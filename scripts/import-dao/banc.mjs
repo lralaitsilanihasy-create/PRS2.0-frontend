@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const lirePath = process.argv.find((a) => a.startsWith('--lire='))?.slice(7) ?? './lire.mjs';
-const { lireParagraphes, norm } = await import(lirePath);
+const { lire, norm } = await import(lirePath);   // 03/10 : le point d'entrée de l'import réel (lecture par le modèle, puis passe par clause)
 const MOD = fileURLToPath(new URL('../modeles-dao/modeles', import.meta.url));
 const bruit = process.argv.some((a) => a.startsWith('--bruit'));
 const manques = process.argv.find((a) => a.startsWith('--manques='))?.slice(10);   // les champs non relus d'un modèle
@@ -149,7 +149,7 @@ for (const sigle of Object.keys(FORMES)) {
   for (const [c, t] of Object.entries(NOUVEAUX)) champs[c] ??= { type: t };
   for (const [nomCad, cad] of Object.entries(CADRAGES)) {
     const r0 = rendre(sigle, cad, champs);
-    const r = lireParagraphes(bruit ? bruiter(r0.paragraphes) : r0.paragraphes, sigle, champs);
+    const r = lire(bruit ? bruiter(r0.paragraphes) : r0.paragraphes, sigle, champs);
     const attendus = [...r0.imprimes].filter((c) => champs[c]?.source !== 'CADRAGE');
     const props = r.propositions.filter((p) => !p.code.includes('#'));
     const justes = props.filter((p) => egal(champs[p.code]?.type, p.valeur, r0.valeurs[p.code]));

@@ -587,6 +587,22 @@ export interface PropositionImport {
   actuelle: string | number | null;
   /** Refus de la validation, condition d'affichage fausse, champ par lot : la ligne ne peut pas être retenue. */
   anomalies: string[];
+  /**
+   * ⚠️ 03/10 — lecture hybride (contrat demandé, `demande-backend-2026-10-03-lecture-par-clause` §B3) : `'modele'` = lue
+   * dans le modèle (la lecture habituelle) ; `'clause'` = trouvée par les mots-clés de sa clause, toujours en confiance
+   * moyenne, à vérifier. Absent : lecture habituelle.
+   */
+  source?: 'modele' | 'clause' | null;
+}
+
+/**
+ * ⚠️ 03/10 — un passage de liste repéré par la lecture par clause (contrat demandé, §B2) : il ne s'applique pas, il se
+ * colle dans la liste du bloc (« Coller une liste »), où la PRMP vérifie l'aperçu.
+ */
+export interface PassageImport {
+  liste: 'MATERIEL' | 'PERSONNEL' | 'PIECES';
+  texte: string;
+  paragraphe?: number | null;
 }
 
 /** Une réponse de cadrage déduite de la rédaction retenue par le document. */
@@ -610,6 +626,8 @@ export interface ImportDaoResult {
   conflits: { code: string; valeurs: (string | number)[] }[];
   nonTrouves: string[];
   avertissements: string[];
+  /** ⚠️ 03/10 — passages de listes (contrat demandé) ; absent tant que le serveur ne le sert pas. */
+  passages?: PassageImport[] | null;
 }
 
 /** Corps de `PUT …/import/appliquer` : les seules lignes retenues par la PRMP, avec la trace du fichier lu. */

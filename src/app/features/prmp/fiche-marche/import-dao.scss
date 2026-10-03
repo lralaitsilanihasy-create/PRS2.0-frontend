@@ -160,3 +160,8 @@
     color: var(--n-600);
   }
 }
+
+/* ⚠️ 03/10 — passages de listes repérés par la lecture par clause, à coller dans leur bloc. */
+.idao__passage { margin: 0.4rem 0 0.8rem; }
+.idao__passage p { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin: 0 0 0.3rem; }
+.idao__passage-texte { display: block; white-space: pre-line; font-size: 0.84rem; color: var(--n-700); background: var(--n-50); border-left: 3px solid var(--p-300); padding: 0.5rem 0.7rem; max-height: 12rem; overflow: auto; }

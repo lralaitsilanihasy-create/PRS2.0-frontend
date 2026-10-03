@@ -165,3 +165,18 @@ justes (B04-DE-02/03, B06-EP-01), aucune perdue.
    Le banc rend désormais une valeur sur plusieurs lignes en autant de paragraphes, comme le rendu Word du serveur.
    Mesures : cas réel (`--defauts --quantite-fixe`) 33 % → **90 %** et 39 % → **93 %**, 0 fausse valeur, Q10 tenu sur
    12 graines ; banc ordinaire (propre et 12 graines) et DAO réels (MEN, MTP, 2463) **identiques** à la règle 9 seule.
+
+## Lecture par clause — option A de la note de décision du 03/10 (`clauses.mjs`)
+
+Après la lecture par le modèle d'un **DPAO** (DPAO-T, DPAO-F), `lire()` lance une **passe par clause**
+(`completerParClause`). Elle ne remplace jamais une valeur lue dans le modèle : elle propose, en confiance **moyenne** et
+source **`clause`**, les informations d'un **catalogue court** que le modèle n'a pas trouvées. Elle rend aussi les
+**passages** de listes (matériel, personnel, pièces), que l'écran propose de coller dans « Coller une liste ».
+
+- **Section d'abord** : on cherche seulement dans les données particulières, à partir de « Les données particulières
+  ci-après complètent ». Ailleurs, les Instructions aux candidats répondent à la place (essai : 4/14 au lieu de 12/14).
+- **Catalogue du premier temps** : validité des offres, garantie de soumission (par lot), délai d'exécution, liquidité (par
+  lot, montant ou %), lieu d'ouverture des plis. Le détail est dans `demande-backend-2026-10-03-lecture-par-clause.md`, §B1.
+- **Mesures** : MTP 1 → 4 valeurs, MEN 9 → 12, 2463 9 → 14 ; tous les ajouts sont justes. Le banc est identique (le
+  modèle y trouve tout) et passe désormais par `lire()`, le point d'entrée de l'import réel.
+- **Listes** : la passe ne découpe rien (essai : 1 liste juste sur 6) ; elle repère le passage.

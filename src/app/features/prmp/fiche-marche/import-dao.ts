@@ -4,7 +4,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output, si
 import { ApiError, corpsErreur, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
 import { TYPES_DOCX, TYPES_PDF, validerFichier } from '../../../core/securite/fichiers-surs';
-import { CategorieDao, ChampFiche, ConfianceImport, FicheMarche, ImportDaoResult, PropositionImport, ReponseCadrageImport, TypeMarche } from '../../../models';
+import { CategorieDao, ChampFiche, ConfianceImport, FicheMarche, ImportDaoResult, PassageImport, PropositionImport, ReponseCadrageImport, TypeMarche } from '../../../models';
 import { FicheMarcheService } from '../../../services/fiche-marche.services';
 import { ModaleDirective } from '../../../shared/a11y/modale.directive';
 import { Icone } from '../../../shared/ui/icone';
@@ -143,6 +143,21 @@ export class ImportDao {
   basculerCadrage(cle: string): void {
     this.cadrageCoche.update((s) => { const n = new Set(s); if (n.has(cle)) n.delete(cle); else n.add(cle); return n; });
   }
+  /** ⚠️ 03/10 — où coller chaque passage de liste repéré (lecture par clause). */
+  libellePassage(liste: PassageImport['liste']): string {
+    return { MATERIEL: 'Matériel exigé — bloc B13', PERSONNEL: 'Personnel clé — bloc B13', PIECES: 'Pièces de l’offre — bloc B14' }[liste];
+  }
+
+  /**
+   * Copie le passage : la PRMP l'ouvre dans « Coller une liste » du bloc indiqué, où l'aperçu se vérifie. Rien ne
+   * s'applique d'ici — la lecture repère le passage, elle ne le découpe pas (note de décision du 03/10).
+   */
+  copierPassage(p: PassageImport): void {
+    const fait = () => this.toast.info(`Passage copié. Ouvrez « ${this.libellePassage(p.liste)} », puis « Coller une liste ».`);
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(p.texte).then(fait, () => this.toast.error('La copie a été refusée par le navigateur : sélectionnez le passage et copiez-le.'));
+    else this.toast.error('La copie n’est pas disponible ici : sélectionnez le passage et copiez-le.');
+  }
+
   libelleConfiance(c: ConfianceImport): string {
     return c === 'haute' ? 'sûre' : c === 'moyenne' ? 'à vérifier' : 'incertaine';
   }

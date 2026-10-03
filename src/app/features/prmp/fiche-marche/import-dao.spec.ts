@@ -210,4 +210,25 @@ describe('Import du DAO — la revue avant d’écrire (demande du pilote du 28/
     fixture.detectChanges();
     expect(texte(racine().querySelector('.alert-danger'))).toContain('saisissez la fiche');
   });
+
+  it('lecture hybride (03/10, contrat demandé) : une valeur trouvée par clause est dite à vérifier ; un passage de liste se copie, il ne s’applique pas', async () => {
+    monter();
+    choisir(DOCX);
+    const ecrit = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText: ecrit }, configurable: true });
+    http.expectOne('/api/fiches-marche/27/import').flush({
+      ...RESULTAT,
+      propositions: [prop('B07-FS-01', 'Marchés uniques non fractionnés', 'moyenne', { source: 'clause' })],
+      passages: [{ liste: 'MATERIEL', texte: 'Camions bennes ≥ 10 000 kg\t6\tau moins 4 en propre', paragraphe: 312 }],
+    });
+    fixture.detectChanges();
+    expect(Array.from(racine().querySelectorAll('tbody .idao__note')).map((n) => texte(n))).toContain('trouvée par les mots-clés de sa clause — à vérifier');
+    expect(caseDe('Marchés uniques non fractionnés')?.checked ?? false).toBe(false);
+    expect(texte(racine().querySelector('.idao__passage strong'))).toBe('Matériel exigé — bloc B13');
+    bouton('Copier le passage').click();
+    await Promise.resolve();
+    expect(ecrit).toHaveBeenCalledWith('Camions bennes ≥ 10 000 kg\t6\tau moins 4 en propre');
+    await Promise.resolve();
+    expect(toast.info).toHaveBeenCalledWith('Passage copié. Ouvrez « Matériel exigé — bloc B13 », puis « Coller une liste ».');
+  });
 });

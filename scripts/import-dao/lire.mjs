@@ -16,6 +16,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CP, JAVA } from '../modeles-dao/commun.mjs';
+import { lireParClause } from './clauses.mjs';
 
 const ICI = path.dirname(fileURLToPath(import.meta.url));
 const MODELES = path.resolve(ICI, '../modeles-dao/modeles');
@@ -254,9 +255,41 @@ function implications(expression) {
 
 // ── La lecture ────────────────────────────────────────────────────────────────────────────────
 export function lire(fichier, sigle, champs = {}) {
-  if (Array.isArray(fichier)) return lireParagraphes(fichier, sigle, champs);
+  if (Array.isArray(fichier)) return completerParClause(lireParagraphes(fichier, sigle, champs), fichier, sigle, champs);
   const origines = paragraphesDOrigine(fichier);
-  return lireParagraphes(origines.map(norm), sigle, champs, origines);
+  const doc = origines.map(norm);
+  return completerParClause(lireParagraphes(doc, sigle, champs, origines), doc, sigle, champs);
+}
+
+/**
+ * ⚠️ 03/10 — option A de la note de décision (lecture HYBRIDE, retenue par le pilote) : après la lecture par le modèle
+ * d'un DPAO, la passe PAR CLAUSE (clauses.mjs) propose, en confiance MOYENNE et source « clause », les informations du
+ * catalogue que le modèle n'a pas trouvées — jamais à la place d'une valeur lue dans le modèle. Elle rend aussi les
+ * PASSAGES de listes (matériel, personnel, pièces), que l'écran propose dans « Coller une liste ».
+ */
+const CATEGORIE_DU_DPAO = { 'DPAO-T': 'TRAVAUX', 'DPAO-F': 'FOURNITURES_SERVICES' };
+function completerParClause(res, doc, sigle, champs) {
+  const categorie = CATEGORIE_DU_DPAO[sigle];
+  if (!categorie) return { ...res, passages: [] };
+  const deja = new Set(res.propositions.map((p) => p.code.split('#')[0]));
+  const clause = lireParClause(doc, categorie, deja);
+  const ajouts = [];
+  for (const p of clause.propositions) {
+    const code = p.code.split('#')[0];
+    const type = champs[code]?.type;
+    if (!type) continue;   // un champ que le référentiel ne sert pas pour ce marché ne se propose pas
+    // Une durée lue pour un NOMBRE (« CENT VINGT (120) jours ») : l'unité n'est pas la valeur.
+    const brut = ['NOMBRE', 'MONTANT', 'POURCENTAGE'].includes(type) ? p.brut.replace(/\s*(?:jours?|mois)\b.*$/i, '') : p.brut;
+    const valeur = valeurSaisie(brut, type);
+    if (valeur == null) continue;
+    ajouts.push({ code: p.code, valeur, brut: p.brut, confiance: 'moyenne', source: 'clause', paragraphe: p.paragraphe });
+  }
+  return {
+    ...res,
+    propositions: [...res.propositions, ...ajouts],
+    nonTrouves: res.nonTrouves.filter((c) => !ajouts.some((a) => a.code.split('#')[0] === c)),
+    passages: clause.passages,
+  };
 }
 
 /** Les paragraphes du document, déjà extraits : un DAO en un seul fichier (avis, DPAC, AE à la suite) se lit modèle par modèle. */

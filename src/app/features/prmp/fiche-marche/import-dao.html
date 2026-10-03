@@ -75,6 +75,7 @@
                     @if (l.identique) { <span class="idao__note">déjà saisie à l’identique</span> }
                     @for (a of l.anomalies; track a) { <span class="idao__motif">{{ a }}</span> }
                     @if (refus().get(l.code); as m) { <span class="idao__motif">{{ m }}</span> }
+                    @if (l.source === 'clause') { <span class="idao__note">trouvée par les mots-clés de sa clause — à vérifier</span> }
                     <details class="idao__extrait"><summary>Extrait du document</summary><q>{{ l.extrait }}</q></details>
                   </td>
                   <td><strong>{{ affiche(l.valeur) }}</strong></td>
@@ -84,6 +85,17 @@
               }
             </tbody>
           </table>
+        }
+
+        <!-- ⚠️ 03/10 — lecture hybride : les passages de listes repérés ne s'appliquent pas, ils se collent dans le bloc. -->
+        @if (r.passages?.length) {
+          <h3 class="idao__titre">Listes repérées — à coller dans leur bloc</h3>
+          @for (p of r.passages; track $index) {
+            <div class="idao__passage">
+              <p><strong>{{ libellePassage(p.liste) }}</strong> <button type="button" class="btn btn-outline btn-sm" (click)="copierPassage(p)">Copier le passage</button></p>
+              <q class="idao__passage-texte">{{ p.texte }}</q>
+            </div>
+          }
         }
 
         @if (r.ambigus.length) {
