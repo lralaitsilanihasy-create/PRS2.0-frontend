@@ -3,7 +3,9 @@
 **Statut** : **arbitré par le pilote le 04/10** : Q2 et Q4 par décisions propres, les autres questions selon les
 recommandations. Lot 0 : ADR-0013 écrite par le backend (proposée). **Lot 1 livré** des deux côtés le 04/10 (back V63-V65, front espace `/candidat`) ; lot 2 : Q11 (04/10) scinde le lot en **2a** (CAO, `docs/demande-backend-2026-10-04-commission-appel-offres.md`) et **2b** (cérémonie, `docs/demande-backend-2026-10-04-ceremonie-des-cles.md`, corrigée en place) — **2a et 2b livrés et recettés pour de vrai le
 04/10** (clés publiées dans Chromium, défi JCA ↔ WebCrypto, cérémonie close) ; lot 3 : demande écrite le 04/10
-(`docs/demande-backend-2026-10-04-depot-scelle.md`, B1-B7, 6 questions) ; lot 4 ensuite.
+(`docs/demande-backend-2026-10-04-depot-scelle.md`, B1-B7, 6 questions) — **livré des deux côtés le 04/10** (back V68,
+front cf15191 ; dépôt réel à recetter, accord du pilote) ; lot 4 : demande écrite le 04/10
+(`docs/demande-backend-2026-10-04-ouverture-des-plis.md`, B0-B8, vecteurs `docs/vecteurs-scellement-2026-10-04.json`).
 **Origine** : pilote, 04/10 : « Attaquer la soumission en ligne ». Suite de la remise électronique (V50, 27/09), qui
 préparait la fiche et annonçait : « la plateforme de dépôt viendra plus tard ». Q14 du 27/09 avait tranché : les
 formulaires du candidat seront remplis **en ligne**, sur le besoin de la fiche.
