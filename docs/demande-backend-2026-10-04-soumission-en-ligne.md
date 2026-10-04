@@ -346,6 +346,45 @@ ensuite les demandes des lots 2 à 4 contre l'ADR.
   **avertissement** (non bloquant, sur `B04-SE-05`) : « La plateforme n'accepte pour l'instant que la signature simple :
   la procédure ne pourra pas s'ouvrir en ligne. »
 
+> ⚠️ **Livraison backend du 2026-10-04 (§B8, sous-lot 1c, V65).** Conforme, routes et `ProcedureEnLigneDto` tels que
+> proposés.
+> - **Les critères de la liste** :
+>   - la dernière version **validée** de la fiche (une révision ouverte ne la masque pas) ;
+>   - **lancée**, c'est-à-dire avec un **avis spécifique** imprimé : les lettres d'invitation des prestations
+>     intellectuelles (liste restreinte) n'ouvrent rien au public ;
+>   - un `B04-SE-05` vide vaut Simple.
+>
+>   Hors critères, le détail répond 404 sans dire lequel manque. Une procédure close sort de la liste, mais reste lisible
+>   par son identifiant avec `etat = CLOSE`.
+> - **Les sources** des champs :
+>   - `reference` = `B02-OB-03` (numéro du DAO), à défaut la référence du plan ;
+>   - `dateLimite` = `B04-LR-03` + `B04-LR-04`, à défaut `B04-CP-02` (contrat-cadre), puis `B04-OV-02` (travaux) ;
+>   - `datePublication` = celle saisie à la **première** impression de l'avis (`AAAA-MM-JJ`), à défaut `B04-SE-17` ;
+>   - `lots` = les lots du plan, numérotés de 1 à n ; liste vide si le marché n'est pas alloti ;
+>   - les autres dates sont en `AAAA-MM-JJTHH:MM`.
+>
+>   Le tableau complet est dans `docs/api-endpoints.md`.
+> - **`etat`** :
+>   - `CLOSE` : la date limite est passée ;
+>   - `A_VENIR` : avant l'ouverture des dépôts (`B04-SE-03`) ;
+>   - `OUVERTE` : sinon.
+> - **Les documents** : `.docx` et `.pdf` de la dernière version validée, sans l'avis ni les lettres.
+>   - `code` est le **nom du fichier**.
+>   - Sans session : **401** ; un agent connecté : 403.
+> - **Le registre** :
+>   - **Chaque téléchargement** fait une ligne : le même document retiré deux fois en fait deux.
+>   - `GET /api/fiches-marche/{idDmc}/retraits` = `[{ date, compte, entreprise, nif, document, version }]`, du plus
+>     ancien au plus récent.
+>   - `compte` est l'adresse électronique du candidat ; `entreprise` et `nif` valent `null` si l'entreprise n'était pas
+>     encore déclarée au retrait.
+>   - L'accès est réservé à la **PRMP** de la fiche : l'UGPM et l'Administrateur reçoivent 403.
+> - **Q5** : l'avertissement est livré, règle **`SIGNATURE_EN_LIGNE`**, avec votre message.
+>
+>   ⚠️ **Écart à connaître** : le niveau minimal de l'Administrateur (`FICHE_SE_SIGNATURE_MIN`, V50) vaut **Avancée**
+>   par défaut. La règle bloquante `SE_SIGNATURE_MIN` refuse alors une fiche électronique en Simple. **Tant que
+>   l'Administrateur ne l'abaisse pas à Simple** (`PUT /api/parametres/fiche-remise-electronique`), aucune procédure ne
+>   peut paraître en ligne. Le défaut n'est pas changé : c'est une décision du pilote, signalée.
+
 ---
 
 ## Ce que le front fera, et quand
