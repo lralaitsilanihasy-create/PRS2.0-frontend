@@ -53,7 +53,7 @@ s'ouvrir en ligne avant la clause du juriste. Les DAO réels étudiés (2463, ME
     | 2. Entreprise déclarée | préparer une offre en brouillon | NIF, STAT et RCS **uniques** sur la plateforme ; pièces téléversées (carte fiscale, statuts, pouvoir du signataire) ; NIF vérifié (ci-dessous) |
     | 3. Dépôt | déposer une offre scellée | ce que le DAO exige déjà : garantie avec code de vérification, reçu des frais de dossier, pièces administratives, signature |
 
-  - **Le dépôt n'est jamais bloqué par la vérification.** Le statut de vérification de l'entreprise s'affiche à la
+  - **Le dépôt n'est jamais bloqué par la vérification** (seule l'exclusion par l'ARMP le bloque, ci-dessous). Le statut de vérification de l'entreprise s'affiche à la
     commission à l'ouverture des plis, et c'est elle qui juge sur pièces, comme pour une offre papier.
   - **La vérification du NIF : deux voies, choisies par un paramètre administrable.**
     - Le paramètre `CANDIDAT_VERIFICATION_NIF` vaut `AUTOMATIQUE` (interrogation d'un service de la DGI) ou
@@ -68,9 +68,19 @@ s'ouvrir en ligne avant la clause du juriste. Les DAO réels étudiés (2463, ME
   - **Le répertoire des entreprises exclues ou sanctionnées par l'ARMP.**
     - Il est tenu dans l'application par l'Administrateur : NIF, raison sociale, motif, référence de la décision de
       l'ARMP, date de début et date de fin (l'exclusion peut être temporaire), avec un journal.
-    - Une entreprise du répertoire, rapprochée par son NIF pendant la période d'exclusion, est **signalée** à
-      l'inscription et au dépôt : au candidat, à l'Administrateur, et à la commission à l'ouverture.
-    - Le signalement n'est pas un refus automatique : la commission constate et décide, comme pour une collusion.
+    - Une entreprise du répertoire est reconnue par son NIF. Pendant la période d'exclusion, elle est **signalée** à
+      l'inscription, au candidat et à l'Administrateur.
+    - **Elle ne peut pas soumettre (pilote, 04/10).** Le serveur refuse le dépôt, en nommant la décision de l'ARMP et sa
+      date de fin. C'est la seule exception à la règle « le système ne refuse pas, la commission décide ».
+      - Le refus est vérifié **au moment du dépôt**, sur le répertoire du jour : une exclusion levée rouvre le dépôt, et
+        une exclusion prononcée pendant la préparation le ferme.
+      - L'écran prévient dès l'ouverture de l'offre, pour que le candidat ne prépare pas une offre qu'il ne pourra pas
+        déposer.
+      - Groupement : si l'un des membres déclarés est exclu, le dépôt du groupement est refusé.
+    - **Une exclusion prononcée après un dépôt** ne peut pas retirer une offre scellée. Celle-ci est signalée à la
+      commission à l'ouverture, avec la décision, et la commission l'écarte.
+    - Une erreur de saisie dans le répertoire (un mauvais NIF) bloquerait un candidat à tort. Chaque fiche du
+      répertoire porte donc sa référence de décision, et l'Administrateur la corrige au journal.
   - **La collusion** (une même personne derrière plusieurs entreprises).
     - Les rapprochements donnent une **alerte** : même téléphone, même adresse électronique, même signataire ou même
       adresse postale sur plusieurs comptes.
