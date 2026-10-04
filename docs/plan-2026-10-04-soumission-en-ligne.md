@@ -186,6 +186,10 @@ s'ouvrir en ligne avant la clause du juriste. Les DAO réels étudiés (2463, ME
     l'évaluation. La décision de nomination est **temporaire** : un appel d'offres correspond à une CAO. »
   - **Ne peuvent pas en être** : la PRMP et l'UGPM (parties à la procédure), le responsable de la procédure (règle 6 : il
     ne détient pas de part), et **les contrôleurs de la CNM**.
+  - **Précision du pilote (04/10)** : « Les membres de la CAO sont **issus de l'entité contractante**, ou sont des
+    **personnes ayant une expertise en matière de l'objet du DAO**. » Un membre porte donc une origine (agent de
+    l'autorité contractante, ou expert de l'objet) ; les deux siègent et détiennent une part. Les experts **adjoints**
+    pour l'évaluation sont autre chose : ni part, ni compte.
   - **Conséquences** : `membresCommission` de V50 (contrôleurs de la localité choisis par le responsable, ADR-0010) est
     remplacé par les membres de la CAO ; ces personnes n'ont pas de compte dans PRS, il leur en faut un (profil
     `MEMBRE_CAO`, hors coquille interne, comme le candidat) ; les experts n'ouvrent pas les plis : pas de part, pas de

@@ -14,15 +14,15 @@ la procédure de secours S1 à S4 ; S5 (le dernier recours) relève de la séanc
 en place (encadré ⚠️ daté). Le front ne code rien contre un nom non confirmé.
 
 > ⚠️ **Correction du 2026-10-04 (décision du pilote, Q11 du plan) — qui sont les « membres ».** Partout dans ce document,
-> « membre désigné » et « membre de la commission » désignent un **membre de la commission d'appel d'offres (CAO), hors
-> experts**, désigné par la PRMP par une décision, et porteur d'un compte **`MEMBRE_CAO`** actif — **pas** un contrôleur de la
+> « membre désigné » et « membre de la commission » désignent un **membre de la commission d'appel d'offres (CAO), de qualité
+> `MEMBRE`** — issu de l’entité contractante ou expert de l’objet du DAO ; les experts adjoints n’ont pas de part —, désigné par la PRMP par une décision, et porteur d'un compte **`MEMBRE_CAO`** actif — **pas** un contrôleur de la
 > CNM choisi par le responsable, comme V50 et l'ADR-0010 l'avaient prévu. La CAO, ses comptes et ce que V50 devient sont la
 > demande du lot **2a**, `docs/demande-backend-2026-10-04-commission-appel-offres.md`, à livrer **avant** ce lot, renommé
 > **2b**. Conséquences ici :
 > - §B1 : le dépositaire reste désigné par le responsable ; la règle 12 et le reste ne changent pas ;
-> - §B2.1 : « membres désignés » = membres hors experts de la CAO ; la garde est par identité (il siège dans la CAO de
+> - §B2.1 : « membres désignés » = membres de qualité `MEMBRE` de la CAO ; la garde est par identité (il siège dans la CAO de
 >   l'`idDmc`), le profil est `MEMBRE_CAO` ;
-> - §B2.2, §B4, §B5.1 : l'appelant « membre » est un compte `MEMBRE_CAO` ; `n` = membres hors experts + 1 ;
+> - §B2.2, §B4, §B5.1 : l'appelant « membre » est un compte `MEMBRE_CAO` ; `n` = membres de qualité `MEMBRE` + 1 ;
 > - §B6 : les notifications aux membres partent **aussi par courriel** — une personne extérieure ne vit pas dans
 >   l'application ;
 > - §B7 : l'écran « Ma clé » vit dans l'espace **`/cao`** (coquille propre, modèle de `/candidat`), pas en route transverse
@@ -50,6 +50,16 @@ propose donc de la fixer maintenant, et de laisser le juriste poser, s'il le veu
   lui. Sa **phrase secrète est générée** (pas choisie) et **imprimée sur le pli scellé**, avec l'empreinte de sa clé et, en
   dernier recours, l'enveloppe en base64. Le serveur ne reçoit jamais la phrase.
 - Le pilote et le juriste tranchent l'organisme ; rien d'autre ne bouge quand ils l'auront fait.
+
+> ⚠️ **Livraison backend du 2026-10-04 (§B1, lot 2, V66).** Conforme : la structure est fixée, la valeur attend le juriste.
+> - `PUT …/parametres-internes` gagne `depositaire: { nom, organisme?, fonction?, contact? } | null` ; `nom` est obligatoire
+>   s'il est donné (400 sous `depositaire`). Les trois valeurs actuelles restent.
+> - `ParametresInternesDto.partDeSecours = { depositaire, etat }`, `etat` ∈ `A_DESIGNER` · `DESIGNE` · `PUBLIEE` ·
+>   `VERIFIEE` · `PERDUE` ; **hors `nombreParts`**.
+> - **Règle 12 `SE_DEPOSITAIRE`**, bloquante en mode électronique, avec votre message ; `etat = COMPLETS` l'exige (anomalie
+>   `SE_DEPOSITAIRE` dans `anomalies`). La règle 10 ne compte pas ce manque une seconde fois.
+> - Journal dédié : champ `depositaire`, valeur « nom ; organisme ; fonction ; contact ».
+> - Le serveur ne reçoit jamais la phrase du pli : la génération et l'impression sont au front (§B2.3).
 
 ## B2 — La cérémonie
 
@@ -145,6 +155,32 @@ propose donc de la fixer maintenant, et de laisser le juriste poser, s'il le veu
 - La validation de la fiche (`POST …/valider`), elle, **n'exige pas** la cérémonie : elle se tient entre la validation et la
   publication, comme le prévoit la règle 8. À confirmer par le pilote (question 2).
 
+> ⚠️ **Livraison backend du 2026-10-04 (§B2.1 à §B2.6, lot 2, V66).** Conforme, routes, DTO et codes tels que proposés.
+> Aucune cryptographie à la main : lecture SPKI et RSA-OAEP par la JCA, aucune dépendance de plus.
+> **Q11** : ce lot a été construit sur les membres de V50 (`membresCommission`, contrôleurs désignés par le responsable) ;
+> toutes les gardes « membre » passent par l'identité contre cette liste, et c'est le lot 2a qui la fera venir de la CAO
+> (comptes `MEMBRE_CAO`) — les routes, les DTO et les codes de ce lot ne changent pas, seule la population change.
+> - **§B2.1** : `CeremonieDto` et `DetenteurDto` tels quels. `detenteurs` liste les membres dans l'ordre des paramètres
+>   internes, puis la part de secours (`im = null`, `nom` = le dépositaire). `avertissements` porte `SE_MARGE_EPUISEE`
+>   quand la cérémonie est **close** et `disponibles ≤ quorum` : avec `quorum = membres`, il paraît dès la clôture.
+>   Lecture : responsable et membres désignés ; Administrateur, PRMP, autres contrôleurs : 403. `FicheMarcheDto.ceremonie`
+>   ∈ `A_VENIR` · `CLOSE` · `A_REFAIRE` · `null` (papier) pour tous ceux qui lisent la fiche.
+> - **§B2.2** : contrôles dans l'ordre — SPKI lisible, RSA, module de **3072 bits** (`CLE_INVALIDE`) ; empreinte recalculée
+>   (`EMPREINTE_INVALIDE`) ; `chiffre`, `iv`, `sel` en base64, `iterations ≥ 600 000`, `kdf = PBKDF2-SHA-256`,
+>   `algorithme = AES-256-GCM` (**`ENVELOPPE_INVALIDE`**, code ajouté). Le responsable n'est pas membre : 403 sur
+>   `POST …/cles`. `/mienne` : 404 sans clé, 403 à tout autre.
+> - **§B2.3** : 409 `DEPOSITAIRE_ABSENT` sans dépositaire ; `GET …/cles/secours` réservé au responsable.
+> - **§B2.4** : 409 `CLES_INCOMPLETES` nomme les manquants (« NOM Prénoms », « la part de secours ») ; une part `PERDUE`
+>   compte comme manquante ; 409 aussi, même code, si les paramètres internes n'ont pas deux membres et un quorum. Close,
+>   `PUT …/parametres-internes` répond 409 `CEREMONIE_CLOSE` si `membresCommission`, `quorum`, `dateCeremonie` ou
+>   `depositaire` change — un envoi à l'identique passe.
+> - **§B2.5** : `ClesPubliquesDto` tel quel, `algorithmes = ['AES-256-GCM', 'RSA-OAEP-3072-SHA256', 'SHAMIR-GF256']`, sans
+>   matricule ni nom ; 404 tant que la cérémonie n'est pas close ou hors des critères des procédures en ligne (donc aussi
+>   tant que l'avis n'est pas imprimé).
+> - **§B2.6** : `disponibilite.raison = CEREMONIE_NON_CLOSE`, `POST …/avis-specifique` → 409 `AVIS_INDISPONIBLE`,
+>   `details.raison = CEREMONIE_NON_CLOSE`. **Écart** : la même garde vaut pour les **lettres d'invitation** (prestations
+>   intellectuelles) — la liste restreinte doit aussi pouvoir sceller. La validation n'exige pas la cérémonie (question 2).
+
 ## B3 — S1 : la marge du quorum (avertissement)
 
 - Quand `quorum = membresCommission.length`, la règle 6 (`SE_QUORUM`) produit un **avertissement**, non bloquant,
@@ -152,6 +188,10 @@ propose donc de la fixer maintenant, et de laisser le juriste poser, s'il le veu
   illisibles. » (ADR §5, S1). La part de secours n'entre pas dans ce calcul.
 - Servi dans `ParametresInternesDto.avertissements` (champ nouveau, `[{ regle, message }]`, distinct d'`anomalies` qui
   restent les refus) et dans `BilanControles.avertissements` de la fiche.
+
+> ⚠️ **Livraison backend du 2026-10-04 (§B3, lot 2).** Conforme : `SE_QUORUM_MARGE`, avertissement, votre message, dans
+> `ParametresInternesDto.avertissements` (champ nouveau, `[{ regle, message }]`) et dans `bilanControles.avertissements`.
+> La part de secours n'entre pas dans le calcul. Il n'est pas émis quand la règle 6 refuse déjà le quorum.
 
 ## B4 — S2 : la vérification d'une part, sans rien révéler
 
@@ -175,6 +215,21 @@ propose donc de la fixer maintenant, et de laisser le juriste poser, s'il le veu
 - **Déclarer sa part perdue** : `POST /api/fiches-marche/{idDmc}/ceremonie/cles/perdue` (membre, pour lui-même ;
   responsable avec `?role=SECOURS`) → `etatPart = PERDUE`, responsable notifié. La perte la plus probable est l'oubli de la
   phrase secrète : c'est ce geste, puis §B5.
+
+> ⚠️ **Livraison backend du 2026-10-04 (§B4, lot 2, V66).** Conforme.
+> - Le défi : 32 octets, RSA-OAEP SHA-256 / MGF1-SHA-256 (`OAEPParameterSpec` explicite), SHA-256 du clair gardé **cinq
+>   minutes, usage unique** ; comparaison en temps constant. Le test d'intégration déchiffre le défi par la JCA avec les
+>   mêmes paramètres que WebCrypto. Un défi consommé ou périmé répond `DEFI_EXPIRE` ; un défi ouvert par un autre détenteur,
+>   403 ; `idDefi` inconnu, 404.
+> - `disponibles` et `SE_MARGE_EPUISEE` comme proposés, mais **servis une fois la cérémonie close seulement** : avant, des
+>   parts manquent par construction. `MARGE_QUORUM` est émis au responsable à la clôture et à chaque part perdue quand la
+>   marge est épuisée.
+> - Le rappel : paramètre **`verificationPartJours`** sur `GET/PUT /api/parametres/fiche-remise-electronique` (clé
+>   `FICHE_SE_VERIFICATION_PART_JOURS`, défaut 7, 400 si négatif). Traitement de nuit à 03 h 45
+>   (`app.ceremonie.cron-rappel`) ; la date limite est lue sur la fiche validée ; un membre n'est rappelé qu'une fois par
+>   clôture.
+> - `POST …/cles/perdue` (membre ; `?role=SECOURS` pour le responsable) : `PERDUE`, journal `clePerdue`, `PART_PERDUE` au
+>   responsable. 409 `CLE_ABSENTE` sans clé.
 
 ## B5 — S4 : remplacer une clé, refaire la cérémonie
 
@@ -204,6 +259,16 @@ propose donc de la fixer maintenant, et de laisser le juriste poser, s'il le veu
   membre qui s'en va après le premier dépôt ne se remplace **pas** — sa part est `PERDUE`, et c'est la marge (S1) et la part
   de secours (S3) qui tiennent. L'écran le dit en toutes lettres.
 
+> ⚠️ **Livraison backend du 2026-10-04 (§B5, lot 2, V66).** Conforme.
+> - **§B5.1** : `PUT …/cles` et `PUT …/cles/secours`, cérémonie close ou non. Avant le premier dépôt, l'ancienne ligne est
+>   supprimée ; après, archivée (`DATE_ARCHIVAGE`), jamais supprimée. `etatPart = PUBLIEE`, `derniereVerification` effacée,
+>   `remplacements + 1`. Journal `cleRemplacee` : ancienne → nouvelle empreinte.
+> - **§B5.2** : `POST …/rouvrir` → `A_REFAIRE`, toutes les parts `ABSENTE` (lignes actives supprimées, empreintes au journal
+>   `ceremonieRouverte`), `CLE_A_PUBLIER` à chaque membre ; 409 `DEPOT_EXISTANT` dès la première offre.
+>   **Écart assumé à V50** : une cérémonie rouverte rend les paramètres internes modifiables **même sur une fiche validée**
+>   (le 409 `FICHE_VALIDEE` ne s'applique pas à `A_REFAIRE`) — sans quoi un membre qui quitte la commission après la
+>   validation ne pourrait pas se remplacer. Les autres gardes (membre ≠ responsable, 400 nominatifs) restent.
+
 ## B6 — Notifications et journal
 
 - **Notifications** (le mécanisme existant : `typeNotif`, `typeObjet = 'PROCEDURE'`, `idObjet = idDmc`, destinataire par
@@ -215,6 +280,16 @@ propose donc de la fixer maintenant, et de laisser le juriste poser, s'il le veu
   enveloppe. Le journal global reçoit la route et l'acteur, sans valeurs.
 - **Aucune cryptographie à la main** côté serveur : lecture SPKI et RSA-OAEP par la JCA (ADR §3) ; aucune dépendance de
   plus au lot 2 (BouncyCastle n'arrive qu'au lot 4).
+
+> ⚠️ **Livraison backend du 2026-10-04 (§B6, lot 2).** Conforme.
+> - Notifications : `typeObjet = PROCEDURE` (valeur nouvelle de `TypeObjet`), `idObjet = idDmc`, destinataire par matricule
+>   (les membres et le responsable sont des contrôleurs ; la PRMP du plan reçoit `CLES_PUBLIEES` par son identifiant). Les
+>   cinq types sont ceux proposés. `CLE_A_PUBLIER` part à chaque membre **nouvellement** désigné par `PUT …/parametres-internes`,
+>   et à tous à la réouverture.
+> - Journal dédié : les huit champs proposés, avec les empreintes (préfixées du rôle : « MEMBRE <empreinte> », « SECOURS
+>   <empreinte> ») ; `ceremonieClose` liste toutes les empreintes publiées. Le journal global reçoit la route et l'acteur,
+>   sans valeurs (intercepteur inchangé).
+> - Aucune dépendance ajoutée : JCA seule.
 
 ## B7 — Ce que le front construira, à la confirmation
 
