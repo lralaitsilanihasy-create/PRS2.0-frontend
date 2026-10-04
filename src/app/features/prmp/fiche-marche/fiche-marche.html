@@ -47,6 +47,9 @@
         @if (modeElectronique() && f.depots; as d) {
           <span class="fm__rep" title="Offres déposées en ligne ; leur détail se lit à la date limite">{{ d.nombre }} {{ d.nombre > 1 ? 'offres déposées' : 'offre déposée' }}{{ d.clos ? ' · dépôts clos' : '' }}</span>
         }
+        @if (modeElectronique() && f.depots?.clos) {
+          <a class="btn btn-outline btn-sm" [routerLink]="['/procedure', f.idDmc, 'seance']">Séance d'ouverture</a>
+        }
         @if (lienDepots(); as lien) {
           <a class="btn btn-outline btn-sm" [routerLink]="lien">Dépôts des offres</a>
         }

@@ -234,3 +234,22 @@ L'ADR-0013 §2 subordonne la reconstitution au serveur à un test d'interopérab
 | 3 | Le **PV publié** (`B04-OP-13`) : entier, ou un extrait sans les alertes de rapprochement et la vérification des NIF ? | pilote, juriste |
 | 4 | Qui lit les **pièces déchiffrées** après la séance : la CAO et la PRMP (proposé), l'UGPM aussi ? | pilote |
 | 5 | La **durée de conservation** des contenus déchiffrés et des conteneurs (ADR §7, question 2) | juriste |
+
+---
+
+> ✅ **Front, lot 4 livré (2026-10-04, JAR V69)** — contre-recette de bout en bout à venir (accord du pilote : des offres déposées).
+> - **Responsable** : `/procedure/{idDmc}/seance` (route transverse, garde serveur ; lien depuis ses paramètres internes) — état, heure
+>   d'ouverture et temps restant, quorum `apportés / quorum`, membres et présences (cases, autres présents), offres reçues ; « Ouvrir la
+>   séance » (409 `SEANCE_PREMATUREE` nommé avec l'heure, `DEPOTS_NON_CLOS`) ; **part de secours** (phrase du pli + motif obligatoire) ;
+>   constat S5 (motif ; `QUORUM_POSSIBLE` nommé avec `possibles` / `quorum`) ; lecture en **mode projection** ; PV (observations, production,
+>   téléchargement). Relu toutes les 5 secondes tant que la séance attend.
+> - **Membre de la CAO** : dans `/cao/procedures/{idDmc}`, la séance — « Apporter mes parts » : `mes-parts`, sa clé déverrouillée **dans
+>   le navigateur** (et l'enveloppe archivée servie pour une part S4, même phrase essayée), chaque part déchiffrée, envoi en une fois ;
+>   puis la lecture et les pièces.
+> - **PRMP / UGPM** : la même page en lecture (aucune action), lien « Séance d'ouverture » sur la fiche une fois les dépôts clos ; l'UGPM
+>   lit sans ouvrir les pièces.
+> - **Lecture** (`lecture-seance.ts`) : offre par offre, intégrité et motif, NIF et vérification, groupement, montants HT/TTC, délai,
+>   validité, rabais, garantie, pièces manquantes, alertes ; pièces ouvertes par `ouvrirBlobSur` ; offres non ouvertes et pourquoi.
+> - Vérifié en lecture seule sur la fiche 34 : le responsable voit « À venir », quorum 0 / 2, « Ouvrir la séance » ; le membre « Au moment de
+>   l'ouverture, vous apporterez ici vos parts » ; la PRMP la même page sans action. Aucune écriture. L'heure d'ouverture est vide : la
+>   fiche 34 n'a pas de `B04-OP-02/03`.

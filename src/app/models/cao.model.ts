@@ -189,3 +189,57 @@ export interface ClesPubliques {
   dateCloture: string | null;
   detenteurs: { role: RoleDetenteur; empreinte: string; clePublique: string }[];
 }
+
+// ── La séance d'ouverture des plis (lot 4, V69) ───────────────────────────────────────────────────────────────
+
+export type EtatSeance = 'A_VENIR' | 'OUVERTE' | 'DECHIFFREE' | 'ILLISIBLE' | 'CLOSE';
+export type IntegriteOffre = 'INTACTE' | 'ALTEREE' | 'LECTURE_IMPOSSIBLE';
+
+/** `GET /api/fiches-marche/{idDmc}/seance` — responsable, membres de la CAO, PRMP et UGPM de la fiche. */
+export interface Seance {
+  idDmc: number;
+  etat: EtatSeance;
+  /** `B04-OP-02` + `B04-OP-03`, à l'horloge du serveur. */
+  heureOuverture: string | null;
+  ouverteLe: string | null;
+  /** Secondes avant l'heure d'ouverture ; `null` une fois passée. */
+  ouverteDans: number | null;
+  quorum: number;
+  membres: { im: string; nom: string; president: boolean; present: boolean; partsApportees: boolean }[];
+  autres: { nom: string; qualite: string | null }[];
+  secoursEmploye: boolean;
+  /** `etat` : l'intégrité une fois l'offre ouverte, sinon l'état de l'offre. */
+  offres: { numero: number | null; lot: number | null; etat: string; partsRecues: number }[];
+  dechiffreeLe: string | null;
+  pv: { produit: boolean; publie: boolean } | null;
+}
+
+/** Une part chiffrée pour la clé de l'appelant ; `enveloppe` seulement si l'offre a été scellée pour une clé archivée (S4). */
+export interface PartChiffree {
+  idOffre: string;
+  empreinteCle: string;
+  part: string;
+  enveloppe: Enveloppe | null;
+}
+
+export interface OffreLue {
+  numero: number | null;
+  idOffre: string;
+  lot: number | null;
+  etat: string;
+  integrite: IntegriteOffre;
+  motif: string | null;
+  entreprise: { nif: string; raisonSociale: string; verification: { statut: string; source: string | null } | null; exclusion: unknown | null };
+  groupement: { nif: string; raisonSociale: string; mandataire: boolean }[] | null;
+  acteEngagement: { montantHt: number; montantTtc: number; delai: number; delaiUnite: 'JOURS' | 'MOIS'; validiteJours: number; rabais: string | null } | null;
+  garantie: { codeVerification: string; presente: boolean } | null;
+  pieces: { code: string; libelle: string; presente: boolean; nomFichier: string | null; empreinteConforme: boolean | null }[];
+  piecesManquantes: string[];
+  alertes: { type: 'RAPPROCHEMENT' | 'EXCLUSION'; message: string }[];
+}
+
+/** `GET …/seance/lecture` — après le déchiffrement seulement (409 `SEANCE_NON_DECHIFFREE`). */
+export interface Lecture {
+  offres: OffreLue[];
+  nonOuvertes: { numero: number | null; entreprise: string; etat: string; motif: string | null }[];
+}

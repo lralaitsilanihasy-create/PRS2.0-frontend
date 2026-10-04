@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { DatePipe, Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { ApiError, codeErreur, erreursParChamp } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
@@ -29,7 +29,7 @@ import { CeremonieResponsable } from './ceremonie-responsable';
 @Component({
   selector: 'app-parametres-internes',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, EtatErreur, CeremonieResponsable],
+  imports: [DatePipe, RouterLink, EtatErreur, CeremonieResponsable],
   template: `
     <section class="pi">
       <header class="page-header">
@@ -142,6 +142,8 @@ import { CeremonieResponsable } from './ceremonie-responsable';
         </form>
 
         @if (idDmc(); as id) {
+          <!-- ⚠️ Lot 4 (V69) — la séance d'ouverture des plis, conduite par le responsable. -->
+          <p class="pi__seance"><a class="btn btn-primary btn-sm" [routerLink]="['/procedure', id, 'seance']">Séance d'ouverture des plis</a></p>
           <app-ceremonie-responsable [idDmc]="id" [depositaire]="d.partDeSecours?.depositaire ?? null" (changement)="charger(true)" />
         }
 
@@ -180,6 +182,7 @@ import { CeremonieResponsable } from './ceremonie-responsable';
     .pi__pied { display: flex; gap: 0.6rem; }
     .pi__h2 { margin: 0.5rem 0 0; font-size: 1.05rem; }
     .pi__journal { font-size: 0.86rem; }
+    .pi__seance { margin: 0; }
   `,
 })
 export class ParametresInternesEcran implements OnInit {

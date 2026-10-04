@@ -15,8 +15,11 @@ import {
   Detenteur,
   Enveloppe,
   MaProcedureCao,
+  Lecture,
   MembreCao,
+  PartChiffree,
   RoleDetenteur,
+  Seance,
   VueProcedureCao,
 } from '../models';
 
@@ -158,5 +161,62 @@ export class CeremonieService {
   /** `GET /api/procedures-en-ligne/{idDmc}/cles` (public) — 404 tant que la cérémonie n'est pas close, ou hors de la liste publique. */
   clesPubliques(idDmc: number): Observable<ClesPubliques> {
     return this.http.get<ClesPubliques>(`${environment.apiUrl}/procedures-en-ligne/${idDmc}/cles`, { context: skipErrorToast() });
+  }
+}
+
+/** ⚠️ Lot 4 (V69) — la séance d'ouverture des plis (`/api/fiches-marche/{idDmc}/seance/**`). Silencieux : l'écran nomme les refus. */
+@Injectable({ providedIn: 'root' })
+export class SeanceService {
+  private readonly http = inject(HttpClient);
+  private readonly base = `${environment.apiUrl}/fiches-marche`;
+
+  private url(idDmc: number, suite = ''): string {
+    return `${this.base}/${idDmc}/seance${suite}`;
+  }
+
+  lire(idDmc: number): Observable<Seance> {
+    return this.http.get<Seance>(this.url(idDmc), { context: skipErrorToast() });
+  }
+
+  /** Responsable : 409 `SEANCE_PREMATUREE` (`details.heureOuverture`), `DEPOTS_NON_CLOS`, `SEANCE_DEJA_OUVERTE`. */
+  ouvrir(idDmc: number): Observable<Seance> {
+    return this.http.post<Seance>(this.url(idDmc, '/ouvrir'), null, { context: skipErrorToast() });
+  }
+
+  presences(idDmc: number, presents: string[], autres: { nom: string; qualite: string | null }[]): Observable<Seance> {
+    return this.http.put<Seance>(this.url(idDmc, '/presences'), { presents, autres }, { context: skipErrorToast() });
+  }
+
+  /** Les parts chiffrées pour ma clé — après l'ouverture seulement (409 `SEANCE_NON_OUVERTE`). */
+  mesParts(idDmc: number, role?: RoleDetenteur): Observable<PartChiffree[]> {
+    const params = role === 'SECOURS' ? new HttpParams().set('role', 'SECOURS') : new HttpParams();
+    return this.http.get<PartChiffree[]>(this.url(idDmc, '/mes-parts'), { params, context: skipErrorToast() });
+  }
+
+  /** Mes parts déchiffrées, toutes à la fois ; `motif` obligatoire pour la part de secours (400 `MOTIF_ABSENT`). */
+  apporterParts(idDmc: number, parts: { idOffre: string; partClaire: string }[], role?: RoleDetenteur, motif?: string): Observable<Seance> {
+    const params = role === 'SECOURS' ? new HttpParams().set('role', 'SECOURS') : new HttpParams();
+    return this.http.post<Seance>(this.url(idDmc, '/parts'), motif ? { parts, motif } : { parts }, { params, context: skipErrorToast() });
+  }
+
+  lecture(idDmc: number): Observable<Lecture> {
+    return this.http.get<Lecture>(this.url(idDmc, '/lecture'), { context: skipErrorToast() });
+  }
+
+  piece(idDmc: number, idOffre: string, nomFichier: string): Observable<Blob> {
+    return this.http.get(this.url(idDmc, `/offres/${idOffre}/pieces/${encodeURIComponent(nomFichier)}`), { responseType: 'blob', context: skipErrorToast() });
+  }
+
+  produirePv(idDmc: number, observations: string | null): Observable<Seance> {
+    return this.http.post<Seance>(this.url(idDmc, '/pv'), { observations }, { context: skipErrorToast() });
+  }
+
+  pv(idDmc: number): Observable<Blob> {
+    return this.http.get(this.url(idDmc, '/pv'), { responseType: 'blob', context: skipErrorToast() });
+  }
+
+  /** S5 : 409 `QUORUM_POSSIBLE` (`details.possibles`, `details.quorum`) tant que le quorum reste atteignable. */
+  constaterIllisible(idDmc: number, motif: string): Observable<Seance> {
+    return this.http.post<Seance>(this.url(idDmc, '/constater-illisible'), { motif }, { context: skipErrorToast() });
   }
 }

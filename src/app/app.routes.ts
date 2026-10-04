@@ -91,6 +91,13 @@ export const routes: Routes = [
         data: { title: 'Paramètres internes de la procédure', concentration: true },
       },
       {
+        // ⚠️ Soumission en ligne, lot 4 (04/10, V69) — la séance d'ouverture des plis : responsable (conduite), PRMP et UGPM
+        // (lecture). Route transverse : le serveur garde par identité (403 aux autres).
+        path: 'procedure/:idDmc/seance',
+        loadComponent: () => import('./features/procedure/seance-ecran').then((m) => m.SeanceEcran),
+        data: { title: 'Séance d’ouverture des plis' },
+      },
+      {
         path: 'admin',
         canActivate: [roleGuard],
         data: { roles: ['ADMINISTRATEUR'] },

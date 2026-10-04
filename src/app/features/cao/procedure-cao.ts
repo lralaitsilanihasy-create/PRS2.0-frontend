@@ -9,6 +9,7 @@ import { LIBELLES_CATEGORIES } from '../prmp/fiche-marche/fiche-marche-modele';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 import { LIBELLES_ORIGINE } from './libelles-cao';
 import { MaCle } from './ma-cle';
+import { SeanceMembre } from './seance-membre';
 
 /**
  * La procédure vue par un membre de la CAO (`GET /api/cao/procedures/{idDmc}`, lot 2a §B2) : l'appel d'offres (version
@@ -18,7 +19,7 @@ import { MaCle } from './ma-cle';
 @Component({
   selector: 'app-procedure-cao',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur, MaCle],
+  imports: [RouterLink, EtatErreur, MaCle, SeanceMembre],
   template: `
     <nav class="pc__ariane" aria-label="Fil d'Ariane">
       <a routerLink="/cao/mes-procedures">Mes procédures</a>
@@ -60,6 +61,9 @@ import { MaCle } from './ma-cle';
           }
         </ul>
       </section>
+
+      <!-- ⚠️ Lot 4 (V69) — la séance d'ouverture : apporter ses parts, puis la lecture. -->
+      <app-seance-membre [idDmc]="idDmc" />
 
       <app-ma-cle [idDmc]="idDmc" />
     }

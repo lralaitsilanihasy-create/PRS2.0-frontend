@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 
 import { CleCorps } from '../models';
-import { CaoEspaceService, CaoService, CeremonieService } from './cao.services';
+import { CaoEspaceService, CaoService, CeremonieService, SeanceService } from './cao.services';
 
 const CLE: CleCorps = {
   clePublique: 'MIIB',
@@ -101,5 +101,55 @@ describe('Services de la CAO et de la cérémonie — chemins du contrat', () =>
     // Les clés publiques des candidats : sur la ressource PUBLIQUE des procédures en ligne, pas sous la fiche.
     s.clesPubliques(34).subscribe({ error: () => {} });
     http.expectOne({ method: 'GET', url: '/api/procedures-en-ligne/34/cles' }).flush({ message: 'x' }, { status: 404, statusText: 'Not Found' });
+  });
+});
+
+describe('Séance d’ouverture (lot 4) — chemins du contrat', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+  });
+
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  it('état, ouverture, présences, parts (secours avec motif), lecture, pièce, PV, constat', () => {
+    const s = TestBed.inject(SeanceService);
+    const http = TestBed.inject(HttpTestingController);
+    const u = '/api/fiches-marche/40/seance';
+
+    s.lire(40).subscribe();
+    http.expectOne({ method: 'GET', url: u }).flush({ etat: 'A_VENIR' });
+    s.ouvrir(40).subscribe({ error: () => {} });
+    http.expectOne({ method: 'POST', url: `${u}/ouvrir` }).flush({ code: 'SEANCE_PREMATUREE' }, { status: 409, statusText: 'Conflict' });
+    s.presences(40, ['K000000001'], [{ nom: 'Observateur', qualite: null }]).subscribe();
+    const pr = http.expectOne({ method: 'PUT', url: `${u}/presences` });
+    expect(pr.request.body).toEqual({ presents: ['K000000001'], autres: [{ nom: 'Observateur', qualite: null }] });
+    pr.flush({});
+
+    s.mesParts(40).subscribe();
+    http.expectOne({ method: 'GET', url: `${u}/mes-parts` }).flush([]);
+    s.mesParts(40, 'SECOURS').subscribe();
+    http.expectOne({ method: 'GET', url: `${u}/mes-parts?role=SECOURS` }).flush([]);
+    s.apporterParts(40, [{ idOffre: 'o', partClaire: 'AA==' }]).subscribe();
+    const p1 = http.expectOne({ method: 'POST', url: `${u}/parts` });
+    // Sans motif pour un membre : la clé n'est pas envoyée.
+    expect(p1.request.body).toEqual({ parts: [{ idOffre: 'o', partClaire: 'AA==' }] });
+    p1.flush({});
+    s.apporterParts(40, [], 'SECOURS', 'Membre absent').subscribe();
+    const p2 = http.expectOne({ method: 'POST', url: `${u}/parts?role=SECOURS` });
+    expect(p2.request.body.motif).toBe('Membre absent');
+    p2.flush({});
+
+    s.lecture(40).subscribe();
+    http.expectOne({ method: 'GET', url: `${u}/lecture` }).flush({ offres: [], nonOuvertes: [] });
+    s.piece(40, 'o', 'AE-acte.pdf').subscribe();
+    const pc = http.expectOne({ method: 'GET', url: `${u}/offres/o/pieces/AE-acte.pdf` });
+    expect(pc.request.responseType).toBe('blob');
+    pc.flush(new Blob());
+    s.produirePv(40, null).subscribe();
+    http.expectOne({ method: 'POST', url: `${u}/pv` }).flush({});
+    s.pv(40).subscribe();
+    http.expectOne({ method: 'GET', url: `${u}/pv` }).flush(new Blob());
+    s.constaterIllisible(40, 'Parts perdues').subscribe();
+    http.expectOne({ method: 'POST', url: `${u}/constater-illisible` }).flush({});
   });
 });
