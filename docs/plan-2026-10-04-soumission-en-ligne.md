@@ -1,6 +1,6 @@
 # Plan — 2026-10-04 — La soumission en ligne des offres (plateforme de dépôt)
 
-**Statut** : proposition du front. **Q2 arbitrée le 04/10** ; Q1 et Q3 à Q10 restent à arbitrer. Rien n'est codé.
+**Statut** : proposition du front. **Q2 et Q4 arbitrées le 04/10** ; Q1, Q3 et Q5 à Q10 restent à arbitrer. Rien n'est codé.
 **Origine** : pilote, 04/10 : « Attaquer la soumission en ligne ». Suite de la remise électronique (V50, 27/09), qui
 préparait la fiche et annonçait : « la plateforme de dépôt viendra plus tard ». Q14 du 27/09 avait tranché : les
 formulaires du candidat seront remplis **en ligne**, sur le besoin de la fiche.
@@ -102,22 +102,47 @@ s'ouvrir en ligne avant la clause du juriste. Les DAO réels étudiés (2463, ME
   - **Recommandé** : le téléchargement est **libre après inscription** et journalisé (qui, quand, quelle version).
   - La preuve du paiement des frais de dossier (`{{PARAM.compte-dao}}`) est une **pièce de l'offre**, vérifiée à
     l'ouverture, pas un péage au téléchargement. Elle reste à confirmer par le juriste.
-- **Q4 — Le scellement : c'est la décision structurante.**
-  - **(a) Recommandé : chiffrement dans le navigateur du candidat.** C'est ce que V50 a préparé (parts, quorum,
+- **Q4 — Le scellement. ✅ Arbitrée par le pilote le 04/10 : option (a), avec une procédure de secours en cas de parts
+  perdues.**
+  - **Le principe retenu : chiffrement dans le navigateur du candidat.** C'est ce que V50 a préparé (parts, quorum,
     cérémonie).
     - La procédure a une clé publique ; l'offre est chiffrée dans le navigateur (WebCrypto, sans dépendance) avant
-      l'envoi.
-    - La clé privée n'existe qu'en **parts** détenues par les membres, et n'est reconstituée qu'à l'ouverture, au
-      quorum.
-    - Ni le serveur ni un administrateur ne peuvent lire une offre avant la séance.
-    - Coût : la cérémonie et l'ouverture sont des écrans à part entière, et une part perdue au-delà du quorum rend les
-      offres illisibles. Il faut donc une procédure de secours, à écrire dans l'ADR.
-  - **(b) Chiffrement par le serveur**, la clé gardée par le serveur, l'accès verrouillé jusqu'à l'heure d'ouverture.
-    - C'est plus simple, mais un administrateur de la base ou du serveur peut lire les offres avant l'ouverture.
-    - Les paramètres « parts » et « quorum » de V50 deviennent alors décoratifs.
-  - Dans les deux cas, une **ADR backend** fixe le protocole avant tout code.
-  - Pour (a), le partage de secret (Shamir) demande une **bibliothèque auditée** : c'est un ajout de dépendance npm, à
-    signaler. On ne l'écrit pas soi-même.
+      l'envoi. Le serveur ne reçoit et ne garde qu'un contenu illisible.
+    - La clé privée n'existe qu'en **parts** détenues par les membres. Elle n'est reconstituée qu'à l'ouverture, au
+      quorum, et toutes les offres s'ouvrent ensemble.
+    - Ni le serveur, ni un administrateur, ni un membre seul ne peuvent lire une offre avant la séance.
+    - Le partage de secret (Shamir) demande une **bibliothèque auditée** : c'est un ajout de dépendance npm, signalé, à
+      nommer dans l'ADR. On ne l'écrit pas soi-même.
+    - Une **ADR backend** fixe le protocole avant tout code (lot 0).
+  - **L'option (b)** (clé gardée par le serveur) est écartée : un administrateur ou une intrusion pourrait lire les
+    offres avant l'ouverture.
+  - **La procédure de secours** (proposée par le front, à fixer dans l'ADR). Elle tient en cinq défenses, de la plus
+    courante à la dernière :
+    - **S1 — La marge du quorum.** Le quorum est inférieur au nombre de parts : 3 sur 5 tolère la perte de 2 parts. La
+      règle 6 de V50 l'autorise déjà (2 ≤ quorum ≤ membres). On ajoute un **avertissement** au responsable quand le
+      quorum est égal au nombre de membres, car aucune perte n'est alors tolérée.
+    - **S2 — Chaque part est confirmée, puis vérifiée.**
+      - À la cérémonie, chaque membre confirme qu'il sait ouvrir sa part.
+      - Avant la date limite, la plateforme lui demande une **vérification** : il prouve qu'il détient toujours sa
+        part, sans la révéler ni reconstituer la clé.
+      - Quand le nombre de parts vérifiées tombe au quorum, le responsable de la procédure est alerté : la marge est
+        épuisée.
+    - **S3 — La part de secours.**
+      - Une part de plus est créée à la cérémonie et remise, **imprimée et sous pli scellé**, à un dépositaire désigné
+        hors de la commission. Qui ce dépositaire doit être est une question pour le juriste ; l'ARMP est une piste.
+      - Elle compte pour **une seule** part : elle ne suffit jamais seule à atteindre le quorum.
+      - Son emploi en séance est consigné au PV d'ouverture, avec le motif.
+    - **S4 — Repartager tant qu'aucune offre n'est déposée.** Si des parts sont perdues **avant le premier dépôt**, le
+      responsable relance une cérémonie. Une nouvelle clé est créée, l'ancienne est abandonnée, et rien n'est perdu.
+      Après le premier dépôt, ce n'est plus possible : les offres déjà scellées l'ont été avec l'ancienne clé.
+    - **S5 — Le dernier recours.** Si le quorum ne peut plus être atteint à l'ouverture, même avec la part de secours,
+      les offres sont illisibles. La séance le constate au PV, les candidats sont avertis, et la procédure est relancée.
+      Les suites juridiques, notamment le sort des garanties de soumission, sont à faire écrire par le juriste.
+  - **Où vivent les parts.**
+    - Chaque part est remise au membre **chiffrée par une phrase secrète qu'il choisit**. Le serveur peut en garder la
+      copie chiffrée sans pouvoir la lire.
+    - Le membre en garde aussi une copie hors ligne (fichier ou impression).
+    - La perte la plus probable est l'oubli de la phrase secrète. C'est ce que S2 détecte tôt.
 - **Q5 — La signature électronique** (`B04-SE-05` : Qualifiée, Avancée ou Simple).
   - **Recommandé, premier temps** : niveau **Simple** = authentification du compte, empreinte SHA-256 de l'offre
     scellée, accusé horodaté par le serveur.
@@ -158,7 +183,7 @@ s'ouvrir en ligne avant la clause du juriste. Les DAO réels étudiés (2463, ME
 |---|---|---|---|
 | **0** | ADR du scellement (Q4) et contrat de la plateforme | ADR, puis réponse à la demande | demande `demande-backend-…-soumission-en-ligne.md` (B1…) |
 | **1** | Espace candidat : inscription à trois niveaux, vérification du NIF (deux voies), répertoire des exclus, alertes de collusion, ménage ; procédures ouvertes en ligne, retrait du DAO | profil `CANDIDAT`, comptes, codes de confirmation, paramètres `CANDIDAT_*`, répertoire des exclus, liste publique des procédures `ELECTRONIQUE` lancées, téléchargement journalisé | `/candidat` : inscription, entreprise, liste, fiche de la procédure, documents ; Admin : vérification sur pièces, répertoire des exclus, paramètres |
-| **2** | Cérémonie des clés | clé publique par procédure, dépôt des parts (chiffrées pour chaque membre) | écran de la cérémonie (responsable et membres) |
+| **2** | Cérémonie des clés et procédure de secours (S1 à S4) | clé publique par procédure, parts chiffrées par phrase secrète, part de secours, vérification des parts, alerte de marge, nouvelle cérémonie avant le premier dépôt | écran de la cérémonie (responsable et membres), vérification de sa part, impression de la part de secours |
 | **3** | Dépôt scellé : pièces et acte d'engagement, brouillon, accusé, remplacement et retrait | envoi par morceaux, stockage chiffré, horodatage, refus après la date limite | écran de l'offre (maquettes) et chiffrement dans le navigateur |
 | **4** | Ouverture des plis et PV d'ouverture | reconstitution au quorum, déchiffrement en séance, PV | écran de la séance |
 | **5** | Formulaires structurés (bordereau, DQE, capacités), garantie voie A, signature avancée et qualifiée, prorogation | par sujet | par sujet |
