@@ -97,6 +97,44 @@ exigences sans jamais faire exister la clé entière, **même pendant la cérém
 Aucun code, aucune migration. **L'ADR seule**, puis un encadré ⚠️ ici qui dit les choix et les écarts. Le front écrit
 ensuite les demandes des lots 2 à 4 contre l'ADR.
 
+> ⚠️ **Livraison backend du 2026-10-04 (§B1) — ADR-0013, « Le scellement des offres déposées en ligne »** (statut
+> *Proposé*, `docs/adr/ADR-0013-scellement-des-offres-en-ligne.md`). Votre variante est retenue : un partage par offre, la clé
+> d'une offre n'existe entière que chez le candidat. Les choix laissés à l'ADR :
+> - **Clés des détenteurs : RSA-OAEP 3072 bits, SHA-256 avec MGF1-SHA-256.** C'est natif dans WebCrypto et dans la JCA
+>   de Java 21. ECDH + HKDF est écarté : Java 21 n'a pas de HKDF sans bibliothèque de plus, ou sans l'écrire à la main.
+>   Côté Java, l'`OAEPParameterSpec` doit fixer MGF1 à SHA-256 ; sinon Java prend SHA-1 et ne s'accorde plus avec
+>   WebCrypto.
+> - **Phrase secrète** : PBKDF2-SHA-256, 600 000 itérations, sel de 16 octets propre au détenteur, enveloppe
+>   `wrapKey('pkcs8')` sous AES-256-GCM. **12 caractères au moins** ; l'écran recommande quatre mots ou plus.
+> - **Partage** : `shamir-secret-sharing` (Privy, Apache-2.0). Son dépôt annonce deux audits indépendants, **Cure53 et
+>   Zellic**, rapports publiés. À figer à une version précise.
+> - **Reconstitution de `K` : au serveur**, comme vous le proposez, avec **BouncyCastle** (`bcprov` ≥ 1.80, partage de
+>   Shamir OASIS en GF(2^8)). C'est **sous condition** : un test d'interopérabilité en CI, au début du lot 4. Des parts
+>   produites par `shamir-secret-sharing` (vos vecteurs, abscisse au dernier octet) doivent être recombinées par
+>   BouncyCastle. Le format commun n'est documenté nulle part, et seul ce test le prouve.
+>   **Repli** : la recombinaison dans le navigateur du responsable de séance, avec votre bibliothèque. Jamais de
+>   recombinaison écrite à la main en Java. `pom.xml` ne prend BouncyCastle qu'au lot 4.
+> - **Conteneur v1** : un en-tête JSON (version, offre, procédure, lot, algorithmes, taille des morceaux de 4 Mio,
+>   quorum, `n`, et pour chaque détenteur l'empreinte de sa clé publique et sa part chiffrée), puis des morceaux AES-GCM.
+>   Les données authentifiées de chaque morceau portent l'offre, la version, le rang, un drapeau « dernier » (contre la
+>   troncature) et le SHA-256 de l'en-tête. L'empreinte de l'accusé est le SHA-256 de l'en-tête et des morceaux, calculée
+>   des deux côtés.
+> - **S2** : le défi par la clé publique, comparé en temps constant. **S1** : l'avertissement sur la règle 6, sans compter
+>   la part de secours. **S4** : remplacer la clé d'un seul membre ; chaque offre garde l'empreinte des clés pour
+>   lesquelles elle a été scellée.
+> - **§B1.3** : la part de secours **ne compte pas** dans `nombreParts`. Elle a son champ propre, `partDeSecours:
+>   { depositaire, etat }`, comme vous le proposez. Les lots 2 à 4 ne s'ouvrent pas tant qu'un dépositaire n'est pas
+>   désigné.
+> - **Question 6, le stockage** : les conteneurs vont sur disque, hors base (`app.offres.repertoire`), un fichier par
+>   offre ; la base garde l'en-tête, l'empreinte et le chemin. Ils sont sauvegardés tels quels, donc chiffrés. La durée
+>   de conservation est à fixer avec le juriste.
+> - **Limites dites dans l'ADR** :
+>   - le code qui chiffre est servi par le serveur, et le scellement ne protège pas contre un code servi compromis ;
+>   - les clés publiques sont publiées par le serveur, d'où le contrôle de son empreinte par chaque détenteur ;
+>   - `quorum` membres qui s'entendent avant l'heure peuvent lire, comme une commission physique.
+>
+> Aucun code, aucune migration. Le front peut écrire les demandes des lots 2 à 4 contre cette ADR, une fois adoptée.
+
 ---
 
 ## B2 — Le profil `CANDIDAT` et le compte (lot 1)
