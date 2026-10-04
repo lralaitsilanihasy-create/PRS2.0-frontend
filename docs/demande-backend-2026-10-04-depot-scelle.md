@@ -43,6 +43,18 @@ Le dépôt d'une offre pour une procédure exige, dans l'ordre où le serveur le
 - **Le scellement doit être achevé avant la date limite** : un dépôt commencé et non scellé à l'échéance est refusé à
   `/sceller` (409 `DELAI_DEPASSE`). L'écran le dit dès que moins de quinze minutes restent.
 
+> ⚠️ **Livraison backend du 2026-10-04 (§B1, lot 3, V68).** Conforme : les six conditions dans cet ordre, codes tels que proposés.
+> - **Condition 3** : la cérémonie close **et** `parts[].empreinte` de l'en-tête exactement les empreintes de `GET …/cles`, dans
+>   l'ordre — sinon `CLES_INDISPONIBLES`, à la création comme au scellement (une clé remplacée entre-temps : le candidat rescelle).
+> - **Condition 5** : le groupement n'est pas connu du serveur, mais l'exclusion de ses membres doit l'être. Le corps de
+>   `POST …/offres` gagne donc **`groupementNifs: string[]`** (facultatif) : les NIF des membres, **pour ce seul contrôle** (gardés
+>   pour la revérification au scellement, jamais servis). Messages tels qu'arrêtés ; pour un membre : « Un membre du groupement (NIF
+>   *n*, *raison sociale*) est exclu des marchés publics par la décision de l'ARMP *réf.* du *JJ/MM/AAAA*, sans date de fin | jusqu'au
+>   *JJ/MM/AAAA*. Le groupement ne peut pas déposer d'offre pendant cette période. »
+> - **L'horloge** : `GET /api/horloge` tel que proposé (`fuseau` = le paramètre `FICHE_SE_FUSEAU`, défaut `Indian/Antananarivo`).
+> - `ProcedureEnLigneDto` gagne `remplacementAutorise` et `depotsOuverts`, comme proposé.
+> - La date limite est revérifiée **à chaque morceau** aussi (`DELAI_DEPASSE`), et au scellement.
+
 ## B2 — Les pièces attendues, lisibles par le candidat
 
 | Méthode | URL | Accès | Réponse | Statuts |
@@ -57,6 +69,12 @@ Le dépôt d'une offre pour une procédure exige, dans l'ordre où le serveur le
   **reçu des frais de dossier** (`RECU-DAO`, décision Q3 — à confirmer par le juriste) ; en remise électronique avec garantie
   de soumission exigée, la **garantie** (`GARANTIE`, voie B : le document et son code de vérification, Q7).
 - 404 hors des critères de la liste publique.
+
+> ⚠️ **Livraison backend du 2026-10-04 (§B2, lot 3).** Conforme. Ordre servi : `AE` (par lot si alloti), `RECU-DAO`, `GARANTIE` (si le
+> cadrage dit `garantieSoumission = OUI`), puis les pièces de la fiche, rubrique `OFFRE` puis `ADMINISTRATIVE`, dans l'ordre du DAO.
+> `obligatoire` vaut `true` pour toutes (aucune pièce de la fiche n'est facultative aujourd'hui) ; `parLot` d'une pièce de la fiche ne
+> vaut `true` que si le marché est alloti. Le `code` `PIECE-<idPiece>` est stable **pour une version** de la fiche : une révision
+> recopie les pièces sous de nouveaux identifiants — le candidat scelle contre la version publiée au moment du dépôt.
 
 ## B3 — Le conteneur, son contenu, et ce que le serveur en sait
 
@@ -81,6 +99,19 @@ Le dépôt d'une offre pour une procédure exige, dans l'ordre où le serveur le
   dans le manifeste), le lot, l'horodatage, la taille, l'empreinte, l'en-tête (donc les empreintes des clés pour lesquelles
   l'offre est scellée). **Ce qu'il ignore** : tout le reste, et d'abord les montants.
 - **Stockage** (ADR §7) : un fichier par offre sous `app.offres.repertoire`, la base garde l'en-tête, l'empreinte et le chemin.
+
+> ⚠️ **Livraison backend du 2026-10-04 (§B3, lot 3).** Conforme. Précisions :
+> - **`enTete` voyage comme une chaîne** (le JSON sérialisé, pas un objet) : ce sont ses octets UTF-8 qui entrent dans l'empreinte ; le
+>   serveur le relit pour le contrôler et le garde tel quel.
+> - Contrôles (400 `EN_TETE_INVALIDE`) : `version = 1`, `idOffre` UUID (**c'est l'identifiant de l'offre** : le navigateur le tire),
+>   `idDmc` et `lot` ceux du corps, `algorithmes` exactement les trois, `tailleMorceau = 4194304`, `nombreMorceaux = max(1,
+>   ⌈tailleContenu / tailleMorceau⌉)`, `quorum` et `n` ceux de la cérémonie, chaque `part` en base64.
+> - **Rangs des morceaux : de 0 à `nombreMorceaux − 1`** (l'ADR ne le fixait pas) — c'est aussi le `rang` des données authentifiées.
+> - Le conteneur sur disque : longueur de l'en-tête (4 octets, gros-boutiste), en-tête, morceaux dans l'ordre ; l'empreinte ne couvre
+>   que l'en-tête et les morceaux, comme l'ADR le dit.
+> - `TAILLE_DEPASSEE` dès la création (taille annoncée) et au scellement (octets reçus).
+> - Question 2 (ZIP par `fflate`) : sans objection côté serveur, qui ne voit jamais le clair. Le lot 4 relira ce ZIP au déchiffrement :
+>   entrées stockées ou `deflate` seulement, comme proposé.
 
 ## B4 — Les routes du dépôt (profil `CANDIDAT`)
 
@@ -116,6 +147,22 @@ Le dépôt d'une offre pour une procédure exige, dans l'ordre où le serveur le
 - **`ECARTEE`** : posé par le lot 4 (exclusion prononcée après le dépôt, décision du pilote) ; déclaré ici pour que l'écran du
   candidat le connaisse.
 
+> ⚠️ **Livraison backend du 2026-10-04 (§B4, lot 3, V68).** Conforme, routes, DTO et codes tels que proposés. Écarts et précisions :
+> - `POST …/offres` : codes en plus — 400 `LOT_INVALIDE` (marché alloti sans lot, ou lot hors 1…n ; non alloti avec un lot autre que
+>   `null`), 400 `REMPLACE_INVALIDE` (l'offre à remplacer n'est pas l'une de vos offres déposées pour ce lot), 409 `TAILLE_DEPASSEE`. Un
+>   identifiant déjà pris répond `OFFRE_EXISTANTE`. Un dépôt `EN_COURS` de la même entreprise pour le même lot est **abandonné** (purgé)
+>   au profit du nouveau : recommencer ne demande rien de plus.
+> - Morceaux : 400 `MORCEAU_INVALIDE` (rang hors de l'offre, morceau vide) ; 403 sur l'offre d'un autre candidat ; `DELAI_DEPASSE`.
+> - Sceller : `MORCEAU_MANQUANT` porte les rangs dans **`details.rangs`** ; 409 **`MORCEAU_INVALIDE`** si un morceau autre que le
+>   dernier n'est pas plein ou si la somme des contenus diffère de `tailleContenu` ; `EMPREINTE_DIFFERENTE` est journalisé et les
+>   morceaux restent (renvoyer le fautif, resceller) ; `CLES_INDISPONIBLES` si une clé a changé depuis la création.
+> - `AccuseDto` = `{ offre: OffreDto, entreprise, n, quorum, empreintesDetenteurs }` (l'offre **imbriquée** sous `offre`, pas aplatie).
+>   `OffreDto` gagne `dateRetrait`. Le PDF de l'accusé est produit à la demande (moteur `DocumentLibre`), le courriel `ACCUSE_DEPOT`
+>   porte le texte de l'accusé, **sans pièce jointe** (`EmailService` n'en envoie pas) : le PDF se télécharge par `…/accuse`.
+> - Retrait : `DELETE` d'un dépôt `EN_COURS` → 409 **`OFFRE_NON_DEPOSEE`** (il se purge seul) ; même code pour l'accusé d'un dépôt en
+>   cours.
+> - Purge : toutes les 5 minutes (`app.offres.cron-entretien`), fichiers compris ; le journal reste.
+
 ## B5 — Ce que la PRMP et la fiche en savent
 
 | Méthode | URL | Accès | Réponse | Statuts |
@@ -130,6 +177,13 @@ Le dépôt d'une offre pour une procédure exige, dans l'ordre où le serveur le
 - `FicheMarcheDto` gagne `depots: { nombre, clos } | null` (mode électronique seul). `CeremonieDto.premierDepot` devient vrai.
 - L'Administrateur ne lit pas les dépôts ; le candidat lit les siens (§B4).
 
+> ⚠️ **Livraison backend du 2026-10-04 (§B5, lot 3).** Conforme, en suivant la proposition de la question 1 (le nombre seul avant la
+> date limite). `DepotsDto.depots[]` = `{ numero, entreprise, nif, lot, dateDepot, dateRetrait, empreinte, taille, etat }` : les
+> `DEPOSEE` par rang d'arrivée, puis les `RETIREE`, `REMPLACEE`, `ECARTEE` ; `depots` vaut `null` avant l'échéance. 403 pour
+> l'Administrateur (sauf s'il est désigné responsable de la procédure) et pour tout autre profil ; la PRMP et l'UGPM au périmètre de la
+> fiche. `FicheMarcheDto.depots = { nombre, clos }` en mode électronique, `null` en papier. `CeremonieDto.premierDepot` devient vrai à
+> la première offre scellée.
+
 ## B6 — Notifications et journal
 
 - `ACCUSE_DEPOT` au candidat (courriel, avec le PDF ou son lien), à chaque scellement ; `OFFRE_RETIREE` au candidat (courriel).
@@ -140,6 +194,15 @@ Le dépôt d'une offre pour une procédure exige, dans l'ordre où le serveur le
 - Aucune dépendance côté serveur : il ne déchiffre rien au lot 3. Il **vérifie** seulement que l'en-tête est bien formé et que
   `parts[].empreinte` sont exactement les empreintes publiées (409 `CLES_INDISPONIBLES` si la liste a changé entre-temps — un
   remplacement de clé, lot 2b §B5 — le candidat rescelle avec la liste à jour).
+
+> ⚠️ **Livraison backend du 2026-10-04 (§B6, lot 3).** Conforme. `ACCUSE_DEPOT` et `OFFRE_RETIREE` : une trace en base (type
+> `CANDIDAT`) et le courriel, que le candidat lit (son espace n'a pas de centre de notifications). `DEPOTS_CLOS` : **une fois** par
+> procédure (`t_ceremonie_cles.DATE_DEPOTS_CLOS`), au plus 5 minutes après la date limite, à la PRMP du plan et au responsable. Journal
+> `t_offre_journal` : `CREATION`, `SCELLEMENT`, `SCELLEMENT_REFUSE`, `REMPLACEMENT`, `RETRAIT`, `PURGE` (les morceaux ne sont pas
+> journalisés un par un : `t_offre_morceau` en garde la taille et l'empreinte jusqu'au scellement).
+>
+> **Recette** : le conteneur va sous `app.offres.repertoire` — sur le JAR de recette, `C:\Users\LANTO\prs-offres` (défaut
+> `${user.home}/prs-offres`). La voie proposée (révision de la fiche 40 en électronique) reste à l'accord du pilote.
 
 ## B7 — Ce que le front construira, à la confirmation
 

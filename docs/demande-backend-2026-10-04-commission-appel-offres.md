@@ -272,3 +272,10 @@ Le pilote tranche : « **Un expert est suffisant dans la CAO.** » Il n'y a qu'u
 
 **Demandé** : retirer `EXPERT_ADJOINT` et poser la borne d'un expert, avec un encadré ici. Pas de migration attendue
 (`QUALITE` peut rester en base, posée à `MEMBRE`).
+
+> ⚠️ **Livraison backend du 2026-10-04 (§B6, avec le lot 3).** Conforme : `qualite` retirée de `MembreCaoDto` ; dans le corps,
+> `EXPERT_ADJOINT` → 400 sous `membres[i].qualite` avec votre message, `MEMBRE` toléré et ignoré, toute autre valeur → 400 (« La
+> qualité n'est plus à envoyer… ») ; `origine` obligatoire pour tous ; au plus un `EXPERT_OBJET` (400 sous `membres`, votre message).
+> Tout membre a un compte `MEMBRE_CAO` et détient une part ; pas de migration, `QUALITE` posée à `MEMBRE`. Une ligne `EXPERT_ADJOINT`
+> restée en base reste hors des détenteurs jusqu'au prochain `PUT …/cao`, qui la reclasse (origine exigée) ou la retire ; celle de la
+> fiche 34 est déjà retirée.
