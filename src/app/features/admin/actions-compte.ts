@@ -249,7 +249,7 @@ export class ActionsCompte implements OnInit {
   });
 
   readonly libelleType = computed(
-    () => ({ PRMP: 'PRMP', UGPM: 'UGPM', CONTROLEUR: 'Contrôleur' })[this.type()] ?? this.type(),
+    () => ({ PRMP: 'PRMP', UGPM: 'UGPM', CONTROLEUR: 'Contrôleur', CANDIDAT: 'Candidat' })[this.type()] ?? this.type(),
   );
 
   ngOnInit(): void {

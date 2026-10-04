@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
-import { ParametreAgpmSeuil, ParametreCompteDao, ParametreRemiseElectronique } from '../models';
+import { ParametreAgpmSeuil, ParametreCompteDao, ParametreRemiseElectronique, ParametresCandidats } from '../models';
 import { skipErrorToast } from '../core/errors/api-error';
 
 /**
@@ -66,5 +66,25 @@ export class ParametreCompteDaoService {
   /** ADMINISTRATEUR seul ; 400 nominatif (`banque`, `titulaire`, `numeroCompte`). Silencieux : l'écran nomme le refus. */
   definir(corps: Pick<ParametreCompteDao, 'banque' | 'titulaire' | 'numeroCompte'>): Observable<ParametreCompteDao> {
     return this.http.put<ParametreCompteDao>(this.url, corps, { context: skipErrorToast() });
+  }
+}
+
+/**
+ * ⚠️ Soumission en ligne, lot 1 (04/10, §B7) — les réglages de l'espace candidat : voie de vérification du NIF,
+ * confirmation par téléphone, limites et délais du ménage, plafond des pièces. `GET` et `PUT` **Administrateur
+ * seul** (le `GET` aussi, à la différence de la remise électronique). Au `PUT`, un champ absent garde sa valeur et
+ * une valeur hors bornes donne un 400 nominatif, que l'écran pose sous le champ.
+ */
+@Injectable({ providedIn: 'root' })
+export class ParametresCandidatsService {
+  private readonly http = inject(HttpClient);
+  private readonly url = `${environment.apiUrl}/parametres/candidats`;
+
+  lire(): Observable<ParametresCandidats> {
+    return this.http.get<ParametresCandidats>(this.url);
+  }
+
+  definir(p: Partial<ParametresCandidats>): Observable<ParametresCandidats> {
+    return this.http.put<ParametresCandidats>(this.url, p, { context: skipErrorToast() });
   }
 }

@@ -62,6 +62,8 @@ describe('Entrée publique — /accueil/:audience (proposition 2026-09-22, arbit
     await harness.fixture.whenStable();
     expect(TestBed.inject(Router).url).toBe('/accueil/prmp');
     expect(audienceDepuis('commission')).toBe('commission');
+    // Soumission en ligne, lot 1 (04/10) : la troisième audience, les entreprises candidates.
+    expect(audienceDepuis('candidat')).toBe('candidat');
     expect(audienceDepuis('x')).toBe('prmp');
     expect(audienceDepuis(null)).toBe('prmp');
   });

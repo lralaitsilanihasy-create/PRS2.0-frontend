@@ -1,4 +1,4 @@
-import { Role } from '../../models';
+import { Role, RoleInterne } from '../../models';
 import {
   COURTS_PAR_ROLE,
   GROUPES_PAR_CHEMIN,
@@ -21,7 +21,7 @@ import { NAV_BY_ROLE, NavItem, navFor } from './navigation';
  * se rattrape ICI, en une ligne de table.
  */
 
-const ROLES = Object.keys(NAV_BY_ROLE) as Role[];
+const ROLES = Object.keys(NAV_BY_ROLE) as RoleInterne[];
 
 describe('suffixeChemin', () => {
   it('retire le segment d’espace, et laisse intact un chemin transverse', () => {
@@ -97,7 +97,7 @@ describe('GROUPES_PAR_CHEMIN — la table elle-même', () => {
   it('les surcharges de libellé court visent une entrée qui existe dans le menu du profil', () => {
     for (const [role, surcharges] of Object.entries(COURTS_PAR_ROLE)) {
       for (const cle of Object.keys(surcharges ?? {})) {
-        const trouvee = NAV_BY_ROLE[role as Role].some(
+        const trouvee = NAV_BY_ROLE[role as RoleInterne].some(
           (i) => i.path === cle || suffixeChemin(i.path) === cle,
         );
         expect(trouvee, `${role} → ${cle}`).toBe(true);

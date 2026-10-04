@@ -36,6 +36,10 @@
         @if (lienParametresInternes(); as lien) {
           <a class="btn btn-outline btn-sm" [routerLink]="lien">Paramètres internes</a>
         }
+        <!-- ⚠️ Soumission en ligne, lot 1 (04/10) — qui a retiré le dossier en ligne ; PRMP seule, remise électronique seule. -->
+        @if (lienRetraits(); as lien) {
+          <a class="btn btn-outline btn-sm" [routerLink]="lien">Retraits du DAO</a>
+        }
       </div>
     }
   </header>

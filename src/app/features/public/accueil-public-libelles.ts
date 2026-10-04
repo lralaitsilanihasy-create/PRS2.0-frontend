@@ -6,9 +6,10 @@
  * place ici). Les mots-clés des cartes sont des LIENS vers l'écran concerné quand il existe pour toute l'audience
  * (PRMP) ; côté Commission, l'écran dépend du profil : les mots-clés restent en gras.
  */
-export type AudiencePublique = 'prmp' | 'commission';
+/** ⚠️ Soumission en ligne, lot 1 (04/10) — troisième audience : les ENTREPRISES candidates, qui retirent un DAO en ligne. */
+export type AudiencePublique = 'prmp' | 'commission' | 'candidat';
 
-export const AUDIENCES: readonly AudiencePublique[] = ['prmp', 'commission'];
+export const AUDIENCES: readonly AudiencePublique[] = ['prmp', 'commission', 'candidat'];
 
 export interface LienPublic {
   libelle: string;
@@ -148,9 +149,60 @@ export const CONTENU_PUBLIC: Readonly<Record<AudiencePublique, ContenuAudience>>
       },
     ],
   },
+  // ⚠️ Soumission en ligne, lot 1 (04/10) — ne promet que ce qui existe : consulter, retirer, déclarer. Le dépôt des
+  // offres, leur scellement et l'ouverture des plis sont les lots 2 à 4 : la page le dit, elle ne les annonce pas.
+  candidat: {
+    onglet: 'Entreprises',
+    titre: 'Retirez les dossiers d’appel d’offres en ligne',
+    promesse:
+      'Les appels d’offres ouverts à la remise électronique sont publiés ici. Avec un compte, vous retirez le dossier ' +
+      'complet et vous déclarez votre entreprise une fois pour toutes. Le dépôt des offres en ligne viendra ensuite.',
+    actions: [
+      { libelle: 'Voir les procédures ouvertes', lien: '/candidat/procedures', principal: true },
+      { libelle: 'Créer un compte candidat', lien: '/candidat/inscription', principal: false },
+    ],
+    nav: [
+      { libelle: 'Procédures ouvertes', lien: '/candidat/procedures' },
+      { libelle: 'Mon entreprise', lien: '/candidat/entreprise' },
+    ],
+    cta: { libelle: 'Créer un compte candidat', lien: '/candidat/inscription' },
+    reperes: [
+      { valeur: '1', libelle: 'compte par entreprise : un NIF, un STAT, un RCS' },
+      { valeur: '0', libelle: 'papier : le dossier se retire en ligne, chaque retrait est enregistré' },
+      { valeur: '6', libelle: 'chiffres : le code reçu par courriel confirme votre compte' },
+    ],
+    sectionTitre: 'Trois gestes, dans l’ordre.',
+    sectionTexte: 'Le reste — l’offre, son dépôt scellé, l’ouverture des plis — arrive avec les prochains lots de la plateforme.',
+    cartes: [
+      {
+        titre: 'Trouver la procédure',
+        texte: [
+          'Les ',
+          { mot: 'procédures ouvertes', lien: '/candidat/procedures' },
+          ' se consultent sans compte : référence, objet, lots, date limite et heure de référence, formats acceptés.',
+        ],
+      },
+      {
+        titre: 'Retirer le dossier',
+        texte: [
+          'Avec un compte confirmé, vous téléchargez le ',
+          { mot: 'dossier d’appel d’offres', lien: '/candidat/procedures' },
+          ' et ses formulaires. Chaque retrait est inscrit au registre de la personne responsable des marchés.',
+        ],
+      },
+      {
+        titre: 'Déclarer votre entreprise',
+        texte: [
+          'Raison sociale, NIF, STAT, RCS, représentant et pièces : ',
+          { mot: 'une déclaration', lien: '/candidat/entreprise' },
+          ', vérifiée sur pièces par l’Administrateur. Elle ne bloque jamais un dépôt ; la commission la lit à l’ouverture des plis.',
+        ],
+      },
+    ],
+  },
 };
 
 /** Audience lue dans l'URL ; toute autre valeur vaut `prmp` (l'audience qui s'inscrit). */
 export function audienceDepuis(param: string | null | undefined): AudiencePublique {
-  return param === 'commission' ? 'commission' : 'prmp';
+  return param === 'commission' || param === 'candidat' ? param : 'prmp';
 }

@@ -14,6 +14,7 @@ describe('Libellés des profils (recette du 2026-09-15)', () => {
       ADMINISTRATEUR: 'Administrateur',
       PRMP: 'PRMP',
       UGPM: 'UGPM',
+      CANDIDAT: 'Candidat',
     };
     expect(LIBELLES_ROLES).toEqual(attendus);
     for (const [role, libelle] of Object.entries(LIBELLES_ROLES)) {
@@ -22,8 +23,8 @@ describe('Libellés des profils (recette du 2026-09-15)', () => {
     }
   });
 
-  it("types d'acteur : Contrôleur / PRMP / UGPM", () => {
-    const attendus: Record<TypeActeur, string> = { CONTROLEUR: 'Contrôleur', PRMP: 'PRMP', UGPM: 'UGPM' };
+  it("types d'acteur : Contrôleur / PRMP / UGPM / Candidat", () => {
+    const attendus: Record<TypeActeur, string> = { CONTROLEUR: 'Contrôleur', PRMP: 'PRMP', UGPM: 'UGPM', CANDIDAT: 'Candidat' };
     expect(LIBELLES_TYPES_ACTEUR).toEqual(attendus);
     expect(libelleTypeActeur('CONTROLEUR')).toBe('Contrôleur');
   });

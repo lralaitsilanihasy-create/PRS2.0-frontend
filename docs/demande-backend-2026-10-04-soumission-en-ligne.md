@@ -409,3 +409,38 @@ ensuite les demandes des lots 2 à 4 contre l'ADR.
 | 4 | L'interface du service de vérification du NIF de la DGI | pilote (DGI) |
 | 5 | Le dépositaire de la part de secours ; le sort des garanties si les offres sont illisibles (S5) ; le reçu des frais de dossier comme pièce de l'offre | juriste, par le pilote |
 | 6 | Le stockage des offres chiffrées (jusqu'à 500 Mo chacune) : où, combien de temps, sauvegarde | backend (infrastructure) |
+
+---
+
+> ✅ **Front, lot 1 livré et contre-recetté (2026-10-04, JAR V65).**
+> - **Espace `/candidat`** dans **sa propre coquille** (`features/candidat/candidat-layout.ts`), jamais dans `MainLayout` :
+>   chaque appel de démarrage de la coquille interne (notifications, actualités, intérims, vacance) vaudrait un 403 au
+>   profil `CANDIDAT` et son dialogue. Gardes : `espaceCandidatGuard` (un agent connecté est renvoyé à la racine),
+>   `candidatConnecteGuard` (« Mon entreprise »), `candidatHorsSessionGuard` (inscription, confirmation) ; `authGuard` et
+>   `roleGuard` renvoient un candidat vers `/candidat` sans appeler `/api/interims/mes`.
+> - **Écrans** : procédures ouvertes (publiques) et détail avec retrait des documents (connecté, chaque retrait annoncé
+>   comme inscrit au registre) ; inscription ; confirmation (réactive aussi un compte archivé : la connexion y mène sur
+>   409 `COMPTE_A_CONFIRMER` / `COMPTE_ARCHIVE`) ; « Mon entreprise » (déclaration, pièces, statut de vérification,
+>   signalement d'exclusion dans les termes du refus du dépôt).
+> - **Administrateur**, sans entrée de menu (il sature) : `/admin/referentiels/candidats` (paramètres),
+>   `/admin/referentiels/exclusions-armp` (répertoire, journal, pas de suppression), `/admin/entreprises` (vérification sur
+>   pièces, pièce ouverte par `ouvrirBlobSur`) — joignables par le sommaire des nomenclatures, l'accueil et l'annuaire.
+> - **PRMP** : « Retraits du DAO » sur la fiche (PRMP seule, remise électronique seule) → `/prmp/dao/{id}/retraits`.
+> - **Entrée publique** : troisième audience `/accueil/candidat` (« Entreprises »), qui ne promet que consulter, retirer,
+>   déclarer. **Connexion** : `login` accepte l'adresse électronique, lien « Créer un compte candidat ».
+> - `Role` et `TypeActeur` gagnent `CANDIDAT` ; `NAV_BY_ROLE` est typé `RoleInterne` (dix menus, garde-fous inchangés).
+> - **Recette écran, lecture seule** (`scratchpad/men/ecran-candidat.cjs`) : accueil, procédures (vide : aucune fiche
+>   électronique en base), inscription (validation locale, rien envoyé), confirmation, connexion, les trois écrans Admin,
+>   l'Administrateur renvoyé hors de `/candidat`, PRMP sur les fiches 19 (404 : base vidée le 25/09), 34 et 40 (remise
+>   papier : lien masqué, voulu). Aucune écriture hors `/api/auth`. 110 tests verts sur les 8 fichiers de test touchés, dont 7 nouveaux (gardes,
+>   chemins des services) ; lint propre.
+> - **Deux points pour le pilote et le backend** :
+>   1. **Le code de confirmation est invisible en recette** : `app.mail.enabled=false` fait renvoyer `EmailService.envoyer`
+>      sans trace, et le code n'est stocké que haché. Aucun compte candidat ne peut donc être confirmé sur le JAR de
+>      recette. **Demandé** : soit un Mailpit local (`app.mail.enabled=true`, `spring.mail.host=localhost`, port 1025,
+>      lecture sur `:8025`), soit, sous un profil de recette seulement, le code dans le journal du serveur.
+>   2. **`FICHE_SE_SIGNATURE_MIN` vaut Avancée** : tant qu'il n'est pas abaissé à Simple, aucune fiche électronique ne se
+>      valide et la liste publique reste vide. Décision du pilote attendue (voir le message au pilote du 04/10).
+> - **Non recetté faute de données** : le parcours du candidat connecté (documents, entreprise, pièces) et le registre
+>   nominal — ils demandent un compte confirmé (point 1) et une fiche électronique lancée (point 2). Toute écriture dans
+>   DBPRS20 attendra l'accord du pilote.

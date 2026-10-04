@@ -245,6 +245,14 @@ export class FicheMarcheEcran {
     return id != null && this.fiche()?.peutModifierParametresInternes ? ['/procedure', id, 'parametres-internes'] : null;
   });
   /**
+   * ⚠️ Soumission en ligne, lot 1 (04/10, §B8) — le registre des retraits du DAO par les candidats : **PRMP seule**
+   * (403 à l'UGPM), et seulement en remise électronique — en papier, rien ne se retire en ligne.
+   */
+  readonly lienRetraits = computed<(string | number)[] | null>(() => {
+    const id = this.idDmc();
+    return id != null && this.estPrmp() && this.modeElectronique() ? ['/prmp', 'dao', id, 'retraits'] : null;
+  });
+  /**
    * ⚠️ Examen (25/09) — **la Commission lit la fiche, elle ne la saisit pas.** Le mode se déduit du RÔLE, pas du
    * statut : une fiche en brouillon comme une fiche figée s'ouvrent en lecture pour un contrôleur, et restent
    * modifiables pour la PRMP et son UGPM. Le serveur sert déjà la fiche à tous les rôles de contrôle ; c'est

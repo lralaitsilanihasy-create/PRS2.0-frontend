@@ -13,5 +13,7 @@ export const accueilPublicGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   if (!auth.isAuthenticated()) return true;
+  // ⚠️ Soumission en ligne, lot 1 (04/10) — le candidat connecté a son espace, hors coquille interne.
+  if (auth.role() === 'CANDIDAT') return router.parseUrl('/candidat');
   return router.parseUrl(cheminAFaire(auth.role()) ?? '/');
 };

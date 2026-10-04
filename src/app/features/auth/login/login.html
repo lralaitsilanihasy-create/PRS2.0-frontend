@@ -51,12 +51,13 @@
         <!-- Le libellé n'est que visuellement masqué : le champ reste nommé pour les lecteurs
              d'écran même quand le texte de substitution disparaît à la saisie (AUDIT.md A7). -->
         <label class="login-field" [class.login-field--invalid]="form.controls.login.touched && form.controls.login.invalid">
-          <span class="cnm-sr-only">Identifiant</span>
+          <span class="cnm-sr-only">Identifiant ou adresse électronique</span>
           <svg class="login-field__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5 0-9 2.5-9 6v2h18v-2c0-3.5-4-6-9-6Z"/></svg>
+          <!-- Un candidat (soumission en ligne, 04/10) se connecte par son adresse électronique ; un agent par son matricule. -->
           <input
             type="text"
             class="login-field__input"
-            placeholder="Identifiant"
+            placeholder="Identifiant ou adresse électronique"
             autocomplete="username"
             formControlName="login"
             required
@@ -97,7 +98,7 @@
           {{ submitting() ? 'Connexion…' : 'Se connecter' }}
         </button>
 
-        <p class="login-form__signup">Nouveau&nbsp;? <a routerLink="/inscription">Créer un compte PRMP</a> · <a routerLink="/accueil/prmp">Découvrir PRS 2.0</a></p>
+        <p class="login-form__signup">Nouveau&nbsp;? <a routerLink="/inscription">Créer un compte PRMP</a> · <a routerLink="/candidat/inscription">Créer un compte candidat</a> · <a routerLink="/accueil/prmp">Découvrir PRS 2.0</a></p>
       </form>
     </section>
   </div>

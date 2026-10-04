@@ -77,6 +77,8 @@ const ECRANS_COMPTES: readonly { readonly libelle: string; readonly chemin: stri
   { libelle: 'Mandats PRMP', chemin: '/admin/comptes/mandats', aide: 'nomination, reconduction, abrogation' },
   { libelle: 'Pièces jointes des PRMP', chemin: '/admin/comptes/prmp-pieces', aide: "arrêté, CIN, justificatifs" },
   { libelle: 'Pièces jointes des UGPM', chemin: '/admin/comptes/ugpm-pieces', aide: 'justificatifs déposés' },
+  // ⚠️ Soumission en ligne, lot 1 (04/10) — les entreprises des candidats, hors annuaire (ce ne sont pas des agents).
+  { libelle: 'Entreprises candidates', chemin: '/admin/entreprises', aide: 'vérification du NIF sur pièces' },
 ];
 
 /** Quinze lignes : la page tient à 1366×768 sans que la fiche, collée à droite, ne perde son ancrage. */
@@ -988,7 +990,8 @@ export class AnnuaireAdmin {
 
   /** « Modifier la fiche » — l'écran d'origine de la population, qui porte le formulaire complet. */
   cheminFiche(type: TypeActeur): string {
-    return { CONTROLEUR: '/admin/comptes/controleurs', PRMP: '/admin/comptes/prmps', UGPM: '/admin/comptes/ugpms' }[type];
+    // Un candidat (soumission en ligne, 04/10) n'est pas dans l'annuaire ; sa « fiche » est son entreprise.
+    return { CONTROLEUR: '/admin/comptes/controleurs', PRMP: '/admin/comptes/prmps', UGPM: '/admin/comptes/ugpms', CANDIDAT: '/admin/entreprises' }[type];
   }
 
   /**

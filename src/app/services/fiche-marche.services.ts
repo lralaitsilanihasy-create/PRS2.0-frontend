@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { skipErrorToast } from '../core/errors/api-error';
-import { AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, DisponibiliteAvis, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, MaterielExige, ParametresInternes, ParametresInternesCorps, PersonnelExige, PieceExigee, PublicationAvis, PublicationLettres, ReferentielFiche, TypeMarche, VersionFiche } from '../models';
+import { AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, DisponibiliteAvis, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, MaterielExige, ParametresInternes, ParametresInternesCorps, PersonnelExige, PieceExigee, PublicationAvis, PublicationLettres, ReferentielFiche, RetraitDao, TypeMarche, VersionFiche } from '../models';
 import { CrudService } from './api/crud.service';
 
 /**
@@ -187,6 +187,15 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
   documents(idDmc: number, version?: number): Observable<DocumentFiche[]> {
     const params = version != null ? new HttpParams().set('version', version) : new HttpParams();
     return this.http.get<DocumentFiche[]>(`${this.baseUrl}/${idDmc}/documents`, { params, context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ Soumission en ligne, lot 1 (04/10, §B8, V65) — `GET /{idDmc}/retraits` : le registre des retraits du DAO par
+   * les candidats, du plus ancien au plus récent. **PRMP de la fiche seule** : 403 à l'UGPM et à l'Administrateur.
+   * Silencieux : l'écran nomme le refus.
+   */
+  retraits(idDmc: number): Observable<RetraitDao[]> {
+    return this.http.get<RetraitDao[]>(`${this.baseUrl}/${idDmc}/retraits`, { context: skipErrorToast() });
   }
 
   /**

@@ -12,7 +12,7 @@ import { VacanceStore } from '../../core/vacance/vacance.store';
 import { InterimStore } from '../../core/interim/interim.store';
 import { ActualiteService } from '../../services/actualite.services';
 import { KpiService } from '../../services';
-import { BadgesMenu, Role } from '../../models';
+import { BadgesMenu, Role, RoleInterne } from '../../models';
 import { NAV_BY_ROLE } from '../../core/navigation/navigation';
 import { courtContenuDansLibelle, libelleCourt } from '../../core/navigation/groupes-menu';
 import { MenuCompactStore } from '../../core/preferences/menu-compact.store';
@@ -441,7 +441,7 @@ describe('Menu par rubriques (refonte ergonomique, lot 5 — F2)', () => {
   });
 
   it('ne perd, n’ajoute et ne double aucune entrée, sur les dix menus', async () => {
-    for (const role of Object.keys(NAV_BY_ROLE) as Role[]) {
+    for (const role of Object.keys(NAV_BY_ROLE) as RoleInterne[]) {
       TestBed.resetTestingModule();
       const hote = await monter(role, 'TEST001');
       // `?maj=1` de « Mettre à jour un PPM » : c'est le même chemin de route, on compare les chemins.

@@ -39,6 +39,11 @@ const refLinks = [
   { label: 'Remise électronique — défauts et bornes', path: '/admin/referentiels/remise-electronique' },
   // ⚠️ 01/10 (avis spécifique §B8) — le compte bancaire unique de l'ARMP, imprimé dans l'avis pour le prix du DAO.
   { label: 'Compte bancaire de l’ARMP (prix des DAO)', path: '/admin/referentiels/compte-dao' },
+  // ⚠️ Soumission en ligne, lot 1 (04/10) — SANS entrée de menu : le menu de l'Administrateur sature (39 px de marge à
+  // 1229×691, `hauteur-menu.mjs`). Les deux réglages de l'espace candidat vivent dans ce sommaire ; la file des
+  // entreprises à vérifier se rejoint depuis l'accueil (« À surveiller ») et depuis l'annuaire (`ECRANS_COMPTES`).
+  { label: 'Candidats — paramètres de l’espace en ligne', path: '/admin/referentiels/candidats' },
+  { label: 'Entreprises exclues par l’ARMP', path: '/admin/referentiels/exclusions-armp' },
 ];
 
 /**
@@ -64,6 +69,10 @@ export const ADMIN_ROUTES: Routes = [
   { path: 'referentiels/champs-fiche-marche', loadComponent: () => import('./champs-fiche-marche-admin').then((m) => m.ChampsFicheMarcheAdmin), data: { title: 'Champs de la fiche DAO' } },
   { path: 'referentiels/compte-dao', loadComponent: () => import('./compte-dao-admin').then((m) => m.CompteDaoAdmin), data: { title: 'Compte bancaire de l’ARMP' } },
   { path: 'referentiels/remise-electronique', loadComponent: () => import('./remise-electronique-admin').then((m) => m.RemiseElectroniqueAdmin), data: { title: 'Remise électronique — défauts et bornes' } },
+  // ⚠️ Soumission en ligne, lot 1 (04/10, §B4, §B5, §B7) — l'espace candidat côté Administrateur.
+  { path: 'referentiels/candidats', loadComponent: () => import('./parametres-candidats-admin').then((m) => m.ParametresCandidatsAdmin), data: { title: 'Candidats — paramètres' } },
+  { path: 'referentiels/exclusions-armp', loadComponent: () => import('./exclusions-armp-admin').then((m) => m.ExclusionsArmpAdmin), data: { title: 'Entreprises exclues par l’ARMP' } },
+  { path: 'entreprises', loadComponent: () => import('./entreprises-admin').then((m) => m.EntreprisesAdmin), data: { title: 'Entreprises candidates' } },
   // ⚠️ Remise électronique (27/09, Q8) — l'Administrateur désigne le responsable de la procédure DEPUIS la fiche : il
   // lui faut donc l'atteindre. La fiche s'ouvre pour lui en lecture (le mode se déduit du rôle), avec l'encart.
   { path: 'dao/:idDmc', loadComponent: () => import('../prmp/fiche-marche/fiche-marche').then((m) => m.FicheMarcheEcran), data: { title: 'Fiche DAO', concentration: true } },

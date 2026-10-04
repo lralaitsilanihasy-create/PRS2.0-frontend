@@ -32,10 +32,19 @@ export type Role =
   | 'VERIFICATEUR'
   | 'ASSISTANT_CONTROLEUR'
   | 'CHARGE_PUBLICATION'
-  | 'ADMINISTRATEUR';
+  | 'ADMINISTRATEUR'
+  /**
+   * ⚠️ Soumission en ligne, lot 1 (04/10, V63) — le CANDIDAT (une entreprise) : connexion par son adresse
+   * électronique, **aucune route interne** (403 serveur sur tout ce qui n'est pas `/api/candidat/**`, les routes
+   * publiques et `/api/mon-compte/**`). Il n'entre jamais dans la coquille interne : son espace est `/candidat`.
+   */
+  | 'CANDIDAT';
+
+/** Les dix profils de la coquille interne (menu latéral, « À faire », délégations) — tout sauf le candidat. */
+export type RoleInterne = Exclude<Role, 'CANDIDAT'>;
 
 /** Nature de l'acteur authentifié (LoginResponse.typeActeur) ; `UGPM` agit sous sa PRMP de tutelle. */
-export type TypeActeur = 'CONTROLEUR' | 'PRMP' | 'UGPM';
+export type TypeActeur = 'CONTROLEUR' | 'PRMP' | 'UGPM' | 'CANDIDAT';
 
 /** Statut d'un dossier (cycle réel backend : BROUILLON → SOUMIS → PRET_DISPATCH → … → CLOTURE/RETIRE). */
 export type StatutDossier =

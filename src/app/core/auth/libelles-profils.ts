@@ -18,12 +18,15 @@ export const LIBELLES_ROLES: Readonly<Record<Role, string>> = {
   ADMINISTRATEUR: 'Administrateur',
   PRMP: 'PRMP',
   UGPM: 'UGPM',
+  // ⚠️ Soumission en ligne, lot 1 (04/10) — l'entreprise qui retire un DAO ; hors coquille interne.
+  CANDIDAT: 'Candidat',
 };
 
 export const LIBELLES_TYPES_ACTEUR: Readonly<Record<TypeActeur, string>> = {
   CONTROLEUR: 'Contrôleur',
   PRMP: 'PRMP',
   UGPM: 'UGPM',
+  CANDIDAT: 'Candidat',
 };
 
 /** Libellé d'un profil ; vide sans profil. Un code inconnu (backend plus récent) reste lisible tel quel. */

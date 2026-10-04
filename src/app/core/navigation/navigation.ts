@@ -1,4 +1,4 @@
-import { Interim, Role } from '../../models';
+import { Interim, Role, RoleInterne } from '../../models';
 import { NomIcone } from '../../shared/ui/icone';
 
 /** Entrée de menu latéral. */
@@ -151,7 +151,13 @@ function menuCommission(base: '/president' | '/cc'): NavItem[] {
  *
  * Rappel : masquer une entrée est un confort UX ; le backend reste l'autorité (403).
  */
-export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
+/**
+ * ⚠️ Soumission en ligne, lot 1 (04/10) — le CANDIDAT n'a PAS de menu ici, et c'est voulu : il n'entre jamais dans
+ * la coquille interne (barre latérale, notifications, actualités, assistant — autant d'appels que le serveur lui
+ * refuserait à 403). Son espace `/candidat` a sa propre coquille, `features/candidat/candidat-layout.ts`. D'où le
+ * type `RoleInterne` : les dix menus, et les garde-fous de `groupes-menu.spec.ts` qui les parcourent, restent dix.
+ */
+export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
   PRMP: [
     entreeAFaire('prmp'),
     // ⚠️ Demande pilote (2026-09-06) — l'entrée du tableau de bord devient le suivi des délais.
@@ -301,9 +307,9 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   ],
 };
 
-/** Menu du profil donné (vide si rôle inconnu/null). */
+/** Menu du profil donné (vide si rôle inconnu/null — et pour le candidat, qui n'a pas de menu dans cette coquille). */
 export function navFor(role: Role | null): NavItem[] {
-  return role ? NAV_BY_ROLE[role] : [];
+  return role && role !== 'CANDIDAT' ? NAV_BY_ROLE[role] : [];
 }
 
 /** Menu aplati (parents + enfants) du profil donné, pour les affichages sans hiérarchie (accueil). */
@@ -330,7 +336,7 @@ export function entreesParInterim(exerces: readonly Interim[], propres: readonly
   const exclus = new Set(['a-faire', '/notifications', 'interim', ...propres.map((i) => suffixe(i.path))]);
   const resultat: NavItem[] = [];
   for (const i of exerces) {
-    for (const item of NAV_BY_ROLE[i.profilTitulaire] ?? []) {
+    for (const item of navFor(i.profilTitulaire)) {
       const s = suffixe(item.path);
       if (exclus.has(s)) continue;
       exclus.add(s);

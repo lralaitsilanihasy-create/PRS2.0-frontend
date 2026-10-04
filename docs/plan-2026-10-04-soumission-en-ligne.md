@@ -1,7 +1,7 @@
 # Plan — 2026-10-04 — La soumission en ligne des offres (plateforme de dépôt)
 
 **Statut** : **arbitré par le pilote le 04/10** : Q2 et Q4 par décisions propres, les autres questions selon les
-recommandations. Lot 0 engagé : `docs/demande-backend-2026-10-04-soumission-en-ligne.md`. Rien n’est codé.
+recommandations. Lot 0 : ADR-0013 écrite par le backend (proposée). **Lot 1 livré** des deux côtés le 04/10 (back V63-V65, front espace `/candidat`) ; lots 2 à 4 : demandes à écrire contre l’ADR.
 **Origine** : pilote, 04/10 : « Attaquer la soumission en ligne ». Suite de la remise électronique (V50, 27/09), qui
 préparait la fiche et annonçait : « la plateforme de dépôt viendra plus tard ». Q14 du 27/09 avait tranché : les
 formulaires du candidat seront remplis **en ligne**, sur le besoin de la fiche.

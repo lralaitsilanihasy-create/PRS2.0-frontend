@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 
-import { authGuard, roleGuard } from './core/auth/auth.guard';
+import { authGuard, espaceCandidatGuard, roleGuard } from './core/auth/auth.guard';
 import { accueilPublicGuard } from './core/navigation/accueil-public.guard';
 import { dossierAliasGuard } from './core/navigation/dossier-alias.guard';
 
@@ -32,6 +32,15 @@ export const routes: Routes = [
       { path: '', redirectTo: 'prmp', pathMatch: 'full' },
       { path: ':audience', loadComponent: () => import('./features/public/accueil-public').then((m) => m.AccueilPublic) },
     ],
+  },
+  {
+    // ⚠️ Soumission en ligne, lot 1 (04/10) — l'ESPACE CANDIDAT, dans SA coquille (pas `MainLayout`, dont chaque appel
+    // de démarrage vaudrait un 403 au profil CANDIDAT). Public pour un visiteur (procédures, inscription), réservé au
+    // candidat connecté ensuite ; un agent connecté est renvoyé chez lui. Les gardes fines sont dans `candidat.routes.ts`.
+    path: 'candidat',
+    canActivate: [espaceCandidatGuard],
+    loadComponent: () => import('./features/candidat/candidat-layout').then((m) => m.CandidatLayout),
+    loadChildren: () => import('./features/candidat/candidat.routes').then((m) => m.CANDIDAT_ROUTES),
   },
   {
     path: '',

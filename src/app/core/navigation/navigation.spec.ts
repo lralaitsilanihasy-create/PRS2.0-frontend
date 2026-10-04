@@ -1,4 +1,4 @@
-import { Role } from '../../models';
+import { Role, RoleInterne } from '../../models';
 import { NOMS_ICONES } from '../../shared/ui/icone';
 import { NAV_BY_ROLE, NavItem, cheminAFaire, navFor, separerParDelegation } from './navigation';
 
@@ -111,6 +111,6 @@ describe('Icônes du menu (refonte ergonomique, lot 5 — 2026-09-15)', () => {
     for (const role of ['PRESIDENT', 'CHEF_COMMISSION', 'SECRETAIRE', 'MEMBRE', 'VERIFICATEUR', 'ASSISTANT_CONTROLEUR', 'PRMP', 'UGPM'] as const) {
       expect(icone(role, 'À faire')).toBe('inbox');
     }
-    for (const role of Object.keys(NAV_BY_ROLE) as Role[]) expect(icone(role, 'Notifications')).toBe('bell');
+    for (const role of Object.keys(NAV_BY_ROLE) as RoleInterne[]) expect(icone(role, 'Notifications')).toBe('bell');
   });
 });
