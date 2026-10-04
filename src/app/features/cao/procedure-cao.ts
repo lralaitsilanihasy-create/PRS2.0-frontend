@@ -7,7 +7,7 @@ import { CaoEspaceService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { LIBELLES_CATEGORIES } from '../prmp/fiche-marche/fiche-marche-modele';
 import { dateHeureFr } from '../candidat/libelles-candidat';
-import { LIBELLES_ORIGINE, LIBELLES_QUALITE } from './libelles-cao';
+import { LIBELLES_ORIGINE } from './libelles-cao';
 import { MaCle } from './ma-cle';
 
 /**
@@ -55,7 +55,7 @@ import { MaCle } from './ma-cle';
           @for (m of v.cao.membres; track m.id) {
             <li class="pc__membre">
               <span><strong>{{ m.nom }} {{ m.prenom }}</strong>{{ m.president ? ' — président' : '' }}</span>
-              <span class="text-sm text-muted">{{ qualites[m.qualite] }}{{ m.origine ? ' · ' + origines[m.origine] : '' }}{{ m.fonction ? ' · ' + m.fonction : '' }}{{ m.organisme ? ' · ' + m.organisme : '' }}{{ m.service ? ' · ' + m.service : '' }}{{ m.domaine ? ' · ' + m.domaine : '' }}</span>
+              <span class="text-sm text-muted">{{ m.origine ? origines[m.origine] : 'Origine à préciser' }}{{ m.fonction ? ' · ' + m.fonction : '' }}{{ m.organisme ? ' · ' + m.organisme : '' }}{{ m.service ? ' · ' + m.service : '' }}{{ m.domaine ? ' · ' + m.domaine : '' }}</span>
             </li>
           }
         </ul>
@@ -82,7 +82,6 @@ export class ProcedureCao implements OnInit {
 
   readonly idDmc = Number(this.route.snapshot.paramMap.get('idDmc'));
   readonly categories = LIBELLES_CATEGORIES;
-  readonly qualites = LIBELLES_QUALITE;
   readonly origines = LIBELLES_ORIGINE;
   readonly date = dateFr;
   readonly dateHeure = dateHeureFr;

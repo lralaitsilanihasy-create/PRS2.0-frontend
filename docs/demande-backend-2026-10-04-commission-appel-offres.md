@@ -249,3 +249,26 @@ extérieure ne vit pas dans l'application. L'écran « Ma clé » vit dans l'esp
 > « Le code d'activation est faux ») ; connexion par l'adresse → `/cao/mes-procedures` montre la procédure, « Président »
 > pour le premier ; `ADMIN01` désigné responsable (201). Après la clôture, retirer l'expert adjoint par `PUT …/cao` passe (200)
 > : il n'est pas détenteur. Les trois comptes de recette (`cao.recette.un|deux|expert@exemple.mg`) restent en base.
+
+---
+
+## B6 — Correction du 2026-10-04 : un seul expert, pas d'expert adjoint (précision du pilote)
+
+Le pilote tranche : « **Un expert est suffisant dans la CAO.** » Il n'y a qu'une sorte d'expert — **un membre**, d'origine
+`EXPERT_OBJET`, qui détient une part comme les autres — et la commission n'en compte **qu'un au plus**. La catégorie
+`EXPERT_ADJOINT` (évalue sans part, sans compte), née d'une lecture du front, **n'existe plus**.
+
+- **`qualite` disparaît** du corps et du DTO : tout membre est détenteur. Un corps qui porte `qualite = EXPERT_ADJOINT`
+  répond 400 sous `membres[i].qualite` : « Les experts adjoints n'existent plus : un expert de l'objet siège comme membre. »
+  (`qualite = MEMBRE` est toléré et ignoré, le temps que le front cesse de l'envoyer — il a cessé.)
+- **`origine` est obligatoire pour tous** ; **au plus un membre `EXPERT_OBJET`** par CAO : 400 sous `membres`, « Un expert
+  de l'objet suffit : la commission n'en compte qu'un. »
+- Rien d'autre ne change : au moins deux membres, un président parmi eux, `n` = membres + 1, les comptes `MEMBRE_CAO` pour
+  tous les membres (l'expert compris), les exclusions par construction.
+- `CaoDto.membres[].compte` n'est donc plus jamais `null` ; `anomalies` ne parle plus d'experts.
+- **Front** : la colonne « Qualité » est retirée de l'écran de la PRMP, l'origine est exigée pour chaque ligne, un second
+  expert est refusé avant l'envoi avec le même message ; la vue du membre ne montre que l'origine. La CAO de recette de la
+  fiche 34 a déjà perdu son expert adjoint (`PUT …/cao`, 200).
+
+**Demandé** : retirer `EXPERT_ADJOINT` et poser la borne d'un expert, avec un encadré ici. Pas de migration attendue
+(`QUALITE` peut rester en base, posée à `MEMBRE`).

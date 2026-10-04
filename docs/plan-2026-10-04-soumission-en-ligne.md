@@ -188,8 +188,10 @@ s'ouvrir en ligne avant la clause du juriste. Les DAO réels étudiés (2463, ME
     ne détient pas de part), et **les contrôleurs de la CNM**.
   - **Précision du pilote (04/10)** : « Les membres de la CAO sont **issus de l'entité contractante**, ou sont des
     **personnes ayant une expertise en matière de l'objet du DAO**. » Un membre porte donc une origine (agent de
-    l'autorité contractante, ou expert de l'objet) ; les deux siègent et détiennent une part. Les experts **adjoints**
-    pour l'évaluation sont autre chose : ni part, ni compte.
+    l'autorité contractante, ou expert de l'objet) ; les deux siègent et détiennent une part.
+  - **Précision du pilote (04/10, bis)** : « **Un expert est suffisant dans la CAO.** » Il n'y a donc **pas** de catégorie
+    d'« expert adjoint » sans part : l'expert est un membre, il détient une part, et la commission n'en compte **qu'un au
+    plus**. Les autres membres viennent de l'entité contractante.
   - **Conséquences** : `membresCommission` de V50 (contrôleurs de la localité choisis par le responsable, ADR-0010) est
     remplacé par les membres de la CAO ; ces personnes n'ont pas de compte dans PRS, il leur en faut un (profil
     `MEMBRE_CAO`, hors coquille interne, comme le candidat) ; les experts n'ouvrent pas les plis : pas de part, pas de

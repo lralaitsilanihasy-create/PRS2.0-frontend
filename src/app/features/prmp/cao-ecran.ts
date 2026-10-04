@@ -5,11 +5,11 @@ import { ApiError, codeErreur, erreursParChamp } from '../../core/errors/api-err
 import { dateFr } from '../../core/interim/interim-libelles';
 import { ToastService } from '../../core/notifications/toast.service';
 import { TYPES_PDF, validerFichier } from '../../core/securite/fichiers-surs';
-import { Cao, CompteMembreCao, MembreCaoCorps, OrigineMembreCao, QualiteMembreCao } from '../../models';
+import { Cao, CompteMembreCao, MembreCaoCorps, OrigineMembreCao } from '../../models';
 import { CaoService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr } from '../candidat/libelles-candidat';
-import { LIBELLES_ETAT_CAO, LIBELLES_ETAT_COMPTE_CAO, LIBELLES_ORIGINE, LIBELLES_QUALITE, classeCao } from '../cao/libelles-cao';
+import { LIBELLES_ETAT_CAO, LIBELLES_ETAT_COMPTE_CAO, LIBELLES_ORIGINE, MESSAGE_UN_SEUL_EXPERT, classeCao } from '../cao/libelles-cao';
 
 /** Une ligne du tableau des membres, telle qu'elle se saisit ; `cle` est locale, `id` vient du serveur. */
 interface Ligne {
@@ -19,7 +19,6 @@ interface Ligne {
   prenom: string;
   email: string;
   telephone: string;
-  qualite: QualiteMembreCao;
   origine: OrigineMembreCao | '';
   fonction: string;
   service: string;
@@ -27,18 +26,19 @@ interface Ligne {
   domaine: string;
   president: boolean;
   compte: CompteMembreCao | null;
+  /** Un ancien « expert adjoint » servi par V67 : il n'a ni part ni compte, l'écran demande son origine ou son retrait (§B6). */
+  ancienExpertAdjoint: boolean;
 }
 
 const DECISION_MAX_MO = 10;
-const QUALITES: readonly QualiteMembreCao[] = ['MEMBRE', 'EXPERT_ADJOINT'];
 const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OBJET'];
 
 /**
  * **Commission d'appel d'offres** d'une fiche DAO en remise électronique (lot 2a, V67, décision Q11) — l'écran de la
- * PRMP : la décision de nomination (référence, date, PDF), les membres avec leur qualité (membre détenteur d'une part,
- * ou expert adjoint sans part) et leur origine (entité contractante, ou expert de l'objet du DAO), **un** président, et
- * l'état des comptes : la désignation crée le compte `MEMBRE_CAO` et envoie l'invitation par courriel. Une CAO par DAO ;
- * une cérémonie close la fige (409 `CEREMONIE_CLOSE` : le responsable rouvre d'abord). Les exclusions (PRMP, UGPM,
+ * PRMP : la décision de nomination (référence, date, PDF), les membres avec leur origine (entité contractante, ou expert
+ * de l'objet du DAO — **un seul expert au plus**, pilote 04/10), **un** président, et l'état des comptes : la désignation
+ * crée le compte `MEMBRE_CAO` et envoie l'invitation par courriel. Tous les membres détiennent une part. Une CAO par
+ * DAO ; une cérémonie close la fige (409 `CEREMONIE_CLOSE` : le responsable rouvre d'abord). Les exclusions (PRMP, UGPM,
  * contrôleurs de la CNM, candidats, comptes internes) sont dites par le serveur, jamais devinées ici.
  */
 @Component({
@@ -57,9 +57,9 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
         <h1 class="page-title">Commission d'appel d'offres</h1>
       </header>
       <p class="page-role">
-        Les membres que vous désignez par décision détiennent chacun une part de la clé qui ouvrira les offres ; les experts
-        adjoints évaluent sans part. Chaque membre reçoit par courriel une invitation à activer son compte, puis publie sa clé
-        à la cérémonie. Une commission par appel d'offres.
+        Les membres que vous désignez par décision détiennent chacun une part de la clé qui ouvrira les offres : des agents de
+        votre entité, et au plus un expert de l'objet du marché. Chacun reçoit par courriel une invitation à activer son
+        compte, puis publie sa clé à la cérémonie. Une commission par appel d'offres.
       </p>
 
       @if (chargement()) {
@@ -96,26 +96,19 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
             <table class="cao__table">
               <caption class="cnm-sr-only">Les membres de la commission</caption>
               <thead>
-                <tr><th scope="col">Président</th><th scope="col">Qualité</th><th scope="col">Origine</th><th scope="col">Nom</th><th scope="col">Prénom</th><th scope="col">Adresse électronique</th><th scope="col">Téléphone</th><th scope="col">Fonction</th><th scope="col">Service / organisme / domaine</th><th scope="col">Compte</th><th scope="col"><span class="cnm-sr-only">Retirer</span></th></tr>
+                <tr><th scope="col">Président</th><th scope="col">Origine</th><th scope="col">Nom</th><th scope="col">Prénom</th><th scope="col">Adresse électronique</th><th scope="col">Téléphone</th><th scope="col">Fonction</th><th scope="col">Service, ou organisme et domaine</th><th scope="col">Compte</th><th scope="col"><span class="cnm-sr-only">Retirer</span></th></tr>
               </thead>
               <tbody>
                 @for (l of lignes(); track l.cle; let i = $index) {
-                  <tr>
-                    <td><input type="radio" name="president" [checked]="l.president" [disabled]="l.qualite !== 'MEMBRE'" (change)="presider(l.cle)" [attr.aria-label]="'Président : ' + (l.nom || 'membre ' + (i + 1))" /></td>
+                  <tr [class.cao__ligne--ancien]="l.ancienExpertAdjoint">
+                    <td><input type="radio" name="president" [checked]="l.president" (change)="presider(l.cle)" [attr.aria-label]="'Président : ' + (l.nom || 'membre ' + (i + 1))" /></td>
                     <td>
-                      <select class="form-control cao__select" [attr.aria-label]="'Qualité du membre ' + (i + 1)" (change)="poser(l.cle, 'qualite', $any($event.target).value)">
-                        @for (q of qualites; track q) { <option [value]="q" [selected]="l.qualite === q">{{ libQualite[q] }}</option> }
+                      <select class="form-control cao__select" [attr.aria-label]="'Origine du membre ' + (i + 1)" (change)="poser(l.cle, 'origine', $any($event.target).value)" [class.error]="!!erreurDe('membres[' + i + '].origine')">
+                        <option value="" [selected]="!l.origine">— Choisir —</option>
+                        @for (o of origines; track o) { <option [value]="o" [selected]="l.origine === o">{{ libOrigine[o] }}</option> }
                       </select>
-                      @if (erreurDe('membres[' + i + '].qualite'); as m) { <span class="form-error">{{ m }}</span> }
-                    </td>
-                    <td>
-                      @if (l.qualite === 'MEMBRE') {
-                        <select class="form-control cao__select" [attr.aria-label]="'Origine du membre ' + (i + 1)" (change)="poser(l.cle, 'origine', $any($event.target).value)">
-                          <option value="" [selected]="!l.origine">— Choisir —</option>
-                          @for (o of origines; track o) { <option [value]="o" [selected]="l.origine === o">{{ libOrigine[o] }}</option> }
-                        </select>
-                        @if (erreurDe('membres[' + i + '].origine'); as m) { <span class="form-error">{{ m }}</span> }
-                      } @else { <span class="text-xs text-muted">—</span> }
+                      @if (l.ancienExpertAdjoint) { <span class="form-hint">Ancien expert adjoint : donnez-lui son origine (il détiendra une part), ou retirez-le.</span> }
+                      @if (erreurDe('membres[' + i + '].origine'); as m) { <span class="form-error">{{ m }}</span> }
                     </td>
                     <td><input class="form-control" type="text" [value]="l.nom" (input)="poser(l.cle, 'nom', $any($event.target).value)" [attr.aria-label]="'Nom du membre ' + (i + 1)" [class.error]="!!erreurDe('membres[' + i + '].nom')" />@if (erreurDe('membres[' + i + '].nom'); as m) { <span class="form-error">{{ m }}</span> }</td>
                     <td><input class="form-control" type="text" [value]="l.prenom" (input)="poser(l.cle, 'prenom', $any($event.target).value)" [attr.aria-label]="'Prénom du membre ' + (i + 1)" /></td>
@@ -123,13 +116,13 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
                     <td><input class="form-control cao__court" type="tel" [value]="l.telephone" (input)="poser(l.cle, 'telephone', $any($event.target).value)" [attr.aria-label]="'Téléphone du membre ' + (i + 1)" /></td>
                     <td><input class="form-control" type="text" [value]="l.fonction" (input)="poser(l.cle, 'fonction', $any($event.target).value)" [attr.aria-label]="'Fonction du membre ' + (i + 1)" /></td>
                     <td>
-                      @if (l.qualite === 'MEMBRE' && l.origine === 'ENTITE_CONTRACTANTE') {
-                        <input class="form-control" type="text" placeholder="ex. Direction des affaires financières" [value]="l.service" (input)="poser(l.cle, 'service', $any($event.target).value)" [attr.aria-label]="'Service du membre ' + (i + 1)" [class.error]="!!erreurDe('membres[' + i + '].service')" />
-                        @if (erreurDe('membres[' + i + '].service'); as m) { <span class="form-error">{{ m }}</span> }
-                      } @else {
+                      @if (l.origine === 'EXPERT_OBJET') {
                         <input class="form-control" type="text" placeholder="ex. organisme" [value]="l.organisme" (input)="poser(l.cle, 'organisme', $any($event.target).value)" [attr.aria-label]="'Organisme du membre ' + (i + 1)" />
                         <input class="form-control" type="text" placeholder="ex. génie civil" [value]="l.domaine" (input)="poser(l.cle, 'domaine', $any($event.target).value)" [attr.aria-label]="'Domaine du membre ' + (i + 1)" [class.error]="!!erreurDe('membres[' + i + '].domaine')" />
                         @if (erreurDe('membres[' + i + '].domaine'); as m) { <span class="form-error">{{ m }}</span> }
+                      } @else {
+                        <input class="form-control" type="text" placeholder="ex. Direction des affaires financières" [value]="l.service" (input)="poser(l.cle, 'service', $any($event.target).value)" [attr.aria-label]="'Service du membre ' + (i + 1)" [class.error]="!!erreurDe('membres[' + i + '].service')" />
+                        @if (erreurDe('membres[' + i + '].service'); as m) { <span class="form-error">{{ m }}</span> }
                       }
                     </td>
                     <td class="nowrap">
@@ -137,8 +130,7 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
                         <span class="badge" [class.badge-success]="c.etat === 'ACTIF'" [class.badge-info]="c.etat === 'INVITE'" [class.badge-neutral]="c.etat === 'A_INVITER' || c.etat === 'ARCHIVE'">{{ libCompte[c.etat] }}</span>
                         @if (c.etat !== 'ACTIF' && l.id != null) { <button type="button" class="btn btn-sm btn-outline cao__inviter" [disabled]="saving()" (click)="inviter(l)">Renvoyer l'invitation</button> }
                         @if (c.dateInvitation) { <span class="text-xs text-muted">{{ dateHeure(c.dateInvitation) }}</span> }
-                      } @else if (l.qualite === 'EXPERT_ADJOINT') { <span class="text-xs text-muted">sans compte</span> }
-                      @else { <span class="text-xs text-muted">créé à l'enregistrement</span> }
+                      } @else { <span class="text-xs text-muted">créé à l'enregistrement</span> }
                     </td>
                     <td><button type="button" class="btn btn-sm btn-outline" (click)="retirer(l.cle)" [attr.aria-label]="'Retirer ' + (l.nom || 'le membre ' + (i + 1))">✕</button></td>
                   </tr>
@@ -148,7 +140,7 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
           </div>
           <div class="cao__actions">
             <button type="button" class="btn btn-secondary btn-sm" (click)="ajouter()">Ajouter un membre</button>
-            <span class="text-sm text-muted">Au moins deux membres (hors experts adjoints), un seul président parmi eux.</span>
+            <span class="text-sm text-muted">Au moins deux membres, un seul président ; un expert de l'objet au plus{{ nbExperts() ? ' (' + nbExperts() + ' saisi' + (nbExperts() > 1 ? 's' : '') + ')' : '' }}.</span>
           </div>
           <div class="cao__pied">
             <button type="submit" class="btn btn-primary" [disabled]="saving()">{{ saving() ? 'Enregistrement…' : 'Enregistrer la commission' }}</button>
@@ -181,12 +173,13 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
     .cao__h2 { margin: 0; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-500); }
     .cao__court { max-width: 11rem; }
     .cao__tableau { overflow-x: auto; }
-    .cao__table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); min-width: 72rem; }
+    .cao__table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); min-width: 66rem; }
     .cao__table th, .cao__table td { text-align: left; padding: 0.35rem 0.4rem; border-bottom: 1px solid var(--n-200); vertical-align: top; }
     .cao__table th { color: var(--n-500); font-weight: 600; white-space: nowrap; }
     .cao__table .form-control { padding: 0.3rem 0.45rem; min-width: 7rem; }
     .cao__table td .form-control + .form-control { margin-top: 0.25rem; }
-    .cao__select { min-width: 9rem; }
+    .cao__ligne--ancien td { background: var(--warning-bg); }
+    .cao__select { min-width: 11rem; }
     .cao__inviter { margin-left: 0.3rem; }
     .cao__actions { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
     .cao__pied { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; padding-top: 0.5rem; border-top: 1px solid var(--n-200); }
@@ -199,9 +192,7 @@ export class CaoEcran implements OnInit {
   private readonly toast = inject(ToastService);
 
   readonly idDmc = Number(this.route.snapshot.paramMap.get('idDmc'));
-  readonly qualites = QUALITES;
   readonly origines = ORIGINES;
-  readonly libQualite = LIBELLES_QUALITE;
   readonly libOrigine = LIBELLES_ORIGINE;
   readonly libCompte = LIBELLES_ETAT_COMPTE_CAO;
   readonly etats = LIBELLES_ETAT_CAO;
@@ -222,7 +213,7 @@ export class CaoEcran implements OnInit {
   readonly erreurGlobale = signal<string | null>(null);
   readonly fichier = signal<File | null>(null);
   readonly fichierErreur = signal<string | null>(null);
-  readonly nbMembres = computed(() => this.lignes().filter((l) => l.qualite === 'MEMBRE').length);
+  readonly nbExperts = computed(() => this.lignes().filter((l) => l.origine === 'EXPERT_OBJET').length);
   private prochaineCle = 1;
 
   ngOnInit(): void {
@@ -259,7 +250,6 @@ export class CaoEcran implements OnInit {
         prenom: m.prenom,
         email: m.email,
         telephone: m.telephone ?? '',
-        qualite: m.qualite,
         origine: m.origine ?? '',
         fonction: m.fonction ?? '',
         service: m.service ?? '',
@@ -267,6 +257,7 @@ export class CaoEcran implements OnInit {
         domaine: m.domaine ?? '',
         president: m.president,
         compte: m.compte,
+        ancienExpertAdjoint: m.qualite === 'EXPERT_ADJOINT',
       })),
     );
     this.erreurs.set(new Map());
@@ -278,7 +269,7 @@ export class CaoEcran implements OnInit {
   }
 
   ajouter(): void {
-    this.lignes.update((l) => [...l, { cle: this.prochaineCle++, id: null, nom: '', prenom: '', email: '', telephone: '', qualite: 'MEMBRE', origine: '', fonction: '', service: '', organisme: '', domaine: '', president: false, compte: null }]);
+    this.lignes.update((l) => [...l, { cle: this.prochaineCle++, id: null, nom: '', prenom: '', email: '', telephone: '', origine: '', fonction: '', service: '', organisme: '', domaine: '', president: false, compte: null, ancienExpertAdjoint: false }]);
   }
 
   retirer(cle: number): void {
@@ -286,7 +277,7 @@ export class CaoEcran implements OnInit {
   }
 
   poser<K extends keyof Ligne>(cle: number, champ: K, valeur: Ligne[K]): void {
-    this.lignes.update((l) => l.map((x) => (x.cle === cle ? { ...x, [champ]: valeur, ...(champ === 'qualite' && valeur !== 'MEMBRE' ? { president: false, origine: '' } : {}) } : x)));
+    this.lignes.update((l) => l.map((x) => (x.cle === cle ? { ...x, [champ]: valeur } : x)));
   }
 
   presider(cle: number): void {
@@ -294,28 +285,32 @@ export class CaoEcran implements OnInit {
   }
 
   private corpsMembre(l: Ligne): MembreCaoCorps {
-    const membre = l.qualite === 'MEMBRE';
     return {
       id: l.id ?? undefined,
       nom: l.nom.trim(),
       prenom: l.prenom.trim(),
       email: l.email.trim(),
       telephone: l.telephone.trim() || null,
-      qualite: l.qualite,
-      origine: membre && l.origine ? l.origine : null,
+      // Une origine vide part telle quelle : c'est le serveur qui la refuse, sous `membres[i].origine`.
+      origine: l.origine as OrigineMembreCao,
       fonction: l.fonction.trim() || null,
-      service: membre && l.origine === 'ENTITE_CONTRACTANTE' ? l.service.trim() || null : null,
+      service: l.origine === 'ENTITE_CONTRACTANTE' ? l.service.trim() || null : null,
       organisme: l.organisme.trim() || null,
-      domaine: l.domaine.trim() || null,
-      president: membre && l.president,
+      domaine: l.origine === 'EXPERT_OBJET' ? l.domaine.trim() || null : null,
+      president: l.president,
     };
   }
 
   enregistrer(): void {
     if (this.saving()) return;
-    this.saving.set(true);
     this.erreurs.set(new Map());
     this.erreurGlobale.set(null);
+    // ⚠️ Pilote (04/10) : « Un expert est suffisant dans la CAO. » Le même message que le serveur, avant l'envoi.
+    if (this.nbExperts() > 1) {
+      this.erreurs.set(new Map([['membres', MESSAGE_UN_SEUL_EXPERT]]));
+      return;
+    }
+    this.saving.set(true);
     this.service
       .definir(this.idDmc, { decision: { reference: this.reference().trim(), date: this.dateDecision() }, membres: this.lignes().map((l) => this.corpsMembre(l)) })
       .subscribe({

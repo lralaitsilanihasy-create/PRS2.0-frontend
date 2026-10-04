@@ -10,10 +10,11 @@ import { EtatCao, EtatCeremonie } from './fiche-marche.model';
 
 // ── La CAO (lot 2a) ───────────────────────────────────────────────────────────────────────────────────────────
 
-/** `MEMBRE` siège et détient une part ; `EXPERT_ADJOINT` évalue, sans part, sans compte, jamais président. */
-export type QualiteMembreCao = 'MEMBRE' | 'EXPERT_ADJOINT';
-
-/** L'origine d'un membre (précision du pilote, 04/10) : agent de l'entité contractante, ou expert de l'objet du DAO. */
+/**
+ * L'origine d'un membre (précision du pilote, 04/10) : agent de l'entité contractante, ou expert de l'objet du DAO. Les
+ * deux siègent et détiennent une part. ⚠️ « Un expert est suffisant dans la CAO » (pilote, 04/10 bis) : **un seul**
+ * membre `EXPERT_OBJET` par commission, et pas d'« expert adjoint » sans part — la catégorie a été retirée (§B6).
+ */
 export type OrigineMembreCao = 'ENTITE_CONTRACTANTE' | 'EXPERT_OBJET';
 
 export type EtatCompteCao = 'A_INVITER' | 'INVITE' | 'ACTIF' | 'ARCHIVE';
@@ -25,19 +26,18 @@ export interface MembreCaoCorps {
   prenom: string;
   email: string;
   telephone?: string | null;
-  qualite: QualiteMembreCao;
-  /** Obligatoire pour un `MEMBRE` ; absent pour un expert adjoint. */
-  origine?: OrigineMembreCao | null;
+  /** Obligatoire ; `EXPERT_OBJET` une fois au plus. */
+  origine: OrigineMembreCao;
   fonction?: string | null;
   /** Obligatoire pour `ENTITE_CONTRACTANTE`. */
   service?: string | null;
   organisme?: string | null;
-  /** Obligatoire pour `EXPERT_OBJET` ; attendu d'un expert adjoint. */
+  /** Obligatoire pour `EXPERT_OBJET`. */
   domaine?: string | null;
   president?: boolean;
 }
 
-/** Le compte `MEMBRE_CAO` d'un membre : créé à la désignation, activé par courriel. `null` pour un expert adjoint. */
+/** Le compte `MEMBRE_CAO` d'un membre : créé à la désignation, activé par courriel. */
 export interface CompteMembreCao {
   etat: EtatCompteCao;
   /** Identifiant court `K` + 9 chiffres. */
@@ -49,6 +49,9 @@ export interface CompteMembreCao {
 export interface MembreCao extends MembreCaoCorps {
   id: number;
   president: boolean;
+  /** Servi par V67 tant que §B6 n'est pas porté : `EXPERT_ADJOINT` désigne un ancien expert sans part, à reclasser. */
+  qualite?: 'MEMBRE' | 'EXPERT_ADJOINT' | null;
+  /** `null` seulement pour un ancien expert adjoint (V67, avant §B6). */
   compte: CompteMembreCao | null;
 }
 

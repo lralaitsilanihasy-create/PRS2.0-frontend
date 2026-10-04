@@ -1,22 +1,12 @@
-import {
-  EtatCao,
-  EtatCeremonie,
-  EtatCompteCao,
-  EtatPart,
-  EtatPartDeSecours,
-  OrigineMembreCao,
-  QualiteMembreCao,
-} from '../../models';
+import { EtatCao, EtatCeremonie, EtatCompteCao, EtatPart, EtatPartDeSecours, OrigineMembreCao } from '../../models';
 
 /**
  * Soumission en ligne, lots 2a et 2b (04/10) — libellés de la commission d'appel d'offres et de la cérémonie des clés,
  * fichier UNIQUE : la PRMP, le responsable de la procédure et le membre de CAO lisent les mêmes mots.
  */
 
-export const LIBELLES_QUALITE: Readonly<Record<QualiteMembreCao, string>> = {
-  MEMBRE: 'Membre',
-  EXPERT_ADJOINT: 'Expert adjoint',
-};
+/** Le message du refus d'un second expert — le même ici, avant l'envoi, et au serveur (§B6). */
+export const MESSAGE_UN_SEUL_EXPERT = 'Un expert de l’objet suffit : la commission n’en compte qu’un.';
 
 export const LIBELLES_ORIGINE: Readonly<Record<OrigineMembreCao, string>> = {
   ENTITE_CONTRACTANTE: 'Entité contractante',
