@@ -1,7 +1,7 @@
 # Plan — 2026-10-04 — La soumission en ligne des offres (plateforme de dépôt)
 
 **Statut** : **arbitré par le pilote le 04/10** : Q2 et Q4 par décisions propres, les autres questions selon les
-recommandations. Lot 0 : ADR-0013 écrite par le backend (proposée). **Lot 1 livré** des deux côtés le 04/10 (back V63-V65, front espace `/candidat`) ; lot 2 : demande écrite le 04/10 (`docs/demande-backend-2026-10-04-ceremonie-des-cles.md`, B1-B7) ; lots 3 et 4 à écrire ensuite.
+recommandations. Lot 0 : ADR-0013 écrite par le backend (proposée). **Lot 1 livré** des deux côtés le 04/10 (back V63-V65, front espace `/candidat`) ; lot 2 : Q11 (04/10) scinde le lot en **2a** (CAO, `docs/demande-backend-2026-10-04-commission-appel-offres.md`) et **2b** (cérémonie, `docs/demande-backend-2026-10-04-ceremonie-des-cles.md`, corrigée en place) ; lots 3 et 4 ensuite.
 **Origine** : pilote, 04/10 : « Attaquer la soumission en ligne ». Suite de la remise électronique (V50, 27/09), qui
 préparait la fiche et annonçait : « la plateforme de dépôt viendra plus tard ». Q14 du 27/09 avait tranché : les
 formulaires du candidat seront remplis **en ligne**, sur le besoin de la fiche.
@@ -178,13 +178,31 @@ s'ouvrir en ligne avant la clause du juriste. Les DAO réels étudiés (2463, ME
     au backend.
   - Côté front, chaque fichier passe par `validerFichier()` (type et taille), comme tout téléversement.
 
+- **Q11 — Qui détient les parts de clé ? ✅ Arbitrée par le pilote le 04/10, après la question « qui sont les membres ».**
+  - **La commission d'appel d'offres (CAO)**, et non des contrôleurs de la CNM. Dans les termes du pilote : « La CAO examine
+    les candidatures et évalue les offres ou propositions ; sur la base de son avis, la PRMP choisit l'offre
+    économiquement la plus avantageuse. Elle est constituée de membres **désignés par la PRMP, par une décision**. Le
+    **président** est désigné par la PRMP parmi ces membres. La PRMP peut adjoindre des **experts** spécialisés pour
+    l'évaluation. La décision de nomination est **temporaire** : un appel d'offres correspond à une CAO. »
+  - **Ne peuvent pas en être** : la PRMP et l'UGPM (parties à la procédure), le responsable de la procédure (règle 6 : il
+    ne détient pas de part), et **les contrôleurs de la CNM**.
+  - **Conséquences** : `membresCommission` de V50 (contrôleurs de la localité choisis par le responsable, ADR-0010) est
+    remplacé par les membres de la CAO ; ces personnes n'ont pas de compte dans PRS, il leur en faut un (profil
+    `MEMBRE_CAO`, hors coquille interne, comme le candidat) ; les experts n'ouvrent pas les plis : pas de part, pas de
+    compte au lot 2 ; `n` = membres de la CAO (hors experts) + 1 (la part de secours). Le responsable de la procédure
+    (CNM, ADR-0010) **reste** : gardien neutre du quorum, de la date de cérémonie et du dépositaire, il conduit la
+    cérémonie et l'ouverture avec le président de la CAO — à confirmer (question 1 de la demande 2a).
+  - Demande : `docs/demande-backend-2026-10-04-commission-appel-offres.md` (lot 2a) ; la demande du lot 2 (cérémonie)
+    est corrigée en place.
+
 ## 4. Découpage retenu
 
 | Lot | Contenu | Côté backend | Côté front |
 |---|---|---|---|
 | **0** | ADR du scellement (Q4) et contrat de la plateforme | ADR, puis réponse à la demande | demande `demande-backend-…-soumission-en-ligne.md` (B1…) |
 | **1** | Espace candidat : inscription à trois niveaux, vérification du NIF (deux voies), répertoire des exclus, alertes de collusion, ménage ; procédures ouvertes en ligne, retrait du DAO | profil `CANDIDAT`, comptes, codes de confirmation, paramètres `CANDIDAT_*`, répertoire des exclus, liste publique des procédures `ELECTRONIQUE` lancées, téléchargement journalisé | `/candidat` : inscription, entreprise, liste, fiche de la procédure, documents ; Admin : vérification sur pièces, répertoire des exclus, paramètres |
-| **2** | Cérémonie des clés et procédure de secours (S1 à S4) | clé publique par procédure, parts chiffrées par phrase secrète, part de secours, vérification des parts, alerte de marge, nouvelle cérémonie avant le premier dépôt | écran de la cérémonie (responsable et membres), vérification de sa part, impression de la part de secours |
+| **2a** | La commission d’appel d’offres (Q11) : désignation par la PRMP (décision, membres, président, experts), comptes `MEMBRE_CAO`, exclusions par construction | `/api/fiches-marche/{idDmc}/cao`, profil `MEMBRE_CAO`, invitations, règle `SE_CAO`, V50 : `membresCommission` dérivé de la CAO | écran PRMP « Commission d’appel d’offres », espace `/cao`, paramètres internes relus |
+| **2b** | Cérémonie des clés et procédure de secours (S1 à S4) | clé publique par détenteur, parts chiffrées par phrase secrète, part de secours, vérification des parts, alerte de marge, nouvelle cérémonie avant le premier dépôt | section du responsable, « Ma clé » des membres de la CAO, impression du pli de secours |
 | **3** | Dépôt scellé : pièces et acte d'engagement, brouillon, accusé, remplacement et retrait | envoi par morceaux, stockage chiffré, horodatage, refus après la date limite | écran de l'offre (maquettes) et chiffrement dans le navigateur |
 | **4** | Ouverture des plis et PV d'ouverture | reconstitution au quorum, déchiffrement en séance, PV | écran de la séance |
 | **5** | Formulaires structurés (bordereau, DQE, capacités), garantie voie A, signature avancée et qualifiée, prorogation | par sujet | par sujet |

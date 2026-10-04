@@ -13,6 +13,24 @@ la procédure de secours S1 à S4 ; S5 (le dernier recours) relève de la séanc
 **Conventions** : les noms de routes, de champs et de codes sont **PROPOSÉS**. Le backend les fixe et corrige ce document
 en place (encadré ⚠️ daté). Le front ne code rien contre un nom non confirmé.
 
+> ⚠️ **Correction du 2026-10-04 (décision du pilote, Q11 du plan) — qui sont les « membres ».** Partout dans ce document,
+> « membre désigné » et « membre de la commission » désignent un **membre de la commission d'appel d'offres (CAO), hors
+> experts**, désigné par la PRMP par une décision, et porteur d'un compte **`MEMBRE_CAO`** actif — **pas** un contrôleur de la
+> CNM choisi par le responsable, comme V50 et l'ADR-0010 l'avaient prévu. La CAO, ses comptes et ce que V50 devient sont la
+> demande du lot **2a**, `docs/demande-backend-2026-10-04-commission-appel-offres.md`, à livrer **avant** ce lot, renommé
+> **2b**. Conséquences ici :
+> - §B1 : le dépositaire reste désigné par le responsable ; la règle 12 et le reste ne changent pas ;
+> - §B2.1 : « membres désignés » = membres hors experts de la CAO ; la garde est par identité (il siège dans la CAO de
+>   l'`idDmc`), le profil est `MEMBRE_CAO` ;
+> - §B2.2, §B4, §B5.1 : l'appelant « membre » est un compte `MEMBRE_CAO` ; `n` = membres hors experts + 1 ;
+> - §B6 : les notifications aux membres partent **aussi par courriel** — une personne extérieure ne vit pas dans
+>   l'application ;
+> - §B7 : l'écran « Ma clé » vit dans l'espace **`/cao`** (coquille propre, modèle de `/candidat`), pas en route transverse
+>   de la coquille interne ; le responsable ne choisit plus les membres, il les lit.
+>
+> Le président de la CAO n'a ici aucun droit de plus : sa clé est une clé parmi `n`. Le responsable de la procédure (CNM)
+> reste le gardien neutre, sous réserve de la question 1 de la demande 2a.
+
 ---
 
 ## B1 — Le dépositaire de la part de secours (S3)
