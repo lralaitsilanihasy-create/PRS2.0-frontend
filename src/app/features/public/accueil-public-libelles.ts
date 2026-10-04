@@ -149,20 +149,22 @@ export const CONTENU_PUBLIC: Readonly<Record<AudiencePublique, ContenuAudience>>
       },
     ],
   },
-  // ⚠️ Soumission en ligne, lot 1 (04/10) — ne promet que ce qui existe : consulter, retirer, déclarer. Le dépôt des
-  // offres, leur scellement et l'ouverture des plis sont les lots 2 à 4 : la page le dit, elle ne les annonce pas.
+  // ⚠️ Soumission en ligne (04/10) — lots 1 à 4 livrés : consulter, retirer, déclarer, puis déposer une offre scellée,
+  // ouverte en séance par la commission d'appel d'offres.
   candidat: {
     onglet: 'Entreprises',
-    titre: 'Retirez les dossiers d’appel d’offres en ligne',
+    titre: 'Retirez le dossier, déposez votre offre en ligne',
     promesse:
       'Les appels d’offres ouverts à la remise électronique sont publiés ici. Avec un compte, vous retirez le dossier ' +
-      'complet et vous déclarez votre entreprise une fois pour toutes. Le dépôt des offres en ligne viendra ensuite.',
+      'complet, vous déclarez votre entreprise une fois pour toutes, et vous déposez votre offre : chiffrée sur votre ' +
+      'poste, elle ne s’ouvre qu’en séance, à l’heure prévue, par la commission d’appel d’offres.',
     actions: [
       { libelle: 'Voir les procédures ouvertes', lien: '/candidat/procedures', principal: true },
       { libelle: 'Créer un compte candidat', lien: '/candidat/inscription', principal: false },
     ],
     nav: [
       { libelle: 'Procédures ouvertes', lien: '/candidat/procedures' },
+      { libelle: 'Mes offres', lien: '/candidat/offres' },
       { libelle: 'Mon entreprise', lien: '/candidat/entreprise' },
     ],
     cta: { libelle: 'Créer un compte candidat', lien: '/candidat/inscription' },
@@ -172,7 +174,7 @@ export const CONTENU_PUBLIC: Readonly<Record<AudiencePublique, ContenuAudience>>
       { valeur: '6', libelle: 'chiffres : le code reçu par courriel confirme votre compte' },
     ],
     sectionTitre: 'Trois gestes, dans l’ordre.',
-    sectionTexte: 'Le reste — l’offre, son dépôt scellé, l’ouverture des plis — arrive avec les prochains lots de la plateforme.',
+    sectionTexte: 'Puis votre offre, déposée en ligne avant la date limite : un accusé horodaté vous est remis, et personne ne la lit avant la séance d’ouverture.',
     cartes: [
       {
         titre: 'Trouver la procédure',
