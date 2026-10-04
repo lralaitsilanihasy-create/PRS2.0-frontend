@@ -1,6 +1,6 @@
 # Plan — 2026-10-04 — La soumission en ligne des offres (plateforme de dépôt)
 
-**Statut** : proposition du front, **à arbitrer par le pilote** (Q1 à Q10). Rien n'est codé.
+**Statut** : proposition du front. **Q2 arbitrée le 04/10** ; Q1 et Q3 à Q10 restent à arbitrer. Rien n'est codé.
 **Origine** : pilote, 04/10 : « Attaquer la soumission en ligne ». Suite de la remise électronique (V50, 27/09), qui
 préparait la fiche et annonçait : « la plateforme de dépôt viendra plus tard ». Q14 du 27/09 avait tranché : les
 formulaires du candidat seront remplis **en ligne**, sur le besoin de la fiche.
@@ -41,11 +41,45 @@ s'ouvrir en ligne avant la clause du juriste. Les DAO réels étudiés (2463, ME
     `CANDIDAT` qui n'atteint aucune route interne (garde par profil côté serveur, comme les dix profils actuels).
     C'est la même origine, le même cookie `HttpOnly` et le même CSRF.
   - L'autre voie, une application séparée, double l'authentification et le déploiement sans gain fonctionnel.
-- **Q2 — Qui est le candidat ?**
-  - **Recommandé** : un compte par **entreprise**, porté par une personne, créé par **inscription publique** avec
-    vérification de l'adresse électronique, et identifiants légaux déclarés (NIF, STAT, RCS).
-  - Sans validation par l'Administrateur : une validation préalable filtrerait l'accès à la concurrence.
-  - Groupements : le mandataire dépose pour le groupement, et les membres sont déclarés dans l'offre.
+- **Q2 — Qui est le candidat ? ✅ Arbitrée par le pilote le 04/10.**
+  - Un compte par **entreprise**, porté par une personne, créé par **inscription publique**. Groupements : le
+    mandataire dépose pour le groupement, et les membres sont déclarés dans l'offre.
+  - **Trois niveaux de confiance.** L'inscription reste légère ; les contrôles se placent au dépôt, où le candidat
+    s'engage.
+
+    | Niveau | Ce que le compte peut faire | Ce qu'on vérifie |
+    |---|---|---|
+    | 1. Compte | consulter les procédures, retirer le DAO | adresse électronique **et** téléphone confirmés par un code ; anti-robot ; inscriptions limitées par adresse et par jour |
+    | 2. Entreprise déclarée | préparer une offre en brouillon | NIF, STAT et RCS **uniques** sur la plateforme ; pièces téléversées (carte fiscale, statuts, pouvoir du signataire) ; NIF vérifié (ci-dessous) |
+    | 3. Dépôt | déposer une offre scellée | ce que le DAO exige déjà : garantie avec code de vérification, reçu des frais de dossier, pièces administratives, signature |
+
+  - **Le dépôt n'est jamais bloqué par la vérification.** Le statut de vérification de l'entreprise s'affiche à la
+    commission à l'ouverture des plis, et c'est elle qui juge sur pièces, comme pour une offre papier.
+  - **La vérification du NIF : deux voies, choisies par un paramètre administrable.**
+    - Le paramètre `CANDIDAT_VERIFICATION_NIF` vaut `AUTOMATIQUE` (interrogation d'un service de la DGI) ou
+      `SUR_PIECES` (l'Administrateur contrôle la carte fiscale téléversée). Sa valeur par défaut est `SUR_PIECES`, tant
+      qu'aucun service de la DGI n'est raccordé.
+    - Côté serveur : un seul contrat « vérifier un NIF », deux implémentations. Le service DGI n'est qu'un
+      **raccordement** à brancher le jour où l'interface est connue ; on ne l'invente pas.
+    - En mode `AUTOMATIQUE`, un service DGI injoignable ou une réponse illisible **retombe sur la vérification sur
+      pièces**, sans bloquer l'inscription ni le dépôt.
+    - Le statut porte sa source : `VERIFIE_DGI`, `VERIFIE_SUR_PIECES`, `INCONNU_DGI` (le NIF n'existe pas pour la DGI),
+      `NON_VERIFIE`, avec la date et l'acteur. C'est ce statut que la commission voit.
+  - **Le répertoire des entreprises exclues ou sanctionnées par l'ARMP.**
+    - Il est tenu dans l'application par l'Administrateur : NIF, raison sociale, motif, référence de la décision de
+      l'ARMP, date de début et date de fin (l'exclusion peut être temporaire), avec un journal.
+    - Une entreprise du répertoire, rapprochée par son NIF pendant la période d'exclusion, est **signalée** à
+      l'inscription et au dépôt : au candidat, à l'Administrateur, et à la commission à l'ouverture.
+    - Le signalement n'est pas un refus automatique : la commission constate et décide, comme pour une collusion.
+  - **La collusion** (une même personne derrière plusieurs entreprises).
+    - Les rapprochements donnent une **alerte** : même téléphone, même adresse électronique, même signataire ou même
+      adresse postale sur plusieurs comptes.
+    - L'alerte est remise à la commission avec les offres concernées, à l'ouverture.
+    - **Le refus se fait après décision de la commission**, motivée et journalisée, jamais par le système.
+  - **Le ménage.**
+    - Un compte jamais confirmé est supprimé après `CANDIDAT_DELAI_CONFIRMATION_JOURS` jours (paramètre, défaut 7).
+    - Un compte inactif est **archivé** après `CANDIDAT_DELAI_INACTIVITE_MOIS` mois (paramètre, défaut 24), jamais
+      supprimé : ses retraits de DAO et ses dépôts restent au journal.
 - **Q3 — Le retrait du DAO et son coût.**
   - **Recommandé** : le téléchargement est **libre après inscription** et journalisé (qui, quand, quelle version).
   - La preuve du paiement des frais de dossier (`{{PARAM.compte-dao}}`) est une **pièce de l'offre**, vérifiée à
@@ -105,7 +139,7 @@ s'ouvrir en ligne avant la clause du juriste. Les DAO réels étudiés (2463, ME
 | Lot | Contenu | Côté backend | Côté front |
 |---|---|---|---|
 | **0** | ADR du scellement (Q4) et contrat de la plateforme | ADR, puis réponse à la demande | demande `demande-backend-…-soumission-en-ligne.md` (B1…) |
-| **1** | Espace candidat : inscription, procédures ouvertes en ligne, retrait du DAO | profil `CANDIDAT`, comptes, liste publique des procédures `ELECTRONIQUE` lancées, téléchargement journalisé | `/candidat` : inscription, liste, fiche de la procédure, documents |
+| **1** | Espace candidat : inscription à trois niveaux, vérification du NIF (deux voies), répertoire des exclus, alertes de collusion, ménage ; procédures ouvertes en ligne, retrait du DAO | profil `CANDIDAT`, comptes, codes de confirmation, paramètres `CANDIDAT_*`, répertoire des exclus, liste publique des procédures `ELECTRONIQUE` lancées, téléchargement journalisé | `/candidat` : inscription, entreprise, liste, fiche de la procédure, documents ; Admin : vérification sur pièces, répertoire des exclus, paramètres |
 | **2** | Cérémonie des clés | clé publique par procédure, dépôt des parts (chiffrées pour chaque membre) | écran de la cérémonie (responsable et membres) |
 | **3** | Dépôt scellé : pièces et acte d'engagement, brouillon, accusé, remplacement et retrait | envoi par morceaux, stockage chiffré, horodatage, refus après la date limite | écran de l'offre (maquettes) et chiffrement dans le navigateur |
 | **4** | Ouverture des plis et PV d'ouverture | reconstitution au quorum, déchiffrement en séance, PV | écran de la séance |
