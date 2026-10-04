@@ -372,6 +372,8 @@ export interface FicheMarche {
   cao?: EtatCao | null;
   /** ⚠️ Lot 2b (V66) — l'état de la cérémonie des clés ; `null` en mode papier. */
   ceremonie?: EtatCeremonie | null;
+  /** ⚠️ Lot 3 (V68) — les dépôts : le nombre, et s'ils sont clos (date limite passée) ; `null` en mode papier. */
+  depots?: { nombre: number; clos: boolean } | null;
   /**
    * Clés (`CODE` ou `CODE#n`) dont la valeur a été **posée par le serveur** à l'enregistrement du bloc — en mode
    * électronique : ouverture des plis (date limite + délai), dates déduites (publication, assistance, dépôt de

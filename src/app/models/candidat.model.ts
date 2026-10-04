@@ -170,6 +170,10 @@ export interface ProcedureEnLigne {
   tailleMaxOffreMo: number | null;
   assistance: string | null;
   etat: EtatProcedureEnLigne;
+  /** ⚠️ Lot 3 (V68) — `B04-SE-10` : remplacer et retirer son offre avant la date limite. */
+  remplacementAutorise?: boolean | null;
+  /** ⚠️ Lot 3 (V68) — après l’ouverture des dépôts et avant la date limite, à l’horloge du serveur. */
+  depotsOuverts?: boolean | null;
 }
 
 /** Un document du DAO téléchargeable par un candidat connecté ; `code` est le nom du fichier. */
@@ -190,4 +194,92 @@ export interface RetraitDao {
   nif: string | null;
   document: string;
   version: number;
+}
+
+// ── Le dépôt scellé (lot 3, V68) ──────────────────────────────────────────────────────────────────────────────
+
+/** `GET /api/horloge` (public) : l'heure du serveur, qui fait foi pour la date limite. */
+export interface Horloge {
+  /** `AAAA-MM-JJTHH:MM:SS`, à l'heure de `fuseau`. */
+  maintenant: string;
+  fuseau: string;
+}
+
+/** Une pièce attendue dans l'offre (`GET /api/procedures-en-ligne/{idDmc}/pieces`, public). `code` rattache un fichier à la pièce. */
+export interface PieceAttendue {
+  /** `AE`, `RECU-DAO`, `GARANTIE`, ou `PIECE-<idPiece>` (stable pour une version de la fiche). */
+  code: string;
+  rubrique: 'ADMINISTRATIVE' | 'OFFRE';
+  numero: string | null;
+  libelle: string;
+  forme: string | null;
+  ancienneteMaxMois: number | null;
+  parLot: boolean | null;
+  modele: string | null;
+  obligatoire: boolean;
+}
+
+export type EtatOffre = 'EN_COURS' | 'DEPOSEE' | 'REMPLACEE' | 'RETIREE' | 'ECARTEE';
+
+/** Une offre du candidat : le serveur en connaît la taille, l'empreinte et l'horodatage, jamais le contenu. */
+export interface Offre {
+  /** UUID tiré par le navigateur — l'identifiant de l'offre, dans l'en-tête et les données authentifiées. */
+  idOffre: string;
+  idDmc: number;
+  reference: string | null;
+  objet: string | null;
+  lot: number | null;
+  etat: EtatOffre;
+  dateCreation: string;
+  dateDepot: string | null;
+  dateRetrait: string | null;
+  /** Rang d'arrivée dans la procédure. */
+  numero: number | null;
+  taille: number;
+  nombreMorceaux: number;
+  recus: number;
+  /** SHA-256 de l'en-tête puis des morceaux, hexadécimal. */
+  empreinte: string | null;
+  remplace: string | null;
+  remplaceePar: string | null;
+}
+
+/** Corps de `POST /api/candidat/offres`. `enTete` est le JSON **sérialisé** : ses octets UTF-8 entrent dans l'empreinte. */
+export interface CreationOffreCorps {
+  idDmc: number;
+  lot: number | null;
+  enTete: string;
+  remplace: string | null;
+  /** Les NIF des membres d'un groupement, pour le seul contrôle d'exclusion ; jamais servis. */
+  groupementNifs?: string[];
+}
+
+/** `POST …/sceller` → l'accusé de réception (l'offre imbriquée). */
+export interface Accuse {
+  offre: Offre;
+  entreprise: { nif: string; raisonSociale: string };
+  n: number;
+  quorum: number;
+  empreintesDetenteurs: string[];
+}
+
+/** Une ligne du registre des dépôts, servie après la date limite seulement. */
+export interface LigneDepot {
+  numero: number | null;
+  entreprise: string;
+  nif: string;
+  lot: number | null;
+  dateDepot: string | null;
+  dateRetrait: string | null;
+  empreinte: string | null;
+  taille: number;
+  etat: EtatOffre;
+}
+
+/** `GET /api/fiches-marche/{idDmc}/depots` — avant la date limite, **le nombre seul** (`depots = null`). */
+export interface Depots {
+  clos: boolean;
+  nombre: number;
+  dateLimite: string | null;
+  depots: LigneDepot[] | null;
 }

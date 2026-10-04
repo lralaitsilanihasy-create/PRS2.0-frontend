@@ -81,7 +81,15 @@ import { LIBELLES_ETAT_PROCEDURE, dateHeureFr, tailleLisible } from './libelles-
             <dt>Taille maximale par offre</dt><dd>{{ p.tailleMaxOffreMo != null ? p.tailleMaxOffreMo + ' Mo' : '—' }}</dd>
           </dl>
           @if (p.assistance) { <p class="ped__assist"><strong>Assistance aux candidats :</strong> {{ p.assistance }}</p> }
-          <p class="text-sm text-muted">Le dépôt des offres en ligne n'est pas encore ouvert sur cette plateforme : seul le retrait du dossier l'est.</p>
+          <!-- ⚠️ Lot 3 (V68) — le dépôt : ouvert entre l'ouverture des dépôts et la date limite, à l'heure du serveur. -->
+          @if (p.depotsOuverts && connecte()) {
+            <a class="btn btn-primary ped__deposer" [routerLink]="['/candidat', 'procedures', p.idDmc, 'offre']">Déposer une offre</a>
+            <span class="text-sm text-muted">Votre offre est chiffrée sur votre poste : personne ne peut la lire avant la séance d'ouverture.{{ p.remplacementAutorise ? ' Vous pourrez la remplacer ou la retirer jusqu’à la date limite.' : '' }}</span>
+          } @else if (p.depotsOuverts) {
+            <p class="text-sm">Pour déposer une offre, <a routerLink="/login" [queryParams]="{ returnUrl: lienRetour() }">connectez-vous</a> avec votre compte candidat.</p>
+          } @else {
+            <p class="text-sm text-muted">{{ p.etat === 'CLOSE' ? 'La date limite est passée : les dépôts sont clos.' : 'Les dépôts ne sont pas encore ouverts.' }}</p>
+          }
         </section>
 
         <section class="card ped__bloc ped__bloc--large" aria-labelledby="ped-docs">
@@ -125,6 +133,7 @@ import { LIBELLES_ETAT_PROCEDURE, dateHeureFr, tailleLisible } from './libelles-
     .ped__lots { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.25rem; font-size: var(--text-sm); }
     .ped__lot-n { font-weight: 700; margin-right: 0.3rem; }
     .ped__assist { margin: 0; font-size: var(--text-sm); white-space: pre-line; }
+    .ped__deposer { align-self: flex-start; }
     .ped__docs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
     .ped__doc { display: grid; grid-template-columns: 1fr auto auto; gap: 0.75rem; align-items: center; padding: 0.5rem 0.75rem; border: 1px solid var(--n-200); border-radius: var(--radius-md); }
     .ped__doc-nom { font-weight: 600; }

@@ -258,6 +258,11 @@ export class FicheMarcheEcran {
     const id = this.idDmc();
     return id != null && this.estPrmp() && this.modeElectronique() ? ['/prmp', 'dao', id, 'cao'] : null;
   });
+  /** ⚠️ Lot 3 (V68) — le registre des dépôts : PRMP de la fiche, remise électronique. */
+  readonly lienDepots = computed<(string | number)[] | null>(() => {
+    const id = this.idDmc();
+    return id != null && this.estPrmp() && this.modeElectronique() ? ['/prmp', 'dao', id, 'depots'] : null;
+  });
   readonly libellesCao = LIBELLES_ETAT_CAO;
   readonly libellesCeremonie = LIBELLES_ETAT_CEREMONIE;
   /**

@@ -25,6 +25,17 @@ export const CANDIDAT_ROUTES: Routes = [
     loadComponent: () => import('./procedure-en-ligne-detail').then((m) => m.ProcedureEnLigneDetail),
   },
   {
+    // ⚠️ Lot 3 (V68) — déposer (ou remplacer, `?remplace=`) une offre scellée.
+    path: 'procedures/:idDmc/offre',
+    canActivate: [externeConnecteGuard],
+    loadComponent: () => import('./depot-offre').then((m) => m.DepotOffre),
+  },
+  {
+    path: 'offres',
+    canActivate: [externeConnecteGuard],
+    loadComponent: () => import('./mes-offres').then((m) => m.MesOffres),
+  },
+  {
     path: 'entreprise',
     canActivate: [externeConnecteGuard],
     loadComponent: () => import('./entreprise-candidat').then((m) => m.EntrepriseCandidat),

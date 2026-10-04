@@ -235,3 +235,27 @@ Le dépôt d'une offre pour une procédure exige, dans l'ordre où le serveur le
 | 4 | Le conteneur d'une offre **retirée** : conservé marqué (proposé) jusqu'à l'avis du juriste sur la conservation (ADR §7), ou supprimé ? | juriste, par le pilote |
 | 5 | Le reçu des frais de dossier comme pièce de l'offre (Q3 du plan) | juriste, par le pilote |
 | 6 | Le registre des dépôts est-il un document à produire (PDF) à la date limite, pour la séance ? Le front le propose pour le lot 4 | pilote |
+
+---
+
+> ✅ **Front, lot 3 livré (2026-10-04, JAR V68)** — contre-recette réelle à venir (accord du pilote : une fiche validée et lancée).
+> - **`core/securite/scellement.ts`** : archive ZIP du contenu (`fflate`, entrées stockées : `manifeste.json` + `<code>-<nom>` par
+>   pièce, empreinte de chaque pièce au manifeste) ; `K` tirée, **partagée par `shamir-secret-sharing`** en `n` parts seuil
+>   `quorum`, chaque part chiffrée RSA-OAEP pour un détenteur **dans l'ordre de `GET …/cles`** ; morceaux de 4 Mio AES-256-GCM,
+>   **rangs 0…n−1** ; en-tête sérialisé une fois (`enTete` chaîne) ; empreinte = SHA-256(en-tête UTF-8 ‖ morceaux). **Testé** de bout
+>   en bout : deux parts sur trois reconstituent `K` et le contenu revient à l'identique sur deux morceaux ; une part seule, un
+>   morceau altéré ou un en-tête modifié échouent.
+> - ⚠️ **À reprendre au lot 4 — les données authentifiées d'un morceau, octet pour octet** (l'ADR ne les fixait pas) : la chaîne
+>   UTF-8 `${idOffre}|1|${rang}|${0|1}|${sha256 hexadécimal minuscule des octets UTF-8 de l'en-tête}` ; IV 12 octets en tête du
+>   morceau, étiquette de 16 octets en fin. **Parts** : `shamir-secret-sharing` 0.0.4, 33 octets (32 + l'abscisse en dernier
+>   octet), le clair RSA-OAEP est la part brute.
+> - **Dépendances npm ajoutées**, à version figée : `shamir-secret-sharing` 0.0.4 (ADR §2) et `fflate` 0.8.3 (question 2, sans
+>   objection du serveur).
+> - **Écrans** : `/candidat/procedures/:idDmc/offre` (soumissionnaire et lot, groupement — `groupementNifs` envoyés —, acte
+>   d'engagement saisi, pièces attendues avec `validerFichier` sur `B04-SE-07`/`-08`, code de la garantie, liste de ce qui manque,
+>   temps restant à l'horloge du serveur, progression, **reprise** d'un morceau en échec réseau — trois essais, jamais sur une
+>   erreur à code —, accusé à l'écran et en PDF) ; « **Mes offres** » (accusé, remplacer `?remplace=&lot=`, retirer en deux
+>   temps) ; « Déposer une offre » sur la procédure quand `depotsOuverts` ; **PRMP** : pastille « n offres déposées », registre
+>   `/prmp/dao/{idDmc}/depots` (nombre seul avant l'échéance, liste ensuite).
+> - **Vérifié en lecture seule** sur la fiche 34 : pastilles « Commission : constituée », « Cérémonie close », « 0 offre déposée »,
+>   registre « le détail s'affichera à la date limite ». Le dépôt réel attend une fiche **validée et lancée** en électronique.

@@ -5,7 +5,12 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { skipErrorToast } from '../core/errors/api-error';
 import {
+  Accuse,
   ConfirmationCandidat,
+  CreationOffreCorps,
+  Horloge,
+  Offre,
+  PieceAttendue,
   ConfirmationCandidatCorps,
   DecisionVerificationNif,
   DocumentProcedureEnLigne,
@@ -105,6 +110,16 @@ export class ProceduresEnLigneService {
     return this.http.get<DocumentProcedureEnLigne[]>(`${this.base}/${idDmc}/documents`);
   }
 
+  /** ⚠️ Lot 3 (V68) — `GET /{idDmc}/pieces` (public) : les pièces attendues dans l'offre, AE, reçu et garantie en tête. */
+  pieces(idDmc: number): Observable<PieceAttendue[]> {
+    return this.http.get<PieceAttendue[]>(`${this.base}/${idDmc}/pieces`, { context: skipErrorToast() });
+  }
+
+  /** ⚠️ Lot 3 — `GET /api/horloge` (public) : l'heure du serveur, qui fait foi pour la date limite. */
+  horloge(): Observable<Horloge> {
+    return this.http.get<Horloge>(`${environment.apiUrl}/horloge`, { context: skipErrorToast() });
+  }
+
   /**
    * `GET /{idDmc}/documents/{code}` → le fichier. **Chaque appel inscrit une ligne au registre des retraits** de la
    * PRMP : l'écran le dit avant le clic, et ne télécharge jamais de lui-même.
@@ -155,5 +170,49 @@ export class ExclusionsArmpService {
   /** `PUT /{id}` — une exclusion ne se supprime pas (405) : on la corrige, ou on avance sa date de fin. */
   modifier(id: number, corps: ExclusionArmpCorps): Observable<ExclusionArmp> {
     return this.http.put<ExclusionArmp>(`${this.base}/${id}`, corps, { context: skipErrorToast() });
+  }
+}
+
+/**
+ * ⚠️ Lot 3 (V68) — les offres du candidat connecté (`/api/candidat/offres`). Le serveur ne reçoit qu'un en-tête et des
+ * morceaux chiffrés : le scellement se fait dans `core/securite/scellement.ts`. Tout est silencieux — l'écran du dépôt nomme
+ * chaque refus (409 à code), et un dialogue centralisé couperait le fil d'un envoi en plusieurs morceaux.
+ */
+@Injectable({ providedIn: 'root' })
+export class OffresCandidatService {
+  private readonly http = inject(HttpClient);
+  private readonly base = `${environment.apiUrl}/candidat/offres`;
+
+  /** `POST` → 201 `EN_COURS` ; 400 `EN_TETE_INVALIDE` / `LOT_INVALIDE` / `REMPLACE_INVALIDE`, 409 des conditions du dépôt. */
+  creer(corps: CreationOffreCorps): Observable<Offre> {
+    return this.http.post<Offre>(this.base, corps, { context: skipErrorToast() });
+  }
+
+  /** `PUT /{id}/morceaux/{rang}` (octets bruts, `X-Empreinte`) — rejouable : c'est la reprise d'un envoi coupé. */
+  envoyerMorceau(idOffre: string, rang: number, morceau: Uint8Array<ArrayBuffer>, empreinte: string): Observable<{ rang: number; taille: number; recus: number }> {
+    return this.http.put<{ rang: number; taille: number; recus: number }>(`${this.base}/${idOffre}/morceaux/${rang}`, new Blob([morceau], { type: 'application/octet-stream' }), {
+      headers: { 'Content-Type': 'application/octet-stream', 'X-Empreinte': empreinte },
+      context: skipErrorToast(),
+    });
+  }
+
+  /** `POST /{id}/sceller` `{ empreinte }` → l'accusé ; 409 `MORCEAU_MANQUANT` (`details.rangs`), `EMPREINTE_DIFFERENTE`, `DELAI_DEPASSE`… */
+  sceller(idOffre: string, empreinte: string): Observable<Accuse> {
+    return this.http.post<Accuse>(`${this.base}/${idOffre}/sceller`, { empreinte }, { context: skipErrorToast() });
+  }
+
+  /** `GET` — toutes ses offres, toutes procédures. */
+  liste(): Observable<Offre[]> {
+    return this.http.get<Offre[]>(this.base);
+  }
+
+  /** `GET /{id}/accuse` → le PDF de l'accusé (409 `OFFRE_NON_DEPOSEE` pour un dépôt en cours). */
+  accuse(idOffre: string): Observable<Blob> {
+    return this.http.get(`${this.base}/${idOffre}/accuse`, { responseType: 'blob', context: skipErrorToast() });
+  }
+
+  /** `DELETE /{id}` → `RETIREE` ; 409 `DELAI_DEPASSE`, `REMPLACEMENT_INTERDIT`, `OFFRE_NON_DEPOSEE`. */
+  retirer(idOffre: string): Observable<Offre> {
+    return this.http.delete<Offre>(`${this.base}/${idOffre}`, { context: skipErrorToast() });
   }
 }

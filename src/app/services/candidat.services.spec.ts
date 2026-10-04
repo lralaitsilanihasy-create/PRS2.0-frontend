@@ -8,6 +8,7 @@ import {
   EntrepriseCandidatService,
   EntreprisesAdminService,
   ExclusionsArmpService,
+  OffresCandidatService,
   ProceduresEnLigneService,
 } from './candidat.services';
 import { FicheMarcheService } from './fiche-marche.services';
@@ -140,5 +141,53 @@ describe('Services du candidat — chemins du contrat', () => {
     ]);
     expect(recus?.length).toBe(1);
     expect(recus?.[0].entreprise).toBeNull();
+  });
+});
+
+describe('Offres du candidat (lot 3) — chemins du contrat', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+  });
+
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  it('création, morceaux en octets bruts avec leur empreinte, scellement, retrait, accusé ; pièces et horloge publiques', () => {
+    const s = TestBed.inject(OffresCandidatService);
+    const p = TestBed.inject(ProceduresEnLigneService);
+    const f = TestBed.inject(FicheMarcheService);
+    const http = TestBed.inject(HttpTestingController);
+
+    s.creer({ idDmc: 40, lot: 1, enTete: '{"version":1}', remplace: null }).subscribe();
+    const c = http.expectOne({ method: 'POST', url: '/api/candidat/offres' });
+    // L'en-tête voyage en CHAÎNE : ses octets UTF-8 sont ce que l'empreinte couvre.
+    expect(typeof c.request.body.enTete).toBe('string');
+    c.flush({ idOffre: 'u-1', etat: 'EN_COURS' }, { status: 201, statusText: 'Created' });
+
+    s.envoyerMorceau('u-1', 0, new Uint8Array([1, 2, 3]), 'ab'.repeat(32)).subscribe();
+    const m = http.expectOne({ method: 'PUT', url: '/api/candidat/offres/u-1/morceaux/0' });
+    expect(m.request.headers.get('X-Empreinte')).toBe('ab'.repeat(32));
+    expect(m.request.headers.get('Content-Type')).toBe('application/octet-stream');
+    expect(m.request.body).toBeInstanceOf(Blob);
+    m.flush({ rang: 0, taille: 3, recus: 1 });
+
+    s.sceller('u-1', 'cd'.repeat(32)).subscribe();
+    const sc = http.expectOne({ method: 'POST', url: '/api/candidat/offres/u-1/sceller' });
+    expect(sc.request.body).toEqual({ empreinte: 'cd'.repeat(32) });
+    sc.flush({ offre: { idOffre: 'u-1', etat: 'DEPOSEE' }, entreprise: { nif: '1', raisonSociale: 'X' }, n: 3, quorum: 2, empreintesDetenteurs: [] });
+
+    s.accuse('u-1').subscribe();
+    const a = http.expectOne({ method: 'GET', url: '/api/candidat/offres/u-1/accuse' });
+    expect(a.request.responseType).toBe('blob');
+    a.flush(new Blob());
+
+    s.retirer('u-1').subscribe();
+    http.expectOne({ method: 'DELETE', url: '/api/candidat/offres/u-1' }).flush({ idOffre: 'u-1', etat: 'RETIREE' });
+
+    p.pieces(40).subscribe();
+    http.expectOne({ method: 'GET', url: '/api/procedures-en-ligne/40/pieces' }).flush([]);
+    p.horloge().subscribe();
+    http.expectOne({ method: 'GET', url: '/api/horloge' }).flush({ maintenant: '2026-10-04T18:00:00', fuseau: 'Indian/Antananarivo' });
+    f.depots(40).subscribe();
+    http.expectOne({ method: 'GET', url: '/api/fiches-marche/40/depots' }).flush({ clos: false, nombre: 2, dateLimite: null, depots: null });
   });
 });

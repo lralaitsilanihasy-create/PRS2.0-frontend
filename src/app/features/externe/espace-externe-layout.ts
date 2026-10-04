@@ -36,7 +36,10 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
     racine: '/candidat',
     titre: 'Espace candidat',
     navPublique: [{ label: 'Procédures ouvertes', path: '/candidat/procedures' }],
-    navConnecte: [{ label: 'Mon entreprise', path: '/candidat/entreprise' }],
+    navConnecte: [
+      { label: 'Mes offres', path: '/candidat/offres' },
+      { label: 'Mon entreprise', path: '/candidat/entreprise' },
+    ],
     entree: { label: 'Créer un compte', path: '/candidat/inscription' },
     piedLien: { label: "À propos de l'espace candidat", path: '/accueil/candidat' },
     apresDeconnexion: '/candidat/procedures',

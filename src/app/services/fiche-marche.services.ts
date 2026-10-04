@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { skipErrorToast } from '../core/errors/api-error';
-import { AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, DisponibiliteAvis, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, MaterielExige, ParametresInternes, ParametresInternesCorps, PersonnelExige, PieceExigee, PublicationAvis, PublicationLettres, ReferentielFiche, RetraitDao, TypeMarche, VersionFiche } from '../models';
+import { AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, Depots, DisponibiliteAvis, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, MaterielExige, ParametresInternes, ParametresInternesCorps, PersonnelExige, PieceExigee, PublicationAvis, PublicationLettres, ReferentielFiche, RetraitDao, TypeMarche, VersionFiche } from '../models';
 import { CrudService } from './api/crud.service';
 
 /**
@@ -196,6 +196,14 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
    */
   retraits(idDmc: number): Observable<RetraitDao[]> {
     return this.http.get<RetraitDao[]>(`${this.baseUrl}/${idDmc}/retraits`, { context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ Lot 3 (V68) — `GET /{idDmc}/depots` : avant la date limite, **le nombre seul** (`depots = null`) ; après, le registre.
+   * PRMP et UGPM de la fiche, responsable de la procédure ; 403 aux autres. Silencieux.
+   */
+  depots(idDmc: number): Observable<Depots> {
+    return this.http.get<Depots>(`${this.baseUrl}/${idDmc}/depots`, { context: skipErrorToast() });
   }
 
   /**
