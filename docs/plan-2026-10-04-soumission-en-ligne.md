@@ -70,15 +70,23 @@ s'ouvrir en ligne avant la clause du juriste. Les DAO réels étudiés (2463, ME
       l'ARMP, date de début et date de fin (l'exclusion peut être temporaire), avec un journal.
     - Une entreprise du répertoire est reconnue par son NIF. Pendant la période d'exclusion, elle est **signalée** à
       l'inscription, au candidat et à l'Administrateur.
-    - **Elle ne peut pas soumettre (pilote, 04/10).** Le serveur refuse le dépôt, en nommant la décision de l'ARMP et sa
-      date de fin. C'est la seule exception à la règle « le système ne refuse pas, la commission décide ».
+    - **Elle ne peut pas déposer : le système refuse, avec un message (pilote, 04/10).** C'est le système qui refuse, pas
+      la commission : la seule exception à la règle « le système ne refuse pas, la commission décide ».
+      - Réponse du serveur au dépôt : **409 `ENTREPRISE_EXCLUE`**, avec le message, servi tel quel et affiché par
+        l'écran :
+        > « Votre entreprise (NIF *n*) est exclue des marchés publics par la décision de l'ARMP *référence* du
+        > *date de début*, jusqu'au *date de fin*. Vous ne pouvez pas déposer d'offre pendant cette période. »
+        Pour une exclusion sans fin, la fin de phrase devient « … du *date de début*, sans date de fin. ». Pour un
+        groupement, le message nomme l'entreprise membre exclue.
       - Le refus est vérifié **au moment du dépôt**, sur le répertoire du jour : une exclusion levée rouvre le dépôt, et
         une exclusion prononcée pendant la préparation le ferme.
-      - L'écran prévient dès l'ouverture de l'offre, pour que le candidat ne prépare pas une offre qu'il ne pourra pas
-        déposer.
+      - Le même message s'affiche dès l'ouverture de l'offre, pour que le candidat ne prépare pas une offre qu'il ne
+        pourra pas déposer, et à l'inscription comme signalement.
       - Groupement : si l'un des membres déclarés est exclu, le dépôt du groupement est refusé.
-    - **Une exclusion prononcée après un dépôt** ne peut pas retirer une offre scellée. Celle-ci est signalée à la
-      commission à l'ouverture, avec la décision, et la commission l'écarte.
+      - Le refus est journalisé (entreprise, procédure, décision, date), et l'Administrateur le voit.
+    - **Une exclusion prononcée après un dépôt** ne peut pas retirer une offre scellée. Le système l'**écarte** à
+      l'ouverture : elle n'est pas déchiffrée, la séance la mentionne « écartée : entreprise exclue par l'ARMP » avec la
+      décision, et le candidat reçoit le même message.
     - Une erreur de saisie dans le répertoire (un mauvais NIF) bloquerait un candidat à tort. Chaque fiche du
       répertoire porte donc sa référence de décision, et l'Administrateur la corrige au journal.
   - **La collusion** (une même personne derrière plusieurs entreprises).
