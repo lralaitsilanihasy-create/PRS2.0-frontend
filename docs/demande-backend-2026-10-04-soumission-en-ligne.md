@@ -202,6 +202,19 @@ ensuite les demandes des lots 2 à 4 contre l'ADR.
   verification: VerificationNifDto, exclusion: ExclusionDto | null }`.
 - **Les pièces** : PDF ou image, taille plafonnée par un paramètre. Le front passe par `validerFichier()`.
 
+> ⚠️ **Livraison backend du 2026-10-04 (§B3, sous-lot 1b, V64).** Conforme, routes et codes tels que proposés.
+> - Le candidat est celui du jeton : aucune route ne prend d'identifiant de compte.
+> - **Écarts et précisions** :
+>   - **`stat` et `rcs` sont facultatifs** ; `raisonSociale`, `nif`, `adresse` et le représentant (nom, prénom) sont
+>     obligatoires ;
+>   - NIF, STAT et RCS sont **normalisés** (sans blancs, en majuscules) avant le contrôle d'unicité, si bien que « 1234 567
+>     890 » et « 1234567890 » sont le même NIF ;
+>   - le message du 409 est le vôtre, sans nommer l'autre compte.
+> - **Pièces** : PDF, JPEG ou PNG reconnus à leurs premiers octets, quel que soit le type annoncé.
+>   - Une pièce envoyée avant la déclaration de l'entreprise donne 409 **`ENTREPRISE_ABSENTE`**.
+>   - Le plafond est `tailleMaxPieceMo` (413), dans la limite multipart du serveur, 10 Mo : au-delà, le paramètre ne sert
+>     à rien sans relever cette limite.
+
 ## B4 — La vérification du NIF : deux voies (lot 1, Q2)
 
 - **Paramètre** `CANDIDAT_VERIFICATION_NIF` : `AUTOMATIQUE` ou `SUR_PIECES`, défaut `SUR_PIECES`.
@@ -225,6 +238,14 @@ ensuite les demandes des lots 2 à 4 contre l'ADR.
 | GET | /api/admin/entreprises/{id}/pieces/{idPiece}/fichier | — | le fichier | 200, 403, 404 |
 
 - Tout changement de statut est **journalisé**, avec ses valeurs.
+
+> ⚠️ **Livraison backend du 2026-10-04 (§B4).** Conforme. **Un contrat, deux voies**, choisies par `verificationNif` :
+> - `AUTOMATIQUE` passe par le raccordement à la DGI, **vide** : il répond « indisponible », on ne l'invente pas. Une
+>   réponse indisponible, ou une erreur, retombe sur la voie `SUR_PIECES`.
+> - Un NIF nouveau ou changé remet le statut à `NON_VERIFIE`.
+> - Les routes de l'Administrateur sont celles proposées. `GET /api/admin/entreprises` prend `NON_VERIFIE` par défaut, et
+>   accepte les autres statuts.
+> - Chaque changement de statut est journalisé, avec l'ancien statut, le nouveau et le motif.
 
 ## B5 — Le répertoire des entreprises exclues par l'ARMP (lot 1, Q2)
 
@@ -253,6 +274,14 @@ ensuite les demandes des lots 2 à 4 contre l'ADR.
   l'ouverture. Elle n'est pas déchiffrée, et la séance la mentionne « écartée : entreprise exclue par l'ARMP », avec la
   décision.
 
+> ⚠️ **Livraison backend du 2026-10-04 (§B5).** Conforme pour le lot 1.
+> - Les routes de l'Administrateur sont celles proposées. Il n'y a **pas de `DELETE`** : la route répond 405.
+> - Le journal de chaque exclusion, avec ses anciennes et nouvelles valeurs, est servi dans `ExclusionDto.journal`.
+> - Le rapprochement se fait par le NIF normalisé, sur le répertoire du jour.
+> - À la déclaration de l'entreprise, `EntrepriseDto.exclusion` est rempli tant que l'exclusion court ; il n'y a pas de
+>   refus. L'inscription seule ne porte pas encore de NIF, donc rien à signaler à ce moment-là.
+> - Le refus au dépôt (409 `ENTREPRISE_EXCLUE`) et l'offre écartée à l'ouverture relèvent des lots 3 et 4.
+
 ## B6 — Les alertes de collusion (lot 1 pour les données, lot 4 pour l'affichage)
 
 - **Rapprochements** entre comptes : même téléphone, même adresse électronique, même signataire (le représentant de
@@ -263,6 +292,14 @@ ensuite les demandes des lots 2 à 4 contre l'ADR.
 - **Jamais de refus par le système** : le refus se fait après décision de la commission, motivée et journalisée.
 - **Question** : l'adresse IP de dépôt sert-elle de rapprochement ? Le front ne la propose pas : une IP partagée (un
   cybercafé, un opérateur mobile) donnerait de fausses alertes.
+
+> ⚠️ **Livraison backend du 2026-10-04 (§B6).** Données calculées et gardées (`t_rapprochement_candidat`). Elles sont
+> recalculées à l'inscription et à chaque déclaration de l'entreprise, et ne sont servies qu'au lot 4.
+> - Critères : **téléphone** (chiffres seuls, `+261` ramené au `0`), **signataire** (le représentant de l'entreprise),
+>   **adresse** (casse, blancs et accents ignorés).
+> - L'**adresse électronique** d'un compte est unique : deux comptes ne la partagent jamais. Le critère servira aux adresses
+>   saisies dans les offres, au lot 3.
+> - **Question sur l'IP** : votre proposition est retenue, l'adresse IP n'est pas un critère. Jamais de refus.
 
 ## B7 — Le ménage des comptes (lot 1)
 
