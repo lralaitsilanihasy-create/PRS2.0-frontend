@@ -1,6 +1,7 @@
 # Plan — 2026-10-04 — La soumission en ligne des offres (plateforme de dépôt)
 
-**Statut** : proposition du front. **Q2 et Q4 arbitrées le 04/10** ; Q1, Q3 et Q5 à Q10 restent à arbitrer. Rien n'est codé.
+**Statut** : **arbitré par le pilote le 04/10** : Q2 et Q4 par décisions propres, les autres questions selon les
+recommandations. Lot 0 engagé : `docs/demande-backend-2026-10-04-soumission-en-ligne.md`. Rien n’est codé.
 **Origine** : pilote, 04/10 : « Attaquer la soumission en ligne ». Suite de la remise électronique (V50, 27/09), qui
 préparait la fiche et annonçait : « la plateforme de dépôt viendra plus tard ». Q14 du 27/09 avait tranché : les
 formulaires du candidat seront remplis **en ligne**, sur le besoin de la fiche.
@@ -36,7 +37,7 @@ s'ouvrir en ligne avant la clause du juriste. Les DAO réels étudiés (2463, ME
 
 ## 3. Questions au pilote
 
-- **Q1 — Où vit la plateforme ?**
+- **Q1 — Où vit la plateforme ? ✅ Arbitrée le 04/10 : recommandation retenue.**
   - **Recommandé** : dans **cette application et ce backend**, comme un espace à part `/candidat`, avec un profil
     `CANDIDAT` qui n'atteint aucune route interne (garde par profil côté serveur, comme les dix profils actuels).
     C'est la même origine, le même cookie `HttpOnly` et le même CSRF.
@@ -98,7 +99,7 @@ s'ouvrir en ligne avant la clause du juriste. Les DAO réels étudiés (2463, ME
     - Un compte jamais confirmé est supprimé après `CANDIDAT_DELAI_CONFIRMATION_JOURS` jours (paramètre, défaut 7).
     - Un compte inactif est **archivé** après `CANDIDAT_DELAI_INACTIVITE_MOIS` mois (paramètre, défaut 24), jamais
       supprimé : ses retraits de DAO et ses dépôts restent au journal.
-- **Q3 — Le retrait du DAO et son coût.**
+- **Q3 — Le retrait du DAO et son coût. ✅ Arbitrée le 04/10 : recommandation retenue.**
   - **Recommandé** : le téléchargement est **libre après inscription** et journalisé (qui, quand, quelle version).
   - La preuve du paiement des frais de dossier (`{{PARAM.compte-dao}}`) est une **pièce de l'offre**, vérifiée à
     l'ouverture, pas un péage au téléchargement. Elle reste à confirmer par le juriste.
@@ -143,41 +144,41 @@ s'ouvrir en ligne avant la clause du juriste. Les DAO réels étudiés (2463, ME
       copie chiffrée sans pouvoir la lire.
     - Le membre en garde aussi une copie hors ligne (fichier ou impression).
     - La perte la plus probable est l'oubli de la phrase secrète. C'est ce que S2 détecte tôt.
-- **Q5 — La signature électronique** (`B04-SE-05` : Qualifiée, Avancée ou Simple).
+- **Q5 — La signature électronique (`B04-SE-05` : Qualifiée, Avancée ou Simple). ✅ Arbitrée le 04/10 : recommandation retenue.**
   - **Recommandé, premier temps** : niveau **Simple** = authentification du compte, empreinte SHA-256 de l'offre
     scellée, accusé horodaté par le serveur.
   - Les niveaux Avancée et Qualifiée dépendent des prestataires de certification (`B04-SE-06`, liste officielle
     toujours « À définir »). Ils viennent dans un second temps.
   - Tant qu'une fiche exige plus que Simple, elle ne peut pas s'ouvrir sur la plateforme. Le serveur le refuse en le
     nommant.
-- **Q6 — Les formulaires en ligne.**
+- **Q6 — Les formulaires en ligne. ✅ Arbitrée le 04/10 : recommandation retenue.**
   - **Recommandé** : les **pièces jointes** et l'**acte d'engagement** (montant par lot, délai) d'abord.
   - Les formulaires structurés des maquettes viennent ensuite, chacun lu sur le besoin de la fiche : bordereau et
     calendrier (fournitures), DQE et sous-détail (travaux), capacités, personnel, matériel.
   - Contrainte avec (a) : le **montant lu en séance** est dans l'offre chiffrée. Le serveur ne connaît aucun prix avant
     l'ouverture, donc pas de contrôle serveur au dépôt, seulement dans le navigateur.
-- **Q7 — La garantie de soumission** (`B05-GS-10`).
+- **Q7 — La garantie de soumission (`B05-GS-10`). ✅ Arbitrée le 04/10 : recommandation retenue.**
   - **Recommandé** : la **voie B** (téléversement de la garantie avec son code de vérification) dans l'offre.
   - La voie A (dépôt direct par le garant) suppose des comptes de garants habilités (`B05-GS-13`, liste « À définir »).
     Elle vient plus tard.
   - L'original papier (`B05-GS-11`) reste hors plateforme.
-- **Q8 — L'ouverture des plis.**
+- **Q8 — L'ouverture des plis. ✅ Arbitrée le 04/10 : recommandation retenue.**
   - **Recommandé** : une séance sur la plateforme, menée par le responsable de la procédure. Les membres du quorum
     apportent leur part, et les offres s'ouvrent ensemble ; aucune ne s'ouvre seule.
   - La séance lit à haute voix (écran projeté) les éléments du PV d'ouverture : candidat, montant par lot, garantie,
     rabais. Le PV est produit par le moteur des documents, comme les PV actuels.
   - `B04-OP-10` (Présentiel, En ligne ou Mixte) ne change que la diffusion. Le lien `B04-OP-11` reste vide au premier
     temps.
-- **Q9 — Disponibilité et prorogation** (`B04-SE-12`, `-13`, `-16`).
+- **Q9 — Disponibilité et prorogation (`B04-SE-12`, `-13`, `-16`). ✅ Arbitrée le 04/10 : recommandation retenue.**
   - **Recommandé** : le serveur **journalise** les indisponibilités. La prorogation reste une **décision de la PRMP**,
     proposée par le serveur quand le seuil est atteint dans la fenêtre, jamais automatique.
-- **Q10 — Les fichiers.**
+- **Q10 — Les fichiers. ✅ Arbitrée le 04/10 : recommandation retenue.**
   - Jusqu'à 500 Mo par offre (`B04-SE-09`), donc un **envoi par morceaux** avec reprise.
   - Le stockage relève du backend : où, combien de temps, et sauvegarde. C'est une question d'infrastructure, à poser
     au backend.
   - Côté front, chaque fichier passe par `validerFichier()` (type et taille), comme tout téléversement.
 
-## 4. Découpage proposé (si les recommandations sont retenues)
+## 4. Découpage retenu
 
 | Lot | Contenu | Côté backend | Côté front |
 |---|---|---|---|
