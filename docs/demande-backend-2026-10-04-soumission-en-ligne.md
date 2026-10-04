@@ -164,6 +164,27 @@ ensuite les demandes des lots 2 à 4 contre l'ADR.
   (défaut 5), plus les limites des codes ci-dessus, avec la réponse 429 et un message servi.
 - **Mot de passe** : la politique des comptes internes, et le même stockage.
 
+> ⚠️ **Livraison backend du 2026-10-04 (§B2, sous-lot 1a, V63).** Conforme, routes et codes tels que proposés.
+> - **Question 2, confirmée** : le candidat se connecte par `POST /api/auth/login`, `login` = son adresse électronique
+>   (casse ignorée). `LoginResponse` porte `role` = `typeActeur` = `CANDIDAT`, `ref` = `idCompte` (`C` + 9 chiffres), et
+>   `nomAffichage` = « NOM Prénom ». Même cookie `PRS_SESSION`, même CSRF.
+> - **Deux refus nommés à la connexion**, après le mot de passe seulement (un tiers n'apprend rien) :
+>   - 409 `COMPTE_A_CONFIRMER` ;
+>   - 409 `COMPTE_ARCHIVE` : un nouveau code part par courriel, et `POST /api/candidats/confirmation` (courriel seul)
+>     réactive le compte. C'est ainsi que se fait la réactivation du §B7.
+> - **Garde** : un jeton `CANDIDAT` reçoit **403 sur toute route interne**, y compris celles dont le contrôleur n'avait pas
+>   de garde de profil (référentiels, annuaire, messages…). Lui restent ouverts `/api/candidat/**` (sous-lot 1b), les
+>   routes publiques, et `/api/mon-compte/**` (changer son mot de passe).
+> - **Écarts et précisions** :
+>   - l'adresse est unique parmi **tous** les comptes, internes compris ;
+>   - un compte déjà confirmé répond 200 `CONFIRME` à une nouvelle confirmation ;
+>   - un code faux mal formé (pas six chiffres) compte comme un essai ;
+>   - le renvoi est limité à **5 par heure et par adresse** (429), et répond toujours 204, même pour une adresse inconnue ;
+>   - le 429 des essais épuisés porte un `Retry-After` de 60 s, mais il faut surtout un nouveau code.
+> - **Téléphone** : `CANDIDAT_CONFIRMATION_TELEPHONE` (défaut `NON`). Une passerelle vide est en place, qui n'envoie rien et
+>   le journalise. Le paramètre doit rester à `NON` tant que le pilote n'a pas choisi de fournisseur (question 3).
+> - Le 400 porte désormais un `code` quand il en a un (`CODE_INVALIDE`, `CODE_EXPIRE`).
+
 ## B3 — L'entreprise (lot 1)
 
 | Méthode | URL | Corps | Réponse | Statuts |
@@ -252,6 +273,15 @@ ensuite les demandes des lots 2 à 4 contre l'ADR.
 - **Paramètres** : `GET` / `PUT /api/parametres/candidats` (patron des paramètres existants), qui porte aussi
   `CANDIDAT_VERIFICATION_NIF`, `CANDIDAT_CONFIRMATION_TELEPHONE`, `CANDIDAT_INSCRIPTIONS_PAR_JOUR` et la taille maximale
   des pièces.
+
+> ⚠️ **Livraison backend du 2026-10-04 (§B7, sous-lot 1a).** Conforme.
+> - Ménage chaque nuit (3 h 30, `app.candidats.cron-menage`) : suppression des comptes jamais confirmés après
+>   `delaiConfirmationJours` ; archivage, jamais suppression, des comptes sans connexion depuis `delaiInactiviteMois`.
+>   À défaut de connexion, c'est la date de confirmation qui compte.
+> - `GET` / `PUT /api/parametres/candidats` (Administrateur seul, `GET` compris) :
+>   `{ verificationNif, confirmationTelephone, inscriptionsParJour, delaiConfirmationJours, delaiInactiviteMois,
+>   tailleMaxPieceMo }`, avec les défauts SUR_PIECES, false, 5, 7, 24, 10. Au `PUT`, un champ absent garde sa valeur, et une
+>   valeur hors bornes donne un 400 nominatif.
 
 ## B8 — Les procédures ouvertes en ligne et le retrait du DAO (lot 1, Q3)
 
