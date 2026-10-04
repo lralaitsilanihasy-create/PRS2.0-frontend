@@ -349,3 +349,21 @@ propose donc de la fixer maintenant, et de laisser le juriste poser, s'il le veu
 >   électronique. **PRMP** : `CEREMONIE_NON_CLOSE` expliqué sur l'avis et les lettres.
 > - **Non recetté faute de données** : le parcours réel (publication des clés par des membres, clôture, défi contre le serveur,
 >   clés publiques servies) demande une fiche électronique, une CAO et des comptes activés dans DBPRS20 — accord du pilote.
+>
+> ✅ **Recette RÉELLE du 2026-10-04 (accord du pilote), fiche 34, JAR V66/V67** — la cérémonie de bout en bout, **WebCrypto
+> dans Chromium contre la JCA du serveur** :
+> - responsable (`ADMIN01`) : `PUT …/parametres-internes` quorum 2, cérémonie prévue, dépositaire → `COMPLETS`,
+>   `nombreParts = 2`, `partDeSecours = DESIGNE`, **`SE_QUORUM_MARGE`** (quorum = membres) ;
+> - **part de secours** à l'écran : phrase générée de sept mots, pli `.txt` enregistré, case cochée, publication →
+>   `PUBLIEE` ; **vérification par la phrase du pli** : `GET …/cles/secours`, déverrouillage, `POST …/defi?role=SECOURS`,
+>   déchiffrement, réponse → **`VERIFIEE`** — le défi chiffré par Java (RSA-OAEP, MGF1-SHA-256) se déchiffre dans le navigateur ;
+> - chaque membre, connecté dans `/cao` : « Générer et publier ma clé » → `PUBLIEE`, copie hors ligne téléchargée ; **les
+>   empreintes vues dans le navigateur sont celles que le serveur sert** ;
+> - clôture : d'abord 409 `CLES_INCOMPLETES` nommant « RECETTE Membre Un », puis **`CLOSE`** avec `SE_MARGE_EPUISEE`
+>   (attendu : quorum = membres) ; la fiche porte `ceremonie = CLOSE` ;
+> - membre 1, après clôture : défi réussi → `VERIFIEE` ; **mauvaise phrase refusée** (« La phrase secrète ne déverrouille
+>   pas cette clé ») sans appel au serveur ; la liste des détenteurs montre les trois empreintes ;
+> - `GET /api/procedures-en-ligne/34/cles` → **404**, attendu : la fiche n'est ni validée ni lancée.
+>
+> **Second temps clos pour la cérémonie.** L'interopérabilité WebCrypto ↔ JCA du défi est prouvée ; celle du partage de
+> Shamir (`shamir-secret-sharing` ↔ BouncyCastle) reste le test du lot 4.

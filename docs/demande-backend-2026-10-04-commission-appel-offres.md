@@ -239,3 +239,13 @@ extérieure ne vit pas dans l'application. L'écran « Ma clé » vit dans l'esp
 >   Aucune écriture hors `/api/auth`. Tests : chemins des services, gardes, libellés ; lint propre.
 > - **Non recetté faute de données** : la désignation réelle (PUT, invitations, activation d'un membre, « Mes procédures ») —
 >   elle écrit dans DBPRS20 et attend l'accord du pilote, avec une fiche électronique.
+>
+> ✅ **Recette RÉELLE du 2026-10-04 (accord du pilote), fiche 34, JAR V67** — `scratchpad/men/recette-cao.mjs` puis
+> `recette-cao-suite.mjs`. Administrateur : `signatureMin` passé à **Simple** dans la base de recette ; PRMP001 : cadrage
+> `modeRemise = ELECTRONIQUE` (la fiche répond `cao=ABSENTE`, `ceremonie=A_VENIR`), puis `PUT …/cao` avec deux membres
+> (`ENTITE_CONTRACTANTE` + service ; `EXPERT_OBJET` + organisme et domaine) et un expert adjoint → `COMPLETE`, anomalies
+> `DECISION_SANS_FICHIER` et `COMPTES_NON_ACTIVES`, comptes `INVITE` ; les **deux courriels** par membre sont au journal
+> (invitation avec le code, puis `CLE_A_PUBLIER`) ; `POST /api/cao/activation` → `ACTIF` (un code faux compte un essai :
+> « Le code d'activation est faux ») ; connexion par l'adresse → `/cao/mes-procedures` montre la procédure, « Président »
+> pour le premier ; `ADMIN01` désigné responsable (201). Après la clôture, retirer l'expert adjoint par `PUT …/cao` passe (200)
+> : il n'est pas détenteur. Les trois comptes de recette (`cao.recette.un|deux|expert@exemple.mg`) restent en base.
