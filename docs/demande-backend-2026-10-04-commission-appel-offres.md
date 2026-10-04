@@ -39,8 +39,8 @@ place (encadré ⚠️ daté). Le front ne code rien contre un nom non confirmé
   - `qualite` ∈ `MEMBRE` (siège, détient une part) · `EXPERT_ADJOINT` (évalue, pas de part) ;
   - `origine`, pour un `MEMBRE` : `ENTITE_CONTRACTANTE` (agent de l'autorité contractante de la fiche, avec son `service`) ·
     `EXPERT_OBJET` (personne qualifiée sur l'objet du DAO, avec son `organisme` et son `domaine`, par exemple « génie
-    civil ») — la précision du pilote ; un expert adjoint porte `organisme` et `domaine`, pas d'`origine` ; Un `id` absent crée le membre, présent le met à jour, un membre omis est retiré (tant que §B3 le
-  permet).
+    civil ») — la précision du pilote ; un expert adjoint porte `organisme` et `domaine`, pas d'`origine` ;
+  - un `id` absent crée le membre, présent le met à jour ; un membre omis est retiré (tant que §B3 le permet).
 - `CaoDto` = `{ idDmc, decision: { reference, date, fichier: boolean }, membres: MembreCaoDto[], etat, anomalies: [{ regle,
   message }] }` ; `MembreCaoDto` = `{ id, nom, prenom, email, telephone, qualite, origine, fonction, service, organisme,
   domaine, president, compte: { etat: 'A_INVITER' | 'INVITE' | 'ACTIF' | 'ARCHIVE', idCompte: string | null,
