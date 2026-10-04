@@ -30,6 +30,12 @@ en place (encadré ⚠️ daté). Le front ne code rien contre un nom non confir
 >
 > Le président de la CAO n'a ici aucun droit de plus : sa clé est une clé parmi `n`. Le responsable de la procédure (CNM)
 > reste le gardien neutre, sous réserve de la question 1 de la demande 2a.
+>
+> ⚠️ **Livraison backend du 2026-10-04 (lot 2a, V67) — la correction ci-dessus est appliquée.** Les routes de ce lot sont
+> ouvertes aux comptes `MEMBRE_CAO` membres de la CAO de l'`idDmc` (garde par identité), les contrôleurs n'y sont plus
+> membres ; `detenteurs[].im` est l'identifiant `K…`, `nom` « NOM Prénom » ; `n` = membres `MEMBRE` + 1 ; les notifications aux
+> membres partent aussi par courriel ; une cérémonie close fige la CAO (409 `CEREMONIE_CLOSE` sur `PUT …/cao`). Détail :
+> `demande-backend-2026-10-04-commission-appel-offres.md`, encadrés §B1 à §B5.
 
 ---
 

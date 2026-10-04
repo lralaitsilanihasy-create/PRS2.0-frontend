@@ -63,6 +63,21 @@ place (encadré ⚠️ daté). Le front ne code rien contre un nom non confirmé
 - `etat` ∈ `ABSENTE` (rien) · `INCOMPLETE` (une règle manque) · `COMPLETE`. `anomalies` dit ce qui manque, et les
   comptes non activés (« 2 membres n'ont pas activé leur compte. »).
 
+> ⚠️ **Livraison backend du 2026-10-04 (§B1, lot 2a, V67).** Conforme, routes, DTO et codes tels que proposés, le modèle
+> `qualite` / `origine` compris.
+> - **Précisions** : `service` est obligatoire pour un `MEMBRE` d'origine `ENTITE_CONTRACTANTE`, `domaine` pour un `EXPERT_OBJET`
+>   (400 par champ) ; un expert adjoint ne peut pas être président (400) ; l'identifiant d'un membre d'une autre CAO : 400.
+> - **Exclusions** : aux quatre proposées s'ajoute **un compte interne de PRS** (une adresse qui est le login d'un compte autre
+>   que `MEMBRE_CAO`). Le message nomme la raison (« un contrôleur de la CNM », « la PRMP de la fiche », « une UGPM de la fiche »,
+>   « un candidat inscrit »), jamais le compte.
+> - **Un membre omis est retiré** tant que la cérémonie n'est pas close ; close, un changement des membres détenteurs répond 409
+>   **`CEREMONIE_CLOSE`** (le responsable rouvre d'abord). Le compte d'un membre retiré reste.
+> - `anomalies` : `CAO_INCOMPLETE` (ce qui manque), `DECISION_SANS_FICHIER` (non bloquante, question 4), `COMPTES_NON_ACTIVES`
+>   (« 2 membres n'ont pas activé leur compte. »).
+> - La décision PDF : `POST …/decision`, PDF reconnu à ses premiers octets (400 `FORMAT_INVALIDE`), 10 Mo au plus (413), 404 sans
+>   CAO.
+> - Les lecteurs : qui lit la fiche, périmètre compris (PRMP et UGPM de la fiche, contrôleurs de la localité, Administrateur).
+
 ## B2 — Les comptes des membres de la CAO : le profil `MEMBRE_CAO`
 
 - **Un profil de plus, `MEMBRE_CAO`**, qui n'atteint **aucune route interne** (même garde que `CANDIDAT`, lot 1a). Lui
@@ -93,6 +108,25 @@ place (encadré ⚠️ daté). Le front ne code rien contre un nom non confirmé
 - **Pas de ménage automatique** dans ce lot : une désignation est temporaire, le compte reste pour la CAO suivante.
   L'Administrateur peut suspendre un compte comme les autres (`/api/comptes-auth`).
 
+> ⚠️ **Livraison backend du 2026-10-04 (§B2, lot 2a, V67).** Conforme.
+> - **Comptes** : `t_compte_cao` (identifiant `K` + 9 chiffres = `ref`), `t_compte_auth` (login = l'adresse en minuscules, type
+>   `MEMBRE_CAO`). Créés à la désignation, `A_ACTIVER`. Les codes d'invitation réutilisent `CodesCandidat` et sa table (clé
+>   étrangère levée) : six chiffres, **72 heures**, 5 essais. Le courriel porte le lien de l'espace
+>   (`app.cao.lien-activation`, défaut `http://localhost:4200/cao/activation` — **à confirmer** par le front), l'objet de la
+>   procédure et l'autorité contractante. Le membre reçoit aussi la notification `CLE_A_PUBLIER` (courriel compris) : deux
+>   courriels à la désignation d'un compte neuf, un seul pour un compte déjà actif.
+> - **Activation** : `POST /api/cao/activation` tel que proposé ; politique du mot de passe des comptes internes (8 à 72
+>   caractères, une lettre et un chiffre, 400 nominatif) ; un compte déjà actif répond `{ etat: 'ACTIF' }` sans rien changer.
+> - **Connexion** : conforme (`role` = `typeActeur` = `MEMBRE_CAO`, `ref`, `nomAffichage` « NOM Prénom »). **Écart** : un compte
+>   `A_ACTIVER` n'a pas encore de mot de passe, le 409 `COMPTE_A_ACTIVER` part donc **avant** toute vérification (il révèle qu'une
+>   invitation est en cours pour cette adresse ; accepté). Le JWT voyage dans le cookie `PRS_SESSION`, comme pour tous.
+> - **Routes** : `GET /api/cao/mes-procedures` et `GET /api/cao/procedures/{idDmc}` tels que proposés. La vue reprend
+>   `ProcedureEnLigneDto` lu sur la **version courante** de la fiche (validée ou non, sans les critères de la liste publique) :
+>   `datePublication` et `etat` sont `null` tant que rien ne les fonde. `etatPart` ∈ `ABSENTE` · `PUBLIEE` · `VERIFIEE` · `PERDUE`.
+> - **Aucune route interne** (garde `INTERNE`), y compris `GET /api/notifications/mes` : le membre reçoit ses notifications par
+>   courriel. La cérémonie (`/api/fiches-marche/{idDmc}/ceremonie/**`) lui est ouverte par identité (lot 2b, rebranché).
+> - Pas de ménage, comme demandé ; l'Administrateur suspend par `/api/comptes-auth`.
+
 ## B3 — Ce que V50 et l'ADR-0010 deviennent
 
 - **`membresCommission` est DÉRIVÉ de la CAO** : les membres de qualité `MEMBRE`. `PUT …/parametres-internes` ne le reçoit plus
@@ -122,12 +156,29 @@ place (encadré ⚠️ daté). Le front ne code rien contre un nom non confirmé
 - **Les experts adjoints** : données seulement (nom, organisme, domaine, contact), aucune part, aucun compte. L'évaluation des
   offres est hors des quatre lots.
 
+> ⚠️ **Livraison backend du 2026-10-04 (§B3, lot 2a, V67).** Conforme ; ADR-0010 amendé (§ *Amendement du 2026-10-04*).
+> - `membresCommission` **dérivé** de la CAO : `PUT …/parametres-internes` qui le porte → 400 sous `membresCommission`, avec votre
+>   message. `ParametresInternesDto.membresCommission[]` = `{ im: K…, nom: « NOM Prénom », profil: MEMBRE_CAO }`. Une CAO désignée
+>   sans paramètres enregistrés donne `INCOMPLETS` (quorum, date manquants), plus `ABSENTS`.
+> - `GET …/parametres-internes/candidats` → **410 Gone**, pour tous.
+> - **Règle 13 `SE_CAO`** bloquante, votre message ; règle 6 vérifiée quand même ; les comptes activés ne conditionnent pas la
+>   validation (ils conditionnent la clôture de la cérémonie, qui nomme les manquants).
+> - Le journal dédié (Q7) reçoit `membresCommission` à chaque changement de la liste des détenteurs — acteur : la PRMP.
+> - Le responsable de la procédure reste (question 1 : le front le recommande, le backend l'a suivi).
+
 ## B4 — Ce que la demande du lot 2b (cérémonie) devient
 
 Corrigée en place par un encadré daté : « membre désigné » s'y lit « membre de la CAO, de qualité `MEMBRE`, compte `MEMBRE_CAO`
 actif ». Les routes du lot 2b sous `/api/fiches-marche/{idDmc}/ceremonie/**` s'ouvrent à ces comptes par identité ; les
 notifications `CLE_A_PUBLIER`, `CLES_PUBLIEES`, `PART_A_VERIFIER` leur partent **aussi par courriel** — une personne
 extérieure ne vit pas dans l'application. L'écran « Ma clé » vit dans l'espace `/cao`, pas dans la coquille interne.
+
+> ⚠️ **Livraison backend du 2026-10-04 (§B4, lot 2a).** Le lot 2b est rebranché sur la CAO : la garde « membre » des routes
+> `/api/fiches-marche/{idDmc}/ceremonie/**` est l'identité (membre de qualité `MEMBRE` de la CAO de l'`idDmc`, compte `MEMBRE_CAO`),
+> `n` = membres `MEMBRE` + 1, `CeremonieDto.detenteurs[].im` est l'identifiant `K…` et `nom` « NOM Prénom » ; le message de
+> `CLES_INCOMPLETES` nomme les membres ainsi. Les notifications `CLE_A_PUBLIER`, `CLES_PUBLIEES`, `PART_A_VERIFIER` partent aux
+> membres **par notification `MEMBRE_CAO` et par courriel**. Une cérémonie close fige aussi la CAO (409 `CEREMONIE_CLOSE` sur
+> `PUT …/cao`) ; rouverte, la PRMP peut remplacer un membre, fiche validée ou non.
 
 ## B5 — Ce que le front construira, à la confirmation
 
@@ -143,6 +194,16 @@ extérieure ne vit pas dans l'application. L'écran « Ma clé » vit dans l'esp
   `/cao` sans appel aux intérims, comme le candidat.
 - **Recette** : une fiche électronique, une CAO et des comptes activés dans DBPRS20 — et des **courriels lisibles** : le
   point 1 de la contre-recette du lot 1 (Mailpit, ou le code au journal sous profil de recette) devient bloquant ici.
+
+> ⚠️ **Livraison backend du 2026-10-04 (§B5, recette).** Les deux points bloquants de la recette :
+> - **Les courriels sont lisibles** : `app.mail.journaliser=true` (variable `APP_MAIL_JOURNALISER`) écrit chaque courriel entier
+>   au journal `prs-backend.log`, envoyé ou non — codes de confirmation des candidats et codes d'activation des membres compris.
+>   Le lanceur de recette `lancer-backend-jar.cmd` le pose. **Recette seulement**, jamais en production. L'autre voie reste
+>   Mailpit (`app.mail.enabled=true`, `spring.mail.host=localhost`, port 1025, lecture sur `:8025`).
+> - **`FICHE_SE_SIGNATURE_MIN`** : le défaut reste Avancée dans V50 ; le pilote tranche. En attendant, l'Administrateur le passe à
+>   Simple par `PUT /api/parametres/fiche-remise-electronique` (`signatureMin`).
+> - `FicheMarcheDto.cao` ∈ `ABSENTE` · `INCOMPLETE` · `COMPLETE` · `null` (papier) : la fiche porte l'état de la CAO comme celui des
+>   paramètres internes et de la cérémonie.
 
 ## Questions ouvertes
 
