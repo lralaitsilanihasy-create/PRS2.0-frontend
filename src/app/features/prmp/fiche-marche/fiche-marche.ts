@@ -72,6 +72,7 @@ import {
   typeOutille,
   avecDefauts,
 } from './fiche-marche-modele';
+import { LIBELLES_ETAT_CAO, LIBELLES_ETAT_CEREMONIE } from '../../cao/libelles-cao';
 
 /** Les heures saisies en texte (« 10:00 ») à côté desquelles le fuseau de référence s'affiche en mode électronique. */
 const HEURES_SAISIES: readonly string[] = ['B04-LR-04', 'B04-OP-03'];
@@ -252,6 +253,13 @@ export class FicheMarcheEcran {
     const id = this.idDmc();
     return id != null && this.estPrmp() && this.modeElectronique() ? ['/prmp', 'dao', id, 'retraits'] : null;
   });
+  /** ⚠️ Lot 2a (04/10, Q11) — la commission d'appel d'offres : désignée par la PRMP seule, en remise électronique seule. */
+  readonly lienCao = computed<(string | number)[] | null>(() => {
+    const id = this.idDmc();
+    return id != null && this.estPrmp() && this.modeElectronique() ? ['/prmp', 'dao', id, 'cao'] : null;
+  });
+  readonly libellesCao = LIBELLES_ETAT_CAO;
+  readonly libellesCeremonie = LIBELLES_ETAT_CEREMONIE;
   /**
    * ⚠️ Examen (25/09) — **la Commission lit la fiche, elle ne la saisit pas.** Le mode se déduit du RÔLE, pas du
    * statut : une fiche en brouillon comme une fiche figée s'ouvrent en lecture pour un contrôleur, et restent

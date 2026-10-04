@@ -8,6 +8,22 @@ import { InterimStore } from '../interim/interim.store';
 import { AuthService } from './auth.service';
 
 /**
+ * ⚠️ Soumission en ligne (04/10) — les profils EXTERNES et leur espace : le candidat (lot 1) et le membre de la commission
+ * d'appel d'offres (lot 2a). Ni l'un ni l'autre n'entre dans la coquille interne : chaque appel qu'elle fait au chargement
+ * (notifications, actualités, intérims, vacance…) leur vaudrait un 403 et son dialogue. Chaque espace a sa coquille
+ * (`features/externe/espace-externe-layout.ts`) et ses routes.
+ */
+export const ESPACES_EXTERNES: Readonly<Partial<Record<Role, string>>> = {
+  CANDIDAT: '/candidat',
+  MEMBRE_CAO: '/cao',
+};
+
+/** La racine de l'espace externe du profil, `null` pour un profil de la coquille interne (ou sans profil). */
+export function espaceExterneDe(role: Role | null | undefined): string | null {
+  return role ? (ESPACES_EXTERNES[role] ?? null) : null;
+}
+
+/**
  * Garde d'authentification : laisse passer si une session valide existe,
  * sinon redirige vers `/login` en mémorisant l'URL demandée (`returnUrl`).
  *
@@ -18,10 +34,10 @@ export const authGuard: CanActivateFn = (_route, state) => {
   const router = inject(Router);
 
   if (auth.isAuthenticated()) {
-    // ⚠️ Soumission en ligne, lot 1 (04/10) — le CANDIDAT n'entre jamais dans la coquille interne : chaque appel
-    // qu'elle fait au chargement (notifications, actualités, intérims…) lui vaudrait un 403 et son dialogue.
-    if (auth.role() === 'CANDIDAT' && !state.url.startsWith('/candidat')) {
-      return router.createUrlTree(['/candidat']);
+    // Un profil externe (candidat, membre de CAO) n'entre jamais dans la coquille interne : son espace, et rien d'autre.
+    const espace = espaceExterneDe(auth.role());
+    if (espace && !state.url.startsWith(espace)) {
+      return router.createUrlTree([espace]);
     }
     return true;
   }
@@ -55,9 +71,10 @@ export const roleGuard: CanActivateFn = (route) => {
   if (!allowed || allowed.length === 0 || auth.hasRole(...allowed)) {
     return true;
   }
-  // Un candidat n'a ni intérim ni accès à `/api/interims/mes` (403) : son refus est son propre espace, sans appel.
-  if (auth.role() === 'CANDIDAT') {
-    return router.createUrlTree(['/candidat']);
+  // Un profil externe n'a ni intérim ni accès à `/api/interims/mes` (403) : son refus est son propre espace, sans appel.
+  const espace = espaceExterneDe(auth.role());
+  if (espace) {
+    return router.createUrlTree([espace]);
   }
   const refus = router.createUrlTree(['/acces-refuse']);
   return interims.assurer().pipe(
@@ -67,21 +84,23 @@ export const roleGuard: CanActivateFn = (route) => {
 };
 
 /**
- * ⚠️ Soumission en ligne, lot 1 (04/10) — l'espace `/candidat` : PUBLIC pour un visiteur (procédures ouvertes,
- * inscription, confirmation), réservé au CANDIDAT une fois connecté. Un agent connecté y est renvoyé chez lui :
- * la PRMP lit le registre des retraits sur sa fiche, l'Administrateur a ses écrans, aucun n'a rien à faire ici.
+ * ⚠️ Soumission en ligne (04/10) — la racine d'un espace externe (`/candidat`, `/cao`), dont la route porte
+ * `data.role`. PUBLIC pour un visiteur (procédures ouvertes, inscription, activation), réservé à SON profil une fois
+ * connecté. Un agent connecté y est renvoyé chez lui (la PRMP a sa fiche, l'Administrateur ses écrans) ; un autre profil
+ * externe, dans son propre espace.
  */
-export const espaceCandidatGuard: CanActivateFn = () => {
+export const espaceExterneGuard: CanActivateFn = (route) => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  if (!auth.isAuthenticated() || auth.role() === 'CANDIDAT') {
+  const attendu = route.data['role'] as Role | undefined;
+  if (!auth.isAuthenticated() || auth.role() === attendu) {
     return true;
   }
-  return router.createUrlTree(['/']);
+  return router.createUrlTree([espaceExterneDe(auth.role()) ?? '/']);
 };
 
-/** Écran du candidat CONNECTÉ (« Mon entreprise ») : sans session, connexion puis retour à l'écran demandé. */
-export const candidatConnecteGuard: CanActivateFn = (_route, state) => {
+/** Écran d'un externe CONNECTÉ (« Mon entreprise », « Mes procédures ») : sans session, connexion puis retour à l'écran demandé. */
+export const externeConnecteGuard: CanActivateFn = (_route, state) => {
   const auth = inject(AuthService);
   const router = inject(Router);
   if (auth.isAuthenticated()) {
@@ -90,9 +109,9 @@ export const candidatConnecteGuard: CanActivateFn = (_route, state) => {
   return router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
 };
 
-/** Inscription et confirmation : un candidat déjà connecté n'a rien à y faire, il retrouve ses procédures. */
-export const candidatHorsSessionGuard: CanActivateFn = () => {
+/** Inscription, confirmation, activation : un externe déjà connecté n'a rien à y faire, il retrouve son espace. */
+export const externeHorsSessionGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  return auth.isAuthenticated() ? router.createUrlTree(['/candidat']) : true;
+  return auth.isAuthenticated() ? router.createUrlTree([espaceExterneDe(auth.role()) ?? '/']) : true;
 };

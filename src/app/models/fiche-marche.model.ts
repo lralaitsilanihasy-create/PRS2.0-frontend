@@ -94,6 +94,10 @@ export interface EntreeJournalParametres {
  */
 export interface ParametresInternes {
   idDmc: number;
+  /**
+   * ⚠️ Lot 2a (04/10, V67, Q11) — **dérivés de la commission d'appel d'offres** désignée par la PRMP : les membres de qualité
+   * `MEMBRE`, `im` = identifiant `K…`, `profil` = `MEMBRE_CAO`. Le responsable ne les choisit plus, il les lit.
+   */
   membresCommission: CompteDesignable[];
   nombreParts: number;
   quorum: number | null;
@@ -101,15 +105,43 @@ export interface ParametresInternes {
   responsable: ResponsableProcedure | null;
   etat: EtatParametresInternes;
   anomalies: { regle: string; message: string }[];
+  /** ⚠️ Lot 2b (V66) — `SE_QUORUM_MARGE` (S1) : un avertissement, jamais un refus. */
+  avertissements?: { regle: string; message: string }[] | null;
+  /** ⚠️ Lot 2b (V66) — la part de secours (S3), hors `nombreParts`. */
+  partDeSecours?: PartDeSecours | null;
   journal: EntreeJournalParametres[];
 }
 
-/** Corps du `PUT …/parametres-internes` : les trois valeurs saisies ; le reste est calculé ou posé par le serveur. */
+/** Le dépositaire de la part de secours (ADR-0013, S3) : une désignation nominative, pas un compte. */
+export interface Depositaire {
+  nom: string;
+  organisme?: string | null;
+  fonction?: string | null;
+  contact?: string | null;
+}
+
+export type EtatPartDeSecours = 'A_DESIGNER' | 'DESIGNE' | 'PUBLIEE' | 'VERIFIEE' | 'PERDUE';
+
+export interface PartDeSecours {
+  depositaire: Depositaire | null;
+  etat: EtatPartDeSecours;
+}
+
+/**
+ * Corps du `PUT …/parametres-internes` : quorum, date de la cérémonie, dépositaire. ⚠️ Lot 2a : `membresCommission` n'en
+ * fait plus partie (400 s'il est envoyé) — les membres viennent de la CAO.
+ */
 export interface ParametresInternesCorps {
-  membresCommission: string[];
   quorum: number | null;
   dateCeremonie: string | null;
+  depositaire: Depositaire | null;
 }
+
+/** ⚠️ Lot 2a (V67) — l'état de la commission d'appel d'offres, tel que la fiche le dit à qui la lit. */
+export type EtatCao = 'ABSENTE' | 'INCOMPLETE' | 'COMPLETE';
+
+/** ⚠️ Lot 2b (V66) — l'état de la cérémonie des clés : `A_VENIR` (des clés manquent), `CLOSE`, `A_REFAIRE` (rouverte). */
+export type EtatCeremonie = 'A_VENIR' | 'CLOSE' | 'A_REFAIRE';
 
 /** Rubrique d'un bloc (« Garantie de soumission » dans B05). `attendus` : compte d'informations de l'esquisse. */
 export interface RubriqueFiche {
@@ -336,6 +368,10 @@ export interface FicheMarche {
   /** Vrai pour le seul titulaire connecté : l'écran des paramètres internes lui est ouvert, 403 aux autres. */
   peutModifierParametresInternes?: boolean | null;
   parametresInternes?: EtatParametresInternes | null;
+  /** ⚠️ Lot 2a (V67) — l'état de la CAO ; `null` en mode papier. */
+  cao?: EtatCao | null;
+  /** ⚠️ Lot 2b (V66) — l'état de la cérémonie des clés ; `null` en mode papier. */
+  ceremonie?: EtatCeremonie | null;
   /**
    * Clés (`CODE` ou `CODE#n`) dont la valeur a été **posée par le serveur** à l'enregistrement du bloc — en mode
    * électronique : ouverture des plis (date limite + délai), dates déduites (publication, assistance, dépôt de
@@ -550,6 +586,8 @@ export type RaisonAvisIndisponible =
   | 'RESERVES_NON_LEVEES'
   | 'FICHE_NON_VALIDEE'
   | 'CATEGORIE_SANS_LETTRE'
+  /** ⚠️ Lot 2b (V66) — remise électronique : sans clés publiées, aucun candidat ne pourrait sceller. Vaut aussi pour les lettres. */
+  | 'CEREMONIE_NON_CLOSE'
   | (string & {});
 
 /**

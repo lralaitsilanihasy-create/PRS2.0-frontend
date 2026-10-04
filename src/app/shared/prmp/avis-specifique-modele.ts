@@ -119,6 +119,9 @@ export function messageIndisponible(raison: RaisonAvisIndisponible | null): stri
       return 'PV favorable avec réserves : l’avis s’imprimera après la levée des réserves, sur le DAO corrigé.';
     case 'FICHE_NON_VALIDEE':
       return 'Aucune version validée de la fiche : l’avis ne peut pas être produit.';
+    // ⚠️ Lot 2b (V66) — remise électronique : publier sans clés publiées annoncerait une procédure impraticable.
+    case 'CEREMONIE_NON_CLOSE':
+      return 'La cérémonie des clés n’est pas close : sans clés publiées, aucun candidat ne pourrait sceller son offre. Le responsable de la procédure clôt la cérémonie, puis l’avis se publie.';
     default:
       return 'L’avis spécifique n’est pas encore disponible pour ce dossier.';
   }

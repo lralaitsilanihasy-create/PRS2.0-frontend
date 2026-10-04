@@ -213,3 +213,29 @@ extérieure ne vit pas dans l'application. L'écran « Ma clé » vit dans l'esp
 | 2 | L'UGPM peut-elle **saisir** la CAO pour la PRMP, qui validerait ? Le front propose non : la décision est un acte de la PRMP, et l'UGPM ne soumet rien | pilote |
 | 3 | Les experts adjoints auront-ils un compte pour l'évaluation (hors des quatre lots) ? Rien n'est construit pour eux ici | pilote |
 | 4 | Le PDF de la décision de nomination : facultatif avec avertissement (proposé), ou obligatoire ? | pilote |
+
+---
+
+> ✅ **Front, lot 2a livré et contre-recetté en lecture seule (2026-10-04, JAR V67).**
+> - **Profil `MEMBRE_CAO`** : `Role`, `TypeActeur`, libellé « Membre de CAO » ; `RoleInterne` exclut les deux profils externes (dix
+>   menus inchangés). Les gardes sont **généralisées** aux espaces externes (`ESPACES_EXTERNES`, `espaceExterneDe`,
+>   `espaceExterneGuard` par `data.role`, `externeConnecteGuard`, `externeHorsSessionGuard`) : `authGuard` et `roleGuard`
+>   renvoient un externe vers son espace sans appeler `/api/interims/mes`.
+> - **Coquille des espaces externes** (`features/externe/espace-externe-layout.ts`, configurée par `data.espace`) : elle
+>   remplace la coquille du candidat et sert aussi `/cao` — marque, liens, compte, mot de passe, déconnexion.
+> - **Espace `/cao`** : activation publique (`/cao/activation?email=`, le lien du courriel ; `app.cao.lien-activation` par
+>   défaut est **confirmé**), « Mes procédures », la procédure (lecture de la CAO sans les adresses des autres) et « Ma clé »
+>   (lot 2b). **Connexion** : un externe est mené à sa racine ; 409 `COMPTE_A_ACTIVER` → l'activation avec l'adresse posée.
+> - **PRMP** : `/prmp/dao/{idDmc}/cao` — décision (référence, date, PDF par `validerFichier`), membres en tableau (qualité,
+>   origine, service / organisme / domaine selon l'origine, un président parmi les `MEMBRE`), état des comptes et « Renvoyer
+>   l'invitation », anomalies ; 400 par champ posés sous `membres[i].…`, 409 `MEMBRE_EXCLU` / `CEREMONIE_CLOSE` nommés. La
+>   fiche porte les pastilles « Commission » et « Cérémonie » et le lien, en remise électronique.
+> - **Responsable** : `/procedure/{idDmc}/parametres-internes` relu — les membres se lisent (depuis la CAO), le `GET …/candidats`
+>   n'est plus appelé ; quorum, date, **dépositaire** (lot 2b) ; puis la section « Cérémonie des clés ».
+> - **Notifications** `typeObjet = PROCEDURE` : la PRMP vers sa fiche, le responsable vers ses paramètres internes.
+> - **Recette écran, lecture seule** (`scratchpad/men/ecran-cao.cjs`) : activation (validation locale, rien envoyé), `/cao`
+>   sans session → connexion, écran CAO de la PRMP sur la fiche 34 (« non constituée », ajout d'une ligne sans envoi),
+>   paramètres internes refusés à la PRMP, fiche 40 papier sans lien ni pastille, Administrateur renvoyé hors de `/cao`.
+>   Aucune écriture hors `/api/auth`. Tests : chemins des services, gardes, libellés ; lint propre.
+> - **Non recetté faute de données** : la désignation réelle (PUT, invitations, activation d'un membre, « Mes procédures ») —
+>   elle écrit dans DBPRS20 et attend l'accord du pilote, avec une fiche électronique.

@@ -1,43 +1,95 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { libelleRole } from '../../core/auth/libelles-profils';
+import { Role } from '../../models';
 import { Icone } from '../../shared/ui/icone';
 import { ChangerMotDePasseModal } from '../auth/mon-compte/changer-mot-de-passe-modal';
 
+/** Les deux espaces externes ; la route racine dit lequel par `data.espace`. */
+export type CleEspaceExterne = 'candidat' | 'cao';
+
+interface Lien {
+  label: string;
+  path: string;
+}
+
+interface ConfigEspace {
+  role: Role;
+  racine: string;
+  titre: string;
+  /** Liens offerts à tout visiteur. */
+  navPublique: Lien[];
+  /** Liens offerts au seul profil connecté. */
+  navConnecte: Lien[];
+  /** Le geste d'entrée hors session : s'inscrire (candidat), activer son compte (membre de CAO). */
+  entree: Lien | null;
+  piedLien: Lien | null;
+  /** Où mène la déconnexion : les procédures publiques pour le candidat ; la connexion pour le membre de CAO, dont rien n'est public. */
+  apresDeconnexion: string;
+}
+
+const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
+  candidat: {
+    role: 'CANDIDAT',
+    racine: '/candidat',
+    titre: 'Espace candidat',
+    navPublique: [{ label: 'Procédures ouvertes', path: '/candidat/procedures' }],
+    navConnecte: [{ label: 'Mon entreprise', path: '/candidat/entreprise' }],
+    entree: { label: 'Créer un compte', path: '/candidat/inscription' },
+    piedLien: { label: "À propos de l'espace candidat", path: '/accueil/candidat' },
+    apresDeconnexion: '/candidat/procedures',
+  },
+  cao: {
+    role: 'MEMBRE_CAO',
+    racine: '/cao',
+    titre: "Espace commission d'appel d'offres",
+    navPublique: [],
+    navConnecte: [{ label: 'Mes procédures', path: '/cao/mes-procedures' }],
+    entree: { label: 'Activer mon compte', path: '/cao/activation' },
+    piedLien: null,
+    apresDeconnexion: '/login',
+  },
+};
+
 /**
- * Coquille de l'ESPACE CANDIDAT (soumission en ligne, lot 1 — 04/10). Volontairement distincte de `MainLayout` :
- * la coquille interne charge au démarrage les notifications, les actualités, les intérims, la vacance du poste…
- * autant d'appels que le serveur refuse au profil CANDIDAT (403 sur toute route interne) — et autant de dialogues
- * d'erreur à l'ouverture. Ici : une barre du haut (marque, deux liens, compte), le contenu, un pied. Hors session,
- * la barre offre la connexion et l'inscription ; les procédures se lisent dans les deux cas.
+ * Coquille des ESPACES EXTERNES (soumission en ligne, lots 1 et 2a) : le candidat (`/candidat`) et le membre de la
+ * commission d'appel d'offres (`/cao`). Volontairement distincte de `MainLayout`, qui charge au démarrage les
+ * notifications, les actualités, les intérims, la vacance du poste… autant d'appels que le serveur refuse à ces profils
+ * (403 sur toute route interne), et autant de dialogues d'erreur à l'ouverture. Ici : une barre du haut (marque, liens,
+ * compte), le contenu, un pied. Hors session, la barre offre la connexion et le geste d'entrée de l'espace.
  */
 @Component({
-  selector: 'app-candidat-layout',
+  selector: 'app-espace-externe-layout',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, RouterLink, RouterLinkActive, Icone, ChangerMotDePasseModal],
   template: `
     <a class="cnm-sr-only cl-evitement" href="#cl-contenu">Aller au contenu</a>
     <header class="cl-top">
       <div class="cl-top__in">
-        <a class="cl-marque" routerLink="/candidat/procedures" aria-label="Espace candidat — procédures ouvertes">
+        <a class="cl-marque" [routerLink]="config.racine" [attr.aria-label]="config.titre + ' — accueil'">
           <span class="cl-marque__mef" aria-hidden="true">MEF</span>
           <span class="cl-marque__texte">
-            <span class="cl-marque__t">PRS 2.0 · Espace candidat</span>
+            <span class="cl-marque__t">PRS 2.0 · {{ config.titre }}</span>
             <span class="cl-marque__s">Commission nationale des marchés</span>
           </span>
         </a>
-        <nav class="cl-nav" aria-label="Espace candidat">
-          <a routerLink="/candidat/procedures" routerLinkActive="active" ariaCurrentWhenActive="page">Procédures ouvertes</a>
+        <nav class="cl-nav" [attr.aria-label]="config.titre">
+          @for (l of config.navPublique; track l.path) {
+            <a [routerLink]="l.path" routerLinkActive="active" ariaCurrentWhenActive="page">{{ l.label }}</a>
+          }
           @if (connecte()) {
-            <a routerLink="/candidat/entreprise" routerLinkActive="active" ariaCurrentWhenActive="page">Mon entreprise</a>
+            @for (l of config.navConnecte; track l.path) {
+              <a [routerLink]="l.path" routerLinkActive="active" ariaCurrentWhenActive="page">{{ l.label }}</a>
+            }
           }
         </nav>
         <div class="cl-top__actions">
           @if (connecte()) {
             <span class="cl-user">
               <span class="cl-user__nom">{{ nom() }}</span>
-              <span class="cl-user__role">Candidat</span>
+              <span class="cl-user__role">{{ roleLibelle() }}</span>
             </span>
             <button type="button" class="cl-btn" (click)="motDePasseOuvert.set(true)">
               <app-icone nom="key" [taille]="15" />Mot de passe
@@ -46,8 +98,8 @@ import { ChangerMotDePasseModal } from '../auth/mon-compte/changer-mot-de-passe-
               <app-icone nom="exit" [taille]="15" />Se déconnecter
             </button>
           } @else {
-            <a class="cl-btn" routerLink="/candidat/inscription">Créer un compte</a>
-            <a class="cl-btn cl-btn--primaire" routerLink="/login" [queryParams]="{ returnUrl: '/candidat' }">
+            @if (config.entree; as e) { <a class="cl-btn" [routerLink]="e.path">{{ e.label }}</a> }
+            <a class="cl-btn cl-btn--primaire" routerLink="/login" [queryParams]="{ returnUrl: config.racine }">
               <app-icone nom="key" [taille]="15" />Se connecter
             </a>
           }
@@ -60,7 +112,7 @@ import { ChangerMotDePasseModal } from '../auth/mon-compte/changer-mot-de-passe-
     <footer class="cl-pied">
       <div class="cl-pied__in">
         <span>Ministère de l'Économie et des Finances — Commission nationale des marchés</span>
-        <a routerLink="/accueil/candidat">À propos de l'espace candidat</a>
+        @if (config.piedLien; as p) { <a [routerLink]="p.path">{{ p.label }}</a> }
       </div>
     </footer>
 
@@ -98,18 +150,21 @@ import { ChangerMotDePasseModal } from '../auth/mon-compte/changer-mot-de-passe-
     @media (max-width: 720px) { .cl-nav { margin-left: 0; width: 100%; order: 3; } }
   `,
 })
-export class CandidatLayout {
+export class EspaceExterneLayout {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
-  /** Connecté EN TANT QUE candidat : un agent est renvoyé chez lui par `espaceCandidatGuard`, il n'arrive pas ici. */
-  readonly connecte = computed(() => this.auth.isAuthenticated() && this.auth.role() === 'CANDIDAT');
+  /** L'espace, lu sur la route racine (`data.espace`) ; à défaut le candidat, l'espace historique. */
+  readonly config: ConfigEspace = ESPACES[(inject(ActivatedRoute).snapshot.data['espace'] as CleEspaceExterne | undefined) ?? 'candidat'];
+
+  /** Connecté EN TANT QUE profil de cet espace : un autre profil est renvoyé ailleurs par `espaceExterneGuard`, il n'arrive pas ici. */
+  readonly connecte = computed(() => this.auth.isAuthenticated() && this.auth.role() === this.config.role);
   readonly nom = computed(() => this.auth.nomAffichage() || this.auth.login() || '');
+  readonly roleLibelle = computed(() => libelleRole(this.auth.role()));
   readonly motDePasseOuvert = signal(false);
 
-  /** La déconnexion laisse le visiteur sur les procédures, qui se lisent sans session. */
   deconnecter(): void {
     this.auth.logout();
-    void this.router.navigate(['/candidat', 'procedures']);
+    void this.router.navigateByUrl(this.config.apresDeconnexion);
   }
 }

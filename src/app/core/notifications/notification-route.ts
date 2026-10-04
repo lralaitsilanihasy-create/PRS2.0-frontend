@@ -135,6 +135,13 @@ export function routePourNotification(n: Notification, role: string | null): Cib
   }
 
   // — Replis par OBJET (types non mappés individuellement).
+  // ⚠️ Soumission en ligne, lot 2b (04/10) — la cérémonie des clés (`CLES_PUBLIEES`, `MARGE_QUORUM`, `PART_PERDUE`…) : la
+  // PRMP lit sa fiche (états de la CAO et de la cérémonie), le responsable de la procédure ses paramètres internes, où vit
+  // la section « Cérémonie ». Les membres de CAO ne lisent pas leurs notifications ici : elles leur partent par courriel.
+  if (n.typeObjet === 'PROCEDURE' && n.idObjet != null) {
+    if (role === 'PRMP' || role === 'UGPM') return { genre: 'route', commands: ['/prmp', 'dao', String(n.idObjet)] };
+    return { genre: 'route', commands: ['/procedure', String(n.idObjet), 'parametres-internes'] };
+  }
   if (n.typeObjet === 'PV') {
     if (role === 'MEMBRE') return { genre: 'route', commands: ['/membre/resultat-examen/pv'] };
     if (role === 'PRMP') return { genre: 'route', commands: ['/prmp/resultat-examen/pv-definitifs'] };

@@ -36,6 +36,17 @@
         @if (lienParametresInternes(); as lien) {
           <a class="btn btn-outline btn-sm" [routerLink]="lien">Paramètres internes</a>
         }
+        <!-- ⚠️ Soumission en ligne, lot 2a / 2b (04/10) — la commission d'appel d'offres et la cérémonie des clés : leur ÉTAT
+             se lit par tous ceux qui lisent la fiche ; la CAO se désigne par la PRMP. -->
+        @if (modeElectronique() && f.cao; as etat) {
+          <span class="fm__rep" [class.fm__rep--ko]="etat !== 'COMPLETE'" title="Commission d'appel d'offres, désignée par la PRMP (décision, membres, président)">Commission : {{ libellesCao[etat] }}</span>
+        }
+        @if (modeElectronique() && f.ceremonie; as etat) {
+          <span class="fm__rep" [class.fm__rep--ko]="etat !== 'CLOSE'" title="Cérémonie des clés (section de l'écran du responsable de la procédure)">Cérémonie {{ libellesCeremonie[etat] }}</span>
+        }
+        @if (lienCao(); as lien) {
+          <a class="btn btn-outline btn-sm" [routerLink]="lien">Commission d'appel d'offres</a>
+        }
         <!-- ⚠️ Soumission en ligne, lot 1 (04/10) — qui a retiré le dossier en ligne ; PRMP seule, remise électronique seule. -->
         @if (lienRetraits(); as lien) {
           <a class="btn btn-outline btn-sm" [routerLink]="lien">Retraits du DAO</a>

@@ -202,7 +202,7 @@ export const CONTENU_PUBLIC: Readonly<Record<AudiencePublique, ContenuAudience>>
   },
 };
 
-/** Audience lue dans l'URL ; toute autre valeur vaut `prmp` (l'audience qui s'inscrit). */
+/** Audience lue dans l'URL ; toute autre valeur vaut `prmp` (l'audience qui s'inscrit). Les membres de CAO n'ont pas d'audience : ils arrivent par leur invitation. */
 export function audienceDepuis(param: string | null | undefined): AudiencePublique {
   return param === 'commission' || param === 'candidat' ? param : 'prmp';
 }

@@ -270,10 +270,8 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
     return this.http.put<FicheMarche>(`${this.baseUrl}/${idDmc}/import/appliquer`, corps, { context: skipErrorToast() });
   }
 
-  /** `GET /{idDmc}/parametres-internes/candidats` — comptes désignables comme détenteurs d'une part de clé (titulaire seul). */
-  candidatsParametresInternes(idDmc: number): Observable<CompteDesignable[]> {
-    return this.http.get<CompteDesignable[]>(`${this.baseUrl}/${idDmc}/parametres-internes/candidats`, { context: skipErrorToast() });
-  }
+  // ⚠️ Lot 2a (04/10, V67) — `GET /{idDmc}/parametres-internes/candidats` répond **410 Gone** : les détenteurs de parts sont
+  // les membres de la commission d'appel d'offres, désignés par la PRMP (`/cao`), le responsable ne les choisit plus.
 
   /** `GET /{idDmc}/responsable/candidats` — comptes désignables comme responsable, hors commission (Administrateur). */
   candidatsResponsable(idDmc: number): Observable<CompteDesignable[]> {

@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 
+import { espaceExterneDe } from '../auth/auth.guard';
 import { AuthService } from '../auth/auth.service';
 import { cheminAFaire } from './navigation';
 
@@ -13,7 +14,8 @@ export const accueilPublicGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   if (!auth.isAuthenticated()) return true;
-  // ⚠️ Soumission en ligne, lot 1 (04/10) — le candidat connecté a son espace, hors coquille interne.
-  if (auth.role() === 'CANDIDAT') return router.parseUrl('/candidat');
+  // ⚠️ Soumission en ligne (04/10) — un profil externe connecté (candidat, membre de CAO) a son espace, hors coquille interne.
+  const espace = espaceExterneDe(auth.role());
+  if (espace) return router.parseUrl(espace);
   return router.parseUrl(cheminAFaire(auth.role()) ?? '/');
 };

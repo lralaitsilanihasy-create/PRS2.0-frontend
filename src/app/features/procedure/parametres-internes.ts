@@ -5,16 +5,21 @@ import { ActivatedRoute } from '@angular/router';
 
 import { ApiError, codeErreur, erreursParChamp } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { CompteDesignable, ParametresInternes } from '../../models';
+import { ParametresInternes } from '../../models';
 import { FicheMarcheService } from '../../services/fiche-marche.services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
+import { LIBELLES_ETAT_PART_SECOURS, classePart } from '../cao/libelles-cao';
+import { CeremonieResponsable } from './ceremonie-responsable';
 
 /**
  * **Paramètres internes de la procédure** — écran SÉPARÉ de la fiche DAO, réservé au responsable de la procédure
- * (demande du 27/09, §B4 et §B5 ; plan Q6, Q7). Les membres de la commission détenteurs d'une part de clé
- * (INT-SE-01), le nombre de parts (INT-SE-02, calculé), le quorum de déchiffrement (INT-SE-03), la date de la
- * cérémonie des clés (INT-SE-04) et le responsable (INT-SE-05, posé par le serveur). Ces valeurs ne sont ni des
- * champs de la fiche ni des jetons : le moteur de rendu ne les voit jamais.
+ * (demande du 27/09, §B4 et §B5 ; plan Q6, Q7). Le quorum de déchiffrement (INT-SE-03), la date de la cérémonie des
+ * clés (INT-SE-04), le responsable (INT-SE-05, posé par le serveur), et depuis le lot 2b le **dépositaire de la part de
+ * secours** (ADR-0013, S3). Ces valeurs ne sont ni des champs de la fiche ni des jetons : le moteur de rendu ne les voit jamais.
+ *
+ * ⚠️ Lot 2a (04/10, Q11) — les **membres détenteurs d'une part ne se choisissent plus ici** : ce sont les membres de la
+ * commission d'appel d'offres, désignés par la PRMP par une décision ; le responsable les lit. `nombreParts` en découle.
+ * La section « Cérémonie des clés » (lot 2b) suit le formulaire.
  *
  * ⚠️ Le droit est **par procédure**, pas par rôle de session : la route est transverse, ouverte à tout profil
  * connecté, et c'est le serveur qui répond 403 à quiconque n'est pas le titulaire — Administrateur compris. L'écran
@@ -24,7 +29,7 @@ import { EtatErreur } from '../../shared/ui/etat-erreur';
 @Component({
   selector: 'app-parametres-internes',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, EtatErreur],
+  imports: [DatePipe, EtatErreur, CeremonieResponsable],
   template: `
     <section class="pi">
       <header class="page-header">
@@ -35,9 +40,10 @@ import { EtatErreur } from '../../shared/ui/etat-erreur';
         <button type="button" class="btn btn-outline btn-sm" (click)="retour()">Retour</button>
       </header>
       <p class="page-role">
-        Ce que la plateforme de dépôt saura de cette procédure sans jamais l'imprimer dans le dossier : qui détient une part
-        de clé, combien de parts suffisent pour déchiffrer, quand la cérémonie des clés a lieu. Seul le responsable de la
-        procédure lit et modifie cet écran ; chaque modification est journalisée avec l'ancienne et la nouvelle valeur.
+        Ce que la plateforme de dépôt saura de cette procédure sans jamais l'imprimer dans le dossier : combien de parts
+        suffisent pour déchiffrer, quand la cérémonie des clés a lieu, qui garde la part de secours. Les détenteurs, eux,
+        sont les membres de la commission d'appel d'offres, désignés par la PRMP. Seul le responsable de la procédure lit et
+        modifie cet écran ; chaque modification est journalisée avec l'ancienne et la nouvelle valeur.
       </p>
 
       @if (loading()) {
@@ -60,44 +66,37 @@ import { EtatErreur } from '../../shared/ui/etat-erreur';
           <span class="badge" [class.badge-success]="d.etat === 'COMPLETS'" [class.badge-warning]="d.etat !== 'COMPLETS'">Paramètres {{ libelleEtat(d.etat) }}</span>
           @if (d.responsable; as r) { <span>Responsable : <strong>{{ r.nom }}</strong>&nbsp;<span class="cnm-mono">{{ r.im }}</span></span> }
           @else { <span class="pi__manque">Aucun responsable désigné</span> }
+          @if (d.partDeSecours; as s) { <span class="badge" [class]="'badge ' + classePart(s.etat)">{{ secoursLibelles[s.etat] }}</span> }
         </div>
         @if (d.anomalies.length) {
           <ul class="pi__anomalies" aria-label="Règles non satisfaites">
             @for (a of d.anomalies; track a.regle) { <li><span class="cnm-mono">{{ a.regle }}</span> {{ a.message }}</li> }
           </ul>
         }
+        @for (a of d.avertissements ?? []; track a.regle) { <p class="alert alert-warning" role="status"><span>{{ a.message }}</span></p> }
 
         <form class="card cnm-form pi__form" aria-label="Paramètres internes" (submit)="$event.preventDefault(); enregistrer()" novalidate>
-          <fieldset class="form-group">
-            <legend class="form-label">Membres de la commission détenteurs d'une part de clé <span class="pi__code">INT-SE-01</span></legend>
-            @if (candidats(); as cands) {
-              @if (cands.length) {
-                <div class="pi__cases">
-                  @for (c of cands; track c.im) {
-                    <label class="pi__case">
-                      <input type="checkbox" [value]="c.im" [checked]="membres().includes(c.im)" (change)="basculerMembre(c.im, $any($event.target).checked)" />
-                      <span>{{ c.nom }} <span class="cnm-mono">{{ c.im }}</span>@if (c.profil) { <span class="pi__profil"> · {{ c.profil }}</span> }</span>
-                    </label>
-                  }
-                </div>
-              } @else {
-                <p class="text-muted">Aucun compte désignable n'est servi pour cette procédure.</p>
-              }
+          <div class="form-group">
+            <span class="form-label">Membres de la commission d'appel d'offres détenteurs d'une part de clé <span class="pi__code">INT-SE-01</span></span>
+            @if (d.membresCommission.length) {
+              <ul class="pi__membres">
+                @for (m of d.membresCommission; track m.im) { <li>{{ m.nom }} <span class="cnm-mono pi__profil">{{ m.im }}</span></li> }
+              </ul>
             } @else {
-              <p class="text-muted" role="status">Comptes en cours de chargement…</p>
+              <p class="text-muted pi__lecture">Aucun membre : la PRMP n'a pas encore désigné la commission d'appel d'offres sur la fiche.</p>
             }
-            @if (erreurDe('membresCommission'); as m) { <span class="form-error">{{ m }}</span> }
-          </fieldset>
+            <span class="form-hint">Désignés par la PRMP, par une décision ; ils se lisent ici, ils ne se choisissent pas.</span>
+          </div>
 
           <div class="cnm-form-grid">
             <div class="form-group">
               <span class="form-label">Nombre de parts (n) <span class="pi__code">INT-SE-02</span></span>
-              <div class="pi__lecture" id="pi-nombre-parts">{{ membres().length }} <span class="pi__calc">calculé</span></div>
+              <div class="pi__lecture" id="pi-nombre-parts">{{ d.nombreParts }} <span class="pi__calc">+ 1 part de secours</span></div>
             </div>
             <label class="form-group">
               <span class="form-label">Quorum de déchiffrement (k) <span class="pi__code">INT-SE-03</span></span>
-              <input class="form-control pi__court" id="pi-quorum" type="number" min="2" [max]="membres().length || null" [value]="quorum() ?? ''" (input)="quorum.set($any($event.target).valueAsNumber || null)" />
-              <span class="form-hint">Entre 2 et le nombre de membres ; proposé : {{ quorumPropose() }}.</span>
+              <input class="form-control pi__court" id="pi-quorum" type="number" min="2" [max]="d.nombreParts || null" [value]="quorum() ?? ''" (input)="quorum.set($any($event.target).valueAsNumber || null)" />
+              <span class="form-hint">Entre 2 et le nombre de membres ; proposé : {{ quorumPropose() }}. Un quorum égal au nombre de membres ne tolère aucune perte (S1).</span>
               @if (erreurDe('quorum'); as m) { <span class="form-error">{{ m }}</span> }
             </label>
             <label class="form-group">
@@ -111,10 +110,40 @@ import { EtatErreur } from '../../shared/ui/etat-erreur';
               <div class="pi__lecture" id="pi-responsable">{{ d.responsable ? d.responsable.nom + ' (' + d.responsable.im + ')' : '—' }} <span class="pi__calc">désigné par l'Administrateur</span></div>
             </div>
           </div>
+
+          <!-- ⚠️ Lot 2b (ADR-0013, S3) — le dépositaire de la part de secours : une désignation nominative, pas un compte. -->
+          <fieldset class="form-group pi__depositaire">
+            <legend class="form-label">Dépositaire de la part de secours (hors commission, sans compte)</legend>
+            <div class="cnm-form-grid">
+              <label class="form-group">
+                <span class="form-label">Nom</span>
+                <input class="form-control" type="text" [value]="depNom()" (input)="depNom.set($any($event.target).value)" [class.error]="!!erreurDe('depositaire')" />
+              </label>
+              <label class="form-group">
+                <span class="form-label">Organisme</span>
+                <input class="form-control" type="text" [value]="depOrganisme()" (input)="depOrganisme.set($any($event.target).value)" />
+              </label>
+              <label class="form-group">
+                <span class="form-label">Fonction</span>
+                <input class="form-control" type="text" [value]="depFonction()" (input)="depFonction.set($any($event.target).value)" />
+              </label>
+              <label class="form-group">
+                <span class="form-label">Contact</span>
+                <input class="form-control" type="text" [value]="depContact()" (input)="depContact.set($any($event.target).value)" />
+              </label>
+            </div>
+            <span class="form-hint">L'organisme attendu reste à fixer par le juriste (l'ARMP est une piste). Sa clé naît sur votre poste, en sa présence, à la cérémonie ; sa phrase est imprimée sur le pli qu'il scelle.</span>
+            @if (erreurDe('depositaire'); as m) { <span class="form-error">{{ m }}</span> }
+          </fieldset>
+
           <div class="pi__pied">
             <button type="submit" class="btn btn-primary" [disabled]="saving()">{{ saving() ? 'Enregistrement…' : 'Enregistrer' }}</button>
           </div>
         </form>
+
+        @if (idDmc(); as id) {
+          <app-ceremonie-responsable [idDmc]="id" [depositaire]="d.partDeSecours?.depositaire ?? null" (changement)="charger(true)" />
+        }
 
         <h2 class="pi__h2">Journal des modifications</h2>
         @if (d.journal.length) {
@@ -141,8 +170,8 @@ import { EtatErreur } from '../../shared/ui/etat-erreur';
     .pi__anomalies { margin: 0; padding-left: 1.2rem; color: var(--n-700); font-size: 0.88rem; }
     .pi__form { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
     .pi fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
-    .pi__cases { display: flex; flex-direction: column; gap: 0.35rem; }
-    .pi__case { display: inline-flex; gap: 0.45rem; align-items: center; font-size: 0.9rem; }
+    .pi__depositaire { display: flex; flex-direction: column; gap: 0.4rem; padding-top: 0.5rem; border-top: 1px solid var(--n-200); }
+    .pi__membres { margin: 0; padding-left: 1.1rem; font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.2rem; }
     .pi__profil, .pi__code { color: var(--n-500); font-size: 0.78rem; font-weight: 400; }
     .pi__code { margin-left: 0.3rem; font-family: var(--font-mono, ui-monospace, monospace); }
     .pi__lecture { padding: 0.45rem 0.6rem; border-radius: 8px; background: var(--n-100); color: var(--n-700); font-size: 0.9rem; }
@@ -159,6 +188,9 @@ export class ParametresInternesEcran implements OnInit {
   private readonly service = inject(FicheMarcheService);
   private readonly toast = inject(ToastService);
 
+  readonly secoursLibelles = LIBELLES_ETAT_PART_SECOURS;
+  readonly classePart = classePart;
+
   readonly idDmc = signal<number | null>(null);
   readonly loading = signal(true);
   readonly saving = signal(false);
@@ -166,16 +198,18 @@ export class ParametresInternesEcran implements OnInit {
   readonly contratAbsent = signal(false);
   readonly erreur = signal(false);
   readonly donnees = signal<ParametresInternes | null>(null);
-  readonly candidats = signal<CompteDesignable[] | null>(null);
   readonly erreurs = signal<ReadonlyMap<string, string>>(new Map());
 
-  // les trois valeurs saisies ; le reste est calculé ou posé par le serveur
-  readonly membres = signal<string[]>([]);
+  // les valeurs saisies ; le reste est calculé ou posé par le serveur
   readonly quorum = signal<number | null>(null);
   readonly dateCeremonie = signal<string | null>(null);
+  readonly depNom = signal('');
+  readonly depOrganisme = signal('');
+  readonly depFonction = signal('');
+  readonly depContact = signal('');
   /** « 3 sur 5 » : le quorum proposé suit la règle du défaut (3/5), borné à [2, n]. */
   readonly quorumPropose = computed(() => {
-    const n = this.membres().length;
+    const n = this.donnees()?.nombreParts ?? 0;
     return n ? Math.min(n, Math.max(2, Math.ceil((n * 3) / 5))) : 3;
   });
 
@@ -187,10 +221,11 @@ export class ParametresInternesEcran implements OnInit {
     });
   }
 
-  charger(): void {
+  /** `silencieux` : relecture après un geste de la cérémonie, sans repasser par l'indicateur de chargement. */
+  charger(silencieux = false): void {
     const id = this.idDmc();
     if (id == null) return;
-    this.loading.set(true);
+    if (!silencieux) this.loading.set(true);
     this.refuse.set(false);
     this.contratAbsent.set(false);
     this.erreur.set(false);
@@ -198,7 +233,6 @@ export class ParametresInternesEcran implements OnInit {
       next: (d) => {
         this.poser(d);
         this.loading.set(false);
-        this.service.candidatsParametresInternes(id).subscribe({ next: (c) => this.candidats.set(c ?? []), error: () => this.candidats.set([]) });
       },
       error: (e: ApiError | HttpErrorResponse) => {
         this.loading.set(false);
@@ -211,9 +245,13 @@ export class ParametresInternesEcran implements OnInit {
 
   private poser(d: ParametresInternes): void {
     this.donnees.set(d);
-    this.membres.set((d.membresCommission ?? []).map((m) => m.im));
     this.quorum.set(d.quorum ?? null);
     this.dateCeremonie.set(d.dateCeremonie ?? null);
+    const dep = d.partDeSecours?.depositaire ?? null;
+    this.depNom.set(dep?.nom ?? '');
+    this.depOrganisme.set(dep?.organisme ?? '');
+    this.depFonction.set(dep?.fonction ?? '');
+    this.depContact.set(dep?.contact ?? '');
     this.erreurs.set(new Map());
   }
 
@@ -223,9 +261,6 @@ export class ParametresInternesEcran implements OnInit {
   erreurDe(cle: string): string | null {
     return this.erreurs().get(cle) ?? null;
   }
-  basculerMembre(im: string, coche: boolean): void {
-    this.membres.update((l) => (coche ? (l.includes(im) ? l : [...l, im]) : l.filter((x) => x !== im)));
-  }
   retour(): void {
     this.location.back();
   }
@@ -234,7 +269,9 @@ export class ParametresInternesEcran implements OnInit {
     const id = this.idDmc();
     if (id == null || this.saving()) return;
     this.saving.set(true);
-    this.service.enregistrerParametresInternes(id, { membresCommission: this.membres(), quorum: this.quorum(), dateCeremonie: this.dateCeremonie() }).subscribe({
+    const nom = this.depNom().trim();
+    const depositaire = nom ? { nom, organisme: this.depOrganisme().trim() || null, fonction: this.depFonction().trim() || null, contact: this.depContact().trim() || null } : null;
+    this.service.enregistrerParametresInternes(id, { quorum: this.quorum(), dateCeremonie: this.dateCeremonie(), depositaire }).subscribe({
       next: (d) => {
         this.saving.set(false);
         this.poser(d);
@@ -256,9 +293,11 @@ export class ParametresInternesEcran implements OnInit {
   private motif(e: ApiError | HttpErrorResponse): string {
     switch (codeErreur(e)) {
       case 'MEMBRE_COMMISSION':
-        return 'Le responsable de la procédure ne peut pas détenir une part de clé : retirez-le de la commission.';
+        return 'Le responsable de la procédure ne peut pas détenir une part de clé.';
       case 'FICHE_VALIDEE':
         return 'La fiche est validée en remise électronique : ses paramètres internes ne se modifient plus.';
+      case 'CEREMONIE_CLOSE':
+        return 'La cérémonie des clés est close : rouvrez-la (section ci-dessous) avant de changer le quorum, la date ou le dépositaire.';
       default:
         return e.status === 403 ? 'Seul le responsable de la procédure modifie ces paramètres.' : e.message || 'Enregistrement impossible.';
     }

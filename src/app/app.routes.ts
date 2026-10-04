@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 
-import { authGuard, espaceCandidatGuard, roleGuard } from './core/auth/auth.guard';
+import { authGuard, espaceExterneGuard, roleGuard } from './core/auth/auth.guard';
 import { accueilPublicGuard } from './core/navigation/accueil-public.guard';
 import { dossierAliasGuard } from './core/navigation/dossier-alias.guard';
 
@@ -34,13 +34,23 @@ export const routes: Routes = [
     ],
   },
   {
-    // ⚠️ Soumission en ligne, lot 1 (04/10) — l'ESPACE CANDIDAT, dans SA coquille (pas `MainLayout`, dont chaque appel
-    // de démarrage vaudrait un 403 au profil CANDIDAT). Public pour un visiteur (procédures, inscription), réservé au
-    // candidat connecté ensuite ; un agent connecté est renvoyé chez lui. Les gardes fines sont dans `candidat.routes.ts`.
+    // ⚠️ Soumission en ligne, lot 1 (04/10) — l'ESPACE CANDIDAT, dans la coquille des espaces EXTERNES (pas `MainLayout`,
+    // dont chaque appel de démarrage vaudrait un 403 au profil CANDIDAT). Public pour un visiteur (procédures,
+    // inscription), réservé au candidat connecté ensuite ; un agent connecté est renvoyé chez lui. Gardes fines : `candidat.routes.ts`.
     path: 'candidat',
-    canActivate: [espaceCandidatGuard],
-    loadComponent: () => import('./features/candidat/candidat-layout').then((m) => m.CandidatLayout),
+    canActivate: [espaceExterneGuard],
+    data: { role: 'CANDIDAT', espace: 'candidat' },
+    loadComponent: () => import('./features/externe/espace-externe-layout').then((m) => m.EspaceExterneLayout),
     loadChildren: () => import('./features/candidat/candidat.routes').then((m) => m.CANDIDAT_ROUTES),
+  },
+  {
+    // ⚠️ Soumission en ligne, lot 2a (04/10, Q11) — l'ESPACE DES MEMBRES DE LA COMMISSION D'APPEL D'OFFRES : activation du
+    // compte (publique), puis ses procédures et sa clé (lot 2b). Même coquille externe, même règle : aucune route interne.
+    path: 'cao',
+    canActivate: [espaceExterneGuard],
+    data: { role: 'MEMBRE_CAO', espace: 'cao' },
+    loadComponent: () => import('./features/externe/espace-externe-layout').then((m) => m.EspaceExterneLayout),
+    loadChildren: () => import('./features/cao/cao.routes').then((m) => m.CAO_ROUTES),
   },
   {
     path: '',

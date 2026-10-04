@@ -38,13 +38,20 @@ export type Role =
    * électronique, **aucune route interne** (403 serveur sur tout ce qui n'est pas `/api/candidat/**`, les routes
    * publiques et `/api/mon-compte/**`). Il n'entre jamais dans la coquille interne : son espace est `/candidat`.
    */
-  | 'CANDIDAT';
+  | 'CANDIDAT'
+  /**
+   * ⚠️ Soumission en ligne, lot 2a (04/10, V67, décision Q11) — le MEMBRE DE LA COMMISSION D'APPEL D'OFFRES : une
+   * personne de l'entité contractante, ou un expert de l'objet du DAO, désignée par la PRMP, détentrice d'une part de clé.
+   * Compte créé à la désignation, activé par courriel, connexion par l'adresse ; **aucune route interne** — son espace est
+   * `/cao`, hors coquille interne, comme le candidat.
+   */
+  | 'MEMBRE_CAO';
 
-/** Les dix profils de la coquille interne (menu latéral, « À faire », délégations) — tout sauf le candidat. */
-export type RoleInterne = Exclude<Role, 'CANDIDAT'>;
+/** Les dix profils de la coquille interne (menu latéral, « À faire », délégations) — tout sauf les profils externes. */
+export type RoleInterne = Exclude<Role, 'CANDIDAT' | 'MEMBRE_CAO'>;
 
 /** Nature de l'acteur authentifié (LoginResponse.typeActeur) ; `UGPM` agit sous sa PRMP de tutelle. */
-export type TypeActeur = 'CONTROLEUR' | 'PRMP' | 'UGPM' | 'CANDIDAT';
+export type TypeActeur = 'CONTROLEUR' | 'PRMP' | 'UGPM' | 'CANDIDAT' | 'MEMBRE_CAO';
 
 /** Statut d'un dossier (cycle réel backend : BROUILLON → SOUMIS → PRET_DISPATCH → … → CLOTURE/RETIRE). */
 export type StatutDossier =

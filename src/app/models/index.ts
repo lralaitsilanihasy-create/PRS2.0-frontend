@@ -13,3 +13,4 @@ export * from './assistant-ia.model';
 export * from './pre-controle.model';
 export * from './fiche-marche.model';
 export * from './candidat.model';
+export * from './cao.model';

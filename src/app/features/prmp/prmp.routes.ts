@@ -50,6 +50,8 @@ export const PRMP_ROUTES: Routes = [
   { path: 'dao/:idDmc', loadComponent: () => import('./fiche-marche/fiche-marche').then((m) => m.FicheMarcheEcran), data: { title: 'Fiche DAO', concentration: true } },
   // ⚠️ Soumission en ligne, lot 1 (04/10, §B8) — le registre des retraits du DAO par les candidats, PRMP de la fiche seule.
   { path: 'dao/:idDmc/retraits', loadComponent: () => import('./retraits-dao').then((m) => m.RetraitsDao), data: { title: 'Retraits du DAO' } },
+  // ⚠️ Soumission en ligne, lot 2a (04/10, Q11) — la commission d'appel d'offres, désignée par la PRMP (remise électronique).
+  { path: 'dao/:idDmc/cao', loadComponent: () => import('./cao-ecran').then((m) => m.CaoEcran), data: { title: 'Commission d’appel d’offres' } },
   // Création d'une UGPM par la PRMP (sous sa tutelle) — réservé PRMP (l'UGPM ne crée pas d'UGPM).
   { path: 'creer-ugpm', loadComponent: () => import('./creer-ugpm').then((m) => m.CreerUgpm), canActivate: [roleGuard], data: { roles: ['PRMP'] } },
   { path: 'mes-brouillons', loadComponent: () => import('./mes-brouillons').then((m) => m.MesBrouillons) },

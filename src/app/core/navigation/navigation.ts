@@ -307,9 +307,14 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
   ],
 };
 
-/** Menu du profil donné (vide si rôle inconnu/null — et pour le candidat, qui n'a pas de menu dans cette coquille). */
+/** Un profil de la coquille interne : il a un menu ici. Les profils externes (candidat, membre de CAO) n'en ont pas. */
+function estInterne(role: Role): role is RoleInterne {
+  return Object.prototype.hasOwnProperty.call(NAV_BY_ROLE, role);
+}
+
+/** Menu du profil donné (vide si rôle inconnu/null — et pour un profil externe, qui n'a pas de menu dans cette coquille). */
 export function navFor(role: Role | null): NavItem[] {
-  return role && role !== 'CANDIDAT' ? NAV_BY_ROLE[role] : [];
+  return role && estInterne(role) ? NAV_BY_ROLE[role] : [];
 }
 
 /** Menu aplati (parents + enfants) du profil donné, pour les affichages sans hiérarchie (accueil). */

@@ -296,4 +296,9 @@ export interface ParametreRemiseElectronique {
   assistance: string | null;
   /** Quorum de déchiffrement proposé (« 3/5 »). */
   quorumDefaut: string | null;
+  /**
+   * ⚠️ Lot 2b (V66, S2) — jours avant la date limite où chaque détenteur dont la part n'est pas vérifiée depuis la
+   * clôture reçoit `PART_A_VERIFIER` (défaut 7 ; 400 si négatif). Absent d'un serveur antérieur à V66.
+   */
+  verificationPartJours?: number | null;
 }

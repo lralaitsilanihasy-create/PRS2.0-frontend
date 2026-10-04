@@ -68,6 +68,11 @@ const NIVEAUX = ['Simple', 'Avancée', 'Qualifiée'] as const;
               <span class="form-label">Quorum de déchiffrement proposé</span>
               <input class="form-control rea__court" type="text" id="rea-quorum" placeholder="3/5" [value]="v.quorumDefaut ?? ''" (input)="poser('quorumDefaut', $any($event.target).value || null)" />
             </label>
+            <label class="form-group">
+              <span class="form-label">Rappel de vérification des parts de clé (jours avant la date limite)</span>
+              <input class="form-control rea__court" type="number" min="0" id="rea-verif" [value]="v.verificationPartJours ?? ''" (input)="poser('verificationPartJours', $any($event.target).valueAsNumber ?? null)" />
+              <span class="form-hint">Chaque détenteur dont la part n'est pas vérifiée depuis la clôture de la cérémonie est rappelé une fois (lot 2b, S2).</span>
+            </label>
             <label class="form-group rea__large">
               <span class="form-label">Assistance aux candidats (défaut de B04-SE-14)</span>
               <textarea class="form-control" rows="2" id="rea-assistance" [value]="v.assistance ?? ''" (input)="poser('assistance', $any($event.target).value || null)"></textarea>

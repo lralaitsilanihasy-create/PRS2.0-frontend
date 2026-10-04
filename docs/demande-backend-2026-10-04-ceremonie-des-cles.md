@@ -325,3 +325,27 @@ propose donc de la fixer maintenant, et de laisser le juriste poser, s'il le veu
 | 2 | La validation de la fiche doit-elle, elle aussi, attendre la cérémonie close ? Le front propose non : la cérémonie se tient entre la validation et la publication, et c'est l'avis qui est gardé (§B2.6) | pilote |
 | 3 | Le délai du rappel de vérification, 7 jours par défaut (§B4) | pilote |
 | 4 | La phrase du pli de secours : générée et imprimée (§B2.3), ou choisie par le dépositaire ? Le front propose générée : le pli scellé est la protection, et une phrase oubliée rendrait le secours vain | pilote |
+
+---
+
+> ✅ **Front, lot 2b livré et contre-recetté en lecture seule (2026-10-04, JAR V66/V67).**
+> - **`core/securite/cles-detenteur.ts`** — WebCrypto seul, aucune dépendance npm : paire RSA-OAEP 3072 SHA-256, export SPKI
+>   et empreinte SHA-256, enveloppe `wrapKey('pkcs8')` AES-256-GCM sous PBKDF2-SHA-256 600 000 itérations (sel 16 o, iv 12 o,
+>   paramètres rangés avec l'enveloppe), déverrouillage (phrase fausse → `PhraseIncorrecte`, jamais une clé), déchiffrement
+>   d'un défi, phrase générée de **sept mots** (liste de 256 mots sans accent, 56 bits), copie hors ligne JSON. **Testé** :
+>   aller-retour complet, défi chiffré pour la clé publique et déchiffré par la clé déverrouillée, mauvaise phrase refusée.
+> - **Membre de CAO — « Ma clé »** (`features/cao/ma-cle.ts`, dans sa procédure) : publier (ou remplacer, S4) sa clé — la
+>   paire naît dans son navigateur, seule l'enveloppe part ; enregistrer sa copie ; **vérifier sa part (S2)** : l'enveloppe du
+>   serveur (ou sa copie), sa phrase, le défi ouvert, déchiffré ici, répondu — réussi, il prouve que la phrase est la bonne
+>   et que la clé publiée est la sienne ; déclarer sa part perdue ; la liste des `n` détenteurs et de leurs empreintes.
+> - **Responsable — section « Cérémonie des clés »** (`features/procedure/ceremonie-responsable.ts`) : état, `n` détenteurs
+>   (empreinte, part, dernière vérification), avertissements, **clore** (409 nomme les manquants), **rouvrir** (confirmation
+>   en deux temps ; refusé dès la première offre), **part de secours** : la paire naît sur son poste, la **phrase est
+>   générée**, affichée une fois, **imprimée sur le pli** (cadre d'impression isolé, texte échappé ; ou fichier .txt) avec
+>   l'empreinte et l'enveloppe en dernier recours ; l'enveloppe seule part, après la case « pli imprimé, scellé, remis ».
+>   Vérification de la part de secours par la phrase du pli et l'enveloppe du serveur (`?role=SECOURS`) ; perte ; remplacement.
+> - **Paramètres internes** : dépositaire (nom, organisme, fonction, contact), état de la part de secours, avertissements
+>   `SE_QUORUM_MARGE`, 409 `CEREMONIE_CLOSE` nommé. **Administrateur** : `verificationPartJours` sur l'écran de la remise
+>   électronique. **PRMP** : `CEREMONIE_NON_CLOSE` expliqué sur l'avis et les lettres.
+> - **Non recetté faute de données** : le parcours réel (publication des clés par des membres, clôture, défi contre le serveur,
+>   clés publiques servies) demande une fiche électronique, une CAO et des comptes activés dans DBPRS20 — accord du pilote.
