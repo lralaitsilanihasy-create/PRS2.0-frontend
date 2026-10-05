@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
-import { ParametreAgpmSeuil, ParametreCompteDao, ParametreRemiseElectronique, ParametresCandidats } from '../models';
+import { ConservationOffres, ParametreAgpmSeuil, ParametreCompteDao, ParametreRemiseElectronique, ParametresCandidats, PurgeOffres } from '../models';
 import { skipErrorToast } from '../core/errors/api-error';
 
 /**
@@ -86,5 +86,24 @@ export class ParametresCandidatsService {
 
   definir(p: Partial<ParametresCandidats>): Observable<ParametresCandidats> {
     return this.http.put<ParametresCandidats>(this.url, p, { context: skipErrorToast() });
+  }
+}
+
+/**
+ * ⚠️ V70 (arbitrage du pilote, 04/10) — la conservation des offres, Administrateur seul : les procédures échues, puis la purge,
+ * geste nommé et journalisé (jamais une tâche automatique).
+ */
+@Injectable({ providedIn: 'root' })
+export class ConservationOffresService {
+  private readonly http = inject(HttpClient);
+  private readonly url = `${environment.apiUrl}/admin/offres/conservation`;
+
+  lire(): Observable<ConservationOffres> {
+    return this.http.get<ConservationOffres>(this.url, { context: skipErrorToast() });
+  }
+
+  /** 409 `CONSERVATION_NON_FIXEE` ou `CONSERVATION_EN_COURS` (`details.echeance`). */
+  purger(idDmc: number): Observable<PurgeOffres> {
+    return this.http.post<PurgeOffres>(`${this.url}/${idDmc}/purger`, null, { context: skipErrorToast() });
   }
 }

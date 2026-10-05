@@ -45,6 +45,19 @@ describe('Scellement d’une offre (ADR-0013, lot 3)', () => {
     expect(Array.from(relu.fichiers['AE-acte engagement.pdf'])).toEqual([37, 80, 68, 70, 1, 2, 3]);
   });
 
+  it('format 2 (V70) : la garantie porte son code, son fichier, son montant et son émetteur', async () => {
+    const ae = new File([new Uint8Array([37, 80, 68, 70])], 'ae.pdf', { type: 'application/pdf' });
+    const gar = new File([new Uint8Array([37, 80, 68, 70, 9])], 'caution.pdf', { type: 'application/pdf' });
+    const { manifeste } = await construireContenu(
+      { idDmc: 40, lot: 2, entreprise: { nif: '1234567890', raisonSociale: 'SARL X' }, groupement: null, acteEngagement: { montantHt: 100, montantTtc: 120, monnaie: 'MGA', delai: 6, delaiUnite: 'MOIS', validiteJours: 90, rabais: null } },
+      [{ code: 'AE', fichier: ae }, { code: 'GARANTIE', fichier: gar }],
+      { code: 'GARANTIE', codeVerification: 'GAR-1', montant: 1600000, emetteur: 'Banque de recette' },
+      '2026-10-04T22:00:00',
+    );
+    expect(manifeste.version).toBe(2);
+    expect(manifeste.garantie).toEqual({ codeVerification: 'GAR-1', nomFichier: 'GARANTIE-caution.pdf', montant: 1600000, monnaie: 'MGA', emetteur: 'Banque de recette' });
+  });
+
   it('sceller puis desceller avec deux parts sur trois : le contenu revient à l’identique, sur plusieurs morceaux', async () => {
     const { cles, privees } = await troisDetenteurs();
     // Un peu plus d'un morceau : deux morceaux, le second court.

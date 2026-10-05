@@ -161,7 +161,12 @@ function motifDepot(e: unknown): string {
                   @if (fichiers()[pa.code]; as f) { <span class="text-xs text-muted">{{ f.name }} · {{ taille(f.size) }}</span> }
                   @if (erreursFichier()[pa.code]; as m) { <span class="form-error">{{ m }}</span> }
                   @if (pa.code === 'GARANTIE') {
-                    <label class="form-group do__court"><span class="form-label">Code de vérification de la garantie</span><input class="form-control" type="text" [value]="codeGarantie()" (input)="codeGarantie.set($any($event.target).value)" /></label>
+                    <div class="do__garantie">
+                      <label class="form-group"><span class="form-label">Code de vérification de la garantie</span><input class="form-control" type="text" [value]="codeGarantie()" (input)="codeGarantie.set($any($event.target).value)" /></label>
+                      <!-- ⚠️ V70 (arbitrage du pilote, 04/10) : le montant et l'émetteur de la garantie sont lus en séance. -->
+                      <label class="form-group"><span class="form-label">Montant de la garantie (Ariary)</span><input class="form-control" type="number" min="1" step="1" [value]="montantGarantie() ?? ''" (input)="montantGarantie.set($any($event.target).valueAsNumber || null)" /></label>
+                      <label class="form-group"><span class="form-label">Émetteur (banque, établissement financier)</span><input class="form-control" type="text" [value]="emetteurGarantie()" (input)="emetteurGarantie.set($any($event.target).value)" /></label>
+                    </div>
                   }
                 </li>
               }
@@ -197,6 +202,7 @@ function motifDepot(e: unknown): string {
     .do__bloc, .do__accuse { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.6rem; }
     .do__h2 { margin: 0; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-500); }
     .do__court { max-width: 22rem; }
+    .do__garantie { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: 0.5rem; }
     .do__large { grid-column: span 2; }
     .do__case { display: flex; gap: 0.5rem; align-items: center; font-size: var(--text-sm); }
     .do__ligne { display: grid; grid-template-columns: 12rem 1fr auto; gap: 0.5rem; }
@@ -241,6 +247,8 @@ export class DepotOffre implements OnInit, OnDestroy {
   readonly fichiers = signal<Record<string, File>>({});
   readonly erreursFichier = signal<Record<string, string>>({});
   readonly codeGarantie = signal('');
+  readonly montantGarantie = signal<number | null>(null);
+  readonly emetteurGarantie = signal('');
 
   readonly phase = signal<Phase>('saisie');
   readonly fait = signal(0);
@@ -285,7 +293,11 @@ export class DepotOffre implements OnInit, OnDestroy {
     if (!a.validiteJours || a.validiteJours < 1) m.push('La validité de l’offre.');
     const manquantes = this.pieces().filter((x) => x.obligatoire && !this.fichiers()[x.code]);
     if (manquantes.length) m.push(`${manquantes.length} pièce(s) à joindre : ${manquantes.map((x) => x.libelle).slice(0, 3).join(', ')}${manquantes.length > 3 ? '…' : ''}.`);
-    if (this.pieces().some((x) => x.code === 'GARANTIE') && !this.codeGarantie().trim()) m.push('Le code de vérification de la garantie.');
+    if (this.pieces().some((x) => x.code === 'GARANTIE')) {
+      if (!this.codeGarantie().trim()) m.push('Le code de vérification de la garantie.');
+      if (!(this.montantGarantie()! > 0)) m.push('Le montant de la garantie.');
+      if (!this.emetteurGarantie().trim()) m.push('L’émetteur de la garantie.');
+    }
     if (this.enGroupement() && (!this.groupement().length || this.groupement().some((g) => !g.nif.trim() || !g.raisonSociale.trim()))) m.push('Le NIF et la raison sociale de chaque membre du groupement.');
     if (Object.keys(this.erreursFichier()).length) m.push('Un fichier n’est pas accepté : remplacez-le.');
     const max = p.tailleMaxOffreMo;
@@ -392,7 +404,9 @@ export class DepotOffre implements OnInit, OnDestroy {
       const { contenu } = await construireContenu(
         { idDmc: this.idDmc, lot: this.lot(), entreprise: { nif: en.nif, raisonSociale: en.raisonSociale }, groupement: membres, acteEngagement: this.ae() as ActeEngagementSaisi },
         jointes,
-        this.pieces().some((x) => x.code === 'GARANTIE') ? { code: 'GARANTIE', codeVerification: this.codeGarantie().trim() } : null,
+        this.pieces().some((x) => x.code === 'GARANTIE')
+          ? { code: 'GARANTIE', codeVerification: this.codeGarantie().trim(), montant: this.montantGarantie()!, emetteur: this.emetteurGarantie().trim() }
+          : null,
         horloge.maintenant,
       );
 

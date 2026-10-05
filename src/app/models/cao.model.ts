@@ -192,7 +192,8 @@ export interface ClesPubliques {
 
 // ── La séance d'ouverture des plis (lot 4, V69) ───────────────────────────────────────────────────────────────
 
-export type EtatSeance = 'A_VENIR' | 'OUVERTE' | 'DECHIFFREE' | 'ILLISIBLE' | 'CLOSE';
+/** ⚠️ V70 (arbitrages du 04/10, §B2) : `PV_A_SIGNER` entre le PV produit et la dernière signature des membres présents. */
+export type EtatSeance = 'A_VENIR' | 'OUVERTE' | 'DECHIFFREE' | 'PV_A_SIGNER' | 'ILLISIBLE' | 'CLOSE';
 export type IntegriteOffre = 'INTACTE' | 'ALTEREE' | 'LECTURE_IMPOSSIBLE';
 
 /** `GET /api/fiches-marche/{idDmc}/seance` — responsable, membres de la CAO, PRMP et UGPM de la fiche. */
@@ -211,7 +212,30 @@ export interface Seance {
   /** `etat` : l'intégrité une fois l'offre ouverte, sinon l'état de l'offre. */
   offres: { numero: number | null; lot: number | null; etat: string; partsRecues: number }[];
   dechiffreeLe: string | null;
-  pv: { produit: boolean; publie: boolean } | null;
+  pv: PvSeance | null;
+}
+
+/** Une signature du PV d'ouverture (V70, §B2) — ou un empêchement constaté (`empechement`, avec son motif et qui l'a constaté). */
+export interface SignaturePv {
+  im: string;
+  nom: string;
+  president: boolean;
+  date: string;
+  empechement: boolean;
+  motif: string | null;
+  constatePar: string | null;
+}
+
+/**
+ * Le PV de la séance. ⚠️ V70 : signé électroniquement par chaque membre présent (signataires figés à la production) ; l'extrait
+ * n'est publié qu'à la dernière signature. `signe` dit aussi la signature d'un PV de constat (S5), séance restée `ILLISIBLE`.
+ */
+export interface PvSeance {
+  produit: boolean;
+  publie: boolean;
+  signe?: boolean;
+  signatures?: SignaturePv[];
+  signaturesAttendues?: { im: string; nom: string }[];
 }
 
 /** Une part chiffrée pour la clé de l'appelant ; `enveloppe` seulement si l'offre a été scellée pour une clé archivée (S4). */
@@ -232,10 +256,11 @@ export interface OffreLue {
   entreprise: { nif: string; raisonSociale: string; verification: { statut: string; source: string | null } | null; exclusion: unknown | null };
   groupement: { nif: string; raisonSociale: string; mandataire: boolean }[] | null;
   acteEngagement: { montantHt: number; montantTtc: number; delai: number; delaiUnite: 'JOURS' | 'MOIS'; validiteJours: number; rabais: string | null } | null;
-  garantie: { codeVerification: string; presente: boolean } | null;
+  /** ⚠️ V70 (§B3) : `montant`, `monnaie`, `emetteur` lus au manifeste de format 2 ; `null` pour une offre de format 1 ou illisibles. */
+  garantie: { codeVerification: string; presente: boolean; montant?: number | null; monnaie?: string | null; emetteur?: string | null } | null;
   pieces: { code: string; libelle: string; presente: boolean; nomFichier: string | null; empreinteConforme: boolean | null }[];
   piecesManquantes: string[];
-  alertes: { type: 'RAPPROCHEMENT' | 'EXCLUSION'; message: string }[];
+  alertes: { type: 'RAPPROCHEMENT' | 'EXCLUSION' | 'GARANTIE_INSUFFISANTE'; message: string }[];
 }
 
 /** `GET …/seance/lecture` — après le déchiffrement seulement (409 `SEANCE_NON_DECHIFFREE`). */

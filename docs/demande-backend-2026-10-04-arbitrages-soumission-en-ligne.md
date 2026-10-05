@@ -176,3 +176,27 @@ garantie: { codeVerification, nomFichier, montant: number, monnaie: 'MGA', emett
   **après** la livraison. En lecture et en projection : montant et émetteur, et l'alerte si elle est retenue.
 - **B4.1** : l'écran CAO de la fiche ouvert à l'UGPM en écriture.
 - **B4.2** : le champ dans l'écran « Paramètres des candidats » de l'Administrateur.
+
+---
+
+> ✅ **Front, arbitrages livrés (2026-10-05, contre le serveur V70 `d3e9565`).**
+> - **B1** : l'écran de séance (`/procedure/{idDmc}/seance`) n'ouvre plus aucune pièce, pas même pour le responsable ; seul l'espace
+>   `/cao` les ouvre. Un refus est nommé dans la lecture (403 → « réservées aux membres de la CAO », 404 → « purgée au terme de la
+>   conservation ») : le corps d'erreur d'un Blob n'étant pas décodé, le statut suffit. **Vérifié sur V70** : `PIECE_RESERVEE_CAO` pour
+>   ADMIN01 et PRMP001, fichier servi au membre de la CAO ; zéro bouton de pièce chez le responsable, six chez le membre.
+> - **B2** : composant partagé `signatures-pv.ts` — chez le membre (`/cao/procedures/{idDmc}`) : « Relire le PV (PDF) » (`ouvrirBlobSur`),
+>   case « J'ai relu le PV et je le signe », « Signer le PV d'ouverture » ; le président constate l'empêchement d'un autre signataire
+>   (motif obligatoire). Chez le responsable : le suivi, et le constat seulement une fois le président lui-même empêché. Chez la PRMP et
+>   l'UGPM : la lecture. États `PV_A_SIGNER` (« PV à signer par les membres présents ») et `CLOSE` (« Close — PV signé ») ; relecture
+>   toutes les cinq secondes pendant les signatures. Codes nommés : `NON_PRESENT`, `DEJA_SIGNE`, `PV_NON_PRODUIT`, `MOTIF_ABSENT`,
+>   `NON_SIGNATAIRE`, `SEANCE_CLOSE`. Un **PV produit avant V70** (ni signature ni signataire attendu, fiche 40) s'affiche « Signé sur
+>   papier (PV antérieur à la signature en ligne) ». Le parcours de signature est couvert par `signatures-pv.spec.ts` (4 tests) ; sa
+>   recette réelle attend la prochaine séance.
+> - **B3** : au dépôt, « Montant de la garantie (Ariary) » et « Émetteur », exigés quand la garantie est attendue ; manifeste **format 2**
+>   (`garantie: { codeVerification, nomFichier, montant, monnaie: 'MGA', emetteur }`, test dans `scellement.spec.ts`). En lecture :
+>   « jointe · 1 600 000 Ar · émise par … · code … », et l'alerte « Garantie insuffisante ».
+> - **B4.1** : le lien « Commission d'appel d'offres » de la fiche est ouvert à l'UGPM ; textes de l'écran CAO ajustés.
+> - **B4.2** : « Conservation des offres (années après la clôture de la séance) » dans `/admin/referentiels/candidats` (vide = sans
+>   limite ; enregistré vide, le front envoie `0` pour effacer), puis la section « Offres à purger » (procédures échues, « Purger… » avec
+>   confirmation ; `CONSERVATION_NON_FIXEE`, `CONSERVATION_EN_COURS` nommés). **Vérifié sur V70** : « Aucune durée n'est fixée ».
+> - **B5** : l'aide du champ « dépositaire » dit désormais « Libre : vous le désignez pour chaque procédure ».

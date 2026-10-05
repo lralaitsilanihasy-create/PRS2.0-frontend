@@ -57,16 +57,37 @@ export interface PieceJointe {
   fichier: File;
 }
 
+/**
+ * Le manifeste scellé dans l'offre. ⚠️ Format 2 (V70, arbitrage du pilote du 04/10, §B3) : la garantie porte son montant et son
+ * émetteur, lus en séance. Le serveur lit encore le format 1 (champs servis `null`) et ignore un champ inconnu.
+ */
 export interface Manifeste {
-  version: 1;
+  version: 2;
   idDmc: number;
   lot: number | null;
   entreprise: { nif: string; raisonSociale: string };
   groupement: MembreGroupement[] | null;
   acteEngagement: ActeEngagementSaisi;
   pieces: { code: string; nomFichier: string; taille: number; sha256: string }[];
-  garantie: { codeVerification: string; nomFichier: string } | null;
+  garantie: GarantieManifeste | null;
   dateScellement: string;
+}
+
+/** La garantie de soumission telle que la séance la lit : son code, son fichier, et (format 2) son montant et son émetteur. */
+export interface GarantieManifeste {
+  codeVerification: string;
+  nomFichier: string;
+  montant: number;
+  monnaie: 'MGA';
+  emetteur: string;
+}
+
+/** La garantie saisie au dépôt, rattachée à la pièce attendue `code`. */
+export interface GarantieSaisie {
+  code: string;
+  codeVerification: string;
+  montant: number;
+  emetteur: string;
 }
 
 /** Un nom d'entrée sûr et unique dans l'archive : `<code>-<nom du fichier>`, sans chemin. */
@@ -81,7 +102,7 @@ function nomEntree(code: string, nom: string): string {
 export async function construireContenu(
   base: Omit<Manifeste, 'version' | 'pieces' | 'garantie' | 'dateScellement'>,
   pieces: PieceJointe[],
-  garantie: { codeVerification: string; code: string } | null,
+  garantie: GarantieSaisie | null,
   maintenant: string,
 ): Promise<{ contenu: Uint8Array<ArrayBuffer>; manifeste: Manifeste }> {
   const entrees: Record<string, Uint8Array> = {};
@@ -94,10 +115,13 @@ export async function construireContenu(
   }
   const pieceGarantie = garantie ? lignes.find((l) => l.code === garantie.code) : null;
   const manifeste: Manifeste = {
-    version: 1,
+    version: 2,
     ...base,
     pieces: lignes,
-    garantie: garantie && pieceGarantie ? { codeVerification: garantie.codeVerification, nomFichier: pieceGarantie.nomFichier } : null,
+    garantie:
+      garantie && pieceGarantie
+        ? { codeVerification: garantie.codeVerification, nomFichier: pieceGarantie.nomFichier, montant: garantie.montant, monnaie: 'MGA', emetteur: garantie.emetteur }
+        : null,
     dateScellement: maintenant,
   };
   const zip = zipSync({ 'manifeste.json': encodeur.encode(JSON.stringify(manifeste, null, 2)), ...entrees }, { level: 0 });

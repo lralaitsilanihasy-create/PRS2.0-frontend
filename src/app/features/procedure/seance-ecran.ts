@@ -11,27 +11,47 @@ import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 import { ApportParts } from './apport-parts';
 import { LectureSeance } from './lecture-seance';
+import { SignaturesPv } from './signatures-pv';
 
 export const LIBELLES_ETAT_SEANCE: Readonly<Record<EtatSeance, string>> = {
   A_VENIR: 'À venir',
   OUVERTE: 'Ouverte — les parts arrivent',
   DECHIFFREE: 'Offres ouvertes',
+  PV_A_SIGNER: 'PV à signer par les membres présents',
   ILLISIBLE: 'Offres illisibles (constat)',
-  CLOSE: 'Close — PV produit',
+  CLOSE: 'Close — PV signé',
 };
+
+/**
+ * Les offres sont-elles ouvertes ? Après le déchiffrement, le serveur efface les parts (gardées en mémoire seulement) et sert
+ * `partsApportees = false` : compter les membres afficherait « 0 / 2 ». Recette de bout en bout du 04/10, fiche 40.
+ */
+export function offresOuvertes(s: Seance): boolean {
+  return s.etat === 'DECHIFFREE' || s.etat === 'PV_A_SIGNER' || s.etat === 'CLOSE';
+}
+
+/** « 1 / 2 » tant que les parts arrivent ; « atteint » une fois les offres ouvertes. */
+export function quorumLibelle(s: Seance): string {
+  if (offresOuvertes(s)) return `atteint (${s.quorum})`;
+  return `${s.membres.filter((m) => m.partsApportees).length + (s.secoursEmploye ? 1 : 0)} / ${s.quorum}`;
+}
 
 /**
  * La **séance d'ouverture des plis** (lot 4, V69), `/procedure/:idDmc/seance` — route transverse, garde par identité au serveur.
  * - Le **responsable de la procédure** la conduit : ouvrir à l'heure, noter les présences, apporter la **part de secours** (S3,
  *   motif), suivre le quorum, lire (mode projection), produire le **PV d'ouverture**, ou **constater l'illisibilité** (S5).
+ *   ⚠️ V70 : le PV produit attend ensuite la signature des membres présents (`PV_A_SIGNER`) ; le responsable la suit, et ne
+ *   constate un empêchement que si le président est lui-même empêché.
  * - La **PRMP** et l'**UGPM** y lisent l'état, puis la lecture et le PV — rien d'une offre avant le déchiffrement.
+ * - ⚠️ Arbitrage du pilote (04/10) : personne n'ouvre ici les **pièces** des offres, pas même le responsable — elles sont
+ *   réservées aux membres de la CAO, dans leur espace (`demande-backend-2026-10-04-arbitrages-soumission-en-ligne` §B1).
  * Les membres de la CAO apportent leurs parts depuis leur espace `/cao`. L'état se relit toutes les cinq secondes tant que la
  * séance attend des parts. Le serveur reste l'autorité : un geste refusé est nommé, jamais deviné.
  */
 @Component({
   selector: 'app-seance-ecran',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur, ApportParts, LectureSeance],
+  imports: [RouterLink, EtatErreur, ApportParts, LectureSeance, SignaturesPv],
   template: `
     <section class="se">
       <header class="page-header page-header--actions">
@@ -50,10 +70,10 @@ export const LIBELLES_ETAT_SEANCE: Readonly<Record<EtatSeance, string>> = {
         <app-etat-erreur message="La séance n'a pas pu être chargée." (reessayer)="charger()" />
       } @else if (seance(); as s) {
         <div class="se__etat">
-          <span class="badge" [class.badge-success]="s.etat === 'DECHIFFREE' || s.etat === 'CLOSE'" [class.badge-info]="s.etat === 'OUVERTE'" [class.badge-danger]="s.etat === 'ILLISIBLE'" [class.badge-neutral]="s.etat === 'A_VENIR'">{{ etats[s.etat] }}</span>
+          <span class="badge" [class.badge-success]="s.etat === 'DECHIFFREE' || s.etat === 'CLOSE'" [class.badge-info]="s.etat === 'OUVERTE' || s.etat === 'PV_A_SIGNER'" [class.badge-danger]="s.etat === 'ILLISIBLE'" [class.badge-neutral]="s.etat === 'A_VENIR'">{{ etats[s.etat] }}</span>
           @if (s.heureOuverture) { <span class="text-sm">Heure d'ouverture : <strong>{{ dateHeure(s.heureOuverture) }}</strong></span> }
           @if (s.ouverteDans != null && s.ouverteDans > 0) { <span class="text-sm text-muted">dans {{ duree(s.ouverteDans) }}</span> }
-          <span class="text-sm">Quorum : <strong>{{ apportees() }} / {{ s.quorum }}</strong> détenteurs{{ s.secoursEmploye ? ' (part de secours employée)' : '' }}</span>
+          <span class="text-sm">Quorum : <strong>{{ quorum() }}</strong> détenteurs{{ s.secoursEmploye ? ' (part de secours employée)' : '' }}</span>
         </div>
         @if (message(); as m) { <div class="alert alert-danger" role="alert">{{ m }}</div> }
 
@@ -66,7 +86,9 @@ export const LIBELLES_ETAT_SEANCE: Readonly<Record<EtatSeance, string>> = {
                   @if (conduite() && s.etat === 'OUVERTE') {
                     <label class="se__case"><input type="checkbox" [checked]="m.present" (change)="basculerPresence(m.im, $any($event.target).checked)" /> {{ m.nom }}{{ m.president ? ' — président' : '' }}</label>
                   } @else { <span>{{ m.nom }}{{ m.president ? ' — président' : '' }}{{ m.present ? ' · présent' : '' }}</span> }
-                  <span class="badge" [class.badge-success]="m.partsApportees" [class.badge-neutral]="!m.partsApportees">{{ m.partsApportees ? 'parts apportées' : 'en attente' }}</span>
+                  @if (!offresOuvertes(s)) {
+                    <span class="badge" [class.badge-success]="m.partsApportees" [class.badge-neutral]="!m.partsApportees">{{ m.partsApportees ? 'parts apportées' : 'en attente' }}</span>
+                  }
                 </li>
               }
             </ul>
@@ -113,9 +135,10 @@ export const LIBELLES_ETAT_SEANCE: Readonly<Record<EtatSeance, string>> = {
           }
         }
 
-        @if (s.etat === 'DECHIFFREE' || s.etat === 'CLOSE') {
+        @if (offresOuvertes(s)) {
           <h2 class="se__h2">Lecture des offres</h2>
-          <app-lecture-seance [idDmc]="idDmc" [piecesOuvrables]="!estUgpm()" [projection]="projection()" />
+          <!-- Arbitrage du pilote (04/10) : les pièces s'ouvrent pour les membres de la CAO seulement, depuis /cao. -->
+          <app-lecture-seance [idDmc]="idDmc" [piecesOuvrables]="false" [projection]="projection()" />
         }
 
         @if (conduite() && s.etat === 'DECHIFFREE') {
@@ -126,10 +149,15 @@ export const LIBELLES_ETAT_SEANCE: Readonly<Record<EtatSeance, string>> = {
           </section>
         }
         @if (s.pv?.produit) {
-          <div class="se__actions">
-            <button type="button" class="btn btn-primary" [disabled]="travail()" (click)="telechargerPv()">Enregistrer le PV (PDF)</button>
-            @if (s.pv?.publie) { <span class="text-sm text-muted">Publié sur la procédure en ligne (extrait sans les alertes).</span> }
-          </div>
+          <!-- ⚠️ V70 (§B2) : le PV se signe par les membres présents, depuis leur espace ; publié à la dernière signature. -->
+          <section class="card se__bloc" aria-label="Signatures du PV d'ouverture">
+            <app-signatures-pv [idDmc]="idDmc" [seance]="s" [vue]="conduite() ? 'responsable' : 'lecture'" (geste)="seance.set($event)" />
+            <div class="se__actions">
+              <button type="button" class="btn btn-primary" [disabled]="travail()" (click)="telechargerPv()">Enregistrer le PV (PDF)</button>
+              @if (s.pv?.publie) { <span class="text-sm text-muted">Publié sur la procédure en ligne (extrait sans les alertes).</span> }
+              @else if (!s.pv?.signe) { <span class="text-sm text-muted">L'extrait public, s'il est prévu, paraît à la dernière signature.</span> }
+            </div>
+          </section>
         }
       }
     </section>
@@ -175,13 +203,13 @@ export class SeanceEcran implements OnInit, OnDestroy {
   private sondage: ReturnType<typeof setInterval> | undefined;
 
   /** PRMP et UGPM lisent ; tout autre lecteur servi est le responsable (le serveur refuse les autres). */
-  readonly estUgpm = computed(() => this.auth.role() === 'UGPM');
   readonly conduite = computed(() => !['PRMP', 'UGPM'].includes(this.auth.role() ?? ''));
   readonly lienFiche = computed(() => (['PRMP', 'UGPM'].includes(this.auth.role() ?? '') ? ['/prmp', 'dao', this.idDmc] : null));
-  readonly apportees = computed(() => {
+  readonly quorum = computed(() => {
     const s = this.seance();
-    return s ? s.membres.filter((m) => m.partsApportees).length + (s.secoursEmploye ? 1 : 0) : 0;
+    return s ? quorumLibelle(s) : '';
   });
+  readonly offresOuvertes = offresOuvertes;
   readonly autresTexte = computed(() => (this.seance()?.autres ?? []).map((a) => `${a.nom}${a.qualite ? ' (' + a.qualite + ')' : ''}`).join(' ; '));
 
   constructor() {
@@ -192,7 +220,8 @@ export class SeanceEcran implements OnInit, OnDestroy {
     this.charger();
     this.sondage = setInterval(() => {
       const e = this.seance()?.etat;
-      if (e === 'OUVERTE' || e === 'A_VENIR') this.relire();
+      // ⚠️ V70 : on relit aussi pendant que les signatures du PV arrivent.
+      if (e === 'OUVERTE' || e === 'A_VENIR' || e === 'PV_A_SIGNER') this.relire();
     }, 5000);
   }
 
@@ -248,6 +277,9 @@ export class SeanceEcran implements OnInit, OnDestroy {
       case 'QUORUM_POSSIBLE':
         this.message.set(`Le quorum reste atteignable (${details['possibles'] ?? '?'} détenteurs possibles pour un quorum de ${details['quorum'] ?? '?'}) : l'illisibilité ne se constate pas.`);
         return;
+      case 'SEANCE_CLOSE':
+        this.message.set('Le PV est produit : les présences ne se modifient plus.');
+        return;
       case 'SEANCE_NON_DECHIFFREE':
         this.message.set("Les offres ne sont pas encore ouvertes : le quorum n'est pas atteint.");
         return;
@@ -300,7 +332,7 @@ export class SeanceEcran implements OnInit, OnDestroy {
   produirePv(): void {
     this.travail.set(true);
     this.message.set(null);
-    this.service.produirePv(this.idDmc, this.observations().trim() || null).subscribe({ next: (s) => this.apres(s, "Le PV d'ouverture est produit."), error: (e: ApiError) => this.echec(e) });
+    this.service.produirePv(this.idDmc, this.observations().trim() || null).subscribe({ next: (s) => this.apres(s, "Le PV d'ouverture est produit : il attend la signature des membres présents."), error: (e: ApiError) => this.echec(e) });
   }
 
   telechargerPv(): void {

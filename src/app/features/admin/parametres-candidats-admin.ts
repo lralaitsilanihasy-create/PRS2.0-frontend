@@ -5,6 +5,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { ParametresCandidats } from '../../models';
 import { ParametresCandidatsService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
+import { ConservationOffresAdmin } from './conservation-offres-admin';
 
 /**
  * Écran Administrateur — « Candidats : paramètres de l'espace en ligne » (`GET`/`PUT /api/parametres/candidats`,
@@ -16,7 +17,7 @@ import { EtatErreur } from '../../shared/ui/etat-erreur';
 @Component({
   selector: 'app-parametres-candidats-admin',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [EtatErreur],
+  imports: [EtatErreur, ConservationOffresAdmin],
   template: `
     <section class="pca">
       <header class="page-header">
@@ -27,7 +28,8 @@ import { EtatErreur } from '../../shared/ui/etat-erreur';
         <button type="button" class="btn btn-secondary btn-sm" (click)="charger()" [disabled]="loading()">Rafraîchir</button>
       </header>
       <p class="page-role">
-        Comment une entreprise s'inscrit, comment son NIF se vérifie, et quand un compte est nettoyé. Un réglage
+        Comment une entreprise s'inscrit, comment son NIF se vérifie, quand un compte est nettoyé, et combien de temps les
+        offres déposées sont conservées. Un réglage
         s'applique dès l'enregistrement, aux comptes existants comme aux nouveaux.
       </p>
 
@@ -78,11 +80,19 @@ import { EtatErreur } from '../../shared/ui/etat-erreur';
               <span class="form-hint">La limite multipart du serveur est de 10 Mo : au-delà, ce plafond ne sert à rien.</span>
               @if (erreurChamp('tailleMaxPieceMo'); as m) { <span class="form-error">{{ m }}</span> }
             </label>
+            <!-- ⚠️ V70 (arbitrage du pilote, 04/10) : la durée de conservation des offres est fixée ici ; vide = sans limite. -->
+            <label class="form-group">
+              <span class="form-label">Conservation des offres (années après la clôture de la séance)</span>
+              <input class="form-control pca__court" type="number" min="1" max="100" id="pca-conservation" [value]="v.offreConservationAnnees ?? ''" (input)="poser('offreConservationAnnees', $any($event.target).valueAsNumber || null)" />
+              <span class="form-hint">Vide : sans limite, rien n'est supprimé. Une fois la durée échue, la purge reste un geste de l'Administrateur, procédure par procédure ; le journal, les empreintes, la lecture et le PV restent.</span>
+              @if (erreurChamp('offreConservationAnnees'); as m) { <span class="form-error">{{ m }}</span> }
+            </label>
           </div>
           <div class="pca__pied">
             <button type="submit" class="btn btn-primary" [disabled]="saving()">{{ saving() ? 'Enregistrement…' : 'Enregistrer' }}</button>
           </div>
         </form>
+        <app-conservation-offres [annees]="enregistre()?.offreConservationAnnees ?? null" />
       }
     </section>
   `,
@@ -104,6 +114,8 @@ export class ParametresCandidatsAdmin implements OnInit {
   readonly saving = signal(false);
   readonly erreur = signal(false);
   readonly valeurs = signal<ParametresCandidats | null>(null);
+  /** La valeur enregistrée (et non la saisie en cours) : c'est elle qui règle la liste des procédures échues. */
+  readonly enregistre = signal<ParametresCandidats | null>(null);
   readonly erreursChamps = signal<Record<string, string>>({});
 
   ngOnInit(): void {
@@ -116,6 +128,7 @@ export class ParametresCandidatsAdmin implements OnInit {
     this.service.lire().subscribe({
       next: (p) => {
         this.valeurs.set(p);
+        this.enregistre.set(p);
         this.loading.set(false);
       },
       error: () => {
@@ -138,10 +151,12 @@ export class ParametresCandidatsAdmin implements OnInit {
     if (!v || this.saving()) return;
     this.saving.set(true);
     this.erreursChamps.set({});
-    this.service.definir(v).subscribe({
+    // V70 : un champ absent garde sa valeur ; `0` efface la durée (retour à « sans limite »).
+    this.service.definir({ ...v, offreConservationAnnees: v.offreConservationAnnees ?? 0 }).subscribe({
       next: (p) => {
         this.saving.set(false);
         this.valeurs.set(p);
+        this.enregistre.set(p);
         this.toast.success('Paramètres des candidats enregistrés.');
       },
       error: (e: ApiError) => {

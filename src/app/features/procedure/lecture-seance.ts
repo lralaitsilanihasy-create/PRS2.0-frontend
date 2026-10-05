@@ -15,7 +15,8 @@ const LIBELLES_INTEGRITE: Readonly<Record<string, string>> = {
  * La **lecture en séance** (lot 4, `GET …/seance/lecture`) : offre par offre, dans l'ordre d'arrivée, ce que la séance lit à
  * haute voix — soumissionnaire et groupement, lot, montants, délai, validité, rabais, garantie, pièces manquantes, intégrité,
  * vérification du NIF, alertes (rapprochements, exclusion) — puis les offres non ouvertes et pourquoi. Les pièces s'ouvrent par
- * `ouvrirBlobSur` (`piecesOuvrables` : la CAO, le responsable et la PRMP ; l'UGPM lit sans ouvrir). `projection` grossit le texte.
+ * `ouvrirBlobSur` (`piecesOuvrables` : les membres de la CAO seulement, arbitrage du pilote du 04/10 ; les autres lisent sans
+ * ouvrir). `projection` grossit le texte.
  */
 @Component({
   selector: 'app-lecture-seance',
@@ -45,11 +46,12 @@ const LIBELLES_INTEGRITE: Readonly<Record<string, string>> = {
                 <dt>Délai</dt><dd>{{ a.delai }} {{ a.delaiUnite === 'MOIS' ? 'mois' : 'jours' }}</dd>
                 <dt>Validité</dt><dd>{{ a.validiteJours }} jours</dd>
                 <dt>Rabais</dt><dd>{{ a.rabais || '—' }}</dd>
-                <dt>Garantie</dt><dd>{{ o.garantie ? (o.garantie.presente ? 'jointe' : 'absente') + ' · code ' + o.garantie.codeVerification : '—' }}</dd>
+                <dt>Garantie</dt><dd>{{ garantie(o) }}</dd>
               </dl>
             }
             @if (o.piecesManquantes.length) { <p class="text-sm ls__manque">Pièces manquantes : {{ o.piecesManquantes.join(' ; ') }}</p> }
-            @for (a of o.alertes; track $index) { <p class="alert alert-warning ls__alerte" role="note"><span>{{ a.type === 'EXCLUSION' ? 'Exclusion' : 'Rapprochement' }} : {{ a.message }}</span></p> }
+            @for (a of o.alertes; track $index) { <p class="alert alert-warning ls__alerte" role="note"><span>{{ alertes[a.type] ?? a.type }} : {{ a.message }}</span></p> }
+            @if (erreurPiece()?.idOffre === o.idOffre) { <p class="alert alert-danger" role="alert"><span>{{ erreurPiece()!.message }}</span></p> }
             @if (piecesOuvrables() && o.pieces.length) {
               <ul class="ls__pieces">
                 @for (p of o.pieces; track p.code) {
@@ -104,6 +106,12 @@ export class LectureSeance implements OnInit {
   readonly erreur = signal(false);
   readonly lecture = signal<Lecture | null>(null);
   readonly ouverture = signal<string | null>(null);
+  readonly erreurPiece = signal<{ idOffre: string; message: string } | null>(null);
+  readonly alertes: Readonly<Record<OffreLue['alertes'][number]['type'], string>> = {
+    RAPPROCHEMENT: 'Rapprochement',
+    EXCLUSION: 'Exclusion',
+    GARANTIE_INSUFFISANTE: 'Garantie insuffisante',
+  };
 
   ngOnInit(): void {
     this.charger();
@@ -132,14 +140,37 @@ export class LectureSeance implements OnInit {
     return v == null ? '—' : `${new Intl.NumberFormat('fr-FR').format(v)} Ar`;
   }
 
+  /** ⚠️ V70 (§B3) : montant et émetteur lus au manifeste de format 2 ; une offre de format 1 n'a que le code. */
+  garantie(o: OffreLue): string {
+    const g = o.garantie;
+    if (!g) return '—';
+    const parts = [g.presente ? 'jointe' : 'absente'];
+    if (g.montant != null) parts.push(this.montant(g.montant));
+    if (g.emetteur) parts.push('émise par ' + g.emetteur);
+    parts.push('code ' + g.codeVerification);
+    return parts.join(' · ');
+  }
+
   ouvrir(idOffre: string, nom: string): void {
     this.ouverture.set(idOffre + nom);
+    this.erreurPiece.set(null);
     this.service.piece(this.idDmc(), idOffre, nom).subscribe({
       next: (b) => {
         this.ouverture.set(null);
         ouvrirBlobSur(b);
       },
-      error: () => this.ouverture.set(null),
+      // Le corps d'erreur d'un Blob n'est pas décodé : le refus est nommé d'après le statut (V70 — 403 `PIECE_RESERVEE_CAO`,
+      // 404 après la purge de conservation).
+      error: (e: { status?: number }) => {
+        this.ouverture.set(null);
+        const message =
+          e.status === 403
+            ? 'Les pièces des offres sont réservées aux membres de la commission d’appel d’offres.'
+            : e.status === 404
+              ? 'Cette pièce n’est plus conservée : la durée de conservation des offres est échue et elles ont été purgées.'
+              : 'La pièce n’a pas pu être ouverte.';
+        this.erreurPiece.set({ idOffre, message });
+      },
     });
   }
 }

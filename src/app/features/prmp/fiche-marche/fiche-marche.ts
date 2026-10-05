@@ -253,10 +253,13 @@ export class FicheMarcheEcran {
     const id = this.idDmc();
     return id != null && this.estPrmp() && this.modeElectronique() ? ['/prmp', 'dao', id, 'retraits'] : null;
   });
-  /** ⚠️ Lot 2a (04/10, Q11) — la commission d'appel d'offres : désignée par la PRMP seule, en remise électronique seule. */
+  /**
+   * ⚠️ Lot 2a (04/10, Q11) — la commission d'appel d'offres, en remise électronique seule. ⚠️ V70 (arbitrage du pilote, 04/10) :
+   * saisie par la PRMP **et l'UGPM** ; la décision reste celle de la PRMP.
+   */
   readonly lienCao = computed<(string | number)[] | null>(() => {
     const id = this.idDmc();
-    return id != null && this.estPrmp() && this.modeElectronique() ? ['/prmp', 'dao', id, 'cao'] : null;
+    return id != null && ['PRMP', 'UGPM'].includes(this.auth.role() ?? '') && this.modeElectronique() ? ['/prmp', 'dao', id, 'cao'] : null;
   });
   /** ⚠️ Lot 3 (V68) — le registre des dépôts : PRMP de la fiche, remise électronique. */
   readonly lienDepots = computed<(string | number)[] | null>(() => {

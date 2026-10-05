@@ -51,6 +51,36 @@ export interface ParametresCandidats {
   delaiInactiviteMois: number;
   /** Plafond d'une pièce de l'entreprise (Mo) — la limite multipart du serveur est de 10 Mo. */
   tailleMaxPieceMo: number;
+  /**
+   * ⚠️ V70 (arbitrage du pilote, 04/10) — durée de conservation des offres, en années après la clôture de la séance (1 à 100).
+   * `null` = sans limite (défaut). Au `PUT`, `0` l'efface (retour à « sans limite »).
+   */
+  offreConservationAnnees?: number | null;
+}
+
+/** Une procédure dont la durée de conservation est échue et qui garde des offres sur disque (V70). */
+export interface ProcedureEchue {
+  idDmc: number;
+  reference: string;
+  objet: string;
+  etatSeance: string;
+  /** PV entièrement signé, ou constat S5 dont le PV est signé. */
+  closeLe: string;
+  echeance: string;
+  offresAPurger: number;
+}
+
+/** `GET /api/admin/offres/conservation` (Administrateur) — vide tant que la durée n'est pas fixée ; la plus ancienne d'abord. */
+export interface ConservationOffres {
+  annees: number | null;
+  echues: ProcedureEchue[];
+}
+
+/** `POST /api/admin/offres/conservation/{idDmc}/purger` — restent la ligne de l'offre, l'empreinte, la lecture, l'accusé, le PV. */
+export interface PurgeOffres {
+  idDmc: number;
+  offresPurgees: number;
+  purgeeLe: string;
 }
 
 // ── Entreprise (§B3 à §B5) ────────────────────────────────────────────────────────────────────────────────────

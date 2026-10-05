@@ -253,3 +253,26 @@ L'ADR-0013 §2 subordonne la reconstitution au serveur à un test d'interopérab
 > - Vérifié en lecture seule sur la fiche 34 : le responsable voit « À venir », quorum 0 / 2, « Ouvrir la séance » ; le membre « Au moment de
 >   l'ouverture, vous apporterez ici vos parts » ; la PRMP la même page sans action. Aucune écriture. L'heure d'ouverture est vide : la
 >   fiche 34 n'a pas de `B04-OP-02/03`.
+
+> ✅ **Recette de bout en bout, 2026-10-04 au soir (JAR V69, accord du pilote) — VERTE**, de la fiche jusqu'au PV d'ouverture.
+> - **Préparation** : fiche 40 (MEN, travaux, 5 lots) révisée en v5 et passée en remise électronique, un DQE minimal par lot (règle
+>   `BESOIN_INCOMPLET` travaux du 02/10, postérieure à la v4) ; le calendrier de la **seule** ligne 303288 recalé par l'Administrateur
+>   (`PUT /api/marche-previsions/{id}`, arbitrage du pilote) : tout le plan en base s'arrêtait au 08/06/2026, d'où `DATES_ORDRE`. CAO des
+>   deux membres de recette, responsable ADMIN01, cérémonie close à 20:25 (3 parts, quorum 2) ; fiche validée ; dossier 100361 →
+>   réception, dispatch, examen, PV 48 FAV signé ; avis spécifique imprimé ; procédure publiée en ligne.
+> - **Dépôts** (candidat C000000001, Chromium, scellement réel) : refus nommé avant l'ouverture (« Les dépôts ne sont pas encore
+>   ouverts ») ; lots 1, 2, 3 déposés avec accusés ; lot 1 remplacé ; lot 3 retiré à l'écran ; registre PRMP avant l'échéance : le
+>   **nombre seul** (2).
+> - **Séance** : ouverture refusée avant l'échéance (« La date limite des dépôts n'est pas passée ») ; ouverte à 21:31 ; présences et
+>   un autre présent ; mauvaise phrase refusée (« Cette phrase ne déverrouille pas la clé ») ; deux apports → déchiffrement au quorum ;
+>   les offres n° 2 et n° 4 **intactes**, n° 1 (remplacée) et n° 3 (retirée) non ouvertes avec leur motif ; une pièce ouverte en onglet ;
+>   PV produit et téléchargé ; PRMP en lecture sans geste ; registre des dépôts complet après l'échéance.
+> - **Corrigé au front** : après le déchiffrement, le serveur sert `partsApportees = false` (les parts sont effacées), et l'écran affichait
+>   « Quorum : 0 / 2 » ; il affiche désormais « atteint (2) » et masque les badges de parts une fois les offres ouvertes.
+>
+> **Constats pour le backend** (non bloquants) :
+> - **C1 — `partsApportees` après le déchiffrement** : les parts doivent disparaître, mais le **fait** qu'un membre a apporté les siennes
+>   pourrait rester `true` (le PV et le journal le savent). Le front s'en passe aujourd'hui.
+> - **C2 — présentation du PV d'ouverture** : la date limite est imprimée brute (« 2026-10-04T21:30 ») ; les montants sans séparateur
+>   (« 230000000 ») ; des codes au lieu de mots (« 6 MOIS », « NON_VERIFIE ») ; une offre remplacée désignée par son identifiant
+>   technique (« remplacée par l'offre 239f6619-… ») plutôt que par son numéro d'arrivée (« par l'offre n° 4 »).

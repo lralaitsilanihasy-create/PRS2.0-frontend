@@ -2,9 +2,10 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
+import { espaceExterneDe } from '../../core/auth/auth.guard';
 import { LIBELLES_ROLES } from '../../core/auth/libelles-profils';
 import { Actualite } from '../../models/actualite.model';
-import { AuditLog, CompteursAdmin } from '../../models';
+import { AuditLog, CompteursAdmin, Role } from '../../models';
 import { ActualiteService, ParametreActualitesService } from '../../services/actualite.services';
 import { AuditLogService, KpiService, PreControleService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
@@ -22,7 +23,8 @@ interface FileAttente {
 }
 
 /** Nombre de profils de l'application : au complet, l'actualité vise « tous profils ». */
-const NB_PROFILS = Object.keys(LIBELLES_ROLES).length;
+// ⚠️ Soumission en ligne (04/10) : les profils EXTERNES (candidat, membre de CAO) ne lisent pas l'actualité de la coquille.
+const NB_PROFILS = Object.keys(LIBELLES_ROLES).filter((r) => !espaceExterneDe(r as Role)).length;
 
 /**
  * Les réglages suivis par « Derniers changements de paramétrage » — **noms de ressource de l'API**,

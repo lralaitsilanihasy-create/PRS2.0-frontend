@@ -215,6 +215,22 @@ export class SeanceService {
     return this.http.get(this.url(idDmc, '/pv'), { responseType: 'blob', context: skipErrorToast() });
   }
 
+  /**
+   * ⚠️ V70 (§B2) — un membre présent signe le PV (signature simple : l'acte authentifié du membre connecté). 403 `NON_PRESENT`,
+   * 409 `DEJA_SIGNE` / `PV_NON_PRODUIT`. À la dernière signature, la séance passe à `CLOSE` et l'extrait est publié.
+   */
+  signerPv(idDmc: number): Observable<Seance> {
+    return this.http.post<Seance>(this.url(idDmc, '/pv/signer'), null, { context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ V70 (§B2, Q1) — le président (ou le responsable si le président est lui-même empêché) constate qu'un signataire ne peut
+   * pas signer ; le motif est imprimé au PV. 400 `MOTIF_ABSENT` / `NON_SIGNATAIRE`, 409 `DEJA_SIGNE`.
+   */
+  constaterEmpechement(idDmc: number, im: string, motif: string): Observable<Seance> {
+    return this.http.post<Seance>(this.url(idDmc, '/pv/empechement'), { im, motif }, { context: skipErrorToast() });
+  }
+
   /** S5 : 409 `QUORUM_POSSIBLE` (`details.possibles`, `details.quorum`) tant que le quorum reste atteignable. */
   constaterIllisible(idDmc: number, motif: string): Observable<Seance> {
     return this.http.post<Seance>(this.url(idDmc, '/constater-illisible'), { motif }, { context: skipErrorToast() });

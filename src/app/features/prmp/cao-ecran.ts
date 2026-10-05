@@ -35,7 +35,7 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
 
 /**
  * **Commission d'appel d'offres** d'une fiche DAO en remise électronique (lot 2a, V67, décision Q11) — l'écran de la
- * PRMP : la décision de nomination (référence, date, PDF), les membres avec leur origine (entité contractante, ou expert
+ * PRMP, ⚠️ et de l'UGPM depuis V70 (arbitrage du pilote, 04/10 : elle prépare et saisit, la décision reste celle de la PRMP) : la décision de nomination (référence, date, PDF), les membres avec leur origine (entité contractante, ou expert
  * de l'objet du DAO — **un seul expert au plus**, pilote 04/10), **un** président, et l'état des comptes : la désignation
  * crée le compte `MEMBRE_CAO` et envoie l'invitation par courriel. Tous les membres détiennent une part. Une CAO par
  * DAO ; une cérémonie close la fige (409 `CEREMONIE_CLOSE` : le responsable rouvre d'abord). Les exclusions (PRMP, UGPM,
@@ -57,7 +57,7 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
         <h1 class="page-title">Commission d'appel d'offres</h1>
       </header>
       <p class="page-role">
-        Les membres que vous désignez par décision détiennent chacun une part de la clé qui ouvrira les offres : des agents de
+        Les membres désignés par la décision de la PRMP — saisie par elle ou par l'UGPM — détiennent chacun une part de la clé qui ouvrira les offres : des agents de
         votre entité, et au plus un expert de l'objet du marché. Chacun reçoit par courriel une invitation à activer son
         compte, puis publie sa clé à la cérémonie. Une commission par appel d'offres.
       </p>
@@ -65,7 +65,7 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
       @if (chargement()) {
         <p class="text-muted" role="status">Chargement…</p>
       } @else if (refuse()) {
-        <div class="alert alert-info" role="status"><span>La commission se lit par qui lit la fiche, et se désigne par la PRMP de la fiche.</span></div>
+        <div class="alert alert-info" role="status"><span>La commission se lit par qui lit la fiche, et se saisit par la PRMP ou l'UGPM de la fiche.</span></div>
       } @else if (erreur()) {
         <app-etat-erreur message="La commission n'a pas pu être chargée." (reessayer)="charger()" />
       } @else {

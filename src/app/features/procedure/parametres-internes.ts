@@ -132,7 +132,7 @@ import { CeremonieResponsable } from './ceremonie-responsable';
                 <input class="form-control" type="text" [value]="depContact()" (input)="depContact.set($any($event.target).value)" />
               </label>
             </div>
-            <span class="form-hint">L'organisme attendu reste à fixer par le juriste (l'ARMP est une piste). Sa clé naît sur votre poste, en sa présence, à la cérémonie ; sa phrase est imprimée sur le pli qu'il scelle.</span>
+            <span class="form-hint">Libre : vous le désignez pour chaque procédure (arbitrage du pilote, 04/10). Sa clé naît sur votre poste, en sa présence, à la cérémonie ; sa phrase est imprimée sur le pli qu'il scelle.</span>
             @if (erreurDe('depositaire'); as m) { <span class="form-error">{{ m }}</span> }
           </fieldset>
 
