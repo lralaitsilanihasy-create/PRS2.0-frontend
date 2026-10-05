@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 
 import { ApiError, codeErreur } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
@@ -98,10 +98,12 @@ import { PartSecours } from './part-secours';
     .cr__case { display: flex; gap: 0.5rem; align-items: center; font-size: var(--text-sm); }
   `,
 })
-export class CeremonieResponsable implements OnInit {
+export class CeremonieResponsable {
   readonly idDmc = input.required<number>();
   /** Le dépositaire désigné dans les paramètres internes (son compte, V71) ; il génère lui-même la clé de secours. */
   readonly depositaire = input<Depositaire | null>(null);
+  /** Le quorum des paramètres internes : son changement relit la cérémonie. */
+  readonly quorum = input<number | null>(null);
   /** Un geste a changé l'état : le parent relit les paramètres internes (part de secours, journal). */
   readonly changement = output<void>();
 
@@ -126,8 +128,14 @@ export class CeremonieResponsable implements OnInit {
   readonly erreurAction = signal<string | null>(null);
   readonly confirmerReouverture = signal(false);
 
-  ngOnInit(): void {
-    this.charger();
+  constructor() {
+    // Lue au premier affichage, puis relue chaque fois que les paramètres internes changent (quorum, dépositaire) : sans quoi,
+    // après « Enregistrer », la section gardait « quorum — » et une part de secours sans nom (capture du 05/10, fiche 41).
+    effect(() => {
+      this.depositaire();
+      this.quorum();
+      untracked(() => this.charger());
+    });
   }
 
   charger(): void {

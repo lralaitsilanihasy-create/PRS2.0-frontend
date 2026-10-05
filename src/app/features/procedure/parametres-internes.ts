@@ -166,7 +166,7 @@ import { CeremonieResponsable } from './ceremonie-responsable';
         @if (idDmc(); as id) {
           <!-- ⚠️ Lot 4 (V69) — la séance d'ouverture des plis, conduite par le responsable. -->
           <p class="pi__seance"><a class="btn btn-primary btn-sm" [routerLink]="['/procedure', id, 'seance']">Séance d'ouverture des plis</a></p>
-          <app-ceremonie-responsable [idDmc]="id" [depositaire]="d.partDeSecours?.depositaire ?? null" (changement)="charger(true)" />
+          <app-ceremonie-responsable [idDmc]="id" [depositaire]="d.partDeSecours?.depositaire ?? null" [quorum]="d.quorum" (changement)="charger(true)" />
         }
 
         <h2 class="pi__h2">Journal des modifications</h2>
