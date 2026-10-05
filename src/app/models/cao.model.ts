@@ -292,6 +292,8 @@ export interface OffreLue {
   formulaires?: boolean | null;
   /** ⚠️ Lot 5 — les totaux **recalculés par le serveur** depuis le bordereau ; `htMin`/`ttcMin` en marché à commande. */
   totaux?: { ht: number; tva: number; ttc: number; htMin: number | null; ttcMin: number | null } | null;
+  /** ⚠️ Lot 5, §B5 — les documents remplis que l'offre porte (leur PDF existe) ; `null` sans formulaires ou après la purge. */
+  partiesFormulaires?: DocumentFormulaire[] | null;
 }
 
 /** Les alertes lues en séance — V70, puis les contrôles des formulaires du lot 5 (05/10). Jamais un refus : la commission décide. */

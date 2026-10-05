@@ -358,3 +358,9 @@ justement marquées.
 > `MATERIEL_INCOMPLET`, `SOUS_DETAIL_INCOHERENT` — les mêmes que les avertissements de l'écran au dépôt. Offre conforme (K1 = 1,21,
 > sous-détail à 100 000 000 Ar) : **aucune** alerte. `…/formulaires` en 200, `DQE.pdf` et `CAPACITES.pdf` en 200, PV en 200.
 > Restent **B5** (parties de l'offre dans la lecture) et **B6** (le planning pris pour une liste).
+
+> ✅ **Front, 2026-10-05 — B5 et B6 contre-recettés** (JAR du 05/10 au soir). La lecture n'affiche plus que les documents de
+> `partiesFormulaires` : fiche 45 → « Bordereau des prix » et « Conformité technique » ; fiche 46 → « Bordereau des prix » et
+> « Capacités », pour chaque offre (offres ouvertes avant la livraison comprises). Fiche 46 : `PIECE-102` « Planning de mobilisation
+> du personnel et du matériel » est revenue à joindre (`formulaire = null`, obligatoire) ; les deux listes restent `PERSONNEL` et
+> `MATERIEL`. **Le lot 5 est clos.**

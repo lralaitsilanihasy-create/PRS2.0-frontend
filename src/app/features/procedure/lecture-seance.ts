@@ -63,9 +63,9 @@ const LIBELLES_INTEGRITE: Readonly<Record<string, string>> = {
             @if (o.piecesManquantes.length) { <p class="text-sm ls__manque">Pièces manquantes : {{ o.piecesManquantes.join(' ; ') }}</p> }
             @for (a of o.alertes; track $index) { <p class="alert alert-warning ls__alerte" role="note"><span>{{ alertes[a.type] ?? a.type }} : {{ a.message }}</span></p> }
             @if (erreurPiece()?.idOffre === o.idOffre) { <p class="alert alert-danger" role="alert"><span>{{ erreurPiece()!.message }}</span></p> }
-            @if (piecesOuvrables() && o.formulaires) {
+            @if (piecesOuvrables() && documents(o).length) {
               <ul class="ls__pieces" aria-label="Formulaires remplis en ligne">
-                @for (d of documentsFormulaires; track d.type) {
+                @for (d of documents(o); track d.type) {
                   <li><button type="button" class="btn btn-sm btn-secondary" [disabled]="ouverture() === o.idOffre + d.type" (click)="ouvrirFormulaire(o.idOffre, d.type)">{{ d.libelle }} (rempli)</button></li>
                 }
               </ul>
@@ -145,10 +145,7 @@ export class LectureSeance implements OnInit {
     SOUS_DETAIL_INCOHERENT: 'Sous-détail incohérent',
     FORMULAIRES_ILLISIBLES: 'Formulaires illisibles',
   };
-  /**
-   * Lot 5 — les documents remplis, produits à la volée. La lecture ne dit pas la catégorie : la conformité n'existe qu'en
-   * fournitures, et un 404 le dit simplement. Le DQE des travaux est le même document que le bordereau.
-   */
+  /** Lot 5 — les documents remplis, produits à la volée ; le DQE des travaux est le même document que le bordereau. */
   readonly documentsFormulaires: readonly { type: DocumentFormulaire; libelle: string }[] = [
     { type: 'BORDEREAU', libelle: 'Bordereau des prix' },
     { type: 'CONFORMITE', libelle: 'Conformité technique' },
@@ -193,6 +190,12 @@ export class LectureSeance implements OnInit {
     return parts.join(' · ');
   }
 
+  /** §B5 — seulement les documents que l'offre porte (`partiesFormulaires`, servi par la lecture). */
+  documents(o: OffreLue): readonly { type: DocumentFormulaire; libelle: string }[] {
+    const parties = o.partiesFormulaires ?? [];
+    return this.documentsFormulaires.filter((d) => parties.includes(d.type));
+  }
+
   ouvrirFormulaire(idOffre: string, type: DocumentFormulaire): void {
     this.ouverture.set(idOffre + type);
     this.erreurPiece.set(null);
@@ -207,7 +210,7 @@ export class LectureSeance implements OnInit {
           e.status === 403
             ? 'Les formulaires des offres sont réservés aux membres de la commission d’appel d’offres.'
             : e.status === 404
-              ? 'Cette offre ne comporte pas ce formulaire, ou il n’est plus conservé.'
+              ? 'Ce formulaire n’est plus conservé : la durée de conservation des offres est échue.'
               : 'Le formulaire n’a pas pu être produit.';
         this.erreurPiece.set({ idOffre, message });
       },
