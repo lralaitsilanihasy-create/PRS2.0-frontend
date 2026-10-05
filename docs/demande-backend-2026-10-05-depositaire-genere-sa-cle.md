@@ -177,3 +177,12 @@ Aujourd'hui (lot 4, §B2), le responsable apporte la part de secours depuis son 
 > **Constat pour le backend (non bloquant)** — `POST /api/auth/login` répond 409 `COMPTE_A_ACTIVER` sans dire **quel** compte
 > (membre de CAO ou dépositaire). Le front choisit l'écran d'activation d'après la page visée (`returnUrl`), puis propose l'autre en
 > cas de 404. Un `details.espace` (`'cao'` | `'depositaire'`) dans la réponse lèverait l'ambiguïté.
+>
+> ✅ **Recette en navigateur, 2026-10-05 (serveur V71 `d067a74`, accord du pilote) — VERTE**, fiche 34 :
+> cérémonie rouverte (`A_REFAIRE`) ; dépositaire **sans adresse** → 400 `depositaire.email` nommé ; avec adresse → compte `D000000001`
+> `INVITE`, code lu au journal ; connexion avant activation (`returnUrl=/depositaire`) → menée à `/depositaire/activation` ; activation,
+> connexion, « Espace du dépositaire » ; « Mes procédures » : « Votre clé de secours est à générer » ; clé générée dans Chromium (phrase
+> de sept mots, pli `.txt`), publiée, **vérifiée par le défi** (`VERIFIEE`) ; le responsable : `POST …/cles/secours` → 403
+> `GESTE_DU_DEPOSITAIRE`, compte « Compte actif D000000001 », part en lecture **sans aucun bouton** ; les deux membres republient leur
+> clé ; cérémonie close — détenteurs `MEMBRE:PUBLIEE`, `MEMBRE:PUBLIEE`, `SECOURS:VERIFIEE:DEPOSITAIRE`. **Reste à recetter** la demande
+> en séance et l'apport par le dépositaire, à la prochaine procédure avec des offres.
