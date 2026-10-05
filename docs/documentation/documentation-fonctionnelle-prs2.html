@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>PRS 2.0 — Documentation fonctionnelle, de la planification à la soumission électronique</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 18mm 16mm; }
+  :root { --encre: #1f2433; --gris: #5b6275; --filet: #d9dce5; --fond: #f4f5f9; --accent: #4b2fa6; --accent-clair: #ece8fa; --or: #b8860b; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif; font-size: 10.2pt; line-height: 1.5; color: var(--encre); margin: 0; }
+  h1, h2, h3, h4 { color: var(--accent); line-height: 1.25; }
+  h1 { font-size: 22pt; margin: 0 0 6pt; }
+  h2 { font-size: 15pt; margin: 22pt 0 8pt; padding-bottom: 4pt; border-bottom: 2px solid var(--accent); page-break-after: avoid; }
+  h3 { font-size: 12pt; margin: 14pt 0 5pt; page-break-after: avoid; }
+  h4 { font-size: 10.5pt; margin: 10pt 0 3pt; color: var(--encre); page-break-after: avoid; }
+  p { margin: 0 0 6pt; }
+  ul, ol { margin: 0 0 7pt; padding-left: 16pt; }
+  li { margin-bottom: 2pt; }
+  table { width: 100%; border-collapse: collapse; margin: 6pt 0 10pt; font-size: 9.2pt; page-break-inside: auto; }
+  th, td { border: 1px solid var(--filet); padding: 4pt 6pt; text-align: left; vertical-align: top; }
+  th { background: var(--accent-clair); color: var(--accent); font-weight: 600; }
+  tr { page-break-inside: avoid; }
+  .chapitre { page-break-before: always; }
+  .encadre { background: var(--fond); border-left: 3pt solid var(--accent); padding: 6pt 9pt; margin: 8pt 0; page-break-inside: avoid; }
+  .encadre.or { border-left-color: var(--or); }
+  .encadre p:last-child, .encadre ul:last-child { margin-bottom: 0; }
+  .etiquette { display: inline-block; background: var(--accent-clair); color: var(--accent); border-radius: 3pt; padding: 0 4pt; font-size: 8.6pt; font-weight: 600; }
+  .gris { color: var(--gris); }
+  .flux { display: flex; flex-wrap: wrap; gap: 4pt; align-items: center; margin: 6pt 0 10pt; font-size: 9pt; }
+  .flux span.e { background: var(--accent); color: #fff; border-radius: 3pt; padding: 3pt 6pt; }
+  .flux span.f { color: var(--gris); }
+  /* Couverture */
+  .couverture { height: 255mm; display: flex; flex-direction: column; justify-content: space-between; }
+  .couverture .bandeau { background: var(--accent); color: #fff; padding: 22mm 14mm 16mm; border-radius: 6pt; }
+  .couverture .bandeau h1 { color: #fff; font-size: 30pt; }
+  .couverture .bandeau .sous { font-size: 14pt; opacity: 0.92; margin-top: 4pt; }
+  .couverture .bandeau .inst { margin-top: 18pt; font-size: 10.5pt; opacity: 0.85; }
+  .couverture .meta { font-size: 9.5pt; color: var(--gris); }
+  .couverture .meta td { border: none; padding: 2pt 8pt 2pt 0; }
+  /* Sommaire */
+  .sommaire ol { list-style: none; padding-left: 0; }
+  .sommaire li { display: flex; justify-content: space-between; border-bottom: 1px dotted var(--filet); padding: 3pt 0; }
+  .sommaire li.sous { padding-left: 14pt; font-size: 9.4pt; color: var(--gris); }
+  .deux { display: grid; grid-template-columns: 1fr 1fr; gap: 10pt; }
+</style>
+</head>
+<body>
+
+<!-- ═════════════════════════════ COUVERTURE ═════════════════════════════ -->
+<section class="couverture">
+  <div class="bandeau">
+    <h1>PRS 2.0</h1>
+    <div class="sous">Documentation fonctionnelle<br>De la planification des marchés à la soumission électronique des offres</div>
+    <div class="inst">Ministère de l'Économie et des Finances — Commission nationale des marchés</div>
+  </div>
+  <div>
+    <table class="meta">
+      <tr><td><strong>Objet</strong></td><td>Ce que fait l'application, pour qui, et dans quel ordre : la planification (PPM), le circuit de contrôle a priori de la Commission, la préparation du dossier d'appel d'offres (DAO) et la remise électronique des offres.</td></tr>
+      <tr><td><strong>Lecteurs</strong></td><td>Pilote du projet, Commission, PRMP et UGPM, Administrateur, juriste ; toute personne qui découvre l'application.</td></tr>
+      <tr><td><strong>État décrit</strong></td><td>Application au 4 octobre 2026. Les points encore ouverts sont signalés comme tels (§ 10).</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ═════════════════════════════ SOMMAIRE ═════════════════════════════ -->
+<section class="chapitre sommaire">
+  <h2>Sommaire</h2>
+  <ol>
+    <li><span>1. Vue d'ensemble</span></li>
+    <li><span>2. Les profils et l'accès à l'application</span></li>
+    <li><span>3. La planification : le dossier de planification (PPM)</span></li>
+    <li><span>4. Le circuit de contrôle a priori de la Commission</span></li>
+    <li class="sous"><span>Réception, dispatch, examen, procès-verbal, visa et signature</span></li>
+    <li class="sous"><span>Après la signature : levée des observations, SIGMP, archivage, renvoi</span></li>
+    <li><span>5. Ce qui accompagne le circuit : délais, notifications, délégation, intérim, mandats</span></li>
+    <li><span>6. La mise en concurrence : la fiche DAO</span></li>
+    <li><span>7. La publication : avis spécifique et lettres d'invitation</span></li>
+    <li><span>8. La soumission électronique des offres</span></li>
+    <li class="sous"><span>Espace candidat, commission d'appel d'offres, cérémonie des clés, dépôt scellé, ouverture des plis</span></li>
+    <li><span>9. L'administration de l'application</span></li>
+    <li><span>10. Points encore ouverts</span></li>
+    <li><span>11. Glossaire</span></li>
+  </ol>
+</section>
+
+<!-- ═════════════════════════════ 1. VUE D'ENSEMBLE ═════════════════════════════ -->
+<section class="chapitre">
+  <h2>1. Vue d'ensemble</h2>
+  <p>PRS 2.0 (<em>Procurement Review System</em>) est l'application de la Commission nationale des marchés (CNM). Elle porte, dans un même outil, la vie d'un marché public depuis sa <strong>planification</strong> jusqu'à l'<strong>ouverture des offres</strong> reçues en ligne :</p>
+  <div class="flux">
+    <span class="e">Plan de passation (PPM)</span><span class="f">→</span>
+    <span class="e">Contrôle a priori par la CNM</span><span class="f">→</span>
+    <span class="e">Fiche DAO</span><span class="f">→</span>
+    <span class="e">Contrôle du DAO</span><span class="f">→</span>
+    <span class="e">Avis publié</span><span class="f">→</span>
+    <span class="e">Offres déposées et scellées</span><span class="f">→</span>
+    <span class="e">Ouverture des plis</span>
+  </div>
+  <h3>Les grands principes</h3>
+  <ul>
+    <li><strong>Un dossier, un circuit.</strong> Tout ce que la PRMP soumet à la Commission — plan de passation, dossier d'appel d'offres — suit le même circuit de contrôle, étape par étape, avec ses délais et sa trace.</li>
+    <li><strong>Le serveur décide, l'écran montre.</strong> Les droits, les contrôles et les états sont tenus par le serveur ; l'écran n'offre que les gestes possibles et nomme clairement un refus.</li>
+    <li><strong>Rien ne s'efface.</strong> Une mise à jour crée une nouvelle version, un document produit est figé, chaque décision est journalisée avec son auteur et son heure.</li>
+    <li><strong>Les documents officiels sont produits, pas recopiés.</strong> Procès-verbaux, DAO, avis, accusés : l'application les produit à partir des données saisies, sur les modèles officiels.</li>
+    <li><strong>Une offre électronique est illisible avant l'heure.</strong> Elle est chiffrée sur le poste du candidat ; seule la commission d'appel d'offres, réunie au quorum à l'heure d'ouverture, peut l'ouvrir.</li>
+  </ul>
+  <h3>Les trois familles de dossiers</h3>
+  <table>
+    <tr><th>Famille</th><th>Contenu</th><th>Sous-types</th></tr>
+    <tr><td><strong>DDP</strong> — Dossier de planification</td><td>Le plan de passation des marchés (PPM), sa fiche de présentation, ses pièces, et le projet d'AGPM quand il est requis.</td><td><span class="etiquette">PPM</span> ou <span class="etiquette">PPM-AGPM</span>, déduit par le serveur (un marché en appel d'offres ouvert impose l'AGPM).</td></tr>
+    <tr><td><strong>DMC</strong> — Dossier de mise en concurrence</td><td>Le dossier d'appel d'offres (DAO), produit depuis la fiche DAO.</td><td>Choisi à la saisie.</td></tr>
+    <tr><td><strong>DDM</strong> — Dossier de marché</td><td>Le marché à conclure.</td><td>Choisi à la saisie.</td></tr>
+  </table>
+  <p class="gris">Chaque dossier porte une référence continue : numéro, famille, entité, année (par exemple <em>00012/DDP/CRM-ANT/2026</em>).</p>
+</section>
+
+<!-- ═════════════════════════════ 2. PROFILS ═════════════════════════════ -->
+<section class="chapitre">
+  <h2>2. Les profils et l'accès à l'application</h2>
+  <h3>Les dix profils internes</h3>
+  <table>
+    <tr><th>Profil</th><th>Rôle dans l'application</th></tr>
+    <tr><td><strong>PRMP</strong> — Personne responsable des marchés publics</td><td>Prépare et soumet les dossiers de son entité (PPM, DAO), suit leur contrôle, reçoit les PV et lettres de renvoi, rectifie, demande un retrait, publie l'avis, désigne la commission d'appel d'offres.</td></tr>
+    <tr><td><strong>UGPM</strong> — Unité de gestion de la passation des marchés</td><td>Travaille sous le périmètre de sa PRMP : prépare les brouillons, les marchés, les pièces ; ne soumet pas.</td></tr>
+    <tr><td><strong>Président</strong> de la Commission</td><td>Dispatche les dossiers, vise les PV dont il a fait le dispatch, signe, exerce par délégation les tâches des profils subordonnés.</td></tr>
+    <tr><td><strong>Chef de commission</strong> (CC)</td><td>Dispatche dans sa localité, vise et signe, réattribue, exerce par délégation certaines tâches.</td></tr>
+    <tr><td><strong>Secrétaire</strong></td><td>Réceptionne les dossiers soumis : contrôle de recevabilité pièce par pièce, enregistrement.</td></tr>
+    <tr><td><strong>Membre</strong></td><td>Examine le dossier qui lui est attribué, rédige le projet de PV et émet son avis, signe.</td></tr>
+    <tr><td><strong>Contrôleur vérificateur</strong></td><td>Vérifie la levée des observations d'un PV favorable avec réserves, transmet la décision à SIGMP.</td></tr>
+    <tr><td><strong>Assistant contrôleur</strong></td><td>Archive les PV définitifs et reçoit les lettres de renvoi.</td></tr>
+    <tr><td><strong>Chargé de publication</strong></td><td>Tient le portail de transparence (publications, documents publics).</td></tr>
+    <tr><td><strong>Administrateur</strong></td><td>Comptes, référentiels, paramètres, journal ; désigne le responsable d'une procédure électronique.</td></tr>
+  </table>
+  <h3>Les deux profils externes</h3>
+  <table>
+    <tr><th>Profil</th><th>Rôle</th><th>Espace</th></tr>
+    <tr><td><strong>Candidat</strong></td><td>Une entreprise qui consulte les procédures ouvertes, retire le DAO et dépose son offre en ligne.</td><td>Espace candidat, séparé de l'application interne.</td></tr>
+    <tr><td><strong>Membre de CAO</strong></td><td>Membre de la commission d'appel d'offres désignée par la PRMP : il détient une part de la clé qui ouvre les offres.</td><td>Espace « commission d'appel d'offres », séparé lui aussi.</td></tr>
+  </table>
+  <div class="encadre"><p>Les profils externes n'atteignent <strong>aucun</strong> écran ni aucune donnée interne : le serveur le leur refuse, et l'application les ramène toujours dans leur espace.</p></div>
+
+  <h3>Se connecter, s'inscrire</h3>
+  <ul>
+    <li><strong>Entrée publique</strong> : la page d'accueil présente l'application à trois publics — PRMP et UGPM, Commission, Entreprises — avec ce que chacun peut y faire.</li>
+    <li><strong>Connexion</strong> par identifiant (agents) ou adresse électronique (candidats, membres de CAO). La session est portée par un cookie sécurisé : aucun jeton n'est conservé dans le navigateur.</li>
+    <li><strong>Inscription d'une PRMP</strong> : publique, avec pièces (arrêté de nomination, CIN) ; le compte reste en attente jusqu'à sa validation par l'Administrateur. La PRMP crée ensuite le compte de son UGPM.</li>
+    <li><strong>Inscription d'un candidat</strong> : publique, confirmée par un code envoyé par courriel.</li>
+    <li><strong>Compte d'un membre de CAO</strong> : créé à sa désignation par la PRMP ; il l'active par le code reçu dans son invitation.</li>
+  </ul>
+
+  <h3>L'écran d'accueil « À faire »</h3>
+  <p>À la connexion, chaque profil du circuit arrive sur <strong>« À faire »</strong> : la liste de ce que le circuit attend de lui, par urgence, avec le délai qui court. Chaque ligne ouvre la page du dossier, où le geste attendu (viser, retourner, rédiger une lettre de renvoi…) s'ouvre directement. Le menu latéral est rangé en rubriques et peut se réduire en rail ; il est identique d'un poste à l'autre pour un même profil.</p>
+</section>
+
+<!-- ═════════════════════════════ 3. PLANIFICATION ═════════════════════════════ -->
+<section class="chapitre">
+  <h2>3. La planification : le dossier de planification (PPM)</h2>
+  <p>La PRMP (ou son UGPM) constitue le dossier de planification de son entité pour l'année, puis la PRMP le soumet à la Commission.</p>
+  <h3>Composer le dossier</h3>
+  <ul>
+    <li><strong>La fiche de présentation</strong> : dérivée du plan, avec les justifications à saisir (par exemple pour un mode de passation dérogatoire).</li>
+    <li><strong>Le plan de passation</strong> : saisi dans une grille au format du PPM officiel — marchés, bénéficiaires, lots, processus et dates prévisionnelles (calendrier d'activités par mode de passation) — ou <strong>importé depuis le PDF</strong> du plan. À l'import, une entité inconnue peut être créée sur place ; son rattachement est ensuite approuvé par l'Administrateur.</li>
+    <li><strong>Le projet d'AGPM</strong>, quand le plan contient un marché qui l'exige (le serveur le détermine, ainsi que le sous-type du dossier).</li>
+    <li><strong>Les pièces jointes</strong> attendues pour la famille du dossier.</li>
+  </ul>
+  <p>Le dossier se prépare en brouillon, se relit dans un aperçu fidèle au document officiel, puis se soumet.</p>
+  <h3>Mettre à jour un plan</h3>
+  <div class="deux">
+    <div class="encadre"><h4>Mise à jour = nouvelle version</h4><p>Un plan déjà contrôlé ne se modifie jamais en place : la mise à jour crée une <strong>nouvelle version</strong>, avec la même composition qu'à la création. L'écart avec la version précédente est figé ; les marchés supprimés reçoivent leur état final. Seule la dernière version est proposée à la mise à jour.</p></div>
+    <div class="encadre or"><h4>Rectification ≠ mise à jour</h4><p>La <strong>rectification</strong> corrige la version courante en réponse aux observations d'un PV favorable avec réserves (§ 4). Elle se fait par réimport du plan ; un écart limité (au plus trois ajouts et trois retraits) est toléré. Les versions archivées restent consultables.</p></div>
+  </div>
+  <h3>Le statut des marchés</h3>
+  <p>Chaque marché du plan porte un statut tiré d'un référentiel administrable (prévu, lancé, attribué…). Un marché passe <em>lancé</em> à la première publication de son avis (§ 7).</p>
+  <h3>Retirer un dossier</h3>
+  <p>La PRMP peut demander le retrait d'un dossier <strong>à toute étape du circuit tant que son PV n'est pas signé</strong>. Le Chef de commission accepte ou rejette la demande ; un retrait accepté remet le dossier en brouillon et purge son circuit.</p>
+</section>
+
+<!-- ═════════════════════════════ 4. CIRCUIT ═════════════════════════════ -->
+<section class="chapitre">
+  <h2>4. Le circuit de contrôle a priori de la Commission</h2>
+  <div class="flux">
+    <span class="e">Soumis</span><span class="f">→</span><span class="e">Recevabilité</span><span class="f">→</span><span class="e">Enregistré</span><span class="f">→</span><span class="e">Dispatché</span><span class="f">→</span><span class="e">Examiné</span><span class="f">→</span><span class="e">Navette du PV</span><span class="f">→</span><span class="e">PV signé</span><span class="f">→</span><span class="e">Suites</span><span class="f">→</span><span class="e">Clôturé</span>
+  </div>
+  <p>Chaque dossier a sa <strong>page</strong>, commune à tous les profils : une frise des sept étapes (chacune avec son acteur et ses dates), l'étape en cours, le geste à poser, les documents et le journal complet.</p>
+
+  <h3>4.1 Réception et recevabilité <span class="etiquette">Secrétaire</span></h3>
+  <ul>
+    <li>Le Secrétaire contrôle les pièces jointes <strong>une par une</strong> : conforme, non conforme ou manquante, avec une observation.</li>
+    <li>Une pièce obligatoire non conforme empêche l'enregistrement. Le Secrétaire signale alors les pièces manquantes à la PRMP : le dossier passe <em>en attente de pièces complémentaires</em>, et la PRMP le relance explicitement une fois complété.</li>
+    <li>Le dossier recevable est enregistré et numéroté.</li>
+  </ul>
+
+  <h3>4.2 Dispatch <span class="etiquette">Président</span> <span class="etiquette">Chef de commission</span></h3>
+  <ul>
+    <li>Le Président ou le Chef de commission attribue le dossier à un Membre, avec une consigne. Le pré-dispatch des dossiers de la centrale revient au Président.</li>
+    <li>Le Président peut dispatcher à un Chef de commission, qui réattribue ensuite à un Membre (navette à deux niveaux, ci-dessous). Seul le dispatcheur peut retirer ou reprendre une attribution.</li>
+    <li>Seul l'<strong>attributaire</strong> examine le dossier.</li>
+  </ul>
+
+  <h3>4.3 Examen <span class="etiquette">Membre</span></h3>
+  <p>L'examen suit un fil séquentiel, avec un brouillon enregistré au fil de l'eau :</p>
+  <div class="flux"><span class="e">Fiche de présentation</span><span class="f">→</span><span class="e">Chaque ligne du plan</span><span class="f">→</span><span class="e">AGPM</span><span class="f">→</span><span class="e">Pièces</span><span class="f">→</span><span class="e">Dossier</span><span class="f">→</span><span class="e">Synthèse</span></div>
+  <ul>
+    <li>À chaque étape, la <strong>grille des points de contrôle</strong> propre au sous-type de dossier (points communs et points spécifiques, administrables). Une étape sans contenu n'est pas contrôlée.</li>
+    <li>Une non-conformité porte son texte (« Au lieu de … / Lire … ») : <strong>pas de texte, pas d'observation</strong>.</li>
+    <li>Un <strong>pré-contrôle</strong> automatique (assistant) signale les anomalies probables du plan ; le Membre les retient ou les écarte. L'avis proposé à la fin est cohérent avec les non-conformités relevées.</li>
+    <li>L'examen d'une <strong>mise à jour</strong> ne porte que sur ce qui a changé. Un examen peut être réinitialisé tant qu'il n'est pas soumis.</li>
+    <li>À la soumission, le Membre émet son <strong>avis</strong> : favorable (FAV), favorable avec réserves (FAVR) ou défavorable ; le projet de PV est produit.</li>
+  </ul>
+
+  <h3>4.4 La navette du PV, le visa et la signature</h3>
+  <ul>
+    <li>Le projet de PV remonte au dispatcheur, qui le <strong>retourne</strong> au Membre pour reprise ou le <strong>vise</strong>. Le visa est réservé au dispatcheur lui-même — même par délégation, personne d'autre ne vise.</li>
+    <li><strong>Navette à deux niveaux</strong> (Président → CC → Membre) : le Membre soumet au CC, qui retourne ou transmet au Président ; le Président retourne au CC ou vise. Au visa, il choisit les co-signataires.</li>
+    <li>Chaque PV est signé par <strong>deux personnes distinctes</strong> au moins, chacune une seule fois. Une signature par intérim porte la mention correspondante.</li>
+    <li>Les PV sont produits sur les <strong>modèles officiels</strong> (quatorze modèles), avec le nom du Membre parmi les présents.</li>
+  </ul>
+
+  <h3>4.5 Après la signature</h3>
+  <table>
+    <tr><th>Avis du PV</th><th>Suite</th></tr>
+    <tr><td><strong>Favorable</strong></td><td>La décision est transmise à SIGMP (enregistrement interne), puis le PV définitif est archivé par l'Assistant. La PRMP reçoit son PV définitif.</td></tr>
+    <tr><td><strong>Favorable avec réserves</strong></td><td>Les observations du PV sont <strong>figées</strong> à la signature (une par ligne non conforme, une par pièce non conforme). La PRMP rectifie (par réimport du plan, pièces corrigées) ; le Vérificateur décide observation par observation (levée ou maintenue). Toutes levées : transmission SIGMP, puis archivage.</td></tr>
+    <tr><td><strong>Lettre de renvoi</strong></td><td>Quand des compléments sont nécessaires, une lettre de renvoi est signée ; l'examen est suspendu jusqu'à ce que la PRMP transmette ses compléments, puis le dossier est <strong>réexaminé</strong>.</td></tr>
+  </table>
+  <p>Les écrans « Résultat examen » regroupent, par cartes, les projets de PV, les PV définitifs et les lettres de renvoi de chaque profil.</p>
+</section>
+
+<!-- ═════════════════════════════ 5. ACCOMPAGNEMENT ═════════════════════════════ -->
+<section class="chapitre">
+  <h2>5. Ce qui accompagne le circuit</h2>
+  <h3>Les délais de traitement</h3>
+  <p>Chaque étape est <strong>chronométrée automatiquement</strong>, de l'entrée dans l'étape à sa fin, en heures ouvrées, hors des attentes imputables à la PRMP. La fin prévue se calcule sur les <strong>délais standards</strong>, administrables. Les infobulles de la frise disent qui a fait quoi et quand.</p>
+  <h3>Les notifications</h3>
+  <ul>
+    <li>Une cloche dans la barre du haut, alimentée en temps réel, et une page « Notifications » pour tous les profils, avec un compteur tenu par le serveur.</li>
+    <li>Chaque notification mène à l'écran du geste attendu.</li>
+    <li>Les erreurs et avertissements s'affichent dans une boîte de dialogue, qui reste jusqu'à ce qu'on la ferme.</li>
+    <li>Une messagerie interne relie les profils de la Commission.</li>
+  </ul>
+  <h3>La délégation ascendante</h3>
+  <p>Le Président et le Chef de commission exécutent automatiquement les tâches de certains profils subordonnés (neuf paires définies en base : Président → Secrétaire, CC, Membre, Vérificateur, Assistant ; CC → Secrétaire, Membre, Vérificateur, Assistant). Ces tâches apparaissent sous la rubrique « Exercé par délégation ». Les actes d'identité (le visa du dispatcheur, la signature en son nom) ne se délèguent pas.</p>
+  <h3>L'intérim</h3>
+  <p>Un titulaire absent (Président, Chef de commission) désigne son intérimaire pour une période, avec une pièce justificative ; l'Administrateur peut le faire en repli. L'intérimaire agit dans le périmètre du titulaire, sous sa propre identité, et ses actes portent la mention « par intérim ». Une bannière le rappelle à chacun.</p>
+  <h3>Les mandats de la PRMP</h3>
+  <ul>
+    <li>Un mandat dure trois ans, renouvelable une fois ; la reconduction est un nouveau mandat avec un nouvel arrêté.</li>
+    <li>Les dossiers restent au nom de la PRMP d'attribution ; la PRMP en fonction les traite.</li>
+    <li>En <strong>vacance de poste</strong> (aucun mandat actif), tout traitement est suspendu, avec un message explicite, jusqu'à la nomination.</li>
+  </ul>
+  <h3>Les rattachements de contrôle</h3>
+  <p>Des chaînes Membre → Vérificateur → Assistant orientent les dossiers favorables avec réserves vers la bonne personne, sans jamais bloquer un autre agent habilité.</p>
+</section>
+
+<!-- ═════════════════════════════ 6. FICHE DAO ═════════════════════════════ -->
+<section class="chapitre">
+  <h2>6. La mise en concurrence : la fiche DAO</h2>
+  <p>Pour chaque marché en appel d'offres du plan contrôlé, la PRMP prépare le <strong>dossier d'appel d'offres</strong> non pas en rédigeant un document, mais en remplissant un <strong>formulaire structuré</strong> : la <em>fiche DAO</em>. L'application produit ensuite les documents types de l'ARMP remplis.</p>
+  <h3>Le parcours en sept étapes</h3>
+  <ol>
+    <li><strong>Choisir la ligne du plan</strong> parmi les lignes éligibles. La catégorie (fournitures et services, travaux, prestations intellectuelles) et la forme du marché (quantité fixe, à commande, contrat-cadre) sont reprises du plan.</li>
+    <li><strong>Le cadrage</strong> : les grandes options (allotissement, tranches, variantes, groupement, garantie de soumission, mode de remise papier ou électronique, prix…) qui ouvrent ou ferment les rubriques de la fiche.</li>
+    <li><strong>Les blocs</strong> : les informations du DAO, rubrique par rubrique, avec une saisie par lot quand le marché est alloti. Chaque champ montre, sous lui, l'extrait du document où il sera imprimé.</li>
+    <li><strong>Les reprises</strong> : ce qui se reprend d'une rubrique à l'autre.</li>
+    <li><strong>Les contrôles</strong> : un bilan des règles bloquantes et des avertissements, rendu par le serveur.</li>
+    <li><strong>La validation</strong> : la fiche validée est figée dans une version ; une correction passe par une révision.</li>
+    <li><strong>Les documents</strong> : DPAO (ou DPAC, DPIC), acte d'engagement (un par lot), CCAP, formulaires du candidat, bordereaux — produits sur les documents types officiels, en Word et en PDF.</li>
+  </ol>
+  <h3>Les listes structurées</h3>
+  <table>
+    <tr><th>Bloc</th><th>Contenu</th></tr>
+    <tr><td><strong>Besoin</strong></td><td>Les articles par lot (fournitures) ou le devis quantitatif et estimatif par série (travaux), saisissables ou collés depuis un tableur.</td></tr>
+    <tr><td><strong>Moyens</strong></td><td>Le matériel et le personnel exigés (travaux).</td></tr>
+    <tr><td><strong>Pièces</strong></td><td>Les pièces administratives et les pièces de l'offre exigées ; elles deviennent la liste des pièces attendues des candidats en ligne.</td></tr>
+  </table>
+  <p>Une liste écrite ailleurs se colle en une fois (« Coller une liste ») ; l'application la découpe et montre l'aperçu avant d'enregistrer.</p>
+  <h3>Importer un DAO existant</h3>
+  <p>Un DAO déjà rédigé (PDF ou Word) peut être importé : l'application le lit à la lumière des documents types, et <strong>propose</strong> des valeurs pour les champs, avec leur degré de confiance et le passage du document d'où elles viennent. Rien ne s'applique sans que la PRMP le coche. Les listes repérées se copient dans « Coller une liste ».</p>
+  <h3>Le contrôle du DAO</h3>
+  <p>La fiche validée produit le <strong>dossier de mise en concurrence</strong>, que la PRMP soumet à la Commission. Il suit le circuit du § 4 ; la Commission lit la fiche telle quelle, sans pouvoir la modifier.</p>
+</section>
+
+<!-- ═════════════════════════════ 7. PUBLICATION ═════════════════════════════ -->
+<section class="chapitre">
+  <h2>7. La publication : avis spécifique et lettres d'invitation</h2>
+  <ul>
+    <li>Quand le PV du DAO est <strong>signé favorable</strong> (ou favorable avec réserves une fois les réserves levées), la PRMP produit l'<strong>avis spécifique d'appel d'offres</strong> sur le modèle officiel : date de publication, numéro et date du journal des marchés publics, supports de publication. Le compte bancaire de l'ARMP pour le prix du DAO y est imprimé (paramètre de l'Administrateur).</li>
+    <li>La première publication fait passer le marché à l'état <em>lancé</em>.</li>
+    <li>En <strong>prestations intellectuelles</strong>, la liste restreinte reçoit des <strong>lettres d'invitation</strong> au lieu d'un avis public.</li>
+    <li>En remise électronique, l'avis ne se publie qu'une fois la <strong>cérémonie des clés close</strong> (§ 8.3) : sans clés publiées, aucun candidat ne pourrait sceller son offre.</li>
+  </ul>
+</section>
+
+<!-- ═════════════════════════════ 8. SOUMISSION ÉLECTRONIQUE ═════════════════════════════ -->
+<section class="chapitre">
+  <h2>8. La soumission électronique des offres</h2>
+  <p>Quand la fiche DAO choisit la <strong>remise électronique</strong>, la procédure se déroule en ligne de bout en bout : retrait du dossier, dépôt des offres, ouverture des plis.</p>
+  <div class="flux">
+    <span class="e">Fiche en remise électronique</span><span class="f">→</span><span class="e">CAO désignée</span><span class="f">→</span><span class="e">Cérémonie des clés</span><span class="f">→</span><span class="e">Avis publié</span><span class="f">→</span><span class="e">Retrait du DAO</span><span class="f">→</span><span class="e">Offres scellées</span><span class="f">→</span><span class="e">Séance d'ouverture</span><span class="f">→</span><span class="e">PV d'ouverture</span>
+  </div>
+  <div class="encadre">
+    <h4>Le principe du scellement</h4>
+    <p>Une offre est <strong>chiffrée sur le poste du candidat</strong>, avant de partir. La clé qui l'ouvre est coupée en parts, une par membre de la commission d'appel d'offres, plus une part de secours. Il faut réunir un nombre minimal de parts — le <strong>quorum</strong> — pour l'ouvrir, et le serveur refuse toute part avant l'heure d'ouverture. Ni le serveur, ni un administrateur, ni un membre seul ne peuvent donc lire une offre avant la séance.</p>
+  </div>
+
+  <h3>8.1 Les réglages de la fiche et les paramètres internes</h3>
+  <ul>
+    <li>La rubrique <strong>« Remise électronique »</strong> de la fiche : adresse de la plateforme, ouverture des dépôts, heure de référence, niveau de signature, formats et tailles des fichiers, remplacement et retrait autorisés, prorogation en cas d'indisponibilité, assistance aux candidats. Des dates se calculent seules (ouverture des plis = date limite + délai).</li>
+    <li>Un <strong>responsable de la procédure</strong>, contrôleur de la CNM désigné par l'Administrateur, tient les <strong>paramètres internes</strong>, que personne d'autre ne lit : le quorum, la date de la cérémonie, le dépositaire de la part de secours. Il conduit la cérémonie et la séance d'ouverture ; il ne détient aucune part.</li>
+  </ul>
+
+  <h3>8.2 La commission d'appel d'offres (CAO) <span class="etiquette">PRMP</span></h3>
+  <ul>
+    <li>La PRMP désigne la CAO de chaque appel d'offres <strong>par une décision</strong> (référence, date, PDF signé) : des agents de l'entité contractante, et <strong>au plus un expert</strong> de l'objet du marché ; un président parmi eux ; deux membres au moins.</li>
+    <li>Ne peuvent pas en être : la PRMP, l'UGPM, les contrôleurs de la CNM, les candidats inscrits.</li>
+    <li>Chaque membre reçoit par courriel une invitation à activer son compte. Tous détiennent une part de la clé.</li>
+  </ul>
+
+  <h3>8.3 La cérémonie des clés <span class="etiquette">Membres de CAO</span> <span class="etiquette">Responsable</span></h3>
+  <ul>
+    <li>Chaque membre, depuis son espace, <strong>génère sa clé</strong> sur son poste et la protège par une phrase secrète de son choix ; seule la clé publique et une enveloppe que le serveur ne peut pas ouvrir sont envoyées. Le membre retrouve l'empreinte de sa clé dans la liste publiée, et garde une copie hors ligne.</li>
+    <li>La <strong>part de secours</strong> naît sur le poste du responsable, en présence du dépositaire : sa phrase est générée et imprimée sur un <strong>pli scellé</strong>, remis au dépositaire.</li>
+    <li>Le responsable <strong>clôt la cérémonie</strong> quand toutes les clés sont publiées ; les clés publiques sont alors servies aux candidats, et la composition se fige.</li>
+    <li><strong>La procédure de secours</strong> : une marge de quorum (avertissement si le quorum égale le nombre de membres) ; la vérification d'une part par un défi qui ne révèle rien, avec un rappel avant la date limite ; la part de secours ; le remplacement d'une clé perdue ; la réouverture de la cérémonie tant qu'aucune offre n'est déposée.</li>
+  </ul>
+
+  <h3>8.4 L'espace candidat <span class="etiquette">Candidat</span></h3>
+  <ul>
+    <li><strong>Procédures ouvertes</strong> : consultables sans compte — référence, objet, lots, calendrier, règles de la remise électronique.</li>
+    <li><strong>Inscription</strong> d'une entreprise (un compte par entreprise), confirmée par un code envoyé par courriel.</li>
+    <li><strong>Mon entreprise</strong> : raison sociale, NIF, STAT, RCS (uniques sur la plateforme), représentant, pièces. Le NIF est vérifié sur pièces par l'Administrateur (ou automatiquement par la DGI quand le raccordement existera) ; cette vérification ne bloque jamais un dépôt.</li>
+    <li><strong>Retrait du DAO</strong> : libre pour un candidat connecté ; chaque téléchargement est inscrit au <strong>registre des retraits</strong>, que la PRMP consulte.</li>
+  </ul>
+  <div class="encadre or">
+    <h4>Entreprises exclues par l'ARMP</h4>
+    <p>L'Administrateur tient le répertoire des exclusions (NIF, décision, période). Une entreprise exclue est <strong>signalée</strong> dès sa déclaration, et le système <strong>refuse son dépôt</strong> pendant la période, avec un message qui cite la décision. Une exclusion prononcée après un dépôt fait écarter l'offre à l'ouverture, sans la déchiffrer. Les ressemblances entre comptes (même téléphone, signataire, adresse) produisent des <strong>alertes</strong> remises à la commission, jamais un refus automatique.</p>
+  </div>
+
+  <h3>8.5 Le dépôt scellé d'une offre <span class="etiquette">Candidat</span></h3>
+  <ol>
+    <li>Le candidat choisit le lot, déclare l'éventuel groupement, saisit les valeurs de son <strong>acte d'engagement</strong> (montants, délai, validité, rabais) et joint son acte signé, les <strong>pièces attendues</strong> de la procédure et la garantie avec son code de vérification, son montant et son émetteur. L'écran dit ce qui manque et le temps restant, à l'heure du serveur.</li>
+    <li><strong>« Sceller et déposer »</strong> : l'offre est assemblée et chiffrée sur son poste, par morceaux ; les morceaux partent un à un, et un envoi coupé reprend.</li>
+    <li>Le serveur rend un <strong>accusé de réception</strong> : heure de dépôt, numéro d'arrivée, empreinte de l'offre (téléchargeable en PDF et envoyé par courriel).</li>
+    <li>Jusqu'à la date limite, et si la procédure l'autorise, le candidat peut <strong>remplacer</strong> ou <strong>retirer</strong> son offre (« Mes offres »).</li>
+  </ol>
+  <p>Avant la date limite, la PRMP ne connaît que le <strong>nombre</strong> d'offres déposées ; le registre des dépôts nominatif s'ouvre à l'échéance.</p>
+
+  <h3>8.6 La séance d'ouverture des plis <span class="etiquette">Responsable</span> <span class="etiquette">Membres de CAO</span></h3>
+  <ol>
+    <li>À l'heure d'ouverture, et pas avant, le responsable <strong>ouvre la séance</strong> et note les présents ; le président de la CAO préside.</li>
+    <li>Chaque membre <strong>apporte ses parts</strong> : sa phrase déverrouille sa clé sur son poste, qui déchiffre sa part de chaque offre. Le quorum se remplit en direct. Au besoin, le pli de secours est ouvert devant la séance, avec un motif consigné.</li>
+    <li>Au quorum, <strong>toutes les offres s'ouvrent ensemble</strong> : le serveur vérifie l'empreinte de chacune, la déchiffre, contrôle chaque pièce.</li>
+    <li>La séance <strong>lit</strong> chaque offre dans l'ordre d'arrivée : soumissionnaire, montants, délai, validité, rabais, garantie (montant et émetteur), pièces manquantes, vérification du NIF, alertes ; puis les offres non ouvertes (retirées, remplacées, écartées) et pourquoi. Les <strong>pièces</strong> des offres ne s'ouvrent que pour les membres de la CAO.</li>
+    <li>Le responsable produit le <strong>procès-verbal d'ouverture</strong> (ou de carence, s'il n'y a aucune offre).</li>
+    <li>Chaque membre présent le <strong>signe en ligne</strong> depuis son espace ; le président constate l'empêchement d'un membre, avec un motif imprimé au PV. À la dernière signature, un extrait est publié si la fiche le prévoit.</li>
+  </ol>
+  <p>Si le quorum ne peut plus être atteint, le responsable <strong>constate l'illisibilité</strong> ; un PV de constat est produit et la procédure est à relancer.</p>
+</section>
+
+<!-- ═════════════════════════════ 9. ADMINISTRATION ═════════════════════════════ -->
+<section class="chapitre">
+  <h2>9. L'administration de l'application <span class="etiquette">Administrateur</span></h2>
+  <table>
+    <tr><th>Domaine</th><th>Ce que l'Administrateur fait</th></tr>
+    <tr><td>Poste d'administration</td><td>Ce qui attend : demandes d'accès, mandats arrivant à terme, connexions refusées ; derniers changements de paramétrage.</td></tr>
+    <tr><td>Demandes d'accès</td><td>Valider les inscriptions des PRMP et UGPM, approuver les rattachements d'entités.</td></tr>
+    <tr><td>Comptes &amp; personnes</td><td>Annuaire des agents : fiches, comptes, suspension, réinitialisation ; mandats des PRMP ; intérims.</td></tr>
+    <tr><td>Règles du contrôle</td><td>Chaînes de contrôle, délais standards, points de contrôle par sous-type, seuil AGPM, règles d'alerte.</td></tr>
+    <tr><td>Nomenclatures</td><td>Référentiels (entités, localités, modes de passation, sous-types, statuts de marché…), champs de la fiche DAO, défauts et bornes de la remise électronique, compte bancaire de l'ARMP, paramètres de l'espace candidat, répertoire des exclusions de l'ARMP.</td></tr>
+    <tr><td>Espace candidat</td><td>Vérifier le NIF des entreprises sur pièces ; tenir le répertoire des exclusions.</td></tr>
+    <tr><td>Procédures électroniques</td><td>Désigner ou retirer le responsable d'une procédure, depuis la fiche DAO.</td></tr>
+    <tr><td>Journal</td><td>Les écritures et les connexions, en lecture seule.</td></tr>
+    <tr><td>Actualités</td><td>Les messages affichés à l'ouverture de session, ciblés par profil.</td></tr>
+  </table>
+  <h3>La sécurité, en bref</h3>
+  <ul>
+    <li>Session par cookie sécurisé, protection contre la falsification de requêtes, aucun jeton dans le navigateur.</li>
+    <li>Fichiers téléversés contrôlés (type, taille) ; fichiers affichés dans un cadre qui ne peut pas exécuter de contenu.</li>
+    <li>Accessibilité : navigation au clavier, fenêtres qui se ferment par leur bouton ou Échap, contrastes vérifiés.</li>
+    <li>Offres électroniques chiffrées sur le poste du candidat, ouvertes au quorum, empreintes vérifiées ; les sauvegardes du serveur ne contiennent que des offres chiffrées.</li>
+  </ul>
+</section>
+
+<!-- ═════════════════════════════ 10. POINTS OUVERTS ═════════════════════════════ -->
+<section class="chapitre">
+  <h2>10. Décisions du pilote et points encore ouverts</h2>
+  <p>Le soir du 4 octobre 2026, le pilote a tranché la plupart des points laissés ouverts par la soumission électronique ; l'application les applique.</p>
+  <table>
+    <tr><th>Point</th><th>Décision du pilote (04/10)</th></tr>
+    <tr><td>Lecteurs des pièces des offres</td><td>Les membres de la CAO seulement. Le responsable, la PRMP et l'UGPM lisent ce qui est lu en séance (montants, délais, garantie), sans ouvrir les pièces.</td></tr>
+    <tr><td>Signature et publication du PV d'ouverture</td><td>Signé en ligne par chaque membre présent de la CAO ; le président constate l'empêchement d'un membre, avec un motif imprimé au PV. Un extrait sans les alertes est publié à la dernière signature.</td></tr>
+    <tr><td>Acte d'engagement en ligne</td><td>Montants, délai, validité, rabais, et désormais la garantie de soumission : son montant et son émetteur sont lus en séance ; une garantie inférieure au minimum de la fiche est signalée.</td></tr>
+    <tr><td>Saisie de la CAO</td><td>Par la PRMP et l'UGPM ; la décision de nomination reste celle de la PRMP.</td></tr>
+    <tr><td>Conservation des offres</td><td>Une durée fixée par l'Administrateur (sans limite tant qu'elle n'est pas fixée) ; à l'échéance, la purge est un geste de l'Administrateur. Le journal, les empreintes, la lecture et le PV restent.</td></tr>
+    <tr><td>Dépositaire de la part de secours</td><td>Libre : le responsable le désigne pour chaque procédure.</td></tr>
+    <tr><td>Reçu des frais de dossier</td><td>Une pièce de l'offre ; le dossier d'appel d'offres se télécharge librement après inscription.</td></tr>
+    <tr><td>Niveau de signature des offres</td><td>Signature simple pour l'instant ; les niveaux avancé et qualifié attendent la liste officielle des prestataires de certification.</td></tr>
+  </table>
+  <p>Restent ouverts :</p>
+  <table>
+    <tr><th>Point</th><th>Choix provisoire</th><th>À qui</th></tr>
+    <tr><td>Clause juridique de la remise électronique dans le DAO</td><td>Emplacement réservé dans les documents produits.</td><td>Juriste</td></tr>
+    <tr><td>Passerelle SMS, vérification du NIF par la DGI</td><td>Raccordements prévus mais vides : confirmation par courriel, vérification sur pièces.</td><td>Pilote</td></tr>
+    <tr><td>Formulaires détaillés de l'offre</td><td>Bordereaux, DQE, capacités : plus tard ; aujourd'hui des pièces jointes.</td><td>Pilote</td></tr>
+    <tr><td>Garantie déposée directement par le garant</td><td>Plus tard ; aujourd'hui le candidat la joint avec son code de vérification.</td><td>Pilote</td></tr>
+  </table>
+</section>
+
+<!-- ═════════════════════════════ 11. GLOSSAIRE ═════════════════════════════ -->
+<section class="chapitre">
+  <h2>11. Glossaire</h2>
+  <table>
+    <tr><th>Terme</th><th>Sens</th></tr>
+    <tr><td>AGPM</td><td>Avis général de passation des marchés, joint au plan quand il contient un marché qui l'exige.</td></tr>
+    <tr><td>ARMP</td><td>Autorité de régulation des marchés publics : documents types, exclusions d'entreprises.</td></tr>
+    <tr><td>CAO</td><td>Commission d'appel d'offres, désignée par la PRMP pour un appel d'offres ; ses membres ouvrent les plis.</td></tr>
+    <tr><td>CCAP</td><td>Cahier des clauses administratives particulières.</td></tr>
+    <tr><td>CNM</td><td>Commission nationale des marchés, qui exerce le contrôle a priori.</td></tr>
+    <tr><td>DAO</td><td>Dossier d'appel d'offres.</td></tr>
+    <tr><td>DPAO / DPAC / DPIC</td><td>Données particulières de l'appel d'offres (de l'accord-cadre, de la demande de propositions).</td></tr>
+    <tr><td>DQE</td><td>Devis quantitatif et estimatif (travaux).</td></tr>
+    <tr><td>Empreinte</td><td>Résumé numérique unique d'un fichier ou d'une clé : la moindre modification la change.</td></tr>
+    <tr><td>FAV / FAVR</td><td>Avis favorable / favorable avec réserves.</td></tr>
+    <tr><td>PPM</td><td>Plan de passation des marchés.</td></tr>
+    <tr><td>PRMP / UGPM</td><td>Personne responsable des marchés publics / son unité de gestion.</td></tr>
+    <tr><td>Quorum</td><td>Le nombre minimal de parts de clé qu'il faut réunir pour ouvrir les offres.</td></tr>
+    <tr><td>SIGMP</td><td>Système d'information de gestion des marchés publics, auquel la décision est transmise.</td></tr>
+  </table>
+</section>
+
+</body>
+</html>
