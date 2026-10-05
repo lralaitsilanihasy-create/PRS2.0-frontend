@@ -1,15 +1,17 @@
 import { ChangeDetectionStrategy, Component, DOCUMENT, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { firstValueFrom, forkJoin } from 'rxjs';
+import { catchError, firstValueFrom, forkJoin, of } from 'rxjs';
 
 import { ApiError, codeErreur } from '../../core/errors/api-error';
 import { formaterEmpreinte } from '../../core/securite/cles-detenteur';
 import { telechargerBlob, validerFichier } from '../../core/securite/fichiers-surs';
 import { ActeEngagementSaisi, MembreGroupement, PieceJointe, construireContenu, sceller, typesDesFormats } from '../../core/securite/scellement';
-import { Accuse, ClesPubliques, Entreprise, PieceAttendue, ProcedureEnLigne } from '../../models';
+import { Accuse, BesoinEnLigne, ClesPubliques, Entreprise, PieceAttendue, ProcedureEnLigne } from '../../models';
 import { CeremonieService, EntrepriseCandidatService, OffresCandidatService, ProceduresEnLigneService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr, messageExclusion, tailleLisible } from './libelles-candidat';
+import { aCommande, avertissements, calculerTotaux, construireFormulaires, estTravaux, formulairesLivres, prixManquants, saisieVide } from './offre-financiere';
+import { OffreFormulaires } from './offre-formulaires';
 
 /** Les étapes du dépôt, telles qu'on les montre pendant le scellement et l'envoi. */
 type Phase = 'saisie' | 'archive' | 'scellement' | 'envoi' | 'cloture' | 'fait';
@@ -58,7 +60,7 @@ function motifDepot(e: unknown): string {
 @Component({
   selector: 'app-depot-offre',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur],
+  imports: [RouterLink, EtatErreur, OffreFormulaires],
   template: `
     <nav class="do__ariane" aria-label="Fil d'Ariane">
       <a routerLink="/candidat/procedures">Procédures ouvertes</a><span aria-hidden="true">›</span>
@@ -132,8 +134,14 @@ function motifDepot(e: unknown): string {
             <h2 id="do-ae" class="do__h2">2. L’acte d’engagement</h2>
             <p class="text-sm text-muted">Ces valeurs seront lues à haute voix à l’ouverture des plis ; elles doivent être celles de votre acte signé, joint ci-dessous.</p>
             <div class="cnm-form-grid">
-              <label class="form-group"><span class="form-label">Montant hors taxes (Ariary)</span><input class="form-control" type="number" min="0" step="1" [value]="ae().montantHt ?? ''" (input)="poserAe('montantHt', $any($event.target).valueAsNumber)" /></label>
-              <label class="form-group"><span class="form-label">Montant toutes taxes (Ariary)</span><input class="form-control" type="number" min="0" step="1" [value]="ae().montantTtc ?? ''" (input)="poserAe('montantTtc', $any($event.target).valueAsNumber)" /></label>
+              @if (avecFormulaires()) {
+                <!-- Lot 5 : les montants de l'acte sont ceux du bordereau (section 3), plus saisis à part. -->
+                <label class="form-group"><span class="form-label">Montant hors taxes (Ariary){{ commande() ? ', au maximum' : '' }}</span><input class="form-control" type="text" readonly [value]="nombre(aeEffectif().montantHt)" /><span class="text-xs text-muted">Calculé depuis le bordereau des prix (section 3).</span></label>
+                <label class="form-group"><span class="form-label">Montant toutes taxes (Ariary){{ commande() ? ', au maximum' : '' }}</span><input class="form-control" type="text" readonly [value]="nombre(aeEffectif().montantTtc)" /></label>
+              } @else {
+                <label class="form-group"><span class="form-label">Montant hors taxes (Ariary)</span><input class="form-control" type="number" min="0" step="1" [value]="ae().montantHt ?? ''" (input)="poserAe('montantHt', $any($event.target).valueAsNumber)" /></label>
+                <label class="form-group"><span class="form-label">Montant toutes taxes (Ariary)</span><input class="form-control" type="number" min="0" step="1" [value]="ae().montantTtc ?? ''" (input)="poserAe('montantTtc', $any($event.target).valueAsNumber)" /></label>
+              }
               <label class="form-group"><span class="form-label">Délai d’exécution ou de livraison</span>
                 <span class="do__duree">
                   <input class="form-control" type="number" min="1" step="1" [value]="ae().delai ?? ''" (input)="poserAe('delai', $any($event.target).valueAsNumber)" aria-label="Délai" />
@@ -148,8 +156,25 @@ function motifDepot(e: unknown): string {
             </div>
           </section>
 
+          @if (besoin()?.formulaires) {
+            <section class="card do__bloc" aria-labelledby="do-offre">
+              <h2 id="do-offre" class="do__h2">3. L’offre financière{{ travaux() ? '' : ' et technique' }}</h2>
+              @if (lotBesoin(); as lb) {
+                <p class="text-sm text-muted">Pré-rempli depuis le dossier d’appel d’offres. Saisissez vos prix en chiffres{{ travaux() ? ' : la plateforme les écrit en lettres, et ce sont les lettres qui font foi' : '' }}. Tout est scellé avec votre offre : personne ne le lit avant l’ouverture des plis.</p>
+                <app-offre-formulaires [lot]="lb" [categorie]="besoin()!.categorie" [tauxTva]="tauxTva()" [desactive]="occupe()" [(saisie)]="saisieOffre" />
+                @if (avertissementsOffre().length) {
+                  <div class="alert alert-warning" role="note">
+                    <ul class="do__avert">@for (m of avertissementsOffre(); track m) { <li>{{ m }}</li> }</ul>
+                  </div>
+                }
+              } @else {
+                <p class="text-sm" role="status">Choisissez d’abord le lot (section 1) : son bordereau s’affichera ici.</p>
+              }
+            </section>
+          }
+
           <section class="card do__bloc" aria-labelledby="do-pieces">
-            <h2 id="do-pieces" class="do__h2">3. Les pièces</h2>
+            <h2 id="do-pieces" class="do__h2">{{ besoin()?.formulaires ? 4 : 3 }}. Les pièces</h2>
             <p class="text-sm text-muted">Formats acceptés : {{ (p.formatsAcceptes ?? ['PDF']).join(', ') }} · {{ p.tailleMaxFichierMo ?? '—' }} Mo par fichier · {{ p.tailleMaxOffreMo ?? '—' }} Mo pour l’offre entière.</p>
             <ul class="do__pieces">
               @for (pa of pieces(); track pa.code) {
@@ -158,6 +183,10 @@ function motifDepot(e: unknown): string {
                     <strong>{{ pa.numero ? pa.numero + ' — ' : '' }}{{ pa.libelle }}</strong>
                     @if (pa.forme || pa.ancienneteMaxMois) { <span class="text-xs text-muted"> · {{ pa.forme }}{{ pa.ancienneteMaxMois ? ', de moins de ' + pa.ancienneteMaxMois + ' mois' : '' }}</span> }
                   </div>
+                  @if (remplie(pa)) {
+                    <span class="badge badge-success do__remplie">Remplie en ligne (section 3)</span>
+                    <span class="text-xs text-muted">Facultatif : vous pouvez joindre en plus une pièce justificative (fiche technique, catalogue…).</span>
+                  }
                   <input class="form-control" type="file" [attr.accept]="accept()" [disabled]="occupe()" [attr.aria-label]="'Fichier : ' + pa.libelle" (change)="joindre(pa.code, $event)" />
                   @if (fichiers()[pa.code]; as f) { <span class="text-xs text-muted">{{ f.name }} · {{ taille(f.size) }}</span> }
                   @if (erreursFichier()[pa.code]; as m) { <span class="form-error">{{ m }}</span> }
@@ -176,7 +205,7 @@ function motifDepot(e: unknown): string {
           </section>
 
           <section class="card do__bloc" aria-labelledby="do-sceller">
-            <h2 id="do-sceller" class="do__h2">4. Sceller et déposer</h2>
+            <h2 id="do-sceller" class="do__h2">{{ besoin()?.formulaires ? 5 : 4 }}. Sceller et déposer</h2>
             <p class="text-sm">Votre offre sera chiffrée sur ce poste, pour les {{ cles()?.n }} détenteurs de la procédure ; {{ cles()?.quorum }} d’entre eux, ensemble et à l’heure de la séance seulement, pourront l’ouvrir. Personne ne peut la lire avant — ni le serveur, ni l’administration.</p>
             @if (manques().length) {
               <ul class="do__manques">@for (m of manques(); track m) { <li>{{ m }}</li> }</ul>
@@ -215,6 +244,8 @@ function motifDepot(e: unknown): string {
     .do__progres + progress { width: 100%; }
     .do__actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
     .do__emp { margin: 0; word-break: break-all; font-size: var(--text-sm); }
+    .do__avert { margin: 0; padding-left: 1.2rem; }
+    .do__remplie { align-self: flex-start; }
     @media (max-width: 600px) { .do__large { grid-column: span 1; } .do__ligne { grid-template-columns: 1fr; } }
   `,
 })
@@ -256,6 +287,36 @@ export class DepotOffre implements OnInit, OnDestroy {
   readonly montantGarantie = signal<number | null>(null);
   readonly emetteurGarantie = signal('');
 
+  /** ⚠️ Lot 5 — le besoin servi au candidat ; `null` si la route a échoué (le dépôt retombe alors sur les pièces seules). */
+  readonly besoin = signal<BesoinEnLigne | null>(null);
+  readonly saisieOffre = signal(saisieVide());
+  readonly travaux = computed(() => estTravaux(this.besoin()?.categorie ?? null));
+  readonly tauxTva = computed(() => this.besoin()?.tauxTva ?? 20);
+  /** Le lot du besoin qui correspond au lot déposé : l'unique entrée d'un marché non alloti, sinon celle du lot choisi. */
+  readonly lotBesoin = computed(() => {
+    const b = this.besoin();
+    if (!b?.formulaires || !b.lots.length) return null;
+    if (b.lots.length === 1) return b.lots[0];
+    return b.lots.find((l) => l.numero === this.lot()) ?? null;
+  });
+  readonly avecFormulaires = computed(() => this.lotBesoin() != null);
+  readonly commande = computed(() => { const lb = this.lotBesoin(); return lb ? aCommande(lb) : false; });
+  readonly totauxOffre = computed(() => {
+    const lb = this.lotBesoin();
+    return lb ? calculerTotaux(lb, this.saisieOffre(), this.tauxTva(), this.travaux()) : null;
+  });
+  /** L'acte d'engagement scellé : ses montants sont ceux du bordereau dès qu'il y a des formulaires (au maximum à commande — H1). */
+  readonly aeEffectif = computed<Partial<ActeEngagementSaisi>>(() => {
+    const t = this.totauxOffre();
+    return t ? { ...this.ae(), montantHt: t.ht, montantTtc: t.ttc } : this.ae();
+  });
+  readonly avertissementsOffre = computed(() => {
+    const lb = this.lotBesoin();
+    const t = this.totauxOffre();
+    return lb && t ? avertissements(lb, this.saisieOffre(), this.besoin()!.categorie, this.procedure()?.dateLimite ?? null, t) : [];
+  });
+  private readonly livres = computed(() => formulairesLivres(this.besoin()?.categorie ?? null));
+
   readonly phase = signal<Phase>('saisie');
   readonly fait = signal(0);
   readonly total = signal(0);
@@ -290,11 +351,16 @@ export class DepotOffre implements OnInit, OnDestroy {
   /** Ce qui manque pour déposer, dit en clair : le bouton ne s'active qu'une fois la liste vide. */
   readonly manques = computed(() => {
     const p = this.procedure();
-    const a = this.ae();
+    const a = this.aeEffectif();
     const m: string[] = [];
     if (!p) return m;
     if (p.lots.length > 1 && this.lot() == null) m.push('Choisissez le lot.');
-    if (!(a.montantHt! >= 0) || !(a.montantTtc! >= 0) || !a.montantHt || !a.montantTtc) m.push('Les montants de l’acte d’engagement.');
+    const lb = this.lotBesoin();
+    if (lb) {
+      // Lot 5 : seul un prix manquant bloque ; le reste est averti en section 3, la commission décide.
+      const sans = prixManquants(lb, this.saisieOffre());
+      if (sans.length) m.push(`${sans.length} prix unitaire(s) à saisir au bordereau.`);
+    } else if (!(a.montantHt! >= 0) || !(a.montantTtc! >= 0) || !a.montantHt || !a.montantTtc) m.push('Les montants de l’acte d’engagement.');
     if (!a.delai || a.delai < 1) m.push('Le délai.');
     if (!a.validiteJours || a.validiteJours < 1) m.push('La validité de l’offre.');
     const manquantes = this.pieces().filter((x) => x.obligatoire && !this.fichiers()[x.code]);
@@ -330,10 +396,12 @@ export class DepotOffre implements OnInit, OnDestroy {
       pieces: this.procedures.pieces(this.idDmc),
       entreprise: this.entreprises.lire(),
       horloge: this.procedures.horloge(),
+      besoin: this.procedures.besoin(this.idDmc).pipe(catchError(() => of(null))),
     }).subscribe({
-      next: ({ procedure, pieces, entreprise, horloge }) => {
+      next: ({ procedure, pieces, entreprise, horloge, besoin }) => {
         this.procedure.set(procedure);
         this.pieces.set(pieces);
+        this.besoin.set(besoin);
         this.entreprise.set(entreprise);
         this.ecartHorloge = new Date(horloge.maintenant).getTime() - Date.now();
         this.maintenant.set(Date.now());
@@ -363,6 +431,18 @@ export class DepotOffre implements OnInit, OnDestroy {
 
   poserAe<K extends keyof ActeEngagementSaisi>(cle: K, valeur: ActeEngagementSaisi[K]): void {
     this.ae.update((a) => ({ ...a, [cle]: Number.isNaN(valeur as number) ? undefined : valeur }));
+  }
+
+  /**
+   * Une pièce remplie dans un formulaire **que l'écran livre** : servie facultative, elle reste proposée en justificatif. Une pièce
+   * marquée d'un formulaire du lot 5b (K1, sous-détail, capacités…) se joint comme avant : le serveur la marque déjà.
+   */
+  remplie(pa: PieceAttendue): boolean {
+    return this.avecFormulaires() && !!pa.formulaire && this.livres().has(pa.formulaire);
+  }
+
+  nombre(v: number | null | undefined): string {
+    return v == null ? '—' : new Intl.NumberFormat('fr-FR').format(v);
   }
 
   ajouterMembre(): void {
@@ -407,13 +487,15 @@ export class DepotOffre implements OnInit, OnDestroy {
         : null;
       const jointes: PieceJointe[] = Object.entries(this.fichiers()).map(([code, fichier]) => ({ code, fichier }));
       const horloge = await firstValueFrom(this.procedures.horloge());
+      const lb = this.lotBesoin();
       const { contenu } = await construireContenu(
-        { idDmc: this.idDmc, lot: this.lotEffectif(), entreprise: { nif: en.nif, raisonSociale: en.raisonSociale }, groupement: membres, acteEngagement: this.ae() as ActeEngagementSaisi },
+        { idDmc: this.idDmc, lot: this.lotEffectif(), entreprise: { nif: en.nif, raisonSociale: en.raisonSociale }, groupement: membres, acteEngagement: this.aeEffectif() as ActeEngagementSaisi },
         jointes,
         this.pieces().some((x) => x.code === 'GARANTIE')
           ? { code: 'GARANTIE', codeVerification: this.codeGarantie().trim(), montant: this.montantGarantie()!, emetteur: this.emetteurGarantie().trim() }
           : null,
         horloge.maintenant,
+        lb ? construireFormulaires(lb, this.saisieOffre(), this.besoin()!.categorie, this.tauxTva()) : null,
       );
 
       this.phase.set('scellement');

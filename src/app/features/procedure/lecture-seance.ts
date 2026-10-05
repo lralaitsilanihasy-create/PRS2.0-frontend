@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, input, signal } from '@angular/core';
 
 import { ouvrirBlobSur } from '../../core/securite/fichiers-surs';
-import { Lecture, OffreLue } from '../../models';
+import { DocumentFormulaire, Lecture, OffreLue, TypeAlerteLecture } from '../../models';
 import { SeanceService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 
@@ -49,9 +49,27 @@ const LIBELLES_INTEGRITE: Readonly<Record<string, string>> = {
                 <dt>Garantie</dt><dd>{{ garantie(o) }}</dd>
               </dl>
             }
+            @if (o.formulaires && o.totaux; as t) {
+              <!-- Lot 5 : les totaux recalculés par le serveur depuis le bordereau scellé. -->
+              <dl class="ls__ae ls__totaux" aria-label="Totaux recalculés depuis le bordereau">
+                <dt>Bordereau, HT</dt><dd>{{ montant(t.ht) }}</dd>
+                <dt>Bordereau, TTC</dt><dd>{{ montant(t.ttc) }}</dd>
+                @if (t.htMin != null) {
+                  <dt>Au minimum, HT</dt><dd>{{ montant(t.htMin) }}</dd>
+                  <dt>Au minimum, TTC</dt><dd>{{ montant(t.ttcMin) }}</dd>
+                }
+              </dl>
+            }
             @if (o.piecesManquantes.length) { <p class="text-sm ls__manque">Pièces manquantes : {{ o.piecesManquantes.join(' ; ') }}</p> }
             @for (a of o.alertes; track $index) { <p class="alert alert-warning ls__alerte" role="note"><span>{{ alertes[a.type] ?? a.type }} : {{ a.message }}</span></p> }
             @if (erreurPiece()?.idOffre === o.idOffre) { <p class="alert alert-danger" role="alert"><span>{{ erreurPiece()!.message }}</span></p> }
+            @if (piecesOuvrables() && o.formulaires) {
+              <ul class="ls__pieces" aria-label="Formulaires remplis en ligne">
+                @for (d of documentsFormulaires; track d.type) {
+                  <li><button type="button" class="btn btn-sm btn-secondary" [disabled]="ouverture() === o.idOffre + d.type" (click)="ouvrirFormulaire(o.idOffre, d.type)">{{ d.libelle }} (rempli)</button></li>
+                }
+              </ul>
+            }
             @if (piecesOuvrables() && o.pieces.length) {
               <ul class="ls__pieces">
                 @for (p of o.pieces; track p.code) {
@@ -85,6 +103,7 @@ const LIBELLES_INTEGRITE: Readonly<Record<string, string>> = {
     .ls__ae dt { color: var(--n-500); }
     .ls__ae dd { margin: 0; }
     .ls__alerte { margin: 0; }
+    .ls__totaux { padding-top: 0.3rem; border-top: 1px dashed var(--n-200); }
     .ls__pieces { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
     .ls__h3 { margin: 0.5rem 0 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-500); }
     .ls__non { margin: 0; padding-left: 1.2rem; font-size: var(--text-sm); }
@@ -107,11 +126,33 @@ export class LectureSeance implements OnInit {
   readonly lecture = signal<Lecture | null>(null);
   readonly ouverture = signal<string | null>(null);
   readonly erreurPiece = signal<{ idOffre: string; message: string } | null>(null);
-  readonly alertes: Readonly<Record<OffreLue['alertes'][number]['type'], string>> = {
+  readonly alertes: Readonly<Record<TypeAlerteLecture, string>> = {
     RAPPROCHEMENT: 'Rapprochement',
     EXCLUSION: 'Exclusion',
     GARANTIE_INSUFFISANTE: 'Garantie insuffisante',
+    TOTAL_DIVERGENT: 'Total divergent',
+    AE_DIVERGENT: 'Acte d’engagement divergent du bordereau',
+    PRIX_MANQUANT: 'Prix manquant',
+    LETTRES_DIVERGENTES: 'Prix en lettres divergent des chiffres',
+    PLAFOND_DEPASSE: 'Plafond dépassé',
+    NON_CONFORME: 'Non-conformité déclarée',
+    LIVRAISON_HORS_DELAI: 'Livraison hors délai',
+    CA_INSUFFISANT: 'Chiffre d’affaires insuffisant',
+    LIQUIDITE_INSUFFISANTE: 'Liquidité insuffisante',
+    REFERENCES_INSUFFISANTES: 'Références insuffisantes',
+    PERSONNEL_INCOMPLET: 'Personnel incomplet',
+    MATERIEL_INCOMPLET: 'Matériel incomplet',
+    SOUS_DETAIL_INCOHERENT: 'Sous-détail incohérent',
+    FORMULAIRES_ILLISIBLES: 'Formulaires illisibles',
   };
+  /**
+   * Lot 5 — les documents remplis, produits à la volée. La lecture ne dit pas la catégorie : la conformité n'existe qu'en
+   * fournitures, et un 404 le dit simplement. Le DQE des travaux est le même document que le bordereau.
+   */
+  readonly documentsFormulaires: readonly { type: DocumentFormulaire; libelle: string }[] = [
+    { type: 'BORDEREAU', libelle: 'Bordereau des prix' },
+    { type: 'CONFORMITE', libelle: 'Conformité technique' },
+  ];
 
   ngOnInit(): void {
     this.charger();
@@ -149,6 +190,27 @@ export class LectureSeance implements OnInit {
     if (g.emetteur) parts.push('émise par ' + g.emetteur);
     parts.push('code ' + g.codeVerification);
     return parts.join(' · ');
+  }
+
+  ouvrirFormulaire(idOffre: string, type: DocumentFormulaire): void {
+    this.ouverture.set(idOffre + type);
+    this.erreurPiece.set(null);
+    this.service.formulairePdf(this.idDmc(), idOffre, type).subscribe({
+      next: (b) => {
+        this.ouverture.set(null);
+        ouvrirBlobSur(b);
+      },
+      error: (e: { status?: number }) => {
+        this.ouverture.set(null);
+        const message =
+          e.status === 403
+            ? 'Les formulaires des offres sont réservés aux membres de la commission d’appel d’offres.'
+            : e.status === 404
+              ? 'Cette offre ne comporte pas ce formulaire, ou il n’est plus conservé.'
+              : 'Le formulaire n’a pas pu être produit.';
+        this.erreurPiece.set({ idOffre, message });
+      },
+    });
   }
 
   ouvrir(idOffre: string, nom: string): void {

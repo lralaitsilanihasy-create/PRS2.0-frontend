@@ -6,6 +6,7 @@ import { environment } from '../../environments/environment';
 import { skipErrorToast } from '../core/errors/api-error';
 import {
   Accuse,
+  BesoinEnLigne,
   ConfirmationCandidat,
   CreationOffreCorps,
   Horloge,
@@ -113,6 +114,14 @@ export class ProceduresEnLigneService {
   /** ⚠️ Lot 3 (V68) — `GET /{idDmc}/pieces` (public) : les pièces attendues dans l'offre, AE, reçu et garantie en tête. */
   pieces(idDmc: number): Observable<PieceAttendue[]> {
     return this.http.get<PieceAttendue[]>(`${this.base}/${idDmc}/pieces`, { context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ Lot 5 (05/10) — `GET /{idDmc}/besoin` (CANDIDAT) : articles, délais, garanties et seuils par lot, de quoi pré-remplir les
+   * formulaires de l'offre ; `formulaires: false` sans besoin (dépôt par pièces seules). Silencieux : l'écran retombe sur les pièces.
+   */
+  besoin(idDmc: number): Observable<BesoinEnLigne> {
+    return this.http.get<BesoinEnLigne>(`${this.base}/${idDmc}/besoin`, { context: skipErrorToast() });
   }
 
   /** ⚠️ Lot 3 — `GET /api/horloge` (public) : l'heure du serveur, qui fait foi pour la date limite. */

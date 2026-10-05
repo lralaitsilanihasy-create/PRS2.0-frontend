@@ -62,7 +62,8 @@ export interface PieceJointe {
  * émetteur, lus en séance. Le serveur lit encore le format 1 (champs servis `null`) et ignore un champ inconnu.
  */
 export interface Manifeste {
-  version: 2;
+  /** ⚠️ Format 3 (lot 5, 05/10) dès que l'offre porte des `formulaires` ; 2 sinon. */
+  version: 2 | 3;
   idDmc: number;
   lot: number | null;
   entreprise: { nif: string; raisonSociale: string };
@@ -70,7 +71,45 @@ export interface Manifeste {
   acteEngagement: ActeEngagementSaisi;
   pieces: { code: string; nomFichier: string; taille: number; sha256: string }[];
   garantie: GarantieManifeste | null;
+  /** Format 3 seulement : l'offre saisie dans les formulaires (`demande-backend-2026-10-05-formulaires-en-ligne` §B2). */
+  formulaires?: FormulairesOffre;
   dateScellement: string;
+}
+
+/** Une ligne du bordereau (ou du DQE) : le prix de l'article, en chiffres et en lettres ; la date de livraison en fournitures. */
+export interface LigneBordereau {
+  idArticle: number;
+  prixUnitaireHt: number;
+  prixEnLettres: string;
+  dateLivraison?: string | null;
+}
+
+/** La conformité déclarée d'un article (fournitures) : marque, modèle, et pour chaque caractéristique exigée ce qui est proposé. */
+export interface ConformiteArticle {
+  idArticle: number;
+  marque: string;
+  modele: string;
+  caracteristiques: { idCaracteristique: number; proposee: string; conforme: boolean | null }[];
+}
+
+/** Les totaux calculés ici ; le serveur les recalcule à l'ouverture. `htMin`/`ttcMin` : marché à commande, au minimum. */
+export interface TotauxOffre {
+  ht: number;
+  tva: number;
+  ttc: number;
+  htMin: number | null;
+  ttcMin: number | null;
+  parSerie: { serie: string; ht: number }[] | null;
+}
+
+/**
+ * Les formulaires de l'offre (lot 5a). Les parties du lot 5b (`k1`, `sousDetails`, `capacites`, `personnel`, `materiel`) s'y
+ * ajouteront sans changer de format.
+ */
+export interface FormulairesOffre {
+  bordereau: LigneBordereau[];
+  conformite: ConformiteArticle[] | null;
+  totaux: TotauxOffre;
 }
 
 /** La garantie de soumission telle que la séance la lit : son code, son fichier, et (format 2) son montant et son émetteur. */
@@ -104,6 +143,7 @@ export async function construireContenu(
   pieces: PieceJointe[],
   garantie: GarantieSaisie | null,
   maintenant: string,
+  formulaires: FormulairesOffre | null = null,
 ): Promise<{ contenu: Uint8Array<ArrayBuffer>; manifeste: Manifeste }> {
   const entrees: Record<string, Uint8Array> = {};
   const lignes: Manifeste['pieces'] = [];
@@ -115,13 +155,14 @@ export async function construireContenu(
   }
   const pieceGarantie = garantie ? lignes.find((l) => l.code === garantie.code) : null;
   const manifeste: Manifeste = {
-    version: 2,
+    version: formulaires ? 3 : 2,
     ...base,
     pieces: lignes,
     garantie:
       garantie && pieceGarantie
         ? { codeVerification: garantie.codeVerification, nomFichier: pieceGarantie.nomFichier, montant: garantie.montant, monnaie: 'MGA', emetteur: garantie.emetteur }
         : null,
+    ...(formulaires ? { formulaires } : {}),
     dateScellement: maintenant,
   };
   const zip = zipSync({ 'manifeste.json': encodeur.encode(JSON.stringify(manifeste, null, 2)), ...entrees }, { level: 0 });

@@ -15,6 +15,7 @@ import {
   Detenteur,
   Enveloppe,
   MaProcedureCao,
+  DocumentFormulaire,
   Lecture,
   MembreCao,
   PartChiffree,
@@ -226,6 +227,14 @@ export class SeanceService {
 
   piece(idDmc: number, idOffre: string, nomFichier: string): Observable<Blob> {
     return this.http.get(this.url(idDmc, `/offres/${idOffre}/pieces/${encodeURIComponent(nomFichier)}`), { responseType: 'blob', context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ Lot 5 (05/10) — `GET …/offres/{idOffre}/formulaires/{type}.pdf` : un formulaire de l'offre, **rempli**, produit à la volée.
+   * Mêmes gardes que les pièces (403 `PIECE_RESERVEE_CAO`, 409 séance non déchiffrée) ; 404 si l'offre n'a pas cette partie.
+   */
+  formulairePdf(idDmc: number, idOffre: string, type: DocumentFormulaire): Observable<Blob> {
+    return this.http.get(this.url(idDmc, `/offres/${idOffre}/formulaires/${type}.pdf`), { responseType: 'blob', context: skipErrorToast() });
   }
 
   produirePv(idDmc: number, observations: string | null): Observable<Seance> {

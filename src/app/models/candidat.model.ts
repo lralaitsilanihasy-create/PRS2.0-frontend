@@ -1,4 +1,4 @@
-import { CategorieDao } from './fiche-marche.model';
+import { ArticleFiche, CategorieDao, MaterielExige, PersonnelExige } from './fiche-marche.model';
 
 /**
  * Soumission en ligne — lot 1, l'espace candidat (demande `docs/demande-backend-2026-10-04-soumission-en-ligne.md`,
@@ -247,6 +247,54 @@ export interface PieceAttendue {
   parLot: boolean | null;
   modele: string | null;
   obligatoire: boolean;
+  /**
+   * ⚠️ Lot 5 (05/10) — la pièce n'est plus jointe : elle est **remplie** dans un formulaire de l'offre ; servie `obligatoire = false`.
+   * Les formulaires du lot 5b sont marqués dès maintenant : tant que le front ne les livre pas, la pièce reste à joindre.
+   */
+  formulaire?: FormulaireOffre | null;
+}
+
+export type FormulaireOffre = 'BORDEREAU' | 'CONFORMITE' | 'CALENDRIER' | 'DQE' | 'SOUS_DETAIL' | 'K1' | 'CAPACITES' | 'PERSONNEL' | 'MATERIEL';
+
+/** Un article du besoin tel que le candidat le voit (le rédacteur n'est pas servi). */
+export type ArticleBesoin = Omit<ArticleFiche, 'redigePar' | 'profilRedacteur'> & { idArticle: number };
+
+/** Les seuils de qualification des travaux, résolus pour un lot (`B03-QT-*`). */
+export interface QualificationLot {
+  liquiditeMontant: number | null;
+  liquiditePourcentage: number | null;
+  chiffreAffaires: { montant: number | null; annees: number | null; meilleures: number | null; domaine: string | null } | null;
+  references: { montant: number | null; nombre: number | null; annees: number | null; cumul: boolean } | null;
+}
+
+export interface LotBesoin {
+  /** `null` : marché non alloti (une seule entrée). */
+  numero: number | null;
+  intitule: string | null;
+  articles: ArticleBesoin[];
+  /** `null` aux travaux. */
+  lieuLivraison: string | null;
+  /** En fournitures, en jours ; aux travaux `valeur` n'est remplie que si le texte commence par un nombre. */
+  delaiExecution: { valeur: number | null; unite: string | null; texte: string | null } | null;
+  garantieSoumission: number | null;
+  /** `null` en fournitures. */
+  qualification: QualificationLot | null;
+}
+
+/**
+ * ⚠️ Lot 5 (05/10) — `GET /api/procedures-en-ligne/{idDmc}/besoin` (CANDIDAT) : de quoi pré-remplir les formulaires de l'offre,
+ * depuis la version validée de la fiche. `formulaires: false` : dépôt par pièces seules.
+ */
+export interface BesoinEnLigne {
+  idDmc: number;
+  categorie: CategorieDao | null;
+  typeMarche: string | null;
+  formulaires: boolean;
+  tauxTva: number | null;
+  monnaie: string | null;
+  lots: LotBesoin[];
+  materiel: MaterielExige[];
+  personnel: PersonnelExige[];
 }
 
 export type EtatOffre = 'EN_COURS' | 'DEPOSEE' | 'REMPLACEE' | 'RETIREE' | 'ECARTEE';

@@ -58,6 +58,22 @@ describe('Scellement d’une offre (ADR-0013, lot 3)', () => {
     expect(manifeste.garantie).toEqual({ codeVerification: 'GAR-1', nomFichier: 'GARANTIE-caution.pdf', montant: 1600000, monnaie: 'MGA', emetteur: 'Banque de recette' });
   });
 
+  it('format 3 (lot 5) : les formulaires sont scellés dans le manifeste ; sans formulaires, le format reste 2', async () => {
+    const ae = new File([new Uint8Array([37, 80, 68, 70])], 'ae.pdf', { type: 'application/pdf' });
+    const base = { idDmc: 44, lot: null, entreprise: { nif: '1234567890', raisonSociale: 'SARL X' }, groupement: null, acteEngagement: { montantHt: 1000, montantTtc: 1200, monnaie: 'MGA' as const, delai: 30, delaiUnite: 'JOURS' as const, validiteJours: 90, rabais: null } };
+    const formulaires = {
+      bordereau: [{ idArticle: 812, prixUnitaireHt: 100, prixEnLettres: 'cent', dateLivraison: '2026-12-15' }],
+      conformite: [{ idArticle: 812, marque: 'M', modele: 'X1', caracteristiques: [{ idCaracteristique: 3301, proposee: '16 Go', conforme: true }] }],
+      totaux: { ht: 1000, tva: 200, ttc: 1200, htMin: null, ttcMin: null, parSerie: null },
+    };
+    const { contenu, manifeste } = await construireContenu(base, [{ code: 'AE', fichier: ae }], null, '2026-10-05T20:00:00', formulaires);
+    expect(manifeste.version).toBe(3);
+    expect(lireContenu(contenu).manifeste.formulaires).toEqual(formulaires);
+    const sans = await construireContenu(base, [{ code: 'AE', fichier: ae }], null, '2026-10-05T20:00:00');
+    expect(sans.manifeste.version).toBe(2);
+    expect('formulaires' in sans.manifeste).toBe(false);
+  });
+
   it('sceller puis desceller avec deux parts sur trois : le contenu revient à l’identique, sur plusieurs morceaux', async () => {
     const { cles, privees } = await troisDetenteurs();
     // Un peu plus d'un morceau : deux morceaux, le second court.

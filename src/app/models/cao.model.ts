@@ -287,8 +287,35 @@ export interface OffreLue {
   garantie: { codeVerification: string; presente: boolean; montant?: number | null; monnaie?: string | null; emetteur?: string | null } | null;
   pieces: { code: string; libelle: string; presente: boolean; nomFichier: string | null; empreinteConforme: boolean | null }[];
   piecesManquantes: string[];
-  alertes: { type: 'RAPPROCHEMENT' | 'EXCLUSION' | 'GARANTIE_INSUFFISANTE'; message: string }[];
+  alertes: { type: TypeAlerteLecture; message: string }[];
+  /** ⚠️ Lot 5 (05/10) — l'offre porte des formulaires (manifeste de format 3). */
+  formulaires?: boolean | null;
+  /** ⚠️ Lot 5 — les totaux **recalculés par le serveur** depuis le bordereau ; `htMin`/`ttcMin` en marché à commande. */
+  totaux?: { ht: number; tva: number; ttc: number; htMin: number | null; ttcMin: number | null } | null;
 }
+
+/** Les alertes lues en séance — V70, puis les contrôles des formulaires du lot 5 (05/10). Jamais un refus : la commission décide. */
+export type TypeAlerteLecture =
+  | 'RAPPROCHEMENT'
+  | 'EXCLUSION'
+  | 'GARANTIE_INSUFFISANTE'
+  | 'TOTAL_DIVERGENT'
+  | 'AE_DIVERGENT'
+  | 'PRIX_MANQUANT'
+  | 'LETTRES_DIVERGENTES'
+  | 'PLAFOND_DEPASSE'
+  | 'NON_CONFORME'
+  | 'LIVRAISON_HORS_DELAI'
+  | 'CA_INSUFFISANT'
+  | 'LIQUIDITE_INSUFFISANTE'
+  | 'REFERENCES_INSUFFISANTES'
+  | 'PERSONNEL_INCOMPLET'
+  | 'MATERIEL_INCOMPLET'
+  | 'SOUS_DETAIL_INCOHERENT'
+  | 'FORMULAIRES_ILLISIBLES';
+
+/** ⚠️ Lot 5 — les documents remplis que la commission imprime (`…/formulaires/{type}.pdf`) ; `DQE` = `BORDEREAU` aux travaux. */
+export type DocumentFormulaire = 'BORDEREAU' | 'DQE' | 'CONFORMITE' | 'CAPACITES';
 
 /** `GET …/seance/lecture` — après le déchiffrement seulement (409 `SEANCE_NON_DECHIFFREE`). */
 export interface Lecture {
