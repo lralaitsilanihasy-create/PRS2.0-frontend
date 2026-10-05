@@ -12,6 +12,8 @@ import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr, messageExclusion, tailleLisible } from './libelles-candidat';
 import { aCommande, avertissements, calculerTotaux, construireFormulaires, estTravaux, formulairesLivres, prixManquants, saisieVide } from './offre-financiere';
 import { OffreFormulaires } from './offre-formulaires';
+import { OffreTravauxFormulaires } from './offre-travaux-formulaires';
+import { avertissementsTravaux, construireTravaux, saisieTravauxVide } from './offre-travaux';
 
 /** Les étapes du dépôt, telles qu'on les montre pendant le scellement et l'envoi. */
 type Phase = 'saisie' | 'archive' | 'scellement' | 'envoi' | 'cloture' | 'fait';
@@ -60,7 +62,7 @@ function motifDepot(e: unknown): string {
 @Component({
   selector: 'app-depot-offre',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur, OffreFormulaires],
+  imports: [RouterLink, EtatErreur, OffreFormulaires, OffreTravauxFormulaires],
   template: `
     <nav class="do__ariane" aria-label="Fil d'Ariane">
       <a routerLink="/candidat/procedures">Procédures ouvertes</a><span aria-hidden="true">›</span>
@@ -162,6 +164,11 @@ function motifDepot(e: unknown): string {
               @if (lotBesoin(); as lb) {
                 <p class="text-sm text-muted">Pré-rempli depuis le dossier d’appel d’offres. Saisissez vos prix en chiffres{{ travaux() ? ' : la plateforme les écrit en lettres, et ce sont les lettres qui font foi' : '' }}. Tout est scellé avec votre offre : personne ne le lit avant l’ouverture des plis.</p>
                 <app-offre-formulaires [lot]="lb" [categorie]="besoin()!.categorie" [tauxTva]="tauxTva()" [desactive]="occupe()" [(saisie)]="saisieOffre" />
+                @if (travaux() && totauxOffre(); as t) {
+                  <!-- Lot 5b : K1, sous-détail, capacités, personnel, matériel. -->
+                  <app-offre-travaux-formulaires [lot]="lb" [besoin]="besoin()!" [tauxTva]="tauxTva()" [prix]="saisieOffre().prix" [totaux]="t"
+                    [dateLimite]="p.dateLimite" [desactive]="occupe()" [(saisie)]="saisieTravaux" />
+                }
                 @if (avertissementsOffre().length) {
                   <div class="alert alert-warning" role="note">
                     <ul class="do__avert">@for (m of avertissementsOffre(); track m) { <li>{{ m }}</li> }</ul>
@@ -290,6 +297,7 @@ export class DepotOffre implements OnInit, OnDestroy {
   /** ⚠️ Lot 5 — le besoin servi au candidat ; `null` si la route a échoué (le dépôt retombe alors sur les pièces seules). */
   readonly besoin = signal<BesoinEnLigne | null>(null);
   readonly saisieOffre = signal(saisieVide());
+  readonly saisieTravaux = signal(saisieTravauxVide());
   readonly travaux = computed(() => estTravaux(this.besoin()?.categorie ?? null));
   readonly tauxTva = computed(() => this.besoin()?.tauxTva ?? 20);
   /** Le lot du besoin qui correspond au lot déposé : l'unique entrée d'un marché non alloti, sinon celle du lot choisi. */
@@ -313,7 +321,10 @@ export class DepotOffre implements OnInit, OnDestroy {
   readonly avertissementsOffre = computed(() => {
     const lb = this.lotBesoin();
     const t = this.totauxOffre();
-    return lb && t ? avertissements(lb, this.saisieOffre(), this.besoin()!.categorie, this.procedure()?.dateLimite ?? null, t) : [];
+    if (!lb || !t) return [];
+    const dateLimite = this.procedure()?.dateLimite ?? null;
+    const m = avertissements(lb, this.saisieOffre(), this.besoin()!.categorie, dateLimite, t);
+    return this.travaux() ? [...m, ...avertissementsTravaux(lb, this.besoin()!, this.saisieTravaux(), this.saisieOffre().prix, t, this.tauxTva(), dateLimite)] : m;
   });
   private readonly livres = computed(() => formulairesLivres(this.besoin()?.categorie ?? null));
 
@@ -495,7 +506,12 @@ export class DepotOffre implements OnInit, OnDestroy {
           ? { code: 'GARANTIE', codeVerification: this.codeGarantie().trim(), montant: this.montantGarantie()!, emetteur: this.emetteurGarantie().trim() }
           : null,
         horloge.maintenant,
-        lb ? construireFormulaires(lb, this.saisieOffre(), this.besoin()!.categorie, this.tauxTva()) : null,
+        lb
+          ? {
+              ...construireFormulaires(lb, this.saisieOffre(), this.besoin()!.categorie, this.tauxTva()),
+              ...(this.travaux() ? construireTravaux(lb, this.besoin()!, this.saisieTravaux(), this.tauxTva(), p.dateLimite) : {}),
+            }
+          : null,
       );
 
       this.phase.set('scellement');

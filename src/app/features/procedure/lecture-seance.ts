@@ -152,6 +152,7 @@ export class LectureSeance implements OnInit {
   readonly documentsFormulaires: readonly { type: DocumentFormulaire; libelle: string }[] = [
     { type: 'BORDEREAU', libelle: 'Bordereau des prix' },
     { type: 'CONFORMITE', libelle: 'Conformité technique' },
+    { type: 'CAPACITES', libelle: 'Capacités' },
   ];
 
   ngOnInit(): void {

@@ -110,6 +110,51 @@ export interface FormulairesOffre {
   bordereau: LigneBordereau[];
   conformite: ConformiteArticle[] | null;
   totaux: TotauxOffre;
+  // ── Lot 5b (travaux) : présentes seulement quand la fiche les demande ──
+  k1?: K1Offre;
+  sousDetails?: SousDetailOffre[];
+  capacites?: CapacitesOffre;
+  personnel?: PersonnelPropose[];
+  materiel?: MaterielPropose[];
+}
+
+/** Le coefficient K1 (annexe 2 de l'AE-T) : les neuf taux, le siège, et le K1 calculé ici — le serveur ne le recalcule pas (H3). */
+export interface K1Offre {
+  taux: { code: string; pourcentage: number }[];
+  siegeEtranger: boolean;
+  k1: number;
+}
+
+export type NatureDebourse = 'MAIN_OEUVRE' | 'MATERIEL' | 'MATERIAUX' | 'OUTILLAGE';
+
+/** Le sous-détail d'un prix : déboursés secs, rendement, et le prix qui en résulte (D × K1 / R), comparé au bordereau à l'ouverture. */
+export interface SousDetailOffre {
+  idArticle: number;
+  rendement: number;
+  lignes: { nature: NatureDebourse; designation: string; unite: string; quantite: number; prixUnitaire: number }[];
+  prixCalcule: number;
+}
+
+export interface CapacitesOffre {
+  chiffresAffaires: { annee: number; montant: number }[];
+  liquidite: { montant: number; nature: string; emetteur: string } | null;
+  references: { objet: string; maitreOuvrage: string; annee: number; montant: number }[];
+}
+
+/** Une personne proposée pour un poste exigé (`idPersonnel`) ; autant d'entrées que le nombre exigé. */
+export interface PersonnelPropose {
+  idPersonnel: number;
+  nom: string;
+  diplome: string;
+  experienceAnnees: number;
+}
+
+/** Le matériel proposé pour une ligne exigée (`idMateriel`) : le nombre total, dont en propre. */
+export interface MaterielPropose {
+  idMateriel: number;
+  designation: string;
+  nombre: number;
+  enPropre: number;
 }
 
 /** La garantie de soumission telle que la séance la lit : son code, son fichier, et (format 2) son montant et son émetteur. */

@@ -97,9 +97,10 @@ describe('Offre financière en ligne (lot 5a)', () => {
     expect('dateLivraison' in t.bordereau[0]).toBe(false);
   });
 
-  it('formulaires livrés au lot 5a : les pièces du lot 5b restent à joindre', () => {
+  it('formulaires livrés : 5a partout, 5b aux travaux ; le calendrier des travaux reste à joindre', () => {
     expect([...formulairesLivres('FOURNITURES_SERVICES')]).toEqual(['BORDEREAU', 'CONFORMITE', 'CALENDRIER']);
-    expect(formulairesLivres('TRAVAUX').has('K1')).toBe(false);
+    expect(formulairesLivres('TRAVAUX').has('K1')).toBe(true);
+    expect(formulairesLivres('TRAVAUX').has('CALENDRIER')).toBe(false);
     expect(formulairesLivres('PRESTATIONS_INTELLECTUELLES').size).toBe(0);
   });
 });

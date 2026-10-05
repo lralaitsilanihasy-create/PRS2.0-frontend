@@ -25,11 +25,11 @@ export function saisieVide(): SaisieOffre {
 }
 
 /**
- * Les formulaires que le front **livre** au lot 5a. Une pièce marquée d'un autre formulaire (lot 5b : K1, sous-détail, capacités,
- * personnel, matériel — ou le calendrier des travaux) reste à joindre : le serveur la marque dès maintenant.
+ * Les formulaires que le front **livre** : lot 5a (bordereau, conformité, calendrier ; DQE) et lot 5b aux travaux (K1, sous-détail,
+ * capacités, personnel, matériel). Une pièce marquée d'un autre formulaire (le calendrier des travaux) reste à joindre.
  */
 export function formulairesLivres(categorie: CategorieDao | null): ReadonlySet<FormulaireOffre> {
-  if (categorie === 'TRAVAUX') return new Set<FormulaireOffre>(['BORDEREAU', 'DQE']);
+  if (categorie === 'TRAVAUX') return new Set<FormulaireOffre>(['BORDEREAU', 'DQE', 'K1', 'SOUS_DETAIL', 'CAPACITES', 'PERSONNEL', 'MATERIEL']);
   if (categorie === 'FOURNITURES_SERVICES') return new Set<FormulaireOffre>(['BORDEREAU', 'CONFORMITE', 'CALENDRIER']);
   return new Set();
 }
