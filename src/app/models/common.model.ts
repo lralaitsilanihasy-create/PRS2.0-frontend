@@ -45,13 +45,19 @@ export type Role =
    * Compte créé à la désignation, activé par courriel, connexion par l'adresse ; **aucune route interne** — son espace est
    * `/cao`, hors coquille interne, comme le candidat.
    */
-  | 'MEMBRE_CAO';
+  | 'MEMBRE_CAO'
+  /**
+   * ⚠️ V71 (05/10, décision du pilote) — le DÉPOSITAIRE de la part de secours : il génère lui-même la clé de secours sur son
+   * poste et l'apporte en séance quand le responsable la demande. Compte externe `D…`, invité par courriel ; **aucune route
+   * interne** — son espace est `/depositaire`. Il ne lit ni les offres, ni leurs pièces, ni le PV.
+   */
+  | 'DEPOSITAIRE';
 
 /** Les dix profils de la coquille interne (menu latéral, « À faire », délégations) — tout sauf les profils externes. */
-export type RoleInterne = Exclude<Role, 'CANDIDAT' | 'MEMBRE_CAO'>;
+export type RoleInterne = Exclude<Role, 'CANDIDAT' | 'MEMBRE_CAO' | 'DEPOSITAIRE'>;
 
 /** Nature de l'acteur authentifié (LoginResponse.typeActeur) ; `UGPM` agit sous sa PRMP de tutelle. */
-export type TypeActeur = 'CONTROLEUR' | 'PRMP' | 'UGPM' | 'CANDIDAT' | 'MEMBRE_CAO';
+export type TypeActeur = 'CONTROLEUR' | 'PRMP' | 'UGPM' | 'CANDIDAT' | 'MEMBRE_CAO' | 'DEPOSITAIRE';
 
 /** Statut d'un dossier (cycle réel backend : BROUILLON → SOUMIS → PRET_DISPATCH → … → CLOTURE/RETIRE). */
 export type StatutDossier =

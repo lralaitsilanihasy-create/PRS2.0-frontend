@@ -991,8 +991,9 @@ export class AnnuaireAdmin {
   /** « Modifier la fiche » — l'écran d'origine de la population, qui porte le formulaire complet. */
   cheminFiche(type: TypeActeur): string {
     // Un candidat (soumission en ligne, 04/10) n'est pas dans l'annuaire ; sa « fiche » est son entreprise. Un membre de
-    // CAO non plus : sa « fiche » est la CAO de sa procédure, tenue par la PRMP — l'Administrateur n'a que le compte.
-    return { CONTROLEUR: '/admin/comptes/controleurs', PRMP: '/admin/comptes/prmps', UGPM: '/admin/comptes/ugpms', CANDIDAT: '/admin/entreprises', MEMBRE_CAO: '/admin/comptes' }[type];
+    // CAO non plus : sa « fiche » est la CAO de sa procédure, tenue par la PRMP — l'Administrateur n'a que le compte. Le
+    // dépositaire (V71) de même : il est désigné par le responsable, dans les paramètres internes.
+    return { CONTROLEUR: '/admin/comptes/controleurs', PRMP: '/admin/comptes/prmps', UGPM: '/admin/comptes/ugpms', CANDIDAT: '/admin/entreprises', MEMBRE_CAO: '/admin/comptes', DEPOSITAIRE: '/admin/comptes' }[type];
   }
 
   /**

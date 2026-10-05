@@ -111,9 +111,9 @@ import { CeremonieResponsable } from './ceremonie-responsable';
             </div>
           </div>
 
-          <!-- ⚠️ Lot 2b (ADR-0013, S3) — le dépositaire de la part de secours : une désignation nominative, pas un compte. -->
+          <!-- ⚠️ V71 (05/10) — le dépositaire de la part de secours a un compte : invité par courriel, il génère lui-même sa clé. -->
           <fieldset class="form-group pi__depositaire">
-            <legend class="form-label">Dépositaire de la part de secours (hors commission, sans compte)</legend>
+            <legend class="form-label">Dépositaire de la part de secours (hors commission)</legend>
             <div class="cnm-form-grid">
               <label class="form-group">
                 <span class="form-label">Nom</span>
@@ -131,8 +131,30 @@ import { CeremonieResponsable } from './ceremonie-responsable';
                 <span class="form-label">Contact</span>
                 <input class="form-control" type="text" [value]="depContact()" (input)="depContact.set($any($event.target).value)" />
               </label>
+              <label class="form-group">
+                <span class="form-label">Adresse électronique (obligatoire)</span>
+                <input class="form-control" type="email" autocomplete="off" [value]="depEmail()" (input)="depEmail.set($any($event.target).value)" [class.error]="!!erreurDe('depositaire.email')" />
+                @if (erreurDe('depositaire.email'); as m) { <span class="form-error">{{ m }}</span> }
+              </label>
+              <label class="form-group">
+                <span class="form-label">Téléphone</span>
+                <input class="form-control" type="tel" autocomplete="off" [value]="depTelephone()" (input)="depTelephone.set($any($event.target).value)" />
+              </label>
             </div>
-            <span class="form-hint">Libre : vous le désignez pour chaque procédure (arbitrage du pilote, 04/10). Sa clé naît sur votre poste, en sa présence, à la cérémonie ; sa phrase est imprimée sur le pli qu'il scelle.</span>
+            @if (d.partDeSecours?.depositaire; as dep) {
+              <p class="pi__compte">
+                @if (dep.compte; as c) {
+                  <span class="badge badge-neutral">{{ comptesDepositaire[c.etat] ?? c.etat }}</span>
+                  <span class="cnm-mono text-sm">{{ c.idCompte }}</span>
+                  @if (c.etat !== 'ACTIF' && c.etat !== 'ARCHIVE') {
+                    <button type="button" class="btn btn-outline btn-sm" [disabled]="saving()" (click)="inviterDepositaire()">Renvoyer l'invitation</button>
+                  }
+                } @else {
+                  <span class="text-sm pi__manque">Sans adresse : le dépositaire n'a pas de compte. Renseignez son adresse, puis enregistrez.</span>
+                }
+              </p>
+            }
+            <span class="form-hint">Libre : vous le désignez pour chaque procédure (arbitrage du pilote, 04/10). Il reçoit une invitation par courriel, puis génère lui-même sa clé de secours depuis son espace : personne d'autre ne voit sa phrase (décision du 05/10).</span>
             @if (erreurDe('depositaire'); as m) { <span class="form-error">{{ m }}</span> }
           </fieldset>
 
@@ -172,6 +194,7 @@ import { CeremonieResponsable } from './ceremonie-responsable';
     .pi__anomalies { margin: 0; padding-left: 1.2rem; color: var(--n-700); font-size: 0.88rem; }
     .pi__form { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
     .pi fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+    .pi__compte { margin: 0; display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
     .pi__depositaire { display: flex; flex-direction: column; gap: 0.4rem; padding-top: 0.5rem; border-top: 1px solid var(--n-200); }
     .pi__membres { margin: 0; padding-left: 1.1rem; font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.2rem; }
     .pi__profil, .pi__code { color: var(--n-500); font-size: 0.78rem; font-weight: 400; }
@@ -210,6 +233,9 @@ export class ParametresInternesEcran implements OnInit {
   readonly depOrganisme = signal('');
   readonly depFonction = signal('');
   readonly depContact = signal('');
+  readonly depEmail = signal('');
+  readonly depTelephone = signal('');
+  readonly comptesDepositaire: Readonly<Record<string, string>> = { A_INVITER: 'Compte à inviter', INVITE: 'Invitation envoyée', ACTIF: 'Compte actif', ARCHIVE: 'Compte archivé' };
   /** « 3 sur 5 » : le quorum proposé suit la règle du défaut (3/5), borné à [2, n]. */
   readonly quorumPropose = computed(() => {
     const n = this.donnees()?.nombreParts ?? 0;
@@ -255,6 +281,8 @@ export class ParametresInternesEcran implements OnInit {
     this.depOrganisme.set(dep?.organisme ?? '');
     this.depFonction.set(dep?.fonction ?? '');
     this.depContact.set(dep?.contact ?? '');
+    this.depEmail.set(dep?.email ?? '');
+    this.depTelephone.set(dep?.telephone ?? '');
     this.erreurs.set(new Map());
   }
 
@@ -273,7 +301,16 @@ export class ParametresInternesEcran implements OnInit {
     if (id == null || this.saving()) return;
     this.saving.set(true);
     const nom = this.depNom().trim();
-    const depositaire = nom ? { nom, organisme: this.depOrganisme().trim() || null, fonction: this.depFonction().trim() || null, contact: this.depContact().trim() || null } : null;
+    const depositaire = nom
+      ? {
+          nom,
+          organisme: this.depOrganisme().trim() || null,
+          fonction: this.depFonction().trim() || null,
+          contact: this.depContact().trim() || null,
+          email: this.depEmail().trim() || null,
+          telephone: this.depTelephone().trim() || null,
+        }
+      : null;
     this.service.enregistrerParametresInternes(id, { quorum: this.quorum(), dateCeremonie: this.dateCeremonie(), depositaire }).subscribe({
       next: (d) => {
         this.saving.set(false);
@@ -292,6 +329,24 @@ export class ParametresInternesEcran implements OnInit {
     });
   }
 
+  /** ⚠️ V71 — renvoie l'invitation du dépositaire (code d'activation par courriel). */
+  inviterDepositaire(): void {
+    const id = this.idDmc();
+    if (id == null || this.saving()) return;
+    this.saving.set(true);
+    this.service.inviterDepositaire(id).subscribe({
+      next: (d) => {
+        this.saving.set(false);
+        this.poser(d);
+        this.toast.success('L’invitation est renvoyée au dépositaire.');
+      },
+      error: (e: ApiError | HttpErrorResponse) => {
+        this.saving.set(false);
+        this.toast.error(this.motif(e));
+      },
+    });
+  }
+
   /** Notre mot pour un code connu, le message du serveur sinon. */
   private motif(e: ApiError | HttpErrorResponse): string {
     switch (codeErreur(e)) {
@@ -299,6 +354,12 @@ export class ParametresInternesEcran implements OnInit {
         return 'Le responsable de la procédure ne peut pas détenir une part de clé.';
       case 'FICHE_VALIDEE':
         return 'La fiche est validée en remise électronique : ses paramètres internes ne se modifient plus.';
+      case 'DEJA_ACTIF':
+        return 'Le compte du dépositaire est déjà actif : il se connecte avec son adresse.';
+      case 'DEPOSITAIRE_ABSENT':
+        return 'Renseignez l’adresse du dépositaire, enregistrez, puis renvoyez l’invitation.';
+      case 'DEPOSITAIRE_INCOMPATIBLE':
+        return 'Cette personne ne peut pas être dépositaire : PRMP, UGPM, responsable, membre de la CAO de la procédure ou candidat.';
       case 'CEREMONIE_CLOSE':
         return 'La cérémonie des clés est close : rouvrez-la (section ci-dessous) avant de changer le quorum, la date ou le dépositaire.';
       default:

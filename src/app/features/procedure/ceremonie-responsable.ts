@@ -1,51 +1,26 @@
-import { ChangeDetectionStrategy, Component, DOCUMENT, OnInit, computed, inject, input, output, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 
 import { ApiError, codeErreur } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import {
-  PhraseIncorrecte,
-  dechiffrer,
-  desenvelopper,
-  empreinteCourte,
-  envelopper,
-  exporterClePublique,
-  formaterEmpreinte,
-  genererPaire,
-  genererPhrase,
-} from '../../core/securite/cles-detenteur';
-import { telechargerBlob } from '../../core/securite/fichiers-surs';
-import { Ceremonie, Depositaire, Detenteur, Enveloppe } from '../../models';
+import { empreinteCourte, formaterEmpreinte } from '../../core/securite/cles-detenteur';
+import { Ceremonie, Depositaire, Detenteur } from '../../models';
 import { CeremonieService } from '../../services';
-import { ModaleDirective } from '../../shared/a11y/modale.directive';
-import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { LIBELLES_ETAT_CEREMONIE, LIBELLES_ETAT_PART, classeCeremonie, classePart } from '../cao/libelles-cao';
 import { dateHeureFr } from '../candidat/libelles-candidat';
-
-/** Ce que le pli de secours porte, le temps de l'imprimer ; effacé dès la clé publiée. */
-interface PliSecours {
-  phrase: string;
-  empreinte: string;
-  clePublique: string;
-  enveloppe: Enveloppe;
-}
-
-function echapper(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
+import { PartSecours } from './part-secours';
 
 /**
  * Section **« Cérémonie des clés »** de l'écran du responsable de la procédure (lot 2b, ADR-0013 §1, §5) : l'état, les `n`
  * détenteurs et leurs empreintes, les avertissements (S1, marge), **clore** (409 nomme les manquants) et **rouvrir** (S4,
- * refusé dès la première offre), et la **part de secours** (S3) : la paire naît dans le navigateur du responsable, en
- * présence du dépositaire ; la phrase est **générée**, affichée une fois et **imprimée sur le pli** avec l'empreinte et
- * l'enveloppe ; seule l'enveloppe part au serveur. À l'ouverture (lot 4), le pli n'apportera que la phrase.
+ * refusé dès la première offre), et la **part de secours** (S3). ⚠️ V71 (décision du pilote, 05/10) : la clé de secours naît
+ * chez le **dépositaire**, depuis son espace ; le responsable en lit l'état (`app-part-secours`), et ne garde la vérification
+ * et la perte que pour une clé de l'ancien geste.
  */
 @Component({
   selector: 'app-ceremonie-responsable',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [EtatErreur, ModaleDirective],
+  imports: [EtatErreur, PartSecours],
   template: `
     <section class="cr" aria-labelledby="cr-titre">
       <h2 id="cr-titre" class="cr__h2">Cérémonie des clés</h2>
@@ -100,96 +75,8 @@ function echapper(s: string): string {
           }
         </div>
 
-        <!-- La part de secours (S3) : les gestes du responsable, en présence du dépositaire. -->
-        <div class="card cr__secours">
-          <h3 class="cr__h3">Part de secours</h3>
-          @if (secours(); as s) {
-            <p class="cr__etat">
-              <span>Dépositaire : <strong>{{ s.nom }}</strong></span>
-              <span class="badge" [class]="'badge ' + classePart(s.etatPart)">{{ parts[s.etatPart] }}</span>
-            </p>
-            <div class="cr__actions">
-              @if (s.etatPart === 'ABSENTE') {
-                <button type="button" class="btn btn-primary" [disabled]="travail() || !depositaire()" (click)="ouvrirSecours('publier')">Générer la clé de secours…</button>
-                @if (!depositaire()) { <span class="text-sm text-muted">Désignez d'abord le dépositaire, ci-dessus.</span> }
-              } @else {
-                @if (s.etatPart !== 'PERDUE') { <button type="button" class="btn btn-primary" [disabled]="travail()" (click)="ouvrirVerifSecours()">Vérifier la part de secours…</button> }
-                <button type="button" class="btn btn-outline" [disabled]="travail()" (click)="ouvrirSecours('remplacer')">Remplacer la clé de secours…</button>
-                @if (s.etatPart !== 'PERDUE') {
-                  @if (!confirmerPerteSecours()) {
-                    <button type="button" class="btn btn-outline" [disabled]="travail()" (click)="confirmerPerteSecours.set(true)">Déclarer la part de secours perdue…</button>
-                  } @else {
-                    <span class="cr__confirm">Le pli est perdu ou illisible ?
-                      <button type="button" class="btn btn-sm btn-danger" [disabled]="travail()" (click)="perdueSecours()">Confirmer la perte</button>
-                      <button type="button" class="btn btn-sm btn-outline" (click)="confirmerPerteSecours.set(false)">Annuler</button>
-                    </span>
-                  }
-                }
-              }
-            </div>
-          } @else {
-            <p class="text-sm text-muted">La part de secours paraît ici une fois le dépositaire désigné.</p>
-          }
-        </div>
-      }
-
-      <!-- Génération de la clé de secours : la phrase générée s'affiche une fois, et part sur le pli, jamais au serveur. -->
-      @if (secoursOuvert()) {
-        <div class="modal-backdrop" [class.closing]="fermeture()">
-          <div class="modal cnm-form cr__modal" role="dialog" aria-modal="true" aria-label="Clé de secours" appModale (appModaleFermer)="fermerSecours()">
-            <header class="modal-header">
-              <span class="modal-title">{{ modeSecours() === 'remplacer' ? 'Remplacer la clé de secours' : 'Clé de secours' }}</span>
-              <button type="button" class="btn-close" aria-label="Fermer" (click)="fermerSecours()">✕</button>
-            </header>
-            <div class="modal-body cr__corps">
-              @if (erreurSecours(); as e) { <div class="alert alert-danger" role="alert">{{ e }}</div> }
-              @if (!pli()) {
-                <p>La clé de secours naît sur ce poste, <strong>en présence du dépositaire</strong>{{ depositaire()?.nom ? ' (' + depositaire()!.nom + ')' : '' }}. Sa phrase secrète est <strong>générée</strong>, affichée une seule fois, et imprimée sur le pli que le dépositaire scelle et conserve. Le serveur ne reçoit que l'enveloppe.</p>
-                <button type="button" class="btn btn-primary" [disabled]="travail()" (click)="genererSecours()">{{ travail() ? 'Génération…' : 'Générer la clé et la phrase' }}</button>
-              } @else {
-                <p class="form-label">Phrase secrète du pli — à imprimer, jamais à retaper ici</p>
-                <p class="cr__phrase cnm-mono">{{ pli()!.phrase }}</p>
-                <p class="form-label">Empreinte de la clé</p>
-                <p class="cnm-mono cr__emp">{{ formater(pli()!.empreinte) }}</p>
-                <div class="cr__actions">
-                  <button type="button" class="btn btn-secondary" (click)="imprimerPli()">Imprimer le pli</button>
-                  <button type="button" class="btn btn-outline" (click)="enregistrerPli()">Enregistrer le pli (.txt)</button>
-                </div>
-                <label class="cr__case"><input type="checkbox" [checked]="pliImprime()" (change)="pliImprime.set($any($event.target).checked)" /> Le pli est imprimé, scellé, et remis au dépositaire.</label>
-              }
-            </div>
-            <footer class="modal-footer">
-              <button type="button" class="btn btn-outline" [disabled]="travail()" (click)="fermerSecours()">Annuler</button>
-              @if (pli()) { <button type="button" class="btn btn-primary" [disabled]="travail() || !pliImprime()" (click)="publierSecours()">{{ travail() ? 'Publication…' : modeSecours() === 'remplacer' ? 'Remplacer la clé' : 'Publier la clé de secours' }}</button> }
-            </footer>
-          </div>
-        </div>
-      }
-
-      <!-- Vérification de la part de secours (S2) : l'enveloppe vient du serveur, le pli n'apporte que la phrase. -->
-      @if (verifSecoursOuverte()) {
-        <div class="modal-backdrop" [class.closing]="fermeture()">
-          <div class="modal cnm-form cr__modal" role="dialog" aria-modal="true" aria-label="Vérifier la part de secours" appModale (appModaleFermer)="fermerVerifSecours()">
-            <header class="modal-header">
-              <span class="modal-title">Vérifier la part de secours</span>
-              <button type="button" class="btn-close" aria-label="Fermer" (click)="fermerVerifSecours()">✕</button>
-            </header>
-            <form (submit)="$event.preventDefault(); verifierSecours()" novalidate>
-              <div class="modal-body cr__corps">
-                @if (erreurSecours(); as e) { <div class="alert alert-danger" role="alert">{{ e }}</div> }
-                <p class="text-sm">Le dépositaire ouvre son pli et dicte la phrase ; elle déverrouille ici l'enveloppe gardée par le serveur, qui déchiffre un défi. Rien de secret n'est transmis, et le pli se rescelle.</p>
-                <label class="form-group">
-                  <span class="form-label">Phrase du pli</span>
-                  <input class="form-control" type="password" autocomplete="off" [value]="phraseVerif()" (input)="phraseVerif.set($any($event.target).value)" />
-                </label>
-              </div>
-              <footer class="modal-footer">
-                <button type="button" class="btn btn-outline" [disabled]="travail()" (click)="fermerVerifSecours()">Annuler</button>
-                <button type="submit" class="btn btn-primary" [disabled]="travail()">{{ travail() ? 'Vérification…' : 'Vérifier' }}</button>
-              </footer>
-            </form>
-          </div>
-        </div>
+        <!-- ⚠️ V71 (05/10) : la part de secours se génère chez le dépositaire ; ici, son état (et l'ancien geste, s'il y a lieu). -->
+        <app-part-secours [idDmc]="idDmc()" vue="responsable" [secours]="secours()" [depositaire]="depositaire()" (changement)="apresSecours()" />
       }
     </section>
   `,
@@ -213,14 +100,13 @@ function echapper(s: string): string {
 })
 export class CeremonieResponsable implements OnInit {
   readonly idDmc = input.required<number>();
-  /** Le dépositaire désigné dans les paramètres internes ; sans lui, pas de clé de secours (409 `DEPOSITAIRE_ABSENT`). */
+  /** Le dépositaire désigné dans les paramètres internes (son compte, V71) ; il génère lui-même la clé de secours. */
   readonly depositaire = input<Depositaire | null>(null);
   /** Un geste a changé l'état : le parent relit les paramètres internes (part de secours, journal). */
   readonly changement = output<void>();
 
   private readonly service = inject(CeremonieService);
   private readonly toast = inject(ToastService);
-  private readonly document = inject(DOCUMENT);
 
   readonly parts = LIBELLES_ETAT_PART;
   readonly ceremonies = LIBELLES_ETAT_CEREMONIE;
@@ -239,16 +125,6 @@ export class CeremonieResponsable implements OnInit {
   readonly travail = signal(false);
   readonly erreurAction = signal<string | null>(null);
   readonly confirmerReouverture = signal(false);
-  readonly confirmerPerteSecours = signal(false);
-
-  readonly secoursOuvert = signal(false);
-  readonly modeSecours = signal<'publier' | 'remplacer'>('publier');
-  readonly pli = signal<PliSecours | null>(null);
-  readonly pliImprime = signal(false);
-  readonly erreurSecours = signal<string | null>(null);
-  readonly verifSecoursOuverte = signal(false);
-  readonly phraseVerif = signal('');
-  readonly fermeture = signal(false);
 
   ngOnInit(): void {
     this.charger();
@@ -305,167 +181,13 @@ export class CeremonieResponsable implements OnInit {
     });
   }
 
-  // ── Part de secours ────────────────────────────────────────────────────────────────────────────────────────
-
-  ouvrirSecours(mode: 'publier' | 'remplacer'): void {
-    this.modeSecours.set(mode);
-    this.pli.set(null);
-    this.pliImprime.set(false);
-    this.erreurSecours.set(null);
-    this.fermeture.set(false);
-    this.secoursOuvert.set(true);
-  }
-
-  fermerSecours(): void {
-    fermerAvecAnimation(this.fermeture, () => {
-      this.secoursOuvert.set(false);
-      this.pli.set(null); // la phrase ne survit pas à la fenêtre
-    });
-  }
-
-  async genererSecours(): Promise<void> {
-    this.travail.set(true);
-    this.erreurSecours.set(null);
-    try {
-      const phrase = genererPhrase();
-      const paire = await genererPaire();
-      const { clePublique, empreinte } = await exporterClePublique(paire.publicKey);
-      const enveloppe = await envelopper(paire.privateKey, phrase);
-      this.pli.set({ phrase, empreinte, clePublique, enveloppe });
-    } catch (e) {
-      this.erreurSecours.set((e as Error)?.message || 'La génération a échoué.');
-    } finally {
-      this.travail.set(false);
-    }
-  }
-
-  /** Le texte du pli : la phrase, l'empreinte, et l'enveloppe en base64 en dernier recours (si le serveur en perdait la copie). */
-  private textePli(p: PliSecours): string {
-    const d = this.depositaire();
-    return [
-      'PRS 2.0 — PLI SCELLÉ DE LA PART DE SECOURS',
-      `Procédure n° ${this.idDmc()}`,
-      `Dépositaire : ${d?.nom ?? '—'}${d?.organisme ? ` (${d.organisme})` : ''}`,
-      `Imprimé le ${new Date().toLocaleString('fr-FR')}`,
-      '',
-      'PHRASE SECRÈTE (à dicter à la séance d’ouverture, puis resceller) :',
-      p.phrase,
-      '',
-      'EMPREINTE DE LA CLÉ PUBLIQUE (SHA-256) :',
-      formaterEmpreinte(p.empreinte),
-      '',
-      'ENVELOPPE DE LA CLÉ PRIVÉE (dernier recours si le serveur ne peut plus la rendre ; inutile sans la phrase) :',
-      `kdf=${p.enveloppe.kdf} iterations=${p.enveloppe.iterations} algorithme=${p.enveloppe.algorithme}`,
-      `sel=${p.enveloppe.sel}`,
-      `iv=${p.enveloppe.iv}`,
-      `chiffre=${p.enveloppe.chiffre}`,
-    ].join('\n');
-  }
-
-  /** Impression dans un cadre isolé : notre propre texte, échappé — pas un fichier téléversé. */
-  imprimerPli(): void {
-    const p = this.pli();
-    if (!p) return;
-    const html =
-      '<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Pli de secours</title>' +
-      '<style>body{font:12pt/1.5 ui-monospace,Consolas,monospace;margin:2cm;white-space:pre-wrap;word-break:break-all}h1{font-size:14pt}</style>' +
-      `</head><body><h1>Pli scellé de la part de secours</h1>${echapper(this.textePli(p))}</body></html>`;
-    const cadre = this.document.createElement('iframe');
-    cadre.setAttribute('aria-hidden', 'true');
-    cadre.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
-    cadre.onload = () => {
-      cadre.contentWindow?.focus();
-      cadre.contentWindow?.print();
-      setTimeout(() => cadre.remove(), 60_000);
-    };
-    cadre.srcdoc = html;
-    this.document.body.appendChild(cadre);
-  }
-
-  enregistrerPli(): void {
-    const p = this.pli();
-    if (!p) return;
-    telechargerBlob(new Blob([this.textePli(p)], { type: 'text/plain;charset=utf-8' }), `pli-secours-procedure-${this.idDmc()}.txt`);
-  }
-
-  publierSecours(): void {
-    const p = this.pli();
-    if (!p || this.travail() || !this.pliImprime()) return;
-    this.travail.set(true);
-    this.erreurSecours.set(null);
-    const corps = { clePublique: p.clePublique, empreinte: p.empreinte, enveloppe: p.enveloppe };
-    const appel = this.modeSecours() === 'remplacer' ? this.service.remplacerSecours(this.idDmc(), corps) : this.service.publierSecours(this.idDmc(), corps);
-    appel.subscribe({
-      next: () => {
-        this.pli.set(null);
-        this.secoursOuvert.set(false);
-        this.apres('La clé de secours est publiée. La phrase ne vit plus que sur le pli.');
-      },
-      error: (e: ApiError) => {
-        this.travail.set(false);
-        this.erreurSecours.set(this.motif(e));
-      },
-    });
-  }
-
-  ouvrirVerifSecours(): void {
-    this.phraseVerif.set('');
-    this.erreurSecours.set(null);
-    this.fermeture.set(false);
-    this.verifSecoursOuverte.set(true);
-  }
-
-  fermerVerifSecours(): void {
-    fermerAvecAnimation(this.fermeture, () => {
-      this.verifSecoursOuverte.set(false);
-      this.phraseVerif.set('');
-    });
-  }
-
-  async verifierSecours(): Promise<void> {
-    const phrase = this.phraseVerif().trim();
-    if (!phrase) {
-      this.erreurSecours.set('La phrase du pli est obligatoire.');
-      return;
-    }
-    this.travail.set(true);
-    this.erreurSecours.set(null);
-    try {
-      const enveloppe = await firstValueFrom(this.service.enveloppeSecours(this.idDmc()));
-      const privee = await desenvelopper(enveloppe, phrase);
-      const defi = await firstValueFrom(this.service.ouvrirDefi(this.idDmc(), 'SECOURS'));
-      let clair: string;
-      try {
-        clair = await dechiffrer(privee, defi.chiffre);
-      } catch {
-        throw new Error('Le défi ne se déchiffre pas avec cette enveloppe : la clé de secours publiée n’est pas celle du pli.');
-      }
-      await firstValueFrom(this.service.repondreDefi(this.idDmc(), defi.idDefi, clair));
-      this.phraseVerif.set('');
-      this.verifSecoursOuverte.set(false);
-      this.apres('La part de secours est vérifiée.');
-    } catch (e) {
-      this.travail.set(false);
-      this.erreurSecours.set(this.motif(e));
-    }
-  }
-
-  perdueSecours(): void {
-    if (this.travail()) return;
-    this.travail.set(true);
-    this.erreurAction.set(null);
-    this.confirmerPerteSecours.set(false);
-    this.service.declarerPerdue(this.idDmc(), 'SECOURS').subscribe({
-      next: () => this.apres('La part de secours est déclarée perdue : remplacez-la avec le dépositaire.'),
-      error: (e: ApiError) => {
-        this.travail.set(false);
-        this.erreurAction.set(this.motif(e));
-      },
-    });
+  /** Un geste sur la part de secours : on relit la cérémonie, et le parent ses paramètres internes. */
+  apresSecours(): void {
+    this.charger();
+    this.changement.emit();
   }
 
   private motif(e: unknown): string {
-    if (e instanceof PhraseIncorrecte) return e.message;
     const api = e as Partial<ApiError> & { status?: number };
     switch (codeErreur(api as ApiError)) {
       case 'CLES_INCOMPLETES':

@@ -18,6 +18,7 @@ import {
   Lecture,
   MembreCao,
   PartChiffree,
+  ProcedureDepositaire,
   RoleDetenteur,
   Seance,
   VueProcedureCao,
@@ -77,6 +78,26 @@ export class CaoEspaceService {
   /** `GET /procedures/{idDmc}` — 403 s'il n'y siège pas, 404. Silencieux : l'écran le dit. */
   procedure(idDmc: number): Observable<VueProcedureCao> {
     return this.http.get<VueProcedureCao>(`${this.base}/procedures/${idDmc}`, { context: skipErrorToast() });
+  }
+}
+
+/**
+ * ⚠️ V71 (05/10, décision du pilote) — l'espace du **dépositaire** de la part de secours (`/api/depositaire/**`) : activation
+ * publique, puis ses procédures. Sa clé passe par `CeremonieService` (rôle `SECOURS`), son apport par `SeanceService`.
+ */
+@Injectable({ providedIn: 'root' })
+export class DepositaireService {
+  private readonly http = inject(HttpClient);
+  private readonly base = `${environment.apiUrl}/depositaire`;
+
+  /** `POST /activation` (public) → `{ etat: 'ACTIF' }` (déjà actif : 200 sans rien changer) ; 400 `CODE_INVALIDE` / `CODE_EXPIRE`, 404, 429. */
+  activer(corps: ActivationCaoCorps): Observable<{ etat: 'ACTIF' }> {
+    return this.http.post<{ etat: 'ACTIF' }>(`${this.base}/activation`, corps, { context: skipErrorToast() });
+  }
+
+  /** `GET /procedures` — les procédures dont il garde la part de secours ; un ancien dépositaire ne les voit plus. */
+  procedures(): Observable<ProcedureDepositaire[]> {
+    return this.http.get<ProcedureDepositaire[]>(`${this.base}/procedures`, { context: skipErrorToast() });
   }
 }
 
@@ -229,6 +250,15 @@ export class SeanceService {
    */
   constaterEmpechement(idDmc: number, im: string, motif: string): Observable<Seance> {
     return this.http.post<Seance>(this.url(idDmc, '/pv/empechement'), { im, motif }, { context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ V71 — le responsable **demande** la part de secours, avec le motif porté au PV ; le dépositaire est notifié et l'apporte
+   * depuis son espace. 400 `MOTIF_ABSENT`, 409 `SEANCE_NON_OUVERTE` / `SECOURS_INUTILE` (déjà apportée) /
+   * `GESTE_DU_RESPONSABLE` (clé de l'ancien geste : le responsable l'apporte lui-même). Une nouvelle demande remplace la précédente.
+   */
+  demanderSecours(idDmc: number, motif: string): Observable<Seance> {
+    return this.http.post<Seance>(this.url(idDmc, '/secours'), { motif }, { context: skipErrorToast() });
   }
 
   /** S5 : 409 `QUORUM_POSSIBLE` (`details.possibles`, `details.quorum`) tant que le quorum reste atteignable. */

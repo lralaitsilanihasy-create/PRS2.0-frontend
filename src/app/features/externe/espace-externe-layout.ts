@@ -7,8 +7,8 @@ import { Role } from '../../models';
 import { Icone } from '../../shared/ui/icone';
 import { ChangerMotDePasseModal } from '../auth/mon-compte/changer-mot-de-passe-modal';
 
-/** Les deux espaces externes ; la route racine dit lequel par `data.espace`. */
-export type CleEspaceExterne = 'candidat' | 'cao';
+/** Les espaces externes ; la route racine dit lequel par `data.espace`. ⚠️ V71 : le dépositaire de la part de secours. */
+export type CleEspaceExterne = 'candidat' | 'cao' | 'depositaire';
 
 interface Lien {
   label: string;
@@ -51,6 +51,16 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
     navPublique: [],
     navConnecte: [{ label: 'Mes procédures', path: '/cao/mes-procedures' }],
     entree: { label: 'Activer mon compte', path: '/cao/activation' },
+    piedLien: null,
+    apresDeconnexion: '/login',
+  },
+  depositaire: {
+    role: 'DEPOSITAIRE',
+    racine: '/depositaire',
+    titre: 'Espace du dépositaire',
+    navPublique: [],
+    navConnecte: [{ label: 'Mes procédures', path: '/depositaire/mes-procedures' }],
+    entree: { label: 'Activer mon compte', path: '/depositaire/activation' },
     piedLien: null,
     apresDeconnexion: '/login',
   },

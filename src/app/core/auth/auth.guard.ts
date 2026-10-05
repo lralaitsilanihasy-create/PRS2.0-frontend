@@ -16,6 +16,7 @@ import { AuthService } from './auth.service';
 export const ESPACES_EXTERNES: Readonly<Partial<Record<Role, string>>> = {
   CANDIDAT: '/candidat',
   MEMBRE_CAO: '/cao',
+  DEPOSITAIRE: '/depositaire',
 };
 
 /** La racine de l'espace externe du profil, `null` pour un profil de la coquille interne (ou sans profil). */

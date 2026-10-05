@@ -16,6 +16,7 @@ describe('Libellés des profils (recette du 2026-09-15)', () => {
       UGPM: 'UGPM',
       CANDIDAT: 'Candidat',
       MEMBRE_CAO: 'Membre de CAO',
+      DEPOSITAIRE: 'Dépositaire de la part de secours',
     };
     expect(LIBELLES_ROLES).toEqual(attendus);
     for (const [role, libelle] of Object.entries(LIBELLES_ROLES)) {
@@ -24,8 +25,8 @@ describe('Libellés des profils (recette du 2026-09-15)', () => {
     }
   });
 
-  it("types d'acteur : Contrôleur / PRMP / UGPM / Candidat / Membre de CAO", () => {
-    const attendus: Record<TypeActeur, string> = { CONTROLEUR: 'Contrôleur', PRMP: 'PRMP', UGPM: 'UGPM', CANDIDAT: 'Candidat', MEMBRE_CAO: 'Membre de CAO' };
+  it("types d'acteur : Contrôleur / PRMP / UGPM / Candidat / Membre de CAO / Dépositaire", () => {
+    const attendus: Record<TypeActeur, string> = { CONTROLEUR: 'Contrôleur', PRMP: 'PRMP', UGPM: 'UGPM', CANDIDAT: 'Candidat', MEMBRE_CAO: 'Membre de CAO', DEPOSITAIRE: 'Dépositaire' };
     expect(LIBELLES_TYPES_ACTEUR).toEqual(attendus);
     expect(libelleTypeActeur('CONTROLEUR')).toBe('Contrôleur');
   });

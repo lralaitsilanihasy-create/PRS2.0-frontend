@@ -128,7 +128,15 @@ export interface Detenteur {
   etatPart: EtatPart;
   derniereVerification: string | null;
   remplacements: number;
+  /**
+   * ⚠️ V71 — qui a généré la clé de secours publiée : `RESPONSABLE` (ancien geste, avant le 05/10) ou `DEPOSITAIRE` ;
+   * `null` pour un membre ou une part absente.
+   */
+  generePar?: GenerePar | null;
 }
+
+/** ⚠️ V71 — l'auteur de la clé de secours active. */
+export type GenerePar = 'RESPONSABLE' | 'DEPOSITAIRE';
 
 /** `GET /api/fiches-marche/{idDmc}/ceremonie` — responsable et membres de la CAO ; 403 aux autres. */
 export interface Ceremonie {
@@ -213,6 +221,25 @@ export interface Seance {
   offres: { numero: number | null; lot: number | null; etat: string; partsRecues: number }[];
   dechiffreeLe: string | null;
   pv: PvSeance | null;
+  /** ⚠️ V71 — la demande de la part de secours par le responsable (motif porté au PV), `null` sans demande. */
+  secoursDemande?: { motif: string; date: string } | null;
+  /** ⚠️ V71 — qui a généré la clé de secours : décide entre « Demander la part de secours » et l'ancien geste. */
+  secoursGenerePar?: GenerePar | null;
+}
+
+/** ⚠️ V71 — `GET /api/depositaire/procedures` : les procédures dont le dépositaire connecté garde la part de secours. */
+export interface ProcedureDepositaire {
+  idDmc: number;
+  reference: string;
+  objet: string;
+  etatCeremonie: EtatCeremonie;
+  /** L'état de SA clé (`ABSENTE` sinon). */
+  etatPart: EtatPart;
+  etatSeance: EtatSeance | null;
+  generePar: GenerePar | null;
+  /** Une clé active qui n'est pas la sienne (ancien geste, ou ancien dépositaire) : il la remplace. */
+  cleARemplacer: boolean;
+  secoursDemande: { motif: string; date: string } | null;
 }
 
 /** Une signature du PV d'ouverture (V70, §B2) — ou un empêchement constaté (`empechement`, avec son motif et qui l'a constaté). */

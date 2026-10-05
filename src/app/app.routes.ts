@@ -53,6 +53,15 @@ export const routes: Routes = [
     loadChildren: () => import('./features/cao/cao.routes').then((m) => m.CAO_ROUTES),
   },
   {
+    // ⚠️ V71 (05/10, décision du pilote) — l'ESPACE DU DÉPOSITAIRE de la part de secours : activation (publique), ses
+    // procédures, sa clé (générée sur son poste), et l'apport de la part quand le responsable la demande en séance.
+    path: 'depositaire',
+    canActivate: [espaceExterneGuard],
+    data: { role: 'DEPOSITAIRE', espace: 'depositaire' },
+    loadComponent: () => import('./features/externe/espace-externe-layout').then((m) => m.EspaceExterneLayout),
+    loadChildren: () => import('./features/depositaire/depositaire.routes').then((m) => m.DEPOSITAIRE_ROUTES),
+  },
+  {
     path: '',
     loadComponent: () =>
       import('./layout/main-layout/main-layout').then((m) => m.MainLayout),

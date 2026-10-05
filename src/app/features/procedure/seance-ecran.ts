@@ -40,6 +40,8 @@ export function quorumLibelle(s: Seance): string {
  * La **séance d'ouverture des plis** (lot 4, V69), `/procedure/:idDmc/seance` — route transverse, garde par identité au serveur.
  * - Le **responsable de la procédure** la conduit : ouvrir à l'heure, noter les présences, apporter la **part de secours** (S3,
  *   motif), suivre le quorum, lire (mode projection), produire le **PV d'ouverture**, ou **constater l'illisibilité** (S5).
+ *   ⚠️ V71 : la part de secours se **demande** (motif) et le dépositaire l'apporte de son espace ; l'ancien geste (le
+ *   responsable l'apporte, phrase dictée) ne vaut plus que pour une clé générée chez lui avant le 05/10.
  *   ⚠️ V70 : le PV produit attend ensuite la signature des membres présents (`PV_A_SIGNER`) ; le responsable la suit, et ne
  *   constate un empêchement que si le président est lui-même empêché.
  * - La **PRMP** et l'**UGPM** y lisent l'état, puis la lecture et le PV — rien d'une offre avant le déchiffrement.
@@ -124,7 +126,20 @@ export function quorumLibelle(s: Seance): string {
             }
           </div>
           @if (secoursOuvert() && s.etat === 'OUVERTE') {
-            <div class="card se__bloc"><app-apport-parts [idDmc]="idDmc" role="SECOURS" (apporte)="apres($event, 'La part de secours est apportée.')" /></div>
+            @if (s.secoursGenerePar === 'RESPONSABLE') {
+              <!-- Clé de l'ancien geste (avant le 05/10) : le responsable l'apporte lui-même, la phrase dictée du pli. -->
+              <div class="card se__bloc"><app-apport-parts [idDmc]="idDmc" role="SECOURS" (apporte)="apres($event, 'La part de secours est apportée.')" /></div>
+            } @else {
+              <!-- ⚠️ V71 : le responsable demande, avec le motif porté au PV ; le dépositaire apporte depuis son espace. -->
+              <div class="card se__bloc">
+                <p class="text-sm">Le dépositaire est prévenu par courriel ; il apporte la part de secours depuis son espace, sa phrase ne quittant pas son poste. Le motif est porté au procès-verbal.</p>
+                <label class="form-group"><span class="form-label">Motif de l'emploi de la part de secours</span><input class="form-control" type="text" [value]="motifSecours()" (input)="motifSecours.set($any($event.target).value)" /></label>
+                <button type="button" class="btn btn-primary btn-sm" [disabled]="!motifSecours().trim() || travail()" (click)="demanderSecours()">{{ s.secoursDemande ? 'Renouveler la demande' : 'Demander la part de secours' }}</button>
+              </div>
+            }
+          }
+          @if (s.secoursDemande; as d) {
+            <p class="alert alert-info se__demande" role="status"><span>Part de secours demandée le {{ dateHeure(d.date) }} — motif : {{ d.motif }}.{{ s.etat === 'OUVERTE' && !s.secoursEmploye ? ' En attente du dépositaire.' : '' }}</span></p>
           }
           @if (constatOuvert() && s.etat === 'OUVERTE') {
             <div class="card se__bloc">
@@ -173,6 +188,7 @@ export function quorumLibelle(s: Seance): string {
     .se__case { display: inline-flex; gap: 0.4rem; align-items: center; }
     .se__autre { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.4rem; }
     .se__offres { margin: 0; padding-left: 1.1rem; font-size: var(--text-sm); }
+    .se__demande { margin: 0; }
     .se__actions { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
     @media (max-width: 600px) { .se__autre { grid-template-columns: 1fr; } }
   `,
@@ -196,6 +212,7 @@ export class SeanceEcran implements OnInit, OnDestroy {
   readonly secoursOuvert = signal(false);
   readonly constatOuvert = signal(false);
   readonly motifConstat = signal('');
+  readonly motifSecours = signal('');
   readonly observations = signal('');
   readonly projection = signal(false);
   readonly autreNom = signal('');
@@ -277,6 +294,15 @@ export class SeanceEcran implements OnInit, OnDestroy {
       case 'QUORUM_POSSIBLE':
         this.message.set(`Le quorum reste atteignable (${details['possibles'] ?? '?'} détenteurs possibles pour un quorum de ${details['quorum'] ?? '?'}) : l'illisibilité ne se constate pas.`);
         return;
+      case 'SECOURS_INUTILE':
+        this.message.set('La part de secours est déjà apportée.');
+        return;
+      case 'GESTE_DU_RESPONSABLE':
+        this.message.set('Cette clé de secours a été générée chez le responsable avant le 05/10 : apportez-la vous-même, avec la phrase du pli.');
+        return;
+      case 'MOTIF_ABSENT':
+        this.message.set("Le motif de l'emploi de la part de secours est obligatoire.");
+        return;
       case 'SEANCE_CLOSE':
         this.message.set('Le PV est produit : les présences ne se modifient plus.');
         return;
@@ -321,6 +347,19 @@ export class SeanceEcran implements OnInit, OnDestroy {
     );
     this.autreNom.set('');
     this.autreQualite.set('');
+  }
+
+  /** ⚠️ V71 — la demande de la part de secours ; le dépositaire, notifié, l'apporte depuis son espace. */
+  demanderSecours(): void {
+    this.travail.set(true);
+    this.message.set(null);
+    this.service.demanderSecours(this.idDmc, this.motifSecours().trim()).subscribe({
+      next: (s) => {
+        this.motifSecours.set('');
+        this.apres(s, 'La part de secours est demandée : le dépositaire est prévenu.');
+      },
+      error: (e: ApiError) => this.echec(e),
+    });
   }
 
   constater(): void {

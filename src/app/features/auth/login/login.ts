@@ -70,7 +70,11 @@ export class Login {
         }
         if (err.status === 409 && err.code === 'COMPTE_A_ACTIVER') {
           this.toast.info(err.message, 'Compte à activer');
-          void this.router.navigate(['/cao', 'activation'], { queryParams: { email: login.trim() } });
+          // ⚠️ V71 : le dépositaire de la part de secours a aussi un compte à activer ; la réponse ne dit pas lequel, la page
+          // visée (`returnUrl`) le dit — à défaut, la CAO, dont l'écran d'activation renvoie vers l'autre en cas d'échec.
+          const visee = this.route.snapshot.queryParamMap.get('returnUrl') ?? '';
+          const espace = visee.startsWith('/depositaire') ? '/depositaire' : '/cao';
+          void this.router.navigate([espace, 'activation'], { queryParams: { email: login.trim() } });
           return;
         }
         // 401 = identifiants invalides OU compte désactivé : on affiche le message backend si présent.

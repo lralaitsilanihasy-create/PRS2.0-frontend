@@ -263,6 +263,11 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
     return this.http.put<ParametresInternes>(`${this.baseUrl}/${idDmc}/parametres-internes`, corps, { context: skipErrorToast() });
   }
 
+  /** ⚠️ V71 — renvoie l'invitation au dépositaire (responsable) ; 409 `DEJA_ACTIF` / `DEPOSITAIRE_ABSENT` (sans adresse). */
+  inviterDepositaire(idDmc: number): Observable<ParametresInternes> {
+    return this.http.post<ParametresInternes>(`${this.baseUrl}/${idDmc}/parametres-internes/depositaire/inviter`, null, { context: skipErrorToast() });
+  }
+
   /**
    * ⚠️ Import du DAO (28/09) — `POST /{idDmc}/import`, multipart `fichier` (.docx) : LECTURE SEULE, le serveur rend des
    * propositions ; rien n'est écrit. 415 `FORMAT_NON_SUPPORTE`, 409 `FICHE_VALIDEE`, 422 `MODELE_ABSENT`, 403. Silencieux.

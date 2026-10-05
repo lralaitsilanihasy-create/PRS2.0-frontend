@@ -112,12 +112,19 @@ export interface ParametresInternes {
   journal: EntreeJournalParametres[];
 }
 
-/** Le dépositaire de la part de secours (ADR-0013, S3) : une désignation nominative, pas un compte. */
+/**
+ * Le dépositaire de la part de secours (ADR-0013, S3). ⚠️ V71 (05/10) : il a un **compte externe** (`D…`) et génère lui-même
+ * sa clé ; `email` est obligatoire à l'écriture (400 sous `depositaire.email`), `compte` est servi, ignoré en écriture, et
+ * `null` pour un dépositaire désigné avant V71 sans adresse.
+ */
 export interface Depositaire {
   nom: string;
   organisme?: string | null;
   fonction?: string | null;
   contact?: string | null;
+  email?: string | null;
+  telephone?: string | null;
+  compte?: { idCompte: string; etat: 'A_INVITER' | 'INVITE' | 'ACTIF' | 'ARCHIVE' } | null;
 }
 
 export type EtatPartDeSecours = 'A_DESIGNER' | 'DESIGNE' | 'PUBLIEE' | 'VERIFIEE' | 'PERDUE';

@@ -22,6 +22,8 @@ export const LIBELLES_ROLES: Readonly<Record<Role, string>> = {
   CANDIDAT: 'Candidat',
   // ⚠️ Soumission en ligne, lot 2a (04/10) — membre de la commission d'appel d'offres, détenteur d'une part de clé.
   MEMBRE_CAO: 'Membre de CAO',
+  // ⚠️ V71 (05/10) — le dépositaire de la part de secours, qui génère lui-même sa clé.
+  DEPOSITAIRE: 'Dépositaire de la part de secours',
 };
 
 export const LIBELLES_TYPES_ACTEUR: Readonly<Record<TypeActeur, string>> = {
@@ -30,6 +32,7 @@ export const LIBELLES_TYPES_ACTEUR: Readonly<Record<TypeActeur, string>> = {
   UGPM: 'UGPM',
   CANDIDAT: 'Candidat',
   MEMBRE_CAO: 'Membre de CAO',
+  DEPOSITAIRE: 'Dépositaire',
 };
 
 /** Libellé d'un profil ; vide sans profil. Un code inconnu (backend plus récent) reste lisible tel quel. */

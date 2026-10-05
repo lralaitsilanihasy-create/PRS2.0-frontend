@@ -18,7 +18,9 @@ import { CeremonieService, SeanceService } from '../../services';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <form class="cnm-form ap" (submit)="$event.preventDefault(); apporter()" novalidate [attr.aria-label]="role() === 'SECOURS' ? 'Apporter la part de secours' : 'Apporter mes parts'">
-      @if (role() === 'SECOURS') {
+      @if (role() === 'SECOURS' && parDepositaire()) {
+        <p class="text-sm">La séance demande votre part de secours. Saisissez la phrase de votre pli : elle déverrouille votre clé sur ce poste, qui déchiffre la part de chaque offre. Seules ces parts partent — jamais votre phrase.</p>
+      } @else if (role() === 'SECOURS') {
         <p class="text-sm">Le dépositaire ouvre son pli devant la séance et dicte la phrase. L'emploi de la part de secours est consigné au procès-verbal, avec son motif.</p>
         <label class="form-group">
           <span class="form-label">Motif de l'emploi de la part de secours</span>
@@ -45,6 +47,8 @@ import { CeremonieService, SeanceService } from '../../services';
 export class ApportParts {
   readonly idDmc = input.required<number>();
   readonly role = input<RoleDetenteur>('MEMBRE');
+  /** ⚠️ V71 — la part de secours apportée par le dépositaire lui-même, de son espace : sans motif (celui de la demande vaut). */
+  readonly parDepositaire = input(false);
   readonly apporte = output<Seance>();
 
   private readonly seance = inject(SeanceService);
@@ -63,7 +67,7 @@ export class ApportParts {
       this.erreur.set('La phrase est obligatoire.');
       return;
     }
-    if (secours && !this.motif().trim()) {
+    if (secours && !this.parDepositaire() && !this.motif().trim()) {
       this.erreur.set('Le motif est obligatoire : il est imprimé au procès-verbal.');
       return;
     }
@@ -83,7 +87,9 @@ export class ApportParts {
       const claires: { idOffre: string; partClaire: string }[] = [];
       for (const p of parts) claires.push({ idOffre: p.idOffre, partClaire: await dechiffrer(await cleDe(p.enveloppe ?? enveloppe), p.part) });
       this.etape.set('Envoi…');
-      const s = await firstValueFrom(this.seance.apporterParts(this.idDmc(), claires, this.role(), secours ? this.motif().trim() : undefined));
+      // ⚠️ V71 : le dépositaire apporte sans motif — c'est celui de la demande du responsable qui va au PV.
+      const motif = secours && !this.parDepositaire() ? this.motif().trim() : undefined;
+      const s = await firstValueFrom(this.seance.apporterParts(this.idDmc(), claires, this.role(), motif));
       this.phrase.set('');
       this.apporte.emit(s);
     } catch (e) {
@@ -107,6 +113,8 @@ export class ApportParts {
         return 'Aucune clé publiée pour vous dans cette procédure.';
       case 'MOTIF_ABSENT':
         return 'Le motif est obligatoire pour la part de secours.';
+      case 'SECOURS_NON_DEMANDE':
+        return 'La séance n’a pas demandé la part de secours : attendez la demande du responsable de la procédure.';
     }
     if (api.status === 403) return 'Vous ne détenez pas de part pour cette procédure.';
     return (e as Error)?.message || api.message || 'L’apport des parts n’a pas abouti.';
