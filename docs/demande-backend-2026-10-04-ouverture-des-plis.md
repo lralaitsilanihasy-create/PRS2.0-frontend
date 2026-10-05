@@ -276,3 +276,11 @@ L'ADR-0013 §2 subordonne la reconstitution au serveur à un test d'interopérab
 > - **C2 — présentation du PV d'ouverture** : la date limite est imprimée brute (« 2026-10-04T21:30 ») ; les montants sans séparateur
 >   (« 230000000 ») ; des codes au lieu de mots (« 6 MOIS », « NON_VERIFIE ») ; une offre remplacée désignée par son identifiant
 >   technique (« remplacée par l'offre 239f6619-… ») plutôt que par son numéro d'arrivée (« par l'offre n° 4 »).
+
+> **Constats de la démonstration du 2026-10-05 (fiche 44, fournitures, V71)** — non bloquants :
+> - **C3 — le PV publié n'était lisible nulle part à l'écran.** `GET /api/procedures-en-ligne/{idDmc}/pv` répond 200, mais la procédure
+>   publique ne dit pas s'il est publié. Corrigé au front : une procédure close propose « Lire le PV d'ouverture (PDF) », chargé au clic
+>   (404 → « n'est pas publié »). Un indicateur dans la procédure publique (`pvPublie`) permettrait de n'afficher la section qu'à bon escient.
+> - **C4 — le délai minimal publication → date limite (`delaiMinRemiseJours`, 30 jours) ne s'applique qu'aux fiches dont la date limite
+>   porte le contrôle `SE_OUVERTURE_DEPOTS`** : il a joué sur une fiche de fournitures (`B04-LR-03`/`-04`), pas sur les fiches de travaux
+>   (`B04-OV-02`), validées le 04/10 avec une date limite à quarante minutes de la publication. Une règle qui dépend du référentiel.

@@ -127,6 +127,14 @@ export class ProceduresEnLigneService {
   telecharger(idDmc: number, code: string): Observable<Blob> {
     return this.http.get(`${this.base}/${idDmc}/documents/${encodeURIComponent(code)}`, { responseType: 'blob' });
   }
+
+  /**
+   * `GET /{idDmc}/pv` (public) — l'extrait du PV d'ouverture (sans les alertes), publié à la dernière signature quand la fiche
+   * le prévoit (`B04-OP-13`) ; 404 sinon. La procédure ne dit pas s'il est publié : l'écran le demande au clic. Silencieux.
+   */
+  pv(idDmc: number): Observable<Blob> {
+    return this.http.get(`${this.base}/${idDmc}/pv`, { responseType: 'blob', context: skipErrorToast() });
+  }
 }
 
 /** Vérification des entreprises par l'Administrateur (`/api/admin/entreprises`, §B4). */

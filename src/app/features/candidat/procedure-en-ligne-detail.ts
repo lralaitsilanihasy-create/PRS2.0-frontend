@@ -4,7 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { dateFr } from '../../core/interim/interim-libelles';
 import { ToastService } from '../../core/notifications/toast.service';
-import { telechargerBlob } from '../../core/securite/fichiers-surs';
+import { ouvrirBlobSur, telechargerBlob } from '../../core/securite/fichiers-surs';
 import { DocumentProcedureEnLigne, ProcedureEnLigne } from '../../models';
 import { ProceduresEnLigneService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
@@ -92,6 +92,19 @@ import { LIBELLES_ETAT_PROCEDURE, dateHeureFr, tailleLisible } from './libelles-
           }
         </section>
 
+        @if (p.etat === 'CLOSE') {
+          <!-- Recette du 05/10 : le PV publié n'était lisible nulle part à l'écran. -->
+          <section class="card ped__bloc ped__bloc--large" aria-labelledby="ped-pv">
+            <h2 id="ped-pv" class="ped__h2">Procès-verbal d'ouverture des plis</h2>
+            <p class="text-sm">Quand la fiche le prévoit, un extrait du procès-verbal d'ouverture est publié ici après sa signature par la commission.</p>
+            @if (pvAbsent()) {
+              <p class="text-sm text-muted" role="status">Le procès-verbal d'ouverture n'est pas publié pour cette procédure.</p>
+            } @else {
+              <p><button type="button" class="btn btn-secondary btn-sm" [disabled]="pvEnCours()" (click)="lirePv(p.idDmc)">{{ pvEnCours() ? 'Ouverture…' : 'Lire le PV d’ouverture (PDF)' }}</button></p>
+            }
+          </section>
+        }
+
         <section class="card ped__bloc ped__bloc--large" aria-labelledby="ped-docs">
           <h2 id="ped-docs" class="ped__h2">Dossier d'appel d'offres</h2>
           @if (!connecte()) {
@@ -168,6 +181,8 @@ export class ProcedureEnLigneDetail implements OnInit {
   readonly documents = signal<DocumentProcedureEnLigne[]>([]);
   /** Le `code` du document en cours de retrait : un seul à la fois, le bouton le dit. */
   readonly enCours = signal<string | null>(null);
+  readonly pvEnCours = signal(false);
+  readonly pvAbsent = signal(false);
 
   ngOnInit(): void {
     this.charger();
@@ -218,6 +233,21 @@ export class ProcedureEnLigneDetail implements OnInit {
         this.toast.success(`« ${d.intitule} » est enregistré sur votre poste. Ce retrait est inscrit au registre.`, 'Dossier retiré');
       },
       error: () => this.enCours.set(null), // 401/403 → dialogue centralisé
+    });
+  }
+
+  /** L'extrait public du PV d'ouverture, ouvert dans un nouvel onglet (`ouvrirBlobSur`) ; 404 : non publié. */
+  lirePv(idDmc: number): void {
+    this.pvEnCours.set(true);
+    this.service.pv(idDmc).subscribe({
+      next: (b) => {
+        this.pvEnCours.set(false);
+        ouvrirBlobSur(b);
+      },
+      error: (e: { status?: number }) => {
+        this.pvEnCours.set(false);
+        if (e.status === 404) this.pvAbsent.set(true);
+      },
     });
   }
 }
