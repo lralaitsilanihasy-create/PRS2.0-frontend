@@ -46,6 +46,9 @@ Les noms ci-dessous sont **proposés** : le backend fait autorité, et ce docume
   fiche antérieure à V45), la route répond **200** avec `formulaires: false` : le front garde alors le dépôt par pièces seules.
 - **404** si la procédure n'est pas publiée en ligne (même règle que `GET /api/procedures-en-ligne/{idDmc}`).
 
+> ⚠️ **2026-10-05 — livré, conforme.** Sans session : 401 ; compte interne : 403 ; hors critères : 404 ; sans besoin : 200 avec
+> `formulaires: false`.
+
 ### B1.2 — Le contenu (`BesoinEnLigneDto`, nom proposé)
 
 ```jsonc
@@ -93,6 +96,15 @@ Les noms ci-dessous sont **proposés** : le backend fait autorité, et ce docume
   ce découpage s'il en préfère un autre ; le front a seulement besoin de **valeurs typées**, pas d'un texte à analyser.
 - `materiel` et `personnel` sont les listes de V60 telles quelles.
 
+> ⚠️ **2026-10-05 — livré.** Écarts :
+> - `categorie` reprend le nom de `ProcedureEnLigneDto` : `FOURNITURES_SERVICES` · `TRAVAUX` · `PRESTATIONS_INTELLECTUELLES` ;
+> - `delaiExecution` = `{ valeur, unite, texte }`. En fournitures, le délai de livraison (`B06-EO-11` en quantité fixe, `B06-EO-12`
+>   à commande, à défaut `B09-DX-01`) est en jours. Aux travaux, `B09-DL-01` est un **texte** : `valeur` n'est remplie que s'il
+>   commence par un nombre ;
+> - `lieuLivraison` vaut `null` aux travaux (aucun champ) ; `garantieSoumission` = `B05-GS-03` en fournitures, `B05-GQ-03` aux travaux ;
+> - `qualification` est servie **par lot** (voir Q1), `null` en fournitures. `materiel` et `personnel` sont vides hors travaux ;
+> - l'article n'expose pas son rédacteur.
+
 ### B1.3 — Les pièces attendues remplacées par un formulaire
 
 Quand `formulaires` vaut `true`, certaines pièces attendues de l'offre (`demande-backend-2026-10-03-pieces-offre-*`) **ne sont plus
@@ -103,6 +115,11 @@ jointes : elles sont remplies**. Le front a besoin de savoir lesquelles, pour ne
 - Une pièce marquée n'est plus exigée en fichier. Le candidat peut **joindre en plus** une pièce justificative, par exemple
   une fiche technique ou un CV : celle-ci reste une pièce de l'offre comme une autre.
 - La correspondance entre code de pièce et formulaire est **au backend**, qui connaît les codes des pièces des trois jeux.
+
+> ⚠️ **2026-10-05 — livré.** `PieceAttendue.formulaire` est servi. Une pièce marquée passe à `obligatoire = false`. `AE`, `RECU-DAO`
+> et `GARANTIE` gardent `formulaire = null`. La correspondance se fait sur le libellé de la pièce (voir Q3). ⚠️ Les pièces du lot 5b
+> (`K1`, `SOUS_DETAIL`, `CAPACITES`, `PERSONNEL`, `MATERIEL`) sont marquées **dès maintenant** : le front ne doit pas les retirer
+> du dépôt tant que leurs formulaires ne sont pas livrés, sinon le candidat n'aurait plus aucun moyen de les fournir.
 
 ---
 
@@ -165,6 +182,10 @@ ce texte au récapitulatif, et c'est ce texte qui est scellé.
 À l'ouverture, le serveur vérifie que les lettres correspondent aux chiffres. S'ils divergent, il lève une alerte, sans
 corriger : les lettres priment, et la correction relève de l'évaluation, pas de l'ouverture.
 
+> ⚠️ **2026-10-05 — livré, conforme.** Le format 3 est lu à l'ouverture, un champ inconnu est ignoré, et les formats 1 et 2 restent
+> lus. Pour les prix en lettres, le serveur relit le texte (orthographe traditionnelle ou de 1990, « virgule » pour les décimales)
+> et le compare aux chiffres.
+
 ---
 
 ## B3 — L'ouverture : le serveur lit, recalcule, signale
@@ -199,6 +220,22 @@ Au déchiffrement (lot 4), pour une offre au format 3 :
 
    Son contenu ne change pas autrement.
 
+> ⚠️ **2026-10-05 — livré.** Écarts et précisions :
+> - **routes** : `GET /api/fiches-marche/{idDmc}/seance/offres/{idOffre}/formulaires` et `…/formulaires/{type}.pdf`, à côté des
+>   pièces (et non `/api/procedures/…`) ; mêmes gardes (403 `PIECE_RESERVEE_CAO`, 409 séance non déchiffrée). Réponse du détail :
+>   `{ idOffre, numero, lot, formulaires, besoin }`, où `besoin` est le lot de `BesoinEnLigneDto`. PDF : `BORDEREAU`, `DQE` (le même
+>   document aux travaux), `CONFORMITE`, `CAPACITES` ; un autre type → 400 **`FORMULAIRE_INCONNU`** ; une partie absente → 404 ;
+> - **tolérance** : « 1 Ar par ligne » s'applique aux totaux, soit un écart toléré égal au nombre d'articles du lot ;
+>   `LETTRES_DIVERGENTES` se déclenche à 1 Ar près, et un texte que le serveur ne sait pas lire ne lève rien ;
+> - **`LIVRAISON_HORS_DELAI`** : le délai de la fiche (`B06-EO-11` / `B06-EO-12`, à défaut `B09-DX-01`, en jours) est compté **depuis
+>   l'ouverture des plis**, faute de date de notification ;
+> - **`LIQUIDITE_INSUFFISANTE`** : le seuil retenu est le plus exigeant entre `QT-14` et `QT-15` % du **TTC recalculé** ;
+>   **`CA_INSUFFISANT`** : moyenne des `meilleures` années parmi les `annees` dernières ; **`REFERENCES_INSUFFISANTES`** : cumul des
+>   `nombre` meilleurs marchés de la période. Les contrôles du lot 5b ne jouent que si le manifeste porte la partie concernée ;
+> - code ajouté : **`FORMULAIRES_ILLISIBLES`**, pour une analyse impossible ; l'offre reste lisible ;
+> - `totaux` de la lecture : ce sont les totaux **recalculés** par le serveur, pas ceux déclarés ;
+> - au passage : `GARANTIE_INSUFFISANTE` (V70) lit désormais aussi le minimum des travaux, `B05-GQ-03`.
+
 ---
 
 ## B4 — Journal et conservation
@@ -208,6 +245,10 @@ Au déchiffrement (lot 4), pour une offre au format 3 :
 - **Conservation** : la partie `formulaires` vit et se purge avec l'offre déchiffrée (V70). Aucune table de plus n'est
   demandée **si** le backend relit le manifeste à la demande. S'il préfère indexer les prix, par exemple pour un futur tableau
   comparatif des offres, il suit la même purge.
+
+> ⚠️ **2026-10-05 — livré, conforme.** Aucune table ni migration. À l'ouverture, seuls les **totaux recalculés** et les **alertes**
+> sont gardés avec la lecture de l'offre (`t_offre.LECTURE`), au même titre que les montants de l'acte d'engagement. Le détail ligne à
+> ligne se relit dans le contenu déchiffré et se purge avec lui. `OUVERTURE_OFFRE` dit « formulaires : n alerte(s) », sans aucun prix.
 
 ---
 
@@ -228,6 +269,8 @@ Au déchiffrement (lot 4), pour une offre au format 3 :
 - **H6 — Fiches validées avant le lot 5** : `formulaires: true` dès qu'il y a un besoin. Aucun paramètre de fiche n'est
   ajouté. *Si le pilote veut que la PRMP puisse choisir le dépôt par pièces seules, un champ `B04-SE-*` OUI/NON suffira.*
 
+> ⚠️ **2026-10-05 — H1 à H6 retenues.** Le serveur ne recalcule pas le K1 (H3) ; aucun paramètre de fiche n'est ajouté (H6).
+
 ## Questions
 
 1. **Q1** : le découpage proposé pour `qualification` (B1.2) convient-il ? Les clauses `B03-QT-15` à `B03-QT-20` sont-elles
@@ -236,6 +279,16 @@ Au déchiffrement (lot 4), pour une offre au format 3 :
    préférence : la commission doit seulement pouvoir l'imprimer.
 3. **Q3** : la correspondance pièces → formulaire (B1.3) couvre-t-elle les **trois** jeux (fournitures, travaux bâtiment,
    travaux routiers) avec les codes actuels ?
+
+> ⚠️ **2026-10-05 — livré, réponses.**
+> - **Q1** : le découpage est retenu ; `references.annees` vient de `B03-QT-12` (période des marchés similaires), `cumul` vaut vrai
+>   quand `QT-19` > 1. Sont **par lot** `QT-14`, `QT-15` et `QT-20` ; les autres valent pour toute la fiche. ⚠️ Écart :
+>   `qualification` est servie **dans chaque lot** (`lots[].qualification`), résolue pour ce lot, et non une fois en tête.
+> - **Q2** : le PDF est produit **à la volée** : rien n'est stocké, il disparaît donc avec la purge du contenu déchiffré.
+> - **Q3** : la correspondance se fait sur le **libellé** des pièces de la fiche (bloc B14, saisi librement par la PRMP), car les
+>   codes (`PIECE-<id>`) ne disent rien du contenu. Elle couvre les libellés usuels des trois jeux ; la liste figure dans
+>   `docs/api-endpoints.md`, § *L'offre saisie dans des formulaires — lot 5*. Un libellé inattendu laisse la pièce **à joindre**,
+>   ce qui est le choix sûr.
 
 ## Ce que le front fera, et quand
 
