@@ -200,3 +200,9 @@ garantie: { codeVerification, nomFichier, montant: number, monnaie: 'MGA', emett
 >   limite ; enregistré vide, le front envoie `0` pour effacer), puis la section « Offres à purger » (procédures échues, « Purger… » avec
 >   confirmation ; `CONSERVATION_NON_FIXEE`, `CONSERVATION_EN_COURS` nommés). **Vérifié sur V70** : « Aucune durée n'est fixée ».
 > - **B5** : l'aide du champ « dépositaire » dit désormais « Libre : vous le désignez pour chaque procédure ».
+>
+> ✅ **Recette §B2 (signature du PV), 2026-10-05, fiche 34 (V71) — VERTE** : PV produit → « À signer — 2 signature(s) attendue(s) » ;
+> le président signe depuis `/cao` (case de relecture, « Signer le PV d'ouverture ») ; il constate l'**empêchement** du membre 2 (motif) →
+> « PV signé », séance `CLOSE` ; le PDF imprime « signé électroniquement sur la plateforme le … » et « empêché de signer : motif
+> (constaté par … le …) ». Pas d'extrait public : la fiche 34 ne prévoit pas la publication (`B04-OP-13` vide), `…/pv` public → 404 attendu.
+> La garantie au format 2 n'a pas été recettée (la fiche 34 n'exige pas de garantie) : à la prochaine procédure qui en exige une.

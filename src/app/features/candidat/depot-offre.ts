@@ -104,7 +104,8 @@ function motifDepot(e: unknown): string {
             @if (entreprise(); as en) {
               <p><strong>{{ en.raisonSociale }}</strong> · NIF <span class="cnm-mono">{{ en.nif }}</span></p>
             }
-            @if (p.lots.length) {
+            <!-- Un seul lot = marché non alloti : pas de choix, lot nul (recette du 05/10, fiche 34). -->
+            @if (p.lots.length > 1) {
               <label class="form-group do__court">
                 <span class="form-label">Lot</span>
                 <select class="form-control" [disabled]="!!remplace || occupe()" (change)="lot.set(+$any($event.target).value || null)">
@@ -241,6 +242,11 @@ export class DepotOffre implements OnInit, OnDestroy {
   readonly entreprise = signal<Entreprise | null>(null);
 
   readonly lot = signal<number | null>(Number(this.route.snapshot.queryParamMap.get('lot')) || null);
+  /**
+   * Le lot scellé et déposé : celui choisi pour un marché alloti, **nul** pour un marché à un seul lot. Le serveur ramène le lot
+   * à nul dans ce cas et exige le même dans l'en-tête scellé (`lot ne correspond pas au corps` sinon — recette du 05/10, fiche 34).
+   */
+  readonly lotEffectif = computed(() => ((this.procedure()?.lots.length ?? 0) > 1 ? this.lot() : null));
   readonly enGroupement = signal(false);
   readonly groupement = signal<{ nif: string; raisonSociale: string }[]>([]);
   readonly ae = signal<Partial<ActeEngagementSaisi>>({ monnaie: 'MGA', delaiUnite: 'JOURS', rabais: null });
@@ -287,7 +293,7 @@ export class DepotOffre implements OnInit, OnDestroy {
     const a = this.ae();
     const m: string[] = [];
     if (!p) return m;
-    if (p.lots.length && this.lot() == null) m.push('Choisissez le lot.');
+    if (p.lots.length > 1 && this.lot() == null) m.push('Choisissez le lot.');
     if (!(a.montantHt! >= 0) || !(a.montantTtc! >= 0) || !a.montantHt || !a.montantTtc) m.push('Les montants de l’acte d’engagement.');
     if (!a.delai || a.delai < 1) m.push('Le délai.');
     if (!a.validiteJours || a.validiteJours < 1) m.push('La validité de l’offre.');
@@ -402,7 +408,7 @@ export class DepotOffre implements OnInit, OnDestroy {
       const jointes: PieceJointe[] = Object.entries(this.fichiers()).map(([code, fichier]) => ({ code, fichier }));
       const horloge = await firstValueFrom(this.procedures.horloge());
       const { contenu } = await construireContenu(
-        { idDmc: this.idDmc, lot: this.lot(), entreprise: { nif: en.nif, raisonSociale: en.raisonSociale }, groupement: membres, acteEngagement: this.ae() as ActeEngagementSaisi },
+        { idDmc: this.idDmc, lot: this.lotEffectif(), entreprise: { nif: en.nif, raisonSociale: en.raisonSociale }, groupement: membres, acteEngagement: this.ae() as ActeEngagementSaisi },
         jointes,
         this.pieces().some((x) => x.code === 'GARANTIE')
           ? { code: 'GARANTIE', codeVerification: this.codeGarantie().trim(), montant: this.montantGarantie()!, emetteur: this.emetteurGarantie().trim() }
@@ -411,13 +417,13 @@ export class DepotOffre implements OnInit, OnDestroy {
       );
 
       this.phase.set('scellement');
-      const s = await sceller(contenu, cles, this.idDmc, this.lot(), (f, t) => {
+      const s = await sceller(contenu, cles, this.idDmc, this.lotEffectif(), (f, t) => {
         this.fait.set(f);
         this.total.set(t);
       });
 
       const offre = await firstValueFrom(
-        this.offres.creer({ idDmc: this.idDmc, lot: this.lot(), enTete: s.enTete, remplace: this.remplace, groupementNifs: membres ? membres.slice(1).map((m) => m.nif) : undefined }),
+        this.offres.creer({ idDmc: this.idDmc, lot: this.lotEffectif(), enTete: s.enTete, remplace: this.remplace, groupementNifs: membres ? membres.slice(1).map((m) => m.nif) : undefined }),
       );
 
       this.phase.set('envoi');

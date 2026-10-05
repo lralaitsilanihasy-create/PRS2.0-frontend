@@ -186,3 +186,10 @@ Aujourd'hui (lot 4, §B2), le responsable apporte la part de secours depuis son 
 > `GESTE_DU_DEPOSITAIRE`, compte « Compte actif D000000001 », part en lecture **sans aucun bouton** ; les deux membres republient leur
 > clé ; cérémonie close — détenteurs `MEMBRE:PUBLIEE`, `MEMBRE:PUBLIEE`, `SECOURS:VERIFIEE:DEPOSITAIRE`. **Reste à recetter** la demande
 > en séance et l'apport par le dépositaire, à la prochaine procédure avec des offres.
+>
+> ✅ **Recette de la séance, 2026-10-05 (fiche 34, V71) — VERTE** : fiche 34 remplie et validée, dossier 100362 → PV 49 FAV signé,
+> avis imprimé, offre n° 1 déposée ; séance ouverte à 09:59 ; **le membre 1 seul** apporte sa part (quorum 1 / 2) ; avant la demande,
+> le dépositaire n'a aucun formulaire d'apport ; le responsable **demande** la part de secours (motif) → bandeau « En attente du
+> dépositaire » ; le dépositaire voit la demande et son motif, **apporte** avec la phrase de son pli → « Offres ouvertes », « Quorum :
+> atteint (2) (part de secours employée) » ; le PV porte « Emploi de la part de secours — Motif : … ». `SeanceDto` : `secoursEmploye
+> = true`, `secoursGenerePar = DEPOSITAIRE`. **Toute la décision du 05/10 est recettée.**

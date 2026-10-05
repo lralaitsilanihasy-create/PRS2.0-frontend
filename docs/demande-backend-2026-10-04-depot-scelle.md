@@ -259,3 +259,11 @@ Le dépôt d'une offre pour une procédure exige, dans l'ordre où le serveur le
 >   `/prmp/dao/{idDmc}/depots` (nombre seul avant l'échéance, liste ensuite).
 > - **Vérifié en lecture seule** sur la fiche 34 : pastilles « Commission : constituée », « Cérémonie close », « 0 offre déposée »,
 >   registre « le détail s'affichera à la date limite ». Le dépôt réel attend une fiche **validée et lancée** en électronique.
+
+> ⚠️ **Recette du 2026-10-05 (fiche 34, marché à un seul lot) — défaut trouvé et corrigé au front.** La procédure publique sert
+> `lots: [{ numero: 1, … }]` pour un marché non alloti ; l'écran de dépôt proposait donc « Lot 1 » et scellait `lot = 1` dans l'en-tête.
+> Le serveur ramène le lot à nul pour un marché à un seul lot (`controlerLot`), puis compare l'en-tête : refus « En-tête du conteneur
+> invalide : lot ne correspond pas au corps ». **Tout dépôt sur un marché non alloti était impossible.** Correction front : un seul lot →
+> pas de choix, lot nul au corps comme à l'en-tête (`lotEffectif`) ; dépôt réussi ensuite (offre n° 1, fiche 34).
+> **Constat pour le backend (non bloquant)** : le corps accepte `lot = 1` sur un marché à un seul lot et le ramène à nul, l'en-tête
+> scellé non. Tolérer `1` dans l'en-tête de la même façon rendrait les deux contrôles symétriques.
