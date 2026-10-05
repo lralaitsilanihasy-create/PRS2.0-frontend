@@ -300,3 +300,45 @@ Au déchiffrement (lot 4), pour une offre au format 3 :
 - **Dès B3 livré** : la lecture en séance (totaux, alertes), le détail des formulaires pour la commission, le PDF rempli.
 - **Lot 5b** : K1, sous-détail, capacités, personnel et matériel, dans le même format 3, sans nouvelle demande si B1.2 et B3
   sont livrés complets.
+
+> ✅ **Front, 2026-10-05 — lots 5a et 5b livrés** (`673b287`, `e01471f`).
+> - **Dépôt** : section 3 « L'offre financière » pré-remplie depuis `…/besoin`. Fournitures : bordereau, dates de livraison, conformité
+>   (marque, modèle, caractéristique proposée, conforme). Travaux : DQE par série avec sous-totaux et prix en lettres ; puis K1 (neuf
+>   taux, siège), sous-détail des prix `sousDetail`, capacités (exercices, liquidité, références), personnel par poste, matériel
+>   (nombre, dont en propre). Les montants de l'acte d'engagement sont **dérivés** du bordereau (H1 au maximum). Seul un prix
+>   manquant bloque ; le reste est averti, avec les règles de B3.
+> - Une pièce dont le `formulaire` est livré par l'écran porte « Remplie en ligne » et reste ouverte à un justificatif facultatif.
+>   Le calendrier des **travaux** reste à joindre (aucun formulaire).
+> - **Séance** : totaux recalculés, alertes du lot 5 en clair, et pour la commission les boutons « Bordereau des prix », « Conformité
+>   technique », « Capacités » (PDF remplis, `ouvrirBlobSur`).
+> - **Recette 5a verte** (fiche 45, fournitures à commande, 3 lots, deux offres sur le lot 1) : totaux recalculés **identiques** à
+>   ceux du navigateur, aucune alerte `AE_DIVERGENT`, `NON_CONFORME` et `LIVRAISON_HORS_DELAI` lues, PDF remplis et PV en 200.
+
+## B5 — Une petite suite : les parties que l'offre porte, dans la lecture
+
+La lecture ne dit pas la catégorie du marché, ni les parties du manifeste. L'écran de la commission propose donc les trois documents
+remplis à **chaque** offre ; celui qui n'existe pas répond 404 (« ne comporte pas ce formulaire »). L'interroger offre par offre
+(`…/formulaires`) ferait un appel par offre.
+
+- Proposition : `LectureDto.offres[]` gagne **`partiesFormulaires`**, la liste des documents productibles pour l'offre, parmi
+  `BORDEREAU`, `CONFORMITE`, `CAPACITES` (vide ou `null` sans formulaires). Le front n'affichera que ceux-là.
+- Aucune autre évolution n'est demandée.
+
+## B6 — Constat de recette : un planning pris pour une liste (correspondance B1.3)
+
+Recette du 05/10, fiche 46 (pièces de la fiche 32, route) : **`PIECE-102` « Planning de mobilisation du personnel et du matériel »**
+est servie `formulaire = PERSONNEL`, `obligatoire = false`. Aucun formulaire ne remplace un **planning** : l'écran l'affiche
+« Remplie en ligne », et le candidat peut omettre une pièce exigée. « Liste du personnel » et « Liste du matériel » sont, elles,
+justement marquées.
+
+- Proposition : un libellé qui contient **« planning »**, **« calendrier »** (aux travaux), **« plan de »** ou **« échéancier »**
+  ne reçoit **jamais** de formulaire, quels que soient les autres mots. Le choix sûr de Q3 (laisser la pièce à joindre) s'applique.
+- À vérifier au passage sur les libellés des deux autres jeux (MEN : « Planning de mobilisation », « Liste du matériel » ;
+  2463 : « Calendrier de livraison » reste bien `CALENDRIER` en fournitures).
+
+> ✅ **Front, 2026-10-05 — recette 5b verte** (fiche 46, route, pièces, matériel, personnel et seuils de la fiche 32 ; deux offres).
+> Totaux recalculés **identiques** à ceux du navigateur, `parSerie` compris (000 / 500 / 600). Offre en défaut partout : les six
+> alertes `CA_INSUFFISANT`, `LIQUIDITE_INSUFFISANTE` (seuil 10 % du TTC recalculé), `REFERENCES_INSUFFISANTES`, `PERSONNEL_INCOMPLET`,
+> `MATERIEL_INCOMPLET`, `SOUS_DETAIL_INCOHERENT` — les mêmes que les avertissements de l'écran au dépôt. Offre conforme (K1 = 1,21,
+> sous-détail à 100 000 000 Ar) : **aucune** alerte. `…/formulaires` en 200, `DQE.pdf` et `CAPACITES.pdf` en 200, PV en 200.
+> Restent **B5** (parties de l'offre dans la lecture) et **B6** (le planning pris pour une liste).
