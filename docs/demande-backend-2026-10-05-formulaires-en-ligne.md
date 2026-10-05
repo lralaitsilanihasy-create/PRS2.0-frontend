@@ -324,6 +324,12 @@ remplis à **chaque** offre ; celui qui n'existe pas répond 404 (« ne comporte
   `BORDEREAU`, `CONFORMITE`, `CAPACITES` (vide ou `null` sans formulaires). Le front n'affichera que ceux-là.
 - Aucune autre évolution n'est demandée.
 
+> ⚠️ **2026-10-05 — livré, conforme.** `LectureDto.offres[].partiesFormulaires` est servi : une liste parmi `BORDEREAU`,
+> `CONFORMITE` et `CAPACITES`, `null` sans formulaires. Ce sont exactement les documents dont le PDF existe : `BORDEREAU` couvre
+> aussi le DQE des travaux, qui est le même document. Il est calculé à l'ouverture. Une offre ouverte **avant** cette livraison
+> (recette des fiches 45 et 46) les relit dans son contenu déchiffré, sans rien à refaire. Après la purge de conservation, il vaut
+> `null`.
+
 ## B6 — Constat de recette : un planning pris pour une liste (correspondance B1.3)
 
 Recette du 05/10, fiche 46 (pièces de la fiche 32, route) : **`PIECE-102` « Planning de mobilisation du personnel et du matériel »**
@@ -335,6 +341,16 @@ justement marquées.
   ne reçoit **jamais** de formulaire, quels que soient les autres mots. Le choix sûr de Q3 (laisser la pièce à joindre) s'applique.
 - À vérifier au passage sur les libellés des deux autres jeux (MEN : « Planning de mobilisation », « Liste du matériel » ;
   2463 : « Calendrier de livraison » reste bien `CALENDRIER` en fournitures).
+
+> ⚠️ **2026-10-05 — livré, conforme.** Un libellé qui contient « planning », « plan de », « échéancier », ou « calendrier » aux
+> travaux, ne reçoit plus jamais de formulaire. J'ai vérifié les **25 libellés de pièces** présents en recette (DBPRS20, toutes
+> fiches, MEN et 2463 compris). Les cinq plannings (mobilisation, général, approvisionnement, intervention pendant la garantie,
+> exécution), l'« Échéancier de paiement » et le « Plan de charge » restent à joindre. « Liste du personnel » et « Liste du
+> matériel » restent `PERSONNEL` et `MATERIEL`. « Calendrier de livraison » reste `CALENDRIER` en fournitures. « Bordereau des
+> prix » vaut `BORDEREAU` en fournitures et `DQE` aux travaux. « Cadre des spécifications techniques et conformité » et « Tableau
+> de conformité technique rempli » valent `CONFORMITE`. « Fiches techniques et catalogues », la quittance de l'ARMP, les
+> garanties et les pièces administratives restent à joindre. Au passage, « planning de livraison » ne vaut plus `CALENDRIER` en
+> fournitures.
 
 > ✅ **Front, 2026-10-05 — recette 5b verte** (fiche 46, route, pièces, matériel, personnel et seuils de la fiche 32 ; deux offres).
 > Totaux recalculés **identiques** à ceux du navigateur, `parSerie` compris (000 / 500 / 600). Offre en défaut partout : les six
