@@ -17,6 +17,10 @@ Les noms ci-dessous sont **proposés** : le backend fait autorité, et ce docume
 - Le front l'affiche en pastille sur l'entrée « Appels d'offres » (`/prmp/dao`). Le champ est **déjà lu** (06/10) : absent ou nul,
   pas de pastille.
 
+> ⚠️ **2026-10-06 — livré.** Pour la PRMP, `compteurs.recusAValider` s'ajoute aux compteurs existants (`CompteursPrmpDto`). L'UGPM
+> n'avait aucun compteur : elle reçoit désormais `compteurs = { recusAValider }`, calculé sur les fiches de sa PRMP de tutelle. Le
+> calcul porte sur les fiches dont le plan appartient à la PRMP.
+
 ## B2 — Par fiche, dans la liste des appels d'offres
 
 - `LigneEligible` (`GET /api/dmcs/eligibles`) gagne, pour une ligne qui porte une fiche (`dejaDao`), deux nombres :
@@ -27,6 +31,12 @@ Les noms ci-dessous sont **proposés** : le backend fait autorité, et ce docume
   « 3 offres déposées ».
 - Un seul appel pour toute la liste : pas une requête par fiche.
 
+> ⚠️ **2026-10-06 — livré, conforme.** `recusEnAttente` et `nbOffres` sont servis sur **chaque** ligne et valent `0` sans fiche ou
+> en remise papier. Ce ne sont jamais des champs absents. `nbOffres` compte les offres déposées et les offres écartées. Le calcul
+> tient en deux requêtes groupées pour toute la liste.
+
 ## Hypothèse
 
 - **H1** — Les reçus `REFUSE` ou `VALIDE` ne comptent pas : seul `EN_ATTENTE` appelle un geste.
+
+> ⚠️ **2026-10-06 — H1 retenue.**
