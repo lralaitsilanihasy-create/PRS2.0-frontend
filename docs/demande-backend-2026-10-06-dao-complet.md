@@ -296,3 +296,10 @@ Restent :
 >   produits gardent leur nom, sauf les DAO complets, reproduits par V75.
 > - **V75** retire, au prochain démarrage, les DAO complets non joints à un dossier ; le rattrapage les reproduit avec D1 et D2
 >   dans les minutes qui suivent.
+
+> ✅ **Front, 2026-10-06 — contre-recette V75 close.** Le PDF du DAO complet de la fiche 47 a été produit de nouveau par le
+> rattrapage (`DAO_COMPLET_001-DAOO-MEN-PRMP-Tvx-PI-2026_303279_v1.pdf`, 109 pages). Pages 1 et 2 relues après rendu :
+> - **D1** : la page de garde n'imprime le ministère qu'**une seule fois** (« MINISTÈRE DES TRAVAUX PUBLICS »), puis la PRMP et l'UGPM.
+> - **D2** : le sommaire général a **une seule présentation** à tous les niveaux (même police et même interligne). Les parties sont
+>   en gras, et les niveaux se distinguent seulement par le retrait.
+> - **D3** : pris acte. La clause 6.2 de la fiche 47 garde le doublon jusqu'à une révision validée. Le front n'a rien à faire.
