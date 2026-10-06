@@ -303,3 +303,14 @@ Restent :
 > - **D2** : le sommaire général a **une seule présentation** à tous les niveaux (même police et même interligne). Les parties sont
 >   en gras, et les niveaux se distinguent seulement par le retrait.
 > - **D3** : pris acte. La clause 6.2 de la fiche 47 garde le doublon jusqu'à une révision validée. Le front n'a rien à faire.
+
+## E — Après la clôture (06/10) : un avertissement rendu faux par C4
+
+- **E1 — L'avertissement `PIECES_EN_DOUBLE` est devenu faux.** Le contrôle de la fiche 47 (bloc B03) affiche toujours : « Les
+  pièces administratives sont en liste, et « Identification et situation juridique : pièces exigées » garde sa valeur par défaut :
+  le DPAO les imprimera deux fois. Videz ce texte, ou gardez-y ce que la liste ne dit pas. »
+  (`ControlesFicheMarche.piecesEnDouble`). Or, depuis C4 (V74), `B03-CQ-01` ne s'imprime plus quand la liste administrative n'est
+  pas vide : il n'y a plus de double impression, et le conseil « gardez-y ce que la liste ne dit pas » ne sert à rien, puisque ce
+  texte n'est plus imprimé. Le front a déjà retiré son propre avertissement de double emploi.
+  Proposition : **retirer** ce contrôle. À défaut, le **reformuler** : « La liste des pièces administratives remplace ce texte dans le
+  DPAO : il ne sera pas imprimé. »
