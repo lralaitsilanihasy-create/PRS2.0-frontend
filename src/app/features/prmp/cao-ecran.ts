@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import { ApiError, codeErreur, erreursParChamp } from '../../core/errors/api-error';
 import { dateFr } from '../../core/interim/interim-libelles';
@@ -7,6 +7,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { TYPES_PDF, validerFichier } from '../../core/securite/fichiers-surs';
 import { Cao, CompteMembreCao, MembreCaoCorps, OrigineMembreCao } from '../../models';
 import { CaoService } from '../../services';
+import { EnteteProcedure } from './entete-procedure';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 import { LIBELLES_ETAT_CAO, LIBELLES_ETAT_COMPTE_CAO, LIBELLES_ORIGINE, MESSAGE_UN_SEUL_EXPERT, classeCao } from '../cao/libelles-cao';
@@ -44,16 +45,11 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
 @Component({
   selector: 'app-cao-ecran',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur],
+  imports: [EtatErreur, EnteteProcedure],
   template: `
     <section class="cao">
-      <nav class="cao__ariane" aria-label="Fil d'Ariane">
-        <a [routerLink]="['/prmp', 'dao', idDmc]">Fiche DAO</a>
-        <span aria-hidden="true">›</span>
-        <span aria-current="page">Commission d'appel d'offres</span>
-      </nav>
       <header class="page-header">
-        <div class="page-subtitle">Domaine PRMP · ligne {{ idDmc }} du plan</div>
+        <app-entete-procedure [idDmc]="idDmc" />
         <h1 class="page-title">Commission d'appel d'offres</h1>
       </header>
       <p class="page-role">
@@ -166,8 +162,6 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
   `,
   styles: `
     .cao { display: flex; flex-direction: column; gap: 1rem; }
-    .cao__ariane { display: flex; gap: 0.4rem; align-items: center; font-size: var(--text-sm); color: var(--n-500); }
-    .cao__ariane a { color: var(--p-700); font-weight: 600; }
     .cao__etat { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
     .cao__form, .cao__decision { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
     .cao__h2 { margin: 0; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-500); }

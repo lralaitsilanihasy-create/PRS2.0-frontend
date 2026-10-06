@@ -336,6 +336,10 @@
       <nav class="fil-ariane" aria-label="Fil d'Ariane">
         <a class="fil-ariane__accueil" [routerLink]="fil.accueil.path">{{ fil.accueil.label }}</a>
         <app-icone class="fil-ariane__sep" nom="chev" [taille]="12" />
+        @for (p of fil.parents; track p.label) {
+          <a class="fil-ariane__accueil" [routerLink]="p.commands">{{ p.label }}</a>
+          <app-icone class="fil-ariane__sep" nom="chev" [taille]="12" />
+        }
         <span class="fil-ariane__ici">{{ fil.ici }}</span>
       </nav>
     }

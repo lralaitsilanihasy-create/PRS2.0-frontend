@@ -270,7 +270,8 @@ export class MainLayout {
    * Le titre vient de `data.title` de la route la plus profonde qui en porte, sinon du libellé de l'entrée de menu
    * dont le chemin préfixe l'URL ; rien sur l'accueil lui-même.
    */
-  readonly filAriane = signal<{ accueil: NavItem; ici: string } | null>(null);
+  /** ⚠️ 06/10 — `parents` : niveaux intermédiaires déclarés sur la route (`data.parents`), ex. Appels d'offres › Fiche DAO. */
+  readonly filAriane = signal<{ accueil: NavItem; parents: { label: string; commands: string[] }[]; ici: string } | null>(null);
   private calculerFilAriane(): void {
     const items = navFlat(this.auth.role());
     const accueil = items[0];
@@ -281,9 +282,14 @@ export class MainLayout {
     }
     let route = this.router.routerState.root;
     let titre: string | null = null;
+    let parents: { label: string; chemin: string[] }[] = [];
+    let params: Record<string, string> = {};
     while (route) {
       const t = route.snapshot.data['title'] as string | undefined;
       if (t) titre = t;
+      const p = route.snapshot.data['parents'] as { label: string; chemin: string[] }[] | undefined;
+      if (p) parents = p;
+      params = { ...params, ...route.snapshot.params };
       if (!route.firstChild) break;
       route = route.firstChild;
     }
@@ -293,7 +299,8 @@ export class MainLayout {
         .sort((a, b) => b.path.length - a.path.length)[0];
       titre = entree?.label ?? null;
     }
-    this.filAriane.set(titre ? { accueil, ici: titre } : null);
+    const niveaux = parents.map((p) => ({ label: p.label, commands: p.chemin.map((c) => (c.startsWith(':') ? (params[c.slice(1)] ?? c) : c)) }));
+    this.filAriane.set(titre ? { accueil, parents: niveaux, ici: titre } : null);
   }
   /** Dossier ouvert depuis une notification — la modale est rendue par le layout (hors topbar, cf. template). */
   readonly dossierNotification = signal<Dossier | null>(null);
@@ -566,6 +573,12 @@ export class MainLayout {
             // Demandes passées à ACCEPTEE/REFUSEE depuis ma dernière consultation (calcul serveur).
             c['/prmp/retraits'] = compteurs['demandesRetraitNouvelles'] ?? 0;
             this.alerts.update((a) => ({ ...a, '/prmp/a-rectifier': compteurs['dossiersARectifier'] ?? 0 }));
+            // ⚠️ 06/10 — les reçus des frais de dossier en attente (un candidat attend pour retirer et déposer).
+            c['/prmp/dao'] = compteurs['recusAValider'] ?? 0;
+            break;
+          case 'UGPM':
+            // ⚠️ 06/10 — l'UGPM valide aussi les reçus des frais de dossier des fiches de sa PRMP.
+            c['/prmp/dao'] = compteurs['recusAValider'] ?? 0;
             break;
           case 'PRESIDENT':
             // ⚠️ 2026-09-12 — « Mes dossiers » retiré : la pastille « à dispatcher » passe sur

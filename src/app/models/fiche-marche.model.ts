@@ -493,6 +493,9 @@ export interface LigneEligible {
   montEstim: number | null;
   dejaDao: boolean;
   idDmc?: number | null;
+  /** ⚠️ 06/10 — fiche en remise électronique : offres déposées (le nombre seul) et reçus des frais en attente. Absents = 0. */
+  nbOffres?: number | null;
+  recusEnAttente?: number | null;
   /** ⚠️ Lot 1c — forme du marché portée par la ligne (`FORME_MARCHE`) : c'est elle qui donne le type de la fiche. */
   formeMarche?: TypeMarche | null;
   /** Lot 1c — cette forme est-elle prise en charge aujourd'hui ? Sinon la ligne se voit mais ne se prépare pas. */

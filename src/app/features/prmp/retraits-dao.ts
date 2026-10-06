@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import { RetraitDao } from '../../models';
 import { FicheMarcheService } from '../../services';
+import { EnteteProcedure } from './entete-procedure';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 
@@ -15,16 +16,11 @@ import { dateHeureFr } from '../candidat/libelles-candidat';
 @Component({
   selector: 'app-retraits-dao',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur],
+  imports: [EtatErreur, EnteteProcedure],
   template: `
     <section class="rd">
-      <nav class="rd__ariane" aria-label="Fil d'Ariane">
-        <a [routerLink]="['/prmp', 'dao', idDmc]">Fiche DAO</a>
-        <span aria-hidden="true">›</span>
-        <span aria-current="page">Retraits du DAO</span>
-      </nav>
       <header class="page-header">
-        <div class="page-subtitle">Domaine PRMP · ligne {{ idDmc }} du plan</div>
+        <app-entete-procedure [idDmc]="idDmc" />
         <h1 class="page-title">Registre des retraits du DAO</h1>
       </header>
       <p class="page-role">Les candidats qui ont retiré le dossier en ligne, du plus ancien au plus récent. Une entreprise absente signifie qu'elle n'était pas encore déclarée au moment du retrait.</p>
@@ -70,8 +66,6 @@ import { dateHeureFr } from '../candidat/libelles-candidat';
   `,
   styles: `
     .rd { display: flex; flex-direction: column; gap: 0.75rem; }
-    .rd__ariane { display: flex; gap: 0.4rem; align-items: center; font-size: var(--text-sm); color: var(--n-500); }
-    .rd__ariane a { color: var(--p-700); font-weight: 600; }
     .rd__table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
     .rd__table th, .rd__table td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--n-200); }
     /* 06/10 — pas de couleur ici : l’en-tête global est bleu à texte blanc (gris sur bleu < AA). */

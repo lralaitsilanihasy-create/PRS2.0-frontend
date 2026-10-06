@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import { empreinteCourte, formaterEmpreinte } from '../../core/securite/cles-detenteur';
 import { Depots, EtatOffre } from '../../models';
 import { FicheMarcheService } from '../../services';
+import { EnteteProcedure } from './entete-procedure';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr, tailleLisible } from '../candidat/libelles-candidat';
 
@@ -24,14 +25,11 @@ const LIBELLES_ETAT: Readonly<Record<EtatOffre, string>> = {
 @Component({
   selector: 'app-depots-dao',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur],
+  imports: [EtatErreur, EnteteProcedure],
   template: `
     <section class="dd">
-      <nav class="dd__ariane" aria-label="Fil d'Ariane">
-        <a [routerLink]="['/prmp', 'dao', idDmc]">Fiche DAO</a><span aria-hidden="true">›</span><span aria-current="page">Dépôts des offres</span>
-      </nav>
       <header class="page-header">
-        <div class="page-subtitle">Domaine PRMP · ligne {{ idDmc }} du plan</div>
+        <app-entete-procedure [idDmc]="idDmc" />
         <h1 class="page-title">Registre des dépôts</h1>
       </header>
       <p class="page-role">Les offres déposées en ligne. Avant la date limite, seul leur nombre est connu ; leur contenu, lui, ne s'ouvre qu'en séance, au quorum des membres de la commission.</p>
@@ -72,8 +70,6 @@ const LIBELLES_ETAT: Readonly<Record<EtatOffre, string>> = {
   `,
   styles: `
     .dd { display: flex; flex-direction: column; gap: 0.75rem; }
-    .dd__ariane { display: flex; gap: 0.4rem; align-items: center; font-size: var(--text-sm); color: var(--n-500); }
-    .dd__ariane a { color: var(--p-700); font-weight: 600; }
     .dd__nombre { margin: 0; font-size: 1rem; }
     .dd__table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
     .dd__table th, .dd__table td { text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--n-200); }

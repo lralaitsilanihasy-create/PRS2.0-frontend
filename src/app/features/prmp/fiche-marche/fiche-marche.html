@@ -204,6 +204,11 @@
                   (click)="choisirLigne(l)">
                   {{ l.dejaDao ? 'Reprendre la fiche' : ligneBloquee(l) ? 'Pas encore pris en charge' : 'Préparer l’appel d’offres' }}
                 </button>
+                <!-- 06/10 — ce qui attend sur la fiche : les reçus à valider (un candidat attend), et les offres déposées. -->
+                @if (l.idDmc && l.recusEnAttente) {
+                  <a class="fm__recus" [routerLink]="['/prmp', 'dao', l.idDmc, 'recus']">{{ l.recusEnAttente }} reçu{{ l.recusEnAttente > 1 ? 's' : '' }} à valider</a>
+                }
+                @if (l.nbOffres) { <div class="text-xs text-muted">{{ l.nbOffres }} offre{{ l.nbOffres > 1 ? 's' : '' }} déposée{{ l.nbOffres > 1 ? 's' : '' }}</div> }
               </td>
             </tr>
           } @empty {

@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import { ApiError, codeErreur } from '../../core/errors/api-error';
 import { ouvrirBlobSur } from '../../core/securite/fichiers-surs';
 import { RecuDao } from '../../models';
 import { FicheMarcheService } from '../../services';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
+import { EnteteProcedure } from './entete-procedure';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 
@@ -24,16 +25,11 @@ const LIBELLES_ETAT: Readonly<Record<RecuDao['etat'], string>> = {
 @Component({
   selector: 'app-recus-dao',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur, ModaleDirective],
+  imports: [EtatErreur, ModaleDirective, EnteteProcedure],
   template: `
     <section class="rc">
-      <nav class="rc__ariane" aria-label="Fil d'Ariane">
-        <a [routerLink]="['/prmp', 'dao', idDmc]">Fiche DAO</a>
-        <span aria-hidden="true">›</span>
-        <span aria-current="page">Reçus des frais de dossier</span>
-      </nav>
       <header class="page-header">
-        <div class="page-subtitle">Procédure {{ idDmc }} · remise électronique</div>
+        <app-entete-procedure [idDmc]="idDmc" />
         <h1 class="page-title">Reçus des frais de dossier</h1>
       </header>
       <p class="page-role">Chaque entreprise dépose le reçu de son versement sur le compte de l’ARMP ; elle retire le dossier dès que vous l’avez validé. Comparez le reçu au relevé de l’ARMP avant de décider : une décision ne se reprend pas.</p>
@@ -118,8 +114,6 @@ const LIBELLES_ETAT: Readonly<Record<RecuDao['etat'], string>> = {
   `,
   styles: `
     .rc { display: flex; flex-direction: column; gap: 0.75rem; }
-    .rc__ariane { display: flex; gap: 0.4rem; align-items: center; font-size: var(--text-sm); color: var(--n-500); }
-    .rc__ariane a { color: var(--p-700); font-weight: 600; }
     /* Le td global du design system ne replie pas : un motif de refus pousserait les actions hors de l'écran. */
     .rc__table td { white-space: normal; vertical-align: top; }
     .rc__table td.nowrap, .rc__table td > .cnm-mono { white-space: nowrap; }

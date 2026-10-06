@@ -10,7 +10,9 @@
 // La même carte blanche pour les cinq conteneurs de l'écran.
 .fm__cadrage, .fm__rail, .fm__bloc, .fm__ppm, .fm__ctrls { background: #fff; border: 1px solid var(--n-200); border-radius: 12px; }
 .fm__cadrage { padding: 0.6rem 0.9rem; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
-.fm__cadrage-lbl, .fm__eyebrow, .fm__versions th { font-size: 0.7rem; text-transform: uppercase; }
+.fm__cadrage-lbl, .fm__eyebrow, /* 06/10 — reçus des frais à valider, sous le bouton de la ligne. */
+.fm__recus { display: inline-block; margin-top: 0.3rem; padding: 0.1rem 0.5rem; border-radius: 999px; background: var(--warning-bg, #fff4e0); color: var(--warning-text); font-size: var(--text-xs); font-weight: 600; }
+.fm__versions th { font-size: 0.7rem; text-transform: uppercase; }
 .fm__cadrage-lbl { font-weight: 800; letter-spacing: 0.07em; color: var(--n-400); margin-right: 0.3rem; }
 .fm__rep { padding: 0.2rem 0.6rem; border-radius: 8px; background: var(--p-50); color: var(--p-800); font-weight: 600; font-size: 0.8rem; }
 .fm__rep--non { font-weight: 500; }

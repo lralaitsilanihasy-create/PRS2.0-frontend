@@ -251,7 +251,7 @@ export class FicheMarcheEcran {
    */
   readonly lienRetraits = computed<(string | number)[] | null>(() => {
     const id = this.idDmc();
-    return id != null && this.estPrmp() && this.modeElectronique() ? ['/prmp', 'dao', id, 'retraits'] : null;
+    return id != null && this.estPrmp() && this.modeElectronique() && this.versions().length > 0 ? ['/prmp', 'dao', id, 'retraits'] : null;
   });
   /**
    * ⚠️ Lot 2a (04/10, Q11) — la commission d'appel d'offres, en remise électronique seule. ⚠️ V70 (arbitrage du pilote, 04/10) :
@@ -264,12 +264,13 @@ export class FicheMarcheEcran {
   /** ⚠️ V72 (06/10) — les reçus des frais de dossier : PRMP et UGPM, remise électronique (l'écran dit s'il n'y en a aucun). */
   readonly lienRecus = computed<(string | number)[] | null>(() => {
     const id = this.idDmc();
-    return id != null && ['PRMP', 'UGPM'].includes(this.auth.role() ?? '') && this.modeElectronique() ? ['/prmp', 'dao', id, 'recus'] : null;
+    return id != null && ['PRMP', 'UGPM'].includes(this.auth.role() ?? '') && this.modeElectronique() && this.versions().length > 0 ? ['/prmp', 'dao', id, 'recus'] : null;
   });
   /** ⚠️ Lot 3 (V68) — le registre des dépôts : PRMP de la fiche, remise électronique. */
   readonly lienDepots = computed<(string | number)[] | null>(() => {
     const id = this.idDmc();
-    return id != null && this.estPrmp() && this.modeElectronique() ? ['/prmp', 'dao', id, 'depots'] : null;
+    // ⚠️ 06/10 — dépôts, retraits et reçus n'existent qu'une fois une version validée (procédure publiable) : pas de bouton vide sur un brouillon.
+    return id != null && this.estPrmp() && this.modeElectronique() && this.versions().length > 0 ? ['/prmp', 'dao', id, 'depots'] : null;
   });
   readonly libellesCao = LIBELLES_ETAT_CAO;
   readonly libellesCeremonie = LIBELLES_ETAT_CEREMONIE;
