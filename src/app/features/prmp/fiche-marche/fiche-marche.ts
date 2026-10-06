@@ -369,6 +369,11 @@ export class FicheMarcheEcran {
     const v = this.valeurs()['B03-CQ-01'];
     return typeof v === 'string' ? v : null;
   });
+  /** ⚠️ 06/10 — le texte des pièces de l'offre (`B04-CO-01` fournitures, `B04-PI-01` travaux) : la liste peut en partir. */
+  readonly texteOffre = computed(() => {
+    const v = this.valeurs()['B04-CO-01'] ?? this.valeurs()['B04-PI-01'];
+    return typeof v === 'string' ? v : null;
+  });
   /** Les informations obligatoires qui manquent, par bloc : la pastille de chaque bloc dans la navigation. */
   readonly manquantsParBloc = computed(() => new Map(this.obligatoiresParBloc().map((g) => [g.bloc, g.nb])));
   readonly blocPpm = computed<BlocFiche | null>(() => this.referentiel().blocs.find((b) => b.code === 'B01') ?? null);

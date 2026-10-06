@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, input, output, signal } from '@angular/core';
 
 import { ModaleDirective } from '../../../shared/a11y/modale.directive';
 import { LectureListe } from './collage-listes';
@@ -61,7 +61,7 @@ import { LectureListe } from './collage-listes';
     </div>
   `,
 })
-export class CollageListe<T> {
+export class CollageListe<T> implements OnInit {
   readonly titre = input.required<string>();
   readonly exemple = input<string>('');
   readonly lire = input.required<(texte: string) => LectureListe<T>>();
@@ -70,7 +70,13 @@ export class CollageListe<T> {
   readonly noteUtilisee = input<boolean>(false);
   readonly ajoute = output<T[]>();
   readonly ferme = output<void>();
+  /** ⚠️ 06/10 — un texte de départ (le texte des pièces de la fiche), que la PRMP relit et corrige avant d'ajouter. */
+  readonly texteInitial = input<string>('');
 
   readonly texte = signal('');
+
+  ngOnInit(): void {
+    if (this.texteInitial()) this.texte.set(this.texteInitial());
+  }
   readonly lecture = computed(() => this.lire()(this.texte()));
 }

@@ -62,3 +62,10 @@ Les noms ci-dessous sont **proposés** : le backend fait autorité, et ce docume
 - **Un raccourci** dans l'écran des pièces de la fiche (B14), sans rien demander au serveur : « Proposer la liste à partir du
   texte ». Le front découpe le texte `B04-CO-01` / `B04-PI-01`, une pièce par ligne ou par puce, et pré-remplit la liste. La PRMP
   relit, corrige et enregistre par le `PUT …/pieces` existant.
+
+> ✅ **Front, 2026-10-06 — livré.** Le bloquant `SE_PIECES_LISTEES` s'affiche au bilan des contrôles comme les autres, avec le lien
+> « corriger » vers le bloc B14 (`bloc = "B14"`). Dans l'écran des pièces, tant que la liste est vide et que la fiche porte un texte
+> (`B04-CO-01` aux fournitures, `B04-PI-01` aux travaux), chaque rubrique propose **« Proposer la liste à partir du texte »** : le
+> collage s'ouvre pré-rempli de ce texte, découpé par l'analyseur existant (`lirePieces` : numéro, forme, ancienneté reconnus). La
+> PRMP relit, ajoute à la rubrique choisie, corrige et enregistre par le `PUT …/pieces` existant. Rien n'est envoyé avant
+> « Enregistrer les pièces ».

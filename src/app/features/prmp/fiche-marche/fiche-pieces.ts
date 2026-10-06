@@ -43,6 +43,11 @@ export class FichePieces implements ListeASauver {
   readonly lecture = input<boolean>(false);
   /** Le texte de `B03-CQ-01` tel que saisi au bloc B03 : s'il est rempli avec la liste, il s'imprime en plus. */
   readonly texteAdministratif = input<string | null>(null);
+  /**
+   * ⚠️ 06/10 (`SE_PIECES_LISTEES`) — le texte « Documents et pièces constituant l'offre » (`B04-CO-01` aux fournitures,
+   * `B04-PI-01` aux travaux). En remise électronique la liste est exigée : l'écran propose de la tirer de ce texte.
+   */
+  readonly texteOffre = input<string | null>(null);
   readonly enregistre = output<void>();
 
   readonly rubriques = RUBRIQUES_PIECES;
@@ -66,6 +71,19 @@ export class FichePieces implements ListeASauver {
    * devine pas (le MEN range ses pièces administratives au 1° de sa clause 6.2).
    */
   readonly collage = signal<RubriquePiece | null>(null);
+  /** Le texte qui pré-remplit le collage : celui de la fiche, quand la PRMP part de lui ; vide sinon. */
+  readonly texteCollage = signal('');
+
+  /** « Proposer la liste à partir du texte » : le collage de la rubrique, pré-rempli du texte de la fiche. */
+  proposerDepuisTexte(rubrique: RubriquePiece): void {
+    this.texteCollage.set(this.texteOffre() ?? '');
+    this.collage.set(rubrique);
+  }
+
+  collerListe(rubrique: RubriquePiece): void {
+    this.texteCollage.set('');
+    this.collage.set(rubrique);
+  }
   readonly lirePiecesCollees = computed(() => {
     const rubrique = this.collage() ?? 'OFFRE';
     return (texte: string) => lirePieces(texte, rubrique);

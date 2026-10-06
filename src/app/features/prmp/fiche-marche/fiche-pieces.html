@@ -85,7 +85,11 @@
           @if (r.code === 'ADMINISTRATIVE' && !liste.length) {
             <button type="button" class="btn btn-outline btn-sm" (click)="reprendreDocumentType()">Reprendre les pièces du document type</button>
           }
-          <button type="button" class="btn btn-outline btn-sm" (click)="collage.set(r.code)">Coller une liste</button>
+          @if (texteOffre()?.trim() && !pieces().length) {
+            <!-- 06/10 (SE_PIECES_LISTEES) : en remise électronique, la liste est exigée ; le texte de la fiche la propose. -->
+            <button type="button" class="btn btn-secondary btn-sm" (click)="proposerDepuisTexte(r.code)">Proposer la liste à partir du texte</button>
+          }
+          <button type="button" class="btn btn-outline btn-sm" (click)="collerListe(r.code)">Coller une liste</button>
           <button type="button" class="btn btn-outline btn-sm" (click)="ajouter(r.code)">+ Pièce</button>
         </div>
       }
@@ -105,6 +109,7 @@
     exemple="Copie certifiée conforme à l’original de la carte statistique datée de moins de trois (03) mois…"
     [lire]="lirePiecesCollees()"
     [ligne]="lignePiece"
+    [texteInitial]="texteCollage()"
     (ajoute)="ajouterCollees($event)"
     (ferme)="collage.set(null)"
   />

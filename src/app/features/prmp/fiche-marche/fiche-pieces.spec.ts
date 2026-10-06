@@ -30,7 +30,7 @@ describe('Pièces de l’offre exigées (lot 4 du chantier b — contrat demand�
   const section = (rubrique: string): HTMLElement => racine().querySelector(`section[aria-labelledby="pc-${rubrique}"]`) as HTMLElement;
   const apercu = (rubrique: string): string[] => Array.from(section(rubrique).querySelectorAll('.pc__apercu span:not(.pc__apercu-t)')).map((s) => texte(s));
 
-  function monter(o: { lecture?: boolean; texte?: string | null } = {}): void {
+  function monter(o: { lecture?: boolean; texte?: string | null; texteOffre?: string | null } = {}): void {
     toast = { success: vi.fn(), info: vi.fn(), error: vi.fn() };
     TestBed.configureTestingModule({
       imports: [FichePieces],
@@ -41,6 +41,7 @@ describe('Pièces de l’offre exigées (lot 4 du chantier b — contrat demand�
     fixture.componentRef.setInput('idDmc', 42);
     fixture.componentRef.setInput('lecture', o.lecture ?? false);
     fixture.componentRef.setInput('texteAdministratif', o.texte ?? null);
+    fixture.componentRef.setInput('texteOffre', o.texteOffre ?? null);
     rendre();
   }
 
@@ -127,5 +128,18 @@ describe('Pièces de l’offre exigées (lot 4 du chantier b — contrat demand�
       '- Carte statistique, copie certifiée conforme à l’original, datée de moins de 3 mois',
     ]);
     expect(apercu('OFFRE')).toEqual([]);
+  });
+
+  it('« Proposer la liste à partir du texte » (06/10, SE_PIECES_LISTEES) : le collage part du texte de la fiche', () => {
+    monter({ texteOffre: 'Le planning général\nUn échéancier de paiement (original)' });
+    ouvrir([]);
+    bouton('Proposer la liste à partir du texte', section('OFFRE')).click();
+    rendre();
+    expect((racine().querySelector('textarea') as HTMLTextAreaElement).value).toContain('échéancier de paiement');
+    bouton('Ajouter 2 entrée(s)').click();
+    rendre();
+    expect(apercu('OFFRE')).toHaveLength(2);
+    // La liste remplie, le raccourci s'efface ; sans texte, il n'apparaît pas.
+    expect(racine().textContent).not.toContain('Proposer la liste à partir du texte');
   });
 });
