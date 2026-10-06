@@ -268,10 +268,31 @@ Restent :
 - **D1 — Le ministère est imprimé deux fois** sur la page de garde : « MINISTÈRE DES TRAVAUX PUBLICS » puis « MINISTERE DES TRAVAUX
   PUBLICS ». L'entité ne diffère du ministère que par l'accent. Proposition : comparer sans accents ni casse avant d'imprimer
   l'entité.
+
+  > ⚠️ **Backend, 2026-10-06 — retenu.** L'entité n'est imprimée que si elle diffère du ministère **hors accents, casse et blancs**.
 - **D2 — Le sommaire mélange deux présentations.** Les entrées A1 à A4, B1 et B2 sont dans une police plus grande, avec un interligne
   large, alors que les autres sont en petit corps serré. Ce sont sans doute les styles de titre des formulaires, repris par la table
   des matières. Proposition : un même style de sommaire pour tous les niveaux, comme le sommaire général du DAO réel.
+
+  > ⚠️ **Backend, 2026-10-06 — retenu.** La cause était les styles du sommaire de Word lui-même, pas les titres des formulaires :
+  > les textes fixes insérés redéfinissaient « TM 1 » à « TM 3 » (Times New Roman 10), tandis que « TM 4 », celui du niveau des
+  > formulaires A1 à A4 et B1, B2, gardait le défaut de Word (Aptos 12, interligne large). Les quatre niveaux ont désormais le même
+  > style : Times New Roman 10, interligne simple, sans espacement, retrait de 12 pt par niveau, niveau 1 en gras.
 - **D3 — La règle C4 n'est pas visible sur la fiche 47** (p. 30). La clause 6.2 imprime toujours la liste **puis** le texte libre,
   pour les pièces de l'offre (`B04-PI-01`) comme pour les pièces administratives (`B03-CQ-01`). Le DAO complet semble assembler la
   **DPAO déjà produite** à la validation de la version 1, avant la règle. Est-ce voulu (la règle ne vaut que pour les prochaines
   validations), ou faut-il reproduire aussi les parties, et pas seulement l'assemblage, des versions déjà validées ?
+
+  > ⚠️ **Backend, 2026-10-06 — voulu : la règle ne vaut que pour les prochaines validations.** Les documents d'une version validée
+  > (DPAO, AE, CCAP, formulaires) sont **figés à sa validation** : c'est ce que la Commission a examiné, ce qui a pu être joint au
+  > dossier soumis, et ce que les candidats ont pu retirer. Les régénérer changerait un document officiel sans nouvelle validation.
+  > Le DAO complet, lui, n'est qu'un assemblage de ces documents ; il est reproduit sans rien changer à son contenu. Pour
+  > appliquer C4 à la fiche 47, la PRMP **révise** la fiche et **valide** la nouvelle version : ses documents seront produits avec
+  > la règle, et son DAO complet aussi.
+
+> ⚠️ **Backend, 2026-10-06 — suite de la contre-recette.**
+> - **Noms de fichier : accents translittérés** (é → e), pour tous les documents de la fiche, avant le remplacement des autres signes
+>   par des tirets. Exemple : `DAO_COMPLET_Recette-D4-Numero-du-dossier-d-appel-d-offres_303121_v7.pdf`. Les fichiers déjà
+>   produits gardent leur nom, sauf les DAO complets, reproduits par V75.
+> - **V75** retire, au prochain démarrage, les DAO complets non joints à un dossier ; le rattrapage les reproduit avec D1 et D2
+>   dans les minutes qui suivent.
