@@ -922,10 +922,10 @@ function dpaoFournitures() {
     ALLOTI: 'alloti = OUI',
     // 03/10 (choix A du pilote) — les pièces de l'offre en listes, comme aux travaux ; les textes restent en complément.
     'PIECES-OFFRE-LISTE': 'PIECES.offre renseigne',
-    'PIECES-OFFRE-TEXTE': 'B04-CO-01 renseigne',
+    'PIECES-OFFRE-TEXTE': 'B04-CO-01 renseigne et PIECES.offre vide',
     'PIECES-ADM': 'PIECES.administratives renseigne ou B03-CQ-01 renseigne',
     'PIECES-ADM-LISTE': 'PIECES.administratives renseigne',
-    'PIECES-ADM-TEXTE': 'B03-CQ-01 renseigne',
+    'PIECES-ADM-TEXTE': 'B03-CQ-01 renseigne et PIECES.administratives vide',
     'LOTS-DIVISIBLES': 'alloti = OUI et B02-AU-02 = Lot par lot (attribution divisible)',
     'LOTS-TOTALITE': 'alloti = OUI et B02-AU-02 = Totalité des lots à un seul attributaire',
     'VARIANTES-NON': 'variantes = NON',
@@ -2264,9 +2264,9 @@ function dpaoTravaux() {
     // 03/10 (lot 4 du chantier b, V61) : les pièces de l'offre en liste, par rubrique de la clause 6.2 ; les textes restent
     // en complément.
     'PIECES-OFFRE-LISTE': 'PIECES.offre renseigne',
-    'PIECES-OFFRE-TEXTE': 'B04-PI-01 renseigne',
+    'PIECES-OFFRE-TEXTE': 'B04-PI-01 renseigne et PIECES.offre vide',
     'PIECES-ADM-LISTE': 'PIECES.administratives renseigne',
-    'PIECES-ADM-TEXTE': 'B03-CQ-01 renseigne',
+    'PIECES-ADM-TEXTE': 'B03-CQ-01 renseigne et PIECES.administratives vide',
     // 03/10 (chantier b, lot 2 — V59) : les seuils calculés de la clause 6.3, chacun en deux rédactions exclusives.
     'CHIFFRE-AFFAIRES': 'B03-QT-07 renseigne et B03-QT-16 vide',
     'CA-MOYENNE': 'B03-QT-07 renseigne et B03-QT-16 renseigne',

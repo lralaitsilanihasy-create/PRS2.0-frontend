@@ -7,12 +7,8 @@
     @let liste = parRubrique().get(r.code) ?? [];
     <section class="pc" [attr.aria-labelledby]="'pc-' + r.code">
       <h3 [id]="'pc-' + r.code" class="pc__titre">{{ r.titre }} <span class="pc__clause">DPAO, {{ r.clause }}</span></h3>
-      @if (r.code === 'ADMINISTRATIVE' && doubleEmploi() && !lecture()) {
-        <p class="pc__alerte" role="status">
-          Le texte du bloc B03 (« pièces exigées ») est rempli : il s’imprimera aussi sous cette liste. Videz-le s’il fait
-          double emploi.
-        </p>
-      }
+      <!-- ⚠️ 06/10 (C4, V74) — plus d'avertissement de double emploi : le texte du B03 (ou du B04) ne s'imprime plus quand la
+           liste de sa rubrique n'est pas vide (conditions PIECES-ADM-TEXTE / PIECES-OFFRE-TEXTE des modèles DPAO). -->
       @if (liste.length) {
         <div class="pc__table">
           <table>

@@ -98,7 +98,6 @@ export class FichePieces implements ListeASauver {
     this.toast.info(`${entrees.length} pièce(s) ajoutée(s) — à vérifier avant d’enregistrer.`);
   }
 
-  readonly doubleEmploi = computed(() => !!this.texteAdministratif()?.trim() && (this.parRubrique().get('ADMINISTRATIVE')?.length ?? 0) > 0);
 
   constructor() {
     effect(() => {

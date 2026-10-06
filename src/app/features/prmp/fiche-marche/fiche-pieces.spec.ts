@@ -78,10 +78,10 @@ describe('Pièces de l’offre exigées (lot 4 du chantier b — contrat demand�
     expect(Array.from(section('ADMINISTRATIVE').querySelectorAll('button')).some((b) => texte(b).startsWith('Reprendre'))).toBe(false);
   });
 
-  it('le texte de B03-CQ-01 rempli avec une liste administrative : l’écran prévient du double emploi', () => {
+  it('le texte de B03-CQ-01 rempli avec une liste administrative : plus d’avertissement (C4 — le texte ne s’imprime plus)', () => {
     monter({ texte: 'une photocopie certifiée de la Carte Professionnelle…' });
     ouvrir(PIECES);
-    expect(texte(section('ADMINISTRATIVE').querySelector('.pc__alerte'))).toContain('s’imprimera aussi sous cette liste');
+    expect(section('ADMINISTRATIVE').querySelector('.pc__alerte')).toBeNull();
   });
 
   it('une seule liste envoyée, rubrique par rubrique dans l’ordre affiché ; 400 sous la bonne pièce', () => {

@@ -248,3 +248,30 @@ La pagination continue, l'en-tête « DAO n° … — objet », le pied « page 
 > DAO complets produits avant ce correctif (26 fichiers en recette, aucun joint à un dossier ; un DAO complet joint comme pièce
 > serait gardé). Le rattrapage les reproduit sur le nouveau gabarit dans les minutes qui suivent (environ 20 s par fiche). Contrat :
 > `docs/api-endpoints.md`, § *Le DAO complet en un seul document*, bloc « Recette du 06/10 ».
+
+> ✅ **Front, 2026-10-06 — C4 reporté.** `scripts/modeles-dao/modeles/DPAO-F.txt` et `DPAO-T.txt` (et leurs `.json`) portent les
+> conditions `PIECES-OFFRE-TEXTE` et `PIECES-ADM-TEXTE` du backend, ainsi que `decrire.mjs` qui les déclare. Une nouvelle génération
+> (`node decrire.mjs DPAO-F DPAO-T`) reproduit à l'identique les `.txt` du backend. L'avertissement de double emploi du bloc B14 est
+> retiré.
+
+## D — Contre-recette du 06/10 (PDF de la fiche 47 sur le gabarit V74, 109 pages)
+
+Conformes :
+- la page de garde : emblème, ministère, PRMP, UGPM, « Dossier d'appel d'offres ouvert », numéro, objet, « Lancé le », financement,
+  imputation, compte ;
+- le sommaire général en deux parties, avec la numérotation de l'ARMP ;
+- les Instructions aux candidats et le CCAG sans la couverture du document type (« DOSSIER TYPE » n'apparaît plus) ;
+- le nom de fichier `DAO_COMPLET_001-DAOO-MEN-PRMP-Tvx-PI-2026_303279_v1` ;
+- le DAO complet en tête de `…/documents`.
+
+Restent :
+- **D1 — Le ministère est imprimé deux fois** sur la page de garde : « MINISTÈRE DES TRAVAUX PUBLICS » puis « MINISTERE DES TRAVAUX
+  PUBLICS ». L'entité ne diffère du ministère que par l'accent. Proposition : comparer sans accents ni casse avant d'imprimer
+  l'entité.
+- **D2 — Le sommaire mélange deux présentations.** Les entrées A1 à A4, B1 et B2 sont dans une police plus grande, avec un interligne
+  large, alors que les autres sont en petit corps serré. Ce sont sans doute les styles de titre des formulaires, repris par la table
+  des matières. Proposition : un même style de sommaire pour tous les niveaux, comme le sommaire général du DAO réel.
+- **D3 — La règle C4 n'est pas visible sur la fiche 47** (p. 30). La clause 6.2 imprime toujours la liste **puis** le texte libre,
+  pour les pièces de l'offre (`B04-PI-01`) comme pour les pièces administratives (`B03-CQ-01`). Le DAO complet semble assembler la
+  **DPAO déjà produite** à la validation de la version 1, avant la règle. Est-ce voulu (la règle ne vaut que pour les prochaines
+  validations), ou faut-il reproduire aussi les parties, et pas seulement l'assemblage, des versions déjà validées ?
