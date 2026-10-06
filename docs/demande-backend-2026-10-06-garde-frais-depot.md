@@ -23,6 +23,10 @@ Les noms ci-dessous sont **proposés** : le backend fait autorité, et ce docume
 - Sans entreprise déclarée : la même réponse que les documents.
 - Un retrait libre ne change pas.
 
+> ⚠️ **2026-10-06 — livré, conforme.** Le besoin répond 403 `FRAIS_NON_REGLES` sous la règle des documents. Un reçu `VALIDE` de
+> l'entreprise sur n'importe quel lot ouvre tout le besoin. Sans entreprise déclarée, la réponse est la même. Pour un retrait libre,
+> rien ne change.
+
 ## B2 — La création d'une offre, gardée par lot
 
 - `POST /api/candidat/offres` (création, remplacement compris) répond **403 `FRAIS_NON_REGLES`** quand `retraitPayant` est vrai et
@@ -33,12 +37,20 @@ Les noms ci-dessous sont **proposés** : le backend fait autorité, et ce docume
 - **Les offres déjà déposées** ne sont pas touchées, et l'alerte `FRAIS_NON_REGLES` de la séance reste comme filet (offre déposée
   avant cette livraison, reçu qui ne couvre pas le lot…).
 
+> ⚠️ **2026-10-06 — livré, conforme.** La garde porte sur `POST /api/candidat/offres`, création comme remplacement. Elle joue
+> **après** les conditions existantes : `PROCEDURE_FERMEE` / `DELAI_DEPASSE`, `CLES_INDISPONIBLES`, `ENTREPRISE_ABSENTE`,
+> `ENTREPRISE_EXCLUE`, puis le contrôle du lot. Un candidat sans entreprise reçoit donc d'abord 409 `ENTREPRISE_ABSENTE`. Les
+> morceaux et le scellement ne sont pas gardés, et les offres déjà déposées ne sont pas touchées.
+
 ## Hypothèses
 
 - **H1** — `GET …/pieces` reste public et inchangé : il dit **ce qu'il faudra joindre**, pas le contenu du dossier.
 - **H2** — Le reçu déposé et non encore validé (`EN_ATTENTE`) ne suffit pas : c'est la validation qui fait preuve.
 - **H3** — Aucun délai de grâce près de la date limite. La PRMP reçoit `RECU_A_VALIDER` à chaque dépôt ; à elle de traiter avant
   l'échéance.
+
+> ⚠️ **2026-10-06 — H1, H2 et H3 retenues.** `GET …/pieces` reste public. Un reçu `EN_ATTENTE` ne suffit pas, et il n'y a pas de
+> délai de grâce.
 
 ## Ce que le front fait déjà (06/10, sans attendre)
 
