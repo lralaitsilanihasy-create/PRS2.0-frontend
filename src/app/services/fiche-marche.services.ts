@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { skipErrorToast } from '../core/errors/api-error';
-import { AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, Depots, DisponibiliteAvis, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, MaterielExige, ParametresInternes, ParametresInternesCorps, PersonnelExige, PieceExigee, PublicationAvis, PublicationLettres, RecuDao, ReferentielFiche, RetraitDao, TypeMarche, VersionFiche } from '../models';
+import { AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, Depots, DisponibiliteAvis, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, MaterielExige, ParametresInternes, ParametresInternesCorps, PersonnelExige, PieceExigee, ProcedureInterne, PublicationAvis, PublicationLettres, RecuDao, ReferentielFiche, RetraitDao, TypeMarche, VersionFiche } from '../models';
 import { CrudService } from './api/crud.service';
 
 /**
@@ -68,6 +68,14 @@ export class DmcService extends CrudService<Dmc> {
 @Injectable({ providedIn: 'root' })
 export class FicheMarcheService extends CrudService<FicheMarche> {
   protected readonly resource = 'fiches-marche';
+
+  /**
+   * ⚠️ 06/10 — `GET /en-ligne` : les procédures en remise électronique — toutes pour l'Administrateur, celles dont on est
+   * responsable (ou par intérim) pour les autres ; `[]` sans procédure, 403 à un compte externe. Silencieux.
+   */
+  enLigne(): Observable<ProcedureInterne[]> {
+    return this.http.get<ProcedureInterne[]>(`${this.baseUrl}/en-ligne`, { context: skipErrorToast() });
+  }
 
   /** `GET /{idDmc}` — 404 = pas encore de fiche (créée au premier PUT). Silencieux. */
   lire(idDmc: number): Observable<FicheMarche> {

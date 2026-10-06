@@ -80,3 +80,13 @@ backend préfère une route légère (`…/en-ligne/compte`), le front s'y adapt
 - **Administrateur** : pas d'entrée de menu, car le sien est saturé (20 px de marge à 1229×691, `scripts/hauteur-menu.mjs`). À la
   place, une **carte « Procédures en ligne »** sur le Poste d'administration, avec le nombre de procédures sans responsable. Elle
   mène à la même liste, complète, avec « Désigner le responsable » (depuis la fiche, comme aujourd'hui).
+
+> ✅ **Front, 2026-10-06 — livré.** `ProceduresEnLigneStore` lit `GET /api/fiches-marche/en-ligne` à l'ouverture et à chaque
+> navigation (comme la vacance PRMP et l'intérim). L'entrée **« Mes procédures en ligne »** (rubrique « Mon travail », icône clé,
+> `/procedures-en-ligne`) s'ajoute au menu **seulement si la liste n'est pas vide**, pour tout profil interne sauf l'Administrateur.
+> L'**Administrateur** a, sur son Poste d'administration, la file « Procédures en ligne sans responsable », qui compte elle-même
+> `responsable = null` et ouvre la même liste. L'écran : référence, objet, entité, `aTraiter` en tête (fond et badge), état et statut
+> de la fiche, nombre d'offres, calendrier, commission et cérémonie, séance ; pour le responsable, « Paramètres et cérémonie » et
+> « Séance » ; pour l'Administrateur, « Désigner le responsable » (la fiche) et ses propres gestes s'il est responsable. Une ligne
+> `parInterim` porte « par intérim — lecture seule », sans lien d'action. Vérifié en navigateur avec l'Administrateur (10 procédures,
+> 4 à traiter, 1 sans responsable).

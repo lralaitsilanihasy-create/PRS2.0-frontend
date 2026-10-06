@@ -107,6 +107,13 @@ export const routes: Routes = [
         data: { title: 'Séance d’ouverture des plis' },
       },
       {
+        // ⚠️ 06/10 — les procédures en ligne du responsable (toutes pour l'Administrateur). Route transverse : le serveur
+        // filtre par identité, et sert [] à qui n'est responsable de rien.
+        path: 'procedures-en-ligne',
+        loadComponent: () => import('./features/procedure/procedures-en-ligne').then((m) => m.ProceduresEnLigne),
+        data: { title: 'Procédures en ligne' },
+      },
+      {
         path: 'admin',
         canActivate: [roleGuard],
         data: { roles: ['ADMINISTRATEUR'] },

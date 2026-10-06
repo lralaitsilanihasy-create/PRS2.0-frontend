@@ -10,6 +10,7 @@ import { ActualiteService, ParametreActualitesService } from '../../services/act
 import { AuditLogService, KpiService, PreControleService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { Icone } from '../../shared/ui/icone';
+import { ProceduresEnLigneStore } from '../../core/procedures/procedures-en-ligne.store';
 import { Anciennete, anciennete } from './anciennete';
 
 /** Une file d'attente de la section « À traiter maintenant » — modèle d'affichage, calculé une fois. */
@@ -20,6 +21,8 @@ interface FileAttente {
   readonly attente: Anciennete | null;
   readonly lien: string;
   readonly action: string;
+  /** Texte sous le titre, quand la file ne mesure pas d'ancienneté (procédures en ligne). */
+  readonly texte?: string;
 }
 
 /** Nombre de profils de l'application : au complet, l'actualité vise « tous profils ». */
@@ -138,7 +141,9 @@ const GESTES: Readonly<Record<string, string>> = {
                   </div>
                   <h3 class="acc-file__titre">{{ f.titre }}</h3>
                   <p class="acc-file__attente">
-                    @if (f.nombre === 0) {
+                    @if (f.texte) {
+                      {{ f.texte }}
+                    } @else if (f.nombre === 0) {
                       Aucune demande en attente.
                     } @else if (f.attente) {
                       La plus ancienne attend {{ f.attente.libelle }}.
@@ -487,6 +492,8 @@ const GESTES: Readonly<Record<string, string>> = {
 })
 export class AdminAccueil {
   private readonly kpi = inject(KpiService);
+  /** ⚠️ 06/10 — les procédures en remise électronique : la file « sans responsable ». */
+  private readonly proceduresEnLigne = inject(ProceduresEnLigneStore);
   private readonly journal = inject(AuditLogService);
   private readonly actualites = inject(ActualiteService);
   private readonly parametres = inject(ParametreActualitesService);
@@ -636,6 +643,18 @@ export class AdminAccueil {
         attente: anciennete(c.rattachementDoyenLe, t, 'jour'),
         lien: '/admin/rattachements',
         action: 'Traiter les rattachements',
+      },
+      // ⚠️ 06/10 — les procédures en remise électronique sans responsable : sans lui, ni cérémonie ni validation de la fiche.
+      {
+        cle: 'procedures',
+        titre: 'Procédures en ligne sans responsable',
+        nombre: this.proceduresEnLigne.sansResponsable(),
+        attente: null,
+        lien: '/procedures-en-ligne',
+        action: 'Voir les procédures en ligne',
+        texte: this.proceduresEnLigne.nombre()
+          ? `${this.proceduresEnLigne.nombre()} procédure(s) en remise électronique au total.`
+          : 'Aucune procédure en remise électronique.',
       },
     ];
   });

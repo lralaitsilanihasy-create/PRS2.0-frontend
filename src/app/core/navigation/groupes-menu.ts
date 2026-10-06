@@ -119,6 +119,8 @@ export const GROUPES_PAR_CHEMIN: Readonly<Record<string, { groupe: CleGroupe; co
   documents: { groupe: 'travail', court: 'Documents' },
   // ⚠️ 2026-10-06 — les fiches DAO et la soumission en ligne (PRMP, UGPM).
   dao: { groupe: 'travail', court: 'Appels' },
+  // ⚠️ 06/10 — entrée DYNAMIQUE (main-layout) : le responsable d'au moins une procédure en ligne.
+  '/procedures-en-ligne': { groupe: 'travail', court: 'Procédures' },
 
   // ── Décisions : les productions de l'examen et les demandes à statuer ──
   'resultat-examen': { groupe: 'decisions', court: 'PV' },

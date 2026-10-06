@@ -150,6 +150,33 @@ export type EtatCao = 'ABSENTE' | 'INCOMPLETE' | 'COMPLETE';
 /** ⚠️ Lot 2b (V66) — l'état de la cérémonie des clés : `A_VENIR` (des clés manquent), `CLOSE`, `A_REFAIRE` (rouverte). */
 export type EtatCeremonie = 'A_VENIR' | 'CLOSE' | 'A_REFAIRE';
 
+/**
+ * ⚠️ 06/10 — `GET /api/fiches-marche/en-ligne` (`demande-backend-2026-10-06-liste-procedures-en-ligne`) : une procédure en remise
+ * électronique, pour son **responsable** (titulaire, ou par intérim : il voit, il n'agit pas) et pour l'**Administrateur** (toutes).
+ */
+export interface ProcedureInterne {
+  idDmc: number;
+  reference: string | null;
+  objet: string | null;
+  autoriteContractante: string | null;
+  categorie: CategorieDao | null;
+  statutFiche: 'BROUILLON' | 'VALIDEE' | 'REVISION';
+  responsable: { im: string; nom: string } | null;
+  /** Vue par l'intérimaire du titulaire : il ne peut pas encore conduire la procédure (paramètres, cérémonie, séance). */
+  parInterim: boolean;
+  etatCao: EtatCao | null;
+  etatCeremonie: EtatCeremonie | null;
+  datePublication: string | null;
+  dateOuvertureDepots: string | null;
+  dateLimite: string | null;
+  dateOuverturePlis: string | null;
+  etat: 'NON_LANCEE' | 'A_VENIR' | 'OUVERTE' | 'CLOSE';
+  etatSeance: string | null;
+  nbOffres: number;
+  /** Sans responsable, cérémonie non close, ou séance en cours ou du jour. */
+  aTraiter: boolean;
+}
+
 /** Rubrique d'un bloc (« Garantie de soumission » dans B05). `attendus` : compte d'informations de l'esquisse. */
 export interface RubriqueFiche {
   code: string;

@@ -8,6 +8,7 @@ import { libelleRole } from '../../core/auth/libelles-profils';
 import { VacanceStore } from '../../core/vacance/vacance.store';
 import { jusquA } from '../../core/interim/interim-libelles';
 import { InterimStore } from '../../core/interim/interim.store';
+import { ProceduresEnLigneStore } from '../../core/procedures/procedures-en-ligne.store';
 import { DelegationsAffichageStore } from '../../core/preferences/delegations-affichage.store';
 import { MenuCompactStore } from '../../core/preferences/menu-compact.store';
 import { ToastService } from '../../core/notifications/toast.service';
@@ -89,6 +90,8 @@ export class MainLayout {
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
   private readonly vacanceStore = inject(VacanceStore);
   private readonly interimStore = inject(InterimStore);
+  /** ⚠️ 06/10 — les procédures en ligne dont le compte est responsable : l'entrée « Mes procédures en ligne » en dépend. */
+  private readonly proceduresEnLigne = inject(ProceduresEnLigneStore);
   /** ⚠️ Intérim désigné (2026-09-21) — je suis suppléé (bannière « Vous êtes suppléé par … »). */
   readonly interimSubi = this.interimStore.subi;
   /** Intérims que j'exerce (bannière « Vous suppléez … », rubrique de menu « Exercé par intérim »). */
@@ -118,7 +121,15 @@ export class MainLayout {
    * active de t_delegation_profil) — le menu suit la base, zéro code.
    */
   private readonly navItems = computed(() => {
-    const propres = navFor(this.auth.role());
+    // ⚠️ 06/10 — « Mes procédures en ligne » n'apparaît qu'au responsable d'au moins une procédure : six profils peuvent l'être,
+    // et la plupart ne le sont jamais. L'Administrateur, au menu saturé, y vient par la file de son Poste d'administration.
+    const base = navFor(this.auth.role());
+    const pied = base.findIndex((i) => i.path === '/notifications');
+    const entreeProcedures: NavItem[] =
+      this.proceduresEnLigne.nombre() > 0 && this.auth.role() !== 'ADMINISTRATEUR'
+        ? [{ label: 'Mes procédures en ligne', path: '/procedures-en-ligne', icon: 'key' }]
+        : [];
+    const propres = pied < 0 ? [...base, ...entreeProcedures] : [...base.slice(0, pied), ...entreeProcedures, ...base.slice(pied)];
     // ⚠️ Intérim désigné (2026-09-21) — les entrées du titulaire suppléé s'ajoutent, marquées `interimDe` ;
     // `peutExecuter` accorde par intérim les entrées que ce titulaire tient par délégation.
     return [...propres, ...entreesParInterim(this.interimsExerces(), propres)]
@@ -462,6 +473,7 @@ export class MainLayout {
     // ⚠️ Intérim désigné (2026-09-21) — même cadence : qui je supplée / qui me supplée est relu à l'ouverture et
     // à chaque navigation (une révocation ou une désignation prend effet sans se déconnecter).
     this.interimStore.verifier();
+    this.proceduresEnLigne.verifier();
     this.router.events
       .pipe(
         filter((e) => e instanceof NavigationEnd),
@@ -470,6 +482,7 @@ export class MainLayout {
       .subscribe(() => {
         this.vacanceStore.verifier();
         this.interimStore.verifier();
+        this.proceduresEnLigne.verifier();
       });
 
     // Actualités de l'ouverture de session : le serveur renvoie déjà la liste filtrée (profil,
