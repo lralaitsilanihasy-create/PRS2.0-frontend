@@ -49,6 +49,23 @@ Les noms ci-dessous sont **proposés** : le backend fait autorité, et ce docume
 - **Les prestations intellectuelles** suivent le même plan, sous le titre « **Dossier de consultation** » : IC-PI, DPIC, formulaires,
   AE-PI, CPS-PI, CCAG-PI. **Le contrat-cadre** place son DPAC au rang 2.
 
+> ⚠️ **2026-10-06 — livré par le backend, avec ces écarts** (arbitrage du pilote : assemblage **par Word sur le serveur**, ADR-0014 ;
+> V73 ; contrat : `docs/api-endpoints.md`, § *Le DAO complet en un seul document*) :
+> - **Type** `DAO_COMPLET`, deux lignes de `GET …/documents` (`docx` puis `pdf`), `libelle` « Dossier d'appel d'offres complet »
+>   (« Dossier de consultation complet » en PI), nom `DAO_COMPLET_{référence}_{idDetail}_v{n}.{ext}`.
+> - **Les classeurs restent à part** : le bordereau des prix, le DQE et le tableau de conformité sont des `xlsx`, que Word n'insère
+>   pas ; ils restent servis dans la liste, à côté du DAO complet. Le rang 3 ne contient donc que les formulaires Word (A1-A4, C1, C2).
+> - **Mise en page** : chaque partie est le document du lot D tel qu'il est produit aujourd'hui ; les styles des fichiers Word de
+>   l'ARMP (`modeles-docx/`) ne sont pas encore appliqués aux parties produites. Les textes fixes (IC, CCAG) gardent, eux, la mise en
+>   page des documents types.
+> - **Sommaire** : il ne liste que les parties (titres de section), avec leurs pages ; les titres internes des parties n'y entrent pas.
+> - **Page de garde** : ministère, entité, PRMP, « DOSSIER D'APPEL D'OFFRES » (ou « DOSSIER DE CONSULTATION »), mode, « N° »
+>   `B02-OB-03` (à défaut la référence du plan), objet, lots, financement, **date de validation** de la version.
+> - **Contrat-cadre** : son DPAC en section II, avec l'IC et le CCAG de sa catégorie (il n'y a pas d'IC propre au contrat-cadre).
+> - **Sans Word sur le serveur** (ou en échec), la validation passe et les documents séparés restent servis comme avant : le front
+>   doit garder l'affichage de la liste séparée. ⚠️ Le serveur de production doit avoir Microsoft Word.
+> - **Durée** : environ 30 s ajoutées à la validation d'une version (90 pages).
+
 ## B2 — Les spécifications techniques, jointes par la PRMP
 
 | Méthode | URL | Accès | Corps / réponse |
@@ -66,6 +83,15 @@ Les noms ci-dessous sont **proposés** : le backend fait autorité, et ce docume
 - **Sans fichier**, la partie n'apparaît pas. Proposition : un **avertissement** au contrôle de la fiche (`SPECIFICATIONS_ABSENTES`,
   non bloquant) pour les fournitures et les travaux, car un DAO réel en porte toujours.
 
+> ⚠️ **2026-10-06 — livré tel que demandé, à ces précisions près** :
+> - **Taille maximale : 20 Mo**, 413 au-delà ; la limite multipart du serveur passe à 20 Mo. Refus : 400 `FICHIER_ABSENT`,
+>   400 `FORMAT_INVALIDE` (pas un `.docx`, lu sur le contenu ; un document **à macros** est aussi refusé).
+> - GET (métadonnées) et DELETE répondent **404** sans fichier. Les écritures suivent les gardes de la fiche : 409 `FICHE_VALIDEE` sur
+>   une version validée, et les autres refus d'écriture de la fiche (vacance de mandat…).
+> - **Ses titres ne rejoignent pas le sommaire** : seul « Spécifications techniques » y figure. Le document est inséré tel quel ; quand
+>   un style porte le même nom des deux côtés, celui du DAO l'emporte.
+> - L'avertissement `SPECIFICATIONS_ABSENTES` est rattaché au **bloc B14** ; il est muet en prestations intellectuelles.
+
 ## B3 — Où le DAO complet est servi
 
 - **`GET …/documents`** : le DAO complet, en `.docx` et en `.pdf`, et l'avis. Plus les documents séparés.
@@ -74,6 +100,15 @@ Les noms ci-dessous sont **proposés** : le backend fait autorité, et ce docume
   la garde des frais (V72). Le candidat y trouve l'acte d'engagement et les formulaires à remplir, qu'il recopie depuis le Word.
 - **Les versions déjà validées** (fiches 40 à 48) : le DAO complet est produit à la **première demande**, puis gardé. Sinon, la règle
   est la production à la validation.
+
+> ⚠️ **2026-10-06 — écarts de la livraison** :
+> - **Pas de production « à la première demande »** : une lecture ne lance jamais Word, qui prend environ 30 s. Une **tâche planifiée**
+>   produit le DAO complet des dernières versions validées qui n'en ont pas, deux minutes après le démarrage puis toutes les dix
+>   minutes. D'ici là, la liste sert les documents séparés.
+> - **Dossier soumis** : le PDF du DAO complet devient la pièce unique du DAO (type `DAO_COMPLET`) à la **prochaine jointure**
+>   (création, rattachement, validation d'une version liée). Un dossier **déjà soumis** garde ses pièces : le rattrapage ne le touche
+>   pas.
+> - **Retrait candidat** : la même liste que `…/documents`, donc le DAO complet et les classeurs, sous la garde des frais (V72).
 
 ## Hypothèses
 
@@ -89,6 +124,14 @@ Les noms ci-dessous sont **proposés** : le backend fait autorité, et ce docume
 2. **Q2** : le PDF du DAO complet porte-t-il les numéros de page du sommaire (calcul serveur), ou faut-il un renvoi « voir sommaire du
    Word » ?
 3. **Q3** : une taille maximale du DAO complet à fixer (le Word des spécifications avec plans peut être lourd) ?
+
+> ⚠️ **2026-10-06 — réponses du backend** :
+> - **Q1** : la conversion a été faite **par Word lui-même** (ouvrir le `.doc`, enregistrer en `.docx`) ; tableaux et numérotation sont
+>   gardés. Les six fichiers sont dans `src/main/resources/modeles/dao-fixes/` ; le pilote peut les remplacer par ses propres `.docx`.
+> - **Q2** : **oui**, Word pagine avant d'enregistrer : le sommaire du PDF porte les numéros de page, et le pied « page n / N ».
+> - **Q3** : pas de plafond propre au DAO complet ; seules les spécifications sont limitées, à **20 Mo**.
+>
+> **H1** retenue : le DAO complet assemble, il ne réécrit rien. **H2** retenue.
 
 ## Ce que le front fera, dès la livraison
 
