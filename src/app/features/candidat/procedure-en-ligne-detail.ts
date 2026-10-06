@@ -83,7 +83,11 @@ import { LIBELLES_ETAT_PROCEDURE, dateHeureFr, tailleLisible } from './libelles-
           </dl>
           @if (p.assistance) { <p class="ped__assist"><strong>Assistance aux candidats :</strong> {{ p.assistance }}</p> }
           <!-- ⚠️ Lot 3 (V68) — le dépôt : ouvert entre l'ouverture des dépôts et la date limite, à l'heure du serveur. -->
-          @if (p.depotsOuverts && connecte()) {
+          @if (p.depotsOuverts && connecte() && !retraitAutorise()) {
+            <!-- 06/10 (décision A) : dossier payant, le dépôt attend le reçu validé. -->
+            <button type="button" class="btn btn-primary ped__deposer" disabled>Déposer une offre</button>
+            <span class="text-sm text-muted">Le dépôt s’ouvre dès que votre reçu de paiement des frais de dossier est validé (section « Frais de dossier »).</span>
+          } @else if (p.depotsOuverts && connecte()) {
             <a class="btn btn-primary ped__deposer" [routerLink]="['/candidat', 'procedures', p.idDmc, 'offre']">Déposer une offre</a>
             <span class="text-sm text-muted">Votre offre est chiffrée sur votre poste : personne ne peut la lire avant la séance d'ouverture.{{ p.remplacementAutorise ? ' Vous pourrez la remplacer ou la retirer jusqu’à la date limite.' : '' }}</span>
           } @else if (p.depotsOuverts) {

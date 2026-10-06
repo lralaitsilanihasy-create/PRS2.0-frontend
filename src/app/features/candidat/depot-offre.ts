@@ -7,7 +7,7 @@ import { ApiError, codeErreur } from '../../core/errors/api-error';
 import { formaterEmpreinte } from '../../core/securite/cles-detenteur';
 import { telechargerBlob, validerFichier } from '../../core/securite/fichiers-surs';
 import { ActeEngagementSaisi, MembreGroupement, PieceJointe, construireContenu, sceller, typesDesFormats } from '../../core/securite/scellement';
-import { Accuse, BesoinEnLigne, ClesPubliques, Entreprise, PieceAttendue, ProcedureEnLigne } from '../../models';
+import { Accuse, BesoinEnLigne, ClesPubliques, Entreprise, PieceAttendue, ProcedureEnLigne, RecuDao } from '../../models';
 import { CeremonieService, EntrepriseCandidatService, OffresCandidatService, ProceduresEnLigneService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { BrouillonOffre, brouillonVide, cleBrouillon, ecrireBrouillon, effacerBrouillon, lireBrouillon } from './brouillon-offre';
@@ -48,6 +48,8 @@ function motifDepot(e: unknown): string {
       return 'L’envoi est arrivé incomplet ou altéré. Relancez le dépôt : rien n’a été déposé.';
     case 'LOT_INVALIDE':
       return 'Choisissez le lot pour lequel vous déposez.';
+    case 'FRAIS_NON_REGLES':
+      return 'Les frais de dossier de ce lot ne sont pas réglés : faites d’abord valider votre reçu de paiement (page de la procédure, « Frais de dossier »).';
   }
   return (e as Error)?.message || api.message || 'Le dépôt n’a pas abouti.';
 }
@@ -87,7 +89,7 @@ function motifDepot(e: unknown): string {
       </header>
 
       @if (bloquant(); as b) {
-        <div class="alert alert-danger" role="alert"><span>{{ b }}</span></div>
+        <div class="alert alert-danger" role="alert"><span>{{ b }}@if (fraisNonRegles()) { <a class="do__lien-frais" [routerLink]="['/candidat', 'procedures', idDmc]">Aller aux frais de dossier</a> }</span></div>
       } @else if (phase() === 'fait' && accuse(); as a) {
         <!-- L'accusé de réception : ce que le candidat garde. -->
         <section class="card do__accuse" aria-labelledby="do-accuse">
@@ -265,6 +267,7 @@ function motifDepot(e: unknown): string {
     .do__actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
     .do__emp { margin: 0; word-break: break-all; font-size: var(--text-sm); }
     .do__avert { margin: 0; padding-left: 1.2rem; }
+    .do__lien-frais { margin-left: 0.4rem; font-weight: 600; }
     .do__brouillon { display: flex; gap: 0.75rem; align-items: center; justify-content: space-between; flex-wrap: wrap; }
     .do__remplie { align-self: flex-start; }
     @media (max-width: 600px) { .do__large { grid-column: span 1; } .do__ligne { grid-template-columns: 1fr; } }
@@ -288,6 +291,10 @@ export class DepotOffre implements OnInit, OnDestroy {
   readonly chargement = signal(true);
   readonly erreurChargement = signal<string | null>(null);
   readonly bloquant = signal<string | null>(null);
+  /** 06/10 (décision A) — dossier payant sans reçu validé : l'écran ne s'ouvre pas, et renvoie aux frais de dossier. */
+  readonly fraisNonRegles = signal(false);
+  /** Le reçu validé de l'entreprise, pour un retrait payant ; `null` sinon. Ses `lots` (`null` = tout le dossier) gardent le dépôt. */
+  readonly recuValide = signal<RecuDao | null>(null);
   readonly procedure = signal<ProcedureEnLigne | null>(null);
   readonly pieces = signal<PieceAttendue[]>([]);
   readonly cles = signal<ClesPubliques | null>(null);
@@ -411,6 +418,9 @@ export class DepotOffre implements OnInit, OnDestroy {
     const m: string[] = [];
     if (!p) return m;
     if (p.lots.length > 1 && this.lot() == null) m.push('Choisissez le lot.');
+    const recu = this.recuValide();
+    const lotOffre = this.lotEffectif();
+    if (recu?.lots?.length && lotOffre != null && !recu.lots.includes(lotOffre)) m.push(`Votre reçu validé ne couvre pas le lot ${lotOffre} : faites valider un reçu pour ce lot.`);
     const lb = this.lotBesoin();
     if (lb) {
       // Lot 5 : seul un prix manquant bloque ; le reste est averti en section 3, la commission décide.
@@ -448,24 +458,36 @@ export class DepotOffre implements OnInit, OnDestroy {
     this.chargement.set(true);
     this.erreurChargement.set(null);
     this.bloquant.set(null);
+    this.fraisNonRegles.set(false);
     forkJoin({
       procedure: this.procedures.detail(this.idDmc),
       pieces: this.procedures.pieces(this.idDmc),
       entreprise: this.entreprises.lire(),
       horloge: this.procedures.horloge(),
-      besoin: this.procedures.besoin(this.idDmc).pipe(catchError(() => of(null))),
+      // 06/10 (décision A) — le reçu de l'entreprise : 404 sans reçu, d'où null.
+      recu: this.procedures.monRecu(this.idDmc).pipe(catchError(() => of(null))),
     }).subscribe({
-      next: ({ procedure, pieces, entreprise, horloge, besoin }) => {
+      next: ({ procedure, pieces, entreprise, horloge, recu }) => {
         this.procedure.set(procedure);
         this.pieces.set(pieces);
-        this.besoin.set(besoin);
         this.entreprise.set(entreprise);
+        this.recuValide.set(procedure.retraitPayant && recu?.etat === 'VALIDE' ? recu : null);
         this.ecartHorloge = new Date(horloge.maintenant).getTime() - Date.now();
         this.maintenant.set(Date.now());
         this.document.title = `Dépôt — ${procedure.reference || 'procédure'} — Espace candidat — PRS 2.0`;
         if (entreprise.exclusion) this.bloquant.set(messageExclusion(entreprise.exclusion));
         else if (!procedure.depotsOuverts) this.bloquant.set(procedure.etat === 'CLOSE' ? 'La date limite est passée : les dépôts sont clos.' : 'Les dépôts ne sont pas encore ouverts pour cette procédure.');
         else if (this.remplace && procedure.remplacementAutorise === false) this.bloquant.set('Cette procédure n’autorise pas le remplacement d’une offre déposée.');
+        else if (procedure.retraitPayant && recu?.etat !== 'VALIDE') {
+          this.fraisNonRegles.set(true);
+          this.bloquant.set(
+            recu?.etat === 'EN_ATTENTE'
+              ? 'Votre reçu de paiement des frais de dossier attend la validation de la personne responsable des marchés : le dépôt s’ouvrira dès qu’il sera validé.'
+              : 'Ce dossier est payant : déposez le reçu de paiement des frais de dossier et attendez sa validation avant de déposer une offre.',
+          );
+        }
+        // Le besoin n'est demandé qu'une fois le dépôt permis : il porte une part du dossier payant (décision A du 06/10).
+        if (!this.bloquant()) this.procedures.besoin(this.idDmc).pipe(catchError(() => of(null))).subscribe((b) => this.besoin.set(b));
         // Les clés publiées : sans elles, rien ne se scelle (404 tant que la cérémonie n'est pas close).
         this.ceremonie.clesPubliques(this.idDmc).subscribe({
           next: (c) => {
