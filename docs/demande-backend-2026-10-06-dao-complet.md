@@ -314,3 +314,19 @@ Restent :
   texte n'est plus imprimé. Le front a déjà retiré son propre avertissement de double emploi.
   Proposition : **retirer** ce contrôle. À défaut, le **reformuler** : « La liste des pièces administratives remplace ce texte dans le
   DPAO : il ne sera pas imprimé. »
+
+> ✅ **Front, 2026-10-06 — recette du dossier soumis (B3) : conforme.** Le dossier 100370, créé depuis la fiche 33 après V75, reçoit
+> de la fiche **une seule pièce**, de type 6 : `DAO_COMPLET_AOO-n-2463-MI-MESupReS-PRMP-UGPM-2026_303328_v1.pdf`, signalée « fiche DAO ».
+> Avant, il en recevait dix (DPAO, CCAP, AE, DPAC, A1-A4, B1, B2). Le dossier a été soumis, reçu (SECANT1) et dispatché (PRES001 →
+> MEMANT1). À l'écran d'examen, la pièce 1 est le DAO complet, lu en entier (103 pages, page de garde et sommaire).
+
+- **E2 — Le CCAG et le CCTP restent exigés à part, alors que le DAO complet les contient.** Pour soumettre le dossier 100370, la
+  PRMP a dû joindre, en plus du DAO complet, les pièces obligatoires de type 7 (« Cahier des clauses administratives générales ») et
+  de type 8 (« Cahier des clauses techniques particulières »). Or :
+  - le **CCAG** est la partie 2.3 du DAO complet, recopiée telle quelle du document type ;
+  - le **CCTP** correspond aux **spécifications techniques** (partie 2.2), quand la PRMP les a déposées (B2).
+
+  Proposition : quand le dossier porte un DAO complet, le type 7 n'est plus exigé, et le type 8 non plus si la fiche a des
+  spécifications techniques. Sans spécifications, le type 8 reste exigé. Le front a déjà retiré le CCAG et les spécifications de la
+  liste des pièces à joindre affichée à l'étape 7, quand le DAO complet existe. Le référentiel (`GET /api/type-piece-jointes`)
+  marque toujours ces deux types comme obligatoires pour un dossier DAO (la soumission sans eux n'a pas été essayée).
