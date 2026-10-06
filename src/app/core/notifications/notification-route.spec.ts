@@ -44,4 +44,10 @@ describe('Routage d’une notification', () => {
     expect(routePourNotification(n({ typeNotif: 'NOUVEAU_MESSAGE', idDossier: 1052 }), 'MEMBRE')).toEqual({ genre: 'route', commands: ['/membre/messagerie'] });
     expect(routePourNotification(n({ typeNotif: 'TYPE_INCONNU', idDossier: 1052 }), null)).toBeNull();
   });
+
+  it('V72 : un reçu des frais de dossier à valider mène à l’écran des reçus de la fiche', () => {
+    const recu = n({ typeNotif: 'RECU_A_VALIDER', typeObjet: 'PROCEDURE', idObjet: 47 });
+    expect(routePourNotification(recu, 'PRMP')).toEqual({ genre: 'route', commands: ['/prmp', 'dao', '47', 'recus'] });
+    expect(routePourNotification(recu, 'UGPM')).toEqual({ genre: 'route', commands: ['/prmp', 'dao', '47', 'recus'] });
+  });
 });

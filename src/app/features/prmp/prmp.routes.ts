@@ -50,6 +50,8 @@ export const PRMP_ROUTES: Routes = [
   { path: 'dao/:idDmc', loadComponent: () => import('./fiche-marche/fiche-marche').then((m) => m.FicheMarcheEcran), data: { title: 'Fiche DAO', concentration: true } },
   // ⚠️ Soumission en ligne, lot 1 (04/10, §B8) — le registre des retraits du DAO par les candidats, PRMP de la fiche seule.
   { path: 'dao/:idDmc/retraits', loadComponent: () => import('./retraits-dao').then((m) => m.RetraitsDao), data: { title: 'Retraits du DAO' } },
+  // ⚠️ V72 (06/10, retrait après paiement) — les reçus des frais de dossier, validés par la PRMP ou l'UGPM de la fiche.
+  { path: 'dao/:idDmc/recus', loadComponent: () => import('./recus-dao').then((m) => m.RecusDao), data: { title: 'Reçus des frais de dossier' } },
   // ⚠️ Soumission en ligne, lot 3 (04/10, V68) — le registre des dépôts : le nombre seul avant la date limite.
   { path: 'dao/:idDmc/depots', loadComponent: () => import('./depots-dao').then((m) => m.DepotsDao), data: { title: 'Dépôts des offres' } },
   // ⚠️ Soumission en ligne, lot 2a (04/10, Q11) — la commission d'appel d'offres, désignée par la PRMP (remise électronique).

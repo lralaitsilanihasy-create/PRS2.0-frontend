@@ -7,6 +7,8 @@ import { skipErrorToast } from '../core/errors/api-error';
 import {
   Accuse,
   BesoinEnLigne,
+  DepotRecuCorps,
+  RecuDao,
   ConfirmationCandidat,
   CreationOffreCorps,
   Horloge,
@@ -122,6 +124,28 @@ export class ProceduresEnLigneService {
    */
   besoin(idDmc: number): Observable<BesoinEnLigne> {
     return this.http.get<BesoinEnLigne>(`${this.base}/${idDmc}/besoin`, { context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ V72 (06/10) — `POST /{idDmc}/recus` (CANDIDAT, multipart `fichier` + `data` JSON) : le reçu des frais de dossier. 409
+   * `RECU_EN_ATTENTE`, `RECU_DEJA_VALIDE`, `PROCEDURE_FERMEE`, `ENTREPRISE_ABSENTE`, `ENTREPRISE_EXCLUE` ; 400 par champ,
+   * `FORMAT_INVALIDE`, `FICHIER_ABSENT` ; 413 au-delà de la taille des pièces. Silencieux : l'écran nomme le refus.
+   */
+  deposerRecu(idDmc: number, corps: DepotRecuCorps, fichier: File): Observable<RecuDao> {
+    const fd = new FormData();
+    fd.append('data', new Blob([JSON.stringify(corps)], { type: 'application/json' }));
+    fd.append('fichier', fichier);
+    return this.http.post<RecuDao>(`${this.base}/${idDmc}/recus`, fd, { context: skipErrorToast() });
+  }
+
+  /** ⚠️ V72 — `GET /{idDmc}/recus/mien` : le reçu le plus récent de son entreprise ; 404 s'il n'y en a pas. Silencieux. */
+  monRecu(idDmc: number): Observable<RecuDao> {
+    return this.http.get<RecuDao>(`${this.base}/${idDmc}/recus/mien`, { context: skipErrorToast() });
+  }
+
+  /** ⚠️ V72 — `GET /{idDmc}/recus/mien/fichier` : le fichier déposé (ouvert par `ouvrirBlobSur`). */
+  monRecuFichier(idDmc: number): Observable<Blob> {
+    return this.http.get(`${this.base}/${idDmc}/recus/mien/fichier`, { responseType: 'blob', context: skipErrorToast() });
   }
 
   /** ⚠️ Lot 3 — `GET /api/horloge` (public) : l'heure du serveur, qui fait foi pour la date limite. */

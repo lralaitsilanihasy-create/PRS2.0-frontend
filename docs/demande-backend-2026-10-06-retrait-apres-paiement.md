@@ -194,3 +194,19 @@ retrait. Ainsi la PRMP voit que chaque retrait est couvert.
   - « Valider » et « Refuser » (motif obligatoire, dans une modale) ;
   - le montant insuffisant signalé.
 - **En séance**, la ligne « Frais de dossier » de chaque offre, et l'alerte `FRAIS_NON_REGLES`.
+
+> ✅ **Front, 2026-10-06 — livré et recetté** (JAR V72, fiche 47, travaux, frais de 100 000 Ar).
+> - **Candidat** : section « Frais de dossier » sur la page de la procédure (`app-frais-dossier`) : frais par lot, compte de l'ARMP,
+>   dépôt du reçu (lots, montant, référence, date, banque, fichier), état et motif d'un refus, nouveau dépôt. Les boutons
+>   « Retirer » restent désactivés tant que `retraitPayant` est vrai et qu'aucun reçu n'est validé. Au dépôt de l'offre, `RECU-DAO`
+>   avec `dejaFourni` porte « Reçu des frais de dossier déjà validé ».
+> - **PRMP et UGPM** : écran `/prmp/dao/{idDmc}/recus` (bouton « Reçus des frais de dossier » sur la fiche ; notification
+>   `RECU_A_VALIDER` → cet écran) : en attente d'abord, montant insuffisant signalé, « Voir le reçu » (`ouvrirBlobSur`), « Valider »,
+>   « Refuser… » (modale, motif obligatoire). Le registre des retraits gagne la colonne « Reçu des frais ». En séance : la ligne
+>   « Frais de dossier » et l'alerte `FRAIS_NON_REGLES`.
+> - **Recette verte** : retrait sans reçu → 403 `FRAIS_NON_REGLES` et 21 boutons sur 21 désactivés ; deux reçus déposés ; deux
+>   notifications `RECU_A_VALIDER` à la PRMP ; reçu à 100 000 Ar validé, reçu à 50 000 Ar refusé avec motif (signalé « inférieur aux
+>   100 000 Ar attendus ») ; le candidat validé retire le dossier, le registre porte `recu = VALIDE` ; le candidat refusé lit le motif ;
+>   `RECU-DAO` servi `dejaFourni = true`, `obligatoire = false`.
+> - ⚠️ **À régler par l'Administrateur** : le compte de l'ARMP (`/api/parametres/compte-dao`) est vide sur DBPRS20 ; `compteDao` vaut
+>   donc `null` et le candidat ne voit pas où verser. Le retrait reste bien payant.

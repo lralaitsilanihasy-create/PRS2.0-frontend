@@ -91,6 +91,10 @@ export function routePourNotification(n: Notification, role: string | null): Cib
   if (type === 'LETTRE_RENVOI_RECUE' && role === 'PRMP') {
     return { genre: 'route', commands: ['/prmp/resultat-examen/lettre-renvois'] };
   }
+  // ⚠️ V72 (06/10) — un reçu des frais de dossier à valider : l'écran des reçus de la fiche (`idObjet` = idDmc).
+  if (type === 'RECU_A_VALIDER' && (role === 'PRMP' || role === 'UGPM') && n.idObjet != null) {
+    return { genre: 'route', commands: ['/prmp', 'dao', String(n.idObjet), 'recus'] };
+  }
   if ((type === 'RETRAIT_ACCEPTE' || type === 'RETRAIT_REFUSE') && role === 'PRMP') {
     return { genre: 'route', commands: ['/prmp/retraits'] };
   }

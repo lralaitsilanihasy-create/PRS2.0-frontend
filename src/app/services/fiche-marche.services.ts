@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { skipErrorToast } from '../core/errors/api-error';
-import { AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, Depots, DisponibiliteAvis, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, MaterielExige, ParametresInternes, ParametresInternesCorps, PersonnelExige, PieceExigee, PublicationAvis, PublicationLettres, ReferentielFiche, RetraitDao, TypeMarche, VersionFiche } from '../models';
+import { AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, Depots, DisponibiliteAvis, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, MaterielExige, ParametresInternes, ParametresInternesCorps, PersonnelExige, PieceExigee, PublicationAvis, PublicationLettres, RecuDao, ReferentielFiche, RetraitDao, TypeMarche, VersionFiche } from '../models';
 import { CrudService } from './api/crud.service';
 
 /**
@@ -196,6 +196,28 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
    */
   retraits(idDmc: number): Observable<RetraitDao[]> {
     return this.http.get<RetraitDao[]>(`${this.baseUrl}/${idDmc}/retraits`, { context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ V72 (06/10, retrait après paiement, §B3) — `GET /{idDmc}/recus` : les reçus des frais de dossier, les `EN_ATTENTE` d'abord.
+   * PRMP **et** UGPM de la fiche. Silencieux : l'écran nomme le refus.
+   */
+  recus(idDmc: number): Observable<RecuDao[]> {
+    return this.http.get<RecuDao[]>(`${this.baseUrl}/${idDmc}/recus`, { context: skipErrorToast() });
+  }
+
+  recuFichier(idDmc: number, idRecu: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${idDmc}/recus/${idRecu}/fichier`, { responseType: 'blob', context: skipErrorToast() });
+  }
+
+  /** 409 `RECU_DEJA_DECIDE` : une décision ne se reprend pas. */
+  validerRecu(idDmc: number, idRecu: number): Observable<RecuDao> {
+    return this.http.post<RecuDao>(`${this.baseUrl}/${idDmc}/recus/${idRecu}/valider`, {}, { context: skipErrorToast() });
+  }
+
+  /** Motif obligatoire (400 `MOTIF_ABSENT`). */
+  refuserRecu(idDmc: number, idRecu: number, motif: string): Observable<RecuDao> {
+    return this.http.post<RecuDao>(`${this.baseUrl}/${idDmc}/recus/${idRecu}/refuser`, { motif }, { context: skipErrorToast() });
   }
 
   /**

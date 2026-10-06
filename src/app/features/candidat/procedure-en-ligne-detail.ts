@@ -5,9 +5,10 @@ import { AuthService } from '../../core/auth/auth.service';
 import { dateFr } from '../../core/interim/interim-libelles';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur, telechargerBlob } from '../../core/securite/fichiers-surs';
-import { DocumentProcedureEnLigne, ProcedureEnLigne } from '../../models';
+import { DocumentProcedureEnLigne, ProcedureEnLigne, RecuDao } from '../../models';
 import { ProceduresEnLigneService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
+import { FraisDossier } from './frais-dossier';
 import { LIBELLES_CATEGORIES } from '../prmp/fiche-marche/fiche-marche-modele';
 import { LIBELLES_ETAT_PROCEDURE, dateHeureFr, tailleLisible } from './libelles-candidat';
 
@@ -20,7 +21,7 @@ import { LIBELLES_ETAT_PROCEDURE, dateHeureFr, tailleLisible } from './libelles-
 @Component({
   selector: 'app-procedure-en-ligne-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur],
+  imports: [RouterLink, EtatErreur, FraisDossier],
   template: `
     <nav class="ped__ariane" aria-label="Fil d'Ariane">
       <a routerLink="/candidat/procedures">Procédures ouvertes</a>
@@ -105,6 +106,18 @@ import { LIBELLES_ETAT_PROCEDURE, dateHeureFr, tailleLisible } from './libelles-
           </section>
         }
 
+        @if (p.retraitPayant) {
+          <!-- V72 (06/10, voie B) : le dossier se retire après validation du reçu des frais de dossier. -->
+          <section class="card ped__bloc ped__bloc--large" aria-labelledby="ped-frais">
+            <h2 id="ped-frais" class="ped__h2">Frais de dossier</h2>
+            @if (connecte()) {
+              <app-frais-dossier [procedure]="p" [(recu)]="recu" />
+            } @else {
+              <p class="text-sm">Le dossier est payant. Pour déposer votre reçu de paiement, <a routerLink="/login" [queryParams]="{ returnUrl: lienRetour() }">connectez-vous</a> avec votre compte candidat.</p>
+            }
+          </section>
+        }
+
         <section class="card ped__bloc ped__bloc--large" aria-labelledby="ped-docs">
           <h2 id="ped-docs" class="ped__h2">Dossier d'appel d'offres</h2>
           @if (!connecte()) {
@@ -117,12 +130,15 @@ import { LIBELLES_ETAT_PROCEDURE, dateHeureFr, tailleLisible } from './libelles-
             <p class="text-muted">Aucun document n'est encore disponible pour cette procédure.</p>
           } @else {
             <p class="text-sm text-muted">Chaque retrait est inscrit au registre de la personne responsable des marchés, avec votre compte et votre entreprise.</p>
+            @if (!retraitAutorise()) {
+              <p class="alert alert-info" role="status"><span>Les documents se retireront dès que votre reçu de paiement des frais de dossier sera validé (section « Frais de dossier »).</span></p>
+            }
             <ul class="ped__docs">
               @for (d of documents(); track d.code) {
                 <li class="ped__doc">
                   <span class="ped__doc-nom">{{ d.intitule }}</span>
                   <span class="ped__doc-meta cnm-mono">{{ d.code }} · v{{ d.version }}{{ d.taille != null ? ' · ' + taille(d.taille) : '' }}</span>
-                  <button type="button" class="btn btn-sm btn-primary" [disabled]="enCours() === d.code" (click)="retirer(d)">{{ enCours() === d.code ? 'Retrait…' : 'Retirer' }}</button>
+                  <button type="button" class="btn btn-sm btn-primary" [disabled]="enCours() === d.code || !retraitAutorise()" (click)="retirer(d)">{{ enCours() === d.code ? 'Retrait…' : 'Retirer' }}</button>
                 </li>
               }
             </ul>
@@ -182,6 +198,10 @@ export class ProcedureEnLigneDetail implements OnInit {
   /** Le `code` du document en cours de retrait : un seul à la fois, le bouton le dit. */
   readonly enCours = signal<string | null>(null);
   readonly pvEnCours = signal(false);
+  /** V72 — le reçu des frais de l'entreprise (lu par `app-frais-dossier`). */
+  readonly recu = signal<RecuDao | null>(null);
+  /** Retrait libre, ou reçu validé : le serveur garde la même règle (403 `FRAIS_NON_REGLES`). */
+  readonly retraitAutorise = computed(() => !this.procedure()?.retraitPayant || this.recu()?.etat === 'VALIDE');
   readonly pvAbsent = signal(false);
 
   ngOnInit(): void {
@@ -232,7 +252,8 @@ export class ProcedureEnLigneDetail implements OnInit {
         this.enCours.set(null);
         this.toast.success(`« ${d.intitule} » est enregistré sur votre poste. Ce retrait est inscrit au registre.`, 'Dossier retiré');
       },
-      error: () => this.enCours.set(null), // 401/403 → dialogue centralisé
+      // 401/403 → dialogue centralisé ; 403 FRAIS_NON_REGLES (reçu pas encore validé) le dit en clair.
+      error: () => this.enCours.set(null),
     });
   }
 

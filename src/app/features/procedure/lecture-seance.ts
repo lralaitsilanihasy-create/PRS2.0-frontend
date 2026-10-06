@@ -47,6 +47,10 @@ const LIBELLES_INTEGRITE: Readonly<Record<string, string>> = {
                 <dt>Validité</dt><dd>{{ a.validiteJours }} jours</dd>
                 <dt>Rabais</dt><dd>{{ a.rabais || '—' }}</dd>
                 <dt>Garantie</dt><dd>{{ garantie(o) }}</dd>
+                @if (o.fraisDossier; as fr) {
+                  <!-- V72 : le reçu des frais de dossier, validé avant le retrait (lu par le serveur, pas dans l'offre). -->
+                  <dt>Frais de dossier</dt><dd>{{ fr.regle ? 'réglés' + (fr.referencePaiement ? ' · réf. ' + fr.referencePaiement : '') + (fr.dateValidation ? ' · reçu validé le ' + dateCourte(fr.dateValidation) : '') : 'aucun reçu validé' }}</dd>
+                }
               </dl>
             }
             @if (o.formulaires && o.totaux; as t) {
@@ -144,6 +148,7 @@ export class LectureSeance implements OnInit {
     MATERIEL_INCOMPLET: 'Matériel incomplet',
     SOUS_DETAIL_INCOHERENT: 'Sous-détail incohérent',
     FORMULAIRES_ILLISIBLES: 'Formulaires illisibles',
+    FRAIS_NON_REGLES: 'Frais de dossier non réglés',
   };
   /** Lot 5 — les documents remplis, produits à la volée ; le DQE des travaux est le même document que le bordereau. */
   readonly documentsFormulaires: readonly { type: DocumentFormulaire; libelle: string }[] = [
@@ -173,6 +178,10 @@ export class LectureSeance implements OnInit {
 
   membres(o: OffreLue): string {
     return (o.groupement ?? []).map((g) => `${g.raisonSociale} (${g.nif})${g.mandataire ? ', mandataire' : ''}`).join(' ; ');
+  }
+
+  dateCourte(iso: string): string {
+    return new Date(iso).toLocaleDateString('fr-FR');
   }
 
   montant(v: number | null | undefined): string {

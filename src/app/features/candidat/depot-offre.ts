@@ -190,6 +190,10 @@ function motifDepot(e: unknown): string {
                     <strong>{{ pa.numero ? pa.numero + ' — ' : '' }}{{ pa.libelle }}</strong>
                     @if (pa.forme || pa.ancienneteMaxMois) { <span class="text-xs text-muted"> · {{ pa.forme }}{{ pa.ancienneteMaxMois ? ', de moins de ' + pa.ancienneteMaxMois + ' mois' : '' }}</span> }
                   </div>
+                  @if (pa.dejaFourni) {
+                    <!-- V72 : le reçu des frais, validé avant le retrait, fait preuve ; plus rien à joindre. -->
+                    <span class="badge badge-success do__remplie">Reçu des frais de dossier déjà validé</span>
+                  }
                   @if (remplie(pa)) {
                     <span class="badge badge-success do__remplie">Remplie en ligne (section 3)</span>
                     <span class="text-xs text-muted">Facultatif : vous pouvez joindre en plus une pièce justificative (fiche technique, catalogue…).</span>

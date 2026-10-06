@@ -204,6 +204,51 @@ export interface ProcedureEnLigne {
   remplacementAutorise?: boolean | null;
   /** ⚠️ Lot 3 (V68) — après l’ouverture des dépôts et avant la date limite, à l’horloge du serveur. */
   depotsOuverts?: boolean | null;
+  /**
+   * ⚠️ V72 (06/10, retrait après paiement, §B1) — le retrait exige un reçu **validé** : dossier payant ET premier avis imprimé
+   * depuis la mise en service (H2). Faux : retrait libre, comme avant.
+   */
+  retraitPayant?: boolean | null;
+  /** Les frais de dossier par lot (`B04-DS-05[#n]`) ; `lot = null` pour un marché non alloti. */
+  fraisDossier?: { lot: number | null; montant: number }[] | null;
+  /** Le compte de l'ARMP à créditer ; `null` pour un dossier gratuit ou un compte non réglé. */
+  compteDao?: { banque: string | null; titulaire: string | null; numeroCompte: string | null } | null;
+}
+
+export type EtatRecu = 'EN_ATTENTE' | 'VALIDE' | 'REFUSE';
+
+/**
+ * ⚠️ V72 — un reçu des frais de dossier, **par entreprise** (clé : son NIF). Le candidat le dépose, la PRMP ou l'UGPM le valide
+ * ou le refuse (motif) ; une décision ne se reprend pas. `entreprise`, `compte`, `fraisAttendus` et `montantInsuffisant` ne sont
+ * servis qu'à la PRMP et à l'UGPM.
+ */
+export interface RecuDao {
+  idRecu: number;
+  /** `null` : tout le dossier. */
+  lots: number[] | null;
+  montant: number;
+  referencePaiement: string;
+  datePaiement: string;
+  banque: string | null;
+  nomFichier: string;
+  dateDepot: string;
+  etat: EtatRecu;
+  motifRefus: string | null;
+  dateDecision: string | null;
+  decidePar: 'PRMP' | 'UGPM' | null;
+  entreprise?: { raisonSociale: string; nif: string } | null;
+  compte?: string | null;
+  fraisAttendus?: number | null;
+  montantInsuffisant?: boolean | null;
+}
+
+/** Le corps du dépôt d'un reçu (partie `data` du multipart). */
+export interface DepotRecuCorps {
+  lots: number[] | null;
+  montant: number;
+  referencePaiement: string;
+  datePaiement: string;
+  banque: string | null;
 }
 
 /** Un document du DAO téléchargeable par un candidat connecté ; `code` est le nom du fichier. */
@@ -224,6 +269,8 @@ export interface RetraitDao {
   nif: string | null;
   document: string;
   version: number;
+  /** ⚠️ V72 (§B6) — le reçu qui a ouvert ce retrait ; `null` pour un retrait libre. */
+  recu?: { etat: EtatRecu; referencePaiement: string } | null;
 }
 
 // ── Le dépôt scellé (lot 3, V68) ──────────────────────────────────────────────────────────────────────────────
@@ -252,6 +299,11 @@ export interface PieceAttendue {
    * Les formulaires du lot 5b sont marqués dès maintenant : tant que le front ne les livre pas, la pièce reste à joindre.
    */
   formulaire?: FormulaireOffre | null;
+  /**
+   * ⚠️ V72 (§B5) — sur `RECU-DAO`, retrait payant seulement : l'entreprise du candidat connecté a un reçu **validé** ; la pièce
+   * n'est alors plus à joindre (`obligatoire = false`). `null` ailleurs.
+   */
+  dejaFourni?: boolean | null;
 }
 
 export type FormulaireOffre = 'BORDEREAU' | 'CONFORMITE' | 'CALENDRIER' | 'DQE' | 'SOUS_DETAIL' | 'K1' | 'CAPACITES' | 'PERSONNEL' | 'MATERIEL';

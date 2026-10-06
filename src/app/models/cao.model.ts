@@ -294,6 +294,8 @@ export interface OffreLue {
   totaux?: { ht: number; tva: number; ttc: number; htMin: number | null; ttcMin: number | null } | null;
   /** ⚠️ Lot 5, §B5 — les documents remplis que l'offre porte (leur PDF existe) ; `null` sans formulaires ou après la purge. */
   partiesFormulaires?: DocumentFormulaire[] | null;
+  /** ⚠️ V72 (§B5) — les frais de dossier de l'entreprise, lus par le serveur (retrait payant ; `null` sinon). */
+  fraisDossier?: { regle: boolean; dateValidation: string | null; referencePaiement: string | null } | null;
 }
 
 /** Les alertes lues en séance — V70, puis les contrôles des formulaires du lot 5 (05/10). Jamais un refus : la commission décide. */
@@ -314,7 +316,8 @@ export type TypeAlerteLecture =
   | 'PERSONNEL_INCOMPLET'
   | 'MATERIEL_INCOMPLET'
   | 'SOUS_DETAIL_INCOHERENT'
-  | 'FORMULAIRES_ILLISIBLES';
+  | 'FORMULAIRES_ILLISIBLES'
+  | 'FRAIS_NON_REGLES';
 
 /** ⚠️ Lot 5 — les documents remplis que la commission imprime (`…/formulaires/{type}.pdf`) ; `DQE` = `BORDEREAU` aux travaux. */
 export type DocumentFormulaire = 'BORDEREAU' | 'DQE' | 'CONFORMITE' | 'CAPACITES';

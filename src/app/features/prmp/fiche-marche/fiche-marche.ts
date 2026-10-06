@@ -261,6 +261,11 @@ export class FicheMarcheEcran {
     const id = this.idDmc();
     return id != null && ['PRMP', 'UGPM'].includes(this.auth.role() ?? '') && this.modeElectronique() ? ['/prmp', 'dao', id, 'cao'] : null;
   });
+  /** ⚠️ V72 (06/10) — les reçus des frais de dossier : PRMP et UGPM, remise électronique (l'écran dit s'il n'y en a aucun). */
+  readonly lienRecus = computed<(string | number)[] | null>(() => {
+    const id = this.idDmc();
+    return id != null && ['PRMP', 'UGPM'].includes(this.auth.role() ?? '') && this.modeElectronique() ? ['/prmp', 'dao', id, 'recus'] : null;
+  });
   /** ⚠️ Lot 3 (V68) — le registre des dépôts : PRMP de la fiche, remise électronique. */
   readonly lienDepots = computed<(string | number)[] | null>(() => {
     const id = this.idDmc();

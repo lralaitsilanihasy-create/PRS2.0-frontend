@@ -60,6 +60,9 @@
         @if (lienRetraits(); as lien) {
           <a class="btn btn-outline btn-sm" [routerLink]="lien">Retraits du DAO</a>
         }
+        @if (lienRecus(); as lien) {
+          <a class="btn btn-outline btn-sm" [routerLink]="lien">Reçus des frais de dossier</a>
+        }
       </div>
     }
   </header>

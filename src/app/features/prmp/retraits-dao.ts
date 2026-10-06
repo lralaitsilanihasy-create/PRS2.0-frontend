@@ -47,7 +47,7 @@ import { dateHeureFr } from '../candidat/libelles-candidat';
           <table class="rd__table">
             <caption class="cnm-sr-only">Retraits du DAO, du plus ancien au plus récent</caption>
             <thead>
-              <tr><th scope="col">Date</th><th scope="col">Compte</th><th scope="col">Entreprise</th><th scope="col">NIF</th><th scope="col">Document</th><th scope="col">Version</th></tr>
+              <tr><th scope="col">Date</th><th scope="col">Compte</th><th scope="col">Entreprise</th><th scope="col">NIF</th><th scope="col">Document</th><th scope="col">Version</th><th scope="col">Reçu des frais</th></tr>
             </thead>
             <tbody>
               @for (r of retraits(); track $index) {
@@ -58,6 +58,7 @@ import { dateHeureFr } from '../candidat/libelles-candidat';
                   <td class="cnm-mono">{{ r.nif || '—' }}</td>
                   <td>{{ r.document }}</td>
                   <td class="cnm-mono">v{{ r.version }}</td>
+                  <td>{{ r.recu ? (r.recu.etat === 'VALIDE' ? 'validé' : r.recu.etat === 'REFUSE' ? 'refusé' : 'en attente') + ' · ' + r.recu.referencePaiement : 'retrait libre' }}</td>
                 </tr>
               }
             </tbody>
