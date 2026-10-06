@@ -90,3 +90,8 @@ backend préfère une route légère (`…/en-ligne/compte`), le front s'y adapt
 > « Séance » ; pour l'Administrateur, « Désigner le responsable » (la fiche) et ses propres gestes s'il est responsable. Une ligne
 > `parInterim` porte « par intérim — lecture seule », sans lien d'action. Vérifié en navigateur avec l'Administrateur (10 procédures,
 > 4 à traiter, 1 sans responsable).
+
+> ✅ **Arbitrage du pilote, 2026-10-06 — intérim : option A.** L'intérim (ADR-0008) **n'est pas étendu** à la remise électronique :
+> seul le **responsable titulaire** conduit la procédure (paramètres internes, cérémonie des clés, séance). L'intérimaire continue de
+> la voir, marquée « par intérim — lecture seule ». En cas d'absence du titulaire, l'**Administrateur désigne un autre responsable**
+> depuis la fiche (`POST …/responsable`, après retrait du titulaire). Rien à changer côté serveur ni côté front.
