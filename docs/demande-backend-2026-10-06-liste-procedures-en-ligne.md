@@ -40,11 +40,26 @@ Un compte sans procédure reçoit **200 `[]`**, jamais 403 : le front s'en sert 
 Tri proposé : les procédures **à traiter** d'abord, c'est-à-dire sans responsable, cérémonie non close, séance du jour ou ouverte.
 Puis par date limite croissante.
 
+> ⚠️ **2026-10-06 — livré.** Écarts et précisions :
+> - **`statutFiche`** vaut `BROUILLON`, `VALIDEE` ou **`REVISION`** (un brouillon après une version validée).
+> - **`etat`** vaut `NON_LANCEE` tant que la procédure n'entre pas dans la liste publique : avis non imprimé, fiche non validée, ou
+>   signature au-dessus de Simple. `datePublication` n'est servie qu'une fois la procédure lancée.
+> - **`nbOffres`** compte les offres déposées et les offres écartées.
+> - **Champ ajouté : `aTraiter`.** Il est vrai sans responsable, cérémonie non close, ou séance en cours ou du jour. Le tri suit la
+>   proposition, avec les séances closes en dernier.
+> - ⚠️ **Intérim.** L'intérimaire voit la procédure de son titulaire (`parInterim = true`), mais ne peut pas encore agir :
+>   paramètres internes, cérémonie et séance restent réservés au **titulaire**, car l'intérim (ADR-0008) n'est pas étendu à la
+>   remise électronique. C'est à trancher par le pilote si cela doit changer.
+> - Les profils externes reçoivent 403 ; un compte interne sans procédure reçoit `[]`.
+
 ## B2 — Rien de plus pour le menu
 
 Le front n'affiche l'entrée « Mes procédures en ligne » **que** si B1 rend au moins une procédure. Il l'appelle une fois à
 l'ouverture de session, puis sur les notifications `typeObjet = PROCEDURE`. Aucune route de comptage à part n'est demandée. *Si le
 backend préfère une route légère (`…/en-ligne/compte`), le front s'y adapte.*
+
+> ⚠️ **2026-10-06 — conforme.** Il n'y a pas de route de comptage. Le front compte lui-même dans la liste, y compris les
+> procédures sans responsable de la carte de l'Administrateur (`responsable = null`).
 
 ## Hypothèses
 
@@ -52,6 +67,10 @@ backend préfère une route légère (`…/en-ligne/compte`), le front s'y adapt
   conservation s'y retrouvent. Une procédure close depuis plus de la durée de conservation des offres (V70) en sort.
 - **H2** — La PRMP et l'UGPM ne reçoivent que les fiches dont elles sont responsables (cas de recette). Leur porte d'entrée reste
   « Appels d'offres ».
+
+> ⚠️ **2026-10-06 — H1 et H2 retenues.** H1 : la durée de conservation se compte depuis la clôture de la séance ; si
+> `OFFRE_CONSERVATION_ANNEES` est nul, la procédure reste dans la liste sans limite. H2 : la PRMP et l'UGPM ne voient que les
+> procédures dont elles sont responsables.
 
 ## Ce que le front fera
 
