@@ -216,6 +216,13 @@ export class FicheBesoin implements ListeASauver {
     );
   }
 
+  /** ⚠️ 06/10 — l'intitulé d'une série, saisi dans son intertitre : il vaut pour tous les articles de cette série, dans ce lot. */
+  saisirLibelleSerie(code: string, ev: Event): void {
+    const valeur = (ev.target as HTMLInputElement).value;
+    const cles = new Set(this.duLot().filter((x) => (x.serie?.trim() || null) === code).map((x) => x.cle));
+    this.lignes.update((l) => l.map((x) => (cles.has(x.cle) ? { ...x, serieLibelle: valeur } : x)));
+  }
+
   basculerSousDetail(ligne: LigneBesoin, ev: Event): void {
     const coche = (ev.target as HTMLInputElement).checked;
     this.lignes.update((l) => l.map((x) => (x.cle === ligne.cle ? { ...x, sousDetail: coche } : x)));

@@ -32,33 +32,52 @@
     }
 
     @if (duLot().length && travaux()) {
-      <!-- ⚠️ DQE des travaux (02/10) : n° de prix, séries en intertitre, quantités décimales ; le détail d'un
-           article porte sa série, le libellé du bordereau, le sous-détail et le plafond. -->
+      <!-- ⚠️ DQE des travaux (02/10) — ⚠️ 06/10 (demande pilote : « afficher en intégralité le tableau ») : toutes les
+           colonnes à plat, plus de détail replié sous chaque article. L'intitulé d'une série se saisit dans son intertitre,
+           une fois pour tous ses articles ; la série d'un article (sa colonne) le range dans un autre intertitre. -->
       <div class="bs__table">
-        <table>
+        <table class="bs__dqe-table">
           <caption class="bs__cap">
             {{ duLot().length }} article(s) en {{ series().length }} série(s)@if (lotAffiche(); as n) { au lot {{ n }} } — le détail
             quantitatif et estimatif : le candidat y portera ses prix.
           </caption>
           <thead>
             <tr>
+              <th scope="col" class="bs__c-s">Série</th>
               <th scope="col" class="bs__c-p">N° de prix</th>
               <th scope="col">Désignation</th>
+              <th scope="col" class="bs__c-b">Libellé au bordereau</th>
               <th scope="col" class="bs__c-u">Unité</th>
               <th scope="col" class="bs__c-q">Quantité</th>
+              <th scope="col" class="bs__c-pl">Plafond (%)</th>
+              <th scope="col" class="bs__c-sd">Sous-détail</th>
               <th scope="col" class="bs__c-a"><span class="bs__sr">Actions</span></th>
             </tr>
           </thead>
           <tbody>
             @for (s of series(); track $index) {
               <tr class="bs__serie">
-                <th scope="colgroup" colspan="5">
-                  @if (s.code) { Série {{ s.code }}@if (s.libelle) { — {{ s.libelle }} } } @else { Sans série — à préciser dans le détail de l’article }
+                <th scope="colgroup" colspan="9">
+                  @if (s.code) {
+                    <span class="bs__serie-t">Série {{ s.code }} —</span>
+                    @if (lecture()) {
+                      {{ s.libelle || 'sans intitulé' }}
+                    } @else {
+                      <input class="form-control bs__serie-lib" type="text" [value]="s.libelle ?? ''" placeholder="Intitulé de la série, ex. Ouvrages" [attr.aria-label]="'Intitulé de la série ' + s.code" (input)="saisirLibelleSerie(s.code, $event)" />
+                    }
+                  } @else {
+                    Sans série — saisissez-la dans la colonne « Série » de l’article
+                  }
                 </th>
               </tr>
               @for (l of s.articles; track l.cle) {
                 @let r = rangDe(l);
                 <tr [class.bs__ko]="erreurDe(r, 'designation') || erreurDe(r, 'numeroPrix') || doubles().has(l.numeroPrix?.trim() ?? '')">
+                  <td class="bs__c-s">
+                    @if (lecture()) { <span class="bs__lu">{{ l.serie }}</span> } @else {
+                      <input class="form-control" type="text" [value]="l.serie ?? ''" placeholder="500" [attr.aria-label]="'Série de l’article ' + (r + 1)" (change)="saisir(l, 'serie', $event)" />
+                    }
+                  </td>
                   <td class="bs__c-p">
                     @if (lecture()) {
                       <span class="bs__lu">{{ l.numeroPrix }}</span>
@@ -78,9 +97,11 @@
                       <input class="form-control" type="text" [value]="l.designation" [attr.aria-label]="'Désignation de l’article ' + (r + 1)" (input)="saisir(l, 'designation', $event)" />
                       @if (erreurDe(r, 'designation'); as msg) { <span class="form-error">{{ msg }}</span> }
                     }
-                    <button type="button" class="bs__plier" (click)="basculerOuverture(l)">
-                      {{ l.ouverte ? '▾' : '▸' }} Série, bordereau, sous-détail@if (l.sousDetail) { · sous-détail exigé }@if (l.plafond != null) { · plafond {{ l.plafond }} % }
-                    </button>
+                  </td>
+                  <td class="bs__c-b">
+                    @if (lecture()) { <span class="bs__lu">{{ l.libelleBordereau }}</span> } @else {
+                      <input class="form-control" type="text" [value]="l.libelleBordereau ?? ''" placeholder="Le mètre cube" [attr.aria-label]="'Libellé au bordereau de l’article ' + (r + 1)" (input)="saisir(l, 'libelleBordereau', $event)" />
+                    }
                   </td>
                   <td class="bs__c-u">
                     @if (lecture()) {
@@ -97,6 +118,14 @@
                       @if (erreurDe(r, 'quantite'); as msg) { <span class="form-error">{{ msg }}</span> }
                     }
                   </td>
+                  <td class="bs__c-pl">
+                    @if (lecture()) { <span class="bs__lu">{{ l.plafond != null ? l.plafond + ' %' : '' }}</span> } @else {
+                      <input class="form-control" type="number" min="0" max="100" step="0.01" [value]="l.plafond ?? ''" [attr.aria-label]="'Plafond en % des travaux de l’article ' + (r + 1)" (input)="saisirNombre(l, 'plafond', $event)" />
+                    }
+                  </td>
+                  <td class="bs__c-sd">
+                    <input type="checkbox" [checked]="!!l.sousDetail" [disabled]="lecture()" [attr.aria-label]="'Prix soumis à sous-détail, article ' + (r + 1)" (change)="basculerSousDetail(l, $event)" />
+                  </td>
                   <td class="bs__c-a">
                     @if (!lecture()) {
                       <button type="button" class="bs__ic" aria-label="Monter cet article" [disabled]="r === 0" (click)="deplacer(l, -1)">↑</button>
@@ -105,36 +134,6 @@
                     }
                   </td>
                 </tr>
-                @if (l.ouverte) {
-                  <tr class="bs__carac">
-                    <td></td>
-                    <td colspan="3">
-                      <div class="bs__dqe">
-                        <label class="bs__f">
-                          <span>Série</span>
-                          <input class="form-control" type="text" [value]="l.serie ?? ''" [readOnly]="lecture()" placeholder="ex. 500" (input)="saisir(l, 'serie', $event)" />
-                        </label>
-                        <label class="bs__f bs__f--large">
-                          <span>Intitulé de la série</span>
-                          <input class="form-control" type="text" [value]="l.serieLibelle ?? ''" [readOnly]="lecture()" placeholder="ex. Ouvrages" (input)="saisir(l, 'serieLibelle', $event)" />
-                        </label>
-                        <label class="bs__f bs__f--large">
-                          <span>Libellé au bordereau des prix unitaires</span>
-                          <input class="form-control" type="text" [value]="l.libelleBordereau ?? ''" [readOnly]="lecture()" placeholder="ex. Le mètre cube" (input)="saisir(l, 'libelleBordereau', $event)" />
-                        </label>
-                        <label class="bs__f">
-                          <span>Plafond (% des travaux)</span>
-                          <input class="form-control" type="number" min="0" max="100" step="0.01" [value]="l.plafond ?? ''" [readOnly]="lecture()" (input)="saisirNombre(l, 'plafond', $event)" />
-                        </label>
-                        <label class="bs__case">
-                          <input type="checkbox" [checked]="!!l.sousDetail" [disabled]="lecture()" (change)="basculerSousDetail(l, $event)" />
-                          Prix soumis à sous-détail
-                        </label>
-                      </div>
-                    </td>
-                    <td></td>
-                  </tr>
-                }
               }
             }
           </tbody>

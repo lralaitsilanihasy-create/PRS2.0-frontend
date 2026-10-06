@@ -157,7 +157,15 @@
 }
 
 /* ── DQE des travaux (02/10) : n° de prix, séries en intertitre, détail de l'article ─────────── */
-.bs__c-p { width: 7rem; font-variant-numeric: tabular-nums; }
+.bs__c-p { width: 6rem; font-variant-numeric: tabular-nums; }
+/* ⚠️ 06/10 — le DQE à plat : toutes les colonnes ; le tableau défile en largeur plutôt que de replier. */
+.bs__dqe-table { min-width: 1180px; }
+.bs__c-s { width: 5.5rem; }
+.bs__c-b { width: 12rem; }
+.bs__c-pl { width: 6.5rem; }
+.bs__c-sd { width: 6rem; text-align: center; }
+.bs__serie-t { margin-right: 0.4rem; }
+.bs__serie-lib { display: inline-block; width: min(28rem, 60%); font-weight: 600; }
 .bs__serie th {
   text-align: left;
   font-size: 0.84rem;

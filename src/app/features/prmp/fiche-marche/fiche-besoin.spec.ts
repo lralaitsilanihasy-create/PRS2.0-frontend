@@ -277,22 +277,32 @@ describe('Besoin de la fiche DAO (bloc B12, livraison V45 du 25/09)', () => {
     { idArticle: 2, lot: null, ordre: 2, numeroPrix: '510', serie: '500', serieLibelle: 'Ouvrages', designation: 'Démolition maçonnerie', unite: 'm³', quantite: 55.2, libelleBordereau: 'Le mètre cube', caracteristiques: [] },
   ];
 
-  it('travaux : séries en intertitre, n° de prix, sous-détail et plafond dits sur la ligne', () => {
+  /** L'intertitre d'une série : son code, et son intitulé (champ, ⚠️ 06/10 — tableau à plat). */
+  const intertitre = (t: Element | null): string => `${texte(t)} ${(t?.querySelector('input') as HTMLInputElement | null)?.value ?? ''}`.trim();
+
+  it('travaux : séries en intertitre, toutes les colonnes à plat (06/10) — série, n° de prix, bordereau, plafond, sous-détail', () => {
     monter({ nbLots: 1, saisieParLot: false, categorie: 'TRAVAUX' });
     ouvrir(DQE);
-    expect(Array.from(racine().querySelectorAll('.bs__serie')).map((t) => texte(t))).toEqual(['Série 000 — Installation', 'Série 500 — Ouvrages']);
-    expect(lignes().filter((l) => !l.classList.contains('bs__serie')).map((l) => saisie(l).value)).toEqual(['001', '510']);
-    expect(texte(racine().querySelector('.bs__plier'))).toContain('sous-détail exigé · plafond 10 %');
+    expect(Array.from(racine().querySelectorAll('.bs__serie')).map((t) => intertitre(t))).toEqual(['Série 000 — Installation', 'Série 500 — Ouvrages']);
+    const articles = lignes().filter((l) => !l.classList.contains('bs__serie'));
+    // Champs texte : série, n° de prix, désignation, libellé au bordereau, unité ; champs nombre : quantité, plafond.
+    const plafond = (l: Element): string => (l.querySelectorAll('input[type="number"]')[1] as HTMLInputElement).value;
+    expect(articles.map((l) => [...[0, 1, 3].map((i) => saisie(l, i).value), plafond(l)])).toEqual([
+      ['000', '001', 'Le forfait', '10'],
+      ['500', '510', 'Le mètre cube', ''],
+    ]);
+    expect(articles.map((l) => (l.querySelector('input[type=checkbox]') as HTMLInputElement).checked)).toEqual([true, false]);
+    expect(racine().querySelector('.bs__plier')).toBeNull();
   });
 
   it('travaux : un n° de prix répété est signalé avant l’envoi ; l’envoi porte les attributs du DQE', () => {
     monter({ nbLots: 1, saisieParLot: false, categorie: 'TRAVAUX' });
     ouvrir(DQE);
     const articles = (): HTMLTableRowElement[] => lignes().filter((l) => !l.classList.contains('bs__serie'));
-    ecrire(saisie(articles()[1]), '001');
+    ecrire(saisie(articles()[1], 1), '001');
     rendre();
     expect(racine().querySelectorAll('.form-error').length).toBe(2);
-    ecrire(saisie(articles()[1]), '510');
+    ecrire(saisie(articles()[1], 1), '510');
     rendre();
     expect(racine().querySelector('.form-error')).toBeNull();
     bouton('Enregistrer le besoin').click();
@@ -319,7 +329,7 @@ describe('Besoin de la fiche DAO (bloc B12, livraison V45 du 25/09)', () => {
     bouton('Ajouter 1 article(s)').click();
     rendre();
     expect(racine().querySelector('textarea')).toBeNull();
-    expect(texte(racine().querySelector('.bs__serie'))).toBe('Série 600 — CHAUSSEES');
+    expect(intertitre(racine().querySelector('.bs__serie'))).toBe('Série 600 — CHAUSSEES');
     expect(toast.info).toHaveBeenCalledWith("1 article(s) ajouté(s) — à vérifier avant d'enregistrer.");
   });
 
