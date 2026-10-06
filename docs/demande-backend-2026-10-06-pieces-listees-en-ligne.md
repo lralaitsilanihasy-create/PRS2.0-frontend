@@ -29,11 +29,20 @@ Les noms ci-dessous sont **proposés** : le backend fait autorité, et ce docume
 - **Le texte reste permis** en remise électronique, en plus de la liste : il sert au document imprimé (DPAO). Mais il ne remplace
   plus la liste.
 
+> ⚠️ **2026-10-06 — livré, conforme.** La règle `SE_PIECES_LISTEES` est bloquante, avec le message proposé mot pour mot, `bloc =
+> "B14"` et `champs = []`. Elle compte toutes les rubriques de la liste. Elle est **muette** en remise papier, et aussi là où le
+> bloc B14 n'est pas servi : contrat-cadre et prestations intellectuelles. ⚠️ Conséquence : une procédure en ligne de ce type n'a
+> toujours que les trois pièces de base, car il n'y a pas de liste à exiger.
+
 ## B2 — Les fiches existantes
 
 - **Rien n'est migré.** Une version déjà validée garde ses pièces telles qu'elles sont, y compris les procédures en ligne ouvertes
   ou closes (fiches 44, 45…). La règle joue à la **prochaine validation**, c'est-à-dire à la création ou à la révision d'une fiche.
 - La règle apparaît dès le **contrôle** (`POST …/controler`), pour que la PRMP la voie avant de valider.
+
+> ⚠️ **2026-10-06 — livré, conforme.** Rien n'est migré. La règle apparaît dans le bilan dès le contrôle et bloque la validation.
+> Une version **déjà validée** sans liste la montre dans son bilan en lecture (la 44, par exemple), sans aucun effet sur la
+> procédure publiée.
 
 ## Hypothèses
 
@@ -41,6 +50,11 @@ Les noms ci-dessous sont **proposés** : le backend fait autorité, et ce docume
   pas la présence de chaque rubrique : la PRMP sait ce que son DAO exige.
 - **H2** — Les trois pièces de base (`AE`, `RECU-DAO`, `GARANTIE`) ne comptent **pas** dans la liste : elles sont ajoutées par le
   serveur à toute procédure en ligne, et ne disent rien des pièces propres au DAO.
+
+> ⚠️ **2026-10-06 — H1 et H2 retenues, une précision sur H1.** Pour `SE_PIECES_LISTEES`, une liste faite seulement de pièces
+> administratives suffit. Mais `PIECES_OFFRE_EXIGEES`, qui ne change pas, exige toujours une pièce de la rubrique `OFFRE` **ou** le
+> texte `B04-CO-01` / `B04-PI-01`. Une liste administrative seule doit donc garder ce texte pour valider. **H2** : `AE`, `RECU-DAO`
+> et `GARANTIE` ne sont pas dans la liste `/pieces` et ne comptent pas.
 
 ## Ce que le front fera
 
