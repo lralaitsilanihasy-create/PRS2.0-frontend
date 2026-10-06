@@ -102,6 +102,9 @@
   }
 }
 
+<!-- ⚠️ V73 (06/10) — les spécifications techniques, Word inséré dans le DAO complet (avertissement SPECIFICATIONS_ABSENTES au B14). -->
+<app-fiche-specifications [idDmc]="idDmc()" [lecture]="lecture()" />
+
 <!-- ⚠️ 03/10 — « Coller une liste » dans la rubrique choisie : le passage du DAO, découpé, avec l'aperçu de l'impression. -->
 @if (collage()) {
   <app-collage-liste

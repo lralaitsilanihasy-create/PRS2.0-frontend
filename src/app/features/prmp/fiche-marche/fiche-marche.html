@@ -756,7 +756,7 @@
                       @for (p of g.pieces; track p.cle) {
                         <li>
                           <!-- Le serveur NOMME ses documents (`libelle`) : le sigle ne sert que de repli. -->
-                          <span class="fm__doc fm__doc--{{ p.type.toLowerCase() }}">{{ p.type }}</span>
+                          <span class="fm__doc fm__doc--{{ p.type.toLowerCase() }}">{{ p.type === 'DAO_COMPLET' ? 'DAO' : p.type }}</span>
                           <span class="fm__docs-n">
                             {{ libellePiece(p) }}
                             <span class="fm__docs-f cnm-mono">{{ p.fichiers[0].nomFichier }}</span>
@@ -789,7 +789,12 @@
                      viennent de la ligne du plan, plus de double saisie. Réservé à la PRMP, sur une fiche validée. -->
                 @if (idDossierSoumis(); as idd) {
                   <p class="fm__ok">Dossier à soumettre créé depuis cette fiche.</p>
-                  <p>Il reste à y joindre les pièces qui ne sortent pas de la fiche, puis à le soumettre à la Commission : cahier des clauses techniques particulières, estimation du coût, garantie de soumission, cahier des clauses administratives générales.</p>
+                  <!-- V73 (06/10) : le DAO complet porte déjà les spécifications techniques (si jointes) et le CCAG. -->
+                  @if (aDaoComplet()) {
+                    <p>Il reste à y joindre les pièces qui ne sortent pas de la fiche, puis à le soumettre à la Commission : estimation du coût, garantie de soumission.</p>
+                  } @else {
+                    <p>Il reste à y joindre les pièces qui ne sortent pas de la fiche, puis à le soumettre à la Commission : cahier des clauses techniques particulières, estimation du coût, garantie de soumission, cahier des clauses administratives générales.</p>
+                  }
                   <a class="btn btn-primary" [routerLink]="['/prmp/dossier', idd]">Ouvrir le dossier n° {{ idd }}</a>
                   <!-- ⚠️ 30/09 (AV-3) — l'avis spécifique, après le PV signé favorable (FAVR : réserves levées). L'application
                        le produit : il a quitté la liste des pièces à joindre à la main. -->

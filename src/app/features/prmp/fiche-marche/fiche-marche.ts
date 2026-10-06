@@ -227,6 +227,8 @@ export class FicheMarcheEcran {
   readonly valeursPrecedentes = signal<Record<string, Valeur> | null>(null);
   /** Les pièces de l'étape 7, groupées par lot : sur cinq lots, une liste plate répéterait cinq fois chaque sigle. */
   readonly groupesPieces = computed(() => piecesParLot(this.documents()));
+  /** V73 (06/10) — la version porte son DAO complet (assemblé par le serveur) : les pièces séparées ne sont plus servies. */
+  readonly aDaoComplet = computed(() => this.documents().some((d) => d.type === 'DAO_COMPLET'));
   readonly cadrage = signal<Cadrage>({});
   readonly valeurs = signal<Record<string, Valeur>>({});
   readonly erreursChamp = signal<ReadonlyMap<string, string>>(new Map());

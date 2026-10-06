@@ -139,3 +139,55 @@ Les noms ci-dessous sont **proposés** : le backend fait autorité, et ce docume
 - **Fiche, bloc des pièces** (proposition) : « Spécifications techniques », pour déposer, remplacer, retirer et télécharger le Word ;
   l'avertissement du contrôle s'il manque.
 - **Page de la procédure (candidat)** : « Dossier d'appel d'offres complet », Word et PDF, sous la garde des frais.
+
+> ✅ **Front, 2026-10-06 — livré.** Étape 7 de la fiche : le DAO complet en tête (pastille « DAO », Ouvrir le PDF, Enregistrer
+> PDF / Word), puis les classeurs ; la liste des documents séparés reste affichée tant que le serveur la sert (fiche sans DAO complet).
+> Bloc B14 : section « Spécifications techniques » (dépôt d'un `.docx` ≤ 20 Mo contrôlé avant envoi, remplacement, retrait,
+> enregistrement ; 400, 409 et 413 nommés ; lecture seule sur une version validée). Page de la procédure (candidat) : le DAO complet
+> en tête de la liste. Message de l'étape 7 : le CCAG et les spécifications ne sont plus cités parmi les pièces à joindre quand le DAO
+> complet existe.
+
+## C — Constats de recette du 06/10 (PDF du DAO complet de la fiche 47, 119 pages, comparé aux DAO réels)
+
+La pagination continue, l'en-tête « DAO n° … — objet », le pied « page n / N » et le sommaire paginé sont **conformes**. Restent :
+
+- **C1 — Page de garde incomplète.** Elle ne porte que le titre, le numéro, l'objet et la date. Celle du DAO réel
+  (`Fourniture_a_commande.pdf`, p. 1) porte, de haut en bas :
+  - l'**emblème** de la République (celui de l'avis spécifique) ;
+  - le **ministère**, « Personne responsable des marchés publics », « Unité de gestion de la passation des marchés » ;
+  - « DOSSIER D'APPEL D'OFFRES **OUVERT** » (le mode de passation dans l'intitulé) ;
+  - le numéro, l'objet, la **liste des lots** ;
+  - « Lancé le …… » ;
+  - **financement**, **imputation administrative**, **compte**.
+
+  Le ministère, la PRMP, le mode, les lots et le financement annoncés par l'encadré B1 n'apparaissent pas sur la fiche 47 : sont-ils
+  vides pour cette fiche (recopie de la fiche 32), ou non imprimés ?
+- **C2 — Les couvertures des documents types sont recopiées.**
+  - Section I, pp. 3-4 : le cadre « République de Madagascar / Dossier type d'appel d'offres / Marchés publics de travaux », sur deux
+    pages, dont une presque vide.
+  - Section VI, p. 66 : « Dossier type d'appel d'offres / Marchés publics de travaux », avant le titre du CCAG.
+
+  Un DAO réel ne les porte pas. Proposition : retirer la couverture et le sommaire propres à chaque document type, et ne garder que le
+  texte, à partir de son premier titre.
+- **C3 — Le plan diffère de celui des DAO réels.** Le sommaire du DAO réel (p. 2) suit la numérotation de l'ARMP, en deux parties,
+  avec les sous-parties :
+  - **Première partie : procédure d'appel d'offres** :
+    - 1.1 Instructions aux candidats ;
+    - 1.2 DPAO ;
+    - 1.3 Formulaires de soumission (A. fiches A1 à A4, B. attestation du fabricant, C. garanties C1, C2) ;
+  - **Deuxième partie : marché** :
+    - 2.1 Acte d'engagement et ses annexes ;
+    - 2.2 Cahier des prescriptions spéciales (CCAP et ses annexes 1 à 4, puis spécifications techniques) ;
+    - 2.3 CCAG.
+
+  Le nôtre est « Section I à VI », à plat. Proposition : reprendre ces titres et cette numérotation, sous-parties comprises. Les
+  spécifications techniques passent alors dans la 2.2.
+- **C4 — La clause 6.2 de la DPAO imprime deux fois les pièces** (p. 36) : la **liste** (B14), puis le **texte** libre `B04-PI-01`,
+  et de même la liste administrative et le texte `B03-CQ-01`. Le DAO réel n'imprime que la liste. Proposition : quand la liste B14
+  n'est pas vide, les textes `B04-PI-01` / `B04-CO-01` / `B03-CQ-01` ne s'impriment pas dans la clause 6.2. Le front prévient déjà du
+  double emploi pour `B03-CQ-01` ; il le fera aussi pour les deux autres si la règle n'est pas retenue.
+- **C5 — Nom du fichier.** `DAO_COMPLET_sans-reference_303279_v1` alors que `B02-OB-03` vaut `001-DAOO/MEN/PRMP/Tvx-PI-2026`. Les
+  barres obliques l'ont sans doute écarté : proposition, les remplacer par des tirets
+  (`DAO_COMPLET_001-DAOO-MEN-PRMP-Tvx-PI-2026_303279_v1`).
+- **C6 — Ordre de `…/documents`.** Le classeur BP vient avant le DAO complet. Le front trie déjà ; un ordre serveur « DAO complet
+  d'abord » servirait aussi le dossier soumis et le retrait.

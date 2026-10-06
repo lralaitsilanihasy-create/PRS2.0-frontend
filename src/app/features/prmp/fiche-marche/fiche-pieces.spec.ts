@@ -49,6 +49,8 @@ describe('Pièces de l’offre exigées (lot 4 du chantier b — contrat demand�
     const q = http.expectOne('/api/fiches-marche/42/pieces');
     if (pieces) q.flush(pieces);
     else q.flush({ message: 'Not found' }, { status: 404, statusText: 'Not Found' });
+    // V73 — les spécifications techniques (section sous la liste) : aucun fichier.
+    http.expectOne('/api/fiches-marche/42/specifications').flush({ message: 'Not found' }, { status: 404, statusText: 'Not Found' });
     rendre();
   }
 

@@ -236,7 +236,8 @@ export class ProcedureEnLigneDetail implements OnInit {
     this.docsErreur.set(false);
     this.service.documents(this.idDmc).subscribe({
       next: (docs) => {
-        this.documents.set(docs);
+        // V73 (06/10) — le dossier complet d'abord, puis les classeurs ; l'ordre du serveur sinon.
+        this.documents.set([...docs].sort((a, b) => Number(/^DAO_COMPLET/i.test(b.code)) - Number(/^DAO_COMPLET/i.test(a.code))));
         this.docsChargement.set(false);
       },
       error: () => {

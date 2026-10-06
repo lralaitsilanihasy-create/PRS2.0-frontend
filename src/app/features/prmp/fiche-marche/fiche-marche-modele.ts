@@ -32,6 +32,7 @@ export const LIBELLES_DOCUMENTS: Readonly<Record<DocumentDao, string>> = {
  * cette table n'est qu'un repli, et le nom du fichier reste le dernier recours.
  */
 export const LIBELLES_PIECES: Readonly<Record<PieceProduite, string>> = {
+  DAO_COMPLET: "Dossier d'appel d'offres complet",
   DPAO: "Données particulières de l'appel d'offres",
   // ⚠️ 28/09 — titre du modèle officiel ARMP du contrat-cadre : « Données particulières d'appel à concurrence »
   // (le règlement de la consultation). Le sigle avait été développé à tort en « … du cahier des clauses administratives ».
@@ -55,7 +56,7 @@ export const LIBELLES_PIECES: Readonly<Record<PieceProduite, string>> = {
 
 /** L'ordre de lecture d'une liste de pièces : le dossier d'abord, ses annexes ensuite. */
 export const ORDRE_PIECES: readonly PieceProduite[] = [
-  'DPAO', 'DPAC', 'DPIC', 'CCAP', 'AE', 'LF', 'BP', 'TC', 'A1', 'A2', 'A3', 'A4', 'C1', 'C2', 'AUCUN',
+  'DAO_COMPLET', 'DPAO', 'DPAC', 'DPIC', 'CCAP', 'AE', 'LF', 'BP', 'TC', 'A1', 'A2', 'A3', 'A4', 'C1', 'C2', 'AUCUN',
 ];
 
 /**

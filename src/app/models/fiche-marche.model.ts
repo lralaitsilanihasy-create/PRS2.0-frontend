@@ -22,7 +22,8 @@ export type DocumentDao = 'DPAO' | 'DPAC' | 'DPIC' | 'AE' | 'CCAP' | 'AUCUN';
  * nommer ici ne les promet pas — c'est l'écran qui saura les lire le jour où le serveur les servira.
  */
 /** ⚠️ 30/09 — `AVIS` : l'avis spécifique d'appel d'offres, produit À LA DEMANDE après le PV (jamais à la validation). */
-export type PieceProduite = DocumentDao | 'LF' | 'BP' | 'TC' | 'A1' | 'A2' | 'A3' | 'A4' | 'C1' | 'C2' | 'AVIS' | 'LETTRE_INVITATION';
+/** ⚠️ V73 (06/10) — `DAO_COMPLET` : le dossier d'appel d'offres en un seul document (Word et PDF), qui remplace les pièces séparées. */
+export type PieceProduite = DocumentDao | 'DAO_COMPLET' | 'LF' | 'BP' | 'TC' | 'A1' | 'A2' | 'A3' | 'A4' | 'C1' | 'C2' | 'AVIS' | 'LETTRE_INVITATION';
 export type SourceChamp = 'PPM' | 'SAISIE' | 'CADRAGE';
 /**
  * ⚠️ Lot 5 (24/09) — la **catégorie** de dossier d'appel d'offres, second axe du référentiel. Elle se déduit de la
@@ -154,6 +155,14 @@ export type EtatCeremonie = 'A_VENIR' | 'CLOSE' | 'A_REFAIRE';
  * ⚠️ 06/10 — `GET /api/fiches-marche/en-ligne` (`demande-backend-2026-10-06-liste-procedures-en-ligne`) : une procédure en remise
  * électronique, pour son **responsable** (titulaire, ou par intérim : il voit, il n'agit pas) et pour l'**Administrateur** (toutes).
  */
+/** ⚠️ V73 (06/10) — le Word des spécifications techniques joint à la version de la fiche, inséré dans le DAO complet. */
+export interface SpecificationsTechniques {
+  nomFichier: string;
+  taille: number | null;
+  deposeLe: string | null;
+  deposePar: string | null;
+}
+
 export interface ProcedureInterne {
   idDmc: number;
   reference: string | null;

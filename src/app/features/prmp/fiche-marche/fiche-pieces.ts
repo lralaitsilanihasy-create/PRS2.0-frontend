@@ -5,6 +5,7 @@ import { ToastService } from '../../../core/notifications/toast.service';
 import { PieceExigee, RubriquePiece } from '../../../models';
 import { FicheMarcheService } from '../../../services/fiche-marche.services';
 import { CollageListe } from './collage-liste';
+import { FicheSpecifications } from './fiche-specifications';
 import { lirePieces } from './collage-listes';
 import { empreinte, ListeASauver } from './liste-a-sauver';
 import { lignePiece, PIECES_ADMINISTRATIVES_DOCUMENT_TYPE } from './pieces';
@@ -33,7 +34,7 @@ export const RUBRIQUES_PIECES: { code: RubriquePiece; titre: string; clause: str
   templateUrl: './fiche-pieces.html',
   styleUrl: './fiche-pieces.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CollageListe],
+  imports: [CollageListe, FicheSpecifications],
 })
 export class FichePieces implements ListeASauver {
   private readonly fiches = inject(FicheMarcheService);

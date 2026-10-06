@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { skipErrorToast } from '../core/errors/api-error';
-import { AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, Depots, DisponibiliteAvis, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, MaterielExige, ParametresInternes, ParametresInternesCorps, PersonnelExige, PieceExigee, ProcedureInterne, PublicationAvis, PublicationLettres, RecuDao, ReferentielFiche, RetraitDao, TypeMarche, VersionFiche } from '../models';
+import { AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, Depots, DisponibiliteAvis, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, MaterielExige, ParametresInternes, ParametresInternesCorps, PersonnelExige, PieceExigee, ProcedureInterne, PublicationAvis, SpecificationsTechniques, PublicationLettres, RecuDao, ReferentielFiche, RetraitDao, TypeMarche, VersionFiche } from '../models';
 import { CrudService } from './api/crud.service';
 
 /**
@@ -68,6 +68,29 @@ export class DmcService extends CrudService<Dmc> {
 @Injectable({ providedIn: 'root' })
 export class FicheMarcheService extends CrudService<FicheMarche> {
   protected readonly resource = 'fiches-marche';
+
+  /**
+   * ⚠️ V73 (06/10) — `GET /{idDmc}/specifications` : le Word des spécifications techniques de la version, inséré dans le DAO
+   * complet ; 404 sans fichier. Silencieux.
+   */
+  specifications(idDmc: number): Observable<SpecificationsTechniques> {
+    return this.http.get<SpecificationsTechniques>(`${this.baseUrl}/${idDmc}/specifications`, { context: skipErrorToast() });
+  }
+
+  /** `PUT /{idDmc}/specifications` (multipart `fichier`, .docx ≤ 20 Mo) — 400 `FORMAT_INVALIDE` / `FICHIER_ABSENT`, 413, 409 `FICHE_VALIDEE`. */
+  deposerSpecifications(idDmc: number, fichier: File): Observable<SpecificationsTechniques> {
+    const fd = new FormData();
+    fd.append('fichier', fichier);
+    return this.http.put<SpecificationsTechniques>(`${this.baseUrl}/${idDmc}/specifications`, fd, { context: skipErrorToast() });
+  }
+
+  supprimerSpecifications(idDmc: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${idDmc}/specifications`, { context: skipErrorToast() });
+  }
+
+  specificationsFichier(idDmc: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${idDmc}/specifications/fichier`, { responseType: 'blob', context: skipErrorToast() });
+  }
 
   /**
    * ⚠️ 06/10 — `GET /en-ligne` : les procédures en remise électronique — toutes pour l'Administrateur, celles dont on est
