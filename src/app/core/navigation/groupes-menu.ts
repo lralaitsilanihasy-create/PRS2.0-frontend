@@ -117,6 +117,8 @@ export const GROUPES_PAR_CHEMIN: Readonly<Record<string, { groupe: CleGroupe; co
   verifies: { groupe: 'travail', court: 'Vérifiés' },
   publications: { groupe: 'travail', court: 'Publications' },
   documents: { groupe: 'travail', court: 'Documents' },
+  // ⚠️ 2026-10-06 — les fiches DAO et la soumission en ligne (PRMP, UGPM).
+  dao: { groupe: 'travail', court: 'Appels' },
 
   // ── Décisions : les productions de l'examen et les demandes à statuer ──
   'resultat-examen': { groupe: 'decisions', court: 'PV' },

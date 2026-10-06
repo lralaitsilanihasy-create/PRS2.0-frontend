@@ -176,6 +176,7 @@ describe('sectionsMenu — dérivation des rubriques', () => {
       'Suivi des dossiers CNM',
       'Créer dossier',
       'Mettre à jour un PPM',
+      'Appels d’offres',
     ]);
     expect(sections[1].items.map((i) => i.label)).toEqual(['PV et lettres de renvoi', 'Demandes de retrait']);
     expect(sections[2].items.map((i) => i.label)).toEqual(['Calendrier']);

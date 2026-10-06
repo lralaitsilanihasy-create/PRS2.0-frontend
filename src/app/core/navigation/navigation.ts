@@ -174,6 +174,10 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     // ⚠️ Route AUTONOME `dossiers-verifies` (pas l'enfant `dossiers/verifies` qui s'affiche SOUS les
     // cartes de « Mes dossiers ») : l'écran ne montre QUE le tableau des vérifiés en mode mise à jour.
     { label: 'Mettre à jour un PPM', path: '/prmp/dossiers-verifies', queryParams: { maj: 1 }, icon: 'edit' },
+    // ⚠️ Demande pilote (2026-10-06) — les fiches DAO et la soumission en ligne n'avaient pas d'entrée de menu (on y
+    // venait par la page d'un dossier) : l'écran des lignes éligibles et des fiches ouvertes, d'où partent la commission,
+    // les dépôts, les retraits, les reçus des frais et la séance.
+    { label: 'Appels d’offres', path: '/prmp/dao', icon: 'clip' },
     // « Créer compte UGPM » : déplacé dans le PIED de la barre latérale (à la place de la carte profil,
     // redondante avec la topbar) — cf. main-layout.html (demande user 2026-08-02).
     // « Dossiers à rectifier » / « Dossiers vérifiés » : retirés du menu (demande user 2026-08-02) —
@@ -199,6 +203,8 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     { label: 'Tous les dossiers', path: '/prmp/tableau-de-bord', icon: 'folder' },
     { label: 'Créer dossier', path: '/prmp/soumettre-dossier', icon: 'plus' },
     { label: 'Mes brouillons', path: '/prmp/mes-brouillons', icon: 'edit' },
+    // ⚠️ 2026-10-06 — comme la PRMP : l'UGPM saisit la fiche, la commission et valide les reçus des frais.
+    { label: 'Appels d’offres', path: '/prmp/dao', icon: 'clip' },
     // ⚠️ Demande pilote (2026-09-13) — « Dossiers vérifiés » RETIRÉ du menu UGPM : les dossiers vérifiés
     // sont visibles dans « Tous les dossiers » (avec leur badge de statut). Route conservée (le PRMP s'en
     // sert pour « Mettre à jour un PPM », /prmp/dossiers-verifies?maj=1).
