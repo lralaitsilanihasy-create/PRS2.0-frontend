@@ -162,6 +162,19 @@ La pagination continue, l'en-tête « DAO n° … — objet », le pied « page 
 
   Le ministère, la PRMP, le mode, les lots et le financement annoncés par l'encadré B1 n'apparaissent pas sur la fiche 47 : sont-ils
   vides pour cette fiche (recopie de la fiche 32), ou non imprimés ?
+
+  > ⚠️ **Backend, 2026-10-06 — corrigé.** C'était un **défaut du backend** : la page de garde cherchait le ministère, la PRMP, le
+  > mode, les lots et le financement sous des clés que la fiche ne sert pas ; ils sont désormais lus sur les valeurs du plan de la
+  > ligne. La page de garde porte, de haut en bas : l'**emblème** (celui de l'avis), le ministère, l'entité si elle diffère,
+  > « PERSONNE RESPONSABLE DES MARCHÉS PUBLICS », « UNITÉ DE GESTION DE LA PASSATION DES MARCHÉS », l'intitulé qui porte le mode
+  > (« DOSSIER D'APPEL D'OFFRES OUVERT » ; pour un mode qui n'est pas un appel d'offres, « DOSSIER D'APPEL D'OFFRES » et le mode
+  > en dessous ; PI : « DOSSIER DE CONSULTATION »), « N° » `B02-OB-03`, l'objet, « Lot n : … » si la ligne a plusieurs lots,
+  > « Lancé le ……… » (à compléter), « Financement », « Imputation administrative », « Compte ». Écarts :
+  > - **les intitulés PRMP et UGPM sont imprimés seuls**, comme dans le DAO réel, sans nom de personne ;
+  > - **l'imputation administrative** est faite des services bénéficiaires du plan (code et libellé du SOA, sans le montant), faute
+  >   d'un champ dédié ; **le compte** est le compte budgétaire du plan (`B01-AC-17`) ;
+  > - **la date de validation n'est plus imprimée** : « Lancé le » la remplace ;
+  > - une valeur absente du plan omet sa ligne.
 - **C2 — Les couvertures des documents types sont recopiées.**
   - Section I, pp. 3-4 : le cadre « République de Madagascar / Dossier type d'appel d'offres / Marchés publics de travaux », sur deux
     pages, dont une presque vide.
@@ -169,6 +182,11 @@ La pagination continue, l'en-tête « DAO n° … — objet », le pied « page 
 
   Un DAO réel ne les porte pas. Proposition : retirer la couverture et le sommaire propres à chaque document type, et ne garder que le
   texte, à partir de son premier titre.
+
+  > ⚠️ **Backend, 2026-10-06 — retenu.** Les six textes fixes (`modeles/dao-fixes/`) ont été rognés une fois, par Word : couverture,
+  > sommaire général de l'ARMP et table des matières propre au document retirés. L'IC commence à son texte d'introduction, puis
+  > à « INSTRUCTIONS AUX CANDIDATS » ; le CCAG au chapitre I. Pour les PI, la note aux utilisateurs et le modèle de lettre
+  > d'invitation qui précédaient l'IC sont aussi retirés. Le titre de la partie (1.1, 2.3) est celui du plan, posé par le serveur.
 - **C3 — Le plan diffère de celui des DAO réels.** Le sommaire du DAO réel (p. 2) suit la numérotation de l'ARMP, en deux parties,
   avec les sous-parties :
   - **Première partie : procédure d'appel d'offres** :
@@ -182,12 +200,51 @@ La pagination continue, l'en-tête « DAO n° … — objet », le pied « page 
 
   Le nôtre est « Section I à VI », à plat. Proposition : reprendre ces titres et cette numérotation, sous-parties comprises. Les
   spécifications techniques passent alors dans la 2.2.
+
+  > ⚠️ **Backend, 2026-10-06 — retenu**, avec les intitulés exacts du sommaire général des documents types de l'ARMP, sur quatre
+  > niveaux, tous au sommaire :
+  > - « PREMIÈRE PARTIE : PROCÉDURE D'APPEL D'OFFRES » ; « 1.1. - Instructions aux candidats » ; « 1.2. - Données Particulières de
+  >   l'Appel d'Offres (DPAO) » (contrat-cadre : « … d'Appel à Concurrence (DPAC) ») ; « 1.3. - Formulaires de soumission », avec
+  >   « A. - Modèles de fiches de renseignements » (A1 à A4), « B. - Modèle d'attestation du fabricant - Non utilisé »,
+  >   « C. - Modèles de garantie de soumission » (C1, C2). En **travaux**, comme le document type : « B. - Modèles de garantie de
+  >   soumission » (B1, B2), sans attestation du fabricant.
+  > - « DEUXIÈME PARTIE : MARCHÉ » ; « 2.1. - Acte d'Engagement » (« Lot n » par lot ; contrat-cadre : « Contrat-cadre valant Acte
+  >   d'Engagement et CCAP ») ; « 2.2. - Cahier des Prescriptions Spéciales », puis « Cahier des Clauses Administratives
+  >   Particulières (CCAP) et ses annexes », puis « Spécifications techniques » (le Word joint) et « Annexe : Liste des fournitures et
+  >   calendrier de livraison » ; « 2.3. - Cahier des Clauses Administratives Générales applicable aux marchés publics de … ».
+  > - **Prestations intellectuelles** : « PREMIÈRE PARTIE : PROCÉDURE DE CONSULTATION », « 1.1. - Lettre d'invitation (adressée à
+  >   chaque candidat, document à part) » (titre seul : la lettre se produit candidat par candidat), « 1.2. - Instructions aux
+  >   candidats (IC) », « 1.3. - DPIC », « 1.4. - Formulaires-types de soumission » ; en 2.2, « Termes de références » au lieu de
+  >   « Spécifications techniques ».
+  > - **Écart** : les annexes de l'acte d'engagement (bordereau des prix, DQE) sont des classeurs `xlsx`, toujours servis à part ;
+  >   le sommaire ne les cite pas. Les annexes 1 à 4 du CCAP sont dans son document, sans entrée au sommaire.
 - **C4 — La clause 6.2 de la DPAO imprime deux fois les pièces** (p. 36) : la **liste** (B14), puis le **texte** libre `B04-PI-01`,
   et de même la liste administrative et le texte `B03-CQ-01`. Le DAO réel n'imprime que la liste. Proposition : quand la liste B14
   n'est pas vide, les textes `B04-PI-01` / `B04-CO-01` / `B03-CQ-01` ne s'impriment pas dans la clause 6.2. Le front prévient déjà du
   double emploi pour `B03-CQ-01` ; il le fera aussi pour les deux autres si la règle n'est pas retenue.
+
+  > ⚠️ **Backend, 2026-10-06 — règle retenue**, dans les modèles `DPAO-F` et `DPAO-T` : le texte libre ne s'imprime plus que si la
+  > liste de sa rubrique est vide (conditions `PIECES-OFFRE-TEXTE` : `B04-CO-01` / `B04-PI-01 renseigne et PIECES.offre vide` ;
+  > `PIECES-ADM-TEXTE` : `B03-CQ-01 renseigne et PIECES.administratives vide`). Elle vaut aussi pour les documents séparés. Elle
+  > revient sur le texte validé par le pilote le 03/10 (V61), qui imprimait la liste puis le texte.
+  > **À faire côté front** : ces deux lignes `CONDITION` sont à reporter dans `scripts/modeles-dao/modeles/DPAO-F.txt` et
+  > `DPAO-T.txt` (et leurs `.json`), dont les copies du backend étaient jusqu'ici identiques ; l'avertissement de double emploi
+  > devient inutile.
 - **C5 — Nom du fichier.** `DAO_COMPLET_sans-reference_303279_v1` alors que `B02-OB-03` vaut `001-DAOO/MEN/PRMP/Tvx-PI-2026`. Les
   barres obliques l'ont sans doute écarté : proposition, les remplacer par des tirets
   (`DAO_COMPLET_001-DAOO-MEN-PRMP-Tvx-PI-2026_303279_v1`).
+
+  > ⚠️ **Backend, 2026-10-06 — retenu.** Le nom porte désormais `B02-OB-03` (à défaut, la référence du plan), barres obliques et
+  > autres signes remplacés par des tirets : `DAO_COMPLET_001-DAOO-MEN-PRMP-Tvx-PI-2026_303279_v1.pdf`. La cause n'était pas la
+  > barre oblique, mais le même défaut que C1 : la référence était lue sous une clé que la fiche ne sert pas. Les autres documents
+  > gardent leur nom actuel (référence du plan).
 - **C6 — Ordre de `…/documents`.** Le classeur BP vient avant le DAO complet. Le front trie déjà ; un ordre serveur « DAO complet
   d'abord » servirait aussi le dossier soumis et le retrait.
+
+  > ⚠️ **Backend, 2026-10-06 — retenu.** `GET …/documents` (et donc le retrait candidat) sert le DAO complet en tête, `docx` puis
+  > `pdf`, puis les classeurs. Le dossier soumis n'est pas concerné : il ne reçoit que le PDF du DAO complet.
+
+> ⚠️ **Backend, 2026-10-06 — reproduction des DAO complets déjà produits.** La migration **V74** retire, au prochain démarrage, les
+> DAO complets produits avant ce correctif (26 fichiers en recette, aucun joint à un dossier ; un DAO complet joint comme pièce
+> serait gardé). Le rattrapage les reproduit sur le nouveau gabarit dans les minutes qui suivent (environ 20 s par fiche). Contrat :
+> `docs/api-endpoints.md`, § *Le DAO complet en un seul document*, bloc « Recette du 06/10 ».
