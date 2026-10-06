@@ -77,7 +77,8 @@ const LIBELLES_ETAT: Readonly<Record<EtatOffre, string>> = {
     .dd__nombre { margin: 0; font-size: 1rem; }
     .dd__table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
     .dd__table th, .dd__table td { text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--n-200); }
-    .dd__table th { color: var(--n-500); font-weight: 600; }
+    /* 06/10 — pas de couleur ici : l’en-tête global est bleu à texte blanc (gris sur bleu < AA). */
+    .dd__table th { font-weight: 600; }
   `,
 })
 export class DepotsDao implements OnInit {

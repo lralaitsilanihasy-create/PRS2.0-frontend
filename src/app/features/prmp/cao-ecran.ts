@@ -175,7 +175,8 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
     .cao__tableau { overflow-x: auto; }
     .cao__table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); min-width: 66rem; }
     .cao__table th, .cao__table td { text-align: left; padding: 0.35rem 0.4rem; border-bottom: 1px solid var(--n-200); vertical-align: top; }
-    .cao__table th { color: var(--n-500); font-weight: 600; white-space: nowrap; }
+    /* 06/10 — pas de couleur ici : l’en-tête global est bleu à texte blanc (gris sur bleu < AA). */
+    .cao__table th { font-weight: 600; white-space: nowrap; }
     .cao__table .form-control { padding: 0.3rem 0.45rem; min-width: 7rem; }
     .cao__table td .form-control + .form-control { margin-top: 0.25rem; }
     .cao__ligne--ancien td { background: var(--warning-bg); }

@@ -364,3 +364,9 @@ justement marquées.
 > « Capacités », pour chaque offre (offres ouvertes avant la livraison comprises). Fiche 46 : `PIECE-102` « Planning de mobilisation
 > du personnel et du matériel » est revenue à joindre (`formulaire = null`, obligatoire) ; les deux listes restent `PERSONNEL` et
 > `MATERIEL`. **Le lot 5 est clos.**
+
+> ✅ **Front, 2026-10-06 — H4 livrée : le brouillon local de l'offre.** La saisie du dépôt (lot, groupement, acte d'engagement,
+> garantie, formulaires 5a et 5b) est gardée dans le navigateur seulement (`localStorage`, clé `prs.brouillon-offre:{compte}:{idDmc}`),
+> une demi-seconde après chaque frappe ; jamais envoyée au serveur. Elle est reprise au retour sur la page, avec un bandeau
+> (« Effacer et repartir de zéro »), effacée au dépôt réussi, jetée à la date limite. Les fichiers ne sont pas gardés, et l'écran le
+> dit. Recette en navigateur : saisie, rechargement, reprise du prix, du délai et du K1, effacement.

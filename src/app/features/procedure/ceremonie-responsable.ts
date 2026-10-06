@@ -87,7 +87,8 @@ import { PartSecours } from './part-secours';
     .cr__etat { margin: 0; display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; font-size: 0.9rem; }
     .cr__table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
     .cr__table th, .cr__table td { text-align: left; padding: 0.45rem 0.7rem; border-bottom: 1px solid var(--n-200); vertical-align: top; }
-    .cr__table th { color: var(--n-500); font-weight: 600; }
+    /* 06/10 — pas de couleur ici : l’en-tête global est bleu à texte blanc (gris sur bleu < AA). */
+    .cr__table th { font-weight: 600; }
     .cr__actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
     .cr__confirm { display: inline-flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; font-size: var(--text-sm); }
     .cr__secours { padding: 0.9rem 1.1rem; display: flex; flex-direction: column; gap: 0.6rem; }

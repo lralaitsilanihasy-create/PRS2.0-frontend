@@ -219,7 +219,8 @@
 .fm__lignes td:nth-child(4) { white-space: normal; }
 .fm__obj { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; overflow-wrap: anywhere; }
 .fm__versions { font-size: 0.84rem; margin-bottom: 0.5rem; }
-.fm__versions th { text-align: left; letter-spacing: 0.06em; color: var(--n-500); padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--n-200); }
+/* 06/10 — pas de couleur ici : l’en-tête global est bleu à texte blanc (gris sur bleu < AA). */
+.fm__versions th { text-align: left; letter-spacing: 0.06em; padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--n-200); }
 .fm__versions td { padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--n-100); }
 .fm__versions .r { text-align: right; }
 .fm__versions--courante td { background: var(--p-50); font-weight: 600; }

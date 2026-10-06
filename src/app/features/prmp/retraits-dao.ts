@@ -74,7 +74,8 @@ import { dateHeureFr } from '../candidat/libelles-candidat';
     .rd__ariane a { color: var(--p-700); font-weight: 600; }
     .rd__table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
     .rd__table th, .rd__table td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--n-200); }
-    .rd__table th { color: var(--n-500); font-weight: 600; }
+    /* 06/10 — pas de couleur ici : l’en-tête global est bleu à texte blanc (gris sur bleu < AA). */
+    .rd__table th { font-weight: 600; }
   `,
 })
 export class RetraitsDao implements OnInit {

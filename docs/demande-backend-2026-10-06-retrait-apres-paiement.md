@@ -210,3 +210,9 @@ retrait. Ainsi la PRMP voit que chaque retrait est couvert.
 >   `RECU-DAO` servi `dejaFourni = true`, `obligatoire = false`.
 > - ⚠️ **À régler par l'Administrateur** : le compte de l'ARMP (`/api/parametres/compte-dao`) est vide sur DBPRS20 ; `compteDao` vaut
 >   donc `null` et le candidat ne voit pas où verser. Le retrait reste bien payant.
+
+> ✅ **Front, 2026-10-06 — recette de la séance verte** (fiche 48, travaux, frais de 100 000 Ar). L'entreprise 1 a déposé son reçu
+> (validé) puis son offre ; l'entreprise 2 a déposé son offre **sans** reçu : son bouton « Retirer » restait inactif, le dépôt de
+> l'offre, lui, n'est pas bloqué. En séance : offre 1 `fraisDossier = { regle: true, referencePaiement, dateValidation }` ; offre 2
+> `{ regle: false }` et l'alerte `FRAIS_NON_REGLES` « Aucun reçu de frais de dossier validé pour l'entreprise ». La ligne « Frais de
+> dossier » s'affiche dans la lecture (« réglés · réf. … · reçu validé le … » / « aucun reçu validé »).

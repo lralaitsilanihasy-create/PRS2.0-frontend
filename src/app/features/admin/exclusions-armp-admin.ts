@@ -167,7 +167,8 @@ const LIBELLES_CHAMPS: Readonly<Record<keyof ExclusionArmpCorps, string>> = {
     .ex { display: flex; flex-direction: column; gap: 1rem; }
     .ex__table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
     .ex__table th, .ex__table td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--n-200); vertical-align: top; }
-    .ex__table th { color: var(--n-500); font-weight: 600; }
+    /* 06/10 — pas de couleur ici : l’en-tête global est bleu à texte blanc (gris sur bleu < AA). */
+    .ex__table th { font-weight: 600; }
     .ex__journal td { background: var(--n-50); }
     .ex__lignes { margin: 0.25rem 0 0; padding-left: 1.2rem; font-size: var(--text-sm); display: flex; flex-direction: column; gap: 0.2rem; }
     .ex__chg { margin-right: 0.75rem; }

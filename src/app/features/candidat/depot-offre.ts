@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, DOCUMENT, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DOCUMENT, OnDestroy, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, firstValueFrom, forkJoin, of } from 'rxjs';
 
+import { AuthService } from '../../core/auth/auth.service';
 import { ApiError, codeErreur } from '../../core/errors/api-error';
 import { formaterEmpreinte } from '../../core/securite/cles-detenteur';
 import { telechargerBlob, validerFichier } from '../../core/securite/fichiers-surs';
@@ -9,6 +10,7 @@ import { ActeEngagementSaisi, MembreGroupement, PieceJointe, construireContenu, 
 import { Accuse, BesoinEnLigne, ClesPubliques, Entreprise, PieceAttendue, ProcedureEnLigne } from '../../models';
 import { CeremonieService, EntrepriseCandidatService, OffresCandidatService, ProceduresEnLigneService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
+import { BrouillonOffre, brouillonVide, cleBrouillon, ecrireBrouillon, effacerBrouillon, lireBrouillon } from './brouillon-offre';
 import { dateHeureFr, messageExclusion, tailleLisible } from './libelles-candidat';
 import { aCommande, avertissements, calculerTotaux, construireFormulaires, estTravaux, formulairesLivres, prixManquants, saisieVide } from './offre-financiere';
 import { OffreFormulaires } from './offre-formulaires';
@@ -102,6 +104,13 @@ function motifDepot(e: unknown): string {
       } @else {
         <form class="do__form" (submit)="$event.preventDefault(); deposer()" novalidate aria-label="Dépôt de l'offre">
           @if (erreurDepot(); as e) { <div class="alert alert-danger" role="alert">{{ e }}</div> }
+          @if (brouillonRepris(); as quand) {
+            <!-- 06/10 — le brouillon local (H4) : repris d'une page fermée ou rechargée ; il ne quitte jamais ce poste. -->
+            <div class="alert alert-info do__brouillon" role="status">
+              <span>Votre saisie du {{ dateHeure(quand) }} a été reprise : elle était gardée sur ce poste seulement, jamais envoyée. <strong>Les fichiers ne sont pas gardés</strong> : joignez-les de nouveau.</span>
+              <button type="button" class="btn btn-sm btn-outline" [disabled]="occupe()" (click)="repartirDeZero()">Effacer et repartir de zéro</button>
+            </div>
+          }
 
           <section class="card do__bloc" aria-labelledby="do-ident">
             <h2 id="do-ident" class="do__h2">1. Le soumissionnaire</h2>
@@ -256,6 +265,7 @@ function motifDepot(e: unknown): string {
     .do__actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
     .do__emp { margin: 0; word-break: break-all; font-size: var(--text-sm); }
     .do__avert { margin: 0; padding-left: 1.2rem; }
+    .do__brouillon { display: flex; gap: 0.75rem; align-items: center; justify-content: space-between; flex-wrap: wrap; }
     .do__remplie { align-self: flex-start; }
     @media (max-width: 600px) { .do__large { grid-column: span 1; } .do__ligne { grid-template-columns: 1fr; } }
   `,
@@ -339,6 +349,37 @@ export class DepotOffre implements OnInit, OnDestroy {
   readonly accuse = signal<Accuse | null>(null);
   readonly pdfEnCours = signal(false);
 
+  // ── Le brouillon local (lot 5, H4 ; 06/10) ──
+  private readonly auth = inject(AuthService);
+  /** La clé du brouillon : le compte et la procédure. `null` tant que la page n'est pas prête (rien n'est écrit avant). */
+  private readonly cle = signal<string | null>(null);
+  /** La date du brouillon repris au chargement, pour l'annoncer ; `null` sinon. */
+  readonly brouillonRepris = signal<string | null>(null);
+  private minuterieBrouillon: ReturnType<typeof setTimeout> | undefined;
+  private readonly instantane = computed<BrouillonOffre>(() => ({
+    v: 1,
+    enregistreLe: new Date().toISOString(),
+    dateLimite: this.procedure()?.dateLimite ?? null,
+    lot: this.lot(),
+    enGroupement: this.enGroupement(),
+    groupement: this.groupement(),
+    ae: this.ae(),
+    garantie: { code: this.codeGarantie(), montant: this.montantGarantie(), emetteur: this.emetteurGarantie() },
+    saisieOffre: this.saisieOffre(),
+    saisieTravaux: this.saisieTravaux(),
+  }));
+
+  constructor() {
+    // Chaque saisie réécrit le brouillon, une demi-seconde après la dernière frappe ; jamais après le dépôt.
+    effect(() => {
+      const cle = this.cle();
+      const b = this.instantane();
+      if (!cle || this.phase() !== 'saisie') return;
+      clearTimeout(this.minuterieBrouillon);
+      this.minuterieBrouillon = setTimeout(() => (brouillonVide(b) ? effacerBrouillon(cle) : ecrireBrouillon(cle, b)), 500);
+    });
+  }
+
   /** Écart entre l'horloge du serveur et celle du poste, en ms : le temps restant se compte à l'heure du serveur. */
   private ecartHorloge = 0;
   readonly maintenant = signal(Date.now());
@@ -400,6 +441,7 @@ export class DepotOffre implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     clearInterval(this.minuterie);
+    clearTimeout(this.minuterieBrouillon);
   }
 
   charger(): void {
@@ -428,6 +470,7 @@ export class DepotOffre implements OnInit, OnDestroy {
         this.ceremonie.clesPubliques(this.idDmc).subscribe({
           next: (c) => {
             this.cles.set(c);
+            if (!this.bloquant()) this.reprendreBrouillon();
             this.chargement.set(false);
           },
           error: () => {
@@ -541,10 +584,51 @@ export class DepotOffre implements OnInit, OnDestroy {
       if (accuse.offre.empreinte && accuse.offre.empreinte !== s.empreinte) throw new Error('Le serveur annonce une empreinte différente de celle calculée ici : signalez-le à l’assistance.');
       this.accuse.set(accuse);
       this.phase.set('fait');
+      const cle = this.cle();
+      if (cle) effacerBrouillon(cle);
     } catch (e) {
       this.phase.set('saisie');
       this.erreurDepot.set(motifDepot(e));
     }
+  }
+
+  /** Reprend le brouillon de ce compte pour cette procédure, puis ouvre l'écriture du brouillon (la clé). */
+  private reprendreBrouillon(): void {
+    const login = this.auth.login();
+    if (!login) return;
+    const cle = cleBrouillon(login, this.idDmc);
+    const b = lireBrouillon(cle);
+    if (b) {
+      untracked(() => {
+        if (!this.remplace) this.lot.set(b.lot);
+        this.enGroupement.set(b.enGroupement);
+        this.groupement.set(b.groupement);
+        this.ae.set(b.ae);
+        this.codeGarantie.set(b.garantie.code);
+        this.montantGarantie.set(b.garantie.montant);
+        this.emetteurGarantie.set(b.garantie.emetteur);
+        this.saisieOffre.set(b.saisieOffre);
+        this.saisieTravaux.set(b.saisieTravaux);
+      });
+      this.brouillonRepris.set(b.enregistreLe);
+    }
+    this.cle.set(cle);
+  }
+
+  /** Efface le brouillon et remet la saisie à zéro (les fichiers joints restent : ils ne sont pas dans le brouillon). */
+  repartirDeZero(): void {
+    const cle = this.cle();
+    if (cle) effacerBrouillon(cle);
+    this.brouillonRepris.set(null);
+    if (!this.remplace) this.lot.set(null);
+    this.enGroupement.set(false);
+    this.groupement.set([]);
+    this.ae.set({ monnaie: 'MGA', delaiUnite: 'JOURS', rabais: null });
+    this.codeGarantie.set('');
+    this.montantGarantie.set(null);
+    this.emetteurGarantie.set('');
+    this.saisieOffre.set(saisieVide());
+    this.saisieTravaux.set(saisieTravauxVide());
   }
 
   /** Un morceau perdu en route se renvoie : la route est rejouable. Une erreur à code (délai, offre scellée) ne se rejoue pas. */
