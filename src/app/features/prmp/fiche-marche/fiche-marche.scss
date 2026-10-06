@@ -4,7 +4,9 @@
 .fm__fil a { display: inline-flex; align-items: center; gap: 0.15rem; color: var(--p-700); text-decoration: none; }
 .fm__fil a:hover { text-decoration: underline; }
 .fm__entete { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 0; }
-.fm__ref { display: flex; align-items: center; gap: 0.5rem; color: var(--n-500); font-size: 0.85rem; }
+/* 06/10 — repères et boutons de la fiche : ils passent à la ligne, entiers, au lieu de déborder ou de s’écraser. */
+.fm__ref { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; color: var(--n-500); font-size: 0.85rem; }
+.fm__ref > .fm__rep, .fm__ref > .btn { white-space: nowrap; }
 .alert { display: flex; gap: 0.5rem; align-items: flex-start; }
 
 // La même carte blanche pour les cinq conteneurs de l'écran.
