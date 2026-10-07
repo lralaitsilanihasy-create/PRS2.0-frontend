@@ -112,3 +112,15 @@ ne trace l'AMI : ni son avis, ni les candidatures reçues, ni la sélection.
   consultant.
 - **Dès B3-B4** : l'écran de présélection de la commission (sur le modèle de l'évaluation), le rapport, la liste arrêtée, les lettres
   d'invitation tirées de la liste.
+
+> ✅ **Front, 2026-10-07 — tranche AMI-a branchée** (contrat V82 tel que livré, critères portés par l'AMI) :
+> - **PRMP / UGPM** : `/prmp/dao/{idDmc}/ami`, lien « Appel à manifestation d'intérêt » dans l'en-tête de la fiche (prestations
+>   intellectuelles seules) : préparation (date limite, critères avec total sur 100 affiché, pièces attendues, note minimale, six
+>   retenus par défaut), projet d'avis PDF / Word, publication par la PRMP (supports datés), dispense déclarée avec motif ; après la
+>   date limite, lecture des expressions et de leurs pièces (avant : le nombre seul).
+> - **Candidat** : les AMI ouverts en tête de « Procédures ouvertes » (liste fusionnée à l'affichage) ; `/candidat/amis/{idDmc}` :
+>   avis, critères, dépôt (lettre, qualifications, références, groupement, une pièce par pièce attendue — chaque fichier préfixé de
+>   son rang `p1-…` pour que deux pièces du même nom ne se confondent pas), accusé avec empreinte, remplacement, retrait.
+> - ⚠️ **Recette bloquée par le référentiel** : les deux lignes PI de DBPRS20 (303290, 303291, plan 100359) portent le mode
+>   « Appel à manifestation d'intérêt » (id 9), rattaché à **aucun type de DMC** : la fiche ne se crée pas (409 `MODE_NON_DAO`).
+>   Le rattachement se fait par l'Administrateur (Types de DMC) — à arbitrer par le pilote.

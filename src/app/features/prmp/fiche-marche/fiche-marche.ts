@@ -263,6 +263,11 @@ export class FicheMarcheEcran {
     const id = this.idDmc();
     return id != null && ['PRMP', 'UGPM'].includes(this.auth.role() ?? '') && this.modeElectronique() ? ['/prmp', 'dao', id, 'cao'] : null;
   });
+  /** ⚠️ AMI-a (07/10, V82) — l'appel à manifestation d'intérêt : prestations intellectuelles seules, PRMP et UGPM. */
+  readonly lienAmi = computed<(string | number)[] | null>(() => {
+    const id = this.idDmc();
+    return id != null && ['PRMP', 'UGPM'].includes(this.auth.role() ?? '') && this.categorie() === 'PRESTATIONS_INTELLECTUELLES' ? ['/prmp', 'dao', id, 'ami'] : null;
+  });
   /** ⚠️ V72 (06/10) — les reçus des frais de dossier : PRMP et UGPM, remise électronique (l'écran dit s'il n'y en a aucun). */
   readonly lienRecus = computed<(string | number)[] | null>(() => {
     const id = this.idDmc();

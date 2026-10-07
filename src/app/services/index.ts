@@ -20,3 +20,4 @@ export * from './fiche-marche.services';
 export * from './candidat.services';
 export * from './cao.services';
 export * from './evaluation.services';
+export * from './ami.services';

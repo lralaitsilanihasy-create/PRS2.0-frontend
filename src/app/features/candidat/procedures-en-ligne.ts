@@ -2,8 +2,11 @@ import { ChangeDetectionStrategy, Component, DOCUMENT, OnInit, computed, inject,
 import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
-import { ProcedureEnLigne } from '../../models';
-import { ProceduresEnLigneService } from '../../services';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+
+import { AmiPublic, ProcedureEnLigne } from '../../models';
+import { AmisEnLigneService, ProceduresEnLigneService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { LIBELLES_CATEGORIES } from '../prmp/fiche-marche/fiche-marche-modele';
 import { LIBELLES_ETAT_PROCEDURE, dateHeureFr } from './libelles-candidat';
@@ -24,7 +27,7 @@ import { LIBELLES_ETAT_PROCEDURE, dateHeureFr } from './libelles-candidat';
       <h1 class="page-title">Procédures ouvertes à la remise électronique</h1>
     </header>
     <p class="page-role">
-      Les appels d'offres que vous pouvez retirer en ligne, la date limite la plus proche d'abord.
+      Les appels à manifestation d'intérêt et les appels d'offres que vous pouvez retirer en ligne, la date limite la plus proche d'abord.
       @if (!connecte()) { Pour retirer un dossier, <a routerLink="/candidat/inscription">créez un compte</a> ou <a routerLink="/login" [queryParams]="{ returnUrl: '/candidat/procedures' }">connectez-vous</a>. }
     </p>
 
@@ -32,12 +35,36 @@ import { LIBELLES_ETAT_PROCEDURE, dateHeureFr } from './libelles-candidat';
       <p class="text-muted" role="status">Chargement des procédures…</p>
     } @else if (erreur()) {
       <app-etat-erreur message="Les procédures n'ont pas pu être chargées." (reessayer)="charger()" />
-    } @else if (!procedures().length) {
+    } @else if (!procedures().length && !amis().length) {
       <div class="empty-state">
         <p class="empty-state-title">Aucune procédure ouverte en ligne pour le moment.</p>
         <p class="empty-state-text">Les appels d'offres paraissent ici dès la publication de leur avis.</p>
       </div>
     } @else {
+      <!-- ⚠️ AMI-a (07/10, V82) — les appels à manifestation d'intérêt des prestations intellectuelles : liste servie à part
+           (/api/amis-en-ligne), fusionnée ici à l'affichage, en tête : leur date limite précède la consultation. -->
+      @if (amis().length) {
+        <h2 class="pel__h2">Appels à manifestation d’intérêt</h2>
+        <ul class="pel" aria-label="Appels à manifestation d'intérêt ouverts">
+          @for (a of amis(); track a.idDmc) {
+            <li>
+              <a class="pel__carte" [routerLink]="['/candidat', 'amis', a.idDmc]">
+                <div class="pel__haut">
+                  <span class="cnm-mono pel__ref">{{ a.reference || ('appel ' + a.idDmc) }}</span>
+                  <span class="badge badge-success">Ouvert</span>
+                </div>
+                <h3 class="pel__objet">{{ a.objet || 'Objet non renseigné' }}</h3>
+                <p class="pel__meta">
+                  @if (a.autoriteContractante) { <span>{{ a.autoriteContractante }}</span> }
+                  <span>Prestations intellectuelles · {{ a.nombreRetenus ?? 6 }} candidats retenus</span>
+                </p>
+                <p class="pel__limite">@if (a.dateLimite) { Date limite : <strong>{{ dateHeure(a.dateLimite) }}</strong> } @else { Date limite non renseignée }</p>
+              </a>
+            </li>
+          }
+        </ul>
+        @if (procedures().length) { <h2 class="pel__h2">Appels d’offres</h2> }
+      }
       <ul class="pel" aria-label="Procédures ouvertes">
         @for (p of procedures(); track p.idDmc) {
           <li>
@@ -70,11 +97,13 @@ import { LIBELLES_ETAT_PROCEDURE, dateHeureFr } from './libelles-candidat';
     .pel__ref { font-size: var(--text-sm); color: var(--n-500); }
     .pel__objet { margin: 0; font-size: 1rem; line-height: 1.35; }
     .pel__meta { margin: 0; display: flex; flex-wrap: wrap; gap: 0.25rem 0.75rem; font-size: var(--text-sm); color: var(--n-500); }
+    .pel__h2 { margin: 1rem 0 0.6rem; font-size: 1.05rem; }
     .pel__limite { margin: 0.2rem 0 0; font-size: var(--text-sm); }
   `,
 })
 export class ProceduresEnLigne implements OnInit {
   private readonly service = inject(ProceduresEnLigneService);
+  private readonly amisService = inject(AmisEnLigneService);
   private readonly auth = inject(AuthService);
   private readonly document = inject(DOCUMENT);
 
@@ -86,6 +115,7 @@ export class ProceduresEnLigne implements OnInit {
   readonly chargement = signal(true);
   readonly erreur = signal(false);
   readonly procedures = signal<ProcedureEnLigne[]>([]);
+  readonly amis = signal<AmiPublic[]>([]);
 
   ngOnInit(): void {
     this.document.title = 'Procédures ouvertes — Espace candidat — PRS 2.0';
@@ -95,9 +125,11 @@ export class ProceduresEnLigne implements OnInit {
   charger(): void {
     this.chargement.set(true);
     this.erreur.set(false);
-    this.service.liste().subscribe({
-      next: (liste) => {
+    // Les appels à manifestation d'intérêt ne bloquent jamais la liste : en cas d'échec, ils manquent, sans plus.
+    forkJoin({ liste: this.service.liste(), amis: this.amisService.liste().pipe(catchError(() => of([] as AmiPublic[]))) }).subscribe({
+      next: ({ liste, amis }) => {
         this.procedures.set(liste);
+        this.amis.set(amis);
         this.chargement.set(false);
       },
       error: () => {

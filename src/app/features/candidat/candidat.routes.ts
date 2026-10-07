@@ -30,6 +30,8 @@ export const CANDIDAT_ROUTES: Routes = [
     canActivate: [externeConnecteGuard],
     loadComponent: () => import('./depot-offre').then((m) => m.DepotOffre),
   },
+  // ⚠️ AMI en ligne, tranche AMI-a (07/10, V82) — l'appel à manifestation d'intérêt : lu sans session, déposé connecté.
+  { path: 'amis/:idDmc', loadComponent: () => import('./ami-en-ligne-detail').then((m) => m.AmiEnLigneDetail) },
   {
     path: 'offres',
     canActivate: [externeConnecteGuard],
