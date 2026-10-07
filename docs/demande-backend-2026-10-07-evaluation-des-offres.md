@@ -306,6 +306,24 @@ type ?). Variantes : évaluées seulement si `variantes = OUI`, selon `B02-VA-01
 | POST | `/api/fiches-marche/{idDmc}/evaluation/rapport/signer` | membre de la CAO | `{ observation? }` | 409 `DEJA_SIGNE`, `RAPPORT_NON_PRODUIT` |
 | POST | `/api/fiches-marche/{idDmc}/evaluation/rapport/empechement` | président de la CAO | `{ im, motif }` | |
 
+> ⚠️ **Backend, 2026-10-07 — B6 livré (tranche 1d, V78)**, noms confirmés, avec ces précisions (contrat : `docs/api-endpoints.md`,
+> § *L'évaluation des offres, tranche 1d*) :
+> - **`POST …/rapport`** rend l'**`EvaluationDto`** (`etat` = `RAPPORT_A_SIGNER`), qui porte désormais **`rapport`** = `{produitLe,
+>   observations, signe, signeLe, signatures[{im, nom, president, date, empechement, motif, constatePar, observation}],
+>   signaturesAttendues[{im, nom}]}` (nul avant production). `ETAPES_INCOMPLETES` porte `details.lots` ; en plus 409
+>   **`RAPPORT_DEJA_PRODUIT`**. Une fois produit, plus aucune décision (409 `EVALUATION_CLOSE`) ni réouverture (409 `RAPPORT_SIGNE`).
+> - **Signataires** : les membres de la CAO, **hors ceux qui ont déclaré un conflit** ; un membre qui n'a pas signé sa déclaration est
+>   appelé quand même. Sans signataire, le rapport est signé d'office.
+> - **`POST …/rapport/signer`** et **`…/empechement`** rendent l'`EvaluationDto`. Codes en plus : 403 **`NON_SIGNATAIRE`** (signer sans
+>   être appelé) ; empêchement : 400 `MOTIF_ABSENT`, `NON_SIGNATAIRE` (l'`im` n'est pas appelé), 409 `DEJA_SIGNE` ; constaté par le
+>   président, ou à défaut par le **responsable**, comme pour le PV.
+> - **À la dernière signature** : `etat` = **`CLOSE`**, rapport régénéré avec toutes les signatures, notification **`RAPPORT_EVALUATION`
+>   à la PRMP et aux membres** (pas à l'UGPM : aucun canal de notification ne la vise). `RAPPORT_A_SIGNER` part à chaque signataire à
+>   la production.
+> - **Le document** suit le plan proposé (1 à 9 et les deux annexes) ; les sections 3 à 8 se répètent **lot par lot** ; le tableau du
+>   §5 est rendu en lignes (« Rang n — offre n° … : prix lu, corrigé, rabais, ajustements, montant évalué »). L'avis d'appel d'offres
+>   n'est pas cité (§1) ; le PV d'ouverture est renvoyé, pas recopié (§2).
+
 ## B7 — Accès, notifications, journal
 
 | Acteur | Lit | Décide |
@@ -329,6 +347,10 @@ type ?). Variantes : évaluées seulement si `variantes = OUI`, selon `B02-VA-01
 > viendront avec la tranche du rapport (1d).
 > ⚠️ **Tranches 1b et 1c (même jour)** : notifications `JUSTIFICATION_DEMANDEE` (candidat, et courriel) et `JUSTIFICATION_RECUE` (PRMP, membres) servies ;
 > journal : `MONTANT`, `DEPARTAGE`, `ANORMALE`, `JUSTIFICATION_DEMANDEE`, `JUSTIFICATION_RECUE`, `QUALIFICATION`.
+> ⚠️ **Tranche 1d (même jour) — les compteurs sont servis** par `GET /api/kpis/badges` : PRMP, `compteurs.demandesEvaluationEnAttente` (demandes sans réponse
+> dont le délai court) ; **membre de la CAO** (cette route lui est désormais ouverte), `compteurs` = `{evaluationsEnCours, rapportsASigner}`.
+> Le compteur « décisions en attente pour le membre » est servi par procédure (`evaluationsEnCours`), pas par offre. Notifications
+> `RAPPORT_A_SIGNER` et `RAPPORT_EVALUATION` servies ; journal : `RAPPORT`, `SIGNATURE`, `EMPECHEMENT`, `RAPPORT_SIGNE`.
 
 ## B8 — Hors de ce lot (lot 2, puis lot 3)
 
