@@ -284,3 +284,29 @@ Le backend les sème en migration ; l'Administrateur peut les modifier ensuite.
 >   Word dans le dépôt ; en attendant, le serveur produit un modèle provisoire, remplacé à leur arrivée.
 > - **Q9** : **signature électronique simple** de la PRMP, horodatée et journalisée, imprimée sur la lettre et l'avis, comme pour le PV
 >   d'ouverture ; envoi en ligne et par courriel.
+
+> ⚠️ **Front, 2026-10-07 — arbitrages du pilote sur Q5, Q6, Q8 et Q10** (avec ce que la loi tranche et ce qui reste à vérifier) :
+>
+> - **Q5 — recours auprès de l'ARMP** (art. 18, 19, 52-I). **Déclaré dans l'application, il bloque la signature** jusqu'à la décision du
+>   Comité de Règlement des Différends : le délai d'attente de l'art. 52 sert précisément aux recours. Proposition de contrat (tranche 2c) :
+>   `POST …/lots/{lot}/recours` (PRMP) `{ dateReception, requerant, objet }` + pièce ; `POST …/recours/{id}/decision` `{ date, issue
+>   (REJETE | ACCUEILLI | AUTRE), motif }` + pièce ; la signature répond 409 **`RECOURS_EN_COURS`** tant qu'un recours n'a pas sa décision.
+>   *À vérifier au titre VIII* : l'effet suspensif et ses délais ; si un délai fait tomber le blocage, il s'ajoutera en paramètre.
+> - **Q6 — enregistrement du marché** (art. 54). L'enregistrement est un **préalable obligatoire** à la notification. Une **date** et une
+>   **pièce justificative** (quittance ou référence d'enregistrement) suffisent ; **aucune notification sans enregistrement déclaré**
+>   (409 `NON_ENREGISTRE`). Les droits et le service compétent relèvent de la législation fiscale : l'application ne les calcule pas.
+> - **Q8 — pièces fiscales et sociales non fournies** (art. 20-I, 47, 52, 56). Retrait du marché, puis **réattribution au candidat suivant**
+>   du classement, à trois conditions : sa **post-qualification** (l'étape 5 du lot rouverte au suivant), une **offre encore valide** (délai
+>   de validité non échu), et une **nouvelle information** des candidats avec un **nouveau délai de 10 jours francs**. S'il ne reste aucun
+>   candidat éligible : **infructuosité** (art. 56). Le contrôle de la Commission sur le nouveau dossier de marché : *à préciser par le
+>   backend* (proposition : un nouveau dossier `DDM`, comme pour le premier attributaire).
+> - **Q10 — avis sur une déclaration sans suite** (art. 55-II). L'avis est rendu par **l'organe de contrôle, et non par une personne** :
+>   **un dossier dans le circuit** de la Commission, au lieu du `POST …/sans-suite/avis` proposé en §B6. Proposition :
+>   - un sous-type de dossier propre (par exemple « Déclaration sans suite », famille à fixer par le backend), créé par
+>     `POST …/sans-suite` avec les motifs de la PRMP en pièce ;
+>   - une **échéance de 5 jours** affichée et suivie (alerte à la Commission et à la PRMP) ;
+>   - **deux issues seulement** : favorable ou défavorable (pas de `FAVR`) ;
+>   - avis **défavorable** : la procédure **reprend son cours** automatiquement ; avis **favorable** : la PRMP déclare le sans suite,
+>     affiché et notifié à tous les candidats ;
+>   - une **signature paramétrable** (Président seul, délégation, ou examen collégial), pour suivre la règle interne de la Commission ;
+>     *à vérifier* : le décret d'organisation de la CNM/CRM.
