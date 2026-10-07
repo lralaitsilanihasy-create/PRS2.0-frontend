@@ -272,3 +272,12 @@ Le backend les sème en migration ; l'Administrateur peut les modifier ensuite.
 >   déposée sans formulaires).
 > - **D2** — le projet de marché, article 4, écrit « Le délai d'exécution est celui de l'acte d'engagement : 6. » — sans unité, comme le
 >   constat C2 du rapport d'évaluation (`delaiUnite`).
+
+> ⚠️ **Front, 2026-10-07 — arbitrages du pilote pour la tranche 2b** :
+> - **Q4** : **non, jamais**. La PRMP attribue à l'offre **proposée par la CAO** ; `attribuer` n'accepte pas d'autre offre (proposition :
+>   409 `OFFRE_NON_PROPOSEE`, et `idOffre` peut être omis). En désaccord, la PRMP ne peut que déclarer le lot infructueux ou la procédure
+>   sans suite, avec un motif (tranche 2d).
+> - **Q7** : **le pilote fournira les modèles officiels** (lettre aux candidats non retenus, lettre d'attribution, avis d'attribution) en
+>   Word dans le dépôt ; en attendant, le serveur produit un modèle provisoire, remplacé à leur arrivée.
+> - **Q9** : **signature électronique simple** de la PRMP, horodatée et journalisée, imprimée sur la lettre et l'avis, comme pour le PV
+>   d'ouverture ; envoi en ligne et par courriel.
