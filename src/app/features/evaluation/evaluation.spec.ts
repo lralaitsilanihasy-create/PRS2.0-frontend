@@ -9,6 +9,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { Evaluation, OffreEvaluee } from '../../models';
+import { AttributionLots } from './attribution-lots';
 import { DroitsEvaluation, droitsEvaluation, etapeArretee, etapeAtteinte } from './droits-evaluation';
 import { ConformiteOffre } from './etape-conformite';
 import { MontantOffre } from './etape-montant';
@@ -242,5 +243,101 @@ describe('Écran de l’évaluation', () => {
     fixture.detectChanges();
     expect(racine().textContent).toContain('Arrêter l\'étape « Examen préliminaire »');
     expect(racine().querySelectorAll('app-conformite-offre').length).toBe(1);
+  });
+});
+
+describe('Rabais structuré à l’étape 3 (07/10)', () => {
+  let fixture: ComponentFixture<MontantOffre>;
+  let http: HttpTestingController;
+  const racine = (): HTMLElement => fixture.nativeElement as HTMLElement;
+  const enregistrer = (): void => (Array.from(racine().querySelectorAll('button')).find((b) => b.textContent?.includes('Enregistrer et calculer')) as HTMLButtonElement).click();
+
+  function monter(rabaisDeclare: OffreEvaluee['rabaisDeclare']): void {
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), { provide: ToastService, useValue: { success: vi.fn() } }] });
+    http = TestBed.inject(HttpTestingController);
+    fixture = TestBed.createComponent(MontantOffre);
+    fixture.componentRef.setInput('idDmc', 40);
+    fixture.componentRef.setInput('offre', { ...OFFRE, conformite: { ...OFFRE.conformite!, decision: 'CONFORME' }, rabaisDeclare });
+    fixture.componentRef.setInput('droits', DECIDEUR);
+    fixture.detectChanges();
+    // Le bloc s'ouvre d'office (montant à évaluer) ; le navigateur émet alors « toggle », que le test rejoue.
+    racine().querySelector('details')!.dispatchEvent(new Event('toggle'));
+    http.expectOne('/api/fiches-marche/40/evaluation/offres/o-1/corrections-proposees').flush([]);
+    fixture.detectChanges();
+  }
+
+  afterEach(() => {
+    http.verify();
+    TestBed.resetTestingModule();
+  });
+
+  it('inconditionnel : pré-rempli de la proposition, et le corriger demande un motif', () => {
+    monter({ nature: 'POURCENTAGE', valeur: 2, condition: 'AUCUNE', lots: null, libelle: null, montant: 2900000, lecture: '2 % du montant hors taxes, soit 2 900 000 Ariary' });
+    const champ = racine().querySelector('.mo__grille input[type=number]') as HTMLInputElement;
+    expect(champ.value).toBe('2900000');
+    expect(racine().textContent).toContain('Déclaré par le candidat');
+    champ.value = '2500000';
+    champ.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(racine().textContent).toContain('Motif de la correction du rabais proposé');
+    enregistrer();
+    const put = http.expectOne('/api/fiches-marche/40/evaluation/offres/o-1/montant');
+    expect(put.request.body.rabais).toEqual({ montant: 2500000, lecture: null, motif: null });
+    put.flush(EVALUATION);
+  });
+
+  it('lié à plusieurs lots : non appliqué, rien n’est saisi', () => {
+    monter({ nature: 'MONTANT', valeur: 100000, condition: 'LOTS', lots: [1, 2], libelle: null, montant: null, lecture: '100 000 Ariary hors taxes, si les lots 1, 2 sont attribués au candidat' });
+    expect(racine().textContent).toContain('non appliqué');
+    expect(racine().querySelector('.mo__grille input[type=number]')).toBeNull();
+    enregistrer();
+    const put = http.expectOne('/api/fiches-marche/40/evaluation/offres/o-1/montant');
+    expect(put.request.body.rabais).toBeNull();
+    put.flush(EVALUATION);
+  });
+});
+
+describe('Attribution, tranche 2a : le dossier de marché d’un lot', () => {
+  let fixture: ComponentFixture<AttributionLots>;
+  let http: HttpTestingController;
+  const racine = (): HTMLElement => fixture.nativeElement as HTMLElement;
+  const PROPOSE = { idDmc: 40, lots: [
+    { lot: 1, etat: 'PROPOSE', proposition: { idOffre: 'o-1', numero: 4, candidat: 'Entreprise Une', montant: 143900000, montantTtc: 174000000, delai: '6', infructueux: false }, dossierMarche: null, projetDisponible: false },
+    { lot: 2, etat: 'PROPOSE', proposition: { idOffre: null, numero: null, candidat: null, montant: null, montantTtc: null, delai: null, infructueux: true }, dossierMarche: null, projetDisponible: false },
+  ] };
+
+  function monter(prmpOuUgpm: boolean): void {
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([]), { provide: ToastService, useValue: { success: vi.fn() } }] });
+    http = TestBed.inject(HttpTestingController);
+    fixture = TestBed.createComponent(AttributionLots);
+    fixture.componentRef.setInput('idDmc', 40);
+    fixture.componentRef.setInput('prmpOuUgpm', prmpOuUgpm);
+    fixture.detectChanges();
+    http.expectOne('/api/fiches-marche/40/attribution').flush(PROPOSE);
+    fixture.detectChanges();
+  }
+
+  afterEach(() => {
+    http.verify();
+    TestBed.resetTestingModule();
+  });
+
+  it('la PRMP crée le dossier du lot proposé (pas du lot infructueux) ; le dossier existant est nommé', () => {
+    monter(true);
+    const boutons = Array.from(racine().querySelectorAll('button')).filter((b) => b.textContent?.includes('Créer le dossier de marché'));
+    expect(boutons.length).toBe(1);
+    expect(racine().textContent).toContain('infructueux');
+    boutons[0].click();
+    const post = http.expectOne('/api/fiches-marche/40/attribution/lots/1/dossier');
+    expect(post.request.method).toBe('POST');
+    post.flush({ code: 'DOSSIER_EXISTANT', message: 'x', idDossier: 100371 }, { status: 409, statusText: 'Conflict' });
+    http.expectOne('/api/fiches-marche/40/attribution').flush(PROPOSE);
+    fixture.detectChanges();
+    expect(racine().textContent).toContain('existe déjà (n° 100371)');
+  });
+
+  it('les membres de la CAO et le responsable lisent sans geste', () => {
+    monter(false);
+    expect(Array.from(racine().querySelectorAll('button')).some((b) => b.textContent?.includes('Créer'))).toBe(false);
   });
 });

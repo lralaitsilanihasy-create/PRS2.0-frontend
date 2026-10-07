@@ -45,7 +45,7 @@ const LIBELLES_INTEGRITE: Readonly<Record<string, string>> = {
                 <dt>Montant TTC</dt><dd><strong>{{ montant(a.montantTtc) }}</strong></dd>
                 <dt>Délai</dt><dd>{{ a.delai }} {{ a.delaiUnite === 'MOIS' ? 'mois' : 'jours' }}</dd>
                 <dt>Validité</dt><dd>{{ a.validiteJours }} jours</dd>
-                <dt>Rabais</dt><dd>{{ a.rabais || '—' }}</dd>
+                <dt>Rabais</dt><dd>{{ o.rabais?.lecture || (isTexte(a.rabais) ? a.rabais : '') || '—' }}</dd>
                 <dt>Garantie</dt><dd>{{ garantie(o) }}</dd>
                 @if (o.fraisDossier; as fr) {
                   <!-- V72 : le reçu des frais de dossier, validé avant le retrait (lu par le serveur, pas dans l'offre). -->
@@ -149,6 +149,8 @@ export class LectureSeance implements OnInit {
     SOUS_DETAIL_INCOHERENT: 'Sous-détail incohérent',
     FORMULAIRES_ILLISIBLES: 'Formulaires illisibles',
     FRAIS_NON_REGLES: 'Frais de dossier non réglés',
+    RABAIS_INVALIDE: 'Rabais invalide',
+    RABAIS_LOTS: 'Rabais : lots incohérents',
   };
   /** Lot 5 — les documents remplis, produits à la volée ; le DQE des travaux est le même document que le bordereau. */
   readonly documentsFormulaires: readonly { type: DocumentFormulaire; libelle: string }[] = [
@@ -182,6 +184,11 @@ export class LectureSeance implements OnInit {
 
   dateCourte(iso: string): string {
     return new Date(iso).toLocaleDateString('fr-FR');
+  }
+
+  /** Un rabais texte (offres plus anciennes) ; le rabais structuré se lit dans `OffreLue.rabais.lecture`. */
+  isTexte(v: unknown): v is string {
+    return typeof v === 'string' && !!v;
   }
 
   montant(v: number | null | undefined): string {

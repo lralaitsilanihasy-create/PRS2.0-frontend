@@ -94,9 +94,20 @@ interface CorrectionEditee extends Correction {
 
           <div class="mo__grille">
             <fieldset class="mo__bloc">
-              <legend class="form-label">Rabais (Q4 : valeur hors taxes saisie par la CAO)</legend>
-              <label class="form-group"><span class="form-label">Montant (Ar HT)</span><input class="form-control" type="number" min="0" [value]="rabais() ?? ''" [disabled]="!modifiable()" (input)="rabais.set(nombre($any($event.target).value))" /></label>
-              <label class="form-group"><span class="form-label">Lecture du rabais offert</span><input class="form-control" type="text" [value]="lectureRabais()" [disabled]="!modifiable()" (input)="lectureRabais.set($any($event.target).value)" /></label>
+              <legend class="form-label">Rabais</legend>
+              @if (declare(); as d) { <p class="text-sm mo__aide">Déclaré par le candidat : « {{ d.lecture || d.libelle }} »</p> }
+              @if (conditionnel()) {
+                <!-- 07/10 (Q2, au juriste) — un rabais lié à plusieurs lots n'est jamais appliqué à l'évaluation lot par lot. -->
+                <p class="text-sm">Rabais lié à l'attribution de plusieurs lots : <strong>non appliqué</strong> à l'évaluation lot par lot ; il est repris au rapport.</p>
+              } @else {
+                <label class="form-group"><span class="form-label">Montant retenu (Ar HT){{ propose() != null ? ' — proposé : ' + ariary(propose()) : '' }}</span><input class="form-control" type="number" min="0" [value]="rabais() ?? ''" [disabled]="!modifiable()" (input)="rabais.set(nombre($any($event.target).value))" /></label>
+                @if (corrige()) {
+                  <label class="form-group"><span class="form-label">Motif de la correction du rabais proposé</span><input class="form-control" type="text" [value]="motifRabais()" [disabled]="!modifiable()" (input)="motifRabais.set($any($event.target).value)" /></label>
+                }
+                @if (!structure()) {
+                  <label class="form-group"><span class="form-label">Lecture du rabais offert</span><input class="form-control" type="text" [value]="lectureRabais()" [disabled]="!modifiable()" (input)="lectureRabais.set($any($event.target).value)" /></label>
+                }
+              }
             </fieldset>
             <fieldset class="mo__bloc">
               <legend class="form-label">Marge de préférence (si le DAO la prévoit)</legend>
@@ -198,15 +209,30 @@ export class MontantOffre implements OnInit {
   readonly erreur = signal<string | null>(null);
 
   readonly modifiable = computed(() => this.droits().decider && !this.figee() && this.offre().ecartee?.etape !== 'CONFORMITE');
+  readonly motifRabais = signal('');
+  /** ⚠️ 07/10 — le rabais déclaré (structuré, ou texte des offres plus anciennes), lu en séance. */
+  readonly declare = computed(() => this.offre().rabaisDeclare ?? null);
+  /** Le rabais déclaré est-il structuré (pourcentage ou montant) ? Sinon, la CAO le saisit comme avant. */
+  readonly structure = computed(() => !!(this.offre().evaluation?.rabais?.nature ?? this.declare()?.nature));
+  readonly conditionnel = computed(() => (this.offre().evaluation?.rabais?.condition ?? this.declare()?.condition) === 'LOTS');
+  /** La proposition : celle du serveur après une saisie (sur le prix corrigé), sinon celle de la séance (sur le HT lu). */
+  readonly propose = computed(() => (this.structure() ? this.offre().evaluation?.rabais?.propose ?? this.declare()?.montant ?? null : null));
+  readonly corrige = computed(() => this.structure() && this.propose() != null && this.rabais() != null && this.rabais() !== this.propose());
 
   ngOnInit(): void {
     const ev = this.offre().evaluation;
-    if (!ev) return;
+    // Avant toute saisie, le rabais structuré déclaré pré-remplit le montant (le serveur le recalcule sur le prix corrigé).
+    if (!ev) {
+      const d = this.offre().rabaisDeclare;
+      if (d?.nature && d.condition !== 'LOTS' && d.montant != null) this.rabais.set(d.montant);
+      return;
+    }
     // Une saisie existe : elle fait foi (corrections comprises) ; les propositions ne se rechargent pas par-dessus.
     this.corrections.set(ev.corrections.map((k) => ({ ...k, retenue: k.retenue ?? true, cle: ++this.cle, proposee: k.regle === 'PU_PREVAUT' || k.regle === 'LETTRES_PREVALENT' })));
     this.correctionsChargees.set(true);
     this.prixLu.set(ev.prixLu);
     this.rabais.set(ev.rabais?.montant ?? null);
+    this.motifRabais.set(ev.rabais?.motif ?? '');
     this.lectureRabais.set(ev.rabais?.lecture ?? '');
     this.eligible.set(!!ev.preference?.eligible);
     this.motifPreference.set(ev.preference?.motif ?? '');
@@ -271,7 +297,8 @@ export class MontantOffre implements OnInit {
         prixLu: this.prixLu(),
         corrections: this.corrections().map(({ ligne, libelle, avant, apres, regle, retenue }) => ({ ligne, libelle, avant, apres, regle, retenue })),
         refusCandidat: refus ? { motif: this.motifRefus().trim(), clause: this.clauseRefus().trim() } : null,
-        rabais: this.rabais() != null ? { montant: this.rabais()!, lecture: this.lectureRabais().trim() || null } : null,
+        // Un rabais conditionnel ne se saisit pas (400 RABAIS_CONDITIONNEL) ; un montant égal à la proposition se passe de motif.
+        rabais: this.conditionnel() || this.rabais() == null ? null : { montant: this.rabais()!, lecture: this.lectureRabais().trim() || null, motif: this.corrige() ? this.motifRabais().trim() || null : null },
         preference: this.eligible() ? { eligible: true, motif: this.motifPreference().trim() || null } : null,
         criteres: this.criteres().length ? this.criteres() : undefined,
       })

@@ -1,3 +1,5 @@
+import type { RabaisLu } from './cao.model';
+
 /**
  * ⚠️ Évaluation des offres, lot 1 (demande du 07/10, livrée en tranches 1a à 1d : V76, V77, V78) — les objets de
  * `GET /api/fiches-marche/{idDmc}/evaluation` et de ses gestes. Noms confirmés par le backend (`docs/api-endpoints.md`,
@@ -76,6 +78,14 @@ export interface Correction {
 export interface Rabais {
   montant: number;
   lecture: string | null;
+  /** ⚠️ 07/10 (rabais structuré) — la proposition du serveur (sur le prix corrigé), et ce que le candidat a déclaré. */
+  propose?: number | null;
+  nature?: 'POURCENTAGE' | 'MONTANT' | null;
+  valeur?: number | null;
+  condition?: 'AUCUNE' | 'LOTS' | null;
+  lots?: number[] | null;
+  /** Le motif d'une correction du rabais proposé. */
+  motif?: string | null;
 }
 
 export interface Preference {
@@ -183,6 +193,8 @@ export interface OffreEvaluee {
   exAequo?: boolean;
   ecartee: OffreEcartee | null;
   precisionsEnAttente: number;
+  /** ⚠️ 07/10 — le rabais lu en séance (chiffré sur le HT lu), pour pré-remplir l'étape 3 avant toute saisie. */
+  rabaisDeclare?: RabaisLu | null;
 }
 
 export interface PropositionAttribution {
@@ -284,7 +296,39 @@ export interface MontantRequest {
   prixLu?: number | null;
   corrections: Correction[];
   refusCandidat?: RefusCandidat | null;
-  rabais?: Rabais | null;
+  rabais?: { montant: number; lecture?: string | null; motif?: string | null } | null;
   preference?: { eligible: boolean; motif?: string | null } | null;
   criteres?: CritereMonetise[];
+}
+
+// ── Attribution, lot 2 (tranche 2a, V79) ─────────────────────────────────────────────────────────────────────────────
+
+/** États d'un lot après l'évaluation (tranche 2a ; les suivants viennent avec leurs gestes). */
+export type EtatAttribution = 'EN_EVALUATION' | 'PROPOSE' | 'AU_CONTROLE' | 'AVIS_RENDU' | (string & {});
+
+/** Le dossier de marché (famille `DDM`) d'un lot, au contrôle de la Commission. */
+export interface DossierMarche {
+  idDossier: number;
+  sousType: string;
+  statut: string | null;
+  /** L'avis du dernier PV signé du dossier : `FAV`, `FAVR`, `DEF` ; nul avant. */
+  avis: string | null;
+  creeLe: string | null;
+  creePar: string | null;
+}
+
+export interface LotAttribution {
+  lot: number;
+  etat: EtatAttribution;
+  /** La proposition du rapport d'évaluation ; nulle tant qu'il n'est pas signé. */
+  proposition: PropositionAttribution | null;
+  dossierMarche: DossierMarche | null;
+  /** Le projet de marché produit par le serveur (avec le dossier) se télécharge. */
+  projetDisponible: boolean;
+}
+
+/** `GET /api/fiches-marche/{idDmc}/attribution` — 404 tant que l'évaluation n'est pas ouverte. */
+export interface Attribution {
+  idDmc: number;
+  lots: LotAttribution[];
 }

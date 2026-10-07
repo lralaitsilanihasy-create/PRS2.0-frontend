@@ -42,7 +42,22 @@ export interface ActeEngagementSaisi {
   delai: number;
   delaiUnite: 'JOURS' | 'MOIS';
   validiteJours: number;
-  rabais: string | null;
+  /**
+   * ⚠️ 07/10 (arbitrage Q4, livré back 3c76a59) — le rabais **structuré** ; le serveur reconnaît ce format à la forme (un objet) et lit
+   * encore un texte (offres plus anciennes). Contrôlé avant le scellement par `controlerRabais` (features/candidat/rabais-offre).
+   */
+  rabais: RabaisOffre | null;
+}
+
+/** Le rabais déclaré : un pourcentage (0 < v < 100) ou un montant hors taxes ; inconditionnel, ou lié à l'attribution de plusieurs lots. */
+export interface RabaisOffre {
+  nature: 'POURCENTAGE' | 'MONTANT';
+  valeur: number;
+  condition: 'AUCUNE' | 'LOTS';
+  /** Condition `LOTS` : les lots dont l'attribution conjointe déclenche le rabais, le lot de l'offre compris. */
+  lots: number[] | null;
+  /** La phrase du candidat, facultative. */
+  libelle: string | null;
 }
 
 export interface MembreGroupement {

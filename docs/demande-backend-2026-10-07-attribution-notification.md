@@ -257,3 +257,18 @@ Le backend les sème en migration ; l'Administrateur peut les modifier ensuite.
   et les lettres sur « Mes offres », la demande d'explication.
 - **Dès B5-B6** : le dépôt des pièces fiscales et sociales par l'attributaire et leur vérification ; les décisions d'infructuosité et
   de sans suite.
+
+> ✅ **Front, 2026-10-07 — tranche 2a livrée.** Sous l'évaluation close, la section « Attribution » (`features/evaluation/attribution-lots.ts`) :
+> par lot, l'état, la proposition du rapport (ou l'infructuosité proposée), « Créer le dossier de marché » (PRMP et UGPM ; 409 nommés,
+> `DOSSIER_EXISTANT` avec son numéro), le dossier (n°, sous-type, statut, avis de la Commission), « Ouvrir le dossier de marché » (page
+> du dossier PRMP), le projet de marché en PDF et Word. Les membres de la CAO et le responsable lisent.
+>
+> ✅ **Recette du 2026-10-07 (fiche 40)** : dossier de marché **100371** créé pour le lot 1 (`MAOO`, brouillon ; lot `AU_CONTROLE`) ; le
+> lot 2, proposé infructueux, n'en a pas. Projet de marché lu (1 page, conforme au contrat).
+>
+> **Constats pour le backend :**
+> - **D1** — **la pièce 17 « Procès-verbal d'ouverture des offres » n'est pas jointe** au dossier 100371, alors que la séance de la fiche 40
+>   est `CLOSE` et son PV signé. Pièces jointes d'office : 14 (projet), 15 (DAO complet), 18 (rapport). La 16 manque à bon droit (offre n° 4
+>   déposée sans formulaires).
+> - **D2** — le projet de marché, article 4, écrit « Le délai d'exécution est celui de l'acte d'engagement : 6. » — sans unité, comme le
+>   constat C2 du rapport d'évaluation (`delaiUnite`).

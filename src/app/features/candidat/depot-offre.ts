@@ -6,7 +6,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ApiError, codeErreur } from '../../core/errors/api-error';
 import { formaterEmpreinte } from '../../core/securite/cles-detenteur';
 import { telechargerBlob, validerFichier } from '../../core/securite/fichiers-surs';
-import { ActeEngagementSaisi, MembreGroupement, PieceJointe, construireContenu, sceller, typesDesFormats } from '../../core/securite/scellement';
+import { ActeEngagementSaisi, MembreGroupement, PieceJointe, RabaisOffre, construireContenu, sceller, typesDesFormats } from '../../core/securite/scellement';
 import { Accuse, BesoinEnLigne, ClesPubliques, Entreprise, PieceAttendue, ProcedureEnLigne, RecuDao } from '../../models';
 import { CeremonieService, EntrepriseCandidatService, OffresCandidatService, ProceduresEnLigneService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
@@ -15,6 +15,7 @@ import { dateHeureFr, messageExclusion, tailleLisible } from './libelles-candida
 import { aCommande, avertissements, calculerTotaux, construireFormulaires, estTravaux, formulairesLivres, prixManquants, saisieVide } from './offre-financiere';
 import { OffreFormulaires } from './offre-formulaires';
 import { OffreTravauxFormulaires } from './offre-travaux-formulaires';
+import { RabaisOffreSaisie, controlerRabais } from './rabais-offre';
 import { avertissementsTravaux, construireTravaux, saisieTravauxVide } from './offre-travaux';
 
 /** Les étapes du dépôt, telles qu'on les montre pendant le scellement et l'envoi. */
@@ -66,7 +67,7 @@ function motifDepot(e: unknown): string {
 @Component({
   selector: 'app-depot-offre',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur, OffreFormulaires, OffreTravauxFormulaires],
+  imports: [RouterLink, EtatErreur, OffreFormulaires, OffreTravauxFormulaires, RabaisOffreSaisie],
   template: `
     <nav class="do__ariane" aria-label="Fil d'Ariane">
       <a routerLink="/candidat/procedures">Procédures ouvertes</a><span aria-hidden="true">›</span>
@@ -165,7 +166,8 @@ function motifDepot(e: unknown): string {
                 </span>
               </label>
               <label class="form-group"><span class="form-label">Validité de l’offre (jours)</span><input class="form-control" type="number" min="1" step="1" [value]="ae().validiteJours ?? ''" (input)="poserAe('validiteJours', $any($event.target).valueAsNumber)" /></label>
-              <label class="form-group do__large"><span class="form-label">Rabais (facultatif)</span><input class="form-control" type="text" placeholder="ex. 2 % en cas d’attribution des deux lots" [value]="ae().rabais ?? ''" (input)="poserAe('rabais', $any($event.target).value || null)" /></label>
+              <!-- ⚠️ 07/10 (Q4) — le rabais structuré, contrôlé avant le scellement (le serveur ne lit l'offre qu'à l'ouverture). -->
+              <div class="do__large"><app-rabais-offre [rabais]="rabaisSaisi()" [lots]="numerosLots()" [lotOffre]="lotEffectif()" [montantHt]="aeEffectif().montantHt" [desactive]="occupe()" (modifie)="poserAe('rabais', $event)" /></div>
             </div>
           </section>
 
@@ -337,7 +339,18 @@ export class DepotOffre implements OnInit, OnDestroy {
   /** L'acte d'engagement scellé : ses montants sont ceux du bordereau dès qu'il y a des formulaires (au maximum à commande — H1). */
   readonly aeEffectif = computed<Partial<ActeEngagementSaisi>>(() => {
     const t = this.totauxOffre();
-    return t ? { ...this.ae(), montantHt: t.ht, montantTtc: t.ttc } : this.ae();
+    const ae = { ...this.ae(), rabais: this.rabaisSaisi() };
+    return t ? { ...ae, montantHt: t.ht, montantTtc: t.ttc } : ae;
+  });
+  /** Le rabais saisi ; un ancien brouillon portait un texte libre, qui n'est plus scellé (le candidat le ressaisit). */
+  readonly rabaisSaisi = computed(() => {
+    const r = this.ae().rabais as unknown;
+    return r && typeof r === 'object' ? (r as RabaisOffre) : null;
+  });
+  /** Les numéros de lots de la procédure (un seul pour un marché non alloti : le lot 1). */
+  readonly numerosLots = computed(() => {
+    const l = this.procedure()?.lots ?? [];
+    return l.length ? l.map((x) => x.numero) : [1];
   });
   readonly avertissementsOffre = computed(() => {
     const lb = this.lotBesoin();
@@ -429,6 +442,8 @@ export class DepotOffre implements OnInit, OnDestroy {
     } else if (!(a.montantHt! >= 0) || !(a.montantTtc! >= 0) || !a.montantHt || !a.montantTtc) m.push('Les montants de l’acte d’engagement.');
     if (!a.delai || a.delai < 1) m.push('Le délai.');
     if (!a.validiteJours || a.validiteJours < 1) m.push('La validité de l’offre.');
+    const rabais = controlerRabais(this.rabaisSaisi(), a.montantHt, this.lotEffectif(), this.numerosLots());
+    if (rabais) m.push(`Le rabais : ${rabais.message}`);
     const manquantes = this.pieces().filter((x) => x.obligatoire && !this.fichiers()[x.code]);
     if (manquantes.length) m.push(`${manquantes.length} pièce(s) à joindre : ${manquantes.map((x) => x.libelle).slice(0, 3).join(', ')}${manquantes.length > 3 ? '…' : ''}.`);
     if (this.pieces().some((x) => x.code === 'GARANTIE')) {

@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { skipErrorToast } from '../core/errors/api-error';
 import {
+  Attribution,
   CodeVerification,
   DecisionCritere,
   DemandeEvaluation,
@@ -186,5 +187,30 @@ export class CandidatDemandesService {
     if (fichier) fd.append('fichier', fichier, fichier.name);
     const suite = demande.type === 'JUSTIFICATION' ? 'justification/reponse' : `precisions/${demande.idDemande}/reponse`;
     return this.http.post<DemandeEvaluation>(`${this.base}/${idOffre}/${suite}`, fd, this.ctx);
+  }
+}
+
+/**
+ * ⚠️ Attribution, lot 2, tranche 2a (V79) — `/api/fiches-marche/{idDmc}/attribution/**` : l'état de chaque lot après l'évaluation, le
+ * dossier de marché (famille `DDM`) créé par la PRMP ou son UGPM, le projet de marché produit par le serveur. Silencieux.
+ */
+@Injectable({ providedIn: 'root' })
+export class AttributionService {
+  private readonly http = inject(HttpClient);
+  private readonly base = `${environment.apiUrl}/fiches-marche`;
+
+  lire(idDmc: number): Observable<Attribution> {
+    return this.http.get<Attribution>(`${this.base}/${idDmc}/attribution`, { context: skipErrorToast() });
+  }
+
+  /** 201 avec l'attribution ; 409 `EVALUATION_NON_CLOSE`, `LOT_INFRUCTUEUX`, `DOSSIER_EXISTANT` (avec `idDossier`). */
+  creerDossier(idDmc: number, lot: number): Observable<Attribution> {
+    return this.http.post<Attribution>(`${this.base}/${idDmc}/attribution/lots/${lot}/dossier`, null, { context: skipErrorToast() });
+  }
+
+  /** Le projet de marché, PDF (ou Word) — 404 tant qu'il n'est pas produit. */
+  projet(idDmc: number, lot: number, format: 'pdf' | 'docx' = 'pdf'): Observable<Blob> {
+    const params = format === 'docx' ? new HttpParams().set('format', 'docx') : new HttpParams();
+    return this.http.get(`${this.base}/${idDmc}/attribution/lots/${lot}/projet`, { params, responseType: 'blob', context: skipErrorToast() });
   }
 }

@@ -9,6 +9,7 @@ import { EvaluationService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 import { DroitsEvaluation, EspaceEvaluation, droitsEvaluation, etapeArretee, etapeAtteinte } from './droits-evaluation';
+import { AttributionLots } from './attribution-lots';
 import { AnormaleOffre, IndicateursPrixVue } from './etape-anormales';
 import { ConformiteOffre } from './etape-conformite';
 import { MontantOffre, TableauEvaluation } from './etape-montant';
@@ -29,7 +30,7 @@ import { RapportEvaluationVue } from './rapport-evaluation';
 @Component({
   selector: 'app-evaluation-ecran',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur, ConformiteOffre, MontantOffre, TableauEvaluation, IndicateursPrixVue, AnormaleOffre, EtapeQualification, RapportEvaluationVue],
+  imports: [RouterLink, EtatErreur, AttributionLots, ConformiteOffre, MontantOffre, TableauEvaluation, IndicateursPrixVue, AnormaleOffre, EtapeQualification, RapportEvaluationVue],
   template: `
     <!-- La coquille interne porte son fil d'Ariane (parents déclarés sur la route) ; l'espace CAO n'en a pas : l'écran le pose. -->
     @if (espace === 'cao') {
@@ -187,6 +188,9 @@ import { RapportEvaluationVue } from './rapport-evaluation';
 
       <app-rapport-evaluation [idDmc]="idDmc" [evaluation]="ev" [droits]="droits()" [moi]="moi()" (maj)="appliquer($event)" />
 
+      <!-- ⚠️ Lot 2, tranche 2a (V79) — après le rapport signé : le dossier de marché de chaque lot, au contrôle de la Commission. -->
+      @if (ev.etat === 'CLOSE') { <app-attribution-lots [idDmc]="idDmc" [prmpOuUgpm]="prmpOuUgpm()" /> }
+
       @if (journalOuvert()) {
         <details class="card ev__bloc" (toggle)="lireJournal($any($event.target).open)">
           <summary class="ev__h2">Journal de l'évaluation</summary>
@@ -268,6 +272,8 @@ export class EvaluationEcran implements OnInit {
     if (this.espace === 'cao') return d.president ? 'président de la commission' : 'membre de la commission';
     return d.responsable ? 'responsable de la procédure' : this.auth.role() === 'PRMP' ? 'PRMP' : 'lecture';
   });
+  /** La PRMP ou son UGPM, dans la coquille interne : elles créent le dossier de marché. */
+  readonly prmpOuUgpm = computed(() => this.espace === 'interne' && ['PRMP', 'UGPM'].includes(this.auth.role() ?? ''));
   /** Le journal : CAO, responsable, PRMP — pas l'UGPM (403). */
   readonly journalOuvert = computed(() => this.espace === 'cao' || this.auth.role() !== 'UGPM');
 

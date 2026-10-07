@@ -282,7 +282,12 @@ export interface OffreLue {
   motif: string | null;
   entreprise: { nif: string; raisonSociale: string; verification: { statut: string; source: string | null } | null; exclusion: unknown | null };
   groupement: { nif: string; raisonSociale: string; mandataire: boolean }[] | null;
-  acteEngagement: { montantHt: number; montantTtc: number; delai: number; delaiUnite: 'JOURS' | 'MOIS'; validiteJours: number; rabais: string | null } | null;
+  acteEngagement: { montantHt: number; montantTtc: number; delai: number; delaiUnite: 'JOURS' | 'MOIS'; validiteJours: number; rabais: string | RabaisDeclare | null } | null;
+  /**
+   * ⚠️ 07/10 (rabais structuré) — le rabais tel que la séance le lit : chiffré sur le HT lu s'il est inconditionnel (`montant`), avec la
+   * phrase lue et imprimée au PV (`lecture`). Un texte libre (offres plus anciennes) est servi dans `libelle` et `lecture` seuls.
+   */
+  rabais?: RabaisLu | null;
   /** ⚠️ V70 (§B3) : `montant`, `monnaie`, `emetteur` lus au manifeste de format 2 ; `null` pour une offre de format 1 ou illisibles. */
   garantie: { codeVerification: string; presente: boolean; montant?: number | null; monnaie?: string | null; emetteur?: string | null } | null;
   pieces: { code: string; libelle: string; presente: boolean; nomFichier: string | null; empreinteConforme: boolean | null }[];
@@ -296,6 +301,26 @@ export interface OffreLue {
   partiesFormulaires?: DocumentFormulaire[] | null;
   /** ⚠️ V72 (§B5) — les frais de dossier de l'entreprise, lus par le serveur (retrait payant ; `null` sinon). */
   fraisDossier?: { regle: boolean; dateValidation: string | null; referencePaiement: string | null } | null;
+}
+
+/** Le rabais structuré déclaré par le candidat (manifeste scellé). */
+export interface RabaisDeclare {
+  nature: 'POURCENTAGE' | 'MONTANT';
+  valeur: number;
+  condition: 'AUCUNE' | 'LOTS';
+  lots: number[] | null;
+  libelle: string | null;
+}
+
+/** `OffreLue.rabais` : le rabais déclaré, chiffré et lu. */
+export interface RabaisLu {
+  nature: 'POURCENTAGE' | 'MONTANT' | null;
+  valeur: number | null;
+  condition: 'AUCUNE' | 'LOTS' | null;
+  lots: number[] | null;
+  libelle: string | null;
+  montant: number | null;
+  lecture: string | null;
 }
 
 /** Les alertes lues en séance — V70, puis les contrôles des formulaires du lot 5 (05/10). Jamais un refus : la commission décide. */
@@ -317,7 +342,10 @@ export type TypeAlerteLecture =
   | 'MATERIEL_INCOMPLET'
   | 'SOUS_DETAIL_INCOHERENT'
   | 'FORMULAIRES_ILLISIBLES'
-  | 'FRAIS_NON_REGLES';
+  | 'FRAIS_NON_REGLES'
+  // ⚠️ 07/10 — le rabais structuré, contrôlé à l'ouverture (le serveur ne le lit pas avant).
+  | 'RABAIS_INVALIDE'
+  | 'RABAIS_LOTS';
 
 /** ⚠️ Lot 5 — les documents remplis que la commission imprime (`…/formulaires/{type}.pdf`) ; `DQE` = `BORDEREAU` aux travaux. */
 export type DocumentFormulaire = 'BORDEREAU' | 'DQE' | 'CONFORMITE' | 'CAPACITES';

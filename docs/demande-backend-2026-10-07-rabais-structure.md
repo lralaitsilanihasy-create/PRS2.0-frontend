@@ -98,3 +98,13 @@ rabais: {
   brouillon local de l'offre suit.
 - **Dès B2-B3** : la lecture de séance affiche le rabais chiffré ou sa condition ; l'étape 3 pré-remplit le rabais proposé et demande un
   motif pour le corriger.
+
+> ✅ **Front, 2026-10-07 — livré.** Dépôt : le champ texte est remplacé par la saisie structurée (aucun / pourcentage / montant hors
+> taxes ; sans condition, ou lié à l'attribution de plusieurs lots par les cases des lots ; phrase facultative), avec la phrase qui sera
+> lue en séance ; `controlerRabais` (front, `features/candidat/rabais-offre.ts`) rejoue avant le scellement les règles du serveur
+> (`RABAIS_INVALIDE`, `RABAIS_LOTS` ; lot 1 pour une procédure non allotie) et ferme le dépôt tant qu'elles échouent ; le type vit dans
+> `core/securite/scellement.ts` (`RabaisOffre`) ; le brouillon local le garde (un ancien rabais texte n'est plus scellé : le candidat le
+> ressaisit). Séance : `OffreLue.rabais.lecture` affiché, alertes `RABAIS_INVALIDE` / `RABAIS_LOTS` libellées. Étape 3 : le rabais déclaré
+> (`rabaisDeclare`, puis `evaluation.rabais.propose`) pré-remplit le montant ; le corriger demande un motif (`rabais.motif`) ; un rabais
+> lié à plusieurs lots est affiché « non appliqué » et rien n'est envoyé. Tests : contrôles, saisie, étape 3. Recette réelle d'un dépôt :
+> à faire sur une procédure ouverte (aucune ne l'est en recette aujourd'hui).

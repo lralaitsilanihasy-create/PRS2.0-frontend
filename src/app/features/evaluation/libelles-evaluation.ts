@@ -117,6 +117,7 @@ export function refusEvaluation(e: ApiError): string {
     case 'REGLE_INCONNUE':
     case 'CORRECTION_INVALIDE': return 'Une correction est incomplète : libellé, montant avant et après.';
     case 'RABAIS_INVALIDE': return 'Le rabais est un montant hors taxes positif ou nul.';
+    case 'RABAIS_CONDITIONNEL': return 'Un rabais lié à l’attribution de plusieurs lots ne s’applique pas à l’évaluation lot par lot.';
     case 'PREFERENCE_NON_PREVUE': return 'Le DAO ne prévoit pas de marge de préférence.';
     case 'CRITERE_HORS_DAO': return 'Le DAO ne porte pas de critère additionnel : aucun ne peut être ajouté (règle d’or).';
     case 'CRITERE_INVALIDE': return 'Un critère est incomplet : libellé, montant et justification.';
