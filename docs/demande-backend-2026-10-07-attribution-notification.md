@@ -53,6 +53,15 @@ Une seule ressource par procédure et par lot, lue partout (fiche, évaluation, 
   et sociales non produites, B5).
 - Chaque transition est tracée au journal de l'évaluation (même registre append-only), avec l'auteur, la date et le motif s'il y en a un.
 
+> ⚠️ **Backend, 2026-10-07 — B1 livré en partie (tranche 2a, V79)** ; contrat : `docs/api-endpoints.md`, § *L'attribution, lot 2, tranche
+> 2a*. Le lot 2 est livré par tranches : **2a** (B1, B2), **2b** (B3, B4.1, B4.2), **2c** (B4.3, B4.4, B5), **2d** (B6, Q3, B7).
+> - `GET …/attribution` : accès CAO, responsable, PRMP, UGPM ; **404** tant que l'évaluation n'est pas ouverte. Dans cette tranche,
+>   `AttributionDto` = `{idDmc, lots[{lot, etat, proposition, dossierMarche, projetDisponible}]}` ; les autres sections (attributaire,
+>   information, délai…) s'ajoutent avec leurs tranches.
+> - **États servis** : `PROPOSE`, `AU_CONTROLE`, `AVIS_RENDU`, et en plus **`EN_EVALUATION`** (évaluation ouverte, rapport pas encore
+>   signé : `proposition` nulle). `AU_CONTROLE` dès la **création** du dossier de marché (pas sa soumission) ; `AVIS_RENDU` dès qu'un PV
+>   du dossier est signé. Un lot proposé infructueux reste `PROPOSE`, avec `proposition.infructueux = true`.
+
 ## B2 — Le dossier de marché au contrôle de la Commission (art. 17)
 
 ### B2.1 Créer le dossier depuis l'évaluation
@@ -69,6 +78,20 @@ Une seule ressource par procédure et par lot, lue partout (fiche, évaluation, 
     offre déposée par pièces, la PRMP le joint.
 - Restent à joindre par la PRMP : 14 « Projet de marché signé » (voir Q1), 19 et 20 selon le cas.
 - **Un dossier par lot** (proposition) ; Q2 : un seul dossier pour plusieurs lots du même attributaire ?
+
+> ⚠️ **Backend, 2026-10-07 — B2.1 livré (tranche 2a)**, avec ces écarts :
+> - **`POST …/dossier` répond 201 avec l'`AttributionDto`** (pas le `Dossier`) : le lot porte `dossierMarche.idDossier`, d'où la page du
+>   dossier s'ouvre. Accès : PRMP **et son UGPM**, comme le dossier DAO. 404 pour un lot inconnu.
+> - **Q2 (arbitrage du pilote) : un dossier par lot.** **Q1 (arbitrage) : le projet de marché est produit par le serveur** et joint
+>   d'office en pièce 14 (`PROJET_MARCHE`) : parties, objet, pièces constitutives, montant HT (prix corrigé − rabais) en chiffres et en
+>   lettres, délai, entrée en vigueur, blocs de signature. C'est un document composé par le serveur, pas l'acte d'engagement officiel
+>   rempli ; il est joint **non signé** (la signature du marché est un geste de la tranche 2c). Il se télécharge par
+>   **`GET …/attribution/lots/{lot}/projet`** (`?format=docx` pour le Word).
+> - Le dossier de marché **ne porte pas `idDmc`** : ce champ reste réservé au dossier DAO ; son lien est l'attribution du lot.
+> - **Pièce 15** : le DAO complet s'il existe, **à défaut les documents séparés** de la version validée. **Pièce 16** : vide pour une
+>   offre sans formulaires en ligne (la PRMP la joint). **Pièce 17** : le PV d'ouverture signé. **Pièce 18** : le rapport signé. Les
+>   types sont repérés par un **code** posé par V79 (`PROJET_MARCHE`, `CAHIER_CHARGES`, `DEVIS_ESTIMATIF`, `PV_OUVERTURE`,
+>   `RAPPORT_ANALYSE`). Ces pièces ne sont pas protégées contre la suppression (contrairement aux pièces produites par la fiche).
 
 ### B2.2 Le circuit
 
@@ -91,6 +114,14 @@ Le sous-type `MAOO` n'a aucun point de contrôle. Proposition, tirée de la chec
 - le projet de marché reprend l'offre retenue sans modification substantielle.
 
 Le backend les sème en migration ; l'Administrateur peut les modifier ensuite.
+
+> ⚠️ **Backend, 2026-10-07 — B2.2 et B2.3 livrés (tranche 2a)**, avec ces écarts :
+> - **B2.3** : les neuf points sont **communs à la famille `DDM`** (donc à `MAOO` et `MAOR`), pas spécifiques à chaque sous-type :
+>   une seule ligne par point à administrer, comme les points FICHE du plan. Ils sont **semés au démarrage** (pas en migration : la
+>   table des points porte des clés étrangères vers des référentiels que les migrations ne posent pas), là où la famille `DDM` existe ;
+>   un point modifié par l'Administrateur n'est jamais réécrit.
+> - **B2.2** : l'avis remonte au lot (`dossierMarche.avis`) dès qu'un PV du dossier est signé. **Q3 (arbitrage du pilote)** : après un
+>   avis défavorable, la PRMP choisira, avec un motif, entre la **reprise de l'évaluation** et l'**infructuosité** — livré en tranche 2d.
 
 ## B3 — Le choix de l'attributaire (art. 35-VII)
 
@@ -211,6 +242,11 @@ Le backend les sème en migration ; l'Administrateur peut les modifier ensuite.
 | Q9 | Les lettres et avis sont-ils signés électroniquement par la PRMP, ou imprimés et signés à la main ? | pilote |
 | Q10 | L'avis de l'organe de contrôle sur une déclaration sans suite : rendu par le Président de la Commission, ou par un circuit de dossier ? | pilote |
 | Q11 | Les seuils de contrôle a priori / a posteriori de l'art. 17 : à appliquer, et sur quel montant (évalué, TTC lu) ? | juriste |
+
+> ⚠️ **Backend, 2026-10-07 — arbitrages du pilote du même jour** : **Q1** le projet de marché est **produit par le serveur** ; **Q2** **un
+> dossier par lot** ; **Q3** après un avis défavorable, la PRMP choisit, avec un motif, entre reprise de l'évaluation et infructuosité
+> (tranche 2d) ; **Q11** **chaque marché en ligne** passe au contrôle, sans seuil (H2 retenue). **H1** retenue (remise électronique
+> seule). Q4 à Q10 restent ouvertes ; elles seront posées avec les tranches qui en dépendent.
 
 ## Ce que le front fera, et quand
 
