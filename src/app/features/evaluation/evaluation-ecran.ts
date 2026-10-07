@@ -269,7 +269,9 @@ export class EvaluationEcran implements OnInit {
   readonly lienFiche = computed(() => (['PRMP', 'UGPM'].includes(this.auth.role() ?? '') ? ['/prmp', 'dao', this.idDmc] : null));
   readonly qui = computed(() => {
     const d = this.droits();
-    if (this.espace === 'cao') return d.president ? 'président de la commission' : 'membre de la commission';
+    // Le titre suit la déclaration (qui préside), pas le droit d'arrêter, qui cesse avec l'évaluation close.
+    const preside = this.evaluation()?.declarations.some((x) => x.membre === this.moi() && x.president);
+    if (this.espace === 'cao') return preside ? 'président de la commission' : 'membre de la commission';
     return d.responsable ? 'responsable de la procédure' : this.auth.role() === 'PRMP' ? 'PRMP' : 'lecture';
   });
   /** La PRMP ou son UGPM, dans la coquille interne : elles créent le dossier de marché. */

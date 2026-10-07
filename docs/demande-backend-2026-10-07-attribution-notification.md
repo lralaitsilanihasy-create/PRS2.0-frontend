@@ -270,6 +270,9 @@ Le backend les sème en migration ; l'Administrateur peut les modifier ensuite.
 > - **D1** — **la pièce 17 « Procès-verbal d'ouverture des offres » n'est pas jointe** au dossier 100371, alors que la séance de la fiche 40
 >   est `CLOSE` et son PV signé. Pièces jointes d'office : 14 (projet), 15 (DAO complet), 18 (rapport). La 16 manque à bon droit (offre n° 4
 >   déposée sans formulaires).
+>   ⚠️ *Précision du même jour* : sur la **fiche 44**, le dossier de marché **100372** porte bien la pièce 17 (`pv-ouverture_44.pdf`). Le
+>   défaut tient donc à la fiche 40 : son PV d'ouverture est peut-être antérieur au stockage du PV signé (séance du 04/10, avant V70) ;
+>   à confirmer, et à rattraper si c'est le cas.
 > - **D2** — le projet de marché, article 4, écrit « Le délai d'exécution est celui de l'acte d'engagement : 6. » — sans unité, comme le
 >   constat C2 du rapport d'évaluation (`delaiUnite`).
 
