@@ -218,6 +218,29 @@ Le backend les sème en migration ; l'Administrateur peut les modifier ensuite.
 - La notification ouvre l'exécution : le marché prend effet à la **réception** par l'attributaire (date d'accusé de la plateforme,
   ou date déclarée).
 
+> ⚠️ **Backend, 2026-10-07 — B4.3 et les recours (Q5) livrés (tranche 2c, V81)** ; contrat : `docs/api-endpoints.md`, § *L'attribution,
+> lot 2, tranche 2c*. Tous les gestes : PRMP seule (403 pour l'UGPM), réponse = l'`AttributionDto` à jour.
+> - **Mise au point** : comme proposée ; 400 `RAPPORT_OBLIGATOIRE` ; 409 `NON_ATTRIBUE`, plus `DEJA_SIGNE` et `LOT_RETIRE`. Refaite avant
+>   la signature, elle remplace le rapport. Servie dans `lots[].miseAuPoint` = `{ rapport, le, par, fichier }` ; tout fichier de
+>   l'attribution = `{ id, nature, nom, format, taille, deposeLe }`, téléchargé par **`GET …/attribution/pieces/{id}/fichier`**.
+>   Le rapport n'est pas joint au dossier de marché (déjà examiné par la Commission) : il reste sur l'attribution.
+> - **Écart : l'enregistrement est un geste à part** (Q6 : une date **et** une pièce) : `POST …/lots/{lot}/enregistrement` multipart
+>   `dateEnregistrement`, `reference?`, `fichier` (obligatoire) ; 409 `NON_SIGNE`, `DEJA_ENREGISTRE`. `signature` ne prend donc plus
+>   `dateEnregistrement`.
+> - **Signature** : multipart `dateSignature` + `fichier` (obligatoire, 400 `FICHIER_OBLIGATOIRE`) ; 400 `DATE_INVALIDE` (date à venir) ;
+>   409 `DELAI_ATTENTE` (avant `delaiAttente.signableLe`), `RECOURS_EN_COURS`, et en plus `NON_INFORME`, `DEJA_SIGNE`, `LOT_RETIRE`, et
+>   **`PIECES_NON_CONFORMES`** — voir §B5 : la signature attend les deux pièces de l'attributaire reconnues conformes.
+> - **Notification** : `{ dateNotification, dateReception? }` ; 409 `NON_SIGNE`, `NON_ENREGISTRE`, `DEJA_NOTIFIE`. La **réception** (date
+>   d'effet) : `dateReception` déclarée par la PRMP, sinon l'**accusé de lecture** de la plateforme, posé à la première consultation par
+>   l'attributaire de son résultat ou de **`GET /api/candidat/offres/{idOffre}/marche`** (le marché signé, nouveau). Servie dans
+>   `lots[].notification` = `{ date, le, par, recueLe, receptionDeclaree }`. Notification `MARCHE_NOTIFIE` avec courriel.
+> - **Recours (Q5, après la lecture de la loi)** : `POST …/lots/{lot}/recours` multipart `type` (`REEXAMEN` | `REVISION_ARMP` | `REFERE`),
+>   `dateReception`, `requerant`, `objet`, `fichier?` ; `POST …/recours/{id}/decision` multipart `date`, `issue` (`REJETE` | `ACCUEILLI` |
+>   `AUTRE`), `motif`, `fichier?` (409 `DEJA_DECIDE`). Servis dans `lots[].recours[]` avec `suspensif`, **`finSuspension`** (réception +
+>   20 jours, révision et référé), **`echeanceReponse`** (réception + 10 jours, réexamen) et **`bloquant`** (la signature est fermée
+>   aujourd'hui). Passé `finSuspension` sans décision, le recours ne bloque plus. Un recours accueilli n'a pas d'effet automatique.
+> - Les états **`SIGNE`** et **`NOTIFIE`** s'ajoutent.
+
 ### B4.4 L'avis d'attribution (art. 53)
 
 | Méthode | URL | Accès | Corps | Statuts |
@@ -226,6 +249,18 @@ Le backend les sème en migration ; l'Administrateur peut les modifier ensuite.
 
 - **Échéance : 30 jours** après la notification ; le serveur la sert (`avisAttribution.echeance`) et alerte la PRMP à l'approche.
 - Modèle d'avis : celui de l'ARMP, s'il existe (Q7) ; sinon un modèle proposé, sur le modèle de l'avis spécifique.
+
+> ⚠️ **Backend, 2026-10-07 — B4.4 livré (tranche 2c, V81)** :
+> - `POST …/lots/{lot}/avis` `{ datePublication }` (entre la notification et aujourd'hui, 400 `DATE_INVALIDE`) ; 409 `NON_NOTIFIE`,
+>   `DEJA_PUBLIE`. Réponse : l'`AttributionDto` (état **`PUBLIE`**). L'avis se télécharge par **`GET …/lots/{lot}/avis`** (`?format=docx`),
+>   et **sans session** par `GET /api/procedures-en-ligne/{idDmc}/avis-attribution/{lot}` ; `ResultatPublic` gagne
+>   `datePublicationAvis` et `avisDisponible`.
+> - `lots[].avisAttribution` = `{ echeance, datePublication, publieLe, par, disponible }`, servi dès la notification ; `echeance` =
+>   notification + 30 jours. Une publication tardive est acceptée et journalisée. **L'alerte à l'approche** (J-5) vient avec les
+>   notifications de la tranche 2d.
+> - **Modèle provisoire** (Q7) signé électroniquement par la PRMP : autorité contractante, référence et objet, nombre d'offres ouvertes,
+>   attributaire et NIF, montant HT (et TTC lu), délai, dates de signature, d'enregistrement et de notification. Les mentions de l'arrêté
+>   du Ministre des Finances restent à reprendre avec le modèle officiel.
 
 ## B5 — Les pièces fiscales et sociales de l'attributaire (art. 20-I)
 
@@ -239,6 +274,26 @@ Le backend les sème en migration ; l'Administrateur peut les modifier ensuite.
   serveur), à produire **dans les 15 jours** suivant la notification de l'attribution.
 - À défaut : la PRMP **retire** le marché ; Q8 : la réattribution reprend-elle la post-qualification au candidat suivant (lot 1, étape 5
   rouverte), avec un nouveau dossier de marché ?
+
+> ⚠️ **Backend, 2026-10-07 — B5 livré (tranche 2c, V81)**, avec ces précisions et un ajout :
+> - **Point de départ des 15 jours** : la « notification de l'attribution » est lue comme la **lettre d'attribution**, c'est-à-dire
+>   l'information des candidats (§B4.1), et non la notification du marché (§B4.3). Le retrait, prévu « en vue d'une réattribution », ne
+>   se conçoit qu'avant la signature. L'échéance est `piecesAttributaire.echeance` = information + 15 jours ; les âges (fiscale < 6 mois,
+>   sociale < 3 mois) se comptent à la même date. *À confirmer par le juriste.*
+> - **Ajout : la signature attend les deux pièces reconnues conformes** (409 `PIECES_NON_CONFORMES`). Sans ce verrou, la PRMP pourrait
+>   signer au 11e jour un marché qu'elle devrait retirer au 16e.
+> - **Dépôt** : multipart `type`, `dateDelivrance`, `fichier` → **201** avec `PiecesAttributaire` ; 400 `TYPE_INVALIDE`,
+>   `DATE_DELIVRANCE_OBLIGATOIRE`, **`PIECE_PERIMEE`**, `FICHIER_OBLIGATOIRE`, `FORMAT_INVALIDE` ; 409 `NON_ATTRIBUTAIRE`, `DELAI_DEPASSE`,
+>   et en plus `DEJA_SIGNE`, `LOT_RETIRE`. L'attributaire peut redéposer jusqu'à l'échéance : la dernière pièce de chaque type fait foi.
+>   En plus : `GET /api/candidat/offres/{idOffre}/pieces-attributaire` et `GET …/pieces-attributaire/{id}/fichier`.
+> - **Vérification** : `{ conforme, motif? }` ; 400 `CONFORME_OBLIGATOIRE`, `MOTIF_OBLIGATOIRE` (non conforme sans motif) ; 409
+>   `DEJA_VERIFIEE`. Notification `PIECE_ATTRIBUTAIRE_VERIFIEE` à l'attributaire ; `PIECES_ATTRIBUTAIRE_DEPOSEES` à la PRMP au dépôt.
+> - **Retrait** : `{ motif }` ; 409 `DELAI_EN_COURS` (jusqu'à l'échéance incluse), et en plus `PIECES_CONFORMES`, `DEJA_SIGNE`,
+>   `LOT_RETIRE`, `NON_INFORME` ; état **`RETIRE`**, `lots[].retrait` = `{ le, par, motif }`, notification `MARCHE_RETIRE`. La
+>   **réattribution (Q8)** vient en tranche 2d, avec un **nouveau dossier `DDM`** pour le nouvel attributaire (proposition retenue).
+> - Servies dans `lots[].piecesAttributaire` = `{ echeance, delaiDepasse, fiscaleConforme, socialeConforme, pieces[{ id, type,
+>   dateDelivrance, nom, taille, deposeLe, conforme, motif, verifieeLe }] }`, dès l'information. Côté candidat, `Resultat` gagne
+>   `dateSignature`, `dateNotification`, `notificationRecueLe`, `marcheDisponible`, `piecesAttributaire` (attributaire seul) et `retire`.
 
 ## B6 — Procédure infructueuse (art. 56) et déclaration sans suite (art. 55)
 
