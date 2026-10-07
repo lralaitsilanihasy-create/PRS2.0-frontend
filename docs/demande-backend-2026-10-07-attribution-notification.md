@@ -310,3 +310,38 @@ Le backend les sème en migration ; l'Administrateur peut les modifier ensuite.
 >     affiché et notifié à tous les candidats ;
 >   - une **signature paramétrable** (Président seul, délégation, ou examen collégial), pour suivre la règle interne de la Commission ;
 >     *à vérifier* : le décret d'organisation de la CNM/CRM.
+
+> ⚠️ **Front, 2026-10-07 — vérification sur le texte de la loi n° 2016-055** (version CNLEGIS, 60 pages, fournie par le pilote). Elle
+> **corrige** trois points ci-dessus et en soulève un quatrième :
+>
+> 1. **Le point de départ du délai de 10 jours francs (B4.1)** — art. 78 : la signature ne peut intervenir avant dix jours francs
+>    décomptés à partir de **la plus tardive** de deux dates : l'information des candidats du rejet de leur offre, et l'**affichage du
+>    résultat** au siège de l'autorité contractante. Le serveur compte donc depuis `max(dateInformation, dateAffichage)`, pas depuis
+>    l'information seule. L'information se fait « par lettre recommandée avec accusé de réception ou par tout autre moyen permettant
+>    d'établir avec certitude la preuve de la réception » (art. 52-I) : l'accusé de lecture de la plateforme doit être gardé.
+> 2. **Les recours (Q5)** — le titre VIII en distingue trois, aux effets différents :
+>    - **demande de réexamen** auprès de la PRMP (recours gracieux, art. 79) : la PRMP répond **sous 10 jours** ; **non suspensif** ;
+>    - **demande en révision** auprès de l'ARMP (art. 80) : le Directeur général enjoint de **suspendre la procédure** jusqu'à la décision,
+>      **pour 20 jours au plus** ; décision sous **10 jours ouvrables** ;
+>    - **référé précontractuel** devant la juridiction administrative (art. 78) : le juge peut faire **différer la signature**, **20 jours
+>      au plus**.
+>    Le contrat proposé devient : `recours.type` ∈ `REEXAMEN` | `REVISION_ARMP` | `REFERE` ; la signature est refusée (409
+>    `RECOURS_EN_COURS`) pour une révision ou un référé, jusqu'à la décision ou au terme des 20 jours de suspension ; un réexamen ne
+>    bloque pas, mais son échéance de réponse (10 jours) est suivie et alertée.
+> 3. **L'infructuosité (Q3, Q8, B6)** — art. 56 : elle se déclare « après **avis conforme de la Commission d'appel d'offres** » (le rapport
+>    signé le porte), dans des cas limités (aucune offre ; toutes inacceptables, inappropriées ou non conformes ; une seule offre en appel
+>    d'offres restreint ; cas propres aux prestations intellectuelles, art. 56-II), et **« ne doit en aucun cas intervenir après la décision
+>    d'attribution »** (art. 56-VI). **Conséquence pour Q8** : après un retrait faute de pièces fiscales et sociales, si aucun candidat
+>    suivant n'est éligible, l'infructuosité **n'est pas possible** (l'attribution a eu lieu) ; la sortie reste à trancher par le juriste
+>    (nouvelle procédure ? sans suite, possible tant que le marché n'est pas signé, art. 55-II ?). Le backend ne doit pas proposer
+>    l'infructuosité dans ce cas.
+> 4. **Pour le juriste (lot 1)** — l'art. 46 confie l'établissement de la conformité et la rectification des erreurs de calcul à la
+>    **PRMP**, et l'art. 48 lui confie le **rejet** d'une offre anormale ; l'art. 47-II confie le **montant évalué** à la **CAO**. Le lot 1 fait
+>    décider la CAO à chaque étape (arbitrage du pilote, Q1). À confirmer : la décision de la CAO vaut-elle proposition à la PRMP, qui
+>    l'entérinerait, ou la pratique (art. 12, CAO) suffit-elle ?
+>
+> Confirmés tels que consignés : art. 20-I (pièces datées à la notification de l'attribution, 15 jours, retrait en vue d'une
+> réattribution), art. 52-II (explications écrites), art. 53 (avis d'attribution sous 30 jours ; ses mentions sont fixées par **arrêté du
+> Ministre des Finances**, à reprendre dans le modèle), art. 54 (enregistrement préalable ; notification par tout moyen donnant date
+> certaine, effet à la réception), art. 55 (organe de contrôle, 5 jours, jamais après la signature), art. 49 (préférence plafonnée à
+> 15 % ou 10 %, seulement si le DAO la prévoit).
