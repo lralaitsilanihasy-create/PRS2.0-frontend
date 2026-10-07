@@ -7,6 +7,7 @@ import { ouvrirBlobSur, telechargerBlob } from '../../core/securite/fichiers-sur
 import { Attribution, LotAttribution } from '../../models';
 import { AttributionService } from '../../services';
 import { dateHeureFr } from '../candidat/libelles-candidat';
+import { AttributionLot } from './attribution-lot';
 import { ariary } from './libelles-evaluation';
 
 const LIBELLES_ETAT: Readonly<Record<string, string>> = {
@@ -26,7 +27,7 @@ const LIBELLES_AVIS: Readonly<Record<string, string>> = { FAV: 'Favorable', FAVR
 @Component({
   selector: 'app-attribution-lots',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, AttributionLot],
   template: `
     @if (attribution(); as a) {
       <section class="card at" aria-labelledby="at-titre">
@@ -62,6 +63,8 @@ const LIBELLES_AVIS: Readonly<Record<string, string>> = { FAV: 'Favorable', FAVR
                 <button type="button" class="btn btn-ghost btn-sm" [disabled]="travail() === l.lot" (click)="projet(l, 'docx')">Enregistrer en Word</button>
               }
             </div>
+            <!-- ⚠️ Tranches 2b et 2c — de l'avis de la Commission à l'avis d'attribution. -->
+            @if (l.dossierMarche?.avis || l.attributaire) { <app-attribution-lot [idDmc]="idDmc()" [lot]="l" [prmp]="prmp()" (maj)="maj($event)" /> }
             @if (peutCreer(l)) {
               <p class="text-sm text-muted at__aide">Le serveur y joint d'office le projet de marché (qu'il produit), le cahier des charges (DAO complet), le devis rempli de l'offre, le PV d'ouverture et le rapport d'évaluation ; vous soumettez ensuite le dossier à la Commission depuis sa page.</p>
             }
@@ -85,6 +88,8 @@ export class AttributionLots implements OnInit {
   readonly idDmc = input.required<number>();
   /** La PRMP ou son UGPM : elles créent le dossier de marché et en ouvrent la page. */
   readonly prmpOuUgpm = input(false);
+  /** La PRMP seule : attribuer, informer, signer, notifier… (tranches 2b, 2c). */
+  readonly prmp = input(false);
 
   private readonly service = inject(AttributionService);
   private readonly toast = inject(ToastService);
@@ -111,6 +116,12 @@ export class AttributionLots implements OnInit {
   libelleEtat(l: LotAttribution): string {
     if (l.etat === 'PROPOSE' && l.proposition?.infructueux) return 'Infructuosité proposée — décision de la PRMP à venir';
     return this.etats[l.etat] ?? l.etat;
+  }
+
+  /** Un geste rend l'attribution à jour ; une réponse à une explication ne la rend pas : on la relit. */
+  maj(a: Attribution | null): void {
+    if (a) this.attribution.set(a);
+    else this.charger();
   }
 
   peutCreer(l: LotAttribution): boolean {

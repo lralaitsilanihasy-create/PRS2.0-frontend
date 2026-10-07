@@ -189,7 +189,7 @@ import { RapportEvaluationVue } from './rapport-evaluation';
       <app-rapport-evaluation [idDmc]="idDmc" [evaluation]="ev" [droits]="droits()" [moi]="moi()" (maj)="appliquer($event)" />
 
       <!-- ⚠️ Lot 2, tranche 2a (V79) — après le rapport signé : le dossier de marché de chaque lot, au contrôle de la Commission. -->
-      @if (ev.etat === 'CLOSE') { <app-attribution-lots [idDmc]="idDmc" [prmpOuUgpm]="prmpOuUgpm()" /> }
+      @if (ev.etat === 'CLOSE') { <app-attribution-lots [idDmc]="idDmc" [prmpOuUgpm]="prmpOuUgpm()" [prmp]="espace === 'interne' && role() === 'PRMP'" /> }
 
       @if (journalOuvert()) {
         <details class="card ev__bloc" (toggle)="lireJournal($any($event.target).open)">
@@ -275,6 +275,7 @@ export class EvaluationEcran implements OnInit {
     return d.responsable ? 'responsable de la procédure' : this.auth.role() === 'PRMP' ? 'PRMP' : 'lecture';
   });
   /** La PRMP ou son UGPM, dans la coquille interne : elles créent le dossier de marché. */
+  readonly role = computed(() => this.auth.role());
   readonly prmpOuUgpm = computed(() => this.espace === 'interne' && ['PRMP', 'UGPM'].includes(this.auth.role() ?? ''));
   /** Le journal : CAO, responsable, PRMP — pas l'UGPM (403). */
   readonly journalOuvert = computed(() => this.espace === 'cao' || this.auth.role() !== 'UGPM');

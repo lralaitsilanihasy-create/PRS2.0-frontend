@@ -6,6 +6,10 @@ import { environment } from '../../environments/environment';
 import { skipErrorToast } from '../core/errors/api-error';
 import {
   Attribution,
+  Explication,
+  PiecesAttributaire,
+  ResultatOffre,
+  ResultatPublic,
   CodeVerification,
   DecisionCritere,
   DemandeEvaluation,
@@ -198,6 +202,7 @@ export class CandidatDemandesService {
 export class AttributionService {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiUrl}/fiches-marche`;
+  private readonly ctx = { context: skipErrorToast() };
 
   lire(idDmc: number): Observable<Attribution> {
     return this.http.get<Attribution>(`${this.base}/${idDmc}/attribution`, { context: skipErrorToast() });
@@ -210,7 +215,162 @@ export class AttributionService {
 
   /** Le projet de marché, PDF (ou Word) — 404 tant qu'il n'est pas produit. */
   projet(idDmc: number, lot: number, format: 'pdf' | 'docx' = 'pdf'): Observable<Blob> {
+    return this.blob(`${this.lotUrl(idDmc, lot)}/projet`, format);
+  }
+
+  // ── Tranche 2b (V80) : attribuer, informer, explications. Tous les gestes : PRMP de la fiche seule. ──
+
+  /** 409 `AVIS_NON_RENDU`, `AVIS_DEFAVORABLE`, `OFFRE_NON_PROPOSEE`, `LOT_INFRUCTUEUX`, `DEJA_ATTRIBUE` (Q4 : l'offre proposée seule). */
+  attribuer(idDmc: number, lot: number, motif: string | null): Observable<Attribution> {
+    return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/attribuer`, { motif }, this.ctx);
+  }
+
+  /** Lettres produites et signées, délai de dix jours francs ; 400 `DATE_AFFICHAGE_OBLIGATOIRE` / `_INVALIDE`, 409 `DEJA_INFORME`. */
+  informer(idDmc: number, lot: number, dateAffichage: string): Observable<Attribution> {
+    return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/informer`, { dateAffichage }, this.ctx);
+  }
+
+  lettre(idDmc: number, lot: number, idOffre: string, format: 'pdf' | 'docx' = 'pdf'): Observable<Blob> {
+    return this.blob(`${this.lotUrl(idDmc, lot)}/lettres/${idOffre}`, format);
+  }
+
+  /** 409 `DEJA_REPONDU` ; fichier PDF, JPEG ou PNG facultatif. */
+  repondreExplication(idDmc: number, id: number, texte: string, fichier: File | null): Observable<unknown> {
+    return this.http.post(`${this.base}/${idDmc}/attribution/explications/${id}/reponse`, this.formulaire({ texte }, fichier), this.ctx);
+  }
+
+  fichierExplication(idDmc: number, id: number): Observable<Blob> {
+    return this.blob(`${this.base}/${idDmc}/attribution/explications/${id}/fichier`);
+  }
+
+  // ── Tranche 2c (V81) : mise au point, recours, pièces de l'attributaire, signature, enregistrement, notification, avis. ──
+
+  miseAuPoint(idDmc: number, lot: number, rapport: string, fichier: File | null): Observable<Attribution> {
+    return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/mise-au-point`, this.formulaire({ rapport }, fichier), this.ctx);
+  }
+
+  /** `REEXAMEN` n'arrête rien (réponse sous 10 jours) ; `REVISION_ARMP` et `REFERE` suspendent la signature, 20 jours au plus. */
+  declarerRecours(idDmc: number, lot: number, r: { type: string; dateReception: string; requerant: string; objet: string }, fichier: File | null): Observable<Attribution> {
+    return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/recours`, this.formulaire(r, fichier), this.ctx);
+  }
+
+  deciderRecours(idDmc: number, lot: number, id: number, d: { date: string; issue: string; motif: string }, fichier: File | null): Observable<Attribution> {
+    return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/recours/${id}/decision`, this.formulaire(d, fichier), this.ctx);
+  }
+
+  verifierPiece(idDmc: number, lot: number, id: number, conforme: boolean, motif: string | null): Observable<Attribution> {
+    return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/pieces/${id}/verifier`, { conforme, motif }, this.ctx);
+  }
+
+  /** Art. 20-I : après l'échéance des pièces, si elles ne sont pas toutes deux conformes ; 409 `DELAI_EN_COURS`, `PIECES_CONFORMES`. */
+  retirer(idDmc: number, lot: number, motif: string): Observable<Attribution> {
+    return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/retirer`, { motif }, this.ctx);
+  }
+
+  /** 409 `DELAI_ATTENTE`, `RECOURS_EN_COURS`, `PIECES_NON_CONFORMES`. */
+  signer(idDmc: number, lot: number, dateSignature: string, fichier: File): Observable<Attribution> {
+    return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/signature`, this.formulaire({ dateSignature }, fichier), this.ctx);
+  }
+
+  enregistrer(idDmc: number, lot: number, dateEnregistrement: string, reference: string | null, fichier: File): Observable<Attribution> {
+    return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/enregistrement`, this.formulaire({ dateEnregistrement, reference: reference ?? '' }, fichier), this.ctx);
+  }
+
+  /** 409 `NON_ENREGISTRE` : aucune notification sans enregistrement (art. 54). */
+  notifier(idDmc: number, lot: number, dateNotification: string, dateReception: string | null): Observable<Attribution> {
+    return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/notification`, { dateNotification, dateReception }, this.ctx);
+  }
+
+  publierAvis(idDmc: number, lot: number, datePublication: string): Observable<Attribution> {
+    return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/avis`, { datePublication }, this.ctx);
+  }
+
+  avis(idDmc: number, lot: number, format: 'pdf' | 'docx' = 'pdf'): Observable<Blob> {
+    return this.blob(`${this.lotUrl(idDmc, lot)}/avis`, format);
+  }
+
+  fichier(idDmc: number, id: number): Observable<Blob> {
+    return this.blob(`${this.base}/${idDmc}/attribution/pieces/${id}/fichier`);
+  }
+
+  private lotUrl(idDmc: number, lot: number): string {
+    return `${this.base}/${idDmc}/attribution/lots/${lot}`;
+  }
+
+  private blob(url: string, format: 'pdf' | 'docx' = 'pdf'): Observable<Blob> {
     const params = format === 'docx' ? new HttpParams().set('format', 'docx') : new HttpParams();
-    return this.http.get(`${this.base}/${idDmc}/attribution/lots/${lot}/projet`, { params, responseType: 'blob', context: skipErrorToast() });
+    return this.http.get(url, { params, responseType: 'blob', context: skipErrorToast() });
+  }
+
+  private formulaire(champs: Record<string, string>, fichier: File | null): FormData {
+    const fd = new FormData();
+    for (const [k, v] of Object.entries(champs)) if (v != null && v !== '') fd.append(k, v);
+    if (fichier) fd.append('fichier', fichier, fichier.name);
+    return fd;
+  }
+}
+
+/** Côté candidat (tranches 2b, 2c) : son résultat, sa lettre, ses explications ; attributaire : ses pièces et le marché signé. */
+@Injectable({ providedIn: 'root' })
+export class CandidatResultatService {
+  private readonly http = inject(HttpClient);
+  private readonly base = `${environment.apiUrl}/candidat/offres`;
+  private readonly ctx = { context: skipErrorToast() };
+
+  /** 404 avant l'information des candidats. */
+  resultat(idOffre: string): Observable<ResultatOffre> {
+    return this.http.get<ResultatOffre>(`${this.base}/${idOffre}/resultat`, this.ctx);
+  }
+
+  /** La lire vaut accusé de lecture. */
+  lettre(idOffre: string, format: 'pdf' | 'docx' = 'pdf'): Observable<Blob> {
+    const params = format === 'docx' ? new HttpParams().set('format', 'docx') : new HttpParams();
+    return this.http.get(`${this.base}/${idOffre}/resultat/lettre`, { params, responseType: 'blob', context: skipErrorToast() });
+  }
+
+  explications(idOffre: string): Observable<Explication[]> {
+    return this.http.get<Explication[]>(`${this.base}/${idOffre}/explications`, this.ctx);
+  }
+
+  /** Candidat non retenu, une fois informé : 409 `NON_INFORME`, `OFFRE_RETENUE`. */
+  demanderExplication(idOffre: string, question: string): Observable<Explication> {
+    return this.http.post<Explication>(`${this.base}/${idOffre}/explication`, { question }, this.ctx);
+  }
+
+  fichierExplication(idOffre: string, id: number): Observable<Blob> {
+    return this.http.get(`${this.base}/${idOffre}/explications/${id}/fichier`, { responseType: 'blob', context: skipErrorToast() });
+  }
+
+  /** Attributaire : 400 `PIECE_PERIMEE`, `FORMAT_INVALIDE` ; 409 `DELAI_DEPASSE`, `DEJA_SIGNE`, `LOT_RETIRE`. */
+  deposerPiece(idOffre: string, type: 'FISCALE' | 'SOCIALE', dateDelivrance: string, fichier: File): Observable<PiecesAttributaire> {
+    const fd = new FormData();
+    fd.append('type', type);
+    fd.append('dateDelivrance', dateDelivrance);
+    fd.append('fichier', fichier, fichier.name);
+    return this.http.post<PiecesAttributaire>(`${this.base}/${idOffre}/pieces-attributaire`, fd, this.ctx);
+  }
+
+  pieceFichier(idOffre: string, id: number): Observable<Blob> {
+    return this.http.get(`${this.base}/${idOffre}/pieces-attributaire/${id}/fichier`, { responseType: 'blob', context: skipErrorToast() });
+  }
+
+  /** Le marché signé : le lire après la notification vaut réception (date d'effet, art. 54). */
+  marche(idOffre: string): Observable<Blob> {
+    return this.http.get(`${this.base}/${idOffre}/marche`, { responseType: 'blob', context: skipErrorToast() });
+  }
+}
+
+/** Public, sans session : les résultats d'une procédure en ligne et ses avis d'attribution. */
+@Injectable({ providedIn: 'root' })
+export class ResultatsPublicsService {
+  private readonly http = inject(HttpClient);
+  private readonly base = `${environment.apiUrl}/procedures-en-ligne`;
+
+  resultats(idDmc: number): Observable<ResultatPublic[]> {
+    return this.http.get<ResultatPublic[]>(`${this.base}/${idDmc}/resultats`, { context: skipErrorToast() });
+  }
+
+  avis(idDmc: number, lot: number | null): Observable<Blob> {
+    return this.http.get(`${this.base}/${idDmc}/avis-attribution/${lot ?? 1}`, { responseType: 'blob', context: skipErrorToast() });
   }
 }

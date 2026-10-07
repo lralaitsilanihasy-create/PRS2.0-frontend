@@ -304,7 +304,9 @@ export interface MontantRequest {
 // ── Attribution, lot 2 (tranche 2a, V79) ─────────────────────────────────────────────────────────────────────────────
 
 /** États d'un lot après l'évaluation (tranche 2a ; les suivants viennent avec leurs gestes). */
-export type EtatAttribution = 'EN_EVALUATION' | 'PROPOSE' | 'AU_CONTROLE' | 'AVIS_RENDU' | (string & {});
+export type EtatAttribution =
+  | 'EN_EVALUATION' | 'PROPOSE' | 'AU_CONTROLE' | 'AVIS_RENDU' | 'ATTRIBUE' | 'INFORME' | 'SIGNABLE' | 'SIGNE' | 'NOTIFIE' | 'PUBLIE' | 'RETIRE'
+  | (string & {});
 
 /** Le dossier de marché (famille `DDM`) d'un lot, au contrôle de la Commission. */
 export interface DossierMarche {
@@ -325,6 +327,162 @@ export interface LotAttribution {
   dossierMarche: DossierMarche | null;
   /** Le projet de marché produit par le serveur (avec le dossier) se télécharge. */
   projetDisponible: boolean;
+  // ⚠️ Tranches 2b et 2c (V80, V81) — nuls, ou listes vides, avant leur geste.
+  attributaire?: Attributaire | null;
+  information?: InformationCandidats | null;
+  delaiAttente?: DelaiAttente | null;
+  explications?: Explication[];
+  miseAuPoint?: { rapport: string; le: string; par: string | null; fichier: FichierAttribution | null } | null;
+  recours?: Recours[];
+  signature?: { dateSignature: string; le: string; par: string | null; fichier: FichierAttribution | null } | null;
+  enregistrement?: { date: string; reference: string | null; le: string; fichier: FichierAttribution | null } | null;
+  notification?: { date: string; le: string; par: string | null; recueLe: string | null; receptionDeclaree: boolean } | null;
+  avisAttribution?: { echeance: string; datePublication: string | null; publieLe: string | null; par: string | null; disponible: boolean } | null;
+  piecesAttributaire?: PiecesAttributaire | null;
+  retrait?: { le: string; par: string | null; motif: string } | null;
+}
+
+/** L'offre attribuée : montant hors taxes et délai (avec son unité) figés au choix de la PRMP. */
+export interface Attributaire {
+  idOffre: string;
+  numero: number | null;
+  candidat: string;
+  nif: string | null;
+  montant: number | null;
+  montantTtc: number | null;
+  delai: string | null;
+  motif: string | null;
+  le: string;
+  par: string | null;
+}
+
+export interface LettreCandidat {
+  id: number;
+  idOffre: string;
+  numero: number | null;
+  candidat: string;
+  type: 'ATTRIBUTION' | 'NON_RETENU';
+  motif: string | null;
+  /** Envoi du courriel (nul sans adresse). */
+  envoyeeLe: string | null;
+  /** Accusé de lecture de la plateforme. */
+  lueLe: string | null;
+}
+
+export interface InformationCandidats {
+  le: string;
+  par: string | null;
+  signataire: string | null;
+  dateAffichage: string;
+  lettres: LettreCandidat[];
+}
+
+/** Dix jours francs depuis la plus tardive de l'information et de l'affichage (art. 52, 78). */
+export interface DelaiAttente {
+  debut: string;
+  fin: string;
+  /** Premier jour où la signature est possible. */
+  signableLe: string;
+  jours: number;
+  ecoule: boolean;
+}
+
+export interface Explication {
+  id: number;
+  idOffre: string;
+  numero: number | null;
+  candidat: string | null;
+  question: string;
+  demandeeLe: string;
+  etat: 'EN_ATTENTE' | 'REPONDUE';
+  reponse: string | null;
+  reponseNom: string | null;
+  reponseTaille: number | null;
+  reponduLe: string | null;
+}
+
+export interface FichierAttribution {
+  id: number;
+  nature: string | null;
+  nom: string;
+  format: string | null;
+  taille: number | null;
+  deposeLe: string | null;
+}
+
+export type TypeRecours = 'REEXAMEN' | 'REVISION_ARMP' | 'REFERE';
+
+export interface Recours {
+  id: number;
+  type: TypeRecours;
+  dateReception: string;
+  requerant: string;
+  objet: string;
+  declareLe: string;
+  declarePar: string | null;
+  fichiers: FichierAttribution[];
+  suspensif: boolean;
+  finSuspension: string | null;
+  echeanceReponse: string | null;
+  /** La signature est-elle fermée aujourd'hui par ce recours ? */
+  bloquant: boolean;
+  decision: { date: string; issue: 'REJETE' | 'ACCUEILLI' | 'AUTRE'; motif: string; le: string; par: string | null; fichiers: FichierAttribution[] } | null;
+}
+
+export interface PieceAttributaire {
+  id: number;
+  type: 'FISCALE' | 'SOCIALE';
+  dateDelivrance: string;
+  nom: string;
+  taille: number | null;
+  deposeLe: string;
+  conforme: boolean | null;
+  motif: string | null;
+  verifieeLe: string | null;
+}
+
+/** Art. 20-I : fiscale de moins de six mois, sociale de moins de trois mois, sous 15 jours de la lettre d'attribution. */
+export interface PiecesAttributaire {
+  echeance: string;
+  delaiDepasse: boolean;
+  fiscaleConforme: boolean | null;
+  socialeConforme: boolean | null;
+  pieces: PieceAttributaire[];
+}
+
+/** `GET /api/candidat/offres/{idOffre}/resultat` — 404 avant l'information des candidats. */
+export interface ResultatOffre {
+  idOffre: string;
+  numero: number | null;
+  lot: number | null;
+  retenu: boolean;
+  motifRejet: string | null;
+  attributaire: string | null;
+  montant: number | null;
+  montantTtc: number | null;
+  delai: string | null;
+  lettreDisponible: boolean;
+  dateInformation: string | null;
+  dateAffichage: string | null;
+  finDelai: string | null;
+  signableLe: string | null;
+  dateSignature?: string | null;
+  dateNotification?: string | null;
+  notificationRecueLe?: string | null;
+  marcheDisponible?: boolean;
+  piecesAttributaire?: PiecesAttributaire | null;
+  retire?: boolean;
+}
+
+/** `GET /api/procedures-en-ligne/{idDmc}/resultats` (public). */
+export interface ResultatPublic {
+  lot: number | null;
+  attributaire: string | null;
+  montant: number | null;
+  dateInformation: string | null;
+  dateAffichage: string | null;
+  datePublicationAvis?: string | null;
+  avisDisponible?: boolean;
 }
 
 /** `GET /api/fiches-marche/{idDmc}/attribution` — 404 tant que l'évaluation n'est pas ouverte. */

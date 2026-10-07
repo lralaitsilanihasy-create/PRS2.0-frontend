@@ -453,3 +453,20 @@ Le backend les sème en migration ; l'Administrateur peut les modifier ensuite.
 > Ministre des Finances**, à reprendre dans le modèle), art. 54 (enregistrement préalable ; notification par tout moyen donnant date
 > certaine, effet à la réception), art. 55 (organe de contrôle, 5 jours, jamais après la signature), art. 49 (préférence plafonnée à
 > 15 % ou 10 %, seulement si le DAO la prévoit).
+
+> ✅ **Front, 2026-10-07 — tranches 2b et 2c livrées.** Côté PRMP, sous chaque lot de la section « Attribution »
+> (`features/evaluation/attribution-lot.ts`), le suivi de bout en bout, chaque geste à son tour : attribuer à l'offre proposée ; informer
+> (date d'affichage, lettres PDF/Word avec envoi et accusé de lecture, délai d'attente et `signableLe`) ; répondre aux explications ;
+> recours (déclaration typée, suspension et `finSuspension`, échéance du réexamen, décision) ; pièces de l'attributaire (vérification,
+> retrait) ; mise au point ; signature ; enregistrement ; notification (réception déclarée ou accusé de lecture) ; avis d'attribution. Les
+> refus sont nommés (codes du contrat). L'UGPM, le responsable et la commission lisent sans geste. Côté candidat, « Mes offres »
+> (`features/candidat/resultat-offre.ts`) : résultat, motif, lettre, demande d'explication ; attributaire : dépôt des pièces fiscale et
+> sociale, leur vérification, le marché signé (le lire vaut réception). Page publique : le résultat par lot et l'avis d'attribution publié.
+>
+> ✅ **Recette du 2026-10-07 (fiche 44)** : dossier de marché 100372 passé au circuit (pièce 16 jointe par la PRMP, grille DDM de 9 points,
+> avis **FAV**, PV 57 signé) → attribué à l'offre n° 4 (166 000 000 HT, 3 mois) → candidats informés (deux lettres envoyées et lues ;
+> signature possible le 18/10) → explication du candidat écarté, réponse écrite → pièces fiscale et sociale déposées et reconnues
+> conformes → recours en révision ARMP déclaré (suspensif jusqu'au 27/10) → **signature refusée** (`DELAI_ATTENTE`, nommé) → mise au point
+> enregistrée → résultat public affiché. Non recettés faute de délai écoulé : signature, enregistrement, notification, avis, retrait.
+> Incident : un « Informer » lancé à l'écran pendant une recompilation du serveur de développement a échoué (statut 0) ; rejoué par
+> l'API (5 s, conforme). Aucun constat pour le backend.

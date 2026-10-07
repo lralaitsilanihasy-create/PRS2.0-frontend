@@ -9,6 +9,7 @@ import { DocumentProcedureEnLigne, ProcedureEnLigne, RecuDao } from '../../model
 import { ProceduresEnLigneService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { FraisDossier } from './frais-dossier';
+import { ResultatsPublics } from './resultats-publics';
 import { LIBELLES_CATEGORIES } from '../prmp/fiche-marche/fiche-marche-modele';
 import { LIBELLES_ETAT_PROCEDURE, dateHeureFr, tailleLisible } from './libelles-candidat';
 
@@ -21,7 +22,7 @@ import { LIBELLES_ETAT_PROCEDURE, dateHeureFr, tailleLisible } from './libelles-
 @Component({
   selector: 'app-procedure-en-ligne-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur, FraisDossier],
+  imports: [RouterLink, EtatErreur, FraisDossier, ResultatsPublics],
   template: `
     <nav class="ped__ariane" aria-label="Fil d'Ariane">
       <a routerLink="/candidat/procedures">Procédures ouvertes</a>
@@ -108,6 +109,8 @@ import { LIBELLES_ETAT_PROCEDURE, dateHeureFr, tailleLisible } from './libelles-
               <p><button type="button" class="btn btn-secondary btn-sm" [disabled]="pvEnCours()" (click)="lirePv(p.idDmc)">{{ pvEnCours() ? 'Ouverture…' : 'Lire le PV d’ouverture (PDF)' }}</button></p>
             }
           </section>
+          <!-- ⚠️ 07/10 (attribution) — le résultat par lot, puis l'avis d'attribution publié (art. 53). -->
+          <div class="ped__bloc--large"><app-resultats-publics [idDmc]="p.idDmc" /></div>
         }
 
         @if (p.retraitPayant) {

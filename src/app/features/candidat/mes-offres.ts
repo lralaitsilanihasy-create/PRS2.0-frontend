@@ -9,6 +9,7 @@ import { EtatOffre, Offre } from '../../models';
 import { OffresCandidatService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DemandesOffre } from './demandes-offre';
+import { ResultatOffreCandidat } from './resultat-offre';
 import { dateHeureFr, tailleLisible } from './libelles-candidat';
 
 const LIBELLES_ETAT: Readonly<Record<EtatOffre, string>> = {
@@ -28,7 +29,7 @@ const LIBELLES_ETAT: Readonly<Record<EtatOffre, string>> = {
 @Component({
   selector: 'app-mes-offres',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur, DemandesOffre],
+  imports: [RouterLink, EtatErreur, DemandesOffre, ResultatOffreCandidat],
   template: `
     <header class="page-header">
       <div class="page-subtitle">Espace candidat</div>
@@ -76,7 +77,11 @@ const LIBELLES_ETAT: Readonly<Record<EtatOffre, string>> = {
               </div>
             }
             <!-- ⚠️ 07/10 — pendant l'évaluation, les demandes de la commission sur cette offre, et la réponse du candidat. -->
-            @if (o.etat === 'DEPOSEE') { <app-demandes-offre [idOffre]="o.idOffre" /> }
+            @if (o.etat === 'DEPOSEE') {
+              <app-demandes-offre [idOffre]="o.idOffre" />
+              <!-- ⚠️ 07/10 (attribution, tranches 2b, 2c) — le résultat, la lettre, les explications ; attributaire : pièces et marché. -->
+              <app-resultat-offre [idOffre]="o.idOffre" />
+            }
           </li>
         }
       </ul>
