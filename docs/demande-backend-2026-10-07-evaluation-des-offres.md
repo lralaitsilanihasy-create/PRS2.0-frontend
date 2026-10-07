@@ -85,7 +85,7 @@ offre, presque tout ce que l'évaluation consomme — mais **aucune décision** 
 >   `ETAPE_NON_ARRETEE` (rouvrir une étape ouverte), `EVALUATION_CLOSE` ; `ETAPE_INCOMPLETE` porte `details.offres` (les **numéros**
 >   des offres sans décision). Rouvrir : 400 `MOTIF_OBLIGATOIRE`.
 > - **Étapes 3 à 5 : 409 `ETAPE_NON_DISPONIBLE`** jusqu'aux tranches suivantes (1b corrections et classement, 1c anormales et
->   post-qualification, 1d rapport).
+>   post-qualification, 1d rapport). ⚠️ Depuis la tranche 1b (même jour) : seules les étapes 4 et 5 répondent ainsi.
 > - `EvaluationDto` porte en plus `idDmc`, `ouverteLe`, `ouvertePar`, `nonEvaluees[{numero, entreprise, etat, motif}]` (H3) ;
 >   `declarations[]` liste **chaque membre de la CAO** (`membre`, `nom`, `president`, `signeeLe` nul s'il n'a pas signé, `conflit`,
 >   `precision`) ; `etapesArretees[]` porte aussi `nom` et `observation`. Une procédure **non allotie a un lot 1**.
@@ -178,6 +178,34 @@ type ?). Variantes : évaluées seulement si `variantes = OUI`, selon `B02-VA-01
 | GET | `/api/fiches-marche/{idDmc}/evaluation/offres/{idOffre}/corrections-proposees` | CAO, PRMP, UGPM | `[{ligne, libelle, avant, apres, regle}]` | 409 `OFFRE_ECARTEE` |
 | PUT | `/api/fiches-marche/{idDmc}/evaluation/offres/{idOffre}/montant` | membre de la CAO | `{ corrections[{…, retenue}], refusCandidat?, rabais{montant, lecture}, preference{eligible, motif}, criteres[{libelle, montant, justification}] }` → `OffreEvaluee` (montant évalué calculé par le serveur) | 400 `PREFERENCE_NON_PREVUE`, `CRITERE_HORS_DAO` |
 | GET | `/api/fiches-marche/{idDmc}/evaluation/lots/{lot}/tableau` | CAO, PRMP, UGPM | le tableau du guide (p. 9) : `[{numero, candidat, prixLu, garantie, conforme, motifRejet, prixCorrige, rabais, ajustements, montantEvalue, rang, qualifie}]` | |
+
+> ⚠️ **Backend, 2026-10-07 — B3 livré (tranche 1b, V77)**, noms confirmés, avec ces écarts (contrat : `docs/api-endpoints.md`, § *L'évaluation
+> des offres, tranche 1b*) :
+> - **Corrections proposées** : le bordereau scellé ne porte pas de total par ligne ; le serveur propose donc, par article,
+>   `LETTRES_PREVALENT` (**fournitures comme travaux**, dès que les lettres relues diffèrent des chiffres : `avant` = chiffres ×
+>   quantité, `apres` = lettres × quantité), puis une correction `PU_PREVAUT` à `ligne` nulle (le HT de l'acte d'engagement ramené à
+>   Σ prix unitaire × quantité). Montants **hors taxes**. `REPORT` et `AUTRE` sont les règles des corrections saisies par la CAO. Une
+>   offre sans bordereau rend `[]`. Lecture ouverte aussi au responsable.
+> - **`PUT …/montant`** rend l'**`EvaluationDto`** (pas l'`OffreEvaluee`) ; l'offre porte `evaluation` = `{prixLu, prixLuTtc,
+>   corrections[], refusCandidat, rabais{montant, lecture}, preference{eligible, motif, taux, ajustement}, criteres[], prixCorrige,
+>   montantEvalue, par, nom, le}`. Corps en plus : `prixLu` (seulement si l'acte ne porte pas de HT : 400 `PRIX_LU_OBLIGATOIRE`) ;
+>   `refusCandidat` = `{motif, clause}` (Q2 : constaté par la CAO, l'offre est **écartée à l'étape 3**, `ecartee.etape = EVALUATION`).
+>   Codes en plus : 400 `REGLE_INCONNUE`, `CORRECTION_INVALIDE`, `RABAIS_INVALIDE`, `CRITERE_INVALIDE`, `MOTIF_OBLIGATOIRE`
+>   (préférence ou refus), `CLAUSE_OBLIGATOIRE` (refus) ; 409 `ETAPE_PRECEDENTE_OUVERTE` (examen préliminaire non arrêté),
+>   `ETAPE_ARRETEE`, `OFFRE_ECARTEE`.
+> - **Q3 : hors taxes.** `montantEvalue` = prix lu HT + Σ (après − avant) des corrections retenues − rabais + ajustement + critères. La
+>   préférence s'applique comme un **ajustement ajouté aux offres non éligibles** (taux de la fiche × (prix corrigé − rabais)), plafonné
+>   à **15 %**, et seulement si la fiche la prévoit. **Q4** : le rabais reste saisi par la CAO en valeur HT. **Q8** : la CAO marque
+>   l'éligibilité avec un motif ; aucune donnée de l'entreprise ne la porte.
+> - **Classement** : `OffreEvaluee.rang` et **`exAequo`** (nouveau). **Q5 — égalité** : les offres à égalité partagent leur rang ; la CAO
+>   les départage par **`POST …/lots/{lot}/departage`** `{ordre: [idOffre…], motif}` (nouveau ; 400 `ORDRE_INVALIDE`,
+>   `MOTIF_OBLIGATOIRE`). L'arrêt de l'étape `EVALUATION` exige chaque offre retenue évaluée (`ETAPE_INCOMPLETE`) et refuse une égalité
+>   **en tête** non départagée (409 **`EGALITE_A_DEPARTAGER`**, `details.offres`).
+> - **Tableau** : en plus `idOffre`, `prixLuTtc`, `exAequo` ; `garantie` est un texte (« 1 700 000 MGA », « présente », « absente ») ;
+>   `motifRejet` = « motif (clause) » de l'étape qui a écarté ; trié par rang, les écartées en dernier ; `qualifie` reste `null`
+>   (tranche 1c). Lecture ouverte aussi au responsable.
+> - **Non servis (§3.5)** : la combinaison la moins disante quand l'évaluation porte sur l'ensemble des lots (Q5, juriste) et l'évaluation
+>   des variantes (les offres en ligne n'en portent pas).
 
 ## B4 — Étape 4 : offres anormalement basses ou hautes (art. 48)
 
@@ -315,7 +343,7 @@ type ?). Variantes : évaluées seulement si `variantes = OUI`, selon `B02-VA-01
 > - **Q6, Q7** : **la CAO décide**, la vérification est pré-remplie « non satisfaite » ; aucun rejet d'office (livré en 1a).
 > - **Q4, Q5, Q8** : non tranchées ; la tranche 1b retient les propositions de la demande (rabais saisi par la CAO en valeur
 >   monétaire ; égalité signalée, départagée par la CAO avec motif ; éligibilité à la préférence marquée par la CAO avec motif) sauf
->   avis contraire. **Q9** reste au juriste.
+>   avis contraire (⚠️ appliqué par la tranche 1b, §B3). **Q9** reste au juriste.
 
 ## Ce que le front fera, et quand
 
