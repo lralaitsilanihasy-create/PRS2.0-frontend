@@ -445,3 +445,11 @@ type ?). Variantes : évaluées seulement si `variantes = OUI`, selon `B02-VA-01
 > - **C2** — §8 et proposition du lot : « délai : 6 » sans unité ; l'acte d'engagement porte `delaiUnite` (`JOURS` / `MOIS`).
 > - **C3** — §2 « Plis reçus » (et `nonEvaluees[].motif`) : une offre remplacée est désignée par son identifiant technique
 >   (« remplacée par l'offre 239f6619-… ») ; « remplacée par l'offre n° 4 » se lirait.
+
+> ⚠️ **Front, 2026-10-07 — arbitrages du pilote sur Q4, Q5 et Q8.**
+> - **Q5** : confirmée telle que livrée — une égalité est départagée par la CAO, avec un motif.
+> - **Q8** : confirmée telle que livrée — l'éligibilité à la marge de préférence est marquée par la CAO, avec un motif.
+> - **Q4** : **le rabais est structuré au dépôt** (pourcentage ou montant, inconditionnel ou lié à l'attribution de plusieurs lots),
+>   au lieu d'être saisi par la CAO. Demande à part : `demande-backend-2026-10-07-rabais-structure.md`. D'ici là, la saisie par la CAO
+>   reste la règle ; elle restera celle des offres déposées avant le changement.
+> - La suite de l'évaluation (lot 2, de la proposition d'attribution à la notification) : `demande-backend-2026-10-07-attribution-notification.md`.
