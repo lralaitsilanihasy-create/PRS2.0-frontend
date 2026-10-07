@@ -76,6 +76,23 @@ offre, presque tout ce que l'évaluation consomme — mais **aucune décision** 
 - Toute décision exige que son auteur ait signé sa déclaration (409 `DECLARATION_MANQUANTE`) sans conflit (403 `MEMBRE_EN_CONFLIT`).
 - Une étape **arrêtée** fige ses décisions ; la rouvrir (avec motif) rouvre aussi les étapes suivantes du lot.
 
+> ⚠️ **Backend, 2026-10-07 — B1 livré (tranche 1a, V76)**, noms confirmés, avec ces précisions (contrat : `docs/api-endpoints.md`,
+> § *L'évaluation des offres, lot 1, tranche 1a*) :
+> - `POST …/ouvrir` répond **201**. `GET …/evaluation` répond **404** tant que l'évaluation n'est pas ouverte (et pour un DMC inconnu).
+> - `POST …/declaration` rend l'`EvaluationDto` (200) ; 403 pour qui n'est pas membre de la CAO.
+> - **Arrêter et rouvrir** : le président doit lui aussi avoir signé sa déclaration sans conflit (409 `DECLARATION_MANQUANTE`, 403
+>   `MEMBRE_EN_CONFLIT`). Codes en plus : 400 `ETAPE_INCONNUE` ; 404 pour un lot sans offre ; 409 `ETAPE_ARRETEE` (déjà arrêtée),
+>   `ETAPE_NON_ARRETEE` (rouvrir une étape ouverte), `EVALUATION_CLOSE` ; `ETAPE_INCOMPLETE` porte `details.offres` (les **numéros**
+>   des offres sans décision). Rouvrir : 400 `MOTIF_OBLIGATOIRE`.
+> - **Étapes 3 à 5 : 409 `ETAPE_NON_DISPONIBLE`** jusqu'aux tranches suivantes (1b corrections et classement, 1c anormales et
+>   post-qualification, 1d rapport).
+> - `EvaluationDto` porte en plus `idDmc`, `ouverteLe`, `ouvertePar`, `nonEvaluees[{numero, entreprise, etat, motif}]` (H3) ;
+>   `declarations[]` liste **chaque membre de la CAO** (`membre`, `nom`, `president`, `signeeLe` nul s'il n'a pas signé, `conflit`,
+>   `precision`) ; `etapesArretees[]` porte aussi `nom` et `observation`. Une procédure **non allotie a un lot 1**.
+> - `OffreEvaluee` : `entreprise` = `{nif, raisonSociale}` ; `ecartee` porte aussi `nom` ; `precisionsEnAttente` (nombre de demandes
+>   sans réponse dont le délai court). `evaluation`, `anormale`, `qualification`, `rang` restent `null` dans cette tranche.
+> - En plus : `GET …/evaluation/journal` (CAO, responsable, PRMP ; pas l'UGPM) → `[{date, acteur, action, detail}]`.
+
 ## B2 — Étape 2 : l'examen préliminaire (recevabilité, éligibilité, conformité)
 
 Pour chaque offre ouverte du lot, une **grille de vérifications** pré-remplie par le serveur depuis la lecture, que la CAO confirme
@@ -104,6 +121,30 @@ ou corrige :
 - **Une précision ne change ni le prix ni une pièce essentielle manquante** (guide §2.4) : la règle ne se contrôle pas
   automatiquement ; la demande et la réponse sont **jointes au rapport**, et l'écran le rappelle à la PRMP et au candidat.
 - Notifications : `PRECISION_DEMANDEE` au candidat (et par courriel), `PRECISION_RECUE` à la PRMP et aux membres.
+
+> ⚠️ **Backend, 2026-10-07 — B2 livré (tranche 1a)**, noms confirmés, avec ces précisions :
+> - **Codes des vérifications**, dans l'ordre de la grille : `AE_PRIX`, `GARANTIE`, `OFFRE_UNIQUE`, `EXCLUSION`, `POUVOIRS`, `PIECES`,
+>   `CONFORMITE_TECHNIQUE`, `INTEGRITE`, `FRAIS_DOSSIER`. Chacune est servie par `conformite.verifications[]` =
+>   `{code, libelle, proposee, constat, satisfaite, observation}` : `proposee` vrai, faux ou **nul** (sans objet : garantie non exigée,
+>   pouvoir non exigé, retrait sans frais ; ou à examiner : offre sans formulaire en ligne) ; `constat` dit pourquoi ; `satisfaite` est
+>   la valeur de la CAO si elle a décidé, la proposée sinon. Les vérifications omises du `PUT` gardent la proposition.
+> - **Garantie** : exigée selon le cadrage (`garantieSoumission`), pas `B05-GS-01` / `B05-GQ-01`. **Offre unique** : le serveur croise
+>   le NIF de l'entreprise et les NIF du groupement **déclarés au dépôt** (`groupementNifs`), sur les offres du lot. **Pouvoirs** : une
+>   pièce attendue dont le libellé contient « pouvoir », sinon sans objet.
+> - **Q6, Q7 (arbitrage du pilote du 07/10)** : la CAO décide toujours ; une offre altérée ou illisible, une offre sans frais réglés,
+>   reçoit une vérification **proposée non satisfaite**, jamais un rejet d'office.
+> - `PUT …/conformite` rend l'`EvaluationDto`. Codes en plus : 400 `DECISION_INVALIDE`, `VERIFICATION_INCONNUE`,
+>   `QUALIFICATION_OBLIGATOIRE` (une offre `ECARTEE` exige sa qualification) ; 409 `DECLARATION_MANQUANTE`, `EVALUATION_CLOSE` ; 403
+>   `MEMBRE_EN_CONFLIT`. Une nouvelle décision **remplace** la précédente, qui reste au registre ; le journal dit « avant → après ».
+> - **Précisions** : `POST` répond **201** et rend une `Demande` = `{idDemande, idOffre, numero, type, question, delaiJours, echeance,
+>   demandeeLe, etat (EN_ATTENTE | REPONDUE | EXPIREE), reponse, fichier, tailleFichier, reponduLe}` ; 400 `QUESTION_OBLIGATOIRE`,
+>   `DELAI_OBLIGATOIRE` (ni saisi ni fixé par la fiche). Réservé à la **PRMP** (403 pour l'UGPM et la CAO).
+> - En plus : `GET …/evaluation/offres/{idOffre}/precisions` (CAO, responsable, PRMP, UGPM) et `GET …/evaluation/demandes/{idDemande}/fichier`
+>   (le fichier joint à la réponse).
+> - **Réponse du candidat** : multipart `texte` (obligatoire : 400 `TEXTE_OBLIGATOIRE`) et `fichier` facultatif, **PDF, JPEG ou PNG**
+>   lu sur le contenu (400 `FORMAT_INVALIDE`, 413 au-delà de `tailleMaxPieceMo`) ; une seule réponse. Le candidat ne lit que les
+>   demandes de **ses** offres (403 sinon).
+> - Notification `EVALUATION_OUVERTE` aux membres de la CAO et à la PRMP à l'ouverture.
 
 ## B3 — Étape 3 : corrections, montant évalué, classement
 
@@ -215,6 +256,12 @@ type ?). Variantes : évaluées seulement si `variantes = OUI`, selon `B02-VA-01
 - Journal : chaque décision et chaque réouverture (auteur, date, avant / après, motif), consultable par la CAO et la PRMP.
 - Compteurs (`/api/kpis/badges`) : décisions en attente pour le membre, demandes sans réponse pour la PRMP, rapport à signer.
 
+> ⚠️ **Backend, 2026-10-07 — B7 en partie (tranche 1a).** Le tableau des accès est appliqué pour ce qui est livré ; **l'UGPM ne lit pas le
+> journal** (CAO, responsable, PRMP seulement). Notifications servies : `EVALUATION_OUVERTE` (membres et PRMP), `PRECISION_DEMANDEE`,
+> `PRECISION_RECUE` ; les autres arrivent avec leurs étapes. Journal : actions `OUVERTURE`, `DECLARATION`, `CONFORMITE`, `ARRET`,
+> `REOUVERTURE`, `PRECISION_DEMANDEE`, `PRECISION_RECUE`. **Les compteurs de `/api/kpis/badges` ne sont pas encore servis** : ils
+> viendront avec la tranche du rapport (1d).
+
 ## B8 — Hors de ce lot (lot 2, puis lot 3)
 
 - **Lot 2 — de la proposition à la notification** : choix de l'attributaire par la PRMP (art. 35-VII), examen de l'organe de contrôle
@@ -238,6 +285,12 @@ type ?). Variantes : évaluées seulement si `variantes = OUI`, selon `B02-VA-01
   rend visible aux autres ; le président l'arrête avec l'étape. *Faut-il un vote ou une validation par plusieurs membres ? — Q1.*
 - **H5** — Les montants s'entendent par lot, en ariary, sur la même base (HT ou TTC) que celle que le DAO fixe pour la comparaison.
 
+> ⚠️ **Backend, 2026-10-07 — hypothèses.** **H1** retenue : remise électronique seule, les offres papier n'entrent pas dans le module
+> (arbitrage du pilote). **H2** retenue (409 `SEANCE_NON_CLOSE` tant que la séance n'est pas `CLOSE`). **H3** retenue : les offres
+> écartées au dépôt, retirées et remplacées figurent dans `nonEvaluees`, sans évaluation. **H4** retenue : tout membre déclaré sans
+> conflit saisit, la décision est visible des autres, le président arrête ; pas de vote. **H5** : la base est le **hors taxes**
+> (arbitrage Q3), pour la tranche 1b.
+
 ## Questions
 
 | # | Question | À qui |
@@ -251,6 +304,18 @@ type ?). Variantes : évaluées seulement si `variantes = OUI`, selon `B02-VA-01
 | Q7 | Frais de dossier non réglés : l'arbitrage du 05/10 (alerte, jamais rejet) vaut-il aussi à l'examen de conformité ? | pilote |
 | Q8 | L'éligibilité à la marge de préférence (candidat national, régional, sous-traitance ≥ 25 % à une PME locale) : quelle donnée de l'entreprise la porte ? | pilote, backend |
 | Q9 | Les articles cités par le guide (loi n° 2016-055) et les textes d'application en vigueur sont-ils validés pour devenir des règles de l'application ? | juriste |
+
+> ⚠️ **Backend, 2026-10-07 — arbitrages du pilote du même jour** :
+> - **Q1** : **tout membre** déclaré sans conflit saisit les décisions, le **président** arrête et rouvre les étapes ; les offres
+>   **papier** n'entrent pas dans le module.
+> - **Q2** : le refus d'une correction arithmétique est **constaté par la CAO** (acceptation obtenue hors ligne, enregistrée avec motif)
+>   — tranche 1b.
+> - **Q3** : la comparaison se fait **hors taxes** (HT de l'acte d'engagement) ; le TTC reste affiché au tableau. Aucun champ de fiche
+>   n'est créé — tranche 1b.
+> - **Q6, Q7** : **la CAO décide**, la vérification est pré-remplie « non satisfaite » ; aucun rejet d'office (livré en 1a).
+> - **Q4, Q5, Q8** : non tranchées ; la tranche 1b retient les propositions de la demande (rabais saisi par la CAO en valeur
+>   monétaire ; égalité signalée, départagée par la CAO avec motif ; éligibilité à la préférence marquée par la CAO avec motif) sauf
+>   avis contraire. **Q9** reste au juriste.
 
 ## Ce que le front fera, et quand
 
