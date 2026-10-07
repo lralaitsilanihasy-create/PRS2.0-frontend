@@ -132,6 +132,15 @@ Le backend les sème en migration ; l'Administrateur peut les modifier ensuite.
 - Par défaut, l'offre **proposée par la CAO** ; une autre offre (classée et qualifiée) exige un **motif** (Q4 : la PRMP peut-elle
   s'écarter de l'avis de la CAO, et dans quels cas ?).
 
+> ⚠️ **Backend, 2026-10-07 — B3 livré (tranche 2b, V80)** ; contrat : `docs/api-endpoints.md`, § *L'attribution, lot 2, tranche 2b*.
+> - **Q4 appliqué** : `idOffre` est **facultatif** ; une offre autre que la proposée répond 409 **`OFFRE_NON_PROPOSEE`**. `motif` reste
+>   accepté, facultatif, et ne sert plus qu'au journal.
+> - Codes : 409 `LOT_INFRUCTUEUX`, `AVIS_NON_RENDU`, `AVIS_DEFAVORABLE` comme proposés, plus **`DEJA_ATTRIBUE`**. Pas de 400
+>   `MOTIF_OBLIGATOIRE` (sans objet depuis Q4). L'avis `FAVR` (favorable avec réserves) ouvre l'attribution comme `FAV`.
+> - Accès : la **PRMP seule** (403 pour l'UGPM), comme tout geste qui engage. Réponse : l'`AttributionDto` ; le lot passe `ATTRIBUE`
+>   et porte `attributaire{ idOffre, numero, candidat, nif, montant, montantTtc, delai, motif, le, par }`, montants et délai **figés au
+>   choix**.
+
 ## B4 — Information des non retenus, délai d'attente, explications, signature, notification, avis d'attribution
 
 ### B4.1 L'information (art. 52-I)
@@ -150,6 +159,29 @@ Le backend les sème en migration ; l'Administrateur peut les modifier ensuite.
 - **Le délai d'attente** : au moins **10 jours francs** entre l'information et la signature, calculé par le serveur (jours francs : ni le
   jour de l'information, ni celui de l'échéance) ; `delaiAttente.fin` servi ; la signature est refusée avant (409 `DELAI_ATTENTE`).
 
+> ⚠️ **Backend, 2026-10-07 — B4.1 livré (tranche 2b, V80)**, avec ces écarts et précisions :
+> - **`informer`** : la PRMP seule ; `dateAffichage` obligatoire (400 `DATE_AFFICHAGE_OBLIGATOIRE`), comprise entre la date de
+>   l'attribution et le jour même (400 `DATE_AFFICHAGE_INVALIDE`) ; 409 `NON_ATTRIBUE`, `DEJA_INFORME`. Réponse : l'`AttributionDto`.
+> - **Le délai suit l'art. 78** (correction du pilote) : `delaiAttente` = `{ debut, fin, signableLe, jours, ecoule }`, où `debut` est la
+>   **plus tardive** de l'information et de l'affichage, `fin` le dixième jour franc, et **`signableLe`** (en plus) le lendemain, premier
+>   jour où la signature est possible. Le lot passe `INFORME`, puis **`SIGNABLE`** quand `ecoule`. Pas de report d'une échéance tombant
+>   un week-end ou un jour férié : à confirmer par le juriste.
+> - **Les lettres** : une par **offre évaluée** du lot, en PDF et Word, signées électroniquement par la PRMP (Q9 : son nom et
+>   l'horodatage imprimés, journal `INFORMATION`), sur un **modèle provisoire** (Q7). Les motifs viennent du rapport : l'étape qui a
+>   écarté l'offre, sa qualification, son motif, sa clause ; sinon son rang. Les offres **non ouvertes** en séance (hors délai, retirées,
+>   remplacées) n'ont pas de lettre. `information` = `{ le, par, signataire, dateAffichage, lettres[{ id, idOffre, numero, candidat, type
+>   (ATTRIBUTION | NON_RETENU), motif, envoyeeLe, lueLe }] }`.
+> - **La preuve de réception** : `envoyeeLe` = la date d'envoi du courriel (nulle sans adresse) ; `lueLe` = **l'accusé de lecture de la
+>   plateforme**, posé à la première consultation du résultat ou de la lettre par le candidat (journal `LETTRE_LUE`).
+> - **La lettre** : `GET …/lots/{lot}/lettres/{idOffre}` (`?format=docx` pour le Word). Lecteurs : CAO, responsable, PRMP, UGPM.
+> - **Le résultat du candidat** : `GET /api/candidat/offres/{idOffre}/resultat` → `{ idOffre, numero, lot, retenu, motifRejet,
+>   attributaire, montant, montantTtc, delai, lettreDisponible, dateInformation, dateAffichage, finDelai, signableLe }`. Les
+>   caractéristiques de l'offre retenue sont `montant` (HT), `montantTtc` (prix lu) et `delai`. Le **lien de la lettre** devient une route :
+>   `GET /api/candidat/offres/{idOffre}/resultat/lettre` (`?format=docx`). 404 avant l'information ; 403 pour l'offre d'un autre.
+> - **La page publique** : `GET /api/procedures-en-ligne/{idDmc}/resultats` (sans session) → `[{ lot, attributaire, montant,
+>   dateInformation, dateAffichage }]`, vide avant l'information.
+> - **Notifications** : `ATTRIBUTION` (attributaire) et `RESULTAT_DISPONIBLE` (autres candidats), avec courriel.
+
 ### B4.2 Les demandes d'explication (art. 52-II)
 
 | Méthode | URL | Accès | Corps | Statuts |
@@ -159,6 +191,19 @@ Le backend les sème en migration ; l'Administrateur peut les modifier ensuite.
 
 - Sur le modèle des demandes du lot 1 (sens inverse). Un **recours** auprès de l'ARMP (art. 19) se fait hors de l'application ; Q5 :
   la PRMP doit-elle pouvoir **déclarer un recours** reçu, qui suspend la signature ?
+
+> ⚠️ **Backend, 2026-10-07 — B4.2 livré (tranche 2b, V80)** :
+> - `POST /api/candidat/offres/{idOffre}/explication` `{ question }` → **201** avec l'`Explication` ; 400 `QUESTION_OBLIGATOIRE` ; 409
+>   `NON_INFORME`, et **`OFFRE_RETENUE`** (en plus) pour l'attributaire.
+> - En plus, côté candidat : `GET /api/candidat/offres/{idOffre}/explications` (ses demandes et les réponses) et
+>   `GET …/explications/{id}/fichier` (le fichier joint à la réponse).
+> - `POST /api/fiches-marche/{idDmc}/attribution/explications/{id}/reponse` (multipart `texte` + `fichier` facultatif : PDF, JPEG ou PNG)
+>   → l'`Explication` ; 400 `TEXTE_OBLIGATOIRE`, `FORMAT_INVALIDE` ; 409 `DEJA_REPONDU` ; PRMP seule. Le fichier se relit par
+>   `GET …/attribution/explications/{id}/fichier` (CAO, responsable, PRMP, UGPM).
+> - Les demandes du lot sont servies dans `lots[].explications[]` = `{ id, idOffre, numero, candidat, question, demandeeLe, etat
+>   (EN_ATTENTE | REPONDUE), reponse, reponseNom, reponseTaille, reponduLe }`. Aucun délai imposé.
+> - Notifications `EXPLICATION_DEMANDEE` (PRMP) et `EXPLICATION_REPONDUE` (candidat, avec courriel). Les recours (Q5) suivent en
+>   tranche 2c.
 
 ### B4.3 Mise au point, signature, notification
 
@@ -275,6 +320,14 @@ Le backend les sème en migration ; l'Administrateur peut les modifier ensuite.
 >   à confirmer, et à rattraper si c'est le cas.
 > - **D2** — le projet de marché, article 4, écrit « Le délai d'exécution est celui de l'acte d'engagement : 6. » — sans unité, comme le
 >   constat C2 du rapport d'évaluation (`delaiUnite`).
+
+> ⚠️ **Backend, 2026-10-07 — D1 et D2 corrigés (avec la tranche 2b)** :
+> - **D1** — cause confirmée : la séance de la fiche 40 a été close le 04/10, **avant V70** ; son PV n'a donc pas de date de signature,
+>   et la tranche 2a ne joignait que le PV « signé ». Un PV figé à la clôture d'une séance est désormais tenu pour définitif. **V80
+>   rattrape** le dossier **100371** : la pièce 17 y est jointe au prochain démarrage (seul dossier concerné en recette, vérifié en
+>   lecture).
+> - **D2** — le délai porte son unité : « 6 mois » (`Proposition.delai`, rapport §8, projet de marché article 4, lettres). Le projet
+>   déjà produit du dossier 100371 garde son texte.
 
 > ⚠️ **Front, 2026-10-07 — arbitrages du pilote pour la tranche 2b** :
 > - **Q4** : **non, jamais**. La PRMP attribue à l'offre **proposée par la CAO** ; `attribuer` n'accepte pas d'autre offre (proposition :

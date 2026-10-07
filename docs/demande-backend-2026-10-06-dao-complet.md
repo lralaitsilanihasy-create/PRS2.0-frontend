@@ -315,6 +315,9 @@ Restent :
   Proposition : **retirer** ce contrôle. À défaut, le **reformuler** : « La liste des pièces administratives remplace ce texte dans le
   DPAO : il ne sera pas imprimé. »
 
+> ⚠️ **Backend, 2026-10-07 — E1 corrigé : le contrôle `PIECES_EN_DOUBLE` est retiré** (proposition retenue). Le bilan de la fiche ne le
+> sert plus ; le rôle `PIECES_EN_DOUBLE:TEXTE` du référentiel reste lu, sans effet.
+
 > ✅ **Front, 2026-10-06 — recette du dossier soumis (B3) : conforme.** Le dossier 100370, créé depuis la fiche 33 après V75, reçoit
 > de la fiche **une seule pièce**, de type 6 : `DAO_COMPLET_AOO-n-2463-MI-MESupReS-PRMP-UGPM-2026_303328_v1.pdf`, signalée « fiche DAO ».
 > Avant, il en recevait dix (DPAO, CCAP, AE, DPAC, A1-A4, B1, B2). Le dossier a été soumis, reçu (SECANT1) et dispatché (PRES001 →
@@ -330,3 +333,10 @@ Restent :
   spécifications techniques. Sans spécifications, le type 8 reste exigé. Le front a déjà retiré le CCAG et les spécifications de la
   liste des pièces à joindre affichée à l'étape 7, quand le DAO complet existe. Le référentiel (`GET /api/type-piece-jointes`)
   marque toujours ces deux types comme obligatoires pour un dossier DAO (la soumission sans eux n'a pas été essayée).
+
+> ⚠️ **Backend, 2026-10-07 — E2 corrigé, selon la proposition** : quand le dossier porte le **DAO complet** joint depuis la fiche, le
+> **CCAG** n'est plus exigé, et le **CCTP** non plus si la fiche a ses spécifications techniques (sans spécifications, il reste exigé).
+> L'exemption vaut à la **soumission** (plus de 400 sur ces pièces) et au **contrôle des pièces par le Secrétaire** (elles ne sont plus
+> « manquantes de fait »). Les types sont repérés par les codes **`CCAG`** et **`CCTP`**, que V80 pose sur les types 7 et 8. Le référentiel
+> (`GET /api/type-piece-jointes`) les garde `obligatoire: true` : l'exemption tient au dossier, pas au type. Le front peut donc garder sa
+> liste d'étape 7 sans ces deux pièces quand le DAO complet existe.

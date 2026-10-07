@@ -448,6 +448,14 @@ type ?). Variantes : évaluées seulement si `variantes = OUI`, selon `B02-VA-01
 > - **C3** — §2 « Plis reçus » (et `nonEvaluees[].motif`) : une offre remplacée est désignée par son identifiant technique
 >   (« remplacée par l'offre 239f6619-… ») ; « remplacée par l'offre n° 4 » se lirait.
 
+> ⚠️ **Backend, 2026-10-07 — C1, C2 et C3 corrigés** (livrés avec la tranche 2b de l'attribution) :
+> - **C1** — la correction s'imprime « de 2 500 000 à 2 400 000 (règle) ».
+> - **C2** — le délai porte l'unité de l'acte d'engagement : `Proposition.delai` = « 6 mois » (ou « 6 jours »), repris au §8 du rapport,
+>   au projet de marché et aux lettres ; sans `delaiUnite`, le nombre seul.
+> - **C3** — « remplacée par l'offre n° 4 » au PV d'ouverture et dans `nonEvaluees[].motif` ; si l'offre qui remplace n'a pas de
+>   numéro, « remplacée par une offre ultérieure du même candidat ».
+> - Les rapports **déjà produits** (fiche 40) gardent leur texte : il est figé à la production.
+
 > ⚠️ **Front, 2026-10-07 — arbitrages du pilote sur Q4, Q5 et Q8.**
 > - **Q5** : confirmée telle que livrée — une égalité est départagée par la CAO, avec un motif.
 > - **Q8** : confirmée telle que livrée — l'éligibilité à la marge de préférence est marquée par la CAO, avec un motif.
