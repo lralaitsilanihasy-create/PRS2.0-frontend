@@ -406,6 +406,8 @@ type ?). Variantes : évaluées seulement si `variantes = OUI`, selon `B02-VA-01
 > - **Q4, Q5, Q8** : non tranchées ; la tranche 1b retient les propositions de la demande (rabais saisi par la CAO en valeur
 >   monétaire ; égalité signalée, départagée par la CAO avec motif ; éligibilité à la préférence marquée par la CAO avec motif) sauf
 >   avis contraire (⚠️ appliqué par la tranche 1b, §B3). **Q9** reste au juriste.
+> ⚠️ **Q4 tranchée le 07/10 par le pilote : le rabais est structuré au dépôt** — livré, voir `demande-backend-2026-10-07-rabais-structure.md`
+> (le rabais inconditionnel est proposé par le serveur à l'étape 3 ; la saisie par la CAO reste pour les offres au format 2 ou 3).
 
 ## Ce que le front fera, et quand
 
