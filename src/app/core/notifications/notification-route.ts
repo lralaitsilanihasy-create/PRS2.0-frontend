@@ -39,6 +39,9 @@ const MESSAGERIE: ReadonlySet<string> = new Set([
   'ASSISTANT_CONTROLEUR',
 ]);
 
+/** Les notifications de l'évaluation des offres qui visent la PRMP (contrat V76-V78). */
+const EVALUATION: ReadonlySet<string> = new Set(['EVALUATION_OUVERTE', 'PRECISION_RECUE', 'JUSTIFICATION_RECUE', 'RAPPORT_EVALUATION']);
+
 /**
  * Cible résolue : une route directe, la page d'un dossier (l'appelant y ajoute son `returnUrl`), ou une
  * route paramétrée par le type du dossier (avec repli).
@@ -94,6 +97,11 @@ export function routePourNotification(n: Notification, role: string | null): Cib
   // ⚠️ V72 (06/10) — un reçu des frais de dossier à valider : l'écran des reçus de la fiche (`idObjet` = idDmc).
   if (type === 'RECU_A_VALIDER' && (role === 'PRMP' || role === 'UGPM') && n.idObjet != null) {
     return { genre: 'route', commands: ['/prmp', 'dao', String(n.idObjet), 'recus'] };
+  }
+  // ⚠️ Évaluation des offres, lot 1 (07/10) — ouverture, réponse d'un candidat, rapport signé : l'écran d'évaluation
+  // (`idObjet` = idDmc). Les membres de la CAO, eux, sont avertis par courriel et décident depuis leur espace.
+  if (EVALUATION.has(type) && (role === 'PRMP' || role === 'UGPM') && n.idObjet != null) {
+    return { genre: 'route', commands: ['/procedure', String(n.idObjet), 'evaluation'] };
   }
   if ((type === 'RETRAIT_ACCEPTE' || type === 'RETRAIT_REFUSE') && role === 'PRMP') {
     return { genre: 'route', commands: ['/prmp/retraits'] };

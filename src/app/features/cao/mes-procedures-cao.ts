@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, DOCUMENT, OnInit, inject, signal } 
 import { RouterLink } from '@angular/router';
 
 import { MaProcedureCao } from '../../models';
-import { CaoEspaceService } from '../../services';
+import { CaoEspaceService, KpiService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 import { LIBELLES_ETAT_CEREMONIE, LIBELLES_ETAT_PART, classeCeremonie, classePart } from './libelles-cao';
@@ -24,6 +24,17 @@ import { LIBELLES_ETAT_CEREMONIE, LIBELLES_ETAT_PART, classeCeremonie, classePar
       Les appels d'offres où vous siégez. Pour chacun, vous détenez une part de la clé qui ouvrira les offres : publiez
       votre clé avant la cérémonie, vérifiez votre part avant la date limite.
     </p>
+
+    <!-- ⚠️ 07/10 — les compteurs de l'évaluation des offres (V78, GET /api/kpis/badges, ouvert au membre de la CAO). -->
+    @if (evaluationsEnCours() || rapportsASigner()) {
+      <div class="alert alert-info mp__compteurs" role="status">
+        <span>
+          @if (evaluationsEnCours()) { <strong>{{ evaluationsEnCours() }}</strong> évaluation(s) des offres en cours. }
+          @if (rapportsASigner()) { <strong>{{ rapportsASigner() }}</strong> rapport(s) d'évaluation à signer. }
+          Ouvrez la procédure, puis « Ouvrir l'évaluation ».
+        </span>
+      </div>
+    }
 
     @if (chargement()) {
       <p class="text-muted" role="status">Chargement…</p>
@@ -72,6 +83,7 @@ import { LIBELLES_ETAT_CEREMONIE, LIBELLES_ETAT_PART, classeCeremonie, classePar
 export class MesProceduresCao implements OnInit {
   private readonly service = inject(CaoEspaceService);
   private readonly document = inject(DOCUMENT);
+  private readonly kpi = inject(KpiService);
 
   readonly parts = LIBELLES_ETAT_PART;
   readonly ceremonies = LIBELLES_ETAT_CEREMONIE;
@@ -82,10 +94,20 @@ export class MesProceduresCao implements OnInit {
   readonly chargement = signal(true);
   readonly erreur = signal(false);
   readonly procedures = signal<MaProcedureCao[]>([]);
+  readonly evaluationsEnCours = signal(0);
+  readonly rapportsASigner = signal(0);
 
   ngOnInit(): void {
     this.document.title = 'Mes procédures — Commission d’appel d’offres — PRS 2.0';
     this.charger();
+    // Silencieux : sans compteur, rien ne s'affiche.
+    this.kpi.badges().subscribe({
+      next: ({ compteurs }) => {
+        this.evaluationsEnCours.set(compteurs['evaluationsEnCours'] ?? 0);
+        this.rapportsASigner.set(compteurs['rapportsASigner'] ?? 0);
+      },
+      error: () => undefined,
+    });
   }
 
   charger(): void {

@@ -49,6 +49,8 @@
         }
         @if (modeElectronique() && f.depots?.clos) {
           <a class="btn btn-outline btn-sm" [routerLink]="['/procedure', f.idDmc, 'seance']">Séance d'ouverture</a>
+          <!-- ⚠️ 07/10 — l'évaluation des offres (lot 1) : elle s'ouvre après le PV d'ouverture signé ; l'écran le dit avant. -->
+          <a class="btn btn-outline btn-sm" [routerLink]="['/procedure', f.idDmc, 'evaluation']">Évaluation des offres</a>
         }
         @if (lienDepots(); as lien) {
           <a class="btn btn-outline btn-sm" [routerLink]="lien">Dépôts des offres</a>

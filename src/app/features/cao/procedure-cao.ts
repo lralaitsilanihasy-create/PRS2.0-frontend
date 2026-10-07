@@ -65,6 +65,13 @@ import { SeanceMembre } from './seance-membre';
       <!-- ⚠️ Lot 4 (V69) — la séance d'ouverture : apporter ses parts, puis la lecture. -->
       <app-seance-membre [idDmc]="idDmc" />
 
+      <!-- ⚠️ 07/10 — l'évaluation des offres (lot 1) : déclaration préalable, étapes 2 à 5, rapport à signer. -->
+      <section class="card pc__bloc" aria-labelledby="pc-eval">
+        <h2 id="pc-eval" class="pc__h2">Évaluation des offres</h2>
+        <p class="text-sm">Après le PV d'ouverture signé, la commission évalue les offres : examen préliminaire, montant évalué et classement, offres anormales, post-qualification, puis le rapport d'évaluation.</p>
+        <a class="btn btn-primary btn-sm pc__eval" [routerLink]="['/cao/procedures', idDmc, 'evaluation']">Ouvrir l'évaluation</a>
+      </section>
+
       <app-ma-cle [idDmc]="idDmc" />
     }
   `,
@@ -77,6 +84,7 @@ import { SeanceMembre } from './seance-membre';
     .pc__h2 { margin: 0; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-500); }
     .pc__membres { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
     .pc__membre { display: flex; flex-direction: column; font-size: var(--text-sm); }
+    .pc__eval { align-self: flex-start; }
   `,
 })
 export class ProcedureCao implements OnInit {

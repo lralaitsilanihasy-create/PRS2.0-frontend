@@ -50,4 +50,13 @@ describe('Routage d’une notification', () => {
     expect(routePourNotification(recu, 'PRMP')).toEqual({ genre: 'route', commands: ['/prmp', 'dao', '47', 'recus'] });
     expect(routePourNotification(recu, 'UGPM')).toEqual({ genre: 'route', commands: ['/prmp', 'dao', '47', 'recus'] });
   });
+
+  it('évaluation des offres (07/10) : ouverture, réponse d’un candidat, rapport signé mènent à l’écran d’évaluation', () => {
+    for (const typeNotif of ['EVALUATION_OUVERTE', 'PRECISION_RECUE', 'JUSTIFICATION_RECUE', 'RAPPORT_EVALUATION']) {
+      const notif = n({ typeNotif, typeObjet: 'PROCEDURE', idObjet: 40 });
+      expect(routePourNotification(notif, 'PRMP')).toEqual({ genre: 'route', commands: ['/procedure', '40', 'evaluation'] });
+    }
+    // Les autres notifications d'une procédure gardent leur repli (la fiche, pour la PRMP).
+    expect(routePourNotification(n({ typeNotif: 'CLES_PUBLIEES', typeObjet: 'PROCEDURE', idObjet: 40 }), 'PRMP')).toEqual({ genre: 'route', commands: ['/prmp', 'dao', '40'] });
+  });
 });

@@ -24,4 +24,11 @@ export const CAO_ROUTES: Routes = [
     canActivate: [externeConnecteGuard],
     loadComponent: () => import('./procedure-cao').then((m) => m.ProcedureCao),
   },
+  {
+    // ⚠️ Évaluation des offres, lot 1 (07/10) — les membres décident, le président arrête, tous signent le rapport.
+    path: 'procedures/:idDmc/evaluation',
+    canActivate: [externeConnecteGuard],
+    loadComponent: () => import('../evaluation/evaluation-ecran').then((m) => m.EvaluationEcran),
+    data: { espace: 'cao' },
+  },
 ];

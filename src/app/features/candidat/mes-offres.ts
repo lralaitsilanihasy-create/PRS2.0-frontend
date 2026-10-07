@@ -8,6 +8,7 @@ import { telechargerBlob } from '../../core/securite/fichiers-surs';
 import { EtatOffre, Offre } from '../../models';
 import { OffresCandidatService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
+import { DemandesOffre } from './demandes-offre';
 import { dateHeureFr, tailleLisible } from './libelles-candidat';
 
 const LIBELLES_ETAT: Readonly<Record<EtatOffre, string>> = {
@@ -27,7 +28,7 @@ const LIBELLES_ETAT: Readonly<Record<EtatOffre, string>> = {
 @Component({
   selector: 'app-mes-offres',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur],
+  imports: [RouterLink, EtatErreur, DemandesOffre],
   template: `
     <header class="page-header">
       <div class="page-subtitle">Espace candidat</div>
@@ -74,6 +75,8 @@ const LIBELLES_ETAT: Readonly<Record<EtatOffre, string>> = {
                 }
               </div>
             }
+            <!-- ⚠️ 07/10 — pendant l'évaluation, les demandes de la commission sur cette offre, et la réponse du candidat. -->
+            @if (o.etat === 'DEPOSEE') { <app-demandes-offre [idOffre]="o.idOffre" /> }
           </li>
         }
       </ul>

@@ -419,3 +419,29 @@ type ?). Variantes : évaluées seulement si `variantes = OUI`, selon `B02-VA-01
 - **Dès B6** : production, lecture et signature du rapport (sur le modèle de `signatures-pv.ts`), observations des membres.
 - Entrées de menu : « Évaluation » sur la fiche (à côté de « Séance d'ouverture ») et dans « Mes procédures » de l'espace CAO ;
   compteurs du §B7.
+
+> ✅ **Front, 2026-10-07 — lot 1 livré.** Écran commun `features/evaluation/` sur les noms confirmés, en deux espaces :
+> `/cao/procedures/:idDmc/evaluation` (membres : déclaration préalable, décisions, arrêt et réouverture par le président,
+> signature du rapport avec observation, empêchement) et `/procedure/:idDmc/evaluation` (responsable : ouvrir, produire le rapport ;
+> PRMP : précisions et justifications ; UGPM : lecture ; fil d'Ariane de la coquille). Étapes par lot : grille des neuf vérifications,
+> corrections proposées à retenir ou non et corrections saisies, rabais, préférence, critères, tableau du guide et départage des ex
+> aequo, indicateurs de prix, post-qualification au tour par tour avec la proposition d'attribution ou l'infructuosité, rapport PDF
+> et Word. Candidat : demandes reçues et réponse (texte, une pièce) dans « Mes offres ». Points d'entrée : fiche DAO, séance d'ouverture
+> close, procédure de l'espace CAO ; notifications `EVALUATION_OUVERTE`, `PRECISION_RECUE`, `JUSTIFICATION_RECUE`, `RAPPORT_EVALUATION`
+> → l'écran d'évaluation ; compteurs `evaluationsEnCours` et `rapportsASigner` sur « Mes procédures » de l'espace CAO. Le compteur
+> PRMP `demandesEvaluationEnAttente` (des demandes qui attendent le candidat, sans geste de la PRMP) n'est pas affiché en pastille.
+
+> ✅ **Recette du 2026-10-07 — VERTE (fiche 40, deux lots, deux offres ouvertes), par l'interface.** Ouverture par le responsable
+> (ADMIN01) ; déclarations des deux membres ; précision demandée par la PRMP, réponse du candidat ; examen préliminaire et arrêt des deux
+> lots ; lot 1 : correction de report (−100 000) et rabais (1 000 000) → montant évalué **143 900 000** calculé par le serveur ; rejet
+> tenté **sans demande écrite → refusé** (`JUSTIFICATION_NON_DEMANDEE`, nommé à l'écran), puis suspicion, justification demandée,
+> réponse, offre maintenue ; post-qualification : lot 1 qualifié (proposition : offre n° 4, 143 900 000 HT), lot 2 non qualifié
+> (infructuosité proposée) ; rapport produit, signé des deux membres (une observation), évaluation **CLOSE**. Le PDF (2 pages) suit le
+> plan du guide, annexes comprises.
+>
+> **Constats pour le backend (rapport d'évaluation) :**
+> - **C1** — §4 « Corrections arithmétiques » : la flèche entre l'avant et l'après ne s'imprime pas (« 2 500 000  2 400 000 ») — glyphe
+>   absent de la police du PDF, sans doute ; « 2 500 000 → 2 400 000 » ou « de 2 500 000 à 2 400 000 ».
+> - **C2** — §8 et proposition du lot : « délai : 6 » sans unité ; l'acte d'engagement porte `delaiUnite` (`JOURS` / `MOIS`).
+> - **C3** — §2 « Plis reçus » (et `nonEvaluees[].motif`) : une offre remplacée est désignée par son identifiant technique
+>   (« remplacée par l'offre 239f6619-… ») ; « remplacée par l'offre n° 4 » se lirait.

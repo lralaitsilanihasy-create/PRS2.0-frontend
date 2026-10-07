@@ -107,6 +107,14 @@ export const routes: Routes = [
         data: { title: 'Séance d’ouverture des plis' },
       },
       {
+        // ⚠️ Évaluation des offres, lot 1 (07/10, V76-V78) — responsable (ouvrir, produire le rapport), PRMP (précisions,
+        // justifications), UGPM (lecture). Route transverse : le serveur garde par identité. Les membres de la CAO décident
+        // depuis leur espace (/cao/procedures/:idDmc/evaluation).
+        path: 'procedure/:idDmc/evaluation',
+        loadComponent: () => import('./features/evaluation/evaluation-ecran').then((m) => m.EvaluationEcran),
+        data: { title: 'Évaluation des offres', espace: 'interne', parents: [{ label: 'Séance d’ouverture', chemin: ['/procedure', ':idDmc', 'seance'] }] },
+      },
+      {
         // ⚠️ 06/10 — les procédures en ligne du responsable (toutes pour l'Administrateur). Route transverse : le serveur
         // filtre par identité, et sert [] à qui n'est responsable de rien.
         path: 'procedures-en-ligne',

@@ -171,6 +171,8 @@ export function quorumLibelle(s: Seance): string {
               <button type="button" class="btn btn-primary" [disabled]="travail()" (click)="telechargerPv()">Enregistrer le PV (PDF)</button>
               @if (s.pv?.publie) { <span class="text-sm text-muted">Publié sur la procédure en ligne (extrait sans les alertes).</span> }
               @else if (!s.pv?.signe) { <span class="text-sm text-muted">L'extrait public, s'il est prévu, paraît à la dernière signature.</span> }
+              <!-- ⚠️ 07/10 — la suite de la séance : l'évaluation des offres (lot 1), ouverte par le responsable une fois le PV signé. -->
+              @if (s.etat === 'CLOSE') { <a class="btn btn-outline" [routerLink]="['/procedure', idDmc, 'evaluation']">Évaluation des offres</a> }
             </div>
           </section>
         }
