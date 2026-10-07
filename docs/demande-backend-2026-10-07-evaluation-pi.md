@@ -129,6 +129,21 @@ séance), ou plus tard ?
 | Q7 | Échec de la négociation : on négocie avec le suivant ? | juriste |
 | Q8 | Les consultants individuels (art. 42-V) : dans ce lot, ou plus tard ? | pilote |
 
+> ⚠️ **Arbitrages du pilote, 2026-10-07** :
+> - **Q1** — *qualité technique exclusivement* : **deux enveloppes, comme les autres méthodes** ; seule l'enveloppe financière du
+>   **premier classé** s'ouvre, pour la négociation (B6) ; celles des autres ne s'ouvrent jamais (même sort que les éliminés, Q2).
+>   Un seul parcours de dépôt pour toutes les méthodes.
+> - **Q3** — les **sous-critères sont saisis dans la fiche** : chaque critère `B06-TP-02` à `-06` se détaille en sous-critères
+>   pondérés (par exemple, un barème par expert pour le personnel clé), dont la somme fait les points du critère ; ils paraissent
+>   dans la demande de propositions et la commission note sur cette grille. Forme du champ à proposer par le backend (liste
+>   structurée, comme les critères de l'AMI).
+> - **Q4** — **chaque membre note, puis moyenne** : chaque membre de la commission saisit sa grille ; le serveur calcule la moyenne
+>   par sous-critère et par critère ; un écart important entre membres est signalé (seuil à proposer) ; le président arrête l'étape.
+>   Les grilles individuelles sont jointes au rapport.
+> - **Q8** — les **consultants individuels** (art. 42-V) : **plus tard, lot à part** ; le lot 3 traite les cabinets (deux
+>   enveloppes).
+> - Restent au juriste : Q2, Q5, Q7 ; Q6 (méthode « qualification du consultant », budget prédéterminé) au pilote et au backend.
+
 ## Ce que le front fera, et quand
 
 - **Dès B1-B3** : la page de la procédure restreinte côté candidat invité ; le dépôt en deux enveloppes (scellement de deux
