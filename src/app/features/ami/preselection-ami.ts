@@ -229,7 +229,7 @@ interface NoteEnCours {
         <section class="card ps__bloc" aria-labelledby="ps-liste">
           <h2 id="ps-liste" class="ps__h2">Liste restreinte {{ p.etat === 'DEFINITIVE' ? 'définitive' : 'arrêtée' }}</h2>
           <ol class="ps__liste">
-            @for (r of p.liste; track r.idExpression) { <li><strong>{{ r.raisonSociale }}</strong> <span class="text-sm text-muted">NIF {{ r.nif || '—' }} · {{ r.note }} / 100</span></li> }
+            @for (r of p.liste; track r.idExpression) { <li><strong>{{ r.raisonSociale }}</strong><span class="text-sm text-muted">&nbsp;· NIF {{ r.nif || '—' }} · {{ r.note }} / 100</span></li> }
           </ol>
           @if (p.motifNombre) { <p class="text-sm"><strong>Motif du nombre :</strong> {{ p.motifNombre }}</p> }
           @if (p.observations) { <p class="text-sm"><strong>Observations :</strong> {{ p.observations }}</p> }
