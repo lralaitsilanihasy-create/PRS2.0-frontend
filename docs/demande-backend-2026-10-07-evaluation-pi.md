@@ -108,6 +108,16 @@ seul retenu (art. 42-IV), le rapport, et la suite du lot 2 (dossier de marché, 
 > met l'acte d'engagement (`AE`) dans la financière et **toutes les autres** dans la technique. Si une autre pièce doit aller dans la
 > financière (décomposition du prix, par exemple), il faut que `GET …/pieces` serve un champ `enveloppe` (`TECHNIQUE` |
 > `FINANCIERE`) par pièce : le front s'y alignera.
+>
+> ⚠️ **Backend, 2026-10-08 — H-PI-1 corrigée : `GET …/pieces` sert `enveloppe` par pièce** (nul hors PI) ; contrat :
+> `docs/api-endpoints.md`, § *… tranche PI-b*. L'acte d'engagement n'est **pas** la seule pièce financière : le dossier type (DPIC-PI
+> §7.2.2) y met aussi ses formulaires financiers, qui portent des montants. Pour une fiche PI, la liste s'enrichit :
+> - **`FINANCIERE`** : `AE` ; `PF2` (décomposition des coûts) et `PF3` (ventilation par activité) si `B05-PF-01` = *Prix forfaitaire* ;
+>   `PF4` (taux unitaires et temps passé) si *Temps passé* ; `PF5` (dépenses remboursables) toujours, `obligatoire` quand `B05-PF-11`
+>   les liste.
+> - **`TECHNIQUE`** : `RECU-DAO`, `GARANTIE` le cas échéant, `PT2` à `PT7` et `METHODOLOGIE` (DPIC-PI §7.2.1), tous obligatoires.
+> - Le front range chaque pièce dans l'enveloppe qu'indique `enveloppe`, au lieu de la règle « `AE` seul en financière ». En séance, les
+>   **pièces manquantes** d'une enveloppe ne comptent que les siennes.
 
 ## B3 — Deux séances d'ouverture
 
