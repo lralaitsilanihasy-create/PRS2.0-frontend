@@ -65,6 +65,21 @@ Le code d'affichage est celui du tableau de numérotation du manuel (p. 7) ; il 
   (dossier DDM au PV favorable) ; la Commission n'examine que les actes des contrats qu'elle a contrôlés a priori.
 - Un avenant, une résiliation, une indemnité… se déposent par la PRMP **depuis le marché** (pas de saisie libre de l'objet).
 
+> ⚠️ **Backend, 2026-10-08 — B1 livré (tranche M1, V94)** ; contrat : `docs/api-endpoints.md`, § *… tranche M1*. Le chantier est
+> découpé : **M1** sous-types (B1) ; **M2** pièces (B2) ; **M3** grilles (B3) ; **M4** motifs-types (B4) ; **M5** garde-fous, dépôt des
+> actes DGC depuis le marché, délais (B5, B6). Arbitrages du pilote du 08/10 en plus de Q1-Q4 : codes **sans accent** ; sous-type
+> **déduit du mode du plan** ; **DSS garde sa famille propre**.
+> - **Codes** : `DAOO` (ex-`DAO`, références comprises : « …/DAOO/… »), **`DPREQUAL`**, **`DAOOPREQUAL`**, `DAOOI`, `DAOR`, `DAORI`, `DC`,
+>   `DP`, `RJ` (DMC) ; `MAOO`, **`MAOOPREQUAL`**, `MAOOI`, `MAOR`, `MAORI`, `MPI`, `MGG` (DDM) ; `AVN`, `DR`, `INDEMN`, `PENAL`, `SURSIS`
+>   (**DGC**, nouvelle famille). `PPM.AGPM` reste **`PPM-AGPM`**. Le **type de DMC** « DAO » (`typeDmcCode`) ne change pas.
+> - **Écart sur DSS** : la déclaration sans suite n'est **pas** en famille DMC mais dans sa **famille propre `DSS`** (V93, arbitrage du
+>   pilote à la tranche 2d-3 : ni les points ni les pièces du DAO ne s'y appliquent) ; son lien à la procédure est tenu par la demande
+>   de sans suite (`GET /api/fiches-marche/{idDmc}/sans-suite`).
+> - **Dossier produit par la fiche** : `DC` pour une fiche de prestations intellectuelles ; sinon selon le mode du plan (`DAOOI` /
+>   `DAORI` international, `DAOOPREQUAL` pré-qualification, `DAOR` restreint, `DAOO`) ; le dossier de marché suit la même règle.
+> - Un `idSousType` `DAO` envoyé à `POST /api/saisies/dossier` est encore accepté et lu `DAOO` ; le front passe à `DAOO`.
+> - D'ici M2 et M3, les nouveaux sous-types prennent les pièces et les points **de leur famille** ; DGC n'en a aucun.
+
 ## B2 — Les pièces exigées, par sous-type
 
 Les pièces deviennent **par sous-type** (aujourd'hui par famille). Une pièce produite par l'application (DAO complet, rapport de
