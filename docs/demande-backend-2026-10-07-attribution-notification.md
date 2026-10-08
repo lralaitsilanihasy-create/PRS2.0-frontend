@@ -295,6 +295,22 @@ Le backend les sème en migration ; l'Administrateur peut les modifier ensuite.
 >   dateDelivrance, nom, taille, deposeLe, conforme, motif, verifieeLe }] }`, dès l'information. Côté candidat, `Resultat` gagne
 >   `dateSignature`, `dateNotification`, `notificationRecueLe`, `marcheDisponible`, `piecesAttributaire` (attributaire seul) et `retire`.
 
+> ⚠️ **Backend, 2026-10-08 — Q8, la réattribution, livrée (tranche 2d-2, V92)** ; contrat : `docs/api-endpoints.md`, § *… tranche
+> 2d-2*. Arbitrages du pilote du 08/10 : **nouveau rapport complet** ; les **prestations intellectuelles** comprises (par la
+> négociation) ; un délai de validité non saisi vaut validité **non contrôlée**.
+> - **`POST …/lots/{lot}/reattribuer`** `{ motif }`, PRMP seule, sur un lot `RETIRE` (409 `NON_RETIRE`). 409 **`AUCUN_SUIVANT_ELIGIBLE`**
+>   s'il ne reste aucun candidat (l'écran propose alors le sans suite, tranche 2d-3 — jamais l'infructuosité, art. 56-VI) ; 409
+>   **`OFFRE_EXPIREE`** (`details.echeance`) si le délai de validité de la fiche est échu.
+> - **Effet** : `lots[].reprises[]` gagne une entrée `type` = **`REATTRIBUTION`** (le champ `type` existe aussi pour `REPRISE`), avec
+>   `idOffreRetiree` et `note` (validité) ; le rapport signé est archivé, l'évaluation redevient `EN_COURS`, le lot `EN_EVALUATION`.
+>   Appel d'offres : l'offre retirée passe **non qualifiée** et la **post-qualification** se rouvre, au tour du suivant (`GET
+>   …/evaluation/lots/{lot}/qualification`). PI : la négociation réussie passe **`RETIREE`** (nouvel état de `NegociationDto`) et le
+>   suivant devient `prochain`. Ensuite, le parcours connu : nouveau rapport signé, nouveau dossier `DDM`, attribution, information
+>   (nouvelles lettres, nouveau délai).
+> - **Le cycle retiré est archivé** : ses pièces, recours et lettres disparaissent des lectures du lot et du candidat. **Écart** : la
+>   ligne du lot repart de zéro (`PROPOSE` après le nouveau rapport), l'historique tient dans `reprises[]` et le journal.
+> - Un autre lot déjà attribué garde son état pendant que l'évaluation est rouverte.
+
 ## B6 — Procédure infructueuse (art. 56) et déclaration sans suite (art. 55)
 
 | Méthode | URL | Accès | Corps | Statuts |
