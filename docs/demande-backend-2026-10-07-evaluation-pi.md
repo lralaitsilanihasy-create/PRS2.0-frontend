@@ -69,6 +69,20 @@ seul retenu (art. 42-IV), le rapport, et la suite du lot 2 (dossier de marché, 
 - Question **Q1** : la méthode *qualité technique exclusivement* (art. 42-III, prestations complexes) : faut-il quand même une
   enveloppe financière (ouverte pour la seule offre retenue, à la négociation), ou aucune ?
 
+> ⚠️ **Backend, 2026-10-08 — B2 livré (tranche PI-b, V86)** ; contrat : `docs/api-endpoints.md`, § *… tranche PI-b*.
+> - **Deux conteneurs ordinaires** : chaque enveloppe suit le parcours d'une offre (création, morceaux, scellement, accusé), avec son
+>   propre en-tête et sa propre clé partagée ; ADR-0013 inchangé. `POST /api/candidat/offres` prend **`enveloppe`** (`TECHNIQUE` |
+>   `FINANCIERE`) : obligatoire pour une consultation restreinte PI (400 `ENVELOPPE_OBLIGATOIRE`, `ENVELOPPE_INVALIDE`), refusée ailleurs
+>   (400 `ENVELOPPE_HORS_PI`). Une enveloppe de chaque sorte par entreprise et par lot (409 `OFFRE_EXISTANTE`) ; `remplace` vise une
+>   offre de la même enveloppe.
+> - **« Ensemble »** : le serveur ne peut pas recevoir deux conteneurs d'un seul geste ; le front les dépose l'un après l'autre. Les deux
+>   portent le **même numéro**, et l'accusé de la seconde porte **`jumelle`** (l'autre enveloppe : son empreinte figure ainsi sur
+>   l'accusé). Une enveloppe technique sans financière à la date limite reçoit en séance l'alerte **`FINANCIERE_MANQUANTE`**.
+> - **Retrait** : retirer une enveloppe retire la proposition entière (les deux).
+> - `OffreDto` gagne `enveloppe` ; le registre (`…/depots`) compte les **propositions** (`nombre`) et porte `enveloppe` sur chaque ligne.
+> - Le contrôle « aucun montant dans l'enveloppe technique » reste au front ; à l'ouverture, un montant trouvé n'est **pas lu** et lève
+>   l'alerte **`MONTANT_DANS_TECHNIQUE`**.
+
 ## B3 — Deux séances d'ouverture
 
 - **Première séance** (date limite) : n'ouvre que les enveloppes **techniques**, au quorum, comme le lot 4 ; le PV d'ouverture
@@ -77,6 +91,18 @@ seul retenu (art. 42-IV), le rapport, et la suite du lot 2 (dossier de marché, 
   le score minimum (`B06-TP-07`) ; celles des autres ne sont **jamais ouvertes** (rendues ou détruites selon la règle de
   conservation, Q2). Les candidats qualifiés sont invités à y assister ; le PV lit les notes techniques et les montants.
 - Le quorum et la cérémonie des clés sont ceux de la procédure ; la seconde séance réutilise les mêmes parts.
+
+> ⚠️ **Backend, 2026-10-08 — B3 livré en partie (tranche PI-b)** :
+> - **Première séance livrée** : elle ne connaît que les enveloppes techniques (listées dans `offres`, seules demandées aux détenteurs
+>   dans `mes-parts`, seules ouvertes) ; une part apportée pour une financière est ignorée ; les financières restent `DEPOSEE`, scellées.
+>   La lecture d'une technique ne sert **aucun montant** (`acteEngagement` et `rabais` nuls). Le PV n'en lit aucun et dit le nombre
+>   d'enveloppes financières restées scellées.
+> - **Écart de découpage : la seconde séance passe en PI-d**, avec l'évaluation financière : elle ouvre les financières des seuls candidats
+>   qualifiés, donc après l'arrêt de l'évaluation technique (PI-c).
+> - **« Les mêmes parts »** : ce ne sont pas les parts de la première séance qui serviront. Chaque enveloppe a sa propre clé, partagée
+>   entre les détenteurs, et les parts claires vivent en mémoire seulement : les détenteurs apporteront, en seconde séance, les parts
+>   des financières, déchiffrées avec **les mêmes clés** de la cérémonie.
+> - Les clés publiques de la procédure (`…/cles`) suivent la visibilité de la consultation : 404 hors des invités.
 
 ## B4 — L'évaluation technique
 
