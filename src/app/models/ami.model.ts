@@ -4,7 +4,8 @@
  * dans la fiche : il précède la demande de propositions et se fige à la publication.
  */
 
-export type EtatAmi = 'BROUILLON' | 'PUBLIE' | 'DISPENSE';
+/** ⚠️ AMI-b : `INFRUCTUEUX` (art. 56-II), déclaré par la PRMP sans aucune expression qualifiée. */
+export type EtatAmi = 'BROUILLON' | 'PUBLIE' | 'DISPENSE' | 'INFRUCTUEUX';
 
 /** Un critère de sélection : `poids` en points sur 100 (les poids totalisent 100). `code` (C1, C2…) est donné par le serveur s'il manque. */
 export interface CritereAmi {
@@ -66,6 +67,14 @@ export interface AmiPublic {
   publications: PublicationAmi[];
   publieLe: string | null;
   ouvert: boolean;
+  /** ⚠️ AMI-b (Q5) — la liste restreinte définitive, publiée ; vide avant. */
+  liste?: RetenuPublic[];
+}
+
+export interface RetenuPublic {
+  rang: number;
+  raisonSociale: string;
+  nif: string | null;
 }
 
 export interface ReferenceMission {
@@ -122,4 +131,103 @@ export interface Expression {
   references: ReferenceMission[];
   groupement: MembreGroupement[];
   pieces: PieceExpression[];
+}
+
+// ── Tranche AMI-b (V83) : la présélection par la commission, la liste restreinte, le rapport ────────────────────────────
+
+/** `EN_ATTENTE` : avant la date limite, aucune expression servie. */
+export type EtatPreselection = 'EN_ATTENTE' | 'NOTATION' | 'LISTE_ARRETEE' | 'DEFINITIVE' | 'INFRUCTUEUX';
+
+export interface DeclarationAmi {
+  membre: string;
+  nom: string;
+  president: boolean;
+  signeeLe: string | null;
+  conflit: boolean | null;
+  precision: string | null;
+}
+
+/** La note retenue d'un critère : la dernière saisie (le journal garde les autres). `note` nulle : pas encore notée. */
+export interface NoteAmi {
+  code: string;
+  libelle: string;
+  max: number;
+  note: number | null;
+  motif: string | null;
+  par: string | null;
+  nom: string | null;
+  le: string | null;
+}
+
+export interface ExpressionNotee {
+  id: string;
+  numero: number;
+  nif: string | null;
+  raisonSociale: string | null;
+  notes: NoteAmi[];
+  total: number | null;
+  /** Notée sur tous les critères. */
+  complete: boolean;
+  /** Complète, non écartée, au moins la note minimale. */
+  qualifiee: boolean;
+  ecartee: boolean;
+  motifEcartement: string | null;
+  rang: number | null;
+  exAequo: boolean;
+}
+
+export interface RetenuAmi {
+  rang: number;
+  idExpression: string;
+  idCandidat: string | null;
+  nif: string | null;
+  raisonSociale: string | null;
+  note: number | null;
+}
+
+export interface SignatureAmi {
+  im: string;
+  nom: string;
+  date: string | null;
+  empechement: boolean;
+  motif: string | null;
+  constatePar: string | null;
+  observation: string | null;
+}
+
+export interface RapportPreselection {
+  produitLe: string | null;
+  signe: boolean;
+  signeLe: string | null;
+  signatures: SignatureAmi[];
+  attendues: { im: string; nom: string }[];
+}
+
+/** `GET /api/fiches-marche/{idDmc}/ami/preselection` — PRMP, UGPM, CAO ; 404 sans AMI publié. */
+export interface Preselection {
+  idDmc: number;
+  etat: EtatPreselection;
+  declarations: DeclarationAmi[];
+  expressions: ExpressionNotee[];
+  liste: RetenuAmi[];
+  nombreRetenus: number | null;
+  noteMinimale: number | null;
+  motifNombre: string | null;
+  observations: string | null;
+  rapport: RapportPreselection | null;
+  nombreRelances: number;
+  motifInfructueux: string | null;
+}
+
+export interface NoteSaisie {
+  code: string;
+  note: number;
+  motif: string;
+}
+
+/** `POST …/ami/preselection/arreter` — `ordre` : les identifiants des ex æquo au seuil, dans l'ordre voulu. */
+export interface ArretListeCorps {
+  motifNombre: string | null;
+  observations: string | null;
+  ordre: string[] | null;
 }

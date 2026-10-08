@@ -31,4 +31,11 @@ export const CAO_ROUTES: Routes = [
     loadComponent: () => import('../evaluation/evaluation-ecran').then((m) => m.EvaluationEcran),
     data: { espace: 'cao' },
   },
+  {
+    // ⚠️ AMI-b (07/10, V83) — la présélection de l'AMI : déclaration, notation, arrêt de la liste, rapport à signer.
+    path: 'procedures/:idDmc/ami',
+    canActivate: [externeConnecteGuard],
+    loadComponent: () => import('../ami/preselection-ami').then((m) => m.PreselectionAmi),
+    data: { espace: 'cao' },
+  },
 ];

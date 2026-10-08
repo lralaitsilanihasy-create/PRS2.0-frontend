@@ -68,34 +68,46 @@
           </label>
         </div>
 
-        <fieldset class="lti__liste">
-          <legend class="form-label">Liste restreinte ({{ candidats().length }} candidat{{ candidats().length > 1 ? 's' : '' }})</legend>
-          @for (c of candidats(); track c.id; let i = $index) {
-            <div class="lti__candidat">
-              <span class="lti__rang" aria-hidden="true">{{ i + 1 }}.</span>
-              <label class="form-group lti__nom">
-                <span class="form-label">Nom du candidat n° {{ i + 1 }}</span>
-                <input class="form-control" type="text" [value]="c.nom" (input)="poserCandidat(c.id, 'nom', $any($event.target).value)" />
-                @if (c.erreurNom; as m) { <span class="form-error">{{ m }}</span> }
-              </label>
-              <label class="form-group lti__adresse">
-                <span class="form-label">Adresse du candidat n° {{ i + 1 }}</span>
-                <textarea class="form-control" rows="2" [value]="c.adresse" (input)="poserCandidat(c.id, 'adresse', $any($event.target).value)"></textarea>
-                @if (c.erreurAdresse; as m) { <span class="form-error">{{ m }}</span> }
-              </label>
-              <button type="button" class="btn btn-sm btn-outline lti__retirer" [disabled]="candidats().length <= 1 || envoi()" [attr.aria-label]="'Retirer le candidat n° ' + (i + 1)" (click)="retirerCandidat(c.id)">✕</button>
-            </div>
-          }
-          @if (erreurs().candidats; as m) { <span class="form-error">{{ m }}</span> }
-          <button type="button" class="btn btn-sm btn-secondary" [disabled]="envoi()" (click)="ajouterCandidat()">+ Ajouter un candidat</button>
-        </fieldset>
+        <!-- ⚠️ AMI-b (07/10, V83) — avec une liste restreinte définitive, les lettres vont à ses candidats (raison sociale et
+             adresse déclarées de leur entreprise) : le serveur ignore la saisie, l'écran ne la propose plus. -->
+        @if (listeAmi(); as liste) {
+          <div class="lti__liste">
+            <p class="form-label">Liste restreinte arrêtée par la commission ({{ liste.length }} candidat{{ liste.length > 1 ? 's' : '' }})</p>
+            <ol>
+              @for (r of liste; track r.idExpression) { <li>{{ r.raisonSociale }}</li> }
+            </ol>
+            <p class="avs__aide">Les adresses sont celles que chaque candidat a déclarées pour son entreprise ; chacun est averti en ligne et par courriel.</p>
+          </div>
+        } @else {
+          <fieldset class="lti__liste">
+            <legend class="form-label">Liste restreinte ({{ candidats().length }} candidat{{ candidats().length > 1 ? 's' : '' }})</legend>
+            @for (c of candidats(); track c.id; let i = $index) {
+              <div class="lti__candidat">
+                <span class="lti__rang" aria-hidden="true">{{ i + 1 }}.</span>
+                <label class="form-group lti__nom">
+                  <span class="form-label">Nom du candidat n° {{ i + 1 }}</span>
+                  <input class="form-control" type="text" [value]="c.nom" (input)="poserCandidat(c.id, 'nom', $any($event.target).value)" />
+                  @if (c.erreurNom; as m) { <span class="form-error">{{ m }}</span> }
+                </label>
+                <label class="form-group lti__adresse">
+                  <span class="form-label">Adresse du candidat n° {{ i + 1 }}</span>
+                  <textarea class="form-control" rows="2" [value]="c.adresse" (input)="poserCandidat(c.id, 'adresse', $any($event.target).value)"></textarea>
+                  @if (c.erreurAdresse; as m) { <span class="form-error">{{ m }}</span> }
+                </label>
+                <button type="button" class="btn btn-sm btn-outline lti__retirer" [disabled]="candidats().length <= 1 || envoi()" [attr.aria-label]="'Retirer le candidat n° ' + (i + 1)" (click)="retirerCandidat(c.id)">✕</button>
+              </div>
+            }
+            @if (erreurs().candidats; as m) { <span class="form-error">{{ m }}</span> }
+            <button type="button" class="btn btn-sm btn-secondary" [disabled]="envoi()" (click)="ajouterCandidat()">+ Ajouter un candidat</button>
+          </fieldset>
+        }
 
         @if (refus(); as r) { <div class="alert alert-danger" role="alert"><span>{{ r }}</span></div> }
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline" [disabled]="envoi()" (click)="fermer()">Annuler</button>
         <button type="button" class="btn btn-primary" [disabled]="envoi() || !complete()" (click)="imprimer()">
-          {{ envoi() ? 'Impression…' : 'Imprimer ' + candidats().length + ' lettre' + (candidats().length > 1 ? 's' : '') }}
+          {{ envoi() ? 'Impression…' : 'Imprimer ' + nombreLettres() + ' lettre' + (nombreLettres() > 1 ? 's' : '') }}
         </button>
       </div>
     </div>

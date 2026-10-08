@@ -153,3 +153,16 @@ ne trace l'AMI : ni son avis, ni les candidatures reçues, ni la sélection.
 > - ⚠️ **Recette bloquée par le référentiel** : les deux lignes PI de DBPRS20 (303290, 303291, plan 100359) portent le mode
 >   « Appel à manifestation d'intérêt » (id 9), rattaché à **aucun type de DMC** : la fiche ne se crée pas (409 `MODE_NON_DAO`).
 >   Le rattachement se fait par l'Administrateur (Types de DMC) — à arbitrer par le pilote.
+
+> ✅ **Front, 2026-10-08 — tranche AMI-b branchée** (contrat V83, back 83b7c82) :
+> - **Présélection** (`features/ami/preselection-ami`), un même écran dans deux espaces : `/cao/procedures/{idDmc}/ami` (membres :
+>   déclaration, notes par critère bornées et motivées, écartement / rétablissement motivé ; président : arrêt de la liste, motif du
+>   nombre si moins de qualifiées que de places, ordre des ex æquo fixé à l'écran sur `EGALITE_A_DEPARTAGER` puis renvoyé ; rapport
+>   PDF / Word, signature, empêchement constaté) et `/procedure/{idDmc}/ami` (PRMP / UGPM : lecture ; PRMP : relance, infructuosité).
+>   Entrées : la page de la procédure côté CAO (prestations intellectuelles), l'écran de l'AMI côté PRMP après la date limite.
+> - **Lettres d'invitation** : avec une liste définitive, la modale montre la liste arrêtée et envoie `candidats: []` (saisie
+>   ignorée par le serveur) ; sans AMI ou dispensé, la saisie comme avant.
+> - **Dossier de la demande de propositions** : le refus `LISTE_NON_ARRETEE` est expliqué à la création depuis la fiche.
+> - **Candidat** : la liste restreinte publiée paraît sur la page de l'AMI.
+> - Pas de compteur ni de routage de notification internes : le contrat n'en sert pas (les notifications de l'AMI vont aux candidats).
+> - ⚠️ Recette toujours bloquée par le mode 9 sans type de DMC (encadré AMI-a ci-dessus).

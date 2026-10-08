@@ -55,7 +55,7 @@ describe('Lettres d’invitation — l’encart et la modale de la liste restrei
   const dispo = (d: Partial<DisponibiliteAvis>): DisponibiliteAvis =>
     ({ disponible: false, raison: null, idAvis: null, statutPv: null, statutDossier: null, idDossierSoumis: 100, ...d });
 
-  function monter(etat: DisponibiliteAvis, docs: DocumentFiche[] = []): void {
+  function monter(etat: DisponibiliteAvis, docs: DocumentFiche[] = [], preselection: object | null = null): void {
     toast = { success: vi.fn(), error: vi.fn() };
     TestBed.configureTestingModule({ imports: [LettresInvitation], providers: [provideHttpClient(), provideHttpClientTesting(), { provide: ToastService, useValue: toast }] });
     http = TestBed.inject(HttpTestingController);
@@ -64,6 +64,9 @@ describe('Lettres d’invitation — l’encart et la modale de la liste restrei
     rendre();
     http.expectOne('/api/fiches-marche/40/lettres-invitation/disponibilite').flush(etat);
     http.expectOne('/api/fiches-marche/40/documents').flush(docs);
+    const ps = http.expectOne('/api/fiches-marche/40/ami/preselection');
+    if (preselection) ps.flush(preselection);
+    else ps.flush({ message: 'x' }, { status: 404, statusText: 'Not Found' });
     rendre();
   }
   afterEach(() => {
@@ -117,5 +120,23 @@ describe('Lettres d’invitation — l’encart et la modale de la liste restrei
     (lignes[1].querySelector('.lti__retirer') as HTMLButtonElement).click();
     rendre();
     expect((racine().querySelector('.lti__retirer') as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('⚠️ AMI-b : avec une liste restreinte définitive, la modale la montre et n’envoie aucune saisie', () => {
+    const liste = [
+      { rang: 1, idExpression: 'e-1', idCandidat: 'C1', nif: '1', raisonSociale: 'Cabinet Alpha', note: 85 },
+      { rang: 2, idExpression: 'e-2', idCandidat: 'C2', nif: '2', raisonSociale: 'Bureau Bêta', note: 78 },
+    ];
+    monter(dispo({ disponible: true, idAvis: 'FAV', statutPv: 'SIGNE' }), [], { etat: 'DEFINITIVE', liste });
+    bouton('Imprimer les lettres d’invitation')!.click();
+    rendre();
+    expect(racine().querySelectorAll('.lti__candidat').length).toBe(0);
+    expect(texte(modale())).toContain('Liste restreinte arrêtée par la commission (2 candidats)');
+    saisir(modale().querySelector('input[type="date"]'), '2026-10-20');
+    saisir(modale().querySelector('input[type="text"]'), 'Antananarivo');
+    bouton('Imprimer 2 lettres', modale())!.click();
+    const req = http.expectOne('/api/fiches-marche/40/lettres-invitation');
+    expect(req.request.body).toEqual({ dateEnvoi: '2026-10-20', lieu: 'Antananarivo', candidats: [] });
+    req.flush([], { status: 201, statusText: 'Created' });
   });
 });

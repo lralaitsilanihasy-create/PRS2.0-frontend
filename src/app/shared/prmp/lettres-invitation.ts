@@ -6,7 +6,8 @@ import { catchError, forkJoin, of } from 'rxjs';
 import { ApiError, codeErreur, corpsErreur, erreursParChamp } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur, telechargerBlob } from '../../core/securite/fichiers-surs';
-import { CandidatInvite, DisponibiliteAvis, DocumentFiche } from '../../models';
+import { CandidatInvite, DisponibiliteAvis, DocumentFiche, Preselection, RetenuAmi } from '../../models';
+import { AmiService } from '../../services/ami.services';
 import { FicheMarcheService } from '../../services/fiche-marche.services';
 import { ModaleDirective } from '../a11y/modale.directive';
 import { erreurCandidat, horodatage, jjmmaaaa, lettresImprimees, messageIndisponible } from './avis-specifique-modele';
@@ -38,6 +39,7 @@ interface LigneCandidat extends CandidatInvite {
 })
 export class LettresInvitation implements OnInit {
   private readonly fiches = inject(FicheMarcheService);
+  private readonly amis = inject(AmiService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -46,6 +48,9 @@ export class LettresInvitation implements OnInit {
 
   readonly etat = signal<DisponibiliteAvis | null>(null);
   readonly documents = signal<DocumentFiche[]>([]);
+  /** ⚠️ AMI-b — la liste restreinte définitive de l'AMI, s'il y en a une : elle remplace la saisie. */
+  readonly listeAmi = signal<RetenuAmi[] | null>(null);
+  readonly nombreLettres = computed(() => this.listeAmi()?.length ?? this.candidats().length);
   readonly imprimees = computed(() => lettresImprimees(this.documents()));
   readonly visible = computed(() => {
     const e = this.etat();
@@ -65,8 +70,8 @@ export class LettresInvitation implements OnInit {
   private prochainId = 1;
 
   readonly complete = computed(
-    () => this.dateEnvoi().trim() !== '' && this.lieu().trim() !== '' && this.candidats().length > 0
-      && this.candidats().every((c) => c.nom.trim() !== '' && c.adresse.trim() !== ''),
+    () => this.dateEnvoi().trim() !== '' && this.lieu().trim() !== ''
+      && (!!this.listeAmi() || (this.candidats().length > 0 && this.candidats().every((c) => c.nom.trim() !== '' && c.adresse.trim() !== ''))),
   );
 
   readonly jj = jjmmaaaa;
@@ -81,11 +86,14 @@ export class LettresInvitation implements OnInit {
     forkJoin({
       etat: this.fiches.disponibiliteLettres(id).pipe(catchError(() => of(null))),
       docs: this.fiches.documents(id).pipe(catchError(() => of([] as DocumentFiche[]))),
+      // Sans AMI publié (404), ou dispensé : la saisie, comme avant.
+      preselection: this.amis.preselection(id).pipe(catchError(() => of(null as Preselection | null))),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ etat, docs }) => {
+      .subscribe(({ etat, docs, preselection }) => {
         this.etat.set(etat);
         this.documents.set(docs);
+        this.listeAmi.set(preselection?.etat === 'DEFINITIVE' && preselection.liste.length ? preselection.liste : null);
       });
   }
 
@@ -132,7 +140,7 @@ export class LettresInvitation implements OnInit {
     const corps = {
       dateEnvoi: this.dateEnvoi().trim(),
       lieu: this.lieu().trim(),
-      candidats: this.candidats().map((c) => ({ nom: c.nom.trim(), adresse: c.adresse.trim() })),
+      candidats: this.listeAmi() ? [] : this.candidats().map((c) => ({ nom: c.nom.trim(), adresse: c.adresse.trim() })),
     };
     this.fiches
       .imprimerLettres(this.idDmc(), corps)
@@ -142,7 +150,7 @@ export class LettresInvitation implements OnInit {
           this.envoi.set(false);
           this.ouverte.set(false);
           this.documents.update((d) => [...produits, ...d]);
-          const n = corps.candidats.length;
+          const n = this.listeAmi()?.length ?? corps.candidats.length;
           this.toast.success(`${n} lettre${n > 1 ? 's' : ''} d’invitation imprimée${n > 1 ? 's' : ''} : en tête de la liste, en PDF et en Word.`);
         },
         error: (e: ApiError | HttpErrorResponse) => {

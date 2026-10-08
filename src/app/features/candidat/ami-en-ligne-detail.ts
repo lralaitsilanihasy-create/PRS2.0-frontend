@@ -105,6 +105,17 @@ interface LigneMembre {
           </ul>
         </section>
 
+        <!-- ⚠️ AMI-b (Q5) — la liste restreinte définitive, publiée à la dernière signature du rapport de présélection. -->
+        @if (a.liste?.length) {
+          <section class="card aed__bloc aed__bloc--large" aria-labelledby="aed-liste">
+            <h2 id="aed-liste" class="aed__h2">Liste restreinte</h2>
+            <p class="text-sm text-muted">Arrêtée par la commission : ces candidats sont invités à remettre une proposition.</p>
+            <ol class="aed__liste">
+              @for (r of a.liste; track r.rang) { <li><strong>{{ r.raisonSociale }}</strong>@if (r.nif) { <span class="text-xs text-muted"> · NIF {{ r.nif }}</span> }</li> }
+            </ol>
+          </section>
+        }
+
         <section class="card aed__bloc aed__bloc--large" aria-labelledby="aed-depot">
           <h2 id="aed-depot" class="aed__h2">Votre expression d’intérêt</h2>
           @if (!connecte()) {

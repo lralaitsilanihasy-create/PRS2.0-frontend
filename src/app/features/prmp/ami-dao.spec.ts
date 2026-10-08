@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { ActivatedRoute, RouterLink, convertToParamMap, provideRouter } from '@angular/router';
 import { vi } from 'vitest';
 
 import { AuthService } from '../../core/auth/auth.service';
@@ -32,12 +32,13 @@ describe('Appel à manifestation d’intérêt, côté PRMP', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
+        provideRouter([]),
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ idDmc: '50' }) } } },
         { provide: AuthService, useValue: { role: signal(role) } },
         { provide: ToastService, useValue: { success: vi.fn(), error: vi.fn() } },
       ],
     });
-    TestBed.overrideComponent(AmiDao, { set: { imports: [EtatErreur], schemas: [CUSTOM_ELEMENTS_SCHEMA] } });
+    TestBed.overrideComponent(AmiDao, { set: { imports: [EtatErreur, RouterLink], schemas: [CUSTOM_ELEMENTS_SCHEMA] } });
     http = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(AmiDao);
     fixture.detectChanges();

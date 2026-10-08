@@ -65,6 +65,15 @@ import { SeanceMembre } from './seance-membre';
       <!-- ⚠️ Lot 4 (V69) — la séance d'ouverture : apporter ses parts, puis la lecture. -->
       <app-seance-membre [idDmc]="idDmc" />
 
+      <!-- ⚠️ AMI-b (07/10, V83) — prestations intellectuelles : la présélection de l'AMI précède la demande de propositions. -->
+      @if (v.procedure.categorie === 'PRESTATIONS_INTELLECTUELLES') {
+        <section class="card pc__bloc" aria-labelledby="pc-ami">
+          <h2 id="pc-ami" class="pc__h2">Présélection (appel à manifestation d’intérêt)</h2>
+          <p class="text-sm">Après la date limite, la commission note les expressions d’intérêt sur les critères publiés, le président arrête la liste restreinte, et tous signent le rapport de présélection.</p>
+          <a class="btn btn-primary btn-sm pc__eval" [routerLink]="['/cao/procedures', idDmc, 'ami']">Ouvrir la présélection</a>
+        </section>
+      }
+
       <!-- ⚠️ 07/10 — l'évaluation des offres (lot 1) : déclaration préalable, étapes 2 à 5, rapport à signer. -->
       <section class="card pc__bloc" aria-labelledby="pc-eval">
         <h2 id="pc-eval" class="pc__h2">Évaluation des offres</h2>

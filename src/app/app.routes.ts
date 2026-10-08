@@ -115,6 +115,13 @@ export const routes: Routes = [
         data: { title: 'Évaluation des offres', espace: 'interne', parents: [{ label: 'Séance d’ouverture', chemin: ['/procedure', ':idDmc', 'seance'] }] },
       },
       {
+        // ⚠️ AMI-b (07/10, V83) — la présélection de l'AMI, côté PRMP / UGPM (lecture, relance, infructuosité). Les membres de
+        // la CAO notent depuis leur espace (/cao/procedures/:idDmc/ami).
+        path: 'procedure/:idDmc/ami',
+        loadComponent: () => import('./features/ami/preselection-ami').then((m) => m.PreselectionAmi),
+        data: { title: 'Présélection des candidats', espace: 'interne', parents: [{ label: 'Fiche DAO', chemin: ['/prmp/dao', ':idDmc'] }, { label: 'Appel à manifestation d’intérêt', chemin: ['/prmp/dao', ':idDmc', 'ami'] }] },
+      },
+      {
         // ⚠️ 06/10 — les procédures en ligne du responsable (toutes pour l'Administrateur). Route transverse : le serveur
         // filtre par identité, et sert [] à qui n'est responsable de rien.
         path: 'procedures-en-ligne',

@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { skipErrorToast } from '../core/errors/api-error';
-import { Ami, AmiCorps, AmiPublic, Expression, ExpressionCorps, PublicationAmi } from '../models';
+import { Ami, AmiCorps, AmiPublic, ArretListeCorps, Expression, ExpressionCorps, NoteSaisie, Preselection, PublicationAmi } from '../models';
 
 /**
  * ⚠️ AMI en ligne, tranche AMI-a (07/10, V82). Les refus à code (`PONDERATION_INVALIDE`, `LECTURE_FERMEE`, `PIECES_MANQUANTES`…)
@@ -52,6 +52,53 @@ export class AmiService {
 
   piece(idDmc: number, idExpression: string, idPiece: number): Observable<Blob> {
     return this.http.get(`${this.url(idDmc)}/expressions/${idExpression}/pieces/${idPiece}`, { responseType: 'blob', context: skipErrorToast() });
+  }
+
+  // ── Tranche AMI-b (V83) : la présélection ──
+
+  preselection(idDmc: number): Observable<Preselection> {
+    return this.http.get<Preselection>(`${this.url(idDmc)}/preselection`, { context: skipErrorToast() });
+  }
+
+  declarer(idDmc: number, conflit: boolean, precision: string | null): Observable<Preselection> {
+    return this.http.post<Preselection>(`${this.url(idDmc)}/preselection/declaration`, { conflit, precision }, { context: skipErrorToast() });
+  }
+
+  noter(idDmc: number, idExpression: string, notes: NoteSaisie[]): Observable<Preselection> {
+    return this.http.put<Preselection>(`${this.url(idDmc)}/expressions/${idExpression}/notes`, { notes }, { context: skipErrorToast() });
+  }
+
+  /** `ecartee` faux : rétablir. */
+  ecarter(idDmc: number, idExpression: string, ecartee: boolean, motif: string): Observable<Preselection> {
+    return this.http.post<Preselection>(`${this.url(idDmc)}/expressions/${idExpression}/ecartement`, { ecartee, motif }, { context: skipErrorToast() });
+  }
+
+  /** Président : 409 `EGALITE_A_DEPARTAGER` (`details.expressions`), 400 `MOTIF_NOMBRE_OBLIGATOIRE` (Q3). */
+  arreter(idDmc: number, corps: ArretListeCorps): Observable<Preselection> {
+    return this.http.post<Preselection>(`${this.url(idDmc)}/preselection/arreter`, corps, { context: skipErrorToast() });
+  }
+
+  rapport(idDmc: number, format: 'pdf' | 'docx'): Observable<Blob> {
+    const params = format === 'docx' ? { format } : undefined;
+    return this.http.get(`${this.url(idDmc)}/rapport`, { params, responseType: 'blob', context: skipErrorToast() });
+  }
+
+  signer(idDmc: number, observation: string | null): Observable<Preselection> {
+    return this.http.post<Preselection>(`${this.url(idDmc)}/rapport/signer`, { observation }, { context: skipErrorToast() });
+  }
+
+  constaterEmpechement(idDmc: number, im: string, motif: string): Observable<Preselection> {
+    return this.http.post<Preselection>(`${this.url(idDmc)}/rapport/empechement`, { im, motif }, { context: skipErrorToast() });
+  }
+
+  /** PRMP, après la date limite et avant l'arrêt : expressions et notes gardées. */
+  relancer(idDmc: number, dateLimite: string, motif: string): Observable<Ami> {
+    return this.http.post<Ami>(`${this.url(idDmc)}/relancer`, { dateLimite, motif }, { context: skipErrorToast() });
+  }
+
+  /** PRMP : 409 `QUALIFIES_PRESENTS` s'il reste une expression qualifiée. */
+  declarerInfructueux(idDmc: number, motif: string): Observable<Ami> {
+    return this.http.post<Ami>(`${this.url(idDmc)}/infructueux`, { motif }, { context: skipErrorToast() });
   }
 }
 

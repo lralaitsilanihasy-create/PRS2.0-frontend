@@ -1104,6 +1104,9 @@ export class FicheMarcheEcran {
         if (Number.isFinite(deja)) {
           this.fiche.update((f) => (f ? { ...f, idDossierSoumis: deja } : f));
           void this.router.navigate(['/prmp/dossier', deja]);
+        } else if (e.code === 'LISTE_NON_ARRETEE') {
+          // ⚠️ AMI-b (Q4) — le dossier de la demande de propositions attend la liste restreinte définitive ; le rapport signé y sera joint d'office.
+          this.toast.error('La liste restreinte de l’appel à manifestation d’intérêt n’est pas encore définitive : le dossier se crée après la signature du rapport de présélection.');
         } else {
           this.toast.error(e.message || 'Le dossier n’a pas pu être créé.');
         }

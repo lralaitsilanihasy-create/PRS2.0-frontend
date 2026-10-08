@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, WritableSignal, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
@@ -59,7 +59,7 @@ interface LignePublication {
 @Component({
   selector: 'app-ami-dao',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [EtatErreur, EnteteProcedure],
+  imports: [RouterLink, EtatErreur, EnteteProcedure],
   template: `
     <section class="ami">
       <header class="page-header">
@@ -78,7 +78,7 @@ interface LignePublication {
       } @else {
         @if (ami(); as a) {
           <p class="ami__etat">
-            <span class="badge" [class.badge-warning]="a.etat === 'BROUILLON'" [class.badge-success]="a.etat === 'PUBLIE'" [class.badge-neutral]="a.etat === 'DISPENSE'">{{ etats[a.etat] }}</span>
+            <span class="badge" [class.badge-warning]="a.etat === 'BROUILLON'" [class.badge-success]="a.etat === 'PUBLIE'" [class.badge-neutral]="a.etat === 'DISPENSE'" [class.badge-danger]="a.etat === 'INFRUCTUEUX'">{{ etats[a.etat] }}</span>
             @if (a.publieLe) { <span class="text-sm text-muted">publié le {{ dateHeure(a.publieLe) }}{{ a.publiePar ? ' par ' + a.publiePar : '' }}</span> }
             @if (a.etat === 'PUBLIE') {
               <span class="text-sm"><strong>{{ a.nombreExpressions }}</strong> {{ a.nombreExpressions > 1 ? 'expressions déposées' : 'expression déposée' }}</span>
@@ -210,6 +210,9 @@ interface LignePublication {
           @if (a.etat === 'PUBLIE') {
             <section class="card ami__bloc" aria-labelledby="ami-expr">
               <h2 id="ami-expr" class="ami__h2">Expressions d’intérêt</h2>
+              @if (a.lectureOuverte) {
+                <p><a class="btn btn-primary btn-sm" [routerLink]="['/procedure', idDmc, 'ami']">Présélection, liste restreinte et rapport</a></p>
+              }
               @if (!a.lectureOuverte) {
                 <p class="text-sm" role="status">Elles se lisent après la date limite{{ a.dateLimite ? ', le ' + dateHeure(a.dateLimite) : '' }}. D’ici là, seul leur nombre est connu : {{ a.nombreExpressions }}.</p>
               } @else if (exprChargement()) {
@@ -219,7 +222,7 @@ interface LignePublication {
               } @else if (!expressions().length) {
                 <p class="text-muted">Aucune expression d’intérêt reçue.</p>
               } @else {
-                <p class="text-sm text-muted">La notation par la commission et la liste restreinte arrivent avec la tranche suivante.</p>
+                <p class="text-sm text-muted">La commission note les expressions et arrête la liste restreinte à l’écran de présélection.</p>
                 @for (x of expressions(); track x.id) {
                   <details class="ami__x">
                     <summary>
@@ -287,7 +290,7 @@ export class AmiDao implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   readonly idDmc = Number(inject(ActivatedRoute).snapshot.paramMap.get('idDmc'));
 
-  readonly etats: Readonly<Record<Ami['etat'], string>> = { BROUILLON: 'En préparation', PUBLIE: 'Publié', DISPENSE: 'Dispensé de publicité' };
+  readonly etats: Readonly<Record<Ami['etat'], string>> = { BROUILLON: 'En préparation', PUBLIE: 'Publié', DISPENSE: 'Dispensé de publicité', INFRUCTUEUX: 'Infructueux' };
   readonly dateHeure = dateHeureFr;
   readonly taille = tailleLisible;
   readonly estPrmp = computed(() => this.auth.role() === 'PRMP');
