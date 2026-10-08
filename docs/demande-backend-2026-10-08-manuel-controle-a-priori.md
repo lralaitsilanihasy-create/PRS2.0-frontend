@@ -103,6 +103,20 @@ présélection, projet de marché, PV d'ouverture, rapport d'évaluation) reste 
 | DSS | Fiche* ; AGPM ou PPM contrôlé* ; projet de décision* ; justificatifs des motifs d'intérêt général* |
 | INDEMN / SURSIS / PENAL / DR | Fiche* ; AGPM ou PPM contrôlé* ; PV de la Commission sur le marché* ; marché initial* ; projet de décision* ; justificatifs (correspondances, calcul de l'indemnité ou du nombre de jours, constats, mises en demeure)* |
 
+> ⚠️ **Backend, 2026-10-08 — B2 livré (tranche M2, V95)** ; contrat : `docs/api-endpoints.md`, § *… tranche M2*. Arbitrages du pilote
+> du 08/10 : pièces « * » **exigées dès M2** ; **plans `PPM` / `PPM-AGPM` inchangés** ; sans fiche, les pièces qui dépendent de la
+> catégorie sont **servies sans obligation**.
+> - **Lecture** : `GET /api/type-piece-jointes?sousType={code}` (la liste du sous-type, à défaut celle de sa famille) et **`GET
+>   /api/dossiers/{id}/pieces-exigees`** (obligation résolue pour ce dossier, par la catégorie et la forme de sa fiche). Le DTO gagne
+>   **`categorie`** et **`forme`** (`CONTRAT_CADRE` | `AUTRE`). Le dépôt reste `idTypePiece` ; aucun contrôle de famille à l'upload.
+> - **Une liste propre remplace celle de la famille** (les 9 pièces DMC communes ne s'ajoutent pas à DAOO). Sous-types sans liste
+>   (`DP`) : pièces de la famille. Soumission et recevabilité lisent la même liste.
+> - **Écarts** : DAOOI, DAOOPREQUAL reprennent la liste DAOO ; DAORI celle de DAOR ; MAOOI et MAOOPREQUAL celle de MAOO (MAOOPREQUAL
+>   avec la décision des pré-qualifiés), MAORI celle de MAOR. « Documents d'évaluation de l'AMI » (DC) = `RAPPORT_PRESELECTION`, joint
+>   d'office, plus `PV_AMI` (PV d'ouverture et de validation). « Bordereau ou DQE » du marché = `DEVIS_ESTIMATIF`, joint d'office. Le DSS
+>   garde en plus `MOTIFS_SANS_SUITE` produit par le serveur. Les pièces jointes d'office sont reprises par leur code.
+> - **Effet** : un brouillon `DAOO` existant doit maintenant porter sa liste avant d'être soumis.
+
 ## B3 — Les grilles de contrôle, par sous-type
 
 **Mécanisme proposé** : un point peut porter, en plus de son sous-type (nullable = commun, comme aujourd'hui), une **condition** sur
