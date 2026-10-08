@@ -304,6 +304,18 @@ PPM, DAO, DC, marché, avenant), et l'examen alerte au-delà de 5 jours ouvrés.
 | Q6 | Le rapport d'irrégularité grave : dans l'application, ou hors ligne ? | pilote |
 | Q7 | Délais : valeurs par défaut du manuel, par sous-type ; 48 h lues comme 16 heures ouvrées ? | pilote |
 
+> ⚠️ **Arbitrages du pilote, 2026-10-08** :
+> - **Q1** — le sous-type `DAO` est **renommé `DAOO`**, références des dossiers existants comprises (migration des données : dossiers,
+>   points de contrôle, pièces, références imprimées).
+> - **Q2** — les variantes internationales sont des **sous-types propres** : `DAOOI`, `DAORI`, `MAOOI`, `MAORI` (et leurs grilles :
+>   celles de la variante nationale, la publicité internationale en plus — un journal national et un journal de portée
+>   internationale, décret 2019-1310 art. 2.1).
+> - **Q3** — le projet de marché de gré à gré prend le code **`MGG`**.
+> - **Q4** — les projets de textes (`TEXTMP`) restent **hors de l'application** (examen collégial).
+> - **Q5** — **oui** au référentiel de motifs-types (B4), à insérer dans le projet de PV et la lettre de renvoi.
+> - **Q7** — **oui** : délais du manuel par défaut, par sous-type ; 48 h = **16 heures ouvrées**.
+> - **Q6** (rapport d'irrégularité grave) reste ouverte.
+
 ## Ce que le front fera, et quand
 
 - **Dès B1** : les nouveaux sous-types et la famille DGC paraissent d'eux-mêmes dans « Créer dossier » (liste servie) ; un écran de
