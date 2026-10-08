@@ -340,6 +340,21 @@ Le backend les sème en migration ; l'Administrateur peut les modifier ensuite.
 >   redevient `EN_COURS`, le président rouvre l'étape voulue, un nouveau rapport est signé, puis un nouveau dossier de marché.
 >   `EVALUATION_REPRISE` aux membres de la CAO.
 
+> ⚠️ **Backend, 2026-10-08 — le sans suite livré (tranche 2d-3, V93)** ; contrat : `docs/api-endpoints.md`, § *… tranche 2d-3*.
+> Arbitrages du pilote du 08/10 : famille propre **`DSS`** ; les **5 jours courent de la réception** ; signature du **circuit
+> actuel** ; déclaration par un **geste de la PRMP** après l'avis favorable. **Écart au tableau ci-dessus** : pas de
+> `POST …/sans-suite/avis` (Q10 : l'avis vient du PV du dossier) ; à la place, `POST …/sans-suite/declarer`.
+> - **`POST /api/fiches-marche/{idDmc}/sans-suite`** `{ motifs }` (PRMP seule) : crée le **dossier `DSS`** en brouillon, avec la pièce
+>   `MOTIFS_SANS_SUITE` produite par le serveur ; la PRMP le **soumet** comme tout dossier. 409 `MARCHE_SIGNE`, `SANS_SUITE_EN_COURS`,
+>   `SANS_SUITE_DECLAREE` ; 400 `MOTIFS_OBLIGATOIRES`.
+> - **`GET …/sans-suite`** → `{ declaree, courante, demandes[{ …, idDossier, statutDossier, recuLe, echeance, echeanceDepassee, avis,
+>   etat (A_SOUMETTRE | AU_CONTROLE | FAVORABLE | DEFAVORABLE | DECLAREE), … }] }` ; `GET …/sans-suite/{id}/motifs` (PDF, Word).
+> - **Avis** : le PV d'un dossier `DSS` n'accepte que `FAV` ou `DEF` (409 `AVIS_SANS_SUITE`). `DEF` : la procédure reprend. Pendant
+>   l'attente, la signature répond 409 `SANS_SUITE_EN_COURS`. Alertes `SANS_SUITE_AVIS` (PRMP) et `ECHEANCE_SANS_SUITE` (veille).
+> - **`POST …/sans-suite/declarer`** `{ decision{ reference, date } }` (après `FAV`) : `PROCEDURE_SANS_SUITE` à chaque candidat, page
+>   publique (`ResultatPublic` : une entrée, `lot` nul, `sansSuite`, `motifsSansSuite`, `dateDecision`) ; ensuite tout geste
+>   d'attribution répond 409 **`SANS_SUITE_DECLAREE`**.
+
 ## B7 — Accès, notifications, journal, compteurs
 
 - **Accès** : la PRMP agit ; l'UGPM et le responsable lisent ; les membres de la CAO lisent l'état de leurs lots ; le candidat ne voit
