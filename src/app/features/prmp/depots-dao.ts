@@ -1,8 +1,8 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { empreinteCourte, formaterEmpreinte } from '../../core/securite/cles-detenteur';
-import { Depots, EtatOffre } from '../../models';
+import { Depots, EnveloppeOffre, EtatOffre } from '../../models';
 import { FicheMarcheService } from '../../services';
 import { EnteteProcedure } from './entete-procedure';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
@@ -15,6 +15,8 @@ const LIBELLES_ETAT: Readonly<Record<EtatOffre, string>> = {
   RETIREE: 'Retirée',
   ECARTEE: 'Écartée',
 };
+
+const LIBELLES_ENVELOPPE: Readonly<Record<EnveloppeOffre, string>> = { TECHNIQUE: 'Technique', FINANCIERE: 'Financière' };
 
 /**
  * Le **registre des dépôts** d'une procédure en remise électronique (`GET /api/fiches-marche/{idDmc}/depots`, lot 3 §B5) —
@@ -41,18 +43,19 @@ const LIBELLES_ETAT: Readonly<Record<EtatOffre, string>> = {
       } @else if (erreur()) {
         <app-etat-erreur message="Le registre n'a pas pu être chargé." (reessayer)="charger()" />
       } @else if (registre(); as r) {
-        <p class="dd__nombre"><strong>{{ r.nombre }}</strong> {{ r.nombre > 1 ? 'offres déposées' : 'offre déposée' }}{{ r.dateLimite ? (r.clos ? ' — dépôts clos le ' : ' — date limite : ') + dateHeure(r.dateLimite) : '' }}</p>
+        <!-- ⚠️ V86 (PI-b) — une proposition de prestations intellectuelles (deux enveloppes) compte une fois. -->
+        <p class="dd__nombre"><strong>{{ r.nombre }}</strong> {{ pi() ? (r.nombre > 1 ? 'propositions déposées' : 'proposition déposée') : r.nombre > 1 ? 'offres déposées' : 'offre déposée' }}{{ r.dateLimite ? (r.clos ? ' — dépôts clos le ' : ' — date limite : ') + dateHeure(r.dateLimite) : '' }}</p>
         @if (!r.clos) {
           <p class="text-sm text-muted">Le détail des dépôts s'affichera à la date limite.</p>
         } @else if (r.depots?.length) {
           <div class="table-card">
             <table class="dd__table">
               <caption class="cnm-sr-only">Les dépôts, par numéro d'arrivée</caption>
-              <thead><tr><th scope="col">N°</th><th scope="col">Entreprise</th><th scope="col">NIF</th><th scope="col">Lot</th><th scope="col">Déposée le</th><th scope="col">État</th><th scope="col">Empreinte</th><th scope="col">Taille</th></tr></thead>
+              <thead><tr><th scope="col">N°</th><th scope="col">Entreprise</th><th scope="col">NIF</th><th scope="col">Lot</th>@if (pi()) { <th scope="col">Enveloppe</th> }<th scope="col">Déposée le</th><th scope="col">État</th><th scope="col">Empreinte</th><th scope="col">Taille</th></tr></thead>
               <tbody>
                 @for (d of r.depots; track $index) {
                   <tr>
-                    <td>{{ d.numero ?? '—' }}</td><td>{{ d.entreprise }}</td><td class="cnm-mono">{{ d.nif }}</td><td>{{ d.lot ?? '—' }}</td>
+                    <td>{{ d.numero ?? '—' }}</td><td>{{ d.entreprise }}</td><td class="cnm-mono">{{ d.nif }}</td><td>{{ d.lot ?? '—' }}</td>@if (pi()) { <td>{{ d.enveloppe ? enveloppes[d.enveloppe] : '—' }}</td> }
                     <td class="nowrap">{{ d.dateDepot ? dateHeure(d.dateDepot) : '—' }}{{ d.dateRetrait ? ' (retirée le ' + dateHeure(d.dateRetrait) + ')' : '' }}</td>
                     <td>{{ etats[d.etat] }}</td>
                     <td><code class="cnm-mono" [title]="d.empreinte ? formater(d.empreinte) : ''">{{ d.empreinte ? courte(d.empreinte) : '—' }}</code></td>
@@ -83,6 +86,7 @@ export class DepotsDao implements OnInit {
 
   readonly idDmc = Number(this.route.snapshot.paramMap.get('idDmc'));
   readonly etats = LIBELLES_ETAT;
+  readonly enveloppes = LIBELLES_ENVELOPPE;
   readonly dateHeure = dateHeureFr;
   readonly taille = tailleLisible;
   readonly formater = formaterEmpreinte;
@@ -92,6 +96,8 @@ export class DepotsDao implements OnInit {
   readonly erreur = signal(false);
   readonly refuse = signal(false);
   readonly registre = signal<Depots | null>(null);
+  /** ⚠️ V86 (PI-b) — un registre de propositions de prestations intellectuelles : chaque ligne porte son enveloppe. */
+  readonly pi = computed(() => !!this.registre()?.depots?.some((d) => d.enveloppe));
 
   ngOnInit(): void {
     this.charger();

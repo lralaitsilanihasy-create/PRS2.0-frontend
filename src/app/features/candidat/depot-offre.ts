@@ -7,7 +7,7 @@ import { ApiError, codeErreur } from '../../core/errors/api-error';
 import { formaterEmpreinte } from '../../core/securite/cles-detenteur';
 import { telechargerBlob, validerFichier } from '../../core/securite/fichiers-surs';
 import { ActeEngagementSaisi, MembreGroupement, PieceJointe, RabaisOffre, construireContenu, sceller, typesDesFormats } from '../../core/securite/scellement';
-import { Accuse, BesoinEnLigne, ClesPubliques, Entreprise, PieceAttendue, ProcedureEnLigne, RecuDao } from '../../models';
+import { Accuse, BesoinEnLigne, ClesPubliques, EnveloppeOffre, Entreprise, PieceAttendue, ProcedureEnLigne, RecuDao } from '../../models';
 import { CeremonieService, EntrepriseCandidatService, OffresCandidatService, ProceduresEnLigneService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { BrouillonOffre, brouillonVide, cleBrouillon, ecrireBrouillon, effacerBrouillon, lireBrouillon } from './brouillon-offre';
@@ -18,13 +18,25 @@ import { OffreTravauxFormulaires } from './offre-travaux-formulaires';
 import { RabaisOffreSaisie, controlerRabais } from './rabais-offre';
 import { avertissementsTravaux, construireTravaux, saisieTravauxVide } from './offre-travaux';
 
+/** ⚠️ V86 (PI-b) — le nom de l'enveloppe, tel qu'on le dit au candidat. */
+const LIBELLES_ENVELOPPE: Readonly<Record<EnveloppeOffre, string>> = { TECHNIQUE: 'enveloppe technique', FINANCIERE: 'enveloppe financière' };
+
+/**
+ * ⚠️ V86 (PI-b) — les pièces de chaque enveloppe. Le contrat ne les répartit pas (hypothèse du front, consignée dans la demande) :
+ * l'acte d'engagement (`AE`), qui porte les montants, va dans la financière ; tout le reste, dans la technique.
+ */
+export function piecesDeLEnveloppe(pieces: PieceAttendue[], enveloppe: EnveloppeOffre | null): PieceAttendue[] {
+  if (!enveloppe) return pieces;
+  return pieces.filter((x) => (x.code === 'AE') === (enveloppe === 'FINANCIERE'));
+}
+
 /** Les étapes du dépôt, telles qu'on les montre pendant le scellement et l'envoi. */
 type Phase = 'saisie' | 'archive' | 'scellement' | 'envoi' | 'cloture' | 'fait';
 
 const ESSAIS_PAR_MORCEAU = 3;
 
 /** Notre mot pour les codes du dépôt ; le message du serveur, servi tel quel, quand il nomme lui-même (exclusion). */
-function motifDepot(e: unknown): string {
+function motifDepot(e: unknown, enveloppe: EnveloppeOffre | null = null): string {
   const api = e as Partial<ApiError>;
   switch (codeErreur(api as ApiError)) {
     case 'ENTREPRISE_EXCLUE':
@@ -40,7 +52,14 @@ function motifDepot(e: unknown): string {
     case 'REMPLACEMENT_INTERDIT':
       return 'Cette procédure n’autorise ni le remplacement ni le retrait d’une offre déposée.';
     case 'OFFRE_EXISTANTE':
-      return 'Vous avez déjà déposé une offre pour ce lot : remplacez-la depuis « Mes offres ».';
+      return enveloppe
+        ? `Vous avez déjà déposé l’${LIBELLES_ENVELOPPE[enveloppe]} pour ce lot : remplacez-la depuis « Mes offres ».`
+        : 'Vous avez déjà déposé une offre pour ce lot : remplacez-la depuis « Mes offres ».';
+    case 'ENVELOPPE_OBLIGATOIRE':
+    case 'ENVELOPPE_INVALIDE':
+      return 'Une proposition de prestations intellectuelles se dépose en deux enveloppes : choisissez l’enveloppe technique ou financière.';
+    case 'ENVELOPPE_HORS_PI':
+      return 'Cette procédure ne se dépose pas en deux enveloppes : rechargez la page.';
     case 'TAILLE_DEPASSEE':
       return 'L’offre dépasse la taille maximale fixée par la procédure.';
     case 'MORCEAU_MANQUANT':
@@ -63,6 +82,10 @@ function motifDepot(e: unknown): string {
  * coupure), et le serveur rend l'**accusé** horodaté avec l'empreinte. Le serveur ne voit jamais le contenu ni un montant.
  * `?remplace=<idOffre>&lot=<n>` remplace une offre déposée (si la procédure l'autorise) ; l'ancienne ne tombe qu'au scellement
  * de la nouvelle.
+ *
+ * ⚠️ V86 (lot 3 PI, PI-b) — une consultation restreinte de prestations intellectuelles se dépose en **deux enveloppes**, scellées
+ * chacune à part et déposées l'une après l'autre (`?enveloppe=TECHNIQUE|FINANCIERE`) : la technique sans aucun montant, la
+ * financière avec l'acte d'engagement. L'accusé de la seconde porte l'empreinte de la première (`jumelle`).
  */
 @Component({
   selector: 'app-depot-offre',
@@ -72,7 +95,7 @@ function motifDepot(e: unknown): string {
     <nav class="do__ariane" aria-label="Fil d'Ariane">
       <a routerLink="/candidat/procedures">Procédures ouvertes</a><span aria-hidden="true">›</span>
       <a [routerLink]="['/candidat', 'procedures', idDmc]">{{ procedure()?.reference || 'Procédure' }}</a><span aria-hidden="true">›</span>
-      <span aria-current="page">{{ remplace ? 'Remplacer mon offre' : 'Déposer une offre' }}</span>
+      <span aria-current="page">{{ titreDepot() }}</span>
     </nav>
 
     @if (chargement()) {
@@ -81,7 +104,7 @@ function motifDepot(e: unknown): string {
       <app-etat-erreur [message]="erreurChargement()!" (reessayer)="charger()" />
     } @else if (procedure(); as p) {
       <header class="page-header">
-        <div class="page-subtitle">{{ remplace ? 'Remplacement d’une offre déposée' : 'Dépôt d’une offre' }}</div>
+        <div class="page-subtitle">{{ titreDepot() }}</div>
         <h1 class="page-title">{{ p.objet || 'Procédure ' + idDmc }}</h1>
         <p class="do__sous">
           @if (p.dateLimite) { <span>Date limite : <strong>{{ dateHeure(p.dateLimite) }}</strong> ({{ p.heureReference || 'heure du serveur' }})</span> }
@@ -94,11 +117,22 @@ function motifDepot(e: unknown): string {
       } @else if (phase() === 'fait' && accuse(); as a) {
         <!-- L'accusé de réception : ce que le candidat garde. -->
         <section class="card do__accuse" aria-labelledby="do-accuse">
-          <h2 id="do-accuse" class="do__h2">Offre déposée</h2>
-          <p>Votre offre est scellée et déposée le <strong>{{ dateHeure(a.offre.dateDepot) }}</strong> (heure du serveur), sous le numéro d’arrivée <strong>{{ a.offre.numero }}</strong>{{ a.offre.lot ? ', pour le lot ' + a.offre.lot : '' }}.</p>
+          <h2 id="do-accuse" class="do__h2">{{ enveloppeEffective() ? (enveloppeEffective() === 'TECHNIQUE' ? 'Enveloppe technique déposée' : 'Enveloppe financière déposée') : 'Offre déposée' }}</h2>
+          <p>Votre {{ enveloppeEffective() ? libelleEnveloppe(enveloppeEffective()!) : 'offre' }} est scellée et déposée le <strong>{{ dateHeure(a.offre.dateDepot) }}</strong> (heure du serveur), sous le numéro d’arrivée <strong>{{ a.offre.numero }}</strong>{{ a.offre.lot ? ', pour le lot ' + a.offre.lot : '' }}.</p>
           <p class="form-label">Empreinte de l’offre (SHA-256)</p>
           <p class="cnm-mono do__emp">{{ formater(a.offre.empreinte) }}</p>
           <p class="text-sm text-muted">Elle sera recalculée à l’ouverture des plis : une différence y serait signalée. Scellée pour {{ a.n }} détenteurs ; {{ a.quorum }} suffisent à l’ouvrir, à l’heure de la séance seulement. {{ taille(a.offre.taille) }}.</p>
+          @if (a.jumelle; as j) {
+            <!-- ⚠️ V86 (PI-b) — la proposition est complète : l'accusé porte les deux empreintes. -->
+            <div class="alert alert-success do__jumelle" role="status">
+              <span>Votre proposition est complète. L’{{ j.enveloppe ? libelleEnveloppe(j.enveloppe) : 'autre enveloppe' }} a été déposée le {{ dateHeure(j.dateDepot) }}, empreinte <code class="cnm-mono">{{ formater(j.empreinte) }}</code> ; elle figure aussi sur cet accusé.</span>
+            </div>
+          } @else if (enveloppeEffective(); as env) {
+            <div class="alert alert-warning do__jumelle" role="note">
+              <span>Votre proposition n’est pas complète : déposez aussi l’{{ libelleEnveloppe(autre(env)) }} avant la date limite, sinon la commission le constatera en séance.</span>
+              <button type="button" class="btn btn-sm btn-primary" (click)="passerA(autre(env))">Déposer l’{{ libelleEnveloppe(autre(env)) }}</button>
+            </div>
+          }
           <div class="do__actions">
             <button type="button" class="btn btn-primary" [disabled]="pdfEnCours()" (click)="telechargerAccuse(a.offre.idOffre)">{{ pdfEnCours() ? '…' : 'Enregistrer l’accusé (PDF)' }}</button>
             <a class="btn btn-outline" routerLink="/candidat/offres">Mes offres</a>
@@ -124,11 +158,20 @@ function motifDepot(e: unknown): string {
             @if (p.lots.length > 1) {
               <label class="form-group do__court">
                 <span class="form-label">Lot</span>
-                <select class="form-control" [disabled]="!!remplace || occupe()" (change)="lot.set(+$any($event.target).value || null)">
+                <select class="form-control" [disabled]="!!remplaceActif() || occupe()" (change)="lot.set(+$any($event.target).value || null)">
                   <option value="" [selected]="lot() === null">— Choisir —</option>
                   @for (l of p.lots; track l.numero) { <option [value]="l.numero" [selected]="lot() === l.numero">Lot {{ l.numero }}{{ l.intitule ? ' — ' + l.intitule : '' }}</option> }
                 </select>
               </label>
+            }
+            @if (pi()) {
+              <!-- ⚠️ V86 (PI-b) — l'enveloppe déposée ; figée en remplacement (il vise une offre de la même enveloppe). -->
+              <fieldset class="do__enveloppes">
+                <legend class="form-label">Enveloppe à déposer</legend>
+                <label class="do__case"><input type="radio" name="enveloppe" value="TECHNIQUE" [checked]="enveloppe() === 'TECHNIQUE'" [disabled]="!!remplaceActif() || occupe()" (change)="passerA('TECHNIQUE')" /> Proposition technique (références, méthodologie, personnel clé…), sans aucun montant</label>
+                <label class="do__case"><input type="radio" name="enveloppe" value="FINANCIERE" [checked]="enveloppe() === 'FINANCIERE'" [disabled]="!!remplaceActif() || occupe()" (change)="passerA('FINANCIERE')" /> Proposition financière (acte d’engagement et montants)</label>
+                <span class="text-xs text-muted">Les deux enveloppes se déposent l’une après l’autre, avant la date limite. La financière ne s’ouvrira que si votre proposition technique atteint le score minimum.</span>
+              </fieldset>
             }
             <label class="do__case"><input type="checkbox" [checked]="enGroupement()" [disabled]="occupe()" (change)="enGroupement.set($any($event.target).checked)" /> Je dépose en groupement, comme mandataire</label>
             @if (enGroupement()) {
@@ -145,10 +188,16 @@ function motifDepot(e: unknown): string {
           </section>
 
           <section class="card do__bloc" aria-labelledby="do-ae">
-            <h2 id="do-ae" class="do__h2">2. L’acte d’engagement</h2>
-            <p class="text-sm text-muted">Ces valeurs seront lues à haute voix à l’ouverture des plis ; elles doivent être celles de votre acte signé, joint ci-dessous.</p>
+            <h2 id="do-ae" class="do__h2">2. {{ technique() ? 'Le délai et la validité' : 'L’acte d’engagement' }}</h2>
+            @if (technique()) {
+              <div class="alert alert-info" role="note"><span>L’enveloppe technique ne doit contenir <strong>aucun montant</strong>, ni ici ni dans ses pièces : un montant trouvé à l’ouverture n’est pas lu, et la commission en tire la conséquence.</span></div>
+            } @else {
+              <p class="text-sm text-muted">Ces valeurs seront lues à haute voix à l’ouverture des plis ; elles doivent être celles de votre acte signé, joint ci-dessous.</p>
+            }
             <div class="cnm-form-grid">
-              @if (avecFormulaires()) {
+              @if (technique()) {
+                <!-- V86 : aucun montant dans l'enveloppe technique. -->
+              } @else if (avecFormulaires()) {
                 <!-- Lot 5 : les montants de l'acte sont ceux du bordereau (section 3), plus saisis à part. -->
                 <label class="form-group"><span class="form-label">Montant hors taxes (Ariary){{ commande() ? ', au maximum' : '' }}</span><input class="form-control" type="text" readonly [value]="nombre(aeEffectif().montantHt)" /><span class="text-xs text-muted">Calculé depuis le bordereau des prix (section 3).</span></label>
                 <label class="form-group"><span class="form-label">Montant toutes taxes (Ariary){{ commande() ? ', au maximum' : '' }}</span><input class="form-control" type="text" readonly [value]="nombre(aeEffectif().montantTtc)" /></label>
@@ -167,11 +216,13 @@ function motifDepot(e: unknown): string {
               </label>
               <label class="form-group"><span class="form-label">Validité de l’offre (jours)</span><input class="form-control" type="number" min="1" step="1" [value]="ae().validiteJours ?? ''" (input)="poserAe('validiteJours', $any($event.target).valueAsNumber)" /></label>
               <!-- ⚠️ 07/10 (Q4) — le rabais structuré, contrôlé avant le scellement (le serveur ne lit l'offre qu'à l'ouverture). -->
+              @if (!technique()) {
               <div class="do__large"><app-rabais-offre [rabais]="rabaisSaisi()" [lots]="numerosLots()" [lotOffre]="lotEffectif()" [montantHt]="aeEffectif().montantHt" [desactive]="occupe()" (modifie)="poserAe('rabais', $event)" /></div>
+              }
             </div>
           </section>
 
-          @if (besoin()?.formulaires) {
+          @if (besoin()?.formulaires && !technique()) {
             <section class="card do__bloc" aria-labelledby="do-offre">
               <h2 id="do-offre" class="do__h2">3. L’offre financière{{ travaux() ? '' : ' et technique' }}</h2>
               @if (lotBesoin(); as lb) {
@@ -194,10 +245,10 @@ function motifDepot(e: unknown): string {
           }
 
           <section class="card do__bloc" aria-labelledby="do-pieces">
-            <h2 id="do-pieces" class="do__h2">{{ besoin()?.formulaires ? 4 : 3 }}. Les pièces</h2>
+            <h2 id="do-pieces" class="do__h2">{{ besoin()?.formulaires && !technique() ? 4 : 3 }}. Les pièces</h2>
             <p class="text-sm text-muted">Formats acceptés : {{ (p.formatsAcceptes ?? ['PDF']).join(', ') }} · {{ p.tailleMaxFichierMo ?? '—' }} Mo par fichier · {{ p.tailleMaxOffreMo ?? '—' }} Mo pour l’offre entière.</p>
             <ul class="do__pieces">
-              @for (pa of pieces(); track pa.code) {
+              @for (pa of piecesEnveloppe(); track pa.code) {
                 <li class="do__piece">
                   <div>
                     <strong>{{ pa.numero ? pa.numero + ' — ' : '' }}{{ pa.libelle }}</strong>
@@ -225,11 +276,11 @@ function motifDepot(e: unknown): string {
                 </li>
               }
             </ul>
-            <p class="text-sm">Total : <strong>{{ taille(totalOctets()) }}</strong> · {{ nbJointes() }} pièce(s) sur {{ pieces().length }}</p>
+            <p class="text-sm">Total : <strong>{{ taille(totalOctets()) }}</strong> · {{ nbJointes() }} pièce(s) sur {{ piecesEnveloppe().length }}</p>
           </section>
 
           <section class="card do__bloc" aria-labelledby="do-sceller">
-            <h2 id="do-sceller" class="do__h2">{{ besoin()?.formulaires ? 5 : 4 }}. Sceller et déposer</h2>
+            <h2 id="do-sceller" class="do__h2">{{ besoin()?.formulaires && !technique() ? 5 : 4 }}. Sceller et déposer</h2>
             <p class="text-sm">Votre offre sera chiffrée sur ce poste, pour les {{ cles()?.n }} détenteurs de la procédure ; {{ cles()?.quorum }} d’entre eux, ensemble et à l’heure de la séance seulement, pourront l’ouvrir. Personne ne peut la lire avant — ni le serveur, ni l’administration.</p>
             @if (manques().length) {
               <ul class="do__manques">@for (m of manques(); track m) { <li>{{ m }}</li> }</ul>
@@ -239,7 +290,7 @@ function motifDepot(e: unknown): string {
               <progress [max]="total() || 1" [value]="fait()"></progress>
             }
             <div class="do__actions">
-              <button type="submit" class="btn btn-primary" [disabled]="occupe() || manques().length > 0">{{ occupe() ? 'Dépôt en cours…' : remplace ? 'Sceller et remplacer mon offre' : 'Sceller et déposer' }}</button>
+              <button type="submit" class="btn btn-primary" [disabled]="occupe() || manques().length > 0">{{ occupe() ? 'Dépôt en cours…' : libelleBouton() }}</button>
               <a class="btn btn-outline" [routerLink]="['/candidat', 'procedures', idDmc]">Annuler</a>
             </div>
           </section>
@@ -272,6 +323,9 @@ function motifDepot(e: unknown): string {
     .do__lien-frais { margin-left: 0.4rem; font-weight: 600; }
     .do__brouillon { display: flex; gap: 0.75rem; align-items: center; justify-content: space-between; flex-wrap: wrap; }
     .do__remplie { align-self: flex-start; }
+    .do__enveloppes { border: 1px solid var(--n-200); border-radius: var(--radius-md); padding: 0.5rem 0.75rem; margin: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+    .do__jumelle { display: flex; gap: 0.75rem; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+    .do__jumelle code { word-break: break-all; }
     @media (max-width: 600px) { .do__large { grid-column: span 1; } .do__ligne { grid-template-columns: 1fr; } }
   `,
 })
@@ -286,6 +340,8 @@ export class DepotOffre implements OnInit, OnDestroy {
   readonly idDmc = Number(this.route.snapshot.paramMap.get('idDmc'));
   /** L'offre remplacée, le cas échéant (`?remplace=`), et son lot (`?lot=`), figé. */
   readonly remplace = this.route.snapshot.queryParamMap.get('remplace');
+  /** L'offre remplacée par CE dépôt : celle de `?remplace=`, oubliée quand on passe à l'autre enveloppe après un dépôt. */
+  readonly remplaceActif = signal<string | null>(this.remplace);
   readonly dateHeure = dateHeureFr;
   readonly taille = tailleLisible;
   readonly formater = formaterEmpreinte;
@@ -308,6 +364,23 @@ export class DepotOffre implements OnInit, OnDestroy {
    * à nul dans ce cas et exige le même dans l'en-tête scellé (`lot ne correspond pas au corps` sinon — recette du 05/10, fiche 34).
    */
   readonly lotEffectif = computed(() => ((this.procedure()?.lots.length ?? 0) > 1 ? this.lot() : null));
+  /** ⚠️ V86 (PI-b) — l'enveloppe en cours de dépôt (`?enveloppe=`), pour une consultation de prestations intellectuelles. */
+  readonly enveloppe = signal<EnveloppeOffre>(this.route.snapshot.queryParamMap.get('enveloppe') === 'FINANCIERE' ? 'FINANCIERE' : 'TECHNIQUE');
+  readonly pi = computed(() => this.procedure()?.categorie === 'PRESTATIONS_INTELLECTUELLES');
+  /** L'enveloppe envoyée au serveur : nulle hors prestations intellectuelles (400 `ENVELOPPE_HORS_PI` sinon). */
+  readonly enveloppeEffective = computed<EnveloppeOffre | null>(() => (this.pi() ? this.enveloppe() : null));
+  readonly technique = computed(() => this.enveloppeEffective() === 'TECHNIQUE');
+  readonly piecesEnveloppe = computed(() => piecesDeLEnveloppe(this.pieces(), this.enveloppeEffective()));
+  readonly titreDepot = computed(() => {
+    const env = this.enveloppeEffective();
+    if (env) return `${this.remplaceActif() ? 'Remplacer' : 'Déposer'} l’${LIBELLES_ENVELOPPE[env]}`;
+    return this.remplaceActif() ? 'Remplacer mon offre' : 'Déposer une offre';
+  });
+  readonly libelleBouton = computed(() => {
+    const env = this.enveloppeEffective();
+    if (env) return `Sceller et ${this.remplaceActif() ? 'remplacer' : 'déposer'} l’${LIBELLES_ENVELOPPE[env]}`;
+    return this.remplaceActif() ? 'Sceller et remplacer mon offre' : 'Sceller et déposer';
+  });
   readonly enGroupement = signal(false);
   readonly groupement = signal<{ nif: string; raisonSociale: string }[]>([]);
   readonly ae = signal<Partial<ActeEngagementSaisi>>({ monnaie: 'MGA', delaiUnite: 'JOURS', rabais: null });
@@ -439,14 +512,14 @@ export class DepotOffre implements OnInit, OnDestroy {
       // Lot 5 : seul un prix manquant bloque ; le reste est averti en section 3, la commission décide.
       const sans = prixManquants(lb, this.saisieOffre());
       if (sans.length) m.push(`${sans.length} prix unitaire(s) à saisir au bordereau.`);
-    } else if (!(a.montantHt! >= 0) || !(a.montantTtc! >= 0) || !a.montantHt || !a.montantTtc) m.push('Les montants de l’acte d’engagement.');
+    } else if (!this.technique() && (!(a.montantHt! >= 0) || !(a.montantTtc! >= 0) || !a.montantHt || !a.montantTtc)) m.push('Les montants de l’acte d’engagement.');
     if (!a.delai || a.delai < 1) m.push('Le délai.');
     if (!a.validiteJours || a.validiteJours < 1) m.push('La validité de l’offre.');
-    const rabais = controlerRabais(this.rabaisSaisi(), a.montantHt, this.lotEffectif(), this.numerosLots());
+    const rabais = this.technique() ? null : controlerRabais(this.rabaisSaisi(), a.montantHt, this.lotEffectif(), this.numerosLots());
     if (rabais) m.push(`Le rabais : ${rabais.message}`);
-    const manquantes = this.pieces().filter((x) => x.obligatoire && !this.fichiers()[x.code]);
+    const manquantes = this.piecesEnveloppe().filter((x) => x.obligatoire && !this.fichiers()[x.code]);
     if (manquantes.length) m.push(`${manquantes.length} pièce(s) à joindre : ${manquantes.map((x) => x.libelle).slice(0, 3).join(', ')}${manquantes.length > 3 ? '…' : ''}.`);
-    if (this.pieces().some((x) => x.code === 'GARANTIE')) {
+    if (this.piecesEnveloppe().some((x) => x.code === 'GARANTIE')) {
       if (!this.codeGarantie().trim()) m.push('Le code de vérification de la garantie.');
       if (!(this.montantGarantie()! > 0)) m.push('Le montant de la garantie.');
       if (!this.emetteurGarantie().trim()) m.push('L’émetteur de la garantie.');
@@ -492,7 +565,7 @@ export class DepotOffre implements OnInit, OnDestroy {
         this.document.title = `Dépôt — ${procedure.reference || 'procédure'} — Espace candidat — PRS 2.0`;
         if (entreprise.exclusion) this.bloquant.set(messageExclusion(entreprise.exclusion));
         else if (!procedure.depotsOuverts) this.bloquant.set(procedure.etat === 'CLOSE' ? 'La date limite est passée : les dépôts sont clos.' : 'Les dépôts ne sont pas encore ouverts pour cette procédure.');
-        else if (this.remplace && procedure.remplacementAutorise === false) this.bloquant.set('Cette procédure n’autorise pas le remplacement d’une offre déposée.');
+        else if (this.remplaceActif() && procedure.remplacementAutorise === false) this.bloquant.set('Cette procédure n’autorise pas le remplacement d’une offre déposée.');
         else if (procedure.retraitPayant && recu?.etat !== 'VALIDE') {
           this.fraisNonRegles.set(true);
           this.bloquant.set(
@@ -522,6 +595,40 @@ export class DepotOffre implements OnInit, OnDestroy {
         else this.erreurChargement.set('Le dépôt n’a pas pu être préparé.');
       },
     });
+  }
+
+  /**
+   * L'acte scellé : celui de la saisie, **sans montant ni rabais** dans une enveloppe technique (V86) — un montant y serait signalé
+   * en séance (`MONTANT_DANS_TECHNIQUE`). Les clés indéfinies ne sont pas sérialisées dans le manifeste.
+   */
+  private acteScelle(): ActeEngagementSaisi {
+    const a = this.aeEffectif();
+    return (this.technique() ? { ...a, montantHt: undefined, montantTtc: undefined, rabais: null } : a) as ActeEngagementSaisi;
+  }
+
+  libelleEnveloppe(e: EnveloppeOffre): string {
+    return LIBELLES_ENVELOPPE[e];
+  }
+
+  autre(e: EnveloppeOffre): EnveloppeOffre {
+    return e === 'TECHNIQUE' ? 'FINANCIERE' : 'TECHNIQUE';
+  }
+
+  /**
+   * ⚠️ V86 (PI-b) — passer à l'autre enveloppe : la saisie commune (lot, groupement, délai) reste ; les fichiers joints, propres à
+   * chaque enveloppe, et l'accusé de la précédente s'effacent ; après un dépôt, le remplacement visait la précédente : il est oublié.
+   */
+  passerA(e: EnveloppeOffre): void {
+    if (this.occupe()) return;
+    if (e !== this.enveloppe()) {
+      this.fichiers.set({});
+      this.erreursFichier.set({});
+    }
+    if (this.phase() === 'fait') this.remplaceActif.set(null);
+    this.enveloppe.set(e);
+    this.accuse.set(null);
+    this.erreurDepot.set(null);
+    this.phase.set('saisie');
   }
 
   poserAe<K extends keyof ActeEngagementSaisi>(cle: K, valeur: ActeEngagementSaisi[K]): void {
@@ -580,17 +687,17 @@ export class DepotOffre implements OnInit, OnDestroy {
       const membres: MembreGroupement[] | null = this.enGroupement()
         ? [{ nif: en.nif, raisonSociale: en.raisonSociale, mandataire: true }, ...this.groupement().map((g) => ({ nif: g.nif.trim(), raisonSociale: g.raisonSociale.trim(), mandataire: false }))]
         : null;
-      const jointes: PieceJointe[] = Object.entries(this.fichiers()).map(([code, fichier]) => ({ code, fichier }));
+      const jointes: PieceJointe[] = Object.entries(this.fichiers()).filter(([code]) => this.piecesEnveloppe().some((x) => x.code === code)).map(([code, fichier]) => ({ code, fichier }));
       const horloge = await firstValueFrom(this.procedures.horloge());
       const lb = this.lotBesoin();
       const { contenu } = await construireContenu(
-        { idDmc: this.idDmc, lot: this.lotEffectif(), entreprise: { nif: en.nif, raisonSociale: en.raisonSociale }, groupement: membres, acteEngagement: this.aeEffectif() as ActeEngagementSaisi },
+        { idDmc: this.idDmc, lot: this.lotEffectif(), entreprise: { nif: en.nif, raisonSociale: en.raisonSociale }, groupement: membres, acteEngagement: this.acteScelle() },
         jointes,
-        this.pieces().some((x) => x.code === 'GARANTIE')
+        this.piecesEnveloppe().some((x) => x.code === 'GARANTIE')
           ? { code: 'GARANTIE', codeVerification: this.codeGarantie().trim(), montant: this.montantGarantie()!, emetteur: this.emetteurGarantie().trim() }
           : null,
         horloge.maintenant,
-        lb
+        lb && !this.technique()
           ? {
               ...construireFormulaires(lb, this.saisieOffre(), this.besoin()!.categorie, this.tauxTva()),
               ...(this.travaux() ? construireTravaux(lb, this.besoin()!, this.saisieTravaux(), this.tauxTva(), p.dateLimite) : {}),
@@ -605,7 +712,7 @@ export class DepotOffre implements OnInit, OnDestroy {
       });
 
       const offre = await firstValueFrom(
-        this.offres.creer({ idDmc: this.idDmc, lot: this.lotEffectif(), enTete: s.enTete, remplace: this.remplace, groupementNifs: membres ? membres.slice(1).map((m) => m.nif) : undefined }),
+        this.offres.creer({ idDmc: this.idDmc, lot: this.lotEffectif(), enTete: s.enTete, remplace: this.remplaceActif(), enveloppe: this.enveloppeEffective() ?? undefined, groupementNifs: membres ? membres.slice(1).map((m) => m.nif) : undefined }),
       );
 
       this.phase.set('envoi');
@@ -625,7 +732,7 @@ export class DepotOffre implements OnInit, OnDestroy {
       if (cle) effacerBrouillon(cle);
     } catch (e) {
       this.phase.set('saisie');
-      this.erreurDepot.set(motifDepot(e));
+      this.erreurDepot.set(motifDepot(e, this.enveloppeEffective()));
     }
   }
 
@@ -637,7 +744,7 @@ export class DepotOffre implements OnInit, OnDestroy {
     const b = lireBrouillon(cle);
     if (b) {
       untracked(() => {
-        if (!this.remplace) this.lot.set(b.lot);
+        if (!this.remplaceActif()) this.lot.set(b.lot);
         this.enGroupement.set(b.enGroupement);
         this.groupement.set(b.groupement);
         this.ae.set(b.ae);
@@ -657,7 +764,7 @@ export class DepotOffre implements OnInit, OnDestroy {
     const cle = this.cle();
     if (cle) effacerBrouillon(cle);
     this.brouillonRepris.set(null);
-    if (!this.remplace) this.lot.set(null);
+    if (!this.remplaceActif()) this.lot.set(null);
     this.enGroupement.set(false);
     this.groupement.set([]);
     this.ae.set({ monnaie: 'MGA', delaiUnite: 'JOURS', rabais: null });

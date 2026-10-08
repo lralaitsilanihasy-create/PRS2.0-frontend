@@ -89,8 +89,14 @@ import { LIBELLES_ETAT_PROCEDURE, dateHeureFr, tailleLisible } from './libelles-
             <button type="button" class="btn btn-primary ped__deposer" disabled>Déposer une offre</button>
             <span class="text-sm text-muted">Le dépôt s’ouvre dès que votre reçu de paiement des frais de dossier est validé (section « Frais de dossier »).</span>
           } @else if (p.depotsOuverts && connecte()) {
-            <a class="btn btn-primary ped__deposer" [routerLink]="['/candidat', 'procedures', p.idDmc, 'offre']">Déposer une offre</a>
-            <span class="text-sm text-muted">Votre offre est chiffrée sur votre poste : personne ne peut la lire avant la séance d'ouverture.{{ p.remplacementAutorise ? ' Vous pourrez la remplacer ou la retirer jusqu’à la date limite.' : '' }}</span>
+            @if (p.categorie === 'PRESTATIONS_INTELLECTUELLES') {
+              <!-- ⚠️ V86 (PI-b) — une proposition PI se dépose en deux enveloppes, la technique d'abord. -->
+              <a class="btn btn-primary ped__deposer" [routerLink]="['/candidat', 'procedures', p.idDmc, 'offre']" [queryParams]="{ enveloppe: 'TECHNIQUE' }">Déposer ma proposition</a>
+              <span class="text-sm text-muted">Deux enveloppes, chiffrées sur votre poste et déposées l’une après l’autre : la technique, sans aucun montant, puis la financière. Personne ne peut les lire avant leur séance d’ouverture.</span>
+            } @else {
+              <a class="btn btn-primary ped__deposer" [routerLink]="['/candidat', 'procedures', p.idDmc, 'offre']">Déposer une offre</a>
+              <span class="text-sm text-muted">Votre offre est chiffrée sur votre poste : personne ne peut la lire avant la séance d'ouverture.{{ p.remplacementAutorise ? ' Vous pourrez la remplacer ou la retirer jusqu’à la date limite.' : '' }}</span>
+            }
           } @else if (p.depotsOuverts) {
             <p class="text-sm">Pour déposer une offre, <a routerLink="/login" [queryParams]="{ returnUrl: lienRetour() }">connectez-vous</a> avec votre compte candidat.</p>
           } @else {

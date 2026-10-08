@@ -5,7 +5,7 @@ import { ApiError, codeErreur } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { empreinteCourte, formaterEmpreinte } from '../../core/securite/cles-detenteur';
 import { telechargerBlob } from '../../core/securite/fichiers-surs';
-import { EtatOffre, Offre } from '../../models';
+import { EnveloppeOffre, EtatOffre, Offre } from '../../models';
 import { OffresCandidatService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DemandesOffre } from './demandes-offre';
@@ -19,6 +19,18 @@ const LIBELLES_ETAT: Readonly<Record<EtatOffre, string>> = {
   RETIREE: 'Retirée',
   ECARTEE: 'Écartée',
 };
+
+const LIBELLES_ENVELOPPE: Readonly<Record<EnveloppeOffre, string>> = { TECHNIQUE: 'Enveloppe technique', FINANCIERE: 'Enveloppe financière' };
+
+/**
+ * ⚠️ V86 (lot 3 PI, PI-b) — l'enveloppe qui manque à une proposition de prestations intellectuelles déposée à moitié : l'autre
+ * enveloppe, si aucune offre déposée de la même procédure et du même lot ne la porte ; `null` pour une offre ordinaire ou complète.
+ */
+export function enveloppeManquante(o: Offre, toutes: Offre[]): EnveloppeOffre | null {
+  if (!o.enveloppe || o.etat !== 'DEPOSEE') return null;
+  const autre: EnveloppeOffre = o.enveloppe === 'TECHNIQUE' ? 'FINANCIERE' : 'TECHNIQUE';
+  return toutes.some((x) => x.idDmc === o.idDmc && x.lot === o.lot && x.etat === 'DEPOSEE' && x.enveloppe === autre) ? null : autre;
+}
 
 /**
  * **Mes offres** (`GET /api/candidat/offres`, lot 3) : toutes les offres du candidat, toutes procédures. Une offre déposée
@@ -52,7 +64,7 @@ const LIBELLES_ETAT: Readonly<Record<EtatOffre, string>> = {
         @for (o of offres(); track o.idOffre) {
           <li class="card mo__offre">
             <div class="mo__haut">
-              <span><strong>{{ o.objet || ('Procédure ' + o.idDmc) }}</strong>{{ o.lot ? ' — lot ' + o.lot : '' }}</span>
+              <span><strong>{{ o.objet || ('Procédure ' + o.idDmc) }}</strong>{{ o.lot ? ' — lot ' + o.lot : '' }}@if (o.enveloppe) { <span class="badge badge-info mo__env">{{ enveloppes[o.enveloppe] }}</span> }</span>
               <span class="badge" [class.badge-success]="o.etat === 'DEPOSEE'" [class.badge-neutral]="o.etat === 'REMPLACEE' || o.etat === 'RETIREE' || o.etat === 'EN_COURS'" [class.badge-danger]="o.etat === 'ECARTEE'">{{ etats[o.etat] }}</span>
             </div>
             <p class="text-sm text-muted mo__meta">
@@ -61,15 +73,22 @@ const LIBELLES_ETAT: Readonly<Record<EtatOffre, string>> = {
               @if (o.dateRetrait) { · retirée le {{ dateHeure(o.dateRetrait) }} }
               · {{ taille(o.taille) }}
             </p>
+            @if (manquante(o); as m) {
+              <!-- ⚠️ V86 (PI-b) — une proposition PI se dépose en deux enveloppes : sans la seconde, la séance le signale. -->
+              <div class="alert alert-warning mo__manque" role="note">
+                <span>{{ enveloppes[m] }} non déposée : votre proposition est incomplète.</span>
+                <a class="btn btn-sm btn-primary" [routerLink]="['/candidat', 'procedures', o.idDmc, 'offre']" [queryParams]="{ enveloppe: m, lot: o.lot }">Déposer l’{{ m === 'FINANCIERE' ? 'enveloppe financière' : 'enveloppe technique' }}</a>
+              </div>
+            }
             @if (o.empreinte) { <p class="text-xs mo__emp">Empreinte <code class="cnm-mono" [title]="formater(o.empreinte)">{{ courte(o.empreinte) }}</code></p> }
             @if (o.etat === 'DEPOSEE') {
               <div class="mo__actions">
                 <button type="button" class="btn btn-sm btn-outline" [disabled]="enCours() === o.idOffre" (click)="accuse(o)">Accusé (PDF)</button>
-                <a class="btn btn-sm btn-outline" [routerLink]="['/candidat', 'procedures', o.idDmc, 'offre']" [queryParams]="{ remplace: o.idOffre, lot: o.lot }">Remplacer</a>
+                <a class="btn btn-sm btn-outline" [routerLink]="['/candidat', 'procedures', o.idDmc, 'offre']" [queryParams]="{ remplace: o.idOffre, lot: o.lot, enveloppe: o.enveloppe }">Remplacer</a>
                 @if (aRetirer() !== o.idOffre) {
                   <button type="button" class="btn btn-sm btn-outline" (click)="aRetirer.set(o.idOffre)">Retirer…</button>
                 } @else {
-                  <span class="mo__confirm">Retirer cette offre ? Elle ne sera pas ouverte.
+                  <span class="mo__confirm">{{ o.enveloppe ? 'Retirer cette proposition ? Ses deux enveloppes sont retirées, aucune ne sera ouverte.' : 'Retirer cette offre ? Elle ne sera pas ouverte.' }}
                     <button type="button" class="btn btn-sm btn-danger" [disabled]="enCours() === o.idOffre" (click)="retirer(o)">Confirmer le retrait</button>
                     <button type="button" class="btn btn-sm btn-outline" (click)="aRetirer.set(null)">Annuler</button>
                   </span>
@@ -93,6 +112,8 @@ const LIBELLES_ETAT: Readonly<Record<EtatOffre, string>> = {
     .mo__haut { display: flex; justify-content: space-between; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
     .mo__meta, .mo__emp { margin: 0; }
     .mo__actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    .mo__env { margin-left: 0.5rem; }
+    .mo__manque { display: flex; gap: 0.75rem; align-items: center; justify-content: space-between; flex-wrap: wrap; margin: 0; }
     .mo__confirm { display: inline-flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; font-size: var(--text-sm); }
   `,
 })
@@ -101,6 +122,7 @@ export class MesOffres implements OnInit {
   private readonly toast = inject(ToastService);
 
   readonly etats = LIBELLES_ETAT;
+  readonly enveloppes = LIBELLES_ENVELOPPE;
   readonly dateHeure = dateHeureFr;
   readonly taille = tailleLisible;
   readonly formater = formaterEmpreinte;
@@ -137,6 +159,10 @@ export class MesOffres implements OnInit {
     });
   }
 
+  manquante(o: Offre): EnveloppeOffre | null {
+    return enveloppeManquante(o, this.offres());
+  }
+
   accuse(o: Offre): void {
     this.enCours.set(o.idOffre);
     this.service.accuse(o.idOffre).subscribe({
@@ -155,7 +181,7 @@ export class MesOffres implements OnInit {
       next: () => {
         this.enCours.set(null);
         this.aRetirer.set(null);
-        this.toast.success('Votre offre est retirée : elle ne sera pas ouverte.', 'C’est fait');
+        this.toast.success(o.enveloppe ? 'Votre proposition est retirée, ses deux enveloppes : aucune ne sera ouverte.' : 'Votre offre est retirée : elle ne sera pas ouverte.', 'C’est fait');
         this.charger();
       },
       error: (e: ApiError) => {

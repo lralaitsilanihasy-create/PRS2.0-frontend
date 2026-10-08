@@ -345,7 +345,10 @@ export type TypeAlerteLecture =
   | 'FRAIS_NON_REGLES'
   // ⚠️ 07/10 — le rabais structuré, contrôlé à l'ouverture (le serveur ne le lit pas avant).
   | 'RABAIS_INVALIDE'
-  | 'RABAIS_LOTS';
+  | 'RABAIS_LOTS'
+  // ⚠️ V86 (lot 3 PI, PI-b) — première séance d'une consultation de prestations intellectuelles.
+  | 'MONTANT_DANS_TECHNIQUE'
+  | 'FINANCIERE_MANQUANTE';
 
 /** ⚠️ Lot 5 — les documents remplis que la commission imprime (`…/formulaires/{type}.pdf`) ; `DQE` = `BORDEREAU` aux travaux. */
 export type DocumentFormulaire = 'BORDEREAU' | 'DQE' | 'CONFORMITE' | 'CAPACITES';

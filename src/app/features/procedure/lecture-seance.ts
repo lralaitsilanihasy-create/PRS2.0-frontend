@@ -151,6 +151,8 @@ export class LectureSeance implements OnInit {
     FRAIS_NON_REGLES: 'Frais de dossier non réglés',
     RABAIS_INVALIDE: 'Rabais invalide',
     RABAIS_LOTS: 'Rabais : lots incohérents',
+    MONTANT_DANS_TECHNIQUE: 'Montant dans l’enveloppe technique',
+    FINANCIERE_MANQUANTE: 'Enveloppe financière manquante',
   };
   /** Lot 5 — les documents remplis, produits à la volée ; le DQE des travaux est le même document que le bordereau. */
   readonly documentsFormulaires: readonly { type: DocumentFormulaire; libelle: string }[] = [

@@ -351,6 +351,9 @@ export interface BesoinEnLigne {
 
 export type EtatOffre = 'EN_COURS' | 'DEPOSEE' | 'REMPLACEE' | 'RETIREE' | 'ECARTEE';
 
+/** ⚠️ V86 (lot 3 PI, PI-b) — les deux enveloppes d'une proposition de prestations intellectuelles, scellées chacune à part. */
+export type EnveloppeOffre = 'TECHNIQUE' | 'FINANCIERE';
+
 /** Une offre du candidat : le serveur en connaît la taille, l'empreinte et l'horodatage, jamais le contenu. */
 export interface Offre {
   /** UUID tiré par le navigateur — l'identifiant de l'offre, dans l'en-tête et les données authentifiées. */
@@ -372,6 +375,8 @@ export interface Offre {
   empreinte: string | null;
   remplace: string | null;
   remplaceePar: string | null;
+  /** ⚠️ V86 (PI-b) — `TECHNIQUE` ou `FINANCIERE` pour une proposition PI ; nulle pour une offre ordinaire. */
+  enveloppe?: EnveloppeOffre | null;
 }
 
 /** Corps de `POST /api/candidat/offres`. `enTete` est le JSON **sérialisé** : ses octets UTF-8 entrent dans l'empreinte. */
@@ -380,6 +385,8 @@ export interface CreationOffreCorps {
   lot: number | null;
   enTete: string;
   remplace: string | null;
+  /** ⚠️ V86 (PI-b) — obligatoire pour une consultation restreinte de prestations intellectuelles, refusée ailleurs. */
+  enveloppe?: EnveloppeOffre;
   /** Les NIF des membres d'un groupement, pour le seul contrôle d'exclusion ; jamais servis. */
   groupementNifs?: string[];
 }
@@ -391,6 +398,8 @@ export interface Accuse {
   n: number;
   quorum: number;
   empreintesDetenteurs: string[];
+  /** ⚠️ V86 (PI-b) — l'autre enveloppe de la proposition, si elle est déjà scellée : son empreinte figure sur l'accusé. */
+  jumelle?: Offre | null;
 }
 
 /** Une ligne du registre des dépôts, servie après la date limite seulement. */
@@ -404,6 +413,8 @@ export interface LigneDepot {
   empreinte: string | null;
   taille: number;
   etat: EtatOffre;
+  /** ⚠️ V86 (PI-b) — l'enveloppe d'une proposition de prestations intellectuelles ; nulle pour une offre ordinaire. */
+  enveloppe?: EnveloppeOffre | null;
 }
 
 /** `GET /api/fiches-marche/{idDmc}/depots` — avant la date limite, **le nombre seul** (`depots = null`). */

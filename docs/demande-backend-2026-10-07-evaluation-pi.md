@@ -93,6 +93,22 @@ seul retenu (art. 42-IV), le rapport, et la suite du lot 2 (dossier de marché, 
 > - Le contrôle « aucun montant dans l'enveloppe technique » reste au front ; à l'ouverture, un montant trouvé n'est **pas lu** et lève
 >   l'alerte **`MONTANT_DANS_TECHNIQUE`**.
 
+> ✅ **Front, 2026-10-08 — PI-b branché (tranche F2)** :
+> - **Dépôt** (`/candidat/procedures/{idDmc}/offre?enveloppe=TECHNIQUE|FINANCIERE`) : pour une fiche de prestations intellectuelles,
+>   le candidat choisit l'enveloppe ; la **technique** ne demande ni ne scelle aucun montant ni rabais (l'acte du manifeste n'a ni
+>   `montantHt` ni `montantTtc`) et l'écran le rappelle ; la **financière** porte l'acte d'engagement. `enveloppe` part au `POST`. Après
+>   le dépôt de la première, l'accusé invite à déposer la seconde sur place (lot, groupement, délai repris ; fichiers effacés) ;
+>   l'accusé de la seconde montre l'empreinte de la `jumelle`. 400 `ENVELOPPE_*` et 409 `OFFRE_EXISTANTE` nommés.
+> - **Mes offres** : l'enveloppe de chaque offre ; « Enveloppe … non déposée » avec le lien de dépôt quand une proposition est à
+>   moitié déposée ; le retrait annonce que les deux enveloppes tombent ; « Remplacer » garde l'enveloppe.
+> - **Registre des dépôts** : colonne « Enveloppe » et « propositions déposées » dès qu'une ligne porte une enveloppe.
+> - **Séance** : libellés des alertes `MONTANT_DANS_TECHNIQUE` et `FINANCIERE_MANQUANTE`.
+>
+> ⚠️ **Hypothèse du front H-PI-1, à confirmer** — le contrat ne dit pas quelles **pièces attendues** vont dans quelle enveloppe. Le front
+> met l'acte d'engagement (`AE`) dans la financière et **toutes les autres** dans la technique. Si une autre pièce doit aller dans la
+> financière (décomposition du prix, par exemple), il faut que `GET …/pieces` serve un champ `enveloppe` (`TECHNIQUE` |
+> `FINANCIERE`) par pièce : le front s'y alignera.
+
 ## B3 — Deux séances d'ouverture
 
 - **Première séance** (date limite) : n'ouvre que les enveloppes **techniques**, au quorum, comme le lot 4 ; le PV d'ouverture
