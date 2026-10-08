@@ -41,6 +41,22 @@ seul retenu (art. 42-IV), le rapport, et la suite du lot 2 (dossier de marché, 
   comptes de la liste), le projet de marché ; elle se retire en ligne par les seuls candidats de la liste (403 aux autres).
 - La procédure en ligne d'une fiche PI n'apparaît **pas** dans la liste publique : elle est visible des seuls invités.
 
+> ⚠️ **Backend, 2026-10-08 — B1 livré (tranche PI-a, V84)** ; contrat : `docs/api-endpoints.md`, § *L'évaluation des prestations
+> intellectuelles, lot 3, tranche PI-a*. Le lot est livré en quatre tranches : **PI-a** (sous-critères, méthode et budget, consultation
+> restreinte), **PI-b** (§B2, §B3), **PI-c** (§B4), **PI-d** (§B5 à §B7).
+> - **Lancement** : une fiche PI en remise électronique devient procédure en ligne à l'impression de ses **lettres d'invitation** (elle
+>   n'a pas d'avis) ; sa date limite est `B04-LH-02` « Date et heure limites de remise des propositions ».
+> - **Visibilité** : absente de `GET /api/procedures-en-ligne` ; `GET /api/procedures-en-ligne/{idDmc}` (et `…/pieces`) répond **404**
+>   à qui n'est pas invité (session de candidat requise pour la voir) ; `…/documents` et le retrait d'un document répondent 403
+>   **`NON_INVITE`** aux autres candidats, comme la création d'une offre.
+> - **Les invités** sont écrits à chaque impression des lettres : avec une liste AMI définitive, ses candidats (leur compte) ; sinon les
+>   candidats saisis, qui portent désormais une **adresse électronique** facultative (`candidats[i].email` ; 400 si elle est invalide) —
+>   le compte créé avec cette adresse leur est rattaché, et l'adresse reçoit `LETTRE_INVITATION` (« créez votre compte »).
+> - **Côté candidat** (nouveau) : `GET /api/candidat/invitations` → `[{ idDmc, reference, objet, autoriteContractante, rang, source (AMI |
+>   SAISIE), inviteLe, etatProcedure, dateLimite, lettreDisponible }]` ; `GET /api/candidat/invitations/{idDmc}/lettre` (PDF).
+> - La demande de propositions se retire par `…/documents` comme un DAO (TDR, DPIC, projet de marché, selon la fiche) ; le dépôt en
+>   deux enveloppes vient en PI-b.
+
 ## B2 — Deux enveloppes scellées
 
 - Le dépôt porte **deux conteneurs** scellés, chacun avec sa clé (cérémonie des clés de la procédure, ADR-0013) : `TECHNIQUE` et
@@ -143,6 +159,24 @@ séance), ou plus tard ?
 > - **Q8** — les **consultants individuels** (art. 42-V) : **plus tard, lot à part** ; le lot 3 traite les cabinets (deux
 >   enveloppes).
 > - Restent au juriste : Q2, Q5, Q7 ; Q6 (méthode « qualification du consultant », budget prédéterminé) au pilote et au backend.
+
+> ⚠️ **Backend, 2026-10-08 — Q3, Q5, Q6 et le seuil de Q4** (arbitrages du pilote des 07 et 08/10, et le texte du dossier type) :
+> - **Q3 livré (PI-a)** : `GET|PUT /api/fiches-marche/{idDmc}/sous-criteres`, corps `{ sousCriteres[{ critere, libelle, points }] }`
+>   (l'ordre est la position ; `critere` ∈ `B06-TP-02` … `B06-TP-06`) ; 400 `sousCriteres[i].critere|libelle|points` ; 409
+>   `SOUS_CRITERES_HORS_PERIMETRE` hors PI, `FICHE_VALIDEE`. Un critère sans sous-critère se note globalement. Au bilan, **bloquant
+>   `SOUS_CRITERES_POINTS`** : les sous-critères d'un critère en totalisent les points. Recopiés à la révision. À l'impression,
+>   **`{{SOUSCRITERES.B06-TP-03}}`** (etc.) donne « a) Approche technique et méthodologie : 10 points », une ligne par sous-critère :
+>   **à placer par le front dans `DPIC-PI.txt` §9.3**, à la place des « <Indiquer nombre de points> » (le modèle est celui du front).
+> - **Q6 (pilote, 08/10)** : `B02-MS-01` gagne l'option **« Qualification du consultant »** ; **aucun champ `B06-CS-04`** : le budget
+>   prédéterminé est le champ **existant `B05-PF-13`**, déjà imprimé par la DPIC (condition `BUDGET-DISPONIBLE`), renommé « Budget
+>   disponible (Ariary HT) » et lu hors taxes. Au bilan, **bloquant `BUDGET_DISPONIBLE_ABSENT`** quand la méthode est le budget
+>   prédéterminé et que `B05-PF-13` est vide. Script `docs/referentiel/2026-10-08-pi-methode-qualification-budget.sql` (DBPRS20) ;
+>   **le front aligne sa copie** `docs/referentiel-champs-fiche-dao-prestations-intellectuelles.csv` (les deux lignes `B02-MS-01`,
+>   `B05-PF-13`).
+> - **Q5 tranchée par le dossier type** (DPIC-PI §9.4 et §9.5) : `Sf = 100 × Fm / F`, hors dépenses remboursables (Fm : la proposition
+>   la moins-disante) ; `S = T × wT + Sf × wF`, poids `B06-CS-02` et `B06-CS-03` totalisant 1. Appliquée en PI-d.
+> - **Seuil d'écart de Q4 (pilote)** : un écart entre membres de **20 % du maximum** d'un sous-critère (ou du critère noté
+>   globalement) est signalé ; simple alerte, la moyenne reste retenue. Appliqué en PI-c.
 
 ## Ce que le front fera, et quand
 
