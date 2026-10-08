@@ -104,6 +104,21 @@ seul retenu (art. 42-IV), le rapport, et la suite du lot 2 (dossier de marché, 
 >   des financières, déchiffrées avec **les mêmes clés** de la cérémonie.
 > - Les clés publiques de la procédure (`…/cles`) suivent la visibilité de la consultation : 404 hors des invités.
 
+> ⚠️ **Backend, 2026-10-08 — B3 complété : seconde séance livrée (tranche PI-d1, V88)** ; contrat : `docs/api-endpoints.md`,
+> § *… tranche PI-d1*. Chemin `/api/fiches-marche/{idDmc}/seance/financiere` (`GET`, `POST /ouvrir`, `GET /mes-parts`,
+> `POST /parts`, `POST /cloturer`, `GET /pv[?format=docx]`), même accès que la première séance.
+> - **Ouverture** par le responsable, seulement après la première séance close et l'évaluation technique **arrêtée sur chaque
+>   lot** (409 `SEANCE_TECHNIQUE_NON_CLOSE`, `TECHNIQUE_NON_ARRETEE` avec `details.lots`). S'ouvrent les financières des
+>   `QUALIFIEE` ; en « Qualité technique exclusivement » / « Qualification du consultant », la seule du premier rang (Q1).
+> - **Non ouvertes** : servies dans `nonOuvertes[{ numero, raisonSociale, lot, motif }]` et nommées au PV ; elles restent
+>   `DEPOSEE`, scellées — **Q2 (rendues ou détruites) reste au juriste**, rien n'est purgé.
+> - **Invitation** : notification `SEANCE_FINANCIERE` aux seuls candidats dont l'enveloppe s'ouvre ; `PARTS_ATTENDUES` aux membres.
+> - **Parts** : comme en première séance (toutes en une fois, `PARTS_INCOMPLETES`, secours avec motif), mais pour les seules
+>   enveloppes à ouvrir ; au quorum, tout s'ouvre et `aOuvrir[].acteEngagement` porte les montants.
+> - **Écart** : le PV n'a pas de signature des membres dans cette tranche (clôture par le responsable, PDF + Word). Une fois la
+>   seconde séance ouverte, la réouverture technique est refusée (409 `SEANCE_FINANCIERE_OUVERTE`).
+> - L'évaluation financière et le classement (§B5 et suivants) arrivent en **PI-d2**.
+
 ## B4 — L'évaluation technique
 
 - Une **grille par candidat** : les critères `B06-TP-02` à `-06`, chacun noté sur ses points (la note ne dépasse pas le maximum de la
