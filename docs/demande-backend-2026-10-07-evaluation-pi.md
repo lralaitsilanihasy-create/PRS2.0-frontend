@@ -113,6 +113,28 @@ seul retenu (art. 42-IV), le rapport, et la suite du lot 2 (dossier de marché, 
 - Un candidat sous le score minimum est **éliminé** techniquement, avec le motif ; sa proposition financière ne sera pas ouverte.
 - Les étapes 2 (recevabilité, conformité) et le principe des précisions (art. 35-VI) du lot 1 valent ici, sur l'enveloppe technique.
 
+> ⚠️ **Backend, 2026-10-08 — B4 livré (tranche PI-c, V87)** ; contrat : `docs/api-endpoints.md`, § *… tranche PI-c*.
+> - **Socle du lot 1** : ouverture de l'évaluation par le responsable, déclarations (`POST …/evaluation/declaration`), examen
+>   préliminaire de l'enveloppe technique (`PUT …/evaluation/offres/{idOffre}/conformite`, arrêt `POST …/lots/{lot}/etapes/CONFORMITE/
+>   arreter`), précisions : inchangés. Les étapes suivantes du lot 1 (montant, anormales, post-qualification) ne servent pas aux PI.
+> - **Nouvelle ressource** `GET /api/fiches-marche/{idDmc}/evaluation/technique` → `TechniqueDto` = `{ idDmc, scoreMinimum,
+>   seuilEcartPourcent, elements[{ code, critere, libelleCritere, libelle, max }], lots[{ lot, conformiteArretee, arret{ le, par, nom,
+>   observation, rouverteLe, motifReouverture }, offres[…] }] }` ; 409 `CATEGORIE_SANS_NOTATION_TECHNIQUE` hors PI.
+> - **Grille** : un élément par **sous-critère** de la fiche validée (`B06-TP-03#1`, `#2`…), ou le critère entier s'il n'en a pas
+>   (`B06-TP-02`) ; maximum = ses points.
+> - **Q4 — chaque membre note** : `PUT …/evaluation/technique/offres/{idOffre}/notes` `{ notes[{ element, note, motif }] }`, sa propre
+>   grille (une nouvelle saisie remplace la sienne) ; 0 ≤ note ≤ maximum (400 `NOTE_HORS_BAREME`), motif exigé (400
+>   `MOTIF_OBLIGATOIRE`), 400 `ELEMENT_INCONNU` ; 409 `CONFORMITE_NON_ARRETEE` (avant l'arrêt de l'examen préliminaire du lot),
+>   `OFFRE_ECARTEE`, `TECHNIQUE_ARRETEE`, `DECLARATION_MANQUANTE` ; 403 `MEMBRE_EN_CONFLIT`.
+> - **Calcul** : par proposition, `grilles[]` (une par membre), `moyennes[{ element, moyenne, min, max, nombreNotes, ecart }]`, `total`
+>   (somme des moyennes), `complete`, `statut` (`EN_COURS` · `QUALIFIEE` · `ELIMINEE`), `motifElimination`, `rang`. **`ecart`** : la note
+>   la plus haute et la plus basse d'un élément s'écartent de **plus de 20 %** de son maximum (paramètre administrable
+>   `EVALUATION_ECART_NOTES_POURCENT`) ; alerte seulement, la moyenne reste retenue.
+> - **Arrêt** par le président : `POST …/evaluation/technique/lots/{lot}/arreter` `{ observation? }` ; 409 `NOTATION_INCOMPLETE`
+>   (`details.offres` : les numéros dont une grille manque). Sous `B06-TP-07` : `ELIMINEE`, avec le motif. **Réouverture** : `POST
+>   …/lots/{lot}/rouvrir` `{ motif }`.
+> - Les **grilles individuelles jointes au rapport** viennent avec le rapport adapté (PI-d).
+
 ## B5 — L'évaluation financière et le classement, selon la méthode
 
 | Méthode (`B02-MS-01`) | Classement |
