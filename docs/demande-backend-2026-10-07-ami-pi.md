@@ -166,3 +166,19 @@ ne trace l'AMI : ni son avis, ni les candidatures reçues, ni la sélection.
 > - **Candidat** : la liste restreinte publiée paraît sur la page de l'AMI.
 > - Pas de compteur ni de routage de notification internes : le contrat n'en sert pas (les notifications de l'AMI vont aux candidats).
 > - ⚠️ Recette toujours bloquée par le mode 9 sans type de DMC (encadré AMI-a ci-dessus).
+
+> ⚠️ **Front, 2026-10-08 — recette de l'AMI sur DBPRS20 (fiche 49, ligne PI 303290, après V85)** :
+> - **Passé, par l'interface** : fiche créée sur la ligne en mode AMI ; AMI préparé (trois critères 50/30/20, une pièce, note
+>   minimale 60) et publié (avis signé) ; commission désignée ; après la date limite, l'expression se lit chez la PRMP ;
+>   déclarations des deux membres, notes motivées (80/100, qualifiée), arrêt de la liste par le président avec le motif du nombre
+>   (une qualifiée pour six places), rapport signé des deux membres → liste **DEFINITIVE** (« 1. Société de démonstration SARL »).
+> - ⚠️ **Anomalie 1 — `GET /api/amis-en-ligne` et `GET /api/amis-en-ligne/{idDmc}` répondent 500** (sans session), alors que
+>   `…/avis` répond 200. Conséquence : la page candidat de l'AMI ne se charge pas, et l'AMI ouvert n'apparaît pas dans « Procédures
+>   ouvertes ». Cause probable, à la lecture de `AmiService.publicDto` : la lecture de l'autorité contractante par
+>   `valeursPpm.lire(...)` sans utilisateur connecté — la trace est dans le journal du JAR. Pour poursuivre, l'expression d'intérêt a
+>   été déposée par `POST /api/candidat/amis/49/expression` (compte du candidat de démonstration, 201, n° 1).
+> - ⚠️ **Anomalie 2 (mineure) — les membres de CAO désignés avant le champ `qualite` le servent nul** (`GET …/cao` de la fiche 44) :
+>   les renvoyer tels quels dans un `PUT …/cao` est refusé (« au moins deux membres »). Le front n'est pas touché (son écran
+>   reprend la qualité), mais un rattrapage des anciennes lignes (`MEMBRE` par défaut) éviterait la surprise.
+> - Non joués : les lettres d'invitation et le dossier de la demande de propositions (la fiche 49 n'est pas validée ; les lettres
+>   attendent un PV favorable).
