@@ -38,6 +38,7 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
     navPublique: [{ label: 'Procédures ouvertes', path: '/candidat/procedures' }],
     navConnecte: [
       { label: 'Mes offres', path: '/candidat/offres' },
+      { label: 'Mes invitations', path: '/candidat/invitations' },
       { label: 'Mon entreprise', path: '/candidat/entreprise' },
     ],
     entree: { label: 'Créer un compte', path: '/candidat/inscription' },

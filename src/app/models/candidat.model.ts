@@ -413,3 +413,28 @@ export interface Depots {
   dateLimite: string | null;
   depots: LigneDepot[] | null;
 }
+
+// ── Invitations (consultation restreinte des prestations intellectuelles — lot 3 PI, tranche PI-a, V84) ──────
+
+/** D'où vient l'invitation : la liste restreinte arrêtée par l'AMI (le compte du candidat), ou la saisie de la PRMP (son adresse). */
+export type SourceInvitation = 'AMI' | 'SAISIE';
+
+/**
+ * `GET /api/candidat/invitations` — une procédure restreinte où le candidat est invité. Elle n'apparaît pas dans les
+ * procédures ouvertes : c'est ici qu'il la trouve, avec sa lettre d'invitation.
+ */
+export interface InvitationCandidat {
+  idDmc: number;
+  reference: string | null;
+  objet: string | null;
+  autoriteContractante: string | null;
+  /** Son rang dans la liste restreinte (1 à n). */
+  rang: number | null;
+  source: SourceInvitation;
+  /** `AAAA-MM-JJTHH:MM:SS` — la première impression qui l'a invité. */
+  inviteLe: string | null;
+  etatProcedure: EtatProcedureEnLigne | null;
+  /** `AAAA-MM-JJTHH:MM`. */
+  dateLimite: string | null;
+  lettreDisponible: boolean;
+}

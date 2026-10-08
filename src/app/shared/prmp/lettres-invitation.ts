@@ -17,7 +17,10 @@ interface LigneCandidat extends CandidatInvite {
   id: number;
   erreurNom?: string;
   erreurAdresse?: string;
+  erreurEmail?: string;
 }
+
+const ERREUR_DE = { nom: 'erreurNom', adresse: 'erreurAdresse', email: 'erreurEmail' } as const;
 
 /**
  * ⚠️ **Lettres d'invitation des prestations intellectuelles** (plan du 01/10, lot AV-4.3 ; demande backend livrée, V57).
@@ -103,7 +106,7 @@ export class LettresInvitation implements OnInit {
     this.dateEnvoi.set(dernier?.dateEnvoi ?? '');
     this.lieu.set(dernier?.lieu ?? '');
     const liste = dernier?.candidats?.length ? dernier.candidats : [{ nom: '', adresse: '' }];
-    this.candidats.set(liste.map((c) => ({ id: this.prochainId++, nom: c.nom, adresse: c.adresse })));
+    this.candidats.set(liste.map((c) => ({ id: this.prochainId++, nom: c.nom, adresse: c.adresse, email: c.email ?? '' })));
     this.erreurs.set({});
     this.refus.set(null);
     this.ouverte.set(true);
@@ -115,7 +118,7 @@ export class LettresInvitation implements OnInit {
   }
 
   ajouterCandidat(): void {
-    this.candidats.update((l) => [...l, { id: this.prochainId++, nom: '', adresse: '' }]);
+    this.candidats.update((l) => [...l, { id: this.prochainId++, nom: '', adresse: '', email: '' }]);
     if (this.erreurs().candidats) this.erreurs.update((e) => ({ ...e, candidats: undefined }));
   }
 
@@ -124,8 +127,8 @@ export class LettresInvitation implements OnInit {
     this.candidats.update((l) => l.filter((c) => c.id !== id));
   }
 
-  poserCandidat(id: number, champ: 'nom' | 'adresse', valeur: string): void {
-    this.candidats.update((l) => l.map((c) => (c.id === id ? { ...c, [champ]: valeur, [champ === 'nom' ? 'erreurNom' : 'erreurAdresse']: undefined } : c)));
+  poserCandidat(id: number, champ: 'nom' | 'adresse' | 'email', valeur: string): void {
+    this.candidats.update((l) => l.map((c) => (c.id === id ? { ...c, [champ]: valeur, [ERREUR_DE[champ]]: undefined } : c)));
   }
 
   poser(champ: 'dateEnvoi' | 'lieu', valeur: string): void {
@@ -140,7 +143,8 @@ export class LettresInvitation implements OnInit {
     const corps = {
       dateEnvoi: this.dateEnvoi().trim(),
       lieu: this.lieu().trim(),
-      candidats: this.listeAmi() ? [] : this.candidats().map((c) => ({ nom: c.nom.trim(), adresse: c.adresse.trim() })),
+      // ⚠️ PI-a (V84) — l'adresse électronique est facultative : vide, elle part nulle.
+      candidats: this.listeAmi() ? [] : this.candidats().map((c) => ({ nom: c.nom.trim(), adresse: c.adresse.trim(), email: c.email?.trim() || null })),
     };
     this.fiches
       .imprimerLettres(this.idDmc(), corps)
@@ -158,14 +162,14 @@ export class LettresInvitation implements OnInit {
           const parChamp = erreursParChamp(e);
           if (e.status === 400 && parChamp.size) {
             const generales: { dateEnvoi?: string; lieu?: string; candidats?: string } = {};
-            const parRang = new Map<number, { nom?: string; adresse?: string }>();
+            const parRang = new Map<number, { nom?: string; adresse?: string; email?: string }>();
             for (const [cle, message] of parChamp) {
               const c = erreurCandidat(cle);
               if (c) parRang.set(c.rang, { ...parRang.get(c.rang), [c.champ]: message });
               else if (cle === 'dateEnvoi' || cle === 'lieu' || cle === 'candidats') generales[cle] = message;
             }
             this.erreurs.set(generales);
-            this.candidats.update((l) => l.map((c, i) => ({ ...c, erreurNom: parRang.get(i + 1)?.nom, erreurAdresse: parRang.get(i + 1)?.adresse })));
+            this.candidats.update((l) => l.map((c, i) => ({ ...c, erreurNom: parRang.get(i + 1)?.nom, erreurAdresse: parRang.get(i + 1)?.adresse, erreurEmail: parRang.get(i + 1)?.email })));
             return;
           }
           if (e.status === 409 && codeErreur(e) === 'LETTRE_INDISPONIBLE') {

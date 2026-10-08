@@ -22,6 +22,7 @@ import {
   ExclusionArmp,
   ExclusionArmpCorps,
   InscriptionCandidat,
+  InvitationCandidat,
   InscriptionCandidatCorps,
   PieceEntreprise,
   ProcedureEnLigne,
@@ -255,5 +256,24 @@ export class OffresCandidatService {
   /** `DELETE /{id}` → `RETIREE` ; 409 `DELAI_DEPASSE`, `REMPLACEMENT_INTERDIT`, `OFFRE_NON_DEPOSEE`. */
   retirer(idOffre: string): Observable<Offre> {
     return this.http.delete<Offre>(`${this.base}/${idOffre}`, { context: skipErrorToast() });
+  }
+}
+
+/**
+ * ⚠️ Lot 3 PI, tranche PI-a (V84) — les invitations du candidat connecté aux consultations restreintes des prestations
+ * intellectuelles, et sa lettre d'invitation (PDF). La lettre est silencieuse : l'écran nomme l'échec.
+ */
+@Injectable({ providedIn: 'root' })
+export class InvitationsCandidatService {
+  private readonly http = inject(HttpClient);
+  private readonly base = `${environment.apiUrl}/candidat/invitations`;
+
+  liste(): Observable<InvitationCandidat[]> {
+    return this.http.get<InvitationCandidat[]>(this.base);
+  }
+
+  /** `GET /{idDmc}/lettre` — 404 tant qu'elle n'est pas imprimée, ou à qui n'est pas invité. */
+  lettre(idDmc: number): Observable<Blob> {
+    return this.http.get(`${this.base}/${idDmc}/lettre`, { responseType: 'blob', context: skipErrorToast() });
   }
 }

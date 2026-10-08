@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { skipErrorToast } from '../core/errors/api-error';
-import { AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, Depots, DisponibiliteAvis, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, MaterielExige, ParametresInternes, ParametresInternesCorps, PersonnelExige, PieceExigee, ProcedureInterne, PublicationAvis, SpecificationsTechniques, PublicationLettres, RecuDao, ReferentielFiche, RetraitDao, TypeMarche, VersionFiche } from '../models';
+import { AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, Depots, DisponibiliteAvis, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, MaterielExige, ParametresInternes, ParametresInternesCorps, PersonnelExige, PieceExigee, ProcedureInterne, SousCritere, PublicationAvis, SpecificationsTechniques, PublicationLettres, RecuDao, ReferentielFiche, RetraitDao, TypeMarche, VersionFiche } from '../models';
 import { CrudService } from './api/crud.service';
 
 /**
@@ -158,6 +158,18 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
 
   enregistrerMateriel(idDmc: number, materiel: MaterielExige[]): Observable<MaterielExige[]> {
     return this.http.put<MaterielExige[]>(`${this.baseUrl}/${idDmc}/materiel`, { materiel }, { context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ Lot 3 PI, tranche PI-a (V84) — les sous-critères des critères techniques ; `PUT` remplace la liste (brouillon
+   * seulement : 409 `FICHE_VALIDEE`, `SOUS_CRITERES_HORS_PERIMETRE` hors prestations intellectuelles ; 400 par rang).
+   */
+  sousCriteres(idDmc: number): Observable<SousCritere[]> {
+    return this.http.get<SousCritere[]>(`${this.baseUrl}/${idDmc}/sous-criteres`, { context: skipErrorToast() });
+  }
+
+  enregistrerSousCriteres(idDmc: number, sousCriteres: SousCritere[]): Observable<SousCritere[]> {
+    return this.http.put<SousCritere[]>(`${this.baseUrl}/${idDmc}/sous-criteres`, { sousCriteres }, { context: skipErrorToast() });
   }
 
   personnel(idDmc: number): Observable<PersonnelExige[]> {

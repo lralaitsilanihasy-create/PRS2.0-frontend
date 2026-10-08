@@ -43,4 +43,6 @@
 .lti__candidat { display: grid; grid-template-columns: auto minmax(10rem, 1fr) minmax(12rem, 1.4fr) auto; gap: 0.5rem; align-items: start; }
 .lti__rang { padding-top: 1.9rem; font-weight: 700; color: var(--n-600); }
 .lti__retirer { margin-top: 1.6rem; }
-@media (max-width: 640px) { .lti__candidat { grid-template-columns: auto 1fr auto; } .lti__adresse { grid-column: 2 / 3; } }
+/* ⚠️ 08/10 (PI-a) — l'adresse électronique, facultative, sous le nom et l'adresse postale. */
+.lti__email { grid-column: 2 / 4; grid-row: 2; }
+@media (max-width: 640px) { .lti__candidat { grid-template-columns: auto 1fr auto; } .lti__adresse, .lti__email { grid-column: 2 / 3; grid-row: auto; } }

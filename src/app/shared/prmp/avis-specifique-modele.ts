@@ -97,9 +97,9 @@ export function lettresImprimees(documents: readonly DocumentFiche[]): LettresIm
  * ⚠️ 01/10 — une erreur nominative du serveur pour un candidat (`candidats[1].nom`, indice à partir de 0) :
  * `{ rang: 2, champ: 'nom' }`, ou `null` pour un autre champ.
  */
-export function erreurCandidat(cle: string): { rang: number; champ: 'nom' | 'adresse' } | null {
-  const m = /^candidats\[(\d+)\]\.(nom|adresse)$/.exec(cle);
-  return m ? { rang: Number(m[1]) + 1, champ: m[2] as 'nom' | 'adresse' } : null;
+export function erreurCandidat(cle: string): { rang: number; champ: 'nom' | 'adresse' | 'email' } | null {
+  const m = /^candidats\[(\d+)\]\.(nom|adresse|email)$/.exec(cle);
+  return m ? { rang: Number(m[1]) + 1, champ: m[2] as 'nom' | 'adresse' | 'email' } : null;
 }
 
 /** Ce que la PRMP lit quand l'avis n'est pas encore disponible (`null` : rien à montrer). */

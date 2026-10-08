@@ -38,6 +38,12 @@ export const CANDIDAT_ROUTES: Routes = [
     loadComponent: () => import('./mes-offres').then((m) => m.MesOffres),
   },
   {
+    // ⚠️ Lot 3 PI, tranche PI-a (V84) — les consultations restreintes où le candidat est invité, et sa lettre.
+    path: 'invitations',
+    canActivate: [externeConnecteGuard],
+    loadComponent: () => import('./mes-invitations').then((m) => m.MesInvitations),
+  },
+  {
     path: 'entreprise',
     canActivate: [externeConnecteGuard],
     loadComponent: () => import('./entreprise-candidat').then((m) => m.EntrepriseCandidat),

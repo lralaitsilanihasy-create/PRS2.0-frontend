@@ -37,6 +37,7 @@ describe('Lettres d’invitation — règles pures (lot AV-4, 01/10)', () => {
   it('une erreur nominative d’un candidat (indice à partir de 0) se rapporte au rang humain', () => {
     expect(erreurCandidat('candidats[1].nom')).toEqual({ rang: 2, champ: 'nom' });
     expect(erreurCandidat('candidats[0].adresse')).toEqual({ rang: 1, champ: 'adresse' });
+    expect(erreurCandidat('candidats[2].email')).toEqual({ rang: 3, champ: 'email' });
     expect(erreurCandidat('lieu')).toBeNull();
   });
 });
@@ -93,10 +94,15 @@ describe('Lettres d’invitation — l’encart et la modale de la liste restrei
     const lignes = racine().querySelectorAll('.lti__candidat');
     saisir(lignes[2].querySelector('input'), 'Groupement Gamma');
     saisir(lignes[2].querySelector('textarea'), 'BP 45, Mahajanga');
+    // ⚠️ PI-a — l'adresse électronique est facultative : saisie, elle part ; laissée vide, elle part nulle.
+    saisir(lignes[2].querySelector('input[type="email"]'), ' contact@gamma.mg ');
     bouton('Imprimer 3 lettres', modale())!.click();
     const req = http.expectOne('/api/fiches-marche/40/lettres-invitation');
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ ...PUB, candidats: [...LISTE, { nom: 'Groupement Gamma', adresse: 'BP 45, Mahajanga' }] });
+    expect(req.request.body).toEqual({
+      ...PUB,
+      candidats: [...LISTE.map((c) => ({ ...c, email: null })), { nom: 'Groupement Gamma', adresse: 'BP 45, Mahajanga', email: 'contact@gamma.mg' }],
+    });
     req.flush([doc(31, 'LETTRE_00004_303200_v2_20261006-090000_03.pdf', 3, { dateGeneration: '2026-10-06T09:00:00' })], { status: 201, statusText: 'Created' });
     rendre();
     expect(modale()).toBeNull();

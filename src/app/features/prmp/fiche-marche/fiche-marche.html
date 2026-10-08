@@ -553,6 +553,10 @@
                     }
                   </div>
                 }
+                <!-- ⚠️ 08/10 (lot 3 PI, tranche PI-a) — les sous-critères des critères techniques, sous les points du bloc B06. -->
+                @if (bloc.code === 'B06' && categorie() === 'PRESTATIONS_INTELLECTUELLES' && criteresTechniques().length) {
+                  <app-fiche-sous-criteres [idDmc]="idDmc()!" [criteres]="criteresTechniques()" [lecture]="figee() || enLecture()" (enregistre)="besoinEnregistre()" />
+                }
                 <div class="fm__pied">
                   <button type="button" class="btn btn-outline" [disabled]="saving()" (click)="blocPrecedent()">‹ Précédent</button>
                   <!-- ⚠️ Correctif du 26/09 — quand il n'y a RIEN à enregistrer (lecture, fiche figée, forme non

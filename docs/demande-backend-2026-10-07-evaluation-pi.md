@@ -57,6 +57,16 @@ seul retenu (art. 42-IV), le rapport, et la suite du lot 2 (dossier de marché, 
 > - La demande de propositions se retire par `…/documents` comme un DAO (TDR, DPIC, projet de marché, selon la fiche) ; le dépôt en
 >   deux enveloppes vient en PI-b.
 
+> ✅ **Front, 2026-10-08 — PI-a branché (tranche F1)** :
+> - **Fiche DAO, bloc B06** (prestations intellectuelles) : sous les points des critères `B06-TP-02` à `-06`, l'éditeur des
+>   sous-critères (`fiche-sous-criteres.ts`) — lignes lettrées a), b)… par critère, somme comparée aux points saisis à l'instant,
+>   `PUT` en bloc, erreurs 400 sous la ligne visée, 409 nommés ; il est une « liste à sauver » du bloc (changer de bloc propose de
+>   l'enregistrer). `SOUS_CRITERES_POINTS` et `BUDGET_DISPONIBLE_ABSENT` s'affichent par le bilan existant, sans code dédié.
+> - **Lettres d'invitation** : une adresse électronique facultative par candidat saisi (vide → `null`), 400 `candidats[i].email`
+>   sous le champ.
+> - **Espace candidat** : « Mes invitations » (`/candidat/invitations`, au menu connecté) — source, rang, date limite, état ; la
+>   lettre s'ouvre en PDF assaini (`ouvrirBlobSur`) ; « Voir la procédure » mène à `/candidat/procedures/{idDmc}`.
+
 ## B2 — Deux enveloppes scellées
 
 - Le dépôt porte **deux conteneurs** scellés, chacun avec sa clé (cérémonie des clés de la procédure, ADR-0013) : `TECHNIQUE` et

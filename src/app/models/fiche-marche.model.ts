@@ -608,10 +608,26 @@ export interface PublicationAvis {
   supports: string;
 }
 
-/** ⚠️ 01/10 (lot AV-4) — un candidat de la liste restreinte des prestations intellectuelles. `adresse` : une ligne par ligne. */
+/**
+ * ⚠️ 01/10 (lot AV-4) — un candidat de la liste restreinte des prestations intellectuelles. `adresse` : une ligne par ligne.
+ * ⚠️ 08/10 (lot 3 PI, tranche PI-a) — `email`, facultatif : le compte candidat qui porte cette adresse est rattaché à
+ * l'invitation (même créé après) et l'adresse reçoit la notification de la lettre.
+ */
 export interface CandidatInvite {
   nom: string;
   adresse: string;
+  email?: string | null;
+}
+
+/**
+ * ⚠️ Lot 3 PI, tranche PI-a (V84) — un sous-critère d'un critère technique (`B06-TP-02` à `B06-TP-06`) : ses points
+ * s'additionnent pour faire ceux du critère (`SOUS_CRITERES_POINTS` au bilan). L'ordre est la position dans la liste.
+ */
+export interface SousCritere {
+  ordre?: number;
+  critere: string;
+  libelle: string;
+  points: number;
 }
 
 /**

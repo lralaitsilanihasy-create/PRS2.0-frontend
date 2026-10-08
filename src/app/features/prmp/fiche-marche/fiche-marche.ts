@@ -18,6 +18,7 @@ import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { FicheBesoin } from './fiche-besoin';
 import { FicheMoyens } from './fiche-moyens';
 import { FichePieces } from './fiche-pieces';
+import { CritereTechnique, FicheSousCriteres } from './fiche-sous-criteres';
 import { ListeASauver } from './liste-a-sauver';
 import { ImportDao } from './import-dao';
 import { AvisSpecifique } from '../../../shared/prmp/avis-specifique';
@@ -114,6 +115,7 @@ function routeAbsente(e: HttpErrorResponse | ApiError): boolean {
     FicheBesoin,
     FicheMoyens,
     FichePieces,
+    FicheSousCriteres,
     ImportDao,
     AvisSpecifique,
     LettresInvitation,
@@ -368,7 +370,24 @@ export class FicheMarcheEcran {
   private readonly besoinCmp = viewChild(FicheBesoin);
   private readonly moyensCmp = viewChild(FicheMoyens);
   private readonly piecesCmp = viewChild(FichePieces);
-  private readonly listeCourante = computed<ListeASauver | null>(() => this.besoinCmp() ?? this.moyensCmp() ?? this.piecesCmp() ?? null);
+  private readonly sousCriteresCmp = viewChild(FicheSousCriteres);
+  private readonly listeCourante = computed<ListeASauver | null>(
+    () => this.besoinCmp() ?? this.moyensCmp() ?? this.piecesCmp() ?? this.sousCriteresCmp() ?? null,
+  );
+  /**
+   * ⚠️ 08/10 (lot 3 PI, PI-a) — les critères techniques `B06-TP-02` à `-06` d'une fiche de prestations intellectuelles : leur
+   * libellé et les points saisis à l'instant (avant même l'enregistrement du bloc), que leurs sous-critères doivent totaliser.
+   */
+  readonly criteresTechniques = computed<CritereTechnique[]>(() =>
+    this.referentiel()
+      .champs.filter((c) => /^B06-TP-0[2-6]$/.test(c.code))
+      .sort((a, b) => a.code.localeCompare(b.code))
+      .map((c) => {
+        const v = this.valeurAffichee(c).trim().replace(',', '.');
+        const n = v === '' ? NaN : Number(v);
+        return { code: c.code, libelle: c.libelle, points: Number.isFinite(n) ? n : null };
+      }),
+  );
   /** Un départ suspendu : la liste du bloc a des saisies non enregistrées, la PRMP choisit (dialogue). */
   readonly departSuspendu = signal<(() => void) | null>(null);
   readonly sauvegardeListe = signal(false);

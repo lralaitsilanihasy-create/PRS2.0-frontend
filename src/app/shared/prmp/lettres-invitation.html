@@ -94,6 +94,12 @@
                   <textarea class="form-control" rows="2" [value]="c.adresse" (input)="poserCandidat(c.id, 'adresse', $any($event.target).value)"></textarea>
                   @if (c.erreurAdresse; as m) { <span class="form-error">{{ m }}</span> }
                 </label>
+                <!-- ⚠️ 08/10 (lot 3 PI, PI-a) — facultative : le compte qui la porte est rattaché à l'invitation, même créé après. -->
+                <label class="form-group lti__email">
+                  <span class="form-label">Adresse électronique du candidat n° {{ i + 1 }} (facultative)</span>
+                  <input class="form-control" type="email" autocomplete="off" [value]="c.email ?? ''" (input)="poserCandidat(c.id, 'email', $any($event.target).value)" />
+                  @if (c.erreurEmail; as m) { <span class="form-error">{{ m }}</span> }
+                </label>
                 <button type="button" class="btn btn-sm btn-outline lti__retirer" [disabled]="candidats().length <= 1 || envoi()" [attr.aria-label]="'Retirer le candidat n° ' + (i + 1)" (click)="retirerCandidat(c.id)">✕</button>
               </div>
             }
