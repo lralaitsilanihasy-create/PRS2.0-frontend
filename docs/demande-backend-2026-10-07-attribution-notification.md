@@ -309,6 +309,21 @@ Le backend les sème en migration ; l'Administrateur peut les modifier ensuite.
   l'organe de contrôle, qui se prononce **sous 5 jours** ; un refus oblige à reprendre la procédure. La décision est affichée et
   notifiée à tous les candidats avec ses motifs ; l'attributaire n'a droit ni à la signature ni à une indemnité.
 
+> ⚠️ **Backend, 2026-10-08 — infructuosité et Q3 livrés (tranche 2d-1, V91)** ; contrat : `docs/api-endpoints.md`, § *… tranche 2d-1*.
+> La tranche 2d est découpée (arbitrage du pilote, 08/10) : **2d-1** infructuosité, Q3, §B7 ; **2d-2** réattribution (Q8) ; **2d-3**
+> sans suite par un dossier dans le circuit (Q10) — `…/sans-suite` et `…/sans-suite/avis` ci-dessus ne sont **pas** livrés.
+> - **`POST …/lots/{lot}/infructueux`** comme proposé (`{ motif, decision{ reference, date }, suite? }`), PRMP seule. **Écart** : pas
+>   « sans offre conforme » à part — c'est le rapport qui le propose (`proposition.infructueux`) ; **en plus**, après l'avis **`DEF`**
+>   de la Commission (Q3). Statuts en plus : 400 `DECISION_OBLIGATOIRE`, `DECISION_DATE_INVALIDE`, `SUITE_INVALIDE`, `MOTIF_OBLIGATOIRE` ;
+>   409 `DEJA_ATTRIBUE` (art. 56-VI), `DEJA_INFRUCTUEUX`, `INFRUCTUOSITE_NON_PROPOSEE`. État de lot **`INFRUCTUEUX`**, `lots[].infructuosite`
+>   = `{ le, par, motif, decisionReference, decisionDate, suite }` ; `PROCEDURE_INFRUCTUEUSE` à chaque candidat du lot ; page publique :
+>   `ResultatPublic` gagne `infructueux`, `motifInfructuosite`, `dateDecision`.
+> - **Q3, la reprise** (arbitrage du 08/10 : évaluation rouverte en entier) : **`POST …/lots/{lot}/reprendre`** `{ motif }`, PRMP seule,
+>   après l'avis `DEF` (409 `AVIS_NON_DEFAVORABLE`, `AUTRES_LOTS_ATTRIBUES`). Le rapport signé est archivé
+>   (`lots[].reprises[{ id, le, par, motif, idDossier, avis, rapportDisponible }]`, `GET …/attribution/reprises/{id}/rapport`), l'évaluation
+>   redevient `EN_COURS`, le président rouvre l'étape voulue, un nouveau rapport est signé, puis un nouveau dossier de marché.
+>   `EVALUATION_REPRISE` aux membres de la CAO.
+
 ## B7 — Accès, notifications, journal, compteurs
 
 - **Accès** : la PRMP agit ; l'UGPM et le responsable lisent ; les membres de la CAO lisent l'état de leurs lots ; le candidat ne voit
@@ -318,6 +333,13 @@ Le backend les sème en migration ; l'Administrateur peut les modifier ensuite.
   à J-5), `PROCEDURE_INFRUCTUEUSE`, `PROCEDURE_SANS_SUITE` (candidats).
 - **Compteurs** (`/api/kpis/badges`, PRMP) : lots à attribuer (avis rendu), lots signables (délai écoulé), avis d'attribution à publier,
   explications sans réponse.
+
+> ⚠️ **Backend, 2026-10-08 — §B7 livré (tranche 2d-1, V91)**, sauf `PROCEDURE_SANS_SUITE` (2d-3) :
+> - **Compteurs** dans `compteurs` (PRMP) : `lotsAAttribuer` (avis favorable `FAV`/`FAVR` rendu, non attribués), `lotsSignables`,
+>   `avisAPublier`, `explicationsSansReponse`.
+> - **Alertes** (planificateur horaire, une fois chacune) : `DELAI_ATTENTE_ECOULE`, `ECHEANCE_AVIS_ATTRIBUTION` (J-5 de l'échéance de
+>   30 jours), et **en plus** `ECHEANCE_REEXAMEN` (réexamen sans réponse, J-2 de son échéance de 10 jours). Plus `PROCEDURE_INFRUCTUEUSE`
+>   (candidats) et `EVALUATION_REPRISE` (membres de la CAO).
 
 ## Hypothèses (à confirmer ou corriger)
 
