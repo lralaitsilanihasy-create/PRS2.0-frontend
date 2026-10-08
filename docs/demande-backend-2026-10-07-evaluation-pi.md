@@ -164,6 +164,18 @@ seul retenu (art. 42-IV), le rapport, et la suite du lot 2 (dossier de marché, 
   commission avec un motif (Q5 du lot 1).
 - Le serveur calcule `F`, `S` et le rang ; l'écran affiche, comme au lot 1.
 
+> ⚠️ **Backend, 2026-10-08 — B5 livré (tranche PI-d2a, V89)** ; contrat : `docs/api-endpoints.md`, § *… tranche PI-d2a*.
+> - `GET /api/fiches-marche/{idDmc}/evaluation/financiere` (`FinanciereDto`, `codeMethode`), `PUT …/financiere/offres/{idFinanciere}`
+>   (saisie d'un membre), `GET …/corrections-proposees`, `POST …/financiere/lots/{lot}/departager|arreter|rouvrir`.
+> - **Écart de nom** : le score financier s'appelle `scoreFinancier` (`Sf`, et non `F`) et le score combiné `scoreCombine` ; le montant
+>   comparé est `montantCompare` = prix corrigé − **dépenses remboursables**, saisies par la commission (arbitrage du pilote, 08/10 :
+>   l'acte d'engagement en ligne ne les distingue pas).
+> - **Poids** `B06-CS-02` / `B06-CS-03` : 0,8 / 0,2 ou 80 / 20 (ramenés à 1) ; sinon `poidsTechnique` nul et 409 `POIDS_INVALIDES` à l'arrêt.
+> - **Budget prédéterminé** : comparé au prix corrigé **HT** (sans déduire les remboursables) ; au-delà → `HORS_BUDGET`.
+> - **Qualité technique exclusivement / qualification** : rang = rang technique ; la saisie de la financière reste ouverte après l'arrêt
+>   (elle n'entre que dans la négociation) et est exigée pour conclure une négociation réussie (409 `MONTANT_NON_EVALUE`).
+> - L'arrêt (président) exige toutes les financières ouvertes saisies et les égalités départagées (`EGALITE_NON_DEPARTAGEE`).
+
 ## B6 — La négociation (art. 42-IV)
 
 - Avec le **seul** candidat classé premier ; jamais avec plusieurs à la fois (409 `NEGOCIATION_EN_COURS` sur un autre).
@@ -171,6 +183,19 @@ seul retenu (art. 42-IV), le rapport, et la suite du lot 2 (dossier de marché, 
   prix : le serveur ne le contrôle pas ; un **procès-verbal de négociation** (texte, date, lieu `B06-NG-01`, pièces) est joint.
 - Échec de la négociation : le candidat suivant est invité à négocier (Q7 : la loi ne le dit pas expressément ; le guide le laisse
   entendre).
+
+> ⚠️ **Backend, 2026-10-08 — B6 livré (tranche PI-d2a, V89)** ; arbitrages du pilote du 08/10 :
+> - **Conduite par la PRMP** (ou son UGPM), pas par la commission : `POST …/evaluation/negociation/lots/{lot}/ouvrir` (`{ prevueLe?,
+>   lieu? }`, lieu par défaut `B06-NG-01`), `PUT …/negociation/{id}/piece` (multipart `fichier`, **une** pièce, remplacée),
+>   `POST …/negociation/{id}/conclure` (`{ resultat, dateNegociation, lieu?, texte, motif? }`), `GET …/negociation`, `…/{id}/pv`.
+>   Le candidat est notifié (`NEGOCIATION`) ; c'est toujours celui dont c'est le tour (`prochain`) : on ne choisit pas l'offre.
+> - **Q7 (juriste)** : en attendant, l'échec **motivé** ouvre la voie au suivant ; réversible.
+> - **Méthodes « premier seul »** (qualité technique exclusivement, qualification du consultant) : la financière du suivant n'est pas
+>   ouverte → 409 `FINANCIERE_NON_OUVERTE` (`details.numero`) ; le responsable ouvre une **séance complémentaire**
+>   (`POST …/seance/financiere/complementaire`, `{ lot?, motif }`) : même écran de séance, ronde 2, mêmes parts, PV complémentaire.
+>   `SeanceFinanciereDto` gagne `ronde`, `motif`, `rondes[]` ; `GET …/pv?ronde=n`.
+> - Une fois une négociation engagée, le classement ne se rouvre plus (`NEGOCIATION_ENGAGEE`).
+> - **B7** (rapport, proposition d'attribution, dossier de marché, infructuosité 56-II) suit en **PI-d2b**.
 
 ## B7 — Le rapport, l'attribution, l'infructuosité
 
