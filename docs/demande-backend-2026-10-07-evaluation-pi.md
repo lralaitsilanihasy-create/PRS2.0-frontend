@@ -207,6 +207,24 @@ seul retenu (art. 42-IV), le rapport, et la suite du lot 2 (dossier de marché, 
   toutes inacceptables, inappropriées, ou **aucune n'atteint la note technique minimale** ; **une seule proposition conforme**.
   Toujours après avis conforme de la commission, jamais après l'attribution (art. 56-VI).
 
+> ⚠️ **Backend, 2026-10-08 — B7 livré (tranche PI-d2b, V90)** ; contrat : `docs/api-endpoints.md`, § *… tranche PI-d2b*. Aucun
+> chemin nouveau : le rapport, la vue d'évaluation et l'attribution du lot 1 et du lot 2 servent la fiche PI.
+> - **Rapport** : « RAPPORT D'ÉVALUATION DES PROPOSITIONS » ; sections 4 évaluation technique, 5 évaluation financière, 6 classement,
+>   7 négociation, 8 proposition ; **annexe des grilles individuelles** (Q4). Produit quand chaque lot est prêt (409
+>   `ETAPES_INCOMPLETES`, `details.lots`) ; dès lors, plus aucune écriture PI (409 `EVALUATION_CLOSE`, comme au lot 1).
+> - **Proposition** (`lots[].proposition`) : gagne `idOffreFinanciere` et `motifInfructuosite`. `idOffre` reste la proposition
+>   (enveloppe technique) ; `montant` = prix corrigé HT de la financière. Proposée = la proposition dont la **négociation a abouti**.
+> - **Sous-type** (arbitrage du pilote, 08/10) : **`MPI` — Marché de Prestations Intellectuelles**, famille DDM (V90) ; il hérite des
+>   points de contrôle et des pièces de la famille. Le devis estimatif joint est le bordereau de la financière.
+> - **Infructuosité proposée par le rapport** (motif servi dans `motifInfructuosite`) : toutes écartées à l'examen préliminaire ;
+>   **une seule conforme — d'office, sans évaluation technique ni financière** (arbitrage du pilote, 08/10) ; aucune au score technique
+>   minimum ; aucune financière recevable (écartées ou au-delà du budget) ; **écart** : aussi l'échec des négociations avec tous les
+>   classés (hors de l'art. 56-II, mais sans attributaire possible). « Aucun candidat à l'AMI » relève de l'AMI (présélection,
+>   infructueux) et « aucune proposition reçue » du PV de carence de la séance.
+> - **Lettres** : le motif dit la note technique, l'élimination, l'écartement financier ou le rang (et l'échec de la négociation).
+> - **Déclaration de l'infructuosité** (avis conforme de la Commission, jamais après l'attribution) : avec la tranche **2d** du lot 2,
+>   commune aux deux évaluations — encore à livrer.
+
 ## B8 — Consultants individuels (art. 42-V)
 
 Sous le seuil réglementaire : comparaison des qualifications d'**au moins trois** candidats ayant manifesté leur intérêt, sur leurs
