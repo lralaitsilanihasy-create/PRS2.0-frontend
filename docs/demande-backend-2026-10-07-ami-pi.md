@@ -84,10 +84,39 @@ ne trace l'AMI : ni son avis, ni les candidatures reçues, ni la sélection.
 - La **liste restreinte** arrêtée est publiée (Q5 : publique, ou notifiée aux seuls candidats ?) ; chaque candidat non retenu en est
   informé, avec le motif.
 
+> ⚠️ **Backend, 2026-10-07 — B3 livré (tranche AMI-b, V83)** ; contrat : `docs/api-endpoints.md`, § *L'appel à manifestation d'intérêt
+> en ligne, tranche AMI-b*. Écarts et précisions :
+> - **`GET /api/fiches-marche/{idDmc}/ami/preselection`** → `PreselectionDto` (`etat` ∈ `EN_ATTENTE` · `NOTATION` · `LISTE_ARRETEE` ·
+>   `DEFINITIVE` · `INFRUCTUEUX`), lu par la PRMP, l'UGPM et la CAO ; avant la date limite, aucune expression n'y est servie (Q2).
+> - **Déclaration** propre à l'AMI : `POST …/ami/preselection/declaration` `{ conflit, precision? }` (409 `DEJA_DECLARE`). La déclaration
+>   de l'évaluation des propositions (lot 3) reste à part.
+> - **Notation collégiale** (pas de grille par membre : c'est le lot 3, Q4, qui l'exige pour la note technique) : `PUT
+>   …/ami/expressions/{id}/notes` `{ notes[{ code, note, motif }] }`, par tout membre déclaré sans conflit ; note de 0 au poids du
+>   critère (400 `NOTE_HORS_BAREME`), motif exigé, une nouvelle saisie remplace la précédente (le journal les garde toutes).
+>   **Écartement** : `POST …/ami/expressions/{id}/ecartement` `{ ecartee, motif }` (`ecartee` faux : rétablir).
+> - **Qualifiée** = notée sur tous les critères, non écartée, au moins la `noteMinimale` ; classement par total, `rang`, `exAequo`.
+> - **Arrêt** par le **président** : `POST …/ami/preselection/arreter` `{ motifNombre?, observations?, ordre? }` ; 409
+>   `NOTATION_INCOMPLETE`, `AUCUN_QUALIFIE`, `EGALITE_A_DEPARTAGER` (`details.expressions`, puis `ordre` = ces identifiants dans l'ordre
+>   voulu) ; 400 **`MOTIF_NOMBRE_OBLIGATOIRE`** (Q3 : moins de qualifiées que de places). Le **rapport de présélection** est produit
+>   (`GET …/ami/rapport`, `?format=docx`) et se signe : `POST …/ami/rapport/signer` `{ observation? }`, `POST …/ami/rapport/empechement`
+>   `{ im, motif }` (président), comme le rapport d'évaluation ; les membres en conflit ne signent pas.
+> - **Q5** : à la dernière signature, la liste est **définitive** : publiée dans `GET /api/amis-en-ligne/{idDmc}` (`liste[{ rang,
+>   raisonSociale, nif }]`) et notifiée à chaque candidat (`AMI_RESULTAT`, avec courriel ; le motif pour les non retenus).
+> - **Q3 côté PRMP** : `POST …/ami/relancer` `{ dateLimite, motif }` (avant l'arrêt ; expressions et notes gardées) ; `POST
+>   …/ami/infructueux` `{ motif }` (409 `QUALIFIES_PRESENTS` s'il reste une expression qualifiée).
+> - **Q4** : `POST /api/fiches-marche/{idDmc}/dossier` répond 409 **`LISTE_NON_ARRETEE`** tant qu'un AMI publié n'a pas sa liste
+>   définitive ; le **rapport signé est joint d'office** au dossier (type de pièce `RAPPORT_PRESELECTION`, posé par V83), et la Commission
+>   l'examine avec la demande de propositions.
+
 ## B4 — De la liste aux invitations
 
 - Les lettres d'invitation (AV-4) prennent la liste arrêtée **avec les comptes** des candidats, au lieu d'une saisie ; chaque invité
   reçoit sa lettre en ligne et par courriel, et accède à la procédure restreinte (lot 3, §B1).
+
+> ⚠️ **Backend, 2026-10-07 — B4 livré (tranche AMI-b)** : `POST …/lettres-invitation` garde son contrat ; avec une liste définitive,
+> **`candidats` est ignoré** (il peut être omis) : les lettres vont aux candidats de la liste, avec la raison sociale et l'adresse
+> déclarées de leur entreprise, et chacun reçoit la notification **`LETTRE_INVITATION`** (avec courriel). Sans AMI, ou dispensé, la
+> saisie reste exigée. L'accès du candidat invité à la lettre et à la procédure restreinte vient avec le lot 3 (§B1, tranche PI-a).
 
 ## Questions
 
