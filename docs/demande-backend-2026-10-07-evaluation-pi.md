@@ -178,6 +178,14 @@ seul retenu (art. 42-IV), le rapport, et la suite du lot 2 (dossier de marché, 
 > produit pas** (l'écran le produit sous la lecture), l'évaluation ne s'ouvre pas (409 `SEANCE_NON_CLOSE`) : la recette de PI-c à PI-d2b
 > attend le correctif. Piste : lire les pièces attendues sans la garde « invité » pour les lecteurs internes de la séance (ou un
 > `propagation = REQUIRES_NEW` / une méthode non transactionnelle) ; `lecturePourEvaluation` passe par le même chemin.
+>
+> ⚠️ **Backend, 2026-10-09 — corrigé** (cause confirmée). Les lecteurs internes — la lecture de la séance (`GET …/seance/lecture`, donc le
+> PV d'ouverture), la lecture pour l'évaluation — lisent désormais les pièces attendues par une méthode propre
+> (`ProceduresEnLigneService.piecesAttenduesInternes`) : **sans la garde « invité »**, **sans exception** (liste vide hors des critères) et
+> sans marquer la transaction de l'appelant (`noRollbackFor`). La lecture répond 200 au responsable de la procédure comme à la PRMP, et
+> les pièces manquantes d'une proposition y sont de nouveau calculées. **Inchangé** : `GET /api/procedures-en-ligne/{idDmc}/pieces` reste
+> réservé aux invités d'une consultation restreinte (404 sinon). Aucune migration, aucun changement de contrat : la recette de PI-c à
+> PI-d2b peut reprendre sur la fiche 50 dès la relance du serveur.
 
 ## B4 — L'évaluation technique
 
