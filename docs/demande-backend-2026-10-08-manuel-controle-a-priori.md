@@ -296,6 +296,19 @@ DAOOpréqual : la grille DAOO (le manuel : « contrôle d'un appel d'offres ouve
 | PENAL | Pièces justificatives et **accord formel de la PRMP** · Calcul du nombre de jours et du montant des pénalités justifié |
 | DR | Motif de résiliation fondé (faute grave, carence, liquidation, intérêt général ; défaut de paiement > 6 mois, ajournement > 3 mois ; force majeure ; garantie de bonne exécution non fournie ; manquement au code d'éthique) · **Mise en demeure motivée** et information préalable du titulaire (résiliation à ses torts) · Indemnité prévue (résiliation aux torts de l'administration) |
 
+> ⚠️ **Backend, 2026-10-08 — B3 livré (tranche M3, V96)** ; contrat : `docs/api-endpoints.md`, § *… tranche M3*. Arbitrages du pilote du
+> 08/10 : les **5 points des plans** sont ajoutés ; un point conditionné reste **servi, à examiner**, sans fiche.
+> - **Mécanisme proposé, tenu** : `PointsCtrlDto` gagne **`categorie`** et **`forme`** (`CONTRAT_CADRE` | `AUTRE`). En plus : chaque
+>   sous-type porte une **grille de base** (DAOR = DAOO + ses points ; DAORI ← DAOR ; MAOOI, MAOOPREQUAL, MAOR ← MAOO ; MAORI ← MAOR) et
+>   une **grille propre** (MPI, MGG, DC, RJ, DPREQUAL, DP, AVN, DSS : sans les points communs de la famille — « MPI remplace 33 à 41 »).
+> - `GET /api/points-ctrls?sousType=` sert la grille du sous-type (conditions non résolues) ; **nouveau `GET /api/dossiers/{id}/grille`**
+>   (conditions résolues par la fiche du dossier) — **à utiliser par l'écran d'examen** : la complétude de l'examen est jugée sur elle.
+> - Les points sont **semés au démarrage** (un point existant n'est jamais réécrit) ; libellé court, question du manuel en description
+>   (≤ 255 caractères, quelques questions condensées). **Écart** : la « précision du point 3 » (fractionnement) est un point à part,
+>   « Fractionnement illicite (base d'appréciation) » ; DAOOI et DAORI reçoivent un point « Publicité internationale » (Q2), MAOOI
+>   « Publicité internationale de l'avis ».
+> - **Effet** : les examens en cours voient leur grille s'enrichir (plans : +3 points par ligne).
+
 ## B4 — Les motifs-types de la conclusion
 
 Le manuel liste, pour chaque type, les **motifs de renvoi** (lettre de demande de compléments) et les **motifs d'avis non
