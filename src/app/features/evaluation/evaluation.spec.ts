@@ -205,6 +205,11 @@ describe('Écran de l’évaluation', () => {
     fixture.detectChanges();
   }
 
+  /** ⚠️ Lot 3 PI, PI-c — l'écran lit aussi la notation technique ; hors prestations intellectuelles, le serveur répond 409. */
+  function horsPi(): void {
+    http.expectOne('/api/fiches-marche/40/evaluation/technique').flush({ code: 'CATEGORIE_SANS_NOTATION_TECHNIQUE', message: 'x' }, { status: 409, statusText: 'Conflict' });
+  }
+
   afterEach(() => {
     http.verify();
     TestBed.resetTestingModule();
@@ -223,6 +228,7 @@ describe('Écran de l’évaluation', () => {
   it('membre non déclaré : la déclaration s’impose avant toute décision, et part au serveur', () => {
     monter('cao', null, 'K2');
     http.expectOne('/api/fiches-marche/40/evaluation').flush(EVALUATION);
+    horsPi();
     fixture.detectChanges();
     const form = racine().querySelector('.ev__form-decl') as HTMLElement;
     expect(form).not.toBeNull();
@@ -237,9 +243,27 @@ describe('Écran de l’évaluation', () => {
     post.flush(EVALUATION);
   });
 
+  it('⚠️ PI-c : une procédure de prestations intellectuelles montre trois étapes et ouvre l’évaluation technique', () => {
+    monter('cao', null, 'K1');
+    http.expectOne('/api/fiches-marche/40/evaluation').flush(EVALUATION);
+    http.expectOne('/api/fiches-marche/40/evaluation/technique').flush({
+      idDmc: 40, scoreMinimum: 70, seuilEcartPourcent: 20,
+      elements: [{ code: 'B06-TP-02', critere: 'B06-TP-02', libelleCritere: 'Expérience', libelle: null, max: 100 }],
+      lots: EVALUATION.lots.map((l) => ({ lot: l.lot, conformiteArretee: true, arret: null, offres: [] })),
+    });
+    fixture.detectChanges();
+    const etapes = Array.from(racine().querySelectorAll('.ev__etape-b')).map((b) => (b.textContent ?? '').replace(/\s+/g, ' ').trim());
+    expect(etapes).toHaveLength(3);
+    expect(etapes[1]).toContain('Évaluation technique');
+    expect(racine().querySelector('app-etape-technique')).not.toBeNull();
+    // L'arrêt générique de l'étape ne double pas celui de la notation technique.
+    expect(racine().textContent).not.toContain('Arrêter l\'étape « ');
+  });
+
   it('président déclaré : il voit le geste d’arrêter l’étape en cours', () => {
     monter('cao', null, 'K1');
     http.expectOne('/api/fiches-marche/40/evaluation').flush(EVALUATION);
+    horsPi();
     fixture.detectChanges();
     expect(racine().textContent).toContain('Arrêter l\'étape « Examen préliminaire »');
     expect(racine().querySelectorAll('app-conformite-offre').length).toBe(1);

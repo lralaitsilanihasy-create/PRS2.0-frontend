@@ -138,6 +138,14 @@ export function refusEvaluation(e: ApiError): string {
     case 'MOTIF_ABSENT': return 'Le motif de l’empêchement est obligatoire.';
     case 'DECISION_INVALIDE': return 'La décision n’est pas valide.';
     case 'VERIFICATION_INCONNUE': return 'Une vérification n’est pas celle de la grille.';
+    // ⚠️ Lot 3 PI, tranche PI-c (V87) — la notation technique.
+    case 'ELEMENT_INCONNU': return 'Un élément noté n’est pas dans la grille de la fiche validée.';
+    case 'NOTE_HORS_BAREME': return 'Une note dépasse le maximum de son élément (ou est négative).';
+    case 'CONFORMITE_NON_ARRETEE': return 'La notation s’ouvre quand l’examen préliminaire du lot est arrêté par le président.';
+    case 'TECHNIQUE_ARRETEE': return 'L’évaluation technique du lot est arrêtée : le président doit la rouvrir, avec un motif, pour la modifier.';
+    case 'TECHNIQUE_NON_ARRETEE': return 'L’évaluation technique du lot n’est pas arrêtée.';
+    case 'NOTATION_INCOMPLETE': return `L’évaluation technique ne peut pas être arrêtée : ${offres ? 'la ou les propositions n° ' + offres + ' attendent' : 'une proposition attend'} les grilles de tous les membres.`;
+    case 'CATEGORIE_SANS_NOTATION_TECHNIQUE': return 'La notation technique ne concerne que les prestations intellectuelles.';
   }
   if (e.status === 403) return 'Ce geste ne vous est pas ouvert.';
   return e.message || 'Le geste n’a pas abouti.';

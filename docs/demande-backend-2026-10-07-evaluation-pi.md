@@ -186,6 +186,17 @@ seul retenu (art. 42-IV), le rapport, et la suite du lot 2 (dossier de marché, 
 >   …/lots/{lot}/rouvrir` `{ motif }`.
 > - Les **grilles individuelles jointes au rapport** viennent avec le rapport adapté (PI-d).
 
+> ✅ **Front, 2026-10-09 — PI-c branché (tranche F3)** :
+> - **Écran de l'évaluation** (`/cao/procedures/{idDmc}/evaluation` et coquille interne) : il lit `GET …/evaluation/technique` ; une réponse
+>   fait le **mode PI** (409 `CATEGORIE_SANS_NOTATION_TECHNIQUE` : l'écran des offres, inchangé). Trois étapes : examen préliminaire,
+>   **évaluation technique** (atteinte à `conformiteArretee`, arrêtée avec `arret`), rapport ; l'arrêt générique des étapes ne s'affiche
+>   pas sur l'étape technique, qui a le sien.
+> - **Étape technique** : classement du lot (note, grilles reçues ou complètes, écarts, statut, rang) ; par proposition, la grille par
+>   critère et sous-critère — **ma note et mon motif** (membre déclaré sans conflit, lot non arrêté ; reprise de mes notes enregistrées),
+>   moyenne, min – max, nombre de notes, ligne surlignée en cas d'**écart** — et les grilles des membres en dépliant ; contrôle avant
+>   envoi (barème, motif) ; **président** : arrêter (observation) ou rouvrir (motif) ; refus nommés (`NOTATION_INCOMPLETE` avec ses
+>   propositions, `NOTE_HORS_BAREME`, `CONFORMITE_NON_ARRETEE`, `TECHNIQUE_ARRETEE`…).
+
 ## B5 — L'évaluation financière et le classement, selon la méthode
 
 | Méthode (`B02-MS-01`) | Classement |

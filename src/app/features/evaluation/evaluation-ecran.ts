@@ -4,8 +4,8 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { EntreeJournalEvaluation, ETAPES_EVALUATION, EtapeEvaluation, Evaluation, LotEvaluation, OffreEvaluee } from '../../models';
-import { EvaluationService } from '../../services';
+import { EntreeJournalEvaluation, ETAPES_EVALUATION, EtapeEvaluation, Evaluation, LotEvaluation, OffreEvaluee, Technique } from '../../models';
+import { EvaluationPiService, EvaluationService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 import { DroitsEvaluation, EspaceEvaluation, droitsEvaluation, etapeArretee, etapeAtteinte } from './droits-evaluation';
@@ -14,6 +14,7 @@ import { AnormaleOffre, IndicateursPrixVue } from './etape-anormales';
 import { ConformiteOffre } from './etape-conformite';
 import { MontantOffre, TableauEvaluation } from './etape-montant';
 import { EtapeQualification } from './etape-qualification';
+import { EtapeTechnique } from './etape-technique';
 import { LIBELLES_ETAPE, LIBELLES_ETAT_EVALUATION, NUMERO_ETAPE, refusEvaluation } from './libelles-evaluation';
 import { RapportEvaluationVue } from './rapport-evaluation';
 
@@ -30,7 +31,7 @@ import { RapportEvaluationVue } from './rapport-evaluation';
 @Component({
   selector: 'app-evaluation-ecran',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur, AttributionLots, ConformiteOffre, MontantOffre, TableauEvaluation, IndicateursPrixVue, AnormaleOffre, EtapeQualification, RapportEvaluationVue],
+  imports: [RouterLink, EtatErreur, AttributionLots, ConformiteOffre, MontantOffre, TableauEvaluation, IndicateursPrixVue, AnormaleOffre, EtapeQualification, EtapeTechnique, RapportEvaluationVue],
   template: `
     <!-- La coquille interne porte son fil d'Ariane (parents déclarés sur la route) ; l'espace CAO n'en a pas : l'écran le pose. -->
     @if (espace === 'cao') {
@@ -113,12 +114,12 @@ import { RapportEvaluationVue } from './rapport-evaluation';
 
       @if (lot(); as l) {
         <ol class="ev__etapes" aria-label="Étapes de l'évaluation">
-          @for (e of ordreEtapes; track e) {
-            <li class="ev__etape" [class.ev__etape--faite]="arretee(l, e)" [class.ev__etape--courante]="l.etape === e">
+          @for (e of etapesVisibles(); track e) {
+            <li class="ev__etape" [class.ev__etape--faite]="arretee(l, e)" [class.ev__etape--courante]="courante(l) === e">
               <button type="button" class="ev__etape-b" [disabled]="!atteinte(l, e)" [attr.aria-current]="etapeChoisie() === e ? 'step' : null" (click)="etapeChoisie.set(e)">
                 <span class="ev__etape-n">{{ numeros[e] }}</span>
-                <span>{{ etapes[e] }}</span>
-                <span class="text-sm text-muted">{{ arretee(l, e) ? 'arrêtée' : l.etape === e ? 'en cours' : 'à venir' }}</span>
+                <span>{{ libelleEtape(e) }}</span>
+                <span class="text-sm text-muted">{{ arretee(l, e) ? 'arrêtée' : courante(l) === e ? 'en cours' : 'à venir' }}</span>
               </button>
             </li>
           }
@@ -137,11 +138,16 @@ import { RapportEvaluationVue } from './rapport-evaluation';
               }
             }
             @case ('EVALUATION') {
+              @if (technique(); as t) {
+                <!-- ⚠️ Lot 3 PI, PI-c (V87) — la notation technique des propositions, par membre. -->
+                <app-etape-technique [idDmc]="idDmc" [technique]="t" [lot]="l.lot" [droits]="droits()" [moi]="moi()" (maj)="technique.set($event)" />
+              } @else {
               <p class="text-sm text-muted ev__aide">Corrections arithmétiques, rabais, préférence et critères du DAO ; le serveur calcule le montant évalué hors taxes et classe (art. 47).</p>
               @for (o of retenues(l); track o.idOffre) {
                 <app-montant-offre [idDmc]="idDmc" [offre]="o" [droits]="droits()" [figee]="arretee(l, 'EVALUATION')" (maj)="appliquer($event)" />
               }
               <app-tableau-evaluation [idDmc]="idDmc" [lot]="l" [droits]="droitsTableau(l)" (maj)="appliquer($event)" />
+              }
             }
             @case ('ANORMALES') {
               <app-indicateurs-prix [idDmc]="idDmc" [lot]="l.lot" />
@@ -158,7 +164,7 @@ import { RapportEvaluationVue } from './rapport-evaluation';
           }
         </div>
 
-        @if (droits().president && etapeChoisie() !== 'RAPPORT') {
+        @if (droits().president && etapeChoisie() !== 'RAPPORT' && !(technique() && etapeChoisie() === 'EVALUATION')) {
           <section class="card ev__president" aria-label="Arrêt de l'étape par le président">
             @if (!arretee(l, etapeChoisie()) && l.etape === etapeChoisie()) {
               <label class="form-group"><span class="form-label">Observation (facultative)</span><input class="form-control" type="text" [value]="observation()" (input)="observation.set($any($event.target).value)" /></label>
@@ -262,6 +268,13 @@ export class EvaluationEcran implements OnInit {
   readonly observation = signal('');
   readonly motifReouverture = signal('');
   readonly journal = signal<EntreeJournalEvaluation[] | null>(null);
+  /**
+   * ⚠️ Lot 3 PI, PI-c (V87) — la notation technique, si la procédure est de prestations intellectuelles (409 `CATEGORIE_SANS_NOTATION_TECHNIQUE`
+   * sinon : `null`). Sa présence fait le mode PI : examen préliminaire, évaluation technique, rapport.
+   */
+  readonly technique = signal<Technique | null>(null);
+  private readonly pi = inject(EvaluationPiService);
+  readonly etapesVisibles = computed<readonly EtapeEvaluation[]>(() => (this.technique() ? ['CONFORMITE', 'EVALUATION', 'RAPPORT'] : this.ordreEtapes));
 
   readonly moi = computed(() => this.auth.ref());
   readonly droits = computed<DroitsEvaluation>(() => droitsEvaluation(this.evaluation(), this.espace, this.moi(), this.auth.role()));
@@ -293,6 +306,7 @@ export class EvaluationEcran implements OnInit {
         this.chargement.set(false);
         this.nonOuverte.set(false);
         this.appliquer(ev, true);
+        this.chargerTechnique();
         this.document.title = `Évaluation des offres — procédure ${this.idDmc} — PRS 2.0`;
       },
       error: (e: ApiError) => {
@@ -321,14 +335,48 @@ export class EvaluationEcran implements OnInit {
   }
 
   arretee(l: LotEvaluation, e: EtapeEvaluation): boolean {
+    const t = this.lotTechnique(l);
+    if (t && e === 'EVALUATION') return !!t.arret;
     return etapeArretee(l, e);
   }
 
   atteinte(l: LotEvaluation, e: EtapeEvaluation): boolean {
+    const t = this.lotTechnique(l);
+    if (t && e === 'EVALUATION') return t.conformiteArretee;
+    if (t && e === 'RAPPORT') return !!t.arret;
     return etapeAtteinte(l, e);
   }
 
+  /** L'étape en cours du lot ; en PI, l'évaluation technique tant qu'elle n'est pas arrêtée, puis le rapport. */
+  courante(l: LotEvaluation): EtapeEvaluation {
+    const t = this.lotTechnique(l);
+    if (!t || !t.conformiteArretee) return l.etape;
+    return t.arret ? 'RAPPORT' : 'EVALUATION';
+  }
+
+  libelleEtape(e: EtapeEvaluation): string {
+    return this.technique() && e === 'EVALUATION' ? 'Évaluation technique' : this.etapes[e];
+  }
+
+  private lotTechnique(l: LotEvaluation) {
+    return this.technique()?.lots.find((x) => x.lot === l.lot) ?? null;
+  }
+
+  /** Silencieux : hors prestations intellectuelles (409) ou sans évaluation (404), l'écran reste celui des offres. */
+  private chargerTechnique(): void {
+    this.pi.technique(this.idDmc).subscribe({
+      next: (t) => {
+        this.technique.set(t);
+        const l = this.lot();
+        if (l) this.etapeChoisie.set(this.courante(l));
+      },
+      error: () => this.technique.set(null),
+    });
+  }
+
   arret(l: LotEvaluation, e: EtapeEvaluation) {
+    // En PI, l'arrêt technique se lit dans l'étape elle-même.
+    if (this.lotTechnique(l) && e === 'EVALUATION') return null;
     return l.etapesArretees.find((a) => a.etape === e) ?? null;
   }
 

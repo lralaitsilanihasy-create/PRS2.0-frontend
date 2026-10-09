@@ -22,3 +22,4 @@ export * from './cao.services';
 export * from './evaluation.services';
 export * from './ami.services';
 export * from './acte-gestion.services';
+export * from './evaluation-pi.services';
