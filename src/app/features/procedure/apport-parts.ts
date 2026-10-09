@@ -3,8 +3,8 @@ import { firstValueFrom } from 'rxjs';
 
 import { ApiError, codeErreur } from '../../core/errors/api-error';
 import { PhraseIncorrecte, dechiffrer, desenvelopper } from '../../core/securite/cles-detenteur';
-import { Enveloppe, RoleDetenteur, Seance } from '../../models';
-import { CeremonieService, SeanceService } from '../../services';
+import { Enveloppe, RoleDetenteur, Seance, SeanceFinanciere } from '../../models';
+import { CeremonieService, EvaluationPiService, SeanceService } from '../../services';
 
 /**
  * **Apporter mes parts** à la séance d'ouverture (lot 4, ADR-0013 §1). Le détenteur — un membre de la CAO, ou le responsable
@@ -12,6 +12,9 @@ import { CeremonieService, SeanceService } from '../../services';
  * navigateur**, sa clé se déverrouille et déchiffre sa part de chaque offre ; seules les parts claires partent, toutes ensemble.
  * Une offre scellée avant un remplacement de clé (S4) désigne l'ancienne clé : son enveloppe archivée est servie avec la part, et
  * la même phrase est essayée (celle de l'époque, le plus souvent la même).
+ *
+ * ⚠️ Lot 3 PI, PI-d1 (V88) — `[financiere]="true"` : la **seconde séance**, celle des enveloppes financières des propositions
+ * qualifiées ; mêmes clés de la cérémonie, autres parts (`/seance/financiere/**`) ; l'issue sort par `apporteFinanciere`.
  */
 @Component({
   selector: 'app-apport-parts',
@@ -50,9 +53,13 @@ export class ApportParts {
   /** ⚠️ V71 — la part de secours apportée par le dépositaire lui-même, de son espace : sans motif (celui de la demande vaut). */
   readonly parDepositaire = input(false);
   readonly apporte = output<Seance>();
+  /** ⚠️ PI-d1 — la seconde séance (enveloppes financières). */
+  readonly financiere = input(false);
+  readonly apporteFinanciere = output<SeanceFinanciere>();
 
   private readonly seance = inject(SeanceService);
   private readonly ceremonie = inject(CeremonieService);
+  private readonly pi = inject(EvaluationPiService);
 
   readonly phrase = signal('');
   readonly motif = signal('');
@@ -75,7 +82,7 @@ export class ApportParts {
     this.travail.set(true);
     try {
       this.etape.set('Récupération des parts…');
-      const parts = await firstValueFrom(this.seance.mesParts(this.idDmc(), this.role()));
+      const parts = await firstValueFrom(this.financiere() ? this.pi.mesPartsFinancieres(this.idDmc(), this.role()) : this.seance.mesParts(this.idDmc(), this.role()));
       const enveloppe = await firstValueFrom(secours ? this.ceremonie.enveloppeSecours(this.idDmc()) : this.ceremonie.maCle(this.idDmc()));
       this.etape.set('Déverrouillage de la clé…');
       const cles = new Map<Enveloppe, CryptoKey>();
@@ -89,9 +96,15 @@ export class ApportParts {
       this.etape.set('Envoi…');
       // ⚠️ V71 : le dépositaire apporte sans motif — c'est celui de la demande du responsable qui va au PV.
       const motif = secours && !this.parDepositaire() ? this.motif().trim() : undefined;
-      const s = await firstValueFrom(this.seance.apporterParts(this.idDmc(), claires, this.role(), motif));
-      this.phrase.set('');
-      this.apporte.emit(s);
+      if (this.financiere()) {
+        const sf = await firstValueFrom(this.pi.apporterPartsFinancieres(this.idDmc(), claires, this.role(), motif));
+        this.phrase.set('');
+        this.apporteFinanciere.emit(sf);
+      } else {
+        const s = await firstValueFrom(this.seance.apporterParts(this.idDmc(), claires, this.role(), motif));
+        this.phrase.set('');
+        this.apporte.emit(s);
+      }
     } catch (e) {
       this.erreur.set(this.motifErreur(e));
     } finally {

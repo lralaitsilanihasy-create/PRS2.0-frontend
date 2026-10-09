@@ -15,6 +15,7 @@ import { ConformiteOffre } from './etape-conformite';
 import { MontantOffre, TableauEvaluation } from './etape-montant';
 import { EtapeQualification } from './etape-qualification';
 import { EtapeTechnique } from './etape-technique';
+import { SeanceFinanciereVue } from './seance-financiere';
 import { LIBELLES_ETAPE, LIBELLES_ETAT_EVALUATION, NUMERO_ETAPE, refusEvaluation } from './libelles-evaluation';
 import { RapportEvaluationVue } from './rapport-evaluation';
 
@@ -31,7 +32,7 @@ import { RapportEvaluationVue } from './rapport-evaluation';
 @Component({
   selector: 'app-evaluation-ecran',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur, AttributionLots, ConformiteOffre, MontantOffre, TableauEvaluation, IndicateursPrixVue, AnormaleOffre, EtapeQualification, EtapeTechnique, RapportEvaluationVue],
+  imports: [RouterLink, EtatErreur, AttributionLots, ConformiteOffre, MontantOffre, TableauEvaluation, IndicateursPrixVue, AnormaleOffre, EtapeQualification, EtapeTechnique, SeanceFinanciereVue, RapportEvaluationVue],
   template: `
     <!-- La coquille interne porte son fil d'Ariane (parents déclarés sur la route) ; l'espace CAO n'en a pas : l'écran le pose. -->
     @if (espace === 'cao') {
@@ -192,6 +193,12 @@ import { RapportEvaluationVue } from './rapport-evaluation';
         </section>
       }
 
+      <!-- ⚠️ Lot 3 PI, PI-d1 (V88) — la seconde séance : les enveloppes financières des propositions qualifiées, une fois l'évaluation
+           technique arrêtée sur chaque lot. -->
+      @if (techniqueArretee()) {
+        <app-seance-financiere [idDmc]="idDmc" [droits]="droits()" [espace]="espace" [membres]="ev.declarations" />
+      }
+
       <app-rapport-evaluation [idDmc]="idDmc" [evaluation]="ev" [droits]="droits()" [moi]="moi()" (maj)="appliquer($event)" />
 
       <!-- ⚠️ Lot 2, tranche 2a (V79) — après le rapport signé : le dossier de marché de chaque lot, au contrôle de la Commission. -->
@@ -274,6 +281,11 @@ export class EvaluationEcran implements OnInit {
    */
   readonly technique = signal<Technique | null>(null);
   private readonly pi = inject(EvaluationPiService);
+  /** ⚠️ PI-d1 — l'évaluation technique est arrêtée sur chaque lot : la seconde séance peut s'ouvrir. */
+  readonly techniqueArretee = computed(() => {
+    const t = this.technique();
+    return !!t && t.lots.length > 0 && t.lots.every((l) => !!l.arret);
+  });
   readonly etapesVisibles = computed<readonly EtapeEvaluation[]>(() => (this.technique() ? ['CONFORMITE', 'EVALUATION', 'RAPPORT'] : this.ordreEtapes));
 
   readonly moi = computed(() => this.auth.ref());

@@ -155,6 +155,14 @@ seul retenu (art. 42-IV), le rapport, et la suite du lot 2 (dossier de marché, 
 >   seconde séance ouverte, la réouverture technique est refusée (409 `SEANCE_FINANCIERE_OUVERTE`).
 > - L'évaluation financière et le classement (§B5 et suivants) arrivent en **PI-d2**.
 
+> ✅ **Front, 2026-10-09 — PI-d1 branché (tranche F4)** : dans l'écran de l'évaluation, en mode PI, l'encart « Seconde séance
+> d'ouverture — enveloppes financières » paraît quand l'évaluation technique est arrêtée sur chaque lot. Responsable (coquille interne) :
+> l'ouvrir, la part de secours (`?role=SECOURS`, motif), la clore (présents cochés parmi les membres, autres présents, observations), le
+> PV en PDF ou en Word. Membres (espace CAO) : « Apporter mes parts » — le même geste que la première séance (`apport-parts`, mêmes clés),
+> branché sur `/seance/financiere/mes-parts` et `/parts`. Pour tous : les enveloppes à ouvrir (note et rang techniques, parts reçues ;
+> après le déchiffrement, intégrité et montants HT/TTC lus), celles qui ne s'ouvrent pas avec leur motif ; l'état se relit toutes les
+> cinq secondes tant que les parts arrivent. Les rondes complémentaires (`complementaire`) viendront avec la négociation (F5).
+
 ## B4 — L'évaluation technique
 
 - Une **grille par candidat** : les critères `B06-TP-02` à `-06`, chacun noté sur ses points (la note ne dépasse pas le maximum de la

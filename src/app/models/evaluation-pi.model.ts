@@ -91,3 +91,60 @@ export interface Technique {
 export interface NotesTechniquesCorps {
   notes: { element: string; note: number; motif: string }[];
 }
+
+// ── Tranche PI-d1 (V88) : la seconde séance d'ouverture, celle des enveloppes financières ──
+
+export type EtatSeanceFinanciere = 'OUVERTE' | 'DECHIFFREE' | 'CLOSE';
+
+/** Une enveloppe financière à ouvrir : sa proposition, sa note et son rang techniques ; après le déchiffrement, l'acte lu. */
+export interface EnveloppeFinanciere {
+  idOffre: string;
+  numero: number | null;
+  raisonSociale: string | null;
+  lot: number | null;
+  noteTechnique: number | null;
+  rangTechnique: number | null;
+  partsRecues: number;
+  integrite: string | null;
+  /** L'acte d'engagement lu (montants HT, TTC…), nul avant le déchiffrement. */
+  acteEngagement: Record<string, unknown> | null;
+}
+
+/** Une enveloppe financière qui ne s'ouvre pas : éliminée techniquement, ou hors du premier rang selon la méthode. */
+export interface EnveloppeNonOuverte {
+  numero: number | null;
+  raisonSociale: string | null;
+  lot: number | null;
+  motif: string;
+}
+
+/** Une ronde : 1 = la seconde séance ; 2… = les séances complémentaires (négociation échouée, PI-d2a). */
+export interface RondeSeanceFinanciere {
+  ronde: number;
+  etat: EtatSeanceFinanciere;
+  motif: string | null;
+  ouverteLe: string | null;
+  closeLe: string | null;
+  pvDisponible: boolean;
+}
+
+/** `GET …/seance/financiere` — 404 tant qu'elle n'est pas ouverte. */
+export interface SeanceFinanciere {
+  idDmc: number;
+  etat: EtatSeanceFinanciere;
+  /** La méthode de sélection (`B02-MS-01`) : elle décide quelles enveloppes s'ouvrent. */
+  methode: string | null;
+  quorum: number | null;
+  aOuvrir: EnveloppeFinanciere[];
+  nonOuvertes: EnveloppeNonOuverte[];
+  presents: string[];
+  autres: { nom: string; qualite: string | null }[];
+  secoursEmploye: boolean;
+  ouverteLe: string | null;
+  dechiffreeLe: string | null;
+  closeLe: string | null;
+  pvDisponible: boolean;
+  ronde: number | null;
+  motif: string | null;
+  rondes: RondeSeanceFinanciere[];
+}
