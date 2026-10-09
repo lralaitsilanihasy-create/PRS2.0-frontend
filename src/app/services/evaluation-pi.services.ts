@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { skipErrorToast } from '../core/errors/api-error';
-import { NotesTechniquesCorps, PartChiffree, RoleDetenteur, SeanceFinanciere, Technique } from '../models';
+import { ConclusionNegociation, Correction, Financiere, Negociations, NotesTechniquesCorps, PartChiffree, RoleDetenteur, SaisieFinanciereCorps, SeanceFinanciere, Technique } from '../models';
 
 /**
  * ⚠️ Lot 3 PI — l'évaluation des propositions de prestations intellectuelles. Tranche PI-c : la notation technique. Tout est silencieux :
@@ -75,5 +75,79 @@ export class EvaluationPiService {
     if (format === 'docx') params = params.set('format', 'docx');
     if (ronde != null) params = params.set('ronde', String(ronde));
     return this.http.get(this.seance(idDmc, '/pv'), { params, responseType: 'blob', context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ PI-d2a (V89) — séance **complémentaire** (qualité technique exclusivement, qualification du consultant) : après l'échec d'une
+   * négociation, l'enveloppe financière du suivant s'ouvre dans une nouvelle ronde, avec un motif. Responsable.
+   */
+  seanceComplementaire(idDmc: number, lot: number | null, motif: string): Observable<SeanceFinanciere> {
+    return this.http.post<SeanceFinanciere>(this.seance(idDmc, '/complementaire'), { lot, motif }, { context: skipErrorToast() });
+  }
+
+  // ── PI-d2a (V89) : l'évaluation financière et le classement selon la méthode ──
+
+  private financiere(idDmc: number, suite = ''): string {
+    return `${environment.apiUrl}/fiches-marche/${idDmc}/evaluation/financiere${suite}`;
+  }
+
+  evaluationFinanciere(idDmc: number): Observable<Financiere> {
+    return this.http.get<Financiere>(this.financiere(idDmc), { context: skipErrorToast() });
+  }
+
+  correctionsFinancieres(idDmc: number, idFinanciere: string): Observable<Correction[]> {
+    return this.http.get<Correction[]>(this.financiere(idDmc, `/offres/${encodeURIComponent(idFinanciere)}/corrections-proposees`), { context: skipErrorToast() });
+  }
+
+  /** Membre déclaré sans conflit : la saisie d'une enveloppe financière (remplace la précédente). */
+  saisirFinanciere(idDmc: number, idFinanciere: string, corps: SaisieFinanciereCorps): Observable<Financiere> {
+    return this.http.put<Financiere>(this.financiere(idDmc, `/offres/${encodeURIComponent(idFinanciere)}`), corps, { context: skipErrorToast() });
+  }
+
+  departagerFinancier(idDmc: number, lot: number, ordre: string[], motif: string): Observable<Financiere> {
+    return this.http.post<Financiere>(this.financiere(idDmc, `/lots/${lot}/departager`), { ordre, motif }, { context: skipErrorToast() });
+  }
+
+  /** Président : arrête le classement du lot. */
+  arreterClassement(idDmc: number, lot: number, observation: string | null): Observable<Financiere> {
+    return this.http.post<Financiere>(this.financiere(idDmc, `/lots/${lot}/arreter`), { observation }, { context: skipErrorToast() });
+  }
+
+  rouvrirClassement(idDmc: number, lot: number, motif: string): Observable<Financiere> {
+    return this.http.post<Financiere>(this.financiere(idDmc, `/lots/${lot}/rouvrir`), { motif }, { context: skipErrorToast() });
+  }
+
+  // ── PI-d2a (V89) : la négociation (art. 42-IV), conduite par la PRMP ou son UGPM ──
+
+  private negociation(idDmc: number, suite = ''): string {
+    return `${environment.apiUrl}/fiches-marche/${idDmc}/evaluation/negociation${suite}`;
+  }
+
+  negociations(idDmc: number): Observable<Negociations> {
+    return this.http.get<Negociations>(this.negociation(idDmc), { context: skipErrorToast() });
+  }
+
+  /** `prevueLe` : `AAAA-MM-JJTHH:MM` ; le lieu par défaut est celui de la fiche (`B06-NG-01`). */
+  ouvrirNegociation(idDmc: number, lot: number, prevueLe: string | null, lieu: string | null): Observable<Negociations> {
+    return this.http.post<Negociations>(this.negociation(idDmc, `/lots/${lot}/ouvrir`), { prevueLe, lieu }, { context: skipErrorToast() });
+  }
+
+  deposerPieceNegociation(idDmc: number, id: number, fichier: File): Observable<Negociations> {
+    const fd = new FormData();
+    fd.append('fichier', fichier, fichier.name);
+    return this.http.put<Negociations>(this.negociation(idDmc, `/${id}/piece`), fd, { context: skipErrorToast() });
+  }
+
+  pieceNegociation(idDmc: number, id: number): Observable<Blob> {
+    return this.http.get(this.negociation(idDmc, `/${id}/piece`), { responseType: 'blob', context: skipErrorToast() });
+  }
+
+  conclureNegociation(idDmc: number, id: number, corps: ConclusionNegociation): Observable<Negociations> {
+    return this.http.post<Negociations>(this.negociation(idDmc, `/${id}/conclure`), corps, { context: skipErrorToast() });
+  }
+
+  pvNegociation(idDmc: number, id: number, format: 'pdf' | 'docx' = 'pdf'): Observable<Blob> {
+    const params = format === 'docx' ? new HttpParams().set('format', 'docx') : new HttpParams();
+    return this.http.get(this.negociation(idDmc, `/${id}/pv`), { params, responseType: 'blob', context: skipErrorToast() });
   }
 }

@@ -4,7 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { EntreeJournalEvaluation, ETAPES_EVALUATION, EtapeEvaluation, Evaluation, LotEvaluation, OffreEvaluee, Technique } from '../../models';
+import { EntreeJournalEvaluation, ETAPES_EVALUATION, EtapeEvaluation, Evaluation, Financiere, LotEvaluation, Negociations, OffreEvaluee, Technique } from '../../models';
 import { EvaluationPiService, EvaluationService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr } from '../candidat/libelles-candidat';
@@ -16,6 +16,8 @@ import { MontantOffre, TableauEvaluation } from './etape-montant';
 import { EtapeQualification } from './etape-qualification';
 import { EtapeTechnique } from './etape-technique';
 import { SeanceFinanciereVue } from './seance-financiere';
+import { EtapeFinanciere } from './etape-financiere';
+import { NegociationPi } from './negociation-pi';
 import { LIBELLES_ETAPE, LIBELLES_ETAT_EVALUATION, NUMERO_ETAPE, refusEvaluation } from './libelles-evaluation';
 import { RapportEvaluationVue } from './rapport-evaluation';
 
@@ -32,7 +34,7 @@ import { RapportEvaluationVue } from './rapport-evaluation';
 @Component({
   selector: 'app-evaluation-ecran',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur, AttributionLots, ConformiteOffre, MontantOffre, TableauEvaluation, IndicateursPrixVue, AnormaleOffre, EtapeQualification, EtapeTechnique, SeanceFinanciereVue, RapportEvaluationVue],
+  imports: [RouterLink, EtatErreur, AttributionLots, ConformiteOffre, MontantOffre, TableauEvaluation, IndicateursPrixVue, AnormaleOffre, EtapeQualification, EtapeTechnique, SeanceFinanciereVue, EtapeFinanciere, NegociationPi, RapportEvaluationVue],
   template: `
     <!-- La coquille interne porte son fil d'Ariane (parents déclarés sur la route) ; l'espace CAO n'en a pas : l'écran le pose. -->
     @if (espace === 'cao') {
@@ -196,7 +198,14 @@ import { RapportEvaluationVue } from './rapport-evaluation';
       <!-- ⚠️ Lot 3 PI, PI-d1 (V88) — la seconde séance : les enveloppes financières des propositions qualifiées, une fois l'évaluation
            technique arrêtée sur chaque lot. -->
       @if (techniqueArretee()) {
-        <app-seance-financiere [idDmc]="idDmc" [droits]="droits()" [espace]="espace" [membres]="ev.declarations" />
+        <app-seance-financiere [idDmc]="idDmc" [droits]="droits()" [espace]="espace" [membres]="ev.declarations" (etatChange)="chargerFinanciere()" />
+        <!-- ⚠️ PI-d2a (V89) — l'évaluation financière et le classement, puis la négociation (PRMP ou UGPM), lot par lot. -->
+        @if (financiere(); as f) {
+          <app-etape-financiere [idDmc]="idDmc" [financiere]="f" [lot]="lot()?.lot ?? 1" [droits]="droits()" (maj)="apresFinanciere($event)" />
+        }
+        @if (negociations(); as n) {
+          <app-negociation-pi [idDmc]="idDmc" [negociations]="n" [lot]="lot()?.lot ?? 1" [conduite]="prmpOuUgpm()" (maj)="apresNegociation($event)" />
+        }
       }
 
       <app-rapport-evaluation [idDmc]="idDmc" [evaluation]="ev" [droits]="droits()" [moi]="moi()" (maj)="appliquer($event)" />
@@ -280,6 +289,9 @@ export class EvaluationEcran implements OnInit {
    * sinon : `null`). Sa présence fait le mode PI : examen préliminaire, évaluation technique, rapport.
    */
   readonly technique = signal<Technique | null>(null);
+  /** ⚠️ PI-d2a — l'évaluation financière et la négociation ; nulles tant que le serveur ne les sert pas (séance non ouverte, hors PI). */
+  readonly financiere = signal<Financiere | null>(null);
+  readonly negociations = signal<Negociations | null>(null);
   private readonly pi = inject(EvaluationPiService);
   /** ⚠️ PI-d1 — l'évaluation technique est arrêtée sur chaque lot : la seconde séance peut s'ouvrir. */
   readonly techniqueArretee = computed(() => {
@@ -374,11 +386,30 @@ export class EvaluationEcran implements OnInit {
     return this.technique()?.lots.find((x) => x.lot === l.lot) ?? null;
   }
 
+  /** ⚠️ PI-d2a — l'évaluation financière et la négociation, relues ensemble (l'une conditionne l'autre) ; silencieuses en cas d'échec. */
+  chargerFinanciere(): void {
+    this.pi.evaluationFinanciere(this.idDmc).subscribe({ next: (f) => this.financiere.set(f), error: () => this.financiere.set(null) });
+    this.pi.negociations(this.idDmc).subscribe({ next: (n) => this.negociations.set(n), error: () => this.negociations.set(null) });
+  }
+
+  /** Un classement arrêté ou rouvert ouvre ou ferme la négociation : elle se relit. */
+  apresFinanciere(f: Financiere): void {
+    this.financiere.set(f);
+    this.pi.negociations(this.idDmc).subscribe({ next: (n) => this.negociations.set(n), error: () => this.negociations.set(null) });
+  }
+
+  /** Une négociation conclue fige les montants (ou ouvre le suivant) : l'évaluation financière se relit. */
+  apresNegociation(n: Negociations): void {
+    this.negociations.set(n);
+    this.pi.evaluationFinanciere(this.idDmc).subscribe({ next: (f) => this.financiere.set(f), error: () => this.financiere.set(null) });
+  }
+
   /** Silencieux : hors prestations intellectuelles (409) ou sans évaluation (404), l'écran reste celui des offres. */
   private chargerTechnique(): void {
     this.pi.technique(this.idDmc).subscribe({
       next: (t) => {
         this.technique.set(t);
+        if (t.lots.length && t.lots.every((l) => !!l.arret)) this.chargerFinanciere();
         const l = this.lot();
         if (l) this.etapeChoisie.set(this.courante(l));
       },

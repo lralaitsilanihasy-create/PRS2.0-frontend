@@ -1,3 +1,5 @@
+import { Correction, RefusCandidat } from './evaluation.model';
+
 /**
  * ⚠️ Lot 3 PI — l'évaluation des propositions de prestations intellectuelles. Tranche PI-c (V87, 08/10) : la **notation technique**
  * (`/api/fiches-marche/{idDmc}/evaluation/technique`). Chaque membre déclaré sans conflit note, motive ; la moyenne de chaque élément
@@ -147,4 +149,141 @@ export interface SeanceFinanciere {
   ronde: number | null;
   motif: string | null;
   rondes: RondeSeanceFinanciere[];
+}
+
+// ── Tranche PI-d2a (V89) : évaluation financière, classement selon la méthode, négociation ──
+
+/** La méthode de sélection (`B02-MS-01`), codée par le serveur. */
+export type CodeMethodePi = 'QUALITE_COUT' | 'BUDGET' | 'MOINDRE_COUT' | 'QUALITE_TECHNIQUE' | 'QUALIFICATION';
+
+export type StatutFinancier = 'NON_OUVERTE' | 'A_EVALUER' | 'EVALUEE' | 'ECARTEE' | 'HORS_BUDGET';
+
+/** La saisie de la commission sur une enveloppe financière : prix lu, corrections retenues, dépenses remboursables, refus éventuel. */
+export interface SaisieFinanciere {
+  prixLu: number | null;
+  prixLuTtc: number | null;
+  corrections: Correction[];
+  refus: RefusCandidat | null;
+  prixCorrige: number | null;
+  remboursables: number | null;
+  motifRemboursables: string | null;
+  par: string | null;
+  nom: string | null;
+  le: string | null;
+}
+
+/** Une proposition qualifiée, dans le classement financier de son lot. */
+export interface PropositionFinanciere {
+  /** L'enveloppe technique (l'identifiant de la proposition). */
+  idOffre: string;
+  /** L'enveloppe financière : c'est elle qui se saisit. */
+  idFinanciere: string | null;
+  numero: number | null;
+  nif: string | null;
+  raisonSociale: string | null;
+  noteTechnique: number | null;
+  rangTechnique: number | null;
+  financiereOuverte: boolean;
+  saisie: SaisieFinanciere | null;
+  statut: StatutFinancier;
+  motif: string | null;
+  /** Prix corrigé − dépenses remboursables : le montant comparé. */
+  montantCompare: number | null;
+  scoreFinancier: number | null;
+  scoreCombine: number | null;
+  rang: number | null;
+  /** Même rang qu'une autre : le départage motivé est exigé à l'arrêt. */
+  egalite: boolean;
+}
+
+export interface ArretFinancier {
+  le: string;
+  par: string;
+  nom: string | null;
+  observation: string | null;
+  rouvertLe: string | null;
+  motifReouverture: string | null;
+}
+
+export interface DepartageFinancier {
+  ordre: string[];
+  motif: string;
+  par: string;
+  nom: string | null;
+  le: string;
+}
+
+export interface LotFinancier {
+  lot: number;
+  arret: ArretFinancier | null;
+  departage: DepartageFinancier | null;
+  propositions: PropositionFinanciere[];
+}
+
+/** `GET …/evaluation/financiere` — 404 (évaluation non ouverte), 409 hors PI. */
+export interface Financiere {
+  idDmc: number;
+  methode: string | null;
+  codeMethode: CodeMethodePi | null;
+  poidsTechnique: number | null;
+  poidsFinancier: number | null;
+  budget: number | null;
+  lots: LotFinancier[];
+}
+
+/** Corps de `PUT …/evaluation/financiere/offres/{idFinanciere}`. */
+export interface SaisieFinanciereCorps {
+  prixLu?: number | null;
+  corrections: Correction[];
+  remboursables: number;
+  motifRemboursables?: string | null;
+  refusCandidat?: RefusCandidat | null;
+}
+
+export type EtatNegociation = 'EN_COURS' | 'REUSSIE' | 'ECHOUEE';
+
+export interface Negociation {
+  id: number;
+  idOffre: string;
+  idFinanciere: string | null;
+  numero: number | null;
+  raisonSociale: string | null;
+  rang: number | null;
+  etat: EtatNegociation;
+  ouverteLe: string | null;
+  ouvertePar: string | null;
+  prevueLe: string | null;
+  lieu: string | null;
+  conclueLe: string | null;
+  concluePar: string | null;
+  dateNegociation: string | null;
+  texte: string | null;
+  motifEchec: string | null;
+  pieceNom: string | null;
+  pvDisponible: boolean;
+}
+
+export interface LotNegociation {
+  lot: number;
+  classementArrete: boolean;
+  /** Le classé suivant sans échec ; nul s'il y a une négociation en cours ou réussie. */
+  prochain: { idOffre: string; numero: number | null; raisonSociale: string | null; rang: number | null; financiereOuverte: boolean } | null;
+  conclue: boolean;
+  negociations: Negociation[];
+}
+
+/** `GET …/evaluation/negociation`. */
+export interface Negociations {
+  idDmc: number;
+  lots: LotNegociation[];
+}
+
+/** Corps de `POST …/negociation/{id}/conclure`. */
+export interface ConclusionNegociation {
+  resultat: 'REUSSIE' | 'ECHOUEE';
+  /** `AAAA-MM-JJ`. */
+  dateNegociation: string;
+  lieu?: string | null;
+  texte: string;
+  motif?: string | null;
 }

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, input, output, signal } from '@angular/core';
 
 import { ApiError, codeErreur, corpsErreur } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
@@ -42,6 +42,10 @@ export function refusSeanceFinanciere(e: ApiError): string {
     case 'SEANCE_CLOSE': return 'La séance est close.';
     case 'MEMBRE_INCONNU': return 'Un présent coché n’est pas membre de la commission.';
     case 'CATEGORIE_SANS_NOTATION_TECHNIQUE': return 'La seconde séance ne concerne que les prestations intellectuelles.';
+    case 'SEANCE_FINANCIERE_EN_COURS': return 'Une séance financière est déjà en cours : close-la d’abord.';
+    case 'COMPLEMENTAIRE_SANS_OBJET': return 'Aucune enveloppe n’attend une séance complémentaire : elle suit l’échec d’une négociation.';
+    case 'LOT_OBLIGATOIRE': return 'Précisez le lot de la séance complémentaire.';
+    case 'MOTIF_OBLIGATOIRE': return 'Le motif est obligatoire.';
   }
   if (e.status === 403) return 'Ce geste revient au responsable de la procédure.';
   return e.message || 'Le geste n’a pas abouti.';
@@ -141,11 +145,33 @@ export function refusSeanceFinanciere(e: ApiError): string {
           </fieldset>
         }
 
-        @if (s.pvDisponible) {
+        @if (s.rondes.length > 1) {
+          <!-- ⚠️ PI-d2a (V89) — une ronde par séance : la seconde, puis les complémentaires (négociation échouée). -->
+          <ul class="sf__rondes">
+            @for (r of s.rondes; track r.ronde) {
+              <li>
+                <span>{{ r.ronde === 1 ? 'Seconde séance' : 'Séance complémentaire n° ' + (r.ronde - 1) }} — {{ etats[r.etat] }}{{ r.motif ? ' · ' + r.motif : '' }}</span>
+                @if (r.pvDisponible) { <button type="button" class="btn btn-ghost btn-sm" [disabled]="travail()" (click)="pv('pdf', r.ronde)">PV (PDF)</button> }
+              </li>
+            }
+          </ul>
+        } @else if (s.pvDisponible) {
           <div class="sf__pv">
             <button type="button" class="btn btn-outline btn-sm" [disabled]="travail()" (click)="pv('pdf')">PV de la seconde séance (PDF)</button>
             <button type="button" class="btn btn-outline btn-sm" [disabled]="travail()" (click)="pv('docx')">PV (Word)</button>
           </div>
+        }
+
+        @if (s.etat === 'CLOSE' && conduite()) {
+          <details class="sf__secours">
+            <summary>Séance complémentaire…</summary>
+            <div class="sf__complementaire">
+              <p class="text-sm text-muted">Après l’échec d’une négociation (qualité technique exclusivement, qualification du consultant), elle ouvre la seule enveloppe financière du classé suivant, avec les mêmes clés et le même quorum.</p>
+              <label class="form-group"><span class="form-label">Lot (si le marché est alloti)</span><input class="form-control sf__lot" type="number" min="1" [value]="lotComplementaire() ?? ''" (input)="lotComplementaire.set(+$any($event.target).value || null)" /></label>
+              <label class="form-group"><span class="form-label">Motif (imprimé au PV)</span><input class="form-control" type="text" [value]="motifComplementaire()" (input)="motifComplementaire.set($any($event.target).value)" /></label>
+              <div><button type="button" class="btn btn-primary btn-sm" [disabled]="!motifComplementaire().trim() || travail()" (click)="complementaire()">Ouvrir la séance complémentaire</button></div>
+            </div>
+          </details>
         }
       }
     </section>
@@ -164,6 +190,9 @@ export function refusSeanceFinanciere(e: ApiError): string {
     .sf__autre .form-control { flex: 1 1 12rem; }
     .sf__secours summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; }
     .sf__pv { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .sf__rondes { margin: 0; padding-left: 1.2rem; font-size: var(--text-sm); display: flex; flex-direction: column; gap: 0.2rem; }
+    .sf__complementaire { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.4rem; }
+    .sf__lot { max-width: 8rem; }
   `,
 })
 export class SeanceFinanciereVue implements OnInit, OnDestroy {
@@ -174,6 +203,8 @@ export class SeanceFinanciereVue implements OnInit, OnDestroy {
   readonly droits = input.required<DroitsEvaluation>();
   readonly espace = input.required<EspaceEvaluation>();
   readonly membres = input<MembreSeance[]>([]);
+  /** L'état de la séance a changé (ouverte, déchiffrée, close, nouvelle ronde) : l'écran relit l'évaluation financière. */
+  readonly etatChange = output<SeanceFinanciere>();
 
   readonly etats = LIBELLES_ETAT;
   readonly jj = dateHeureFr;
@@ -190,6 +221,8 @@ export class SeanceFinanciereVue implements OnInit, OnDestroy {
   readonly autreNom = signal('');
   readonly autreQualite = signal('');
   readonly observations = signal('');
+  readonly lotComplementaire = signal<number | null>(null);
+  readonly motifComplementaire = signal('');
 
   /** Le responsable conduit (coquille interne) ; un membre de la commission détient une part (espace CAO). */
   readonly conduite = computed(() => this.espace() === 'interne' && this.droits().responsable);
@@ -220,8 +253,10 @@ export class SeanceFinanciereVue implements OnInit, OnDestroy {
   }
 
   private recevoir(s: SeanceFinanciere): void {
-    const premiere = !this.seance();
+    const avant = this.seance();
+    const premiere = !avant;
     this.seance.set(s);
+    if (avant && (avant.etat !== s.etat || avant.ronde !== s.ronde)) this.etatChange.emit(s);
     this.chargement.set(false);
     if (premiere && s.presents.length) this.presents.set(new Set(s.presents));
   }
@@ -258,12 +293,19 @@ export class SeanceFinanciereVue implements OnInit, OnDestroy {
     );
   }
 
-  pv(format: 'pdf' | 'docx'): void {
+  /** ⚠️ PI-d2a — la séance complémentaire : une nouvelle ronde pour l'enveloppe du classé suivant. */
+  complementaire(): void {
+    this.apporte.set(false);
+    this.geste(this.service.seanceComplementaire(this.idDmc(), this.lotComplementaire(), this.motifComplementaire().trim()), 'Séance complémentaire ouverte : les détenteurs apportent leurs parts.');
+    this.motifComplementaire.set('');
+  }
+
+  pv(format: 'pdf' | 'docx', ronde?: number): void {
     this.travail.set(true);
-    this.service.pvSeanceFinanciere(this.idDmc(), format).subscribe({
+    this.service.pvSeanceFinanciere(this.idDmc(), format, ronde).subscribe({
       next: (b) => {
         this.travail.set(false);
-        telechargerBlob(b, `pv-ouverture-financiere-${this.idDmc()}.${format}`);
+        telechargerBlob(b, `pv-ouverture-financiere-${this.idDmc()}${ronde && ronde > 1 ? '-complementaire-' + (ronde - 1) : ''}.${format}`);
       },
       error: (e: ApiError) => {
         this.travail.set(false);

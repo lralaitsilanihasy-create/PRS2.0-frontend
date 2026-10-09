@@ -252,6 +252,19 @@ seul retenu (art. 42-IV), le rapport, et la suite du lot 2 (dossier de marché, 
 > - Une fois une négociation engagée, le classement ne se rouvre plus (`NEGOCIATION_ENGAGEE`).
 > - **B7** (rapport, proposition d'attribution, dossier de marché, infructuosité 56-II) suit en **PI-d2b**.
 
+> ✅ **Front, 2026-10-09 — PI-d2a branché (tranche F5)** : dans l'écran de l'évaluation, en mode PI, sous la seconde séance (relus à
+> chaque changement d'état de celle-ci) :
+> - **Évaluation financière et classement** du lot choisi : méthode (poids, budget), tableau (note technique, statut, montant comparé,
+>   scores financier et combiné en qualité-coût, rang, ex aequo surlignés) ; par proposition, la saisie de l'enveloppe **financière**
+>   (`idFinanciere`) — corrections proposées ou ajoutées (règles des offres), prix lu au besoin, **dépenses remboursables** et leur
+>   justification, refus du candidat ; **départage** des ex aequo (ordre par flèches, motif) ; **président** : arrêter ou rouvrir.
+> - **Négociation** (PRMP ou UGPM, coquille interne ; lecture pour les autres) : le prochain classé, l'ouvrir (date prévue, lieu), la
+>   pièce, la conclure (réussie ou échouée — motif —, date, lieu, texte du PV), PV en PDF et en Word ; un suivant dont l'enveloppe n'est pas
+>   ouverte est signalé au responsable.
+> - **Séance complémentaire** (encart de la seconde séance, responsable, séance close) : lot, motif ; les rondes et leur PV.
+> - Refus nommés par un répertoire propre aux PI (`libelles-pi.ts`), avant celui de l'évaluation des offres : `CLASSEMENT_NON_ARRETE`
+>   n'y a pas le même sens.
+
 ## B7 — Le rapport, l'attribution, l'infructuosité
 
 - Le **rapport d'évaluation** du lot 1, adapté : notes techniques par critère, éliminations, notes financières, scores combinés,
