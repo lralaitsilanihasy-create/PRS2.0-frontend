@@ -317,6 +317,17 @@ renvoi (texte modifiable) — par exemple pour MAOO : « délai de remise des of
 quorum non atteint », « offre partielle », « candidat non qualifié »… ; pour un DAO : « incohérence de l'objet entre l'AGPM et le
 DAO : mettre à jour le PPM / AGPM ou modifier le DAO ». Q5 : utile au pilote ?
 
+> ⚠️ **Backend, 2026-10-09 — B4 livré (tranche M4, V97)** ; contrat : `docs/api-endpoints.md`, § *… tranche M4*. Arbitrages du 09/10 :
+> référentiel **administrable** (écriture Administrateur), **semé du manuel** (un motif existant n'est jamais réécrit) ; le **front
+> insère le texte** (le serveur n'écrit rien dans le PV ni la lettre) ; les motifs **suivent l'héritage des grilles** de B3.
+> - Nouveau référentiel **`/api/motifs-types`** (`?sousType=` : motifs actifs avec l'héritage ; `?typeDossier=` : administration, inactifs
+>   compris ; `?nature=RENVOI|AVIS_DEFAVORABLE`) et **`GET /api/dossiers/{id}/motifs-types?nature=`** (conditions résolues par la fiche du
+>   dossier ; sans fiche, servis) — **à utiliser par l'écran d'examen** : `RENVOI` pour la lettre de renvoi, `AVIS_DEFAVORABLE` pour le PV.
+> - `MotifTypeDto` : `libelle` (la liste) et `texte` (ce qui s'insère ; « … » marque l'endroit à préciser), `categorie`, `forme`, `actif`.
+> - **Écart** : les plans n'ont pas de motifs au manuel (aucun semé) ; pour un acte de gestion, les motifs communs DGC (2 avis
+>   défavorables, 1 renvoi) s'ajoutent à ceux du sous-type, sauf l'avenant (grille propre). Les « principales incohérences » en tableau
+>   du manuel ne sont pas reprises comme motifs.
+
 ## B5 — Garde-fous du manuel à porter par le serveur
 
 - **Avenant** : refusé après la réception définitive (travaux) / provisoire (fournitures, services) ou le solde, et si
