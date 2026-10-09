@@ -574,7 +574,9 @@ export class MainLayout {
             c['/prmp/retraits'] = compteurs['demandesRetraitNouvelles'] ?? 0;
             this.alerts.update((a) => ({ ...a, '/prmp/a-rectifier': compteurs['dossiersARectifier'] ?? 0 }));
             // ⚠️ 06/10 — les reçus des frais de dossier en attente (un candidat attend pour retirer et déposer).
-            c['/prmp/dao'] = compteurs['recusAValider'] ?? 0;
+            // ⚠️ 09/10 (attribution 2d-1, V91) — s'y ajoutent les gestes d'attribution qui attendent la PRMP : lots à attribuer,
+            // lots signables, avis d'attribution à publier, explications sans réponse (on y arrive par la fiche, puis l'évaluation).
+            c['/prmp/dao'] = ['recusAValider', 'lotsAAttribuer', 'lotsSignables', 'avisAPublier', 'explicationsSansReponse'].reduce((n, k) => n + (compteurs[k] ?? 0), 0);
             break;
           case 'UGPM':
             // ⚠️ 06/10 — l'UGPM valide aussi les reçus des frais de dossier des fiches de sa PRMP.

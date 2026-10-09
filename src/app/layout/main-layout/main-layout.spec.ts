@@ -836,7 +836,8 @@ describe('Fil d’Ariane de la coquille (proposition 2026-09-22, lot B)', () => 
             logout: () => undefined,
           },
         },
-        { provide: KpiService, useValue: { badges: () => of({}) } },
+        // 09/10 — une réponse de forme réelle : `{}` sans `compteurs` faisait lever « reading 'aExaminer' » à chaque exécution.
+        { provide: KpiService, useValue: { badges: () => of({ profil: 'MEMBRE', compteurs: {} }) } },
         { provide: VacanceStore, useValue: { vacance: signal(false), verifier: () => undefined } },
         { provide: InterimStore, useValue: { exerces: signal([]), subi: signal(null), aVenir: signal([]), verifier: () => undefined } },
         { provide: PermissionsService, useValue: { peutExecuter: () => false } },
