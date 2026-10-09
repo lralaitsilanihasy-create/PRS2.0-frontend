@@ -362,6 +362,17 @@ après la numérotation, sans dépasser 5 jours ouvrables. Proposé : les délai
 valeurs par défaut, **par sous-type** si le serveur le permet (le manuel dit le délai « différencié selon le type de dossier » —
 PPM, DAO, DC, marché, avenant), et l'examen alerte au-delà de 5 jours ouvrés. Q7 : 48 h = 16 heures ouvrées (deux jours de 8 h) ?
 
+> ⚠️ **Backend, 2026-10-09 — B6 livré (tranche M5b, V99)** ; contrat : `docs/api-endpoints.md`, § *… tranche M5b*. Arbitrages du 09/10 :
+> **aucune valeur posée d'office** — l'examen garde son réglage (40 heures ouvrées en recette ; les 16 heures de Q7 restent à régler par
+> l'Administrateur s'il le souhaite) et la table par sous-type naît vide ; alerte au **Membre, au Chef de commission et au Président**.
+> - **Délais par sous-type** : `GET /api/delais-standards/sous-types/{sousType}` (effectif, standard de l'étape, `surcharge`), `PUT` /
+>   `DELETE /api/delais-standards/sous-types/{sousType}/{etape}` (Administrateur) — à ajouter à l'écran « Délais standards ». La date
+>   annoncée et le délai de l'étape en cours de « À faire » suivent le sous-type.
+> - **Alerte** : au-delà de 40 heures ouvrées en examen (5 jours ouvrés), notification `EXAMEN_EN_DEPASSEMENT` (objet : le dossier), une
+>   par passage, suivi horaire.
+> - **Écart** : les autres valeurs du manuel (numérotation le jour même ou le lendemain, signature sous 24 h, réponse sous 72 h) ne sont
+>   pas posées d'office non plus ; elles se règlent sur l'écran existant. La DSS garde son échéance de 5 jours (tranche 2d-3).
+
 ## Questions
 
 | # | Question | À qui |
