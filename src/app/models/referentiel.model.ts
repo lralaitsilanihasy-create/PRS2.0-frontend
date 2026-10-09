@@ -192,6 +192,33 @@ export interface PointsCtrl {
   forme?: string | null;
 }
 
+/**
+ * ⚠️ Manuel de contrôle, M4 (V97) — la nature d'un motif-type : `RENVOI` (demande de compléments, lettre de renvoi) ou
+ * `AVIS_DEFAVORABLE` (avis non favorable, projet de PV).
+ */
+export type NatureMotif = 'RENVOI' | 'AVIS_DEFAVORABLE';
+
+/**
+ * ⚠️ Manuel de contrôle, M4 (V97) — un motif-type de la conclusion (`/api/motifs-types`, référentiel administrable semé du manuel).
+ * `texte` est ce que l'écran insère dans le projet de PV ou la lettre de renvoi ; le manuel y laisse « … » là où le Membre précise.
+ */
+export interface MotifType {
+  idMotif: number;
+  /** Famille, obligatoire. */
+  idTypeDossier: string;
+  /** Nul : commun à la famille. */
+  idSousType?: string | null;
+  nature: NatureMotif;
+  /** ≤ 200 : le nom du motif dans la liste. */
+  libelle: string;
+  texte: string;
+  ordre?: number | null;
+  categorie?: string | null;
+  forme?: string | null;
+  /** Absent à l'écriture : actif à la création, inchangé à la modification. Désactivé : plus servi à l'examen. */
+  actif?: boolean;
+}
+
 /** Profil (référentiel RBAC). */
 export interface Profile {
   idProfile: number;

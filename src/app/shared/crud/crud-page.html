@@ -125,6 +125,10 @@
                   @case ('date') {
                     <input type="date" class="form-control" [id]="'crud-f-' + f.key" [formControlName]="f.key" />
                   }
+                  <!-- ⚠️ 09/10 (motifs-types, M4) — un paragraphe : le texte d'un motif s'insère dans un PV ou une lettre. -->
+                  @case ('textarea') {
+                    <textarea class="form-control" rows="5" [id]="'crud-f-' + f.key" [formControlName]="f.key"></textarea>
+                  }
                   @default {
                     <input type="text" class="form-control" [id]="'crud-f-' + f.key" [formControlName]="f.key" />
                   }

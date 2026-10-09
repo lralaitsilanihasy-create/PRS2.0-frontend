@@ -13,6 +13,8 @@ import {
   Dispatch,
   Dossier,
   DossierResoumissionRequest,
+  MotifType,
+  NatureMotif,
   PointsCtrl,
   TypePieceJointe,
   EchangeDto,
@@ -60,6 +62,14 @@ export class DossierService extends CrudService<Dossier> {
    */
   grille(idDossier: number): Observable<PointsCtrl[]> {
     return this.http.get<PointsCtrl[]>(`${this.baseUrl}/${idDossier}/grille`, { context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ Manuel de contrôle, M4 (V97) — `GET /api/dossiers/{id}/motifs-types?nature=` : les motifs actifs **de ce dossier** (sous-type,
+   * héritage des grilles, sans ceux dont la condition ne s'applique pas à sa fiche), triés.
+   */
+  motifsTypes(idDossier: number, nature: NatureMotif): Observable<MotifType[]> {
+    return this.http.get<MotifType[]>(`${this.baseUrl}/${idDossier}/motifs-types`, { params: new HttpParams().set('nature', nature), context: skipErrorToast() });
   }
 
   /** `GET /api/dossiers[?statut=]` — liste déjà scopée par le backend ; option : filtre statut serveur. */

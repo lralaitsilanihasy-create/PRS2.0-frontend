@@ -65,3 +65,16 @@ describe('Points de contrôle (admin) — conditions du manuel', () => {
     expect(config.fields.filter((f) => f.key === 'categorie' || f.key === 'forme').every((f) => !f.required)).toBe(true);
   });
 });
+
+/** ⚠️ Manuel de contrôle, M4 (V97) — l'administration des motifs-types, rangée dans les Nomenclatures (arbitrage du 09/10). */
+describe('Motifs-types (admin)', () => {
+  const config = REFERENTIELS.find((r) => r.slug === 'motifs-types')!.config;
+  const champ = (cle: string) => config.fields.find((f) => f.key === cle);
+
+  it('identifiant attribué par le serveur, texte en zone de texte, natures du serveur', () => {
+    expect(champ('idMotif')).toMatchObject({ pk: true, hideInForm: true });
+    expect(champ('texte')).toMatchObject({ type: 'textarea', required: true });
+    expect((champ('nature')?.options ?? []).map((o) => (typeof o === 'object' ? o.value : o))).toEqual(['RENVOI', 'AVIS_DEFAVORABLE']);
+    expect(['idTypeDossier', 'libelle'].every((k) => champ(k)?.required)).toBe(true);
+  });
+});

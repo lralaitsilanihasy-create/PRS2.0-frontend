@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import { Avis } from '../../../models';
+import { MotifsTypes, insererTexte } from '../../../shared/circuit/motifs-types';
 import { Icone } from '../../../shared/ui/icone';
 import { GroupeRecap, ObservationNumerotee, pluriel } from './examen-modele';
 
@@ -16,7 +17,7 @@ import { GroupeRecap, ObservationNumerotee, pluriel } from './examen-modele';
 @Component({
   selector: 'app-examen-synthese',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icone],
+  imports: [Icone, MotifsTypes],
   template: `
     <div class="synth">
       <section class="panneau synth__recap" aria-labelledby="recap-titre">
@@ -80,8 +81,12 @@ import { GroupeRecap, ObservationNumerotee, pluriel } from './examen-modele';
           @if (editable()) {
             <label class="fld">
               <span class="fld__l">Synthèse des observations</span>
-              <textarea class="ta" rows="4" [value]="synthese()" (input)="syntheseChange.emit(valeurDe($event))"></textarea>
+              <textarea #ta class="ta" rows="4" [value]="synthese()" (input)="syntheseChange.emit(valeurDe($event))"></textarea>
             </label>
+            <!-- ⚠️ 09/10 (manuel de contrôle, M4) — les formulations d'avis défavorable du dossier, collées au curseur. -->
+            @if (idDossier(); as id) {
+              <app-motifs-types class="synth__motifs" [idDossier]="id" nature="AVIS_DEFAVORABLE" [desactive]="saving()" (inserer)="insererMotif($event, ta)" />
+            }
             <fieldset class="fld">
               <legend class="fld__l">Avis global <em aria-hidden="true">*</em><span class="cnm-sr-only"> (obligatoire)</span></legend>
               <div class="opts">
@@ -142,6 +147,8 @@ export class ExamenSynthese {
   /** Synthèse et avis saisissables (création, ou projet de PV encore entre les mains du Membre). */
   readonly editable = input(false);
   readonly synthese = input('');
+  /** ⚠️ M4 (V97) — le dossier examiné : ses motifs-types d'avis défavorable s'insèrent dans la synthèse. */
+  readonly idDossier = input<number | null>(null);
   readonly avis = input<string | null>(null);
   readonly avisLibelle = input<string | null>(null);
   readonly aviss = input<Avis[]>([]);
@@ -162,6 +169,16 @@ export class ExamenSynthese {
   readonly annuler = output<void>();
 
   readonly pluriel = pluriel;
+
+  /** ⚠️ M4 — colle le texte du motif au curseur de la synthèse, puis y rend le curseur, juste après. */
+  insererMotif(texte: string, ta: HTMLTextAreaElement): void {
+    const r = insererTexte(ta.value, texte, ta.selectionStart ?? ta.value.length, ta.selectionEnd ?? ta.value.length);
+    this.syntheseChange.emit(r.valeur);
+    requestAnimationFrame(() => {
+      ta.focus();
+      ta.setSelectionRange(r.curseur, r.curseur);
+    });
+  }
 
   valeurDe(ev: Event): string {
     return (ev.target as HTMLTextAreaElement).value;

@@ -342,6 +342,15 @@ DAO : mettre à jour le PPM / AGPM ou modifier le DAO ». Q5 : utile au pilote ?
 >   défavorables, 1 renvoi) s'ajoutent à ceux du sous-type, sauf l'avenant (grille propre). Les « principales incohérences » en tableau
 >   du manuel ne sont pas reprises comme motifs.
 
+> ✅ **Front, 2026-10-09 — M4 branché (tranche MC3)** :
+> - **Projet de PV** (Membre, étape « Votre avis ») : « Insérer un motif d'avis défavorable » déplie les motifs du dossier
+>   (`GET /api/dossiers/{id}/motifs-types?nature=AVIS_DEFAVORABLE`, lus à la première ouverture) ; un clic colle le `texte` au curseur
+>   de la synthèse, sur une ligne à lui, la sélection remplacée.
+> - **Lettre de renvoi** (Président / Chef de commission) : de même avec `nature=RENVOI`, dans le corps de la lettre.
+> - **Administration** : « Motifs-types de la conclusion » dans les **Nomenclatures** (arbitrage du 09/10 : le menu de
+>   l'Administrateur est presque saturé), renvoyé depuis l'écran des points ; famille, sous-type, nature, libellé, texte (zone de texte),
+>   ordre, catégorie, forme, actif.
+
 ## B5 — Garde-fous du manuel à porter par le serveur
 
 - **Avenant** : refusé après la réception définitive (travaux) / provisoire (fournitures, services) ou le solde, et si

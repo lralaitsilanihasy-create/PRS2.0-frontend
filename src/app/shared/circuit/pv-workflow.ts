@@ -9,6 +9,7 @@ import { ouvrirBlobSur, validerFichier } from '../../core/securite/fichiers-surs
 import { Avis, Controleur, LettreRenvoi, PvExamen, PvSignataireRole } from '../../models';
 import { AvisService, ControleurService, LettreRenvoiService, ProfileService, PvExamenService } from '../../services';
 import { CanDirective } from '../security/can.directive';
+import { MotifsTypes, insererTexte } from './motifs-types';
 import { StatutBadge } from './statut-badge';
 import {
   PV_STATUT_LABELS,
@@ -47,7 +48,7 @@ import {
 @Component({
   selector: 'app-pv-workflow',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CanDirective, StatutBadge],
+  imports: [CanDirective, StatutBadge, MotifsTypes],
   template: `
     <div class="pv-workflow">
       <div class="pv-workflow__state">
@@ -316,8 +317,12 @@ import {
       @if (lettreOuvert()) {
         <div class="pv-workflow__retour pv-workflow__retour--reponse cnm-form">
           <label class="pv-workflow__retour-label" for="pv-lettre-corps">Lettre de renvoi — corps de la lettre</label>
-          <textarea id="pv-lettre-corps" class="form-control" rows="5" placeholder="Corps de la lettre…"
+          <textarea #lettreTa id="pv-lettre-corps" class="form-control" rows="5" placeholder="Corps de la lettre…"
             [value]="corpsLettre()" (input)="corpsLettre.set($any($event.target).value)"></textarea>
+          <!-- ⚠️ 09/10 (manuel de contrôle, M4) — les formulations de renvoi du dossier, collées au curseur. -->
+          @if (idDossier(); as id) {
+            <app-motifs-types class="pv-workflow__motifs" [idDossier]="id" nature="RENVOI" [desactive]="saving()" (inserer)="insererMotifLettre($event, lettreTa)" />
+          }
           <div class="pv-workflow__retour-actions">
             <button type="button" class="btn btn-outline" [disabled]="saving()" (click)="toggleLettre()">Fermer</button>
             <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="enregistrerBrouillonLettre()">
@@ -484,6 +489,8 @@ export class PvWorkflow {
   readonly pv = input.required<PvExamen>();
   /** Localité du dossier du PV (périmètre de l'intérim et candidats Membre co-signataire). */
   readonly idLocalite = input<string | null>(null);
+  /** ⚠️ M4 (V97) — le dossier du PV : ses motifs-types de renvoi s'insèrent dans la lettre. */
+  readonly idDossier = input<number | null>(null);
   /**
    * Nombre d'observations de l'examen (points de contrôle + pièces jointes), fourni par le parent.
    * ⚠️ Règle de cohérence (2026-08-01) : > 0 → avis FAVR suggéré (FAV refusé par le backend) ;
@@ -504,6 +511,16 @@ export class PvWorkflow {
   readonly avisChoisi = signal<string | null>(null);
   readonly viserErreur = signal<string | null>(null);
   readonly corpsLettre = signal('');
+
+  /** ⚠️ M4 — colle le texte du motif au curseur de la lettre, puis y rend le curseur, juste après. */
+  insererMotifLettre(texte: string, ta: HTMLTextAreaElement): void {
+    const r = insererTexte(ta.value, texte, ta.selectionStart ?? ta.value.length, ta.selectionEnd ?? ta.value.length);
+    this.corpsLettre.set(r.valeur);
+    requestAnimationFrame(() => {
+      ta.focus();
+      ta.setSelectionRange(r.curseur, r.curseur);
+    });
+  }
   /** Lettres de renvoi de l'examen du PV (affichées dans le panneau lettre). */
   readonly lettres = signal<LettreRenvoi[]>([]);
 

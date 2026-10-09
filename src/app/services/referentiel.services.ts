@@ -17,6 +17,7 @@ import {
   ModePassation,
   Nature,
   StatutMarche,
+  MotifType,
   PointsCtrl,
   Profile,
   RegleAlerte,
@@ -136,6 +137,16 @@ export class StatutMarcheService extends CrudService<StatutMarche> {
 @Injectable({ providedIn: 'root' })
 export class TypeDmcService extends CrudService<TypeDmc> {
   protected readonly resource = 'type-dmc';
+}
+
+/**
+ * ⚠️ Manuel de contrôle, M4 (V97) — les motifs-types (`/api/motifs-types`) : lecture interne, écriture **Administrateur** (403 sinon).
+ * Sans paramètre, `GET` sert tout le référentiel, inactifs compris (écran d'administration). Les motifs d'un dossier se lisent par
+ * `DossierService.motifsTypes`.
+ */
+@Injectable({ providedIn: 'root' })
+export class MotifTypeService extends CrudService<MotifType> {
+  protected readonly resource = 'motifs-types';
 }
 
 @Injectable({ providedIn: 'root' })

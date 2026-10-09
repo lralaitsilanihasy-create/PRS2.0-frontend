@@ -83,7 +83,7 @@ const GESTES_PANNEAU: readonly GesteAFaire[] = ['VISER', 'RETOURNER', 'LETTRE_RE
         }
         @case ('pret') {
           @if (pv(); as p) {
-            <app-pv-workflow class="ep__workflow" [pv]="p" [idLocalite]="idLocalite()" [nbObservationsExamen]="nbObservations()" (changed)="apresTransition($event)" />
+            <app-pv-workflow class="ep__workflow" [pv]="p" [idLocalite]="idLocalite()" [idDossier]="navette().tache.dossier.idDossier" [nbObservationsExamen]="nbObservations()" (changed)="apresTransition($event)" />
           }
         }
         @case ('echec') {

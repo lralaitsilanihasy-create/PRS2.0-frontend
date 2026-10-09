@@ -261,7 +261,7 @@ import { LienDossier } from '../circuit/page-dossier/lien-dossier';
 
                   <!-- Les actions du PV AU-DESSUS de la grille de contrôle (viser / retourner / signer). -->
                   <div class="pv__bande-actions">
-                    <app-pv-workflow [pv]="pv" [idLocalite]="dossierLocalite(pv)"
+                    <app-pv-workflow [pv]="pv" [idLocalite]="dossierLocalite(pv)" [idDossier]="idDossierDe(pv)"
                       [nbObservationsExamen]="nbObservations() + nbObservationsPieces()" (changed)="onChanged($event)" />
                   </div>
 

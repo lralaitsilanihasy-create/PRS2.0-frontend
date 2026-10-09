@@ -484,6 +484,7 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
             [estReexamen]="estReexamen()"
             [editable]="syntheseEditable()"
             [synthese]="synthese()"
+            [idDossier]="dossier()?.idDossier ?? null"
             [avis]="avis()"
             [avisLibelle]="avis() ? avisLabel(avis()) : null"
             [aviss]="avissProposes()"

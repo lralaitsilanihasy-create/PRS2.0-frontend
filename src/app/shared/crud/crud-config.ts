@@ -4,7 +4,7 @@ import { Capability } from '../../core/auth/permissions';
 import { CrudService } from '../../services/api/crud.service';
 
 /** Type d'un champ éditable dans le formulaire CRUD générique. */
-export type FieldType = 'text' | 'number' | 'boolean' | 'date';
+export type FieldType = 'text' | 'number' | 'boolean' | 'date' | 'textarea';
 
 /**
  * Résolution d'une clé étrangère en libellé via un référentiel lié.

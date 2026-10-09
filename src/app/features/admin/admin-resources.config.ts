@@ -11,6 +11,7 @@ import {
   LocaliteService,
   MinistereService,
   ModePassationService,
+  MotifTypeService,
   NatureService,
   OrganigrammeService,
   PointsCtrlService,
@@ -363,7 +364,7 @@ export const REFERENTIELS: AdminResource[] = [
       service: PointsCtrlService,
       idKey: 'idPointCtrl',
       writeCapability: 'REFERENTIEL_WRITE',
-      note: 'Grille d\'examen : un point porte sa famille (DDP/DMC/DDM) et, en option, un sous-type ciblé — vide = commun à toute la famille. Un sous-type hors de la famille du point est refusé (400). La portée range le point dans sa grille : par ligne de marché, une fois pour le dossier, la fiche de présentation ou le projet d\'AGPM (sous-type PPM-AGPM), ou constat sur les lignes retirées par une mise à jour.',
+      note: 'Les formulations de la conclusion se règlent dans Nomenclatures › Motifs-types de la conclusion. Grille d\'examen : un point porte sa famille (DDP/DMC/DDM) et, en option, un sous-type ciblé — vide = commun à toute la famille. Un sous-type hors de la famille du point est refusé (400). La portée range le point dans sa grille : par ligne de marché, une fois pour le dossier, la fiche de présentation ou le projet d\'AGPM (sous-type PPM-AGPM), ou constat sur les lignes retirées par une mise à jour.',
       fields: [
         // PK technique sans signification métier : masquée de la liste et du formulaire (auto max+1 à la création).
         { key: 'idPointCtrl', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true, hideInList: true },
@@ -402,6 +403,40 @@ export const REFERENTIELS: AdminResource[] = [
             { value: 'SUPPRESSION', label: 'Lignes retirées (constat de suppression)' },
           ],
         },
+      ],
+    },
+  },
+  {
+    // ⚠️ Manuel de contrôle, M4 (V97) — les formulations de la conclusion, semées du manuel ; rangées dans les Nomenclatures (le menu
+    // de l'Administrateur est presque saturé, arbitrage du 09/10). Un motif désactivé n'est plus proposé à l'examen.
+    slug: 'motifs-types',
+    config: {
+      title: 'Motifs-types de la conclusion',
+      service: MotifTypeService,
+      idKey: 'idMotif',
+      writeCapability: 'REFERENTIEL_WRITE',
+      note: 'Les formulations proposées au Membre (projet de PV : avis défavorable) et au Président ou Chef de commission (lettre de renvoi : demande de compléments). Un motif porte sa famille et, en option, un sous-type — vide = commun à la famille ; un sous-type hérite des motifs de sa grille de base (DAOR ← DAOO, MAOR ← MAOO…). Le texte s’insère tel quel : laissez « … » là où le contrôleur précise. Catégorie et forme restreignent le motif aux dossiers dont la fiche y répond. Désactiver un motif plutôt que le supprimer : il disparaît de l’examen, l’historique reste lisible.',
+      fields: [
+        // PK attribuée par le serveur (IDENTITY) : ni saisie, ni montrée.
+        { key: 'idMotif', label: 'Identifiant', type: 'number', pk: true, hideInForm: true, hideInList: true },
+        { key: 'idTypeDossier', label: 'Famille', required: true, ref: { service: TypeDossierService, idKey: 'idTypeDossier', labelKeys: ['libelleType'] } },
+        { key: 'idSousType', label: 'Sous-type (vide = commun)', ref: { service: SousTypeDossierService, idKey: 'idSousType', labelKeys: ['libelleSousType'] } },
+        {
+          key: 'nature',
+          label: 'Nature',
+          required: true,
+          defaultValue: 'RENVOI',
+          options: [
+            { value: 'RENVOI', label: 'Renvoi (lettre de renvoi)' },
+            { value: 'AVIS_DEFAVORABLE', label: 'Avis défavorable (projet de PV)' },
+          ],
+        },
+        { key: 'libelle', label: 'Libellé', required: true },
+        { key: 'texte', label: 'Texte inséré', type: 'textarea', required: true, hideInList: true },
+        { key: 'ordre', label: 'Ordre', type: 'number' },
+        { key: 'categorie', label: 'Catégorie (vide = toutes)', options: OPTIONS_CATEGORIE_FICHE },
+        { key: 'forme', label: 'Forme (vide = toutes)', options: OPTIONS_FORME_FICHE, hideInList: true },
+        { key: 'actif', label: 'Actif', type: 'boolean', defaultValue: true },
       ],
     },
   },
