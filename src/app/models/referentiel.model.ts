@@ -253,6 +253,13 @@ export interface SousTypeDossier {
 }
 
 /**
+ * ⚠️ Manuel de contrôle, tranche M1 (V94, 08/10) — les sous-types qu'une **fiche DAO** produit : `DC` pour les prestations
+ * intellectuelles, sinon selon le mode du plan (`DAOOI`/`DAORI` international, `DAOOPREQUAL`, `DAOR`, `DAOO` — l'ancien `DAO`,
+ * gardé pour les dossiers relus d'avant la migration). Un dossier de l'un d'eux porte sa fiche ; la saisie le produit depuis elle.
+ */
+export const SOUS_TYPES_FICHE_DAO: ReadonlySet<string> = new Set(['DAOO', 'DAOOI', 'DAOOPREQUAL', 'DAOR', 'DAORI', 'DC', 'DAO']);
+
+/**
  * Paramètre système ADMINISTRABLE : seuil de MONTANT au-delà duquel un marché en appel à
  * manifestation d'intérêt (AMI) déclenche l'AGPM (donc bascule le sous-type en PPM-AGPM). Livré
  * backend `GET`/`PUT /api/parametres/agpm-seuil-montant` — défaut 0 (tout AMI déclenche), borne

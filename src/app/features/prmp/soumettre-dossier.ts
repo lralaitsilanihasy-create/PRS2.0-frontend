@@ -18,7 +18,7 @@ import { LignePpmOfficielle } from '../../shared/prmp/document-officiel';
 import { DocumentVisionneuse } from '../../shared/ui/document-visionneuse';
 import { FichePresentation, calculerFichePresentation } from '../../shared/prmp/fiche-presentation';
 import { LigneAgpm, calculerAgpm } from '../../shared/prmp/agpm';
-import { AnomalieTranscription, Capm, Compte, Dossier, EntiteContract, FormeMarche, Marche, MarchePrevision, Ministere, ModePassation, Nature, Organigramme, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, SousTypeDossier, StatutMarche, TypePieceJointe } from '../../models';
+import { AnomalieTranscription, Capm, Compte, Dossier, EntiteContract, FormeMarche, Marche, MarchePrevision, Ministere, ModePassation, Nature, Organigramme, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, SOUS_TYPES_FICHE_DAO, SousTypeDossier, StatutMarche, TypePieceJointe } from '../../models';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import {
   CapmService,
@@ -1167,7 +1167,7 @@ export class SoumettreDossier {
    * devient le secours. Suit le sous-type, pas la famille : consultation et gré à gré n'ont pas de fiche.
    */
   private readonly sousTypeChoisi = toSignal(this.dossierForm.controls.idSousType.valueChanges, { initialValue: null as string | null });
-  readonly appelOffres = computed(() => this.sousTypeChoisi() === 'DAO');
+  readonly appelOffres = computed(() => SOUS_TYPES_FICHE_DAO.has(this.sousTypeChoisi() ?? ''));
 
   /** Import PPM PDF (pré-remplissage read-only) : état d'analyse + avertissements du parsing. */
   readonly importing = signal(false);

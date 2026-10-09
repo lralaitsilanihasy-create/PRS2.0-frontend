@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink, UrlTree } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
-import { Dispatch, Dossier } from '../../../models';
+import { Dispatch, Dossier, SOUS_TYPES_FICHE_DAO } from '../../../models';
 import { ModaleDirective } from '../../../shared/a11y/modale.directive';
 import { ChronometrageDossier, StatutBadge } from '../../../shared/circuit';
 import { jourSemaineDate } from '../../../shared/circuit/frise-delai';
@@ -320,8 +320,8 @@ export class PageDossierCorps implements OnInit {
   /** Lot F5 — la PRMP suit sa demande de retrait sur la page ; l'UGPM n'a pas l'écran des demandes. */
   readonly suiviRetrait = computed(() => (this.auth.role() === 'PRMP' ? this.dossier() : null));
 
-  /** Dossier d'appel d'offres : le seul sous-type qui porte une fiche DAO (lot 1b). */
-  readonly estAppelOffres = computed(() => this.sousType() === 'DAO');
+  /** Dossier d'appel d'offres : un sous-type qui porte une fiche DAO (lot 1b ; ⚠️ M1, V94 : DAOO et les sous-types produits par la fiche). */
+  readonly estAppelOffres = computed(() => SOUS_TYPES_FICHE_DAO.has(this.sousType()));
 
   private readonly panneau = viewChild('panneau', { read: EtapeCourante });
   private readonly panneauEl = viewChild('panneau', { read: ElementRef });
