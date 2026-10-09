@@ -226,7 +226,7 @@ import { RapportEvaluationVue } from './rapport-evaluation';
       <app-rapport-evaluation [idDmc]="idDmc" [evaluation]="ev" [droits]="droits()" [moi]="moi()" [pi]="!!technique()" (maj)="appliquer($event)" />
 
       <!-- ⚠️ Lot 2, tranche 2a (V79) — après le rapport signé : le dossier de marché de chaque lot, au contrôle de la Commission. -->
-      @if (ev.etat === 'CLOSE') { <app-attribution-lots [idDmc]="idDmc" [prmpOuUgpm]="prmpOuUgpm()" [prmp]="espace === 'interne' && role() === 'PRMP'" /> }
+      @if (ev.etat === 'CLOSE' || ev.etat === 'EN_COURS') { <app-attribution-lots [idDmc]="idDmc" [prmpOuUgpm]="prmpOuUgpm()" [prmp]="espace === 'interne' && role() === 'PRMP'" /> }
 
       <!-- ⚠️ 2d-3 (V93) — la déclaration sans suite : à tout moment avant la signature d'un marché, dans la coquille interne. -->
       @if (espace === 'interne') { <app-sans-suite [idDmc]="idDmc" [prmp]="role() === 'PRMP'" [lienDossier]="prmpOuUgpm()" /> }

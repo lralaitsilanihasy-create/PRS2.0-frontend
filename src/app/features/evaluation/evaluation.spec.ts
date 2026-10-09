@@ -211,6 +211,8 @@ describe('Écran de l’évaluation', () => {
   }
 
   afterEach(() => {
+    // 09/10 (2d) — une évaluation en cours lit aussi l'attribution (une reprise y garde son lot et son rapport archivé) : ici, rien.
+    http.match((r) => r.url.endsWith('/attribution')).forEach((r) => r.flush({ message: 'x' }, { status: 404, statusText: 'Not Found' }));
     http.verify();
     TestBed.resetTestingModule();
   });

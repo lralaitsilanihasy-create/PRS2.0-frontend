@@ -101,8 +101,10 @@ export function refus2d(e: ApiError): string {
             <li>
               <span>{{ r.type === 'REATTRIBUTION' ? 'Réattribution après retrait' : 'Reprise après avis défavorable' }} — le {{ jj(r.le) }} : {{ r.motif }}{{ r.note ? ' (' + r.note + ')' : '' }}</span>
               @if (r.rapportDisponible) {
-                <button type="button" class="btn btn-ghost btn-sm" (click)="rapport(r, 'pdf')">Rapport archivé (PDF)</button>
-                <button type="button" class="btn btn-ghost btn-sm" (click)="rapport(r, 'docx')">Word</button>
+                <span class="dl__docs">
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="rapport(r, 'pdf')">Rapport archivé (PDF)</button>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="rapport(r, 'docx')">Word</button>
+                </span>
               }
             </li>
           }
@@ -119,6 +121,7 @@ export function refus2d(e: ApiError): string {
     .dl__bloc p { margin: 0; }
     .dl__grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: 0.5rem; }
     .dl__liste { margin: 0; padding-left: 1.2rem; font-size: var(--text-sm); display: flex; flex-direction: column; gap: 0.25rem; }
+    .dl__docs { display: inline-flex; gap: 0.4rem; margin-left: 0.4rem; vertical-align: middle; }
   `,
 })
 export class DecisionsLot {

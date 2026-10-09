@@ -23,6 +23,7 @@ import { ListeASauver } from './liste-a-sauver';
 import { ImportDao } from './import-dao';
 import { AvisSpecifique } from '../../../shared/prmp/avis-specifique';
 import { LettresInvitation } from '../../../shared/prmp/lettres-invitation';
+import { SansSuiteVue } from '../../evaluation/sans-suite';
 import { sansAvis } from '../../../shared/prmp/avis-specifique-modele';
 import { ModaleDirective } from '../../../shared/a11y/modale.directive';
 import { Icone } from '../../../shared/ui/icone';
@@ -119,6 +120,7 @@ function routeAbsente(e: HttpErrorResponse | ApiError): boolean {
     ImportDao,
     AvisSpecifique,
     LettresInvitation,
+    SansSuiteVue,
     ModaleDirective,RouterLink, Icone, EtatErreur, TitreSiTronqueDirective],
   templateUrl: './fiche-marche.html',
   styleUrl: './fiche-marche.scss',
@@ -1266,7 +1268,9 @@ export class FicheMarcheEcran {
       return;
     }
     if (!this.fiche() && i > 1) return;
-    if (i >= 2 && !this.cadrageOk()) return;
+    // ⚠️ 09/10 — une fiche validée est figée : son cadrage ne se complète plus, il ne ferme donc plus le rail (sinon ses documents,
+    // l'avis et la déclaration sans suite deviennent injoignables dès qu'une question manque au cadrage enregistré).
+    if (i >= 2 && !this.cadrageOk() && !this.figee()) return;
     if (i === this.etape()) return;
     this.quitterLeBloc(() => this.etape.set(i));
   }

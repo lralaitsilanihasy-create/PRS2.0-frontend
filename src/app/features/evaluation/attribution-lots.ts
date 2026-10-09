@@ -31,7 +31,8 @@ const LIBELLES_AVIS: Readonly<Record<string, string>> = { FAV: 'Favorable', FAVR
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, AttributionLot, DecisionsLot],
   template: `
-    @if (attribution(); as a) {
+    <!-- ⚠️ 09/10 (2d) — montré aussi pendant une reprise de l’évaluation : le lot, la décision et le rapport archivé restent lisibles. -->
+    @if (visible() && attribution(); as a) {
       <section class="card at" aria-labelledby="at-titre">
         <h2 id="at-titre" class="at__h2">Attribution</h2>
         @for (l of a.lots; track l.lot) {
@@ -103,6 +104,8 @@ export class AttributionLots implements OnInit {
   readonly dateHeure = dateHeureFr;
 
   readonly attribution = signal<Attribution | null>(null);
+  /** Un lot au-delà de l’évaluation, ou une reprise archivée : sinon (évaluation en cours, rien à dire), l’encart se tait. */
+  readonly visible = computed(() => (this.attribution()?.lots ?? []).some((l) => l.etat !== 'EN_EVALUATION' || !!l.reprises?.length));
   readonly travail = signal<number | null>(null);
   readonly erreur = signal<string | null>(null);
   readonly lienDossier = computed(() => this.prmpOuUgpm());

@@ -368,6 +368,23 @@ Le backend les sème en migration ; l'Administrateur peut les modifier ensuite.
 > - Les compteurs PRMP (`lotsAAttribuer`, `lotsSignables`, `avisAPublier`, `explicationsSansReponse`) s'ajoutent à la pastille de
 >   l'entrée « Appels d'offres » du menu de la PRMP (avec `recusAValider`, déjà servi).
 
+> ✅ **Recette du 2026-10-09 dans le navigateur (écriture DBPRS20, accord du pilote)** : rien à corriger côté serveur.
+> - **2d-1, infructuosité** (fiche 40, lot 2, proposé infructueux par le rapport) : déclaration par l'écran, l'encart du lot passe
+>   « Infructueux ».
+> - **2d-1, reprise** (fiche 50, dossier MPI 100376) : PV 59 défavorable, la PRMP reprend l'évaluation ; le rapport est archivé
+>   (PDF et Word lisibles), l'évaluation rouverte.
+> - **2d-3, sans suite** (fiche 34) : demande depuis la page de la fiche, dossier DSS **100377**, PV 60 favorable signé, déclaration
+>   DEC-SS-2026-034. La fiche est désormais close.
+> - **2d-2, réattribution : non jouée.** Le seul lot attribué (fiche 44) a été informé le 07/10 ; le retrait n'est possible qu'à
+>   l'échéance des pièces de l'attributaire (vers le 22/10).
+> - **Écarts corrigés côté front :**
+>   - l'historique des reprises n'apparaissait qu'une fois l'évaluation close : la section « Attribution » se montre aussi pendant
+>     une reprise (évaluation en cours) ;
+>   - l'encart « Déclaration sans suite » s'ajoute à l'étape *Documents* de la page de la fiche, sous l'avis ou les lettres : le sans
+>     suite se demande avant toute ouverture des offres ;
+>   - une fiche validée dont le cadrage enregistré est incomplet (fiche de démonstration semée) fermait le rail au-delà du cadrage :
+>     une fiche figée ne le ferme plus.
+
 ## B7 — Accès, notifications, journal, compteurs
 
 - **Accès** : la PRMP agit ; l'UGPM et le responsable lisent ; les membres de la CAO lisent l'état de leurs lots ; le candidat ne voit

@@ -814,6 +814,9 @@
                     } @else {
                       <app-avis-specifique [idDmc]="id" [lecture]="enLecture()" />
                     }
+                    <!-- ⚠️ 09/10 (attribution 2d-3) — la déclaration sans suite se demande à tout moment avant la signature d'un marché : ici
+                         aussi, et pas seulement dans l'écran de l'évaluation (qui n'existe qu'une fois les offres ouvertes). -->
+                    <app-sans-suite class="fm__sans-suite" [idDmc]="id" [prmp]="estPrmp() && !enLecture()" [lienDossier]="!enLecture()" />
                   }
                 } @else if (!figee()) {
                   <p class="fm__attendus">Le dossier à soumettre se crée depuis une fiche <strong>validée</strong> : terminez l'étape 6 d'abord.</p>

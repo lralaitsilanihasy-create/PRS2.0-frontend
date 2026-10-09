@@ -310,3 +310,6 @@
 .fm__bloc-n { font-size: 0.7rem; min-width: 1.1rem; padding: 0 0.3rem; border-radius: 999px; background: var(--danger-bg); color: var(--danger-text); text-align: center; }
 .fm__bloc-lien--actif .fm__bloc-n { background: #fff; }
 .fm__bloc-modif { margin-left: auto; font-size: 0.78rem; color: var(--n-500); }
+
+/* 09/10 (attribution 2d-3) — l'encart « Sans suite » sous les documents de l'étape 7. */
+.fm__sans-suite { display: block; margin-top: 1rem; }
