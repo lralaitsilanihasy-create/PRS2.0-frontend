@@ -293,6 +293,15 @@ seul retenu (art. 42-IV), le rapport, et la suite du lot 2 (dossier de marché, 
 > - **Déclaration de l'infructuosité** (avis conforme de la Commission, jamais après l'attribution) : avec la tranche **2d** du lot 2,
 >   commune aux deux évaluations — encore à livrer.
 
+> ✅ **Front, 2026-10-09 — PI-d2b branché (tranche F6) ; le front du lot 3 PI est complet (F1 à F6)** :
+> - **Étape « Rapport »** d'une fiche PI : la proposition du lot quand il est **prêt** — attribuable (proposition n°, candidat, prix corrigé HT,
+>   TTC lu, délai, après négociation réussie) ou **infructueux** avec `motifInfructuosite` ; sinon « pas encore prêt ».
+> - **Rapport** : produit quand chaque lot est prêt (`proposition` servie), au lieu de « toutes les étapes arrêtées » des offres.
+> - **Dossier de marché** : `SOUS_TYPE_ABSENT` nommé (le sous-type MPI manque au référentiel). Le reste (création, `LOT_INFRUCTUEUX`,
+>   lettres d'information) est l'écran du lot 2, inchangé.
+> - Titre « Évaluation des propositions » en mode PI.
+> - La **déclaration de l'infructuosité** (tranche 2d-1, livrée côté serveur) reste à brancher côté front, avec la suite du lot 2.
+
 ## B8 — Consultants individuels (art. 42-V)
 
 Sous le seuil réglementaire : comparaison des qualifications d'**au moins trois** candidats ayant manifesté leur intérêt, sur leurs

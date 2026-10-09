@@ -25,7 +25,7 @@ import { refusEvaluation } from './libelles-evaluation';
       <h2 id="re-titre" class="re__h2">Rapport d'évaluation</h2>
       @if (!ev.rapport) {
         @if (toutArrete()) {
-          <p class="text-sm">Toutes les étapes sont arrêtées : le responsable de la procédure produit le rapport, qui part à la signature des membres.</p>
+          <p class="text-sm">{{ pi() ? 'Chaque lot est prêt' : 'Toutes les étapes sont arrêtées' }} : le responsable de la procédure produit le rapport, qui part à la signature des membres.</p>
           @if (droits().responsable) {
             <label class="form-group"><span class="form-label">Observations du responsable (facultatives, portées au rapport)</span>
               <textarea class="form-control" rows="2" [value]="observations()" (input)="observations.set($any($event.target).value)"></textarea>
@@ -33,7 +33,7 @@ import { refusEvaluation } from './libelles-evaluation';
             <button type="button" class="btn btn-primary btn-sm re__btn" [disabled]="travail()" (click)="produire()">Produire le rapport d'évaluation</button>
           }
         } @else {
-          <p class="text-sm text-muted">Le rapport se produit quand toutes les étapes de tous les lots sont arrêtées par le président.</p>
+          <p class="text-sm text-muted">{{ pi() ? 'Le rapport se produit quand chaque lot est prêt : négociation réussie, ou infructuosité constatée.' : 'Le rapport se produit quand toutes les étapes de tous les lots sont arrêtées par le président.' }}</p>
         }
       } @else {
         @let r = ev.rapport;
@@ -113,6 +113,8 @@ export class RapportEvaluationVue {
   readonly idDmc = input.required<number>();
   readonly evaluation = input.required<Evaluation>();
   readonly droits = input.required<DroitsEvaluation>();
+  /** ⚠️ Lot 3 PI, PI-d2b (V90) — une fiche de prestations intellectuelles : le rapport attend que chaque lot soit **prêt** (proposition servie). */
+  readonly pi = input(false);
   /** Identifiant du connecté (`K…` pour un membre de la CAO). */
   readonly moi = input<string | null>(null);
   readonly maj = output<Evaluation>();
@@ -129,7 +131,9 @@ export class RapportEvaluationVue {
   readonly travail = signal(false);
   readonly erreur = signal<string | null>(null);
 
-  readonly toutArrete = computed(() => this.evaluation().lots.every((l) => l.etape === 'RAPPORT'));
+  readonly toutArrete = computed(() =>
+    this.pi() ? this.evaluation().lots.every((l) => l.proposition != null) : this.evaluation().lots.every((l) => l.etape === 'RAPPORT'),
+  );
   readonly attendues = computed(() => this.evaluation().rapport?.signaturesAttendues ?? []);
   readonly nomsAttendus = computed(() => this.attendues().map((a) => a.nom).join(', '));
   readonly jeDoisSigner = computed(() => this.droits().membre && this.attendues().some((a) => a.im === this.moi()));

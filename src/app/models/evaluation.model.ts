@@ -206,6 +206,10 @@ export interface PropositionAttribution {
   montantTtc: number | null;
   delai: string | number | null;
   infructueux: boolean;
+  /** ⚠️ Lot 3 PI, PI-d2b (V90) — l'enveloppe financière de la proposition (PI) ; nulle pour une offre. */
+  idOffreFinanciere?: string | null;
+  /** ⚠️ PI-d2b — le motif de l'infructuosité proposée (PI) : toutes écartées, une seule conforme, aucune au score minimum… */
+  motifInfructuosite?: string | null;
 }
 
 export interface LotEvaluation {

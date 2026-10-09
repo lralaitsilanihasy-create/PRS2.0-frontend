@@ -144,6 +144,8 @@ export class AttributionLots implements OnInit {
         this.erreur.set(
           code === 'EVALUATION_NON_CLOSE' ? 'Le dossier de marché se crée quand le rapport d’évaluation est signé de tous.'
           : code === 'LOT_INFRUCTUEUX' ? 'Ce lot est proposé infructueux : il n’a pas de dossier de marché.'
+          // ⚠️ PI-d2b (V90) — le dossier d'un marché de prestations intellectuelles se crée au sous-type MPI.
+          : code === 'SOUS_TYPE_ABSENT' ? 'Le sous-type « Marché de prestations intellectuelles » (MPI) manque au référentiel : l’Administrateur doit le rétablir.'
           : code === 'DOSSIER_EXISTANT' ? `Le dossier de marché de ce lot existe déjà (n° ${existant?.idDossier ?? existant?.details?.idDossier ?? '?'}).`
           : e.message || 'Le dossier n’a pas pu être créé.',
         );

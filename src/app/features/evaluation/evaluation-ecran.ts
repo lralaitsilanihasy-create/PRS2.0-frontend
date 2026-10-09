@@ -18,7 +18,7 @@ import { EtapeTechnique } from './etape-technique';
 import { SeanceFinanciereVue } from './seance-financiere';
 import { EtapeFinanciere } from './etape-financiere';
 import { NegociationPi } from './negociation-pi';
-import { LIBELLES_ETAPE, LIBELLES_ETAT_EVALUATION, NUMERO_ETAPE, refusEvaluation } from './libelles-evaluation';
+import { LIBELLES_ETAPE, LIBELLES_ETAT_EVALUATION, NUMERO_ETAPE, ariary, refusEvaluation } from './libelles-evaluation';
 import { RapportEvaluationVue } from './rapport-evaluation';
 
 /**
@@ -41,14 +41,14 @@ import { RapportEvaluationVue } from './rapport-evaluation';
       <nav class="ev__ariane" aria-label="Fil d'Ariane">
         <a routerLink="/cao/mes-procedures">Mes procédures</a><span aria-hidden="true">›</span>
         <a [routerLink]="['/cao/procedures', idDmc]">Procédure</a><span aria-hidden="true">›</span>
-        <span aria-current="page">Évaluation des offres</span>
+        <span aria-current="page">{{ technique() ? 'Évaluation des propositions' : 'Évaluation des offres' }}</span>
       </nav>
     }
 
     <header class="page-header page-header--actions">
       <div>
         <div class="page-subtitle">Procédure n° {{ idDmc }} · {{ qui() }}</div>
-        <h1 class="page-title">Évaluation des offres</h1>
+        <h1 class="page-title">{{ technique() ? 'Évaluation des propositions' : 'Évaluation des offres' }}</h1>
       </div>
       <div class="ev__entete-actions">
         @if (lienFiche()) { <a class="btn btn-outline btn-sm" [routerLink]="lienFiche()!">Fiche DAO</a> }
@@ -162,7 +162,21 @@ import { RapportEvaluationVue } from './rapport-evaluation';
               <app-etape-qualification [idDmc]="idDmc" [lot]="l" [droits]="droits()" (maj)="appliquer($event)" />
             }
             @case ('RAPPORT') {
+              @if (technique()) {
+                <!-- ⚠️ PI-d2b (V90) — le lot est prêt quand le serveur sert sa proposition : attribuable (négociation réussie) ou infructueux. -->
+                @if (l.proposition; as p) {
+                  @if (p.infructueux) {
+                    <p><strong>La commission propose de déclarer le lot {{ l.lot }} infructueux</strong>{{ p.motifInfructuosite ? ' : ' + p.motifInfructuosite : '' }}.</p>
+                  } @else {
+                    <p><strong>Proposition d’attribution — lot {{ l.lot }}</strong> : proposition n° {{ p.numero ?? '—' }} · {{ p.candidat }}</p>
+                    <p class="text-sm">Prix corrigé {{ ariary(p.montant) }} HT · {{ ariary(p.montantTtc) }} TTC lu · délai {{ p.delai ?? '—' }} (acte d’engagement), après négociation réussie.</p>
+                  }
+                } @else {
+                  <p class="text-sm">Le lot {{ l.lot }} n’est pas encore prêt : classement à arrêter, ou négociation à mener ou à conclure.</p>
+                }
+              } @else {
               <p class="text-sm">Toutes les étapes du lot {{ l.lot }} sont arrêtées.</p>
+              }
             }
           }
         </div>
@@ -208,7 +222,7 @@ import { RapportEvaluationVue } from './rapport-evaluation';
         }
       }
 
-      <app-rapport-evaluation [idDmc]="idDmc" [evaluation]="ev" [droits]="droits()" [moi]="moi()" (maj)="appliquer($event)" />
+      <app-rapport-evaluation [idDmc]="idDmc" [evaluation]="ev" [droits]="droits()" [moi]="moi()" [pi]="!!technique()" (maj)="appliquer($event)" />
 
       <!-- ⚠️ Lot 2, tranche 2a (V79) — après le rapport signé : le dossier de marché de chaque lot, au contrôle de la Commission. -->
       @if (ev.etat === 'CLOSE') { <app-attribution-lots [idDmc]="idDmc" [prmpOuUgpm]="prmpOuUgpm()" [prmp]="espace === 'interne' && role() === 'PRMP'" /> }
@@ -268,6 +282,7 @@ export class EvaluationEcran implements OnInit {
   readonly numeros = NUMERO_ETAPE;
   readonly ordreEtapes: readonly EtapeEvaluation[] = [...ETAPES_EVALUATION, 'RAPPORT'];
   readonly dateHeure = dateHeureFr;
+  readonly ariary = ariary;
 
   readonly chargement = signal(true);
   readonly refuse = signal(false);
@@ -331,7 +346,7 @@ export class EvaluationEcran implements OnInit {
         this.nonOuverte.set(false);
         this.appliquer(ev, true);
         this.chargerTechnique();
-        this.document.title = `Évaluation des offres — procédure ${this.idDmc} — PRS 2.0`;
+        this.document.title = `Évaluation — procédure ${this.idDmc} — PRS 2.0`;
       },
       error: (e: ApiError) => {
         this.chargement.set(false);

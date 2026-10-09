@@ -260,6 +260,26 @@ describe('Écran de l’évaluation', () => {
     expect(racine().textContent).not.toContain('Arrêter l\'étape « ');
   });
 
+  it('⚠️ PI-d2b : un lot prêt montre sa proposition (ici l’infructuosité et son motif) et le rapport se produit', () => {
+    monter('interne', 'RESPONSABLE', 'R1');
+    const ev = { ...EVALUATION, lots: EVALUATION.lots.map((l) => ({ ...l, proposition: { idOffre: null, numero: null, candidat: null, montant: null, montantTtc: null, delai: null, infructueux: true, motifInfructuosite: 'Une seule proposition conforme' } })) };
+    http.expectOne('/api/fiches-marche/40/evaluation').flush(ev);
+    http.expectOne('/api/fiches-marche/40/evaluation/technique').flush({
+      idDmc: 40, scoreMinimum: 70, seuilEcartPourcent: 20, elements: [],
+      lots: EVALUATION.lots.map((l) => ({ lot: l.lot, conformiteArretee: true, arret: { le: '2026-10-09T10:00:00', par: 'K1', nom: null, observation: null, rouverteLe: null, motifReouverture: null }, offres: [] })),
+    });
+    // L'évaluation technique arrêtée : la seconde séance, l'évaluation financière et la négociation se lisent (ici, pas encore servies).
+    for (const url of ['/api/fiches-marche/40/seance/financiere', '/api/fiches-marche/40/evaluation/financiere', '/api/fiches-marche/40/evaluation/negociation']) {
+      http.match(url).forEach((r) => r.flush({ message: 'x' }, { status: 404, statusText: 'Not Found' }));
+    }
+    fixture.detectChanges();
+    http.match('/api/fiches-marche/40/seance/financiere').forEach((r) => r.flush({ message: 'x' }, { status: 404, statusText: 'Not Found' }));
+    fixture.detectChanges();
+    expect(racine().querySelector('.page-title')?.textContent).toContain('Évaluation des propositions');
+    expect(racine().textContent).toContain('La commission propose de déclarer le lot 1 infructueux : Une seule proposition conforme');
+    expect(racine().textContent).toContain('Produire le rapport d\'évaluation');
+  });
+
   it('président déclaré : il voit le geste d’arrêter l’étape en cours', () => {
     monter('cao', null, 'K1');
     http.expectOne('/api/fiches-marche/40/evaluation').flush(EVALUATION);
