@@ -48,8 +48,8 @@ export function manquesConclusion(c: { resultat: 'REUSSIE' | 'ECHOUEE' | null; d
               </p>
               <p class="text-sm ng__ligne">
                 @if (n.prevueLe) { <span>Prévue le {{ jj(n.prevueLe) }}</span> }
-                @if (n.lieu) { <span>· {{ n.lieu }}</span> }
-                @if (n.dateNegociation) { <span>· tenue le {{ jour(n.dateNegociation) }}</span> }
+                @if (n.lieu) { <span>{{ n.prevueLe ? '· ' : '' }}{{ n.lieu }}</span> }
+                @if (n.dateNegociation) { <span>{{ n.prevueLe || n.lieu ? '· ' : '' }}tenue le {{ jour(n.dateNegociation) }}</span> }
                 @if (n.motifEchec) { <span class="ng__echec">· échec : {{ n.motifEchec }}</span> }
               </p>
               <div class="ng__actions">

@@ -133,6 +133,7 @@ export function deplacer<T>(liste: T[], i: number, sens: -1 | 1): T[] {
     .ef__ordre { margin: 0; padding-left: 1.4rem; display: flex; flex-direction: column; gap: 0.25rem; font-size: var(--text-sm); }
     .ef__ordre li span { margin-right: 0.4rem; }
     .ef__president { border-top: 1px dashed var(--n-200); padding-top: 0.6rem; display: flex; flex-direction: column; gap: 0.4rem; }
+    .ef__president > .btn { align-self: flex-start; }
     .ef__rouvrir { display: flex; gap: 0.5rem; align-items: flex-end; flex-wrap: wrap; margin-top: 0.4rem; }
   `,
 })
