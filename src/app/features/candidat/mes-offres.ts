@@ -64,8 +64,12 @@ export function enveloppeManquante(o: Offre, toutes: Offre[]): EnveloppeOffre | 
         @for (o of offres(); track o.idOffre) {
           <li class="card mo__offre">
             <div class="mo__haut">
-              <span><strong>{{ o.objet || ('Procédure ' + o.idDmc) }}</strong>{{ o.lot ? ' — lot ' + o.lot : '' }}@if (o.enveloppe) { <span class="badge badge-info mo__env">{{ enveloppes[o.enveloppe] }}</span> }</span>
-              <span class="badge" [class.badge-success]="o.etat === 'DEPOSEE'" [class.badge-neutral]="o.etat === 'REMPLACEE' || o.etat === 'RETIREE' || o.etat === 'EN_COURS'" [class.badge-danger]="o.etat === 'ECARTEE'">{{ etats[o.etat] }}</span>
+              <span><strong>{{ o.objet || ('Procédure ' + o.idDmc) }}</strong>{{ o.lot ? ' — lot ' + o.lot : '' }}</span>
+              <!-- Recette du 09/10 : l'enveloppe à côté de l'état, à droite (dans le titre, elle repoussait l'état à la ligne). -->
+              <span class="mo__badges">
+                @if (o.enveloppe) { <span class="badge badge-info">{{ enveloppes[o.enveloppe] }}</span> }
+                <span class="badge" [class.badge-success]="o.etat === 'DEPOSEE'" [class.badge-neutral]="o.etat === 'REMPLACEE' || o.etat === 'RETIREE' || o.etat === 'EN_COURS'" [class.badge-danger]="o.etat === 'ECARTEE'">{{ etats[o.etat] }}</span>
+              </span>
             </div>
             <p class="text-sm text-muted mo__meta">
               <span class="cnm-mono">{{ o.reference }}</span>
@@ -112,7 +116,8 @@ export function enveloppeManquante(o: Offre, toutes: Offre[]): EnveloppeOffre | 
     .mo__haut { display: flex; justify-content: space-between; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
     .mo__meta, .mo__emp { margin: 0; }
     .mo__actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
-    .mo__env { margin-left: 0.5rem; }
+    .mo__haut > span:first-child { flex: 1 1 20rem; min-width: 0; }
+    .mo__badges { display: inline-flex; gap: 0.4rem; align-items: center; flex: none; }
     .mo__manque { display: flex; gap: 0.75rem; align-items: center; justify-content: space-between; flex-wrap: wrap; margin: 0; }
     .mo__confirm { display: inline-flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; font-size: var(--text-sm); }
   `,
