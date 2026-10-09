@@ -163,6 +163,22 @@ seul retenu (art. 42-IV), le rapport, et la suite du lot 2 (dossier de marché, 
 > après le déchiffrement, intégrité et montants HT/TTC lus), celles qui ne s'ouvrent pas avec leur motif ; l'état se relit toutes les
 > cinq secondes tant que les parts arrivent. Les rondes complémentaires (`complementaire`) viendront avec la négociation (F5).
 
+> 🧪 **Recette du front, 2026-10-09 (DBPRS20, accord du pilote) — fiche 50, ligne 303291** : fiche PI remplie (99 champs, sous-critères),
+> commission et cérémonie, validée ; dossier **DC 100375** jusqu'au PV **58** favorable ; lettres d'invitation à deux candidats saisis avec
+> leur adresse (`candidat.demo@exemple.mg`, `entreprise.recette.e2e@exemple.mg`) ; chacun voit la consultation dans « Mes invitations »
+> et dépose ses deux enveloppes (technique : 8 pièces, financière : 4 — `enveloppe` servie par pièce ; même numéro ; accusé de la seconde
+> avec la jumelle) ; première séance ouverte, parts apportées, **enveloppes techniques déchiffrées** (quorum 2).
+>
+> ⚠️ **Anomalie serveur bloquante — `GET /api/fiches-marche/50/seance/lecture` répond 500** (`UnexpectedRollbackException : Transaction
+> silently rolled back because it has been marked as rollback-only`, à `SeanceService.lecture` → `construireLecture`). Cause probable :
+> `construireLecture` appelle `procedures.piecesAttendues(idDmc)` dans un `try/catch` ; depuis PI-a, ce service refuse (404) qui n'est pas
+> **invité** à une consultation restreinte — dont le **responsable de la procédure** (ADMIN01 ici) ; l'exception traverse un proxy
+> `@Transactional` et marque la transaction en lecture seule pour l'annulation, que le `catch` n'efface pas. Les procédures ouvertes
+> (fiche 40) n'ont pas ce refus, d'où l'absence du défaut jusqu'ici. **Effet** : la lecture ne s'affiche pas, le **PV d'ouverture ne se
+> produit pas** (l'écran le produit sous la lecture), l'évaluation ne s'ouvre pas (409 `SEANCE_NON_CLOSE`) : la recette de PI-c à PI-d2b
+> attend le correctif. Piste : lire les pièces attendues sans la garde « invité » pour les lecteurs internes de la séance (ou un
+> `propagation = REQUIRES_NEW` / une méthode non transactionnelle) ; `lecturePourEvaluation` passe par le même chemin.
+
 ## B4 — L'évaluation technique
 
 - Une **grille par candidat** : les critères `B06-TP-02` à `-06`, chacun noté sur ses points (la note ne dépasse pas le maximum de la
