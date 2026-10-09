@@ -33,6 +33,20 @@ export interface AdminResource {
   config: CrudResourceConfig;
 }
 
+/**
+ * ⚠️ Manuel de contrôle (M2-M4, V95-V97) — les conditions d'un point de contrôle ou d'un motif-type : la catégorie et la forme de la
+ * fiche du dossier. Vide = toutes. Codes = ceux du serveur (`CONTRAT_CADRE`, `AUTRE` : toute autre forme).
+ */
+export const OPTIONS_CATEGORIE_FICHE = [
+  { value: 'FOURNITURES_SERVICES', label: 'Fournitures et services' },
+  { value: 'TRAVAUX', label: 'Travaux' },
+  { value: 'PRESTATIONS_INTELLECTUELLES', label: 'Prestations intellectuelles' },
+];
+export const OPTIONS_FORME_FICHE = [
+  { value: 'CONTRAT_CADRE', label: 'Contrat-cadre' },
+  { value: 'AUTRE', label: 'Toute autre forme' },
+];
+
 /** Référentiels (écriture ADMINISTRATEUR). */
 export const REFERENTIELS: AdminResource[] = [
   {
@@ -368,6 +382,9 @@ export const REFERENTIELS: AdminResource[] = [
           label: 'Sous-type (vide = commun)',
           ref: { service: SousTypeDossierService, idKey: 'idSousType', labelKeys: ['libelleSousType'] },
         },
+        // ⚠️ Manuel de contrôle, M3 (V96) — la condition du point, résolue par la fiche du dossier examiné.
+        { key: 'categorie', label: 'Catégorie (vide = toutes)', options: OPTIONS_CATEGORIE_FICHE },
+        { key: 'forme', label: 'Forme (vide = toutes)', options: OPTIONS_FORME_FICHE },
         // ⚠️ Audit 2026-09-14 (E3) — sans ce champ, le formulaire n'envoyait pas la portée : toute
         // modification repassait le point en LIGNE (il sortait de sa grille FICHE, AGPM, DOSSIER ou
         // SUPPRESSION) et la création ne produisait que des points LIGNE. Codes = enum backend

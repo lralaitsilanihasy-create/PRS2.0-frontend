@@ -1603,8 +1603,15 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       marches: this.marcheService.list(),
       receptions: this.receptionService.list(),
       dispatchs: this.dispatchService.list(),
-      // Grille effective du sous-type (serveur : communs famille + spécifiques) ; repli famille si idSousType absent.
-      points: dossier$.pipe(switchMap((d) => (d.idSousType ? this.pointsCtrlService.grille(d.idSousType) : this.pointsCtrlService.list()))),
+      // ⚠️ Manuel de contrôle, M3 (V96) — la grille DE CE DOSSIER (sous-type, grille de base, conditions de sa fiche résolues) : c'est
+      // sur elle que le serveur juge la complétude. Repli, si la route ne répond pas : la grille du sous-type, puis la liste.
+      points: dossier$.pipe(
+        switchMap((d) =>
+          this.dossierService.grille(d.idDossier).pipe(
+            catchError(() => (d.idSousType ? this.pointsCtrlService.grille(d.idSousType) : this.pointsCtrlService.list())),
+          ),
+        ),
+      ),
       examens: this.examenService.list(),
       details: this.examenDetailService.list(),
       pvs: this.pvExamenService.list(),

@@ -53,3 +53,15 @@ describe('Points de contrôle (admin) — portée', () => {
     expect(put[0].request.body.portee).toBe('FICHE');
   });
 });
+
+/** ⚠️ Manuel de contrôle, M3 (V96) — la condition d'un point : catégorie et forme de la fiche, vides = toutes, jamais obligatoires. */
+describe('Points de contrôle (admin) — conditions du manuel', () => {
+  const config = REFERENTIELS.find((r) => r.slug === 'points-ctrls')!.config;
+  const valeurs = (cle: string) => (config.fields.find((f) => f.key === cle)?.options ?? []).map((o) => (typeof o === 'object' ? o.value : o));
+
+  it('propose les codes serveur de catégorie et de forme, facultatifs', () => {
+    expect(valeurs('categorie')).toEqual(['FOURNITURES_SERVICES', 'TRAVAUX', 'PRESTATIONS_INTELLECTUELLES']);
+    expect(valeurs('forme')).toEqual(['CONTRAT_CADRE', 'AUTRE']);
+    expect(config.fields.filter((f) => f.key === 'categorie' || f.key === 'forme').every((f) => !f.required)).toBe(true);
+  });
+});

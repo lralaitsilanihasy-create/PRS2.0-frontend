@@ -13,6 +13,7 @@ import {
   Dispatch,
   Dossier,
   DossierResoumissionRequest,
+  PointsCtrl,
   TypePieceJointe,
   EchangeDto,
   Examen,
@@ -51,6 +52,14 @@ export class DossierService extends CrudService<Dossier> {
    */
   piecesExigees(idDossier: number): Observable<TypePieceJointe[]> {
     return this.http.get<TypePieceJointe[]>(`${this.baseUrl}/${idDossier}/pieces-exigees`, { context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ Manuel de contrôle, M3 (V96) — `GET /api/dossiers/{id}/grille` : la grille **de ce dossier** (son sous-type, sa grille de
+   * base, sans les points dont la condition ne s'applique pas à sa fiche). L'examen juge sa complétude sur elle.
+   */
+  grille(idDossier: number): Observable<PointsCtrl[]> {
+    return this.http.get<PointsCtrl[]>(`${this.baseUrl}/${idDossier}/grille`, { context: skipErrorToast() });
   }
 
   /** `GET /api/dossiers[?statut=]` — liste déjà scopée par le backend ; option : filtre statut serveur. */

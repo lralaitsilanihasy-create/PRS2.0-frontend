@@ -318,6 +318,11 @@ DAOOpréqual : la grille DAOO (le manuel : « contrôle d'un appel d'offres ouve
 >   « Publicité internationale de l'avis ».
 > - **Effet** : les examens en cours voient leur grille s'enrichir (plans : +3 points par ligne).
 
+> ✅ **Front, 2026-10-09 — M3 branché (tranche MC2)** :
+> - **Examen** : la grille vient de `GET /api/dossiers/{id}/grille` (conditions de la fiche résolues) — celle sur laquelle le serveur juge
+>   la complétude ; repli, si la route ne répond pas : `?sousType=`, puis la liste.
+> - **Administration des points** : champs « Catégorie (vide = toutes) » et « Forme (vide = toutes) », codes du serveur.
+
 ## B4 — Les motifs-types de la conclusion
 
 Le manuel liste, pour chaque type, les **motifs de renvoi** (lettre de demande de compléments) et les **motifs d'avis non

@@ -109,7 +109,7 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
         { provide: AuthService, useValue: { ref: () => 'IM1' } },
         { provide: ToastService, useValue: { info: vi.fn(), success: vi.fn(), error: vi.fn() } },
         { provide: ReferenceLookupService, useValue: { lookup: (s: Type<unknown>) => of(LIBELLES.get(s) ?? new Map<string, string>()) } },
-        { provide: DossierService, useValue: { getById: () => of(DOSSIER), chronometrage: () => of(CHRONO) } },
+        { provide: DossierService, useValue: { getById: () => of(DOSSIER), chronometrage: () => of(CHRONO), grille: () => of(POINTS) } },
         { provide: DelaiStandardService, useValue: { listeSilencieuse: () => of([{ etape: 'EXAMEN', delaiHeures: 16 }]) } },
         { provide: PieceJointeDossierService, useValue: { getByDossier: () => of(PIECES), telecharger: () => NEVER } },
         { provide: ExamenPieceService, useValue: { ...liste([]), create: () => of({}), update: () => of({}) } },
@@ -117,7 +117,7 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
         { provide: MarcheService, useValue: liste(MARCHES) },
         { provide: ReceptionService, useValue: liste(RECEPTIONS) },
         { provide: DispatchService, useValue: liste(DISPATCHS) },
-        { provide: PointsCtrlService, useValue: { grille: () => of(POINTS), list: () => of(POINTS) } },
+        { provide: PointsCtrlService, useValue: { grille: () => of([]), list: () => of([]) } },
         {
           provide: ExamenService,
           useValue: {

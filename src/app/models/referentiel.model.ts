@@ -183,6 +183,13 @@ export interface PointsCtrl {
    * Défaut serveur `LIGNE`.
    */
   portee?: 'LIGNE' | 'DOSSIER' | 'FICHE' | 'AGPM' | 'SUPPRESSION';
+  /**
+   * ⚠️ Manuel de contrôle, M3 (V96) — la condition du point : catégorie de la fiche (`FOURNITURES_SERVICES`, `TRAVAUX`,
+   * `PRESTATIONS_INTELLECTUELLES` ; nul : toutes) et forme (`CONTRAT_CADRE`, `AUTRE` ; nul : toutes). La grille d'un dossier
+   * (`GET /api/dossiers/{id}/grille`) retire les points qui ne s'appliquent pas à sa fiche ; sans fiche, ils restent.
+   */
+  categorie?: string | null;
+  forme?: string | null;
 }
 
 /** Profil (référentiel RBAC). */
