@@ -428,6 +428,9 @@ PPM, DAO, DC, marché, avenant), et l'examen alerte au-delà de 5 jours ouvrés.
 > - ⚠️ **Anomalie serveur (M1)** : le dossier **100370** est bien en `DAOO`, mais sa référence reste **« 00013/DAO/CNM/2026 »** (lue par
 >   `GET /api/dossiers/100370`, et affichée telle quelle par l'examen) ; le contrat annonçait le renommage des références déjà
 >   attribuées en « …/DAOO/… ». À vérifier : la colonne de référence du dossier (et peut-être celle de la réception) n'a pas été reprise.
+>   ⚠️ **Relance du 2026-10-09 au soir — toujours ouverte** : `GET /api/dossiers/100370` sert encore `refeDossier: "00013/DAO/CNM/2026"`
+>   (les références créées depuis sont justes, ex. 100377 « 00001/DSS/CNM/2026 »). **Besoin** : reprendre `refeDossier` des dossiers
+>   (et des réceptions s'il y a lieu) de l'ancien sous-type `DAO` en « …/DAOO/… », comme Q1 l'a arbitré.
 
 ## Questions
 
