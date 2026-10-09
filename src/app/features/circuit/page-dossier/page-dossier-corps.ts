@@ -24,6 +24,8 @@ import { EtapeCourante } from './etape-courante';
 import { EtatGestes, GesteBouton, VueEtape, ciblePage, famillePage, gesteDemande, montantGestes, vueEtape } from './etape-courante-modele';
 import { RetourPage, SuiteGeste, etapesPage, referenceDossier } from './page-dossier-modele';
 import { FicheMarcheDossier } from './fiche-marche-dossier';
+import { ActesGestionMarche } from './actes-gestion-marche';
+import { ActeGestionDossier } from './acte-gestion-dossier';
 import { SyntheseDossier } from './synthese-dossier';
 
 /** Hauteur de la barre du haut de l'application (fixe, `.topbar`). */
@@ -50,6 +52,8 @@ const HAUT_TOPBAR = 48;
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     RouterLink,
+    ActesGestionMarche,
+    ActeGestionDossier,
     Icone,
     EtatErreur,
     StatutBadge,
@@ -188,6 +192,12 @@ const HAUT_TOPBAR = 48;
            seulement ; ceux d'avant la liaison n'ont pas de fiche et le disent. -->
       @if (estAppelOffres()) {
         <app-fiche-marche-dossier class="pd-fiche" [dossier]="dossier()" (liaisonChangee)="apresGeste()" />
+      }
+      <!-- ⚠️ 09/10 (manuel de contrôle, M5a) — un marché porte ses actes de gestion ; un acte (DGC) se complète et se soumet ici. -->
+      @if (dossier().idTypeDossier === 'DDM') {
+        <app-actes-gestion-marche class="pd-fiche" [dossier]="dossier()" />
+      } @else if (dossier().idTypeDossier === 'DGC') {
+        <app-acte-gestion-dossier class="pd-fiche" [dossier]="dossier()" (modifie)="apresGeste()" />
       }
 
       <section class="pd-documents" aria-label="Documents du dossier">

@@ -356,7 +356,7 @@ export class DossiersClassement {
     return null;
   }
 
-  private static readonly ORDRE_FAMILLE: Record<string, number> = { DDP: 0, DMC: 1, DDM: 2 };
+  private static readonly ORDRE_FAMILLE: Record<string, number> = { DDP: 0, DMC: 1, DDM: 2, DGC: 3, DSS: 4 };
 
   readonly types = signal<TypeDossier[]>([]);
   readonly loading = signal(true);

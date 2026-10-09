@@ -356,7 +356,7 @@ export class MesDossiers {
   private readonly dossierService = inject(DossierService);
 
   /** Ordre d'affichage imposé des familles (référentiel non trié) : DDP → DMC → DDM, le reste après. */
-  private static readonly ORDRE_FAMILLE: Record<string, number> = { DDP: 0, DMC: 1, DDM: 2 };
+  private static readonly ORDRE_FAMILLE: Record<string, number> = { DDP: 0, DMC: 1, DDM: 2, DGC: 3, DSS: 4 };
   /**
    * ⚠️ Demande user (2026-08-03) — statuts du groupe « Vérifiés » : la phase de vérification complète
    * (dossier rectifié/resoumis compris), pas seulement la clôture. Partagé avec l'écran liste.

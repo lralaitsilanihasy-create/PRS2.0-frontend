@@ -21,3 +21,4 @@ export * from './candidat.services';
 export * from './cao.services';
 export * from './evaluation.services';
 export * from './ami.services';
+export * from './acte-gestion.services';

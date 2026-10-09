@@ -16,3 +16,4 @@ export * from './candidat.model';
 export * from './cao.model';
 export * from './evaluation.model';
 export * from './ami.model';
+export * from './acte-gestion.model';

@@ -377,6 +377,17 @@ DAO : mettre à jour le PPM / AGPM ou modifier le DAO ». Q5 : utile au pilote ?
 > - **DSS** : le refus après la signature existait déjà (`MARCHE_SIGNE`, tranche 2d-3) ; son délai propre vient avec M5b. **Q6** reste
 >   ouverte.
 
+> ✅ **Front, 2026-10-09 — M5a branché (tranche MC4)** :
+> - **Page d'un dossier de marché** (`DDM`) : encart « Actes de gestion du marché » — montant initial et catégorie (avec leur source),
+>   réceptions, solde, cumul des avenants face au plafond du tiers, liste des actes (rang, montant, référence, avis, lien). PRMP / UGPM,
+>   marché `FAV` ou `FAVR` : « Déposer un acte de gestion » (modale : sous-type, montant HT de l'avenant, montant initial et catégorie
+>   seulement s'ils ne sont pas connus, réceptions et solde pré-remplis) ; la projection du cumul s'affiche, indicative ; à la réponse,
+>   la page du dossier DGC s'ouvre. Refus nommés (`AVENANT_PLAFOND` chiffré, `AVENANT_APRES_RECEPTION` / `_SOLDE` datés…).
+> - **Page d'un dossier `DGC`** : l'acte et son marché ; en brouillon, « Modifier les déclarations » (`PUT`), les **pièces exigées** de
+>   l'acte à joindre une à une (un acte né du marché n'a pas d'autre écran de saisie) et, pour la PRMP, « Soumettre l'acte » — où le
+>   serveur rejoue les garde-fous.
+> - Listes : DGC et DSS rangées après les trois familles du contrôle.
+
 ## B6 — Les délais (ch. 1, V)
 
 Le manuel fixe : numérotation le jour même ou le lendemain ; **examen 48 h** ouvrées (hors week-end et jours chômés) à compter de
