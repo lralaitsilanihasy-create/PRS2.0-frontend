@@ -232,6 +232,13 @@ export interface TypePieceJointe {
   ordre?: number;
   /** Code stable (`t_type_piece_jointe.CODE`), ex. `AGPM` — sert à repérer une pièce par nature. */
   code?: string;
+  /**
+   * ⚠️ Manuel de contrôle, M2 (V95) — la condition de la pièce, servie pour un sous-type ou un dossier : catégorie de la fiche
+   * (`FOURNITURES_SERVICES`, `TRAVAUX`, `PRESTATIONS_INTELLECTUELLES` ; nul : toutes) et forme (`CONTRAT_CADRE`, `AUTRE` ; nul :
+   * toutes). Une pièce de la bibliothèque du manuel n'a pas de famille (`idTypeDossier` nul).
+   */
+  categorie?: string | null;
+  forme?: string | null;
 }
 
 /** Type (famille) de dossier — `DDP` / `DMC` / `DDM`. PK = idTypeDossier (string). */

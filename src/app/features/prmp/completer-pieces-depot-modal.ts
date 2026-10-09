@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
-import { catchError, forkJoin, of } from 'rxjs';
+import { Observable, catchError, forkJoin, map, of } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
@@ -145,17 +145,31 @@ export class CompleterPiecesDepotModal implements OnInit {
     this.recharger();
   }
 
+  /**
+   * ⚠️ Manuel de contrôle, M2 (V95) — `GET /api/dossiers/{id}/pieces-exigees` : la liste que la soumission et la recevabilité
+   * lisent côté serveur (les pièces de la bibliothèque du manuel n'ont pas de famille : un filtre par famille les perdrait). Repli,
+   * si la route ne répond pas : les pièces de la famille, comme avant.
+   */
+  private piecesAttendues(): Observable<TypePieceJointe[]> {
+    const d = this.dossier();
+    return this.dossierService.piecesExigees(d.idDossier).pipe(
+      catchError(() =>
+        this.typePieceService.list().pipe(
+          map((types) => types.filter((t) => t.idTypeDossier === d.idTypeDossier)),
+          catchError(() => of([] as TypePieceJointe[])),
+        ),
+      ),
+    );
+  }
+
   private recharger(): void {
     forkJoin({
-      types: this.typePieceService.list().pipe(catchError(() => of([] as TypePieceJointe[]))),
+      // ⚠️ Manuel de contrôle, M2 (V95) — les pièces exigées DE CE DOSSIER (sous-type, conditions de sa fiche) ; repli : la famille.
+      types: this.piecesAttendues(),
       pieces: this.pieceService.getByDossier(this.dossier().idDossier).pipe(catchError(() => of([] as PieceJointeDossier[]))),
       verifs: this.verifService.parDossier(this.dossier().idDossier).pipe(catchError(() => of([] as VerificationPieceDepot[]))),
     }).subscribe(({ types, pieces, verifs }) => {
-      this.typesAttendus.set(
-        types
-          .filter((t) => t.idTypeDossier === this.dossier().idTypeDossier)
-          .sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0)),
-      );
+      this.typesAttendus.set([...types].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0)));
       this.pieces.set(pieces);
       const etat = new Map<number, VerificationPieceDepot>();
       for (const v of verifs) etat.set(v.idTypePiece, v);

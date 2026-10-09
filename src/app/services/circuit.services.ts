@@ -13,6 +13,7 @@ import {
   Dispatch,
   Dossier,
   DossierResoumissionRequest,
+  TypePieceJointe,
   EchangeDto,
   Examen,
   ExamenDetail,
@@ -43,6 +44,14 @@ import {
 @Injectable({ providedIn: 'root' })
 export class DossierService extends CrudService<Dossier> {
   protected readonly resource = 'dossiers';
+
+  /**
+   * ⚠️ Manuel de contrôle, M2 (V95) — `GET /api/dossiers/{id}/pieces-exigees` : les pièces exigées **de ce dossier**, selon son
+   * sous-type, obligation résolue par la catégorie et la forme de sa fiche. C'est la liste que la soumission et la recevabilité lisent.
+   */
+  piecesExigees(idDossier: number): Observable<TypePieceJointe[]> {
+    return this.http.get<TypePieceJointe[]>(`${this.baseUrl}/${idDossier}/pieces-exigees`, { context: skipErrorToast() });
+  }
 
   /** `GET /api/dossiers[?statut=]` — liste déjà scopée par le backend ; option : filtre statut serveur. */
   override list(statut?: StatutDossier): Observable<Dossier[]> {

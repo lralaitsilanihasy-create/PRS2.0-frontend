@@ -117,6 +117,15 @@ présélection, projet de marché, PV d'ouverture, rapport d'évaluation) reste 
 >   garde en plus `MOTIFS_SANS_SUITE` produit par le serveur. Les pièces jointes d'office sont reprises par leur code.
 > - **Effet** : un brouillon `DAOO` existant doit maintenant porter sa liste avant d'être soumis.
 
+> ✅ **Front, 2026-10-09 — M2 branché (tranche MC1)** :
+> - **Créer un dossier** : les pièces de la famille à l'entrée, puis celles du **sous-type** choisi (`?sousType=`) ; un fichier déjà
+>   choisi pour une pièce encore attendue est gardé.
+> - **Recevabilité** (Secrétaire) et **Compléter les pièces** (PRMP) lisent `GET /api/dossiers/{id}/pieces-exigees` (repli : la famille,
+>   si la route ne répond pas) — le filtre par famille d'avant perdait les pièces de la bibliothèque du manuel, qui n'en ont pas.
+> - **Page dossier, onglet Pièces** : en brouillon, « Pièces exigées pour soumettre », chaque pièce marquée jointe, obligatoire
+>   manquante ou facultative — ce que la soumission refuserait se voit avant.
+> - Le modèle `TypePieceJointe` lit `categorie` et `forme`.
+
 ## B3 — Les grilles de contrôle, par sous-type
 
 **Mécanisme proposé** : un point peut porter, en plus de son sous-type (nullable = commun, comme aujourd'hui), une **condition** sur

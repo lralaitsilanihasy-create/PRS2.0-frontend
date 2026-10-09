@@ -69,6 +69,16 @@ export class TypePieceJointeService extends CrudService<TypePieceJointe> {
       params: new HttpParams().set('typeDossier', idTypeDossier),
     });
   }
+
+  /**
+   * ⚠️ Manuel de contrôle, M2 (V95) — `GET /api/type-piece-jointes?sousType={code}` : la liste propre du sous-type (sans les pièces
+   * de sa famille), à défaut celles de sa famille ; conditions servies, non résolues (sans fiche, une pièce conditionnée n'oblige pas).
+   */
+  getBySousType(idSousType: string): Observable<TypePieceJointe[]> {
+    return this.http.get<TypePieceJointe[]>(this.baseUrl, {
+      params: new HttpParams().set('sousType', idSousType),
+    });
+  }
 }
 
 @Injectable({ providedIn: 'root' })

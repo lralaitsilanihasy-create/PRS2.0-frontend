@@ -546,12 +546,12 @@ interface ApercuDossier {
               </label>
             </div>
 
-            <!-- Pièces jointes : rattachées à la FAMILLE (référentiel type-piece-jointes), connues dès l'entrée. -->
+            <!-- Pièces jointes : celles de la famille à l'entrée, puis celles du SOUS-TYPE choisi (⚠️ M2, V95 : liste du manuel). -->
             <div class="sd__pieces">
               <h2 class="sd__sub">Pièces jointes</h2>
               <!-- ⚠️ Demande user (2026-09-01) — mêmes règles que la branche PPM : optionnelles masquées. -->
               @if (!typesPieceVisibles().length) {
-                <p class="cnm-muted">Aucune pièce à fournir pour cette famille de dossier.</p>
+                <p class="cnm-muted">Aucune pièce à fournir pour ce {{ dossierForm.controls.idSousType.value ? 'sous-type' : 'type' }} de dossier.</p>
               }
                 @for (t of typesPieceVisibles(); track t.idTypePiece) {
                   <div class="sd__piece" [class.sd__piece--manquante]="t.obligatoire && !pieces().has(t.idTypePiece)">
@@ -1279,6 +1279,10 @@ export class SoumettreDossier {
     // La localité lecture seule suit l'entité sélectionnée (PPM ou DAO/MAOO).
     this.ppmForm.controls.idEntiteContract.valueChanges.subscribe((v) => this.selectedEntiteId.set(v));
     this.dossierForm.controls.idEntiteContract.valueChanges.subscribe((v) => this.selectedEntiteId.set(v));
+    // ⚠️ Manuel de contrôle, M2 (V95) — les pièces suivent le SOUS-TYPE choisi (sa liste propre, à défaut celle de sa famille).
+    this.dossierForm.controls.idSousType.valueChanges.subscribe((st) => {
+      if (this.phase() === 'saisieDossier') this.chargerTypesPiece(this.familleChoisie(), st);
+    });
     // Reprise d'un brouillon depuis « Mes brouillons » (?reprendre=<idDossier>).
     const reprendreId = this.route.snapshot.queryParamMap.get('reprendre');
     if (reprendreId) {
@@ -1363,23 +1367,39 @@ export class SoumettreDossier {
       next: (rows) => this.sousTypesDeLaFamille.set(rows),
       error: () => this.sousTypesDeLaFamille.set([]),
     });
-    // Pièces attendues : rattachées à la famille (connues dès l'entrée, pas au choix du sous-type).
+    // Pièces attendues : celles de la famille à l'entrée, puis celles du sous-type dès qu'il est choisi (M2).
     this.chargerTypesPiece(f);
   }
 
+  /** Le dernier chargement demandé : une réponse plus ancienne (sous-type changé entre-temps) est ignorée. */
+  private chargementPieces = 0;
+
   /**
-   * Charge les pièces jointes **attendues pour une famille de dossier** (référentiel, triées serveur) et
-   * **réinitialise** les fichiers déjà choisis + erreurs (les clés `idTypePiece` diffèrent d'une famille à l'autre).
+   * Charge les pièces jointes **attendues** (référentiel, triées serveur) : celles du **sous-type** quand il est choisi (⚠️ M2,
+   * V95 : sa liste propre, à défaut celle de sa famille ; sans fiche, une pièce conditionnée est servie facultative), sinon celles
+   * de la **famille**. Les fichiers déjà choisis pour une pièce encore attendue sont gardés ; les autres tombent, avec les erreurs.
    */
-  private chargerTypesPiece(idTypeDossier: string): void {
-    this.pieces.set(new Map());
-    this.pieceErreurs.set(new Set());
-    this.typePieceService.getByTypeDossier(idTypeDossier).subscribe({
+  private chargerTypesPiece(idTypeDossier: string, idSousType: string | null = null): void {
+    const jeton = ++this.chargementPieces;
+    const source = idSousType ? this.typePieceService.getBySousType(idSousType) : this.typePieceService.getByTypeDossier(idTypeDossier);
+    source.subscribe({
       // ⚠️ 2026-08-05 — les pièces d'HISTORIQUE (PV du dossier précédent, PPM antérieur) n'existent que
       // pour une mise à jour, où elles sont jointes par le serveur. Elles n'ont aucun sens ici et ne
       // doivent pas être proposées au dépôt sur un dossier neuf.
-      next: (rows) => this.typesPiece.set(rows.filter((t) => !TYPES_PIECE_HISTORIQUE.has(t.code ?? ''))),
-      error: () => this.typesPiece.set([]),
+      next: (rows) => {
+        if (jeton !== this.chargementPieces) return;
+        const types = rows.filter((t) => !TYPES_PIECE_HISTORIQUE.has(t.code ?? ''));
+        const gardees = new Set(types.map((t) => t.idTypePiece));
+        this.pieces.update((m) => new Map([...m].filter(([id]) => gardees.has(id))));
+        this.pieceErreurs.set(new Set());
+        this.typesPiece.set(types);
+      },
+      error: () => {
+        if (jeton !== this.chargementPieces) return;
+        this.pieces.set(new Map());
+        this.pieceErreurs.set(new Set());
+        this.typesPiece.set([]);
+      },
     });
   }
   retourChoix(): void {
