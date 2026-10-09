@@ -1,3 +1,5 @@
+import { EtapeCircuit } from './circuit.model';
+
 /** Référentiels (lecture ouverte, écriture ADMINISTRATEUR) + suggestion de mode. */
 
 /** Avis (FAV, DEFAVORABLE, ...). PK = idAvis (string). */
@@ -217,6 +219,18 @@ export interface MotifType {
   forme?: string | null;
   /** Absent à l'écriture : actif à la création, inchangé à la modification. Désactivé : plus servi à l'examen. */
   actif?: boolean;
+}
+
+/**
+ * ⚠️ Manuel de contrôle, M5b (V99) — le délai d'une étape de la Commission pour un sous-type (`/api/delais-standards/sous-types/{code}`),
+ * en heures ouvrées : `delaiHeures` effectif, `standardHeures` de l'étape pour tous, `surcharge` = le sous-type a le sien.
+ */
+export interface DelaiSousType {
+  idSousType: string;
+  etape: EtapeCircuit;
+  delaiHeures: number;
+  standardHeures: number;
+  surcharge: boolean;
 }
 
 /** Profil (référentiel RBAC). */

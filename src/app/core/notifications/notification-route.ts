@@ -67,8 +67,9 @@ export function routePourNotification(n: Notification, role: string | null): Cib
   }
   // — Dossier soumis → « Tous les dossiers » (réception / suivi).
   if (type === 'DOSSIER_SOUMIS') return { genre: 'route', commands: [`/${base}/tableau-de-bord`] };
-  // — Examen (Membre) : directement l'écran d'examen du dossier.
-  if ((type === 'EXAMEN_A_FAIRE' || type === 'PIECE_AJOUTEE_APRES_RENVOI') && role === 'MEMBRE' && n.idDossier != null) {
+  // — Examen (Membre) : directement l'écran d'examen du dossier. ⚠️ M5b (V99) — `EXAMEN_EN_DEPASSEMENT` (examen ouvert depuis plus de
+  //   5 jours ouvrés) y mène aussi le Membre ; le Président et le Chef de commission vont, par le repli, à la page du dossier.
+  if ((type === 'EXAMEN_A_FAIRE' || type === 'PIECE_AJOUTEE_APRES_RENVOI' || type === 'EXAMEN_EN_DEPASSEMENT') && role === 'MEMBRE' && n.idDossier != null) {
     return { genre: 'route', commands: ['/membre/examiner', String(n.idDossier)] };
   }
   // — Vérification (Vérificateur) : directement l'écran de vérification du dossier.

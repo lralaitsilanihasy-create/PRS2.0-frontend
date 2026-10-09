@@ -2,6 +2,7 @@ import { HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import { skipErrorToast } from '../core/errors/api-error';
 import { CrudService } from './api/crud.service';
 import {
   Avis,
@@ -9,7 +10,9 @@ import {
   CatCompte,
   CategorieEntite,
   Compte,
+  DelaiSousType,
   DelaiStandard,
+  EtapeCircuit,
   DelegationProfil,
   EntiteContract,
   Localite,
@@ -51,6 +54,24 @@ export class CatCompteService extends CrudService<CatCompte, string> {
 @Injectable({ providedIn: 'root' })
 export class DelaiStandardService extends CrudService<DelaiStandard, string> {
   protected readonly resource = 'delais-standards';
+
+  /**
+   * ⚠️ Manuel de contrôle, M5b (V99) — `GET /api/delais-standards/sous-types/{code}` : chaque étape de la Commission, son délai
+   * effectif pour ce sous-type, le délai standard de l'étape, et s'il a le sien (`surcharge`).
+   */
+  parSousType(idSousType: string): Observable<DelaiSousType[]> {
+    return this.http.get<DelaiSousType[]>(`${this.baseUrl}/sous-types/${encodeURIComponent(idSousType)}`, { context: skipErrorToast() });
+  }
+
+  /** `PUT …/sous-types/{code}/{etape}` `{ delaiHeures }` (≥ 1) — Administrateur. */
+  reglerSousType(idSousType: string, etape: EtapeCircuit, delaiHeures: number): Observable<DelaiSousType> {
+    return this.http.put<DelaiSousType>(`${this.baseUrl}/sous-types/${encodeURIComponent(idSousType)}/${etape}`, { delaiHeures }, { context: skipErrorToast() });
+  }
+
+  /** `DELETE …/sous-types/{code}/{etape}` — l'étape reprend son délai standard pour ce sous-type. */
+  revenirAuStandard(idSousType: string, etape: EtapeCircuit): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/sous-types/${encodeURIComponent(idSousType)}/${etape}`, { context: skipErrorToast() });
+  }
 }
 
 /** Référentiel des catégories d'entité contractante (`/api/categorie-entites`, PK = libellé). */

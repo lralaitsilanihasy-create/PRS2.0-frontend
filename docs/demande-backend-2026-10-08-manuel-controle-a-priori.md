@@ -407,6 +407,14 @@ PPM, DAO, DC, marché, avenant), et l'examen alerte au-delà de 5 jours ouvrés.
 > - **Écart** : les autres valeurs du manuel (numérotation le jour même ou le lendemain, signature sous 24 h, réponse sous 72 h) ne sont
 >   pas posées d'office non plus ; elles se règlent sur l'écran existant. La DSS garde son échéance de 5 jours (tranche 2d-3).
 
+> ✅ **Front, 2026-10-09 — M5b branché (tranche MC5)** :
+> - **Administration › Délais standards** : nouvelle section « Délais par sous-type de dossier » — choix du sous-type, puis pour chaque
+>   étape de la Commission le délai standard, le délai du sous-type (saisissable), la marque « propre au sous-type », « Régler » (`PUT`) et
+>   « Revenir au standard » (`DELETE`). L'écran rappelle que l'alerte d'examen est indépendante de ces réglages.
+> - **Notification `EXAMEN_EN_DEPASSEMENT`** : le Membre va à son écran d'examen ; le Président et le Chef de commission, à la page du
+>   dossier.
+> - Le chantier front du manuel est ainsi **complet** (MC1 à MC5) ; reste Q6, en attente du pilote.
+
 ## Questions
 
 | # | Question | À qui |

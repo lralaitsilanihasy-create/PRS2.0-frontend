@@ -59,4 +59,11 @@ describe('Routage d’une notification', () => {
     // Les autres notifications d'une procédure gardent leur repli (la fiche, pour la PRMP).
     expect(routePourNotification(n({ typeNotif: 'CLES_PUBLIEES', typeObjet: 'PROCEDURE', idObjet: 40 }), 'PRMP')).toEqual({ genre: 'route', commands: ['/prmp', 'dao', '40'] });
   });
+
+  it('⚠️ M5b (V99) — un examen en dépassement mène le Membre à son examen, le Président et le Chef de commission à la page du dossier', () => {
+    const alerte = n({ typeNotif: 'EXAMEN_EN_DEPASSEMENT', typeObjet: 'DOSSIER', idDossier: 42 });
+    expect(routePourNotification(alerte, 'MEMBRE')).toEqual({ genre: 'route', commands: ['/membre/examiner', '42'] });
+    expect(routePourNotification(alerte, 'PRESIDENT')).toMatchObject({ genre: 'page-dossier', commands: ['/president', 'dossier', '42'] });
+    expect(routePourNotification(alerte, 'CHEF_COMMISSION')).toMatchObject({ genre: 'page-dossier', commands: ['/cc', 'dossier', '42'] });
+  });
 });
