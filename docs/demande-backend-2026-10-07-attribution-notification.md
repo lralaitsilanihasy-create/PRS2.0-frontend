@@ -365,7 +365,8 @@ Le backend les sème en migration ; l'Administrateur peut les modifier ensuite.
 > - **Sans suite** (`sans-suite.ts`, coquille interne, à tout moment) : la demande (motifs) crée le dossier DSS, ouvert d'un clic pour le
 >   soumettre ; l'état (à soumettre, au contrôle avec l'échéance des 5 jours, favorable, défavorable, déclarée), les motifs en PDF ou en
 >   Word ; après l'avis favorable, la PRMP déclare (sa décision) ; les demandes précédentes se relisent.
-> - Les compteurs PRMP (`lotsAAttribuer`, `lotsSignables`, `avisAPublier`, `explicationsSansReponse`) ne sont **pas encore** montrés.
+> - Les compteurs PRMP (`lotsAAttribuer`, `lotsSignables`, `avisAPublier`, `explicationsSansReponse`) s'ajoutent à la pastille de
+>   l'entrée « Appels d'offres » du menu de la PRMP (avec `recusAValider`, déjà servi).
 
 ## B7 — Accès, notifications, journal, compteurs
 
