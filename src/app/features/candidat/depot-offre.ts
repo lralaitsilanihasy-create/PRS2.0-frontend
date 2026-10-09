@@ -22,12 +22,13 @@ import { avertissementsTravaux, construireTravaux, saisieTravauxVide } from './o
 const LIBELLES_ENVELOPPE: Readonly<Record<EnveloppeOffre, string>> = { TECHNIQUE: 'enveloppe technique', FINANCIERE: 'enveloppe financière' };
 
 /**
- * ⚠️ V86 (PI-b) — les pièces de chaque enveloppe. Le contrat ne les répartit pas (hypothèse du front, consignée dans la demande) :
- * l'acte d'engagement (`AE`), qui porte les montants, va dans la financière ; tout le reste, dans la technique.
+ * ⚠️ V86 (PI-b) — les pièces de chaque enveloppe : celle que le serveur indique sur la pièce (`enveloppe`, H-PI-1 corrigée le
+ * 08/10 : l'acte et les formulaires financiers PF2 à PF5 en financière). Repli pour une pièce servie sans enveloppe : l'acte
+ * d'engagement (`AE`) en financière, le reste en technique.
  */
 export function piecesDeLEnveloppe(pieces: PieceAttendue[], enveloppe: EnveloppeOffre | null): PieceAttendue[] {
   if (!enveloppe) return pieces;
-  return pieces.filter((x) => (x.code === 'AE') === (enveloppe === 'FINANCIERE'));
+  return pieces.filter((x) => (x.enveloppe ?? (x.code === 'AE' ? 'FINANCIERE' : 'TECHNIQUE')) === enveloppe);
 }
 
 /** Les étapes du dépôt, telles qu'on les montre pendant le scellement et l'envoi. */

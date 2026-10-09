@@ -19,6 +19,17 @@ describe('Deux enveloppes des prestations intellectuelles (lot 3 PI, tranche PI-
     expect(piecesDeLEnveloppe(pieces, null)).toHaveLength(3);
   });
 
+  it('H-PI-1 corrigée : l’enveloppe servie sur la pièce fait foi (formulaires financiers PF2 à PF5)', () => {
+    const pieces = [
+      { ...piece('AE'), enveloppe: 'FINANCIERE' as const },
+      { ...piece('PF2'), enveloppe: 'FINANCIERE' as const },
+      { ...piece('METHODOLOGIE'), enveloppe: 'TECHNIQUE' as const },
+      piece('PT2'),
+    ];
+    expect(piecesDeLEnveloppe(pieces, 'FINANCIERE').map((x) => x.code)).toEqual(['AE', 'PF2']);
+    expect(piecesDeLEnveloppe(pieces, 'TECHNIQUE').map((x) => x.code)).toEqual(['METHODOLOGIE', 'PT2']);
+  });
+
   it('signale l’enveloppe qui manque à une proposition déposée à moitié, pour le même lot seulement', () => {
     const tech = offre({ idOffre: 't', enveloppe: 'TECHNIQUE', lot: 1 });
     expect(enveloppeManquante(tech, [tech])).toBe('FINANCIERE');

@@ -304,6 +304,11 @@ export interface PieceAttendue {
    * n'est alors plus à joindre (`obligatoire = false`). `null` ailleurs.
    */
   dejaFourni?: boolean | null;
+  /**
+   * ⚠️ V86 (PI-b, H-PI-1 corrigée le 08/10) — l'enveloppe où va la pièce, pour une consultation de prestations intellectuelles :
+   * `FINANCIERE` (acte d'engagement, formulaires PF2 à PF5), `TECHNIQUE` (le reste) ; nulle hors PI.
+   */
+  enveloppe?: EnveloppeOffre | null;
 }
 
 export type FormulaireOffre = 'BORDEREAU' | 'CONFORMITE' | 'CALENDRIER' | 'DQE' | 'SOUS_DETAIL' | 'K1' | 'CAPACITES' | 'PERSONNEL' | 'MATERIEL';
