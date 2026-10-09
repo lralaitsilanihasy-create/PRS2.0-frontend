@@ -187,6 +187,16 @@ seul retenu (art. 42-IV), le rapport, et la suite du lot 2 (dossier de marché, 
 > réservé aux invités d'une consultation restreinte (404 sinon). Aucune migration, aucun changement de contrat : la recette de PI-c à
 > PI-d2b peut reprendre sur la fiche 50 dès la relance du serveur.
 
+> ✅ **Recette du front, 2026-10-09 (suite, après le correctif) — VERTE de bout en bout sur la fiche 50** : lecture de la première séance
+> (200), PV signé, séance close ; évaluation ouverte, déclarations, examen préliminaire arrêté ; **notation technique** par les deux
+> membres (grilles de 7 éléments, sous-critères compris) : proposition 1 à **87**, proposition 2 à **67,5** avec un écart signalé (chef de
+> mission 11 – 18), arrêt → 1 **qualifiée**, 2 **éliminée** (« sous le score minimum de 70 points ») ; **seconde séance** : la seule
+> financière de la 1 ouverte au quorum (2 400 000 000 Ar HT lus), la 2 « éliminée à l'évaluation technique », séance close, PV ;
+> **évaluation financière** : dépenses remboursables 150 000 000 Ar → montant comparé 2 250 000 000 Ar, Sf 100, S 89,6, classement arrêté ;
+> **négociation** ouverte puis conclue réussie par la PRMP, PV ; étape Rapport : la proposition d'attribution ; rapport produit, signé des
+> deux membres ; **dossier de marché 100376 au sous-type MPI**. Trois défauts d'affichage du front corrigés pendant la recette (intitulés de
+> critère illisibles, boutons d'arrêt étirés, séparateur orphelin). Aucune autre anomalie serveur.
+
 ## B4 — L'évaluation technique
 
 - Une **grille par candidat** : les critères `B06-TP-02` à `-06`, chacun noté sur ses points (la note ne dépasse pas le maximum de la
