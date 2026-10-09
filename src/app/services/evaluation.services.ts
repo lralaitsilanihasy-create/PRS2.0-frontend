@@ -7,6 +7,8 @@ import { skipErrorToast } from '../core/errors/api-error';
 import {
   Attribution,
   Explication,
+  InfructuositeCorps,
+  SansSuite,
   PiecesAttributaire,
   ResultatOffre,
   ResultatPublic,
@@ -265,6 +267,50 @@ export class AttributionService {
   /** Art. 20-I : après l'échéance des pièces, si elles ne sont pas toutes deux conformes ; 409 `DELAI_EN_COURS`, `PIECES_CONFORMES`. */
   retirer(idDmc: number, lot: number, motif: string): Observable<Attribution> {
     return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/retirer`, { motif }, this.ctx);
+  }
+
+  // ── 2d-1 (V91) : infructuosité, reprise après avis défavorable ; 2d-2 (V92) : réattribution après retrait ──
+
+  /** PRMP seule : le lot proposé infructueux par le rapport, ou au dossier de marché refusé (`DEF`) ; jamais après l'attribution. */
+  declarerInfructueux(idDmc: number, lot: number, corps: InfructuositeCorps): Observable<Attribution> {
+    return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/infructueux`, corps, this.ctx);
+  }
+
+  /** PRMP seule, après un avis défavorable : l'évaluation se rouvre en entier, le rapport signé est archivé. */
+  reprendre(idDmc: number, lot: number, motif: string): Observable<Attribution> {
+    return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/reprendre`, { motif }, this.ctx);
+  }
+
+  /** PRMP seule, après le retrait du marché : au candidat suivant (409 `AUCUN_SUIVANT_ELIGIBLE`, `OFFRE_EXPIREE`). */
+  reattribuer(idDmc: number, lot: number, motif: string): Observable<Attribution> {
+    return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/reattribuer`, { motif }, this.ctx);
+  }
+
+  /** Le rapport archivé d'une reprise (PDF, ou Word). */
+  rapportArchive(idDmc: number, idReprise: number, format: 'pdf' | 'docx' = 'pdf'): Observable<Blob> {
+    const params = format === 'docx' ? new HttpParams().set('format', 'docx') : new HttpParams();
+    return this.http.get(`${this.base}/${idDmc}/attribution/reprises/${idReprise}/rapport`, { params, responseType: 'blob', context: skipErrorToast() });
+  }
+
+  // ── 2d-3 (V93) : la déclaration sans suite ──
+
+  sansSuite(idDmc: number): Observable<SansSuite> {
+    return this.http.get<SansSuite>(`${this.base}/${idDmc}/sans-suite`, this.ctx);
+  }
+
+  /** PRMP seule : crée le dossier DSS (brouillon) avec la pièce des motifs ; à soumettre par le circuit. */
+  demanderSansSuite(idDmc: number, motifs: string): Observable<SansSuite> {
+    return this.http.post<SansSuite>(`${this.base}/${idDmc}/sans-suite`, { motifs }, this.ctx);
+  }
+
+  /** PRMP seule, après l'avis favorable : la procédure est close sans suite. */
+  declarerSansSuite(idDmc: number, decision: { reference: string; date: string }): Observable<SansSuite> {
+    return this.http.post<SansSuite>(`${this.base}/${idDmc}/sans-suite/declarer`, { decision }, this.ctx);
+  }
+
+  motifsSansSuite(idDmc: number, id: number, format: 'pdf' | 'docx' = 'pdf'): Observable<Blob> {
+    const params = format === 'docx' ? new HttpParams().set('format', 'docx') : new HttpParams();
+    return this.http.get(`${this.base}/${idDmc}/sans-suite/${id}/motifs`, { params, responseType: 'blob', context: skipErrorToast() });
   }
 
   /** 409 `DELAI_ATTENTE`, `RECOURS_EN_COURS`, `PIECES_NON_CONFORMES`. */

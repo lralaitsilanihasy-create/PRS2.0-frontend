@@ -274,6 +274,8 @@ describe('Écran de l’évaluation', () => {
     }
     fixture.detectChanges();
     http.match('/api/fiches-marche/40/seance/financiere').forEach((r) => r.flush({ message: 'x' }, { status: 404, statusText: 'Not Found' }));
+    // 2d-3 : l'encart « sans suite » de la coquille interne se lit aussi.
+    http.match('/api/fiches-marche/40/sans-suite').forEach((r) => r.flush({ idDmc: 40, declaree: false, courante: null, demandes: [] }));
     fixture.detectChanges();
     expect(racine().querySelector('.page-title')?.textContent).toContain('Évaluation des propositions');
     expect(racine().textContent).toContain('La commission propose de déclarer le lot 1 infructueux : Une seule proposition conforme');

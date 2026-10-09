@@ -8,6 +8,7 @@ import { Attribution, LotAttribution } from '../../models';
 import { AttributionService } from '../../services';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 import { AttributionLot } from './attribution-lot';
+import { DecisionsLot } from './decisions-lot';
 import { ariary } from './libelles-evaluation';
 
 const LIBELLES_ETAT: Readonly<Record<string, string>> = {
@@ -15,6 +16,7 @@ const LIBELLES_ETAT: Readonly<Record<string, string>> = {
   PROPOSE: 'Proposition du rapport — dossier de marché à créer',
   AU_CONTROLE: 'Au contrôle de la Commission',
   AVIS_RENDU: 'Avis de la Commission rendu',
+  INFRUCTUEUX: 'Déclaré infructueux',
 };
 const LIBELLES_AVIS: Readonly<Record<string, string>> = { FAV: 'Favorable', FAVR: 'Favorable avec réserves', DEF: 'Défavorable' };
 
@@ -27,7 +29,7 @@ const LIBELLES_AVIS: Readonly<Record<string, string>> = { FAV: 'Favorable', FAVR
 @Component({
   selector: 'app-attribution-lots',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, AttributionLot],
+  imports: [RouterLink, AttributionLot, DecisionsLot],
   template: `
     @if (attribution(); as a) {
       <section class="card at" aria-labelledby="at-titre">
@@ -40,7 +42,7 @@ const LIBELLES_AVIS: Readonly<Record<string, string>> = { FAV: 'Favorable', FAVR
             </header>
             @if (l.proposition; as p) {
               @if (p.infructueux) {
-                <p class="text-sm">Aucune offre qualifiée : le rapport propose de déclarer le lot <strong>infructueux</strong> (décision de la PRMP, à venir).</p>
+                <p class="text-sm">Le rapport propose de déclarer le lot <strong>infructueux</strong>{{ p.motifInfructuosite ? ' : ' + p.motifInfructuosite : ' (aucune offre qualifiée)' }} — décision de la PRMP.</p>
               } @else {
                 <p class="text-sm">Proposition du rapport : offre n° {{ p.numero }} · <strong>{{ p.candidat }}</strong> — {{ ariary(p.montant) }} HT · délai {{ p.delai ?? '—' }}</p>
               }
@@ -65,6 +67,8 @@ const LIBELLES_AVIS: Readonly<Record<string, string>> = { FAV: 'Favorable', FAVR
             </div>
             <!-- ⚠️ Tranches 2b et 2c — de l'avis de la Commission à l'avis d'attribution. -->
             @if (l.dossierMarche?.avis || l.attributaire) { <app-attribution-lot [idDmc]="idDmc()" [lot]="l" [prmp]="prmp()" (maj)="maj($event)" /> }
+            <!-- ⚠️ 2d-1 (V91) — infructuosité, reprise après avis défavorable, et l'historique des reprises. -->
+            <app-decisions-lot [idDmc]="idDmc()" [lot]="l" [prmp]="prmp()" (maj)="maj($event)" />
             @if (peutCreer(l)) {
               <p class="text-sm text-muted at__aide">Le serveur y joint d'office le projet de marché (qu'il produit), le cahier des charges (DAO complet), le devis rempli de l'offre, le PV d'ouverture et le rapport d'évaluation ; vous soumettez ensuite le dossier à la Commission depuis sa page.</p>
             }

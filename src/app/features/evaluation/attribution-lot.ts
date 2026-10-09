@@ -26,6 +26,12 @@ const MESSAGES: Readonly<Record<string, string>> = {
   RAPPORT_OBLIGATOIRE: 'Le rapport de mise au point est obligatoire.',
   DEJA_SIGNE: 'Le marché est déjà signé.',
   LOT_RETIRE: 'Le marché a été retiré.',
+  // ⚠️ 2d-2 (V92) — la réattribution.
+  NON_RETIRE: 'Le marché n’est pas retiré : rien à réattribuer.',
+  AUCUN_SUIVANT_ELIGIBLE: 'Aucun candidat suivant n’est éligible : seule une déclaration sans suite reste possible.',
+  OFFRE_EXPIREE: 'L’offre du candidat suivant n’est plus valide.',
+  SANS_SUITE_EN_COURS: 'Une demande de déclaration sans suite attend l’avis de la Commission : la signature attend.',
+  SANS_SUITE_DECLAREE: 'La procédure est déclarée sans suite : plus aucun geste d’attribution.',
   TYPE_INVALIDE: 'Le type de recours n’est pas valide.',
   CHAMP_OBLIGATOIRE: 'Tous les champs du recours sont obligatoires.',
   DATE_INVALIDE: 'La date n’est pas valide.',
@@ -84,7 +90,7 @@ function aujourdhui(): string {
           <p class="text-sm">Offre n° {{ a.numero }} · <strong>{{ a.candidat }}</strong>{{ a.nif ? ' (NIF ' + a.nif + ')' : '' }} — {{ ariary(a.montant) }} HT · délai {{ a.delai ?? '—' }} — le {{ dateHeure(a.le) }}</p>
         </section>
       } @else if (l.dossierMarche?.avis === 'DEF') {
-        <p class="text-sm al__alerte">Avis défavorable de la Commission : le marché ne s’attribue pas. La reprise de l’évaluation ou l’infructuosité se décident en tranche suivante.</p>
+        <p class="text-sm al__alerte">Avis défavorable de la Commission : le marché ne s’attribue pas. La PRMP reprend l’évaluation ou déclare le lot infructueux (ci-dessous).</p>
       } @else if (prmp() && l.dossierMarche?.avis && l.proposition && !l.proposition.infructueux) {
         <section class="al__bloc" aria-label="Attribuer">
           <h4 class="al__h4">Attribuer le marché</h4>
@@ -228,7 +234,17 @@ function aujourdhui(): string {
             }
           </section>
         }
-        @if (l.retrait; as rt) { <p class="text-sm al__alerte">Marché <strong>retiré</strong> le {{ dateHeure(rt.le) }} : {{ rt.motif }}. La réattribution au candidat suivant vient en tranche suivante.</p> }
+        @if (l.retrait; as rt) {
+          <p class="text-sm al__alerte">Marché <strong>retiré</strong> le {{ dateHeure(rt.le) }} : {{ rt.motif }}.</p>
+          <!-- ⚠️ 2d-2 (V92, Q8) — au candidat suivant : sa post-qualification (ou, en PI, sa négociation), offre encore valide, nouvelle information. -->
+          @if (prmp()) {
+            <div class="al__ligne">
+              <label class="form-group al__large"><span class="form-label">Motif de la réattribution</span><input class="form-control" type="text" [value]="champ('reattribution')" (input)="poser('reattribution', $any($event.target).value)" /></label>
+              <button type="button" class="btn btn-primary btn-sm" [disabled]="!champ('reattribution').trim() || occupe()" (click)="geste(service.reattribuer(idDmc(), l.lot, champ('reattribution').trim()), 'L’évaluation est rouverte pour le candidat suivant : nouveau rapport, nouveau dossier, nouvelle information.')">Réattribuer au candidat suivant</button>
+            </div>
+            <p class="text-sm text-muted">Le suivant passe sa post-qualification (en prestations intellectuelles : sa négociation) ; son offre doit être encore valide. Sans suivant éligible, seule une déclaration sans suite reste possible.</p>
+          }
+        }
 
         <!-- 6. Mise au point (art. 35-VIII) -->
         @if (l.miseAuPoint; as m) {

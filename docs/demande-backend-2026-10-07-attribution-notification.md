@@ -355,6 +355,18 @@ Le backend les sème en migration ; l'Administrateur peut les modifier ensuite.
 >   publique (`ResultatPublic` : une entrée, `lot` nul, `sansSuite`, `motifsSansSuite`, `dateDecision`) ; ensuite tout geste
 >   d'attribution répond 409 **`SANS_SUITE_DECLAREE`**.
 
+> ✅ **Front, 2026-10-09 — tranche 2d branchée (2d-1, 2d-2, 2d-3)**, dans l'écran de l'évaluation :
+> - **Par lot** (`decisions-lot.ts`, sous l'encart du lot) : « Déclarer le lot infructueux » (motif, référence et date de la décision,
+>   suite facultative) quand le rapport le propose ou que le dossier de marché est refusé, jamais après l'attribution ; « Reprendre
+>   l'évaluation » (motif) après un avis défavorable ; la déclaration faite, et les reprises (reprise ou réattribution, motif, note de
+>   validité) avec leur rapport archivé en PDF ou en Word.
+> - **Après le retrait du marché** (encart du lot) : « Réattribuer au candidat suivant » (motif) ; `AUCUN_SUIVANT_ELIGIBLE` renvoie au sans
+>   suite, `OFFRE_EXPIREE` est nommé.
+> - **Sans suite** (`sans-suite.ts`, coquille interne, à tout moment) : la demande (motifs) crée le dossier DSS, ouvert d'un clic pour le
+>   soumettre ; l'état (à soumettre, au contrôle avec l'échéance des 5 jours, favorable, défavorable, déclarée), les motifs en PDF ou en
+>   Word ; après l'avis favorable, la PRMP déclare (sa décision) ; les demandes précédentes se relisent.
+> - Les compteurs PRMP (`lotsAAttribuer`, `lotsSignables`, `avisAPublier`, `explicationsSansReponse`) ne sont **pas encore** montrés.
+
 ## B7 — Accès, notifications, journal, compteurs
 
 - **Accès** : la PRMP agit ; l'UGPM et le responsable lisent ; les membres de la CAO lisent l'état de leurs lots ; le candidat ne voit

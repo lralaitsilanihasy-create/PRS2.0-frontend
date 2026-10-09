@@ -18,6 +18,7 @@ import { EtapeTechnique } from './etape-technique';
 import { SeanceFinanciereVue } from './seance-financiere';
 import { EtapeFinanciere } from './etape-financiere';
 import { NegociationPi } from './negociation-pi';
+import { SansSuiteVue } from './sans-suite';
 import { LIBELLES_ETAPE, LIBELLES_ETAT_EVALUATION, NUMERO_ETAPE, ariary, refusEvaluation } from './libelles-evaluation';
 import { RapportEvaluationVue } from './rapport-evaluation';
 
@@ -34,7 +35,7 @@ import { RapportEvaluationVue } from './rapport-evaluation';
 @Component({
   selector: 'app-evaluation-ecran',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur, AttributionLots, ConformiteOffre, MontantOffre, TableauEvaluation, IndicateursPrixVue, AnormaleOffre, EtapeQualification, EtapeTechnique, SeanceFinanciereVue, EtapeFinanciere, NegociationPi, RapportEvaluationVue],
+  imports: [RouterLink, EtatErreur, AttributionLots, ConformiteOffre, MontantOffre, TableauEvaluation, IndicateursPrixVue, AnormaleOffre, EtapeQualification, EtapeTechnique, SeanceFinanciereVue, EtapeFinanciere, NegociationPi, SansSuiteVue, RapportEvaluationVue],
   template: `
     <!-- La coquille interne porte son fil d'Ariane (parents déclarés sur la route) ; l'espace CAO n'en a pas : l'écran le pose. -->
     @if (espace === 'cao') {
@@ -226,6 +227,9 @@ import { RapportEvaluationVue } from './rapport-evaluation';
 
       <!-- ⚠️ Lot 2, tranche 2a (V79) — après le rapport signé : le dossier de marché de chaque lot, au contrôle de la Commission. -->
       @if (ev.etat === 'CLOSE') { <app-attribution-lots [idDmc]="idDmc" [prmpOuUgpm]="prmpOuUgpm()" [prmp]="espace === 'interne' && role() === 'PRMP'" /> }
+
+      <!-- ⚠️ 2d-3 (V93) — la déclaration sans suite : à tout moment avant la signature d'un marché, dans la coquille interne. -->
+      @if (espace === 'interne') { <app-sans-suite [idDmc]="idDmc" [prmp]="role() === 'PRMP'" [lienDossier]="prmpOuUgpm()" /> }
 
       @if (journalOuvert()) {
         <details class="card ev__bloc" (toggle)="lireJournal($any($event.target).open)">

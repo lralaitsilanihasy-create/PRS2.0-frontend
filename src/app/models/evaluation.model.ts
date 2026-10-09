@@ -310,6 +310,8 @@ export interface MontantRequest {
 /** États d'un lot après l'évaluation (tranche 2a ; les suivants viennent avec leurs gestes). */
 export type EtatAttribution =
   | 'EN_EVALUATION' | 'PROPOSE' | 'AU_CONTROLE' | 'AVIS_RENDU' | 'ATTRIBUE' | 'INFORME' | 'SIGNABLE' | 'SIGNE' | 'NOTIFIE' | 'PUBLIE' | 'RETIRE'
+  // ⚠️ 2d-1 (V91) — l'infructuosité déclarée par la PRMP.
+  | 'INFRUCTUEUX'
   | (string & {});
 
 /** Le dossier de marché (famille `DDM`) d'un lot, au contrôle de la Commission. */
@@ -344,6 +346,77 @@ export interface LotAttribution {
   avisAttribution?: { echeance: string; datePublication: string | null; publieLe: string | null; par: string | null; disponible: boolean } | null;
   piecesAttributaire?: PiecesAttributaire | null;
   retrait?: { le: string; par: string | null; motif: string } | null;
+  /** ⚠️ 2d-1 (V91, §B6) — la déclaration d'infructuosité du lot ; nulle sans elle. */
+  infructuosite?: InfructuositeLot | null;
+  /** ⚠️ 2d-1 (Q3) et 2d-2 (Q8) — les reprises de l'évaluation (après avis défavorable, ou réattribution après retrait), rapport archivé. */
+  reprises?: RepriseEvaluation[];
+}
+
+/** La suite déclarée d'une infructuosité (déclarée, pas conduite ici). */
+export type SuiteInfructuosite = 'RELANCE' | 'RESTREINTE' | 'NEGOCIEE';
+
+export interface InfructuositeLot {
+  le: string;
+  par: string | null;
+  motif: string;
+  decisionReference: string | null;
+  decisionDate: string | null;
+  suite: SuiteInfructuosite | null;
+}
+
+export interface RepriseEvaluation {
+  id: number;
+  le: string;
+  par: string | null;
+  motif: string;
+  /** Le dossier de marché refusé (reprise) ; nul pour une réattribution. */
+  idDossier: number | null;
+  avis: string | null;
+  rapportDisponible: boolean;
+  /** ⚠️ 2d-2 — `REPRISE` (avis défavorable) ou `REATTRIBUTION` (marché retiré). */
+  type?: 'REPRISE' | 'REATTRIBUTION' | (string & {}) | null;
+  idOffreRetiree?: string | null;
+  /** La validité des offres, contrôlée ou non (sans délai saisi dans la fiche). */
+  note?: string | null;
+}
+
+/** Corps de `POST …/attribution/lots/{lot}/infructueux`. */
+export interface InfructuositeCorps {
+  motif: string;
+  decision: { reference: string; date: string };
+  suite?: SuiteInfructuosite | null;
+}
+
+// ── 2d-3 (V93) : la déclaration sans suite (art. 55), avis de la Commission dans un dossier DSS ──
+
+export type EtatSansSuite = 'A_SOUMETTRE' | 'AU_CONTROLE' | 'FAVORABLE' | 'DEFAVORABLE' | 'DECLAREE';
+
+export interface DemandeSansSuite {
+  id: number;
+  motifs: string;
+  demandeLe: string | null;
+  demandePar: string | null;
+  /** Le dossier DSS créé en brouillon, à soumettre par le circuit ordinaire. */
+  idDossier: number | null;
+  statutDossier: string | null;
+  recuLe: string | null;
+  /** Réception + 5 jours. */
+  echeance: string | null;
+  echeanceDepassee: boolean;
+  avis: string | null;
+  etat: EtatSansSuite;
+  decisionReference: string | null;
+  decisionDate: string | null;
+  declareLe: string | null;
+  motifsDisponibles: boolean;
+}
+
+/** `GET /api/fiches-marche/{idDmc}/sans-suite`. */
+export interface SansSuite {
+  idDmc: number;
+  declaree: boolean;
+  courante: DemandeSansSuite | null;
+  demandes: DemandeSansSuite[];
 }
 
 /** L'offre attribuée : montant hors taxes et délai (avec son unité) figés au choix de la PRMP. */
