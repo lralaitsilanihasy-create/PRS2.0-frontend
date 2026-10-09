@@ -337,6 +337,23 @@ DAO : mettre à jour le PPM / AGPM ou modifier le DAO ». Q5 : utile au pilote ?
 - **Irrégularité grave** (ch. 1, II) : le Membre peut joindre au dossier un **rapport d'irrégularité**, porté sans délai à la
   connaissance du Président (notification), annexé au dossier de contrôle — Q6.
 
+> ⚠️ **Backend, 2026-10-09 — B5 livré pour l'avenant et les actes de gestion, et dépôt des actes depuis le marché (§B1) : tranche M5a,
+> V98** ; contrat : `docs/api-endpoints.md`, § *… tranche M5a*. Arbitrages du 09/10 : M5 en deux sous-tranches (**M5b** : délais, §B6) ;
+> montant initial et catégorie **lus** (attribution en ligne, fiche), **sinon déclarés** au dépôt ; cumul = avenants **déjà soumis, hors
+> avis défavorable**, en HT.
+> - **Dépôt depuis le marché** : `GET` / `POST /api/dossiers/{idMarche}/actes-gestion` (le marché, ses actes, cumul et plafond ; dépôt d'un
+>   acte `AVN`, `DR`, `INDEMN`, `PENAL`, `SURSIS` → dossier DGC **en brouillon**, qui suit ensuite le circuit ordinaire) ; `GET` / `PUT
+>   /api/actes-gestion/{idDossier}` (l'acte ; ses déclarations, en brouillon). Marché = dossier **DDM au dernier PV signé favorable**
+>   (`FAV`, `FAVR`), sinon 409 `MARCHE_NON_CONTROLE`.
+> - **Écart** : la saisie libre d'un acte (`POST /api/saisies/dossier` avec `AVN`, `DR`…) est désormais **refusée** (400
+>   `ACTE_DEPUIS_LE_MARCHE`) — l'écran « Créer dossier » doit écarter la famille DGC et renvoyer vers le marché.
+> - **Avenant** : rang automatique, porté par la référence (`…/AVN2/…`) ; refusé (au dépôt, au `PUT`, à la soumission) après la réception
+>   définitive (travaux) ou provisoire (autres catégories) et après le solde, dates **déclarées** par la PRMP (une date à venir ne bloque
+>   pas), et au-delà du tiers du montant initial HT (409 `AVENANT_PLAFOND`, `details.cumulHt` / `plafondHt`). Le « ni avance modifiée »
+>   du manuel reste un point de la grille (examen), pas un contrôle serveur.
+> - **DSS** : le refus après la signature existait déjà (`MARCHE_SIGNE`, tranche 2d-3) ; son délai propre vient avec M5b. **Q6** reste
+>   ouverte.
+
 ## B6 — Les délais (ch. 1, V)
 
 Le manuel fixe : numérotation le jour même ou le lendemain ; **examen 48 h** ouvrées (hors week-end et jours chômés) à compter de
