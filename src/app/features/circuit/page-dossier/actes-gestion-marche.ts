@@ -46,7 +46,8 @@ import { LienDossier } from './lien-dossier';
                 <li class="agm__acte">
                   <span class="agm__nom">{{ libelle(a) }}</span>
                   @if (a.sousType === 'AVN') { <span>{{ ariary(a.montantHt) }} HT{{ a.compteDansLeCumul ? '' : ' · hors cumul' }}</span> }
-                  <span class="agm__ref">{{ a.refeDossier || 'brouillon' }}</span>
+                  <!-- Recette du 09/10 : la référence s'attribue à la réception — un acte soumis n'en a pas encore, il n'est pas « brouillon ». -->
+                  <span class="agm__ref">{{ a.refeDossier || (a.statutDossier === 'BROUILLON' ? 'brouillon' : 'référence à la réception') }}</span>
                   <span class="badge" [class.badge-success]="a.avis === 'FAV' || a.avis === 'FAVR'" [class.badge-danger]="a.avis === 'DEF'" [class.badge-neutral]="!a.avis">{{ a.avis || a.statutDossier || '—' }}</span>
                   @if (lien(a.idDossier); as l) { <a class="agm__ouvrir" [routerLink]="l">Ouvrir</a> }
                 </li>

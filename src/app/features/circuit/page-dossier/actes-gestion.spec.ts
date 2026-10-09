@@ -43,6 +43,13 @@ describe('Actes de gestion (manuel de contrôle, M5a — V98)', () => {
       expect(messageRefusActe(erreur(409, { code: 'AVENANT_PLAFOND', details: { cumulHt: 35_000_000, plafondHt: 30_000_000 } }))).toContain('35');
       expect(messageRefusActe(erreur(409, { code: 'AVENANT_APRES_RECEPTION', details: { dateReception: '2026-09-30' } }))).toContain('du 30/09/2026');
       expect(messageRefusActe(erreur(409, { code: 'MARCHE_NON_CONTROLE' }))).toContain('avis favorable');
+      // Recette du 09/10 : un 400 de soumission dit ses pièces manquantes, pas « Validation échouée ».
+      const manque = erreur(400, { message: 'Validation échouée', erreurs: [{ message: 'La pièce \'Projet de décision\' est obligatoire.' }, { champ: 'x', message: 'La pièce \'Justificatifs\' est obligatoire.' }] });
+      expect(messageRefusActe(manque)).toBe('La pièce \'Projet de décision\' est obligatoire. La pièce \'Justificatifs\' est obligatoire.');
+      // Normalisé par l'intercepteur : la table par champ n'a gardé que la dernière pièce ; la liste brute (`raw`) fait foi.
+      const normalise = { status: 400, message: 'Validation échouée', fieldErrors: { piecesJointes: 'La pièce \'B\' est obligatoire.' },
+        raw: erreur(400, { erreurs: [{ champ: 'piecesJointes', message: 'La pièce \'A\' est obligatoire.' }, { champ: 'piecesJointes', message: 'La pièce \'B\' est obligatoire.' }] }) };
+      expect(messageRefusActe(normalise as never)).toBe('La pièce \'A\' est obligatoire. La pièce \'B\' est obligatoire.');
     });
   });
 
@@ -79,6 +86,7 @@ describe('Actes de gestion (manuel de contrôle, M5a — V98)', () => {
       const el = fixture.nativeElement as HTMLElement;
       expect(texte(el.querySelector('.agm__plafond'))).toContain('le tiers du montant initial');
       expect(texte(el.querySelector('.agm__acte'))).toContain('Avenant n° 1');
+      expect(texte(el.querySelector('.agm__ref'))).toBe('00012/AVN1/CNM/2026');
       const nav = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
 
       fixture.componentInstance.ouvrir();

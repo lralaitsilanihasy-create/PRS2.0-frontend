@@ -415,6 +415,20 @@ PPM, DAO, DC, marché, avenant), et l'examen alerte au-delà de 5 jours ouvrés.
 >   dossier.
 > - Le chantier front du manuel est ainsi **complet** (MC1 à MC5) ; reste Q6, en attente du pilote.
 
+> 🧪 **Recette du front, 2026-10-09** (DBPRS20 en V99, accord du pilote ; PRMP001, MEMANT1, ADMIN01) :
+> - **M5a** : avenant n° 1 déposé sur le marché 100372 (`MAOO`, `FAV`, 166 000 000 Ar HT) → dossier `DGC` **100373**, 20 000 000 Ar HT,
+>   pièces jointes, **soumis** ; le marché affiche 20 000 000 Ar sur un plafond de 55 333 333,33 Ar. Remise de pénalités **100374**
+>   laissée en **brouillon** (refus de soumission vérifié). Deux correctifs front faits pendant la recette : le refus de soumission
+>   citait « Validation échouée » (il nomme désormais **chaque** pièce : les six entrées arrivent sous le même champ `piecesJointes`, que
+>   la table par champ de l'intercepteur réduisait à une) ; un acte soumis sans référence n'est plus marqué « brouillon ».
+> - **M2** : à la création d'un DMC, 5 pièces de la famille puis **9** pour `DAOO` ; l'onglet Pièces d'un brouillon `PENAL` liste ses
+>   6 pièces exigées, manquantes. **M3** : examen du 100370 ouvert sur sa grille (23 points). **M4** : 59 motifs à l'administration ; 4
+>   motifs de renvoi servis au 100370 (`DAOO` fournitures) ; l'insertion dans une lettre de renvoi n'a pas été jouée de bout en bout
+>   (aucun PV en navette). **M5b** : délai `RECEPTION` du sous-type `DSS` réglé à 24 h puis rendu au standard.
+> - ⚠️ **Anomalie serveur (M1)** : le dossier **100370** est bien en `DAOO`, mais sa référence reste **« 00013/DAO/CNM/2026 »** (lue par
+>   `GET /api/dossiers/100370`, et affichée telle quelle par l'examen) ; le contrat annonçait le renommage des références déjà
+>   attribuées en « …/DAOO/… ». À vérifier : la colonne de référence du dossier (et peut-être celle de la réception) n'a pas été reprise.
+
 ## Questions
 
 | # | Question | À qui |

@@ -90,6 +90,23 @@ export function messageRefusActe(e: ApiError | HttpErrorResponse): string {
     case 'ACTE_SANS_MARCHE':
       return 'Cet acte n’est rattaché à aucun marché : il ne peut pas être soumis.';
   }
+  // Un 400 de validation (pièces obligatoires manquantes à la soumission, par exemple) détaille ses refus dans `erreurs` : on les
+  // dit tous, plutôt que le titre générique (« Validation échouée », recette du 09/10).
+  const detail = detailsValidation(e);
+  if (detail.length) return detail.join(' ');
   const api = e as Partial<ApiError>;
   return api.message || 'L’opération n’a pas abouti.';
+}
+
+/**
+ * Les messages d'un 400 de validation ; vide sinon. La liste **brute** d'abord : la soumission refuse une entrée par pièce, toutes sous
+ * le même champ `piecesJointes`, et la table par champ de l'intercepteur (`fieldErrors`) n'en garde que la dernière (recette du 09/10).
+ */
+function detailsValidation(e: ApiError | HttpErrorResponse): string[] {
+  const corps = corpsErreur<{ erreurs?: unknown }>(e);
+  const liste = Array.isArray(corps?.erreurs) ? (corps.erreurs as { message?: unknown }[]) : [];
+  const messages = liste.map((x) => x?.message).filter((m): m is string => typeof m === 'string' && m.trim() !== '');
+  if (messages.length) return messages;
+  const api = e as Partial<ApiError>;
+  return api.fieldErrors ? Object.values(api.fieldErrors) : [];
 }
