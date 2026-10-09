@@ -431,6 +431,11 @@ PPM, DAO, DC, marché, avenant), et l'examen alerte au-delà de 5 jours ouvrés.
 >   ⚠️ **Relance du 2026-10-09 au soir — toujours ouverte** : `GET /api/dossiers/100370` sert encore `refeDossier: "00013/DAO/CNM/2026"`
 >   (les références créées depuis sont justes, ex. 100377 « 00001/DSS/CNM/2026 »). **Besoin** : reprendre `refeDossier` des dossiers
 >   (et des réceptions s'il y a lieu) de l'ancien sous-type `DAO` en « …/DAOO/… », comme Q1 l'a arbitré.
+>   ⚠️ **Backend, 2026-10-09 — corrigé (V100)**. Cause : V94 reprenait les références des réceptions, des versions de dossier et une
+>   colonne de PV, mais **ni `t_dossier.REFE_DOSSIER`** (la `refeDossier` servie), **ni la référence imprimée du PV** (`REFE_PV` : V94
+>   visait la colonne voisine `REFERENCE_PV`, vide). V100 reprend les deux en « …/DAOO/… » : **10 dossiers** (100360 à 100370) et **9 PV**
+>   sur DBPRS20 (lecture préalable : tous en `DAOO`, aucune collision). Les réceptions étaient déjà justes. Les documents déjà produits
+>   (PDF des PV, lettres) gardent leur texte. Effectif à la relance du serveur.
 
 ## Questions
 
