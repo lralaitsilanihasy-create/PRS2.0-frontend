@@ -131,7 +131,8 @@ import { DossierContenuStore } from './dossier-contenu.store';
     :host { display: contents; }
     .dc-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 1rem; }
     .piece-file { display: block; font-size: 0.78rem; color: var(--n-500); overflow-wrap: anywhere; }
-    .pe-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.25rem; }
+    /* Recette du 09/10 : le même retrait que les lignes de pièces (.piece-row, 9px 14px), sinon la liste colle aux bords de la carte. */
+    .pe-liste { list-style: none; margin: 0; padding: 9px 14px; display: flex; flex-direction: column; gap: 0.25rem; }
     .pe-ligne { display: flex; align-items: baseline; gap: 0.5rem; font-size: 0.85rem; }
     .pe-etat { width: 1rem; font-weight: 700; color: var(--success-700, #047857); }
     .pe-ligne--manque .pe-etat, .pe-ligne--manque .pe-tag { color: var(--danger-700, #b42318); }
