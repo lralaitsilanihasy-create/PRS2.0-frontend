@@ -69,3 +69,22 @@ Le montant TTC n'est pas exigé par l'art. 60. À ajouter si les taxes sont conn
 
 Rien à changer pour B1 et B2 si H1 tient : l'écran tire déjà le projet en PDF et en Word (« Projet de marché (PDF) »,
 « Enregistrer en Word »).
+
+> ⚠️ **Backend, 2026-10-10 — B1 et B2 livrés** ; contrat : `docs/api-endpoints.md`, § *Le projet de marché conforme à la loi n° 2016-055*.
+> Arbitrages du 10/10 : **H1 confirmée** (document produit, « …… » à compléter dans le Word) ; clauses **par renvoi** au CCAP / CPS et au
+> CCAG avec les **valeurs courtes** de la fiche (taux et plafond des pénalités, délai en jours, comptable, imputation, domiciliation) ;
+> **H2 confirmée** (« la proposition » pour un dossier `MPI`). Aucune migration.
+> - **B1** : objet de l'appel d'offres **sans l'énumération des lots**, puis « — Lot n°01 : *désignation* » depuis les lots du plan (procédure
+>   40 : « Travaux d'aménagement et d'entretien des voiries … dans les chefs-lieux de province — Lot n°01 : campus universitaire
+>   d'Antsiranana ») ; sans désignation, « — Lot n°01 ».
+> - **B2** : toutes les mentions, articles 1 à 9 (10 pour le droit applicable d'une procédure internationale). Base légale par mode : art.
+>   35 (AO ouvert), 36 (pré-qualification), 37 (deux étapes), 38 (restreint), 39 (gré à gré), 41 (consultation), 42 (PI), avec l'art. 60 ;
+>   résiliation par l'art. 76, délai de paiement par l'art. 74. Qualité du signataire : « nommée par *refArrete* du *date* » depuis le mandat
+>   en vigueur, sinon « …… (acte de nomination) ». Délai : unité de l'acte d'engagement, à défaut « jours » si la fiche porte `B09-DX-01`,
+>   sinon « …… (unité) ».
+> - **Écart / nouveau** : un **geste de regénération**, `POST /api/fiches-marche/{idDmc}/attribution/lots/{lot}/projet` (PRMP ou UGPM ; 409
+>   `MARCHE_SIGNE` une fois signé) : les projets **déjà produits** (dont le lot 1 de la procédure 40, dossier 100371) gardent l'ancien texte
+>   tant qu'on ne les refait pas ; la pièce `PROJET_MARCHE` du dossier de marché est remplacée s'il est encore modifiable (brouillon, ou
+>   rendu à la PRMP). **Côté front** : un bouton « Refaire le projet de marché » à côté des liens PDF / Word, jusqu'à la signature.
+> - **Limites** : la domiciliation bancaire du titulaire n'est pas déclarée par l'entreprise dans l'application (« …… » sauf saisie
+>   `B08-PA-01` dans la fiche) ; la date de notification n'est remplie que si le projet est refait après la notification.
