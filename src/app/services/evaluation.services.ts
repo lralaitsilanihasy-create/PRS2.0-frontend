@@ -220,6 +220,14 @@ export class AttributionService {
     return this.blob(`${this.lotUrl(idDmc, lot)}/projet`, format);
   }
 
+  /**
+   * ⚠️ 10/10 — refaire le projet de marché (loi n° 2016-055, art. 28 et 60) : PDF et Word reproduits, la pièce `PROJET_MARCHE` du
+   * dossier de marché remplacée s'il est encore modifiable. PRMP ou UGPM ; 404 sans dossier de marché ; 409 `MARCHE_SIGNE`.
+   */
+  refaireProjet(idDmc: number, lot: number): Observable<Attribution> {
+    return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/projet`, null, this.ctx);
+  }
+
   // ── Tranche 2b (V80) : attribuer, informer, explications. Tous les gestes : PRMP de la fiche seule. ──
 
   /** 409 `AVIS_NON_RENDU`, `AVIS_DEFAVORABLE`, `OFFRE_NON_PROPOSEE`, `LOT_INFRUCTUEUX`, `DEJA_ATTRIBUE` (Q4 : l'offre proposée seule). */

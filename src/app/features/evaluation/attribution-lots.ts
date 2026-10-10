@@ -19,6 +19,8 @@ const LIBELLES_ETAT: Readonly<Record<string, string>> = {
   INFRUCTUEUX: 'Déclaré infructueux',
 };
 const LIBELLES_AVIS: Readonly<Record<string, string>> = { FAV: 'Favorable', FAVR: 'Favorable avec réserves', DEF: 'Défavorable' };
+/** Le marché signé (puis notifié, publié), retiré ou le lot déclaré infructueux : le projet ne se refait plus. */
+const ETATS_SIGNES: readonly string[] = ['SIGNE', 'NOTIFIE', 'PUBLIE', 'RETIRE', 'INFRUCTUEUX'];
 
 /**
  * ⚠️ Attribution, lot 2, tranche 2a (V79) — sous l'évaluation, l'état de chaque lot après le rapport : la proposition d'attribution, puis
@@ -64,6 +66,10 @@ const LIBELLES_AVIS: Readonly<Record<string, string>> = { FAV: 'Favorable', FAVR
               @if (l.projetDisponible) {
                 <button type="button" class="btn btn-outline btn-sm" [disabled]="travail() === l.lot" (click)="projet(l, 'pdf')">Projet de marché (PDF)</button>
                 <button type="button" class="btn btn-ghost btn-sm" [disabled]="travail() === l.lot" (click)="projet(l, 'docx')">Enregistrer en Word</button>
+              }
+              <!-- ⚠️ 10/10 — un projet produit avant la mise en conformité (art. 28 et 60) se refait, jusqu'à la signature. -->
+              @if (peutRefaire(l)) {
+                <button type="button" class="btn btn-ghost btn-sm" [disabled]="travail() === l.lot" (click)="refaire(l)">Refaire le projet de marché</button>
               }
             </div>
             <!-- ⚠️ Tranches 2b et 2c — de l'avis de la Commission à l'avis d'attribution. -->
@@ -157,6 +163,32 @@ export class AttributionLots implements OnInit {
           : e.message || 'Le dossier n’a pas pu être créé.',
         );
         if (code === 'DOSSIER_EXISTANT') this.charger();
+      },
+    });
+  }
+
+  /** Le projet se refait tant que le marché n'est pas signé ; le serveur tranche en dernier (409 `MARCHE_SIGNE`). */
+  peutRefaire(l: LotAttribution): boolean {
+    return this.prmpOuUgpm() && l.projetDisponible && !!l.dossierMarche && !ETATS_SIGNES.includes(l.etat);
+  }
+
+  refaire(l: LotAttribution): void {
+    this.travail.set(l.lot);
+    this.erreur.set(null);
+    this.service.refaireProjet(this.idDmc(), l.lot).subscribe({
+      next: (a) => {
+        this.travail.set(null);
+        this.attribution.set(a);
+        this.toast.success('Le projet de marché est refait ; la pièce du dossier de marché est remplacée s’il est encore modifiable.');
+      },
+      error: (e: ApiError) => {
+        this.travail.set(null);
+        const code = codeErreur(e);
+        this.erreur.set(
+          code === 'MARCHE_SIGNE' ? 'Le marché est signé : son projet ne se refait plus.'
+          : e.status === 404 ? 'Ce lot n’a pas encore de dossier de marché : le projet se produit à sa création.'
+          : e.message || 'Le projet n’a pas pu être refait.',
+        );
       },
     });
   }

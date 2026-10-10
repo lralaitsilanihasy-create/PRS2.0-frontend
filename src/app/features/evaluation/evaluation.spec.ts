@@ -388,4 +388,41 @@ describe('Attribution, tranche 2a : le dossier de marché d’un lot', () => {
     monter(false);
     expect(Array.from(racine().querySelectorAll('button')).some((b) => b.textContent?.includes('Créer'))).toBe(false);
   });
+
+  // ⚠️ 10/10 — le projet de marché conforme à la loi (art. 28 et 60) : un projet déjà produit se refait, jusqu'à la signature.
+  describe('refaire le projet de marché', () => {
+    const AU_CONTROLE = { idDmc: 40, lots: [
+      { ...PROPOSE.lots[0], etat: 'AU_CONTROLE', dossierMarche: { idDossier: 100371, statut: 'BROUILLON' }, projetDisponible: true },
+      { ...PROPOSE.lots[0], lot: 3, etat: 'SIGNE', dossierMarche: { idDossier: 100380, statut: 'VISE' }, projetDisponible: true },
+    ] };
+    const refaire = (): HTMLButtonElement[] =>
+      Array.from(racine().querySelectorAll<HTMLButtonElement>('button')).filter((b) => b.textContent?.includes('Refaire le projet de marché'));
+
+    function monterProduit(prmpOuUgpm: boolean): void {
+      TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([]), { provide: ToastService, useValue: { success: vi.fn() } }] });
+      http = TestBed.inject(HttpTestingController);
+      fixture = TestBed.createComponent(AttributionLots);
+      fixture.componentRef.setInput('idDmc', 40);
+      fixture.componentRef.setInput('prmpOuUgpm', prmpOuUgpm);
+      fixture.detectChanges();
+      http.expectOne('/api/fiches-marche/40/attribution').flush(AU_CONTROLE);
+      fixture.detectChanges();
+    }
+
+    it('la PRMP refait le projet d’un lot non signé (jamais d’un marché signé) ; le refus du serveur est nommé', () => {
+      monterProduit(true);
+      expect(refaire().length).toBe(1);
+      refaire()[0].click();
+      const post = http.expectOne('/api/fiches-marche/40/attribution/lots/1/projet');
+      expect(post.request.method).toBe('POST');
+      post.flush({ code: 'MARCHE_SIGNE', message: 'x' }, { status: 409, statusText: 'Conflict' });
+      fixture.detectChanges();
+      expect(racine().textContent).toContain('Le marché est signé : son projet ne se refait plus.');
+    });
+
+    it('hors PRMP et UGPM, aucun geste', () => {
+      monterProduit(false);
+      expect(refaire().length).toBe(0);
+    });
+  });
 });
