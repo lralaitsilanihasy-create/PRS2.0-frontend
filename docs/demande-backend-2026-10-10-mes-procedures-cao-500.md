@@ -42,3 +42,17 @@ dès qu'un tel DMC y entrerait. Même correctif, et un test pour chaque espace (
 
 Rien à changer : l'écran montre déjà `<app-etat-erreur>` avec « Réessayer » en cas d'échec. Il se chargera dès que la route répondra
 200. Une ligne sans référence s'affiche déjà avec l'objet et l'autorité contractante.
+
+> ⚠️ **Backend, 2026-10-10 — B1 et B2 livrés** (cause confirmée ; aucune migration, aucun changement de contrat).
+> - **Correctif** : une lecture interne, `ProceduresEnLigneService.vueSiPresente(idDmc)`, rend la procédure **ou rien** pour un DMC sans
+>   fiche, **sans exception** et sans marquer la transaction de l'appelant (`noRollbackFor`). Elle remplace le `try/catch` autour de
+>   `procedures.vue` dans **quatre** services, pas seulement les deux signalés : `CaoService.mesProcedures` (B1), `DepositaireService` (B2),
+>   et, avec le même défaut latent, `ConservationOffresService` et `ProceduresInternesService`.
+> - **Effet** : `GET /api/cao/mes-procedures` et `GET /api/depositaire/procedures` répondent 200 quels que soient les DMC ; la ligne d'un DMC
+>   sans fiche sort sans `reference` ni `dateLimite` (objet et autorité lus sur la ligne du plan, comme voulu).
+> - **Tests** : un par espace (un DMC sans fiche dans la liste → 200). ⚠️ En test, la requête rejoint la transaction du test, annulée de
+>   toute façon : le 500 ne s'y voyait pas, ce qui explique qu'aucun test ne l'ait attrapé. Les tests contrôlent désormais que la
+>   transaction **n'est pas marquée pour l'annulation** juste après l'appel ; vérifié : sans le correctif, ils échouent. Le test de la
+>   lecture de séance PI (correctif du 09/10) porte le même contrôle.
+> - **Q1** — **état normal**, pas un résidu : le DMC 49 porte un **AMI** (prestations intellectuelles), et sa CAO (« DEC-AMI-49 », désignée le
+>   08/10) siège sur la présélection **avant** que la fiche du dossier de consultation n'existe. Rien à nettoyer.
