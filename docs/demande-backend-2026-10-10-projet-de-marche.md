@@ -88,3 +88,17 @@ Rien à changer pour B1 et B2 si H1 tient : l'écran tire déjà le projet en PD
 >   rendu à la PRMP). **Côté front** : un bouton « Refaire le projet de marché » à côté des liens PDF / Word, jusqu'à la signature.
 > - **Limites** : la domiciliation bancaire du titulaire n'est pas déclarée par l'entreprise dans l'application (« …… » sauf saisie
 >   `B08-PA-01` dans la fiche) ; la date de notification n'est remplie que si le projet est refait après la notification.
+
+> ✅ **Front, 2026-10-10 — bouton livré (9cfa8fc) et recette sur le lot 1 de la procédure 40 (dossier 100371, brouillon)** : « Refaire le
+> projet de marché » depuis l'encart du lot, sans refus ; PDF et Word relus. **Les quatorze mentions de l'art. 60 y sont** : parties et qualité
+> du signataire (« nommée par …… (acte de nomination) », aucun mandat déclaré en recette), objet limité au lot (« … — Lot n°01 : campus
+> universitaire d'Antsiranana »), base légale (art. 35 et 60), pièces par ordre de priorité, prix HT en lettres et TTC, délai « 6 mois » avec
+> pénalités, réception et réception partielle, règlement (art. 74), comptable assignataire (« Trésorier Ministériel chargé de
+> l'Enseignement »), imputation (2441), domiciliation « …… », résiliation (art. 76), date de notification « …… ».
+> - ⚠️ **Un défaut de libellé à corriger** : la fiche 40 porte `B09-PE-02 = "1/2000"` (une fraction du montant par jour) et le gabarit ajoute
+>   « millième(s) », ce qui donne « au taux de 1/2000 millième(s) du montant du marché par jour de retard ». Le gabarit suppose un nombre de
+>   millièmes ; la valeur du champ est libre (fraction ou nombre). Proposition : reprendre la valeur telle quelle (« au taux de 1/2000 du montant
+>   du marché par jour de retard ») et n'ajouter « millième(s) » que si la valeur est un nombre entier.
+> - Observation sur les données de recette, pas sur le projet : le DAO exige 120 jours (`B09-DL-01#1`), l'acte d'engagement de l'offre
+>   retenue dit « 6 mois » ; le projet reprend fidèlement l'acte d'engagement. C'est le contrôle de conformité de l'évaluation (délai ≤
+>   exigé) qui doit l'attraper — il figure dans la révision du manuel (`manuel-controle-revise-2026-10-10-application.md`, 9-C-P4).
