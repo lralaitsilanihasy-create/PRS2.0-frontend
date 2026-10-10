@@ -653,3 +653,88 @@ Sous réserve de Q1 (procédure en ligne) et des arbitrages Q2, Q3, Q4, Q8, Q9, 
 >   elle est retirée. Les contrôles P12 / P17 « imprimé du SIGMP » deviennent sans objet à la fin de la transition.
 
 Restent à trancher : **Q1**, **Q7** à **Q13**, **Q15** à **Q17**, **Q-pièce**, et la table des délais (Q6).
+
+## 21. Arbitrages du pilote (2026-10-10, second lot) : délais, périmètre, bloquants, acte d'engagement
+
+> ⚠️ **Q6 — Table des délais.** Neuf valeurs légales **bloquantes**, vérifiées dans le texte de la loi n° 2016-055 (version CNLEGIS) ; le reste
+> en paramètres administrables. **Convention retenue** : le jour de départ n'est pas compté ; la date limite tombe au plus tôt le 31e (46e,
+> 11e…) jour.
+>
+> | # | Cas | Valeur | Texte (vérifié) | Point de départ | Effet dans l'application |
+> |---|---|---|---|---|---|
+> | 1 | Publicité AOO national → remise des offres | ≥ 30 jours | art. 35-II ✓ | date de publication de l'avis spécifique ; plusieurs supports obligatoires : la plus tardive | **bloquant** à la saisie d'une date limite < départ + 30 j (fiche, impression de l'avis) |
+> | 2 | Publicité AOO international → remise | ≥ 45 jours | art. 35-II ✓ | idem | idem, 45 j |
+> | 3 | Demandes de renseignements des candidats | recevables jusqu'à J−10 | art. 35-II ✓ | à rebours depuis la date limite | fermeture automatique du formulaire de questions à J−10 — **le formulaire n'existe pas : à créer** |
+> | 4 | Consultation ouverte (sous seuil) → remise | ≥ 10 jours | art. 41-II ✓ | date d'affichage de l'avis | **bloquant** sur la date limite |
+> | 5 | Avis de l'organe de contrôle sur le plan | 10 jours ouvrables | art. 26-IV ✓ (« considéré comme approuvé ») | dépôt du plan (horodatage) | à l'expiration sans réponse : **réputé approuvé**, déblocage automatique — **n'existe pas : à créer** |
+> | 6 | Information des non-retenus → signature | ≥ 10 jours francs | art. 52-I et 58 ✓ | la plus tardive des réceptions de l'information par les non-retenus (l'affichage seul ne suffit pas) | signature au plus tôt le 11e jour ; bouton verrouillé **[existe : délai d'attente, plus tardive de l'information et de l'affichage]** |
+> | 7 | Pièces fiscales et sociales de l'attributaire | 15 jours | art. 20-I ✓ | réception de la notification d'attribution | à J+15 sans dépôt : retrait proposé (décision PRMP) **[existe]** ; validation : fiscale ≤ 6 mois, sociale ≤ 3 mois à la date de notification (**règle à ajouter** sur `DATE_DELIVRANCE`) |
+> | 8 | Envoi de l'avis d'attribution | ≤ 30 jours | art. 53 ✓ | notification du marché (réception par le titulaire, art. 54) | alerte à J+20, tâche obligatoire avant clôture — **non bloquant** |
+> | 9 | Avis de l'organe de contrôle sur une déclaration sans suite | ≤ 5 jours | art. 55-II ✓ | saisine (dépôt des motifs) | relance à J+5, **blocage maintenu jusqu'à avis exprès** (le silence ne vaut pas accord) **[existe : déclaration refusée sans avis favorable ; alerte la veille]** — paramètre « à confirmer » |
+
+> ⚠️ **Q1 — Périmètre.** *« Oui : la révision ne vaut que pour les procédures conduites dans l'application. »*
+> - Le **mode** (« dématérialisé » / « papier ») est fixé **à la création de la procédure**, pas par autorité contractante ni par pièce. Pas de
+>   bascule en cours de route ; une procédure commencée sur papier s'achève sur papier (seule exception : migration documentée, re-saisie
+>   contrôlée et validée). Dans l'application, le mode est le cadrage `modeRemise` de la fiche : **il devient non modifiable après la
+>   première version validée** (règle à ajouter).
+> - **Un manuel unique à deux colonnes** (mode application / mode papier), numérotation commune — c'est la forme que prendra la version
+>   suivante de ce document.
+> - Même en mode application, les documents d'origine externe (garanties, pièces fiscales et sociales, habilitations) restent des pièces
+>   jointes.
+
+> ⚠️ **Q13 — Contrôles bloquants.** Liste canonique du pilote, tirée de la loi (15 points), confrontée au §19 et au code :
+>
+> | # | Bloquant (pilote) | Base | Dans l'application | Écart / suite |
+> |---|---|---|---|---|
+> | 1 | Marché inscrit à un plan approuvé ou réputé approuvé | art. 26 | PV favorable du plan exigé à la création du DMC **[existe]** ; « réputé approuvé » absent | ajouter le réputé approuvé (table n° 5) |
+> | 2 | DAO complet (IC, DPAO, spécifications, formulaires) avant publication | art. 31 | avis imprimable seulement fiche validée ; DAO complet assemblé à la validation, rattrapage périodique | **à verrouiller** : impression de l'avis refusée tant que le DAO complet de la version n'est pas produit |
+> | 3 | Délais minimaux de la table au paramétrage | art. 35, 41 | aucun contrôle de délai aujourd'hui | table ci-dessus — le §19 ne le rendait bloquant qu'au marché : **aligné sur le pilote** (bloquant dès la saisie) |
+> | 4 | Aucun dépôt après la date et l'heure limites ; rejet horodaté et tracé | art. 44 | refus **[existe : DELAI_DEPASSE]** ; **aucune trace** d'une tentative refusée | ajouter le registre des tentatives hors délai |
+> | 5 | Une seule offre par candidat et par lot, hors remplacement tracé | art. 31, 43 | **[existe]** | — |
+> | 6 | Verrou horaire à l'ouverture + quorum CAO | art. 35-III/IV | verrou **[existe]** ; quorum : lot 1 B2 | — |
+> | 7 | PV d'ouverture généré avec ses mentions avant tout passage à l'évaluation | art. 35-IV, 45 | **[existe : SEANCE_NON_CLOSE]** | — |
+> | 8 | Aucune offre écartée sans motif renvoyant à une clause du DAO | art. 46, 52 | **[existe : MOTIF_OBLIGATOIRE, CLAUSE_OBLIGATOIRE]** | — |
+> | 9 | Montant évalué calculé par l'application, corrections tracées, jamais saisi à la main | art. 46, 47 | calcul serveur **[existe]** ; **mais** le montant retenu peut différer de la correction proposée, avec motif | **écart à arbitrer** : supprimer cette latitude (ne garder que les corrections proposées et le refus du candidat) ? |
+> | 10 | Rejet pour prix anormal impossible sans demande écrite et réponse tracées | art. 48 | demande écrite exigée **[existe]** ; réponse : absente après l'échéance = refus de répondre (manuel 2-III-C P20) | **nuance à confirmer** : « réponse tracée » = réponse reçue **ou** échéance passée sans réponse |
+> | 11 | Marge de préférence inactive si non prévue aux DPAO | art. 49 | **[existe : B06-PN-01 / B03-CQ-08]** | — |
+> | 12 | Information des non-retenus avant signature ; signature verrouillée 10 jours francs | art. 52 | **[existe]** | — |
+> | 13 | Signature verrouillée si un recours est déclaré (paramètre) | titre VIII | révision ARMP et référé suspensifs **[existe]** ; réexamen non suspensif | paramètre `RECOURS_SUSPENSIFS` (défaut : révision, référé) |
+> | 14 | Notification impossible sans avis de l'organe de contrôle, approbation et enregistrement | art. 54 | avis (PV favorable) et enregistrement exigés **[existe]** ; **approbation non enregistrée** | ajouter l'approbation (autorité, date, pièce), bloquante avant notification |
+> | 15 | Immutabilité : aucune modification d'une pièce d'une étape close ; version nouvelle journalisée | transversal | versions de la fiche, PV, décisions remplacées (historique) **[existe]** ; instantané : lot 1 B5 | verrou d'écriture sur les lignes d'une étape close (à compléter) |
+>
+> Avis d'attribution (art. 53) : **alerte, pas blocage** (table n° 8).
+>
+> **Le §19 face à cette liste** — ce qui s'y trouvait sans base dans la loi relève du réglementaire ou du manuel, donc « à confirmer » :
+>
+> | Bloquant proposé au §19 | Base | Statut |
+> |---|---|---|
+> | Délai de remise | loi (35, 41) | **retenu** (n° 3) |
+> | Date de 1re publication absente | loi (35-II) + manuel 2-III-A | **retenu** (condition du n° 3) |
+> | DSS après signature du marché | loi (55-II) | **retenu** **[existe]** |
+> | Mise en demeure absente (résiliation aux torts) | loi (76) / CCAG | **retenu** (après création du champ) |
+> | Délai de l'AMI | loi (32-III) — valeur à ajouter à la table | **à confirmer** (valeur) |
+> | Rapport non signé, grille de conformité incomplète, PV d'ouverture signé | manuel (2-III-A P5) | **retenu** via n° 7 et n° 8 (le rapport est la pièce d'évaluation) |
+> | Garantie de soumission 1-2 % | manuel / DAO types | **réglementaire — à confirmer** ; sinon signalé |
+> | Offres anormales ≤ 20 % / 10 % | manuel / DPAO types | **réglementaire — à confirmer** |
+> | Variation des quantités ≤ 20 % | manuel / DPAO types | **réglementaire — à confirmer** |
+> | Plafond du tiers des avenants | CCAG (F 6.2, T 3.2, PI 6.2) | **réglementaire — retenu [existe]** (déjà bloquant depuis M5a) |
+> | Avenant après réception / solde | CCAG + manuel | **réglementaire — retenu [existe]** |
+> | Acte sur un marché sous le seuil de contrôle | arrêté des seuils | **réglementaire — à confirmer** |
+> | Délai AOR / PI depuis les invitations | décret 2019-1310 art. 2-3 | **réglementaire — à confirmer** (valeur à ajouter à la table) |
+> | Validité d'une proposition PI < exigée | IC du dossier type | **réglementaire — à confirmer** |
+> | Mention « délai réduit », mode sous le seuil | manuel ; arrêté 13 156 | **signalé** (sauf confirmation) |
+
+> ⚠️ **H2 — Acte d'engagement déposé en ligne.** *« Le dépôt scellé vaut signature pendant la procédure ; l'original signé n'est exigé que de
+> l'attributaire, avant la signature du marché. La signature certifiée devient une option cible. »*
+> - Fondement : origine (compte authentifié), intégrité (empreinte, chiffrement) et date (horodatage) du dépôt scellé ; lois 2014-024 et
+>   2014-025 (signature électronique simple, valable sans présomption de fiabilité) ; art. 31 (« offres signées ») fermé par l'original de
+>   l'attributaire ; art. 5 (ne pas créer de barrière d'accès tant que la certification n'est pas opérationnelle).
+> - **Clause obligatoire des DPAO** (gabarits `DPAO-F`, `DPAO-T`, `DPIC-PI`, `DPAC-CC`) : « La soumission par la plateforme, effectuée depuis le
+>   compte authentifié du candidat et scellée par celle-ci, vaut signature de l'offre et de l'acte d'engagement au sens de l'article 31 du
+>   Code. L'attributaire remet l'original signé de son acte d'engagement avant la signature du marché. »
+> - **Nouvelle pièce de l'attributaire** « original signé de l'acte d'engagement » (nature `ACTE_ENGAGEMENT_ORIGINAL` de `t_attribution_piece`),
+>   vérifiée par la PRMP, **bloquante avant la signature du marché** (comme les pièces fiscales et sociales).
+> - **Paramètre par procédure** `SIGNATURE_OFFRE` : `SCELLE_PLUS_ORIGINAL` (défaut) / `CERTIFIEE` (quand l'écosystème le permettra).
+
+Suite : demande backend lot 2 (`demande-backend-2026-10-10-manuel-revise-lot2.md`). Restent ouverts : Q7 à Q12, Q15 à Q17, Q-pièce, et les
+valeurs « à confirmer » ci-dessus.
