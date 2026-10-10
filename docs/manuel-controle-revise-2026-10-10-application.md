@@ -608,3 +608,48 @@ Sous réserve de Q1 (procédure en ligne) et des arbitrages Q2, Q3, Q4, Q8, Q9, 
 | Q17 | Ambiguïtés du manuel à faire préciser : clause 6.8 vs 6.7 (travaux) ; « liste à compléter » (pré-qualification) ; pourcentages 9.1 RC / art. 19 (contrat-cadre) ; 2-III-C P7 (correction ou anormales) ; 2-III-E P10 « DPAO » pour un DC ; cas f. sans vérification ; « autre autorité de la PRMP » ; ajournement 3 mois vs 90 jours ; critères d'attribution F&S des contrats-cadres ; motifs d'avis défavorable absents en 2-II-G-2. |
 | Q-pièce | Calendrier annuel de passation : dériver un document des prévisions de l'exercice ? Canevas de rapport : en ligne, le rapport est produit par l'application — faire valider son canevas une fois et retirer la pièce ? |
 | à confirmer (code) | clé de la fiche pour « visite des lieux » (3-P11, P20) ; refus d'une réponse de candidat après l'échéance (9-C-P20) ; mention textuelle de la moralité des prix dans le gabarit du rapport (9-C-P8) ; génération d'une lettre d'invitation AOR (5-pièce 5) ; génération du projet d'avenant (12-pièce 8). |
+
+## 20. Arbitrages du pilote (2026-10-10, premier lot) et leurs conséquences
+
+> ⚠️ **Q2 / Q14 — Signature.** *« Oui pour les pièces internes (validation tracée), non pour les actes engageants, qui restent en signature
+> manuscrite ou certifiée. »*
+> - **Pièces internes** : la validation tracée dans l'application vaut signature. Deviennent donc **retirées** sans réserve : la fiche de
+>   présentation (DMC, DDM, DSS ; DGC partielle tant que les champs manquent), l'AGPM/PPM « signé » (soumission par la PRMP), le PV
+>   d'ouverture et le rapport (signatures électroniques de la CAO), les PV de la Commission. Les contrôles « documents dûment signés et
+>   paraphés » (9-A-P5) sont **A**.
+> - **Actes engageants** : restent en signature manuscrite ou certifiée, donc **conservés en pièce jointe** : le marché signé (scan déjà
+>   détenu par l'application pour un marché en ligne : affiché, pas re-téléversé), l'avenant, les décisions de l'autorité contractante
+>   (liste restreinte, pré-qualifiés, AO restreint, gré à gré, sans suite, actes de gestion), l'accord des parties, le PV de validation du
+>   titulaire d'un gré à gré. **À confirmer** : l'acte d'engagement du candidat dans une offre déposée en ligne est-il un acte engageant
+>   (signature certifiée exigée) ou le dépôt scellé authentifié suffit-il (traité en A-construction, 9-D4) ?
+
+> ⚠️ **Q4 — PV de validation par la CAO.** *« Oui, rapport et PV fusionnés, avec les mentions de séance générées automatiquement. »*
+> - Le rapport signé par la CAO vaut PV de validation. **Retirées** : `PV_VALIDATION_CAO`, `PV_VALID_TECHNIQUE`, `PV_VALID_FINALE` et le
+>   PV de validation de l'AMI (`PV_AMI`, partie validation).
+> - **Évolution backend** : le rapport (AMI, évaluation, technique, finale) porte une section « Séance de validation » générée : date et
+>   heure de la validation (dernière signature), membres de la CAO présents (signataires), empêchements constatés, quorum atteint (règle
+>   appliquée), observations de désaccord. Les contrôles « contenu du PV » (9-C-P13, 11-P6, 11-P13, 7-P12) deviennent **A (construction)** ;
+>   « quorum et qualité des signataires » (9-C-P14, 11-P7, 11-P14, 7-P13) deviennent **A** avec Q5.
+
+> ⚠️ **Q5 — Quorum de la CAO.** *« Quorum paramétrable (défaut : majorité). »*
+> - Paramètre d'administration `CAO_QUORUM` (règle : majorité des membres désignés par défaut ; valeur absolue ou fraction possible),
+>   appliqué à la séance d'ouverture, à la séance financière (PI) et à la validation des rapports. Le président (ou son représentant
+>   désigné) reste obligatoire.
+> - Règles de saisie : clôture de la séance et signature finale du rapport **refusées** si le quorum n'est pas atteint (bloquant) ; le
+>   quorum constaté est écrit dans le PV et le rapport (Q4). Tous les contrôles « quorum et qualité des signataires » passent en **A**.
+
+> ⚠️ **Q6 — Délais minimaux.** *« Table des délais ci-dessus, neuf valeurs légales bloquantes, le reste en paramètres. »*
+> - **La table n'a pas été transmise** (le message ne la contient pas) : à recevoir. Dès réception : les neuf valeurs légales sont codées
+>   **bloquantes** (refus à la validation de la fiche, à la publication de l'AMI, à l'impression de l'avis, au dépôt hors délai) ; les
+>   autres sont des **paramètres administrables** (écran Délais, comme les délais par sous-type), signalés.
+
+> ⚠️ **Q3 — Documents générés à la place des imprimés SIGMP.** *« Oui, avec mentions complètes, décision formelle d'équivalence et double
+> mode transitoire. »*
+> - L'avis spécifique, la lettre d'invitation (PI ; **AOR à générer**) et le projet d'AGPM/PPM de l'application remplacent les imprimés
+>   SIGMP, à trois conditions : (1) **mentions complètes** — chaque mention du modèle type doit figurer dans les gabarits `AVIS-F`, `AVIS-T`,
+>   `LETTRE-PI` et dans l'AGPM dérivé (vérification gabarit par gabarit à faire, écarts à corriger) ; (2) **décision formelle d'équivalence**
+>   (hors application, à obtenir de la CNM/ARMP ; sa référence sera portée au pied des documents générés) ; (3) **double mode transitoire** :
+>   tant que la transition dure (paramètre de date de fin), la pièce « imprimé SIGMP » reste acceptée mais devient **facultative** ; après,
+>   elle est retirée. Les contrôles P12 / P17 « imprimé du SIGMP » deviennent sans objet à la fin de la transition.
+
+Restent à trancher : **Q1**, **Q7** à **Q13**, **Q15** à **Q17**, **Q-pièce**, et la table des délais (Q6).
