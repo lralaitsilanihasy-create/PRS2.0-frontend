@@ -102,3 +102,9 @@ Rien à changer pour B1 et B2 si H1 tient : l'écran tire déjà le projet en PD
 > - Observation sur les données de recette, pas sur le projet : le DAO exige 120 jours (`B09-DL-01#1`), l'acte d'engagement de l'offre
 >   retenue dit « 6 mois » ; le projet reprend fidèlement l'acte d'engagement. C'est le contrôle de conformité de l'évaluation (délai ≤
 >   exigé) qui doit l'attraper — il figure dans la révision du manuel (`manuel-controle-revise-2026-10-10-application.md`, 9-C-P4).
+>
+> ⚠️ **Backend, 2026-10-10 — défaut de libellé corrigé**, comme proposé : `B09-PE-02` est repris **tel quel** s'il n'est pas un nombre entier
+> (« au taux de 1/2000 du montant du marché par jour de retard ») ; « millième(s) » n'est ajouté qu'à un entier (« 2 » → « 2 millième(s) »).
+> Le projet du lot 1 est à **refaire** une fois le serveur relancé (bouton « Refaire le projet de marché »). L'observation « 6 mois » contre
+> « 120 jours » est bien un fait des données de recette : le projet reprend l'acte d'engagement, et le contrôle « délai ≤ exigé » relève de
+> la révision du manuel (9-C-P4), en attente des arbitrages du pilote.
