@@ -239,3 +239,18 @@ selon les listes servies ; relecture des mentions des avis et lettres (B3).
 >   Président, Administrateur, PRMP/UGPM) — les membres de CAO ne lisent pas ces routes (coquille interne), ils gardent leurs écrans vivants.
 > - **Côté front** : mode figé des écrans Séance, Évaluation, AMI, Attribution, CAO, Avis, Plan pour les profils CNM depuis ces JSON
 >   (mêmes composants, bandeau « Figé à la soumission n° … du … »), bouton d'export PDF.
+
+> ⚠️ **Backend, 2026-10-13 — B6 livré (tranche R5, V105) : le lot 1 est entièrement livré (R1 à R5)** ; contrat : `docs/api-endpoints.md`, § *… tranche R5*.
+> - `t_controle_resultat` comme demandé (référence du manuel ou point de grille, règle, valeurs JSON, résultat, bloquant, auteur
+>   `SERVEUR`/matricule, date, observation). Exécution dans `soumettre` et `resoumettre` : bloquants avant (400 `CONTROLES_BLOQUANTS`,
+>   `details.controles[{code, reference, libelle, valeurs}]`), tous les résultats enregistrés après sous le n° de soumission (= instantanés).
+> - `GET /api/dossiers/{id}/controles[?soumission=n]` (garde du dossier), `POST …/controles` (Membre attributaire, garde de
+>   `t_examen_detail`, `{ idPointCtrl | regle, reference, libelle, resultat, observation, bloquant }`, 400 nominatif), `GET …/controles/pdf`.
+> - **Écarts** : (1) la « levée » d'une non-conformité = le dernier résultat posé sur la règle (serveur ou contrôleur) fait foi — le Membre
+>   lève en posant CONFORME/NON_APPLICABLE avec observation ; (2) le PV Word (modèle du pilote) ne reçoit pas d'annexe nouvelle : chaque
+>   non-conformité non levée est ajoutée aux lignes de l'ANNEXE existante, la synthèse complète est l'export PDF ; (3) `validerCoherenceAvis`
+>   refuse FAV (409 `CONTROLE_NON_CONFORME`) et admet FAVR sans observation d'examen ; (4) une règle sans objet (procédure hors de
+>   l'application) est enregistrée `NON_APPLICABLE` plutôt qu'omise.
+> - Règles branchées : `DOCUMENTS_EVALUATION_SIGNES` (2-III-A P5) et `QUORUM_COMMISSION` (2-III-C P3 / P14), bloquantes, dossier de marché.
+> - **Côté front** : synthèse des contrôles en tête de l'examen (lecture seule) ; saisie des contrôles B avec observation ; à la soumission,
+>   afficher `details.controles` du 400 ; bouton PDF de la synthèse.
