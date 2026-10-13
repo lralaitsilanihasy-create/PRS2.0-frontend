@@ -198,3 +198,15 @@ selon les listes servies ; relecture des mentions des avis et lettres (B3).
 >   `OBLIGATOIRE = false` : la condition de ligne de R2 suffit. Le « projet d'AGPM/PPM imprimé du SIGMP » n'existe pas au référentiel des
 >   plans ; rien à retirer. Les points de grille P12/P17 ne sont pas touchés dans ce lot.
 > - **Côté front** : écran d'administration du paramètre (date + décision) ; afficher `pied` sur l'AGPM dérivé imprimé.
+
+> ⚠️ **Backend, 2026-10-13 — B3, tranche R3b livrée (projet dès la fiche, V103)** ; contrat : `docs/api-endpoints.md`, § *… tranche R3b*.
+> - `GET /api/fiches-marche/{idDmc}/avis-specifique/projet[?format=docx]` et `…/lettres-invitation/projet[?format=docx]` : rendu à la
+>   volée sur la dernière version validée, filigrane « PROJET », publication et destinataire en pointillés, pied d'équivalence (R3a) ;
+>   rien n'est écrit, la ligne ne passe pas « Lancé » ; 409 `AVIS_INDISPONIBLE` / `LETTRE_INDISPONIBLE` (`CATEGORIE_SANS_AVIS`,
+>   `CATEGORIE_SANS_LETTRE`, `FICHE_NON_VALIDEE`).
+> - **Écart** : le projet est aussi **stocké à la validation** (types `AVIS_PROJET` / `LETTRE_PROJET`) et son PDF **joint d'office** au
+>   dossier sous le type de pièce `AVIS_SPECIFIQUE` / `LETTRE_INVITATION`, à la création du dossier et à chaque nouvelle version —
+>   la lettre aussi, pas seulement l'avis (le DC en a besoin, 2-II-F pièce 7). Le projet n'apparaît pas dans `GET /{idDmc}/documents`
+>   (comme l'avis) ; il se lit par la pièce du dossier (`idDocumentFiche` renseigné, non supprimable) ou par la route.
+> - **Côté front** : bouton « Projet d'avis » / « Projet de lettre » dès la validation (pdf, docx) ; dans l'onglet Pièces, la pièce
+>   « Projet d'avis spécifique (imprimé du SIGMP) » apparaît désormais jointe d'office pour une fiche validée.
