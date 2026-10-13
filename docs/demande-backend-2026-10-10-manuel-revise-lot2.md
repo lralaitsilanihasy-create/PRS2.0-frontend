@@ -103,3 +103,18 @@ l'attributaire ; paramètres `RECOURS_SUSPENSIFS`, `SIGNATURE_OFFRE`, délais pa
 > - Règle 3 (J−10) : la valeur est dans la table ; le formulaire de questions est B2 (R7).
 > - **Côté front** : écran Délais (loi en lecture, paramètres réglables) ; afficher la règle `DELAI_PUBLICITE` du bilan (requis / constaté /
 >   départ / limite) sur la fiche et le 409 de l'impression.
+
+> ⚠️ **Backend, 2026-10-13 — B1, règle 5 : tranche R6b livrée (plan réputé approuvé ; V107)** ; contrat : `docs/api-endpoints.md`,
+> § *… lot 2, tranche R6b*. Arbitrages du 13/10 : un **marqueur daté** `t_dossier.REPUTE_APPROUVE_LE`, pas un statut — l'examen
+> continue et un PV signé plus tard vaut observation (QB4) ; **tout plan sans PV signé** est éligible, quel que soit son statut dans le
+> circuit (hors brouillon, clôturé, retiré, remplacé) ; jours ouvrables = **lundi-vendredi sans jours fériés** ; destinataires = **PRMP
+> du plan + Présidents de sa localité** (un Président sans localité est notifié aussi).
+> - Planificateur horaire (`app.plans.cron-repute-approuve`, défaut `0 20 * * * *`) : dix jours ouvrables après la soumission (jour de
+>   départ non compté, délai n° 5 de `GET /api/delais-legaux`), sans PV signé ⇒ `REPUTE_APPROUVE_LE` posé une fois, journal
+>   `PLAN_REPUTE_APPROUVE` (sans auteur), notification `PLAN_REPUTE_APPROUVE` (objet `DOSSIER`) à la PRMP et aux Présidents.
+> - `DossierDto.reputeApprouveLe` (date-heure, `null` sinon) sur toutes les lectures ; la garde `PV_NON_SIGNE` de la création d'un DMC
+>   accepte un plan réputé approuvé.
+> - **Écarts** : pas de statut `REPUTE_APPROUVE` (lire `reputeApprouveLe`, le filtre statut ne le voit pas) ; éligibilité à tout
+>   statut (la demande citait `SOUMIS` / `RECU` / `DISPATCHE`) ; passage horaire plutôt que quotidien ; pas de calendrier des fériés.
+> - **Côté front** : badge « réputé approuvé le … » sur le plan et dans la liste ; sur un PV signé après ce marqueur, afficher l'avis
+>   comme observation ; la notification ouvre le plan.
