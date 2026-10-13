@@ -11,6 +11,7 @@ import { AmiService } from '../../services/ami.services';
 import { FicheMarcheService } from '../../services/fiche-marche.services';
 import { ModaleDirective } from '../a11y/modale.directive';
 import { erreurCandidat, horodatage, jjmmaaaa, lettresImprimees, messageIndisponible } from './avis-specifique-modele';
+import { MentionsDocumentVue } from './mentions-document';
 
 /** Une ligne de la liste restreinte en cours de saisie (`id` : clé de suivi stable). */
 interface LigneCandidat extends CandidatInvite {
@@ -36,7 +37,7 @@ const ERREUR_DE = { nom: 'erreurNom', adresse: 'erreurAdresse', email: 'erreurEm
 @Component({
   selector: 'app-lettres-invitation',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ModaleDirective],
+  imports: [ModaleDirective, MentionsDocumentVue],
   templateUrl: './lettres-invitation.html',
   styleUrl: './avis-specifique.scss',
 })
@@ -60,6 +61,8 @@ export class LettresInvitation implements OnInit {
     return !!e && e.raison !== 'CATEGORIE_SANS_LETTRE';
   });
   readonly attente = computed(() => (this.etat()?.disponible ? null : messageIndisponible(this.etat()?.raison ?? null)));
+  /** ⚠️ R3b (V103) — le projet de lettre dès la validation de la fiche ; le refus du serveur est nommé. */
+  readonly refusProjet = signal<string | null>(null);
 
   // ── La modale ──
   readonly ouverte = signal(false);
@@ -181,6 +184,25 @@ export class LettresInvitation implements OnInit {
           this.refus.set('L’impression a échoué. Réessayez.');
         },
       });
+  }
+
+  /** ⚠️ R3b — le projet de lettre (filigrane « PROJET », destinataire en pointillés) ; ⚠️ R3c : lettre AOR pour un appel d'offres restreint. */
+  projet(format: 'pdf' | 'docx'): void {
+    if (this.occupe()) return;
+    this.occupe.set(true);
+    this.refusProjet.set(null);
+    this.fiches.projetLettres(this.idDmc(), format).subscribe({
+      next: (blob) => {
+        this.occupe.set(false);
+        if (format === 'pdf') ouvrirBlobSur(blob);
+        else telechargerBlob(blob, `projet-lettre-invitation-${this.idDmc()}.docx`);
+      },
+      error: (e: ApiError) => {
+        this.occupe.set(false);
+        const raison = corpsErreur<{ details?: { raison?: string } }>(e)?.details?.raison ?? null;
+        this.refusProjet.set(raison === 'FICHE_NON_VALIDEE' ? 'Le projet de lettre se lit dès qu’une version de la fiche est validée.' : (messageIndisponible(raison) ?? 'Le projet de lettre n’a pas pu être produit.'));
+      },
+    });
   }
 
   /** Ouvre (PDF) ou enregistre une lettre, toujours par `fichiers-surs` (règle de l'audit). */

@@ -275,3 +275,14 @@ selon les listes servies ; relecture des mentions des avis et lettres (B3).
 > la procédure 40 sert « quorum atteint, 2 sur 2, représentant du président signataire » dès la désignation ; les PV produits avant V101
 > (séance d'ouverture 40, seconde séance 50) n'ont ni quorum ni signataires attendus : le bloc les présente comme « PV antérieur à la
 > signature en ligne ».
+
+> ✅ **Front, 2026-10-13 — tranche FR3 branchée (avis et lettres, R3b / R3c ; délai de publicité, R6a)**, recette dans le navigateur (PRMP001,
+> fiches 40 et 50) : boutons « Projet d'avis (PDF / Word) » et « Projet de lettre (PDF / Word) » dès la validation de la fiche, à côté de
+> l'impression ; volet « Relecture des mentions du modèle type » (`app-mentions-document`, chargé à l'ouverture : modèle / document / détail,
+> écarts surlignés, « sans objet ») sous l'avis et sous les lettres ; appel d'offres restreint : l'avis se tait (`MODE_SANS_AVIS`) et la fiche
+> propose la lettre (candidats saisis) — **non joué** : aucune fiche en mode restreint en recette ; le refus 409 `DELAI_PUBLICITE` de
+> l'impression est nommé avec ses valeurs (constaté, départ, limite, requis) ; la règle `DELAI_PUBLICITE` du bilan s'affiche avec les autres
+> contrôles de la fiche. Constats de recette : fiche 40 (`AVIS-T`) 10 mentions sur 12 renseignées ; fiche 50 (`LETTRE-PI`) 6 sur 9, gabarit
+> incomplet (coût et paiement du dossier, écart nommé par le backend). ⚠️ **Observation pour le backend** : sur la fiche 50, dont la liste
+> restreinte de l'AMI est définitive, `LISTE_CANDIDATS` est servie « non renseignée (pointillés) » — la relecture évalue le projet (destinataires
+> en pointillés par construction) plutôt que la lettre telle qu'elle s'imprimera avec la liste ; à confirmer si c'est voulu.

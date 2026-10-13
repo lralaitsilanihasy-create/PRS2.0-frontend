@@ -350,6 +350,8 @@ export class FicheMarcheEcran {
   readonly resume = computed(() => resumeCadrage(this.cadrageEffectif()));
   /** Le mode de remise des offres, lu sur le cadrage effectif (réponse par défaut comprise). */
   readonly modeElectronique = computed(() => String(this.cadrageEffectif()['modeRemise'] ?? '') === 'ELECTRONIQUE');
+  /** ⚠️ R3c (13/10) — le mode du plan (`B01-AC-13`) dit « restreint » : pas d'avis spécifique, une lettre d'invitation (LETTRE-AOR). */
+  readonly modeRestreint = computed(() => /restreint/i.test(String(this.fiche()?.valeursPpm?.['B01-AC-13'] ?? '')));
   /** Le fuseau de l'heure de référence (`B04-SE-04`), affiché à côté des heures saisies en mode électronique. */
   readonly fuseau = computed(() => (this.modeElectronique() ? String(this.valeurs()['B04-SE-04'] ?? '') : ''));
   readonly blocs = computed(() => blocsASaisir(this.referentiel(), this.typeMarche()));

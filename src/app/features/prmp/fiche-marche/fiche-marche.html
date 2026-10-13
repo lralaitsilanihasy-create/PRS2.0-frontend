@@ -809,7 +809,8 @@
                        le produit : il a quitté la liste des pièces à joindre à la main. -->
                   <!-- ⚠️ 01/10 (AV-4) — les prestations intellectuelles n'ont pas d'avis : leurs candidats reçoivent une lettre. -->
                   @if (idDmc(); as id) {
-                    @if (fiche()?.categorie === 'PRESTATIONS_INTELLECTUELLES') {
+                    <!-- ⚠️ R3c (13/10) — l'appel d'offres restreint n'a pas d'avis : une lettre d'invitation (LETTRE-AOR), candidats saisis. -->
+                    @if (fiche()?.categorie === 'PRESTATIONS_INTELLECTUELLES' || modeRestreint()) {
                       <app-lettres-invitation [idDmc]="id" [lecture]="enLecture()" />
                     } @else {
                       <app-avis-specifique [idDmc]="id" [lecture]="enLecture()" />

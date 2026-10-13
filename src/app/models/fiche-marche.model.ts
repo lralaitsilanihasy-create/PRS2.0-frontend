@@ -656,6 +656,8 @@ export type RaisonAvisIndisponible =
   | 'RESERVES_NON_LEVEES'
   | 'FICHE_NON_VALIDEE'
   | 'CATEGORIE_SANS_LETTRE'
+  /** ⚠️ Manuel révisé, R3c (13/10) — appel d'offres restreint : pas d'avis, une lettre d'invitation (gabarit LETTRE-AOR). */
+  | 'MODE_SANS_AVIS'
   /** ⚠️ Lot 2b (V66) — remise électronique : sans clés publiées, aucun candidat ne pourrait sceller. Vaut aussi pour les lettres. */
   | 'CEREMONIE_NON_CLOSE'
   | (string & {});
@@ -671,6 +673,28 @@ export interface DisponibiliteAvis {
   statutPv: string | null;
   statutDossier: string | null;
   idDossierSoumis: number | null;
+}
+
+/**
+ * ⚠️ Manuel révisé, R3c (13/10, arbitrage Q3 « mentions complètes ») — les mentions du modèle type d'un avis ou d'une lettre,
+ * vérifiées deux fois par le serveur : sur le **gabarit** (le modèle porte la mention) et sur le **document rendu** pour la version
+ * courante (la valeur n'est pas en pointillés), ou **sans objet** pour cette fiche. `GET …/avis-specifique/mentions`,
+ * `GET …/lettres-invitation/mentions` ; 409 `AVIS_INDISPONIBLE` / `LETTRE_INDISPONIBLE` (`details.raison`).
+ */
+export interface MentionDocument {
+  code: string;
+  libelle: string;
+  presenteAuGabarit: boolean;
+  renseignee: boolean;
+  sansObjet: boolean;
+  detail: string | null;
+}
+
+export interface MentionsDocument {
+  gabarit: string;
+  gabaritComplet: boolean;
+  documentComplet: boolean;
+  mentions: MentionDocument[];
 }
 
 /** Erreur nominative par champ d'un `PUT …/blocs/{bloc}` (400). */

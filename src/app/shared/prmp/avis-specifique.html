@@ -13,6 +13,18 @@
       <p class="avs__attente">{{ m }}</p>
     }
 
+    <!-- ⚠️ Manuel révisé, R3b / R3c (13/10) — le projet d'avis dès la validation de la fiche (le manuel l'exige au dépôt du DAO :
+         il est joint d'office au dossier), et la relecture des mentions du modèle type. -->
+    @if (!lecture()) {
+      <div class="avs__projet">
+        <button type="button" class="btn btn-sm btn-outline" [disabled]="occupe()" (click)="projet('pdf')">Projet d’avis (PDF)</button>
+        <button type="button" class="btn btn-sm btn-ghost" [disabled]="occupe()" (click)="projet('docx')">Projet d’avis (Word)</button>
+        <span class="avs__meta">Filigrane « PROJET », sans publication : il ne lance rien.</span>
+      </div>
+      @if (refusProjet(); as r) { <p class="avs__attente" role="alert">{{ r }}</p> }
+      <app-mentions-document [idDmc]="idDmc()" document="avis" />
+    }
+
     @if (imprimes().length) {
       <ul class="avs__liste">
         @for (a of imprimes(); track a.cle; let premier = $first) {

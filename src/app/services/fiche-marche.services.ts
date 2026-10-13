@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { skipErrorToast } from '../core/errors/api-error';
-import { AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, Depots, DisponibiliteAvis, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, MaterielExige, ParametresInternes, ParametresInternesCorps, PersonnelExige, PieceExigee, ProcedureInterne, SousCritere, PublicationAvis, SpecificationsTechniques, PublicationLettres, RecuDao, ReferentielFiche, RetraitDao, TypeMarche, VersionFiche } from '../models';
+import { AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, Depots, DisponibiliteAvis, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, MaterielExige, MentionsDocument, ParametresInternes, ParametresInternesCorps, PersonnelExige, PieceExigee, ProcedureInterne, SousCritere, PublicationAvis, SpecificationsTechniques, PublicationLettres, RecuDao, ReferentielFiche, RetraitDao, TypeMarche, VersionFiche } from '../models';
 import { CrudService } from './api/crud.service';
 
 /**
@@ -285,6 +285,34 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
    */
   imprimerAvis(idDmc: number, corps: PublicationAvis): Observable<DocumentFiche[]> {
     return this.http.post<DocumentFiche[]>(`${this.baseUrl}/${idDmc}/avis-specifique`, corps, { context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ Manuel révisé, R3b (V103, 13/10) — le **projet** d'avis spécifique (ou de lettre d'invitation), rendu à la volée sur la dernière
+   * version validée, filigrane « PROJET », sans publication ni destinataire ; rien n'est écrit, la ligne ne passe pas « Lancé ».
+   * PRMP et UGPM ; 409 `AVIS_INDISPONIBLE` / `LETTRE_INDISPONIBLE` (`details.raison` : `CATEGORIE_SANS_AVIS`, `MODE_SANS_AVIS`,
+   * `CATEGORIE_SANS_LETTRE`, `FICHE_NON_VALIDEE`).
+   */
+  projetAvis(idDmc: number, format: 'pdf' | 'docx' = 'pdf'): Observable<Blob> {
+    return this.projet(`${this.baseUrl}/${idDmc}/avis-specifique/projet`, format);
+  }
+
+  projetLettres(idDmc: number, format: 'pdf' | 'docx' = 'pdf'): Observable<Blob> {
+    return this.projet(`${this.baseUrl}/${idDmc}/lettres-invitation/projet`, format);
+  }
+
+  private projet(url: string, format: 'pdf' | 'docx'): Observable<Blob> {
+    const params = format === 'docx' ? new HttpParams().set('format', 'docx') : new HttpParams();
+    return this.http.get(url, { params, responseType: 'blob', context: skipErrorToast() });
+  }
+
+  /** ⚠️ R3c (13/10) — les mentions du modèle type, vérifiées sur le gabarit et sur le document rendu (version courante, même brouillon). */
+  mentionsAvis(idDmc: number): Observable<MentionsDocument> {
+    return this.http.get<MentionsDocument>(`${this.baseUrl}/${idDmc}/avis-specifique/mentions`, { context: skipErrorToast() });
+  }
+
+  mentionsLettres(idDmc: number): Observable<MentionsDocument> {
+    return this.http.get<MentionsDocument>(`${this.baseUrl}/${idDmc}/lettres-invitation/mentions`, { context: skipErrorToast() });
   }
 
   /**

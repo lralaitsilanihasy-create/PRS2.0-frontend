@@ -10,7 +10,8 @@ import { ChampFiche, DisponibiliteAvis, DocumentFiche, PublicationAvis } from '.
 import { ChampFicheMarcheService, FicheMarcheService } from '../../services/fiche-marche.services';
 import { ParametreCompteDaoService } from '../../services/parametres.services';
 import { ModaleDirective } from '../a11y/modale.directive';
-import { avisImprimes, champsVidesAvis, horodatage, jjmmaaaa, messageIndisponible } from './avis-specifique-modele';
+import { avisImprimes, champsVidesAvis, horodatage, jjmmaaaa, messageDelaiPublicite, messageIndisponible } from './avis-specifique-modele';
+import { MentionsDocumentVue } from './mentions-document';
 
 type CleSaisie = keyof PublicationAvis;
 
@@ -28,7 +29,7 @@ type CleSaisie = keyof PublicationAvis;
 @Component({
   selector: 'app-avis-specifique',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ModaleDirective],
+  imports: [ModaleDirective, MentionsDocumentVue],
   templateUrl: './avis-specifique.html',
   styleUrl: './avis-specifique.scss',
 })
@@ -46,11 +47,14 @@ export class AvisSpecifique implements OnInit {
   readonly etat = signal<DisponibiliteAvis | null>(null);
   readonly documents = signal<DocumentFiche[]>([]);
   readonly imprimes = computed(() => avisImprimes(this.documents()));
+  /** Muet pour les prestations intellectuelles (lettre, AV-4) et ⚠️ R3c pour l'appel d'offres restreint (`MODE_SANS_AVIS` : lettre AOR). */
   readonly visible = computed(() => {
     const e = this.etat();
-    return !!e && e.raison !== 'CATEGORIE_SANS_AVIS';
+    return !!e && e.raison !== 'CATEGORIE_SANS_AVIS' && e.raison !== 'MODE_SANS_AVIS';
   });
   readonly attente = computed(() => (this.etat()?.disponible ? null : messageIndisponible(this.etat()?.raison ?? null)));
+  /** ⚠️ R3b (V103) — le projet d'avis se lit dès la validation de la fiche, avant tout PV ; le refus du serveur est nommé. */
+  readonly refusProjet = signal<string | null>(null);
 
   // ── La modale ──
   readonly ouverte = signal(false);
@@ -165,9 +169,33 @@ export class AvisSpecifique implements OnInit {
             this.charger();
             return;
           }
+          // ⚠️ R6a (V106) — le délai de publicité de la loi (30 j, 45 j international, 10 j consultation) bloque l'impression.
+          if (e.status === 409 && codeErreur(e) === 'DELAI_PUBLICITE') {
+            this.refus.set(messageDelaiPublicite(e));
+            return;
+          }
           this.refus.set('L’impression a échoué. Réessayez.');
         },
       });
+  }
+
+  /** ⚠️ R3b — le projet d'avis (filigrane « PROJET », sans publication), PDF ouvert ou Word enregistré ; rien n'est écrit côté serveur. */
+  projet(format: 'pdf' | 'docx'): void {
+    if (this.occupe()) return;
+    this.occupe.set(true);
+    this.refusProjet.set(null);
+    this.fiches.projetAvis(this.idDmc(), format).subscribe({
+      next: (blob) => {
+        this.occupe.set(false);
+        if (format === 'pdf') ouvrirBlobSur(blob);
+        else telechargerBlob(blob, `projet-avis-${this.idDmc()}.docx`);
+      },
+      error: (e: ApiError) => {
+        this.occupe.set(false);
+        const raison = corpsErreur<{ details?: { raison?: string } }>(e)?.details?.raison ?? null;
+        this.refusProjet.set(raison === 'FICHE_NON_VALIDEE' ? 'Le projet d’avis se lit dès qu’une version de la fiche est validée.' : (messageIndisponible(raison) ?? 'Le projet d’avis n’a pas pu être produit.'));
+      },
+    });
   }
 
   /** Ouvre (PDF) ou enregistre un avis, toujours par `fichiers-surs` (règle de l'audit). */

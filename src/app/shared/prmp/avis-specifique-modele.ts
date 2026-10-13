@@ -1,3 +1,6 @@
+import { HttpErrorResponse } from '@angular/common/http';
+
+import { ApiError, corpsErreur } from '../../core/errors/api-error';
 import { Cadrage, ChampFiche, DocumentFiche, PublicationAvis, PublicationLettres, RaisonAvisIndisponible } from '../../models';
 
 /**
@@ -108,6 +111,7 @@ export function messageIndisponible(raison: RaisonAvisIndisponible | null): stri
     case null:
     case 'CATEGORIE_SANS_AVIS':
     case 'CATEGORIE_SANS_LETTRE':
+    case 'MODE_SANS_AVIS':
       return null;
     case 'SANS_DOSSIER':
       return 'L’avis s’imprime une fois le dossier soumis, examiné, et son PV signé avec un avis favorable.';
@@ -164,4 +168,16 @@ export function jjmmaaaa(iso: string | null | undefined): string {
 export function horodatage(iso: string | null | undefined): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(iso ?? '');
   return m ? `${m[3]}/${m[2]}/${m[1]} à ${m[4]}:${m[5]}` : jjmmaaaa(iso);
+}
+
+/**
+ * ⚠️ Manuel révisé, R6a (V106, 13/10 ; loi n° 2016-055 art. 35-II et 41-II) — le refus 409 `DELAI_PUBLICITE` à l'impression de l'avis :
+ * la date limite de remise est à moins du délai légal de la date de publication saisie. `details` : `code`, `requis`, `constate`,
+ * `depart`, `limite`.
+ */
+export function messageDelaiPublicite(e: ApiError | HttpErrorResponse): string {
+  const d = corpsErreur<{ details?: { code?: string; requis?: number; constate?: number; depart?: string; limite?: string } }>(e)?.details ?? {};
+  const bornes = d.depart && d.limite ? ` entre la publication (${jjmmaaaa(d.depart)}) et la date limite de remise (${jjmmaaaa(d.limite)})` : '';
+  const requis = d.requis != null ? ` ; ${d.requis} jours au moins sont requis${d.code ? ' (' + d.code + ')' : ''}` : '';
+  return `Délai de publicité insuffisant : ${d.constate ?? '?'} jour(s)${bornes}${requis}. Reportez la date de publication, ou la date limite dans une nouvelle version de la fiche.`;
 }

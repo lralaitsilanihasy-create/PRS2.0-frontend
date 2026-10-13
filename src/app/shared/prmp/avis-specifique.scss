@@ -46,3 +46,6 @@
 /* ⚠️ 08/10 (PI-a) — l'adresse électronique, facultative, sous le nom et l'adresse postale. */
 .lti__email { grid-column: 2 / 4; grid-row: 2; }
 @media (max-width: 640px) { .lti__candidat { grid-template-columns: auto 1fr auto; } .lti__adresse, .lti__email { grid-column: 2 / 3; grid-row: auto; } }
+
+/* ⚠️ R3b (13/10) — le projet d'avis ou de lettre, dès la validation de la fiche. */
+.avs__projet { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; font-size: 0.86rem; }
