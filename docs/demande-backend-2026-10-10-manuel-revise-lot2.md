@@ -118,3 +118,20 @@ l'attributaire ; paramètres `RECOURS_SUSPENSIFS`, `SIGNATURE_OFFRE`, délais pa
 >   statut (la demande citait `SOUMIS` / `RECU` / `DISPATCHE`) ; passage horaire plutôt que quotidien ; pas de calendrier des fériés.
 > - **Côté front** : badge « réputé approuvé le … » sur le plan et dans la liste ; sur un PV signé après ce marqueur, afficher l'avis
 >   comme observation ; la notification ouvre le plan.
+
+> ⚠️ **Backend, 2026-10-13 — B1, règles 6 à 9 : tranche R6c livrée (V108) ; B1 est entièrement livré** ; contrat : `docs/api-endpoints.md`,
+> § *… lot 2, tranche R6c*. Arbitrages du 13/10 : règle 6 (QB1), réception **présumée pour tous à l'envoi + n jours** (paramètre
+> `RECEPTION_LETTRE`, 3 j proposés, `PUT /api/delais-parametres/RECEPTION_LETTRE`), sans lire `LUE_LE` — la proposition « max(`LUE_LE` ;
+> envoi + n) » n'est pas retenue ; règle 8, départ = **réception de la notification par le titulaire** (déclarée ou accusé de lecture), à
+> défaut la notification ; règle 9, **une relance à J+5** à la PRMP, au membre examinateur et aux Présidents de la localité.
+> - Règle 6 : `delaiAttente` = `{ debut, fin, signableLe, jours, ecoule, receptionLe, joursReception }` ; 409 `DELAI_ATTENTE` inchangé.
+> - Règle 7 : le dépôt refusait déjà la pièce périmée (`PIECE_PERIMEE`) ; à la vérification, `conforme: true` sur une pièce plus ancienne
+>   que la limite → **400 `PIECE_TROP_ANCIENNE`** `{ nature, dateDelivrance, limite, reference }` ; `piecesAttributaire.limiteFiscale` /
+>   `limiteSociale` à afficher.
+> - Règle 8 : `avisAttribution` = `{ depart, echeance, datePublication, publieLe, par, disponible, enRetard }` ; alerte
+>   `ECHEANCE_AVIS_ATTRIBUTION` à **J+20** (au lieu de J+25) ; compteur `compteurs.avisEnRetard` dans `GET /api/kpis/badges`. **Écart** :
+>   aucun geste de clôture du dossier de marché n'existe côté PRMP, la règle reste non bloquante (alerte + `enRetard` + compteur).
+> - Règle 9 : notification `RELANCE_SANS_SUITE` une fois l'échéance passée, `SansSuiteDto.Demande.relanceLe` ; l'alerte de la veille et le
+>   blocage jusqu'à l'avis exprès restent.
+> - **Côté front** : afficher la réception présumée et `joursReception` sur le délai d'attente ; les limites de délivrance sur les pièces ;
+>   `depart` / `enRetard` sur l'avis d'attribution et le badge `avisEnRetard` ; `relanceLe` sur la demande de sans suite.
