@@ -169,3 +169,17 @@ selon les listes servies ; relecture des mentions des avis et lettres (B3).
 >   empêchement y bloque (409) tant que `CAO_QUORUM` n'est pas réglé à `1`, globalement ou pour la procédure. **Côté front** : écran
 >   d'administration du quorum, champ `caoQuorum` des paramètres internes, bouton « Désigner mon représentant » dans l'espace CAO, affichage
 >   de `quorum` (requis / obtenus / président) et des `qualite`, signatures du PV de la seconde séance.
+
+> ⚠️ **Backend, 2026-10-13 — B4 livré (tranche R2, V102)** ; contrat : `docs/api-endpoints.md`, § *… tranche R2*. Arbitrages du 13/10 : la
+> condition est une **colonne administrable** `CONDITION` de `t_piece_sous_type` (`PAPIER` : hors ligne seulement ; `FACULTATIVE_EN_LIGNE` :
+> listée, non obligatoire en ligne) plutôt qu'une règle codée ; **avis spécifique et lettre d'invitation facultatifs en ligne dès R2** (R3
+> les retirera au terme de la transition SIGMP) ; **marché initial** : le scan `MARCHE_SIGNE` de l'attribution est joint d'office à l'acte
+> (code `MARCHE_INITIAL`), les avenants antérieurs n'ayant pas de document signé dans l'application.
+> - `TypePieceJointeDto.condition` ; `GET /api/dossiers/{id}/pieces-exigees` résout la condition (pièce `PAPIER` absente en ligne,
+>   `FACULTATIVE_EN_LIGNE` avec `obligatoire: false`) ; « en ligne » = fiche (DMC), attribution en ligne (DDM, acte), demande de sans suite
+>   (DSS). Les listes des procédures saisies ne changent pas.
+> - Retraits posés par V102 : ceux du tableau, sauf **`PV_AMI`** (Q8 ouverte, inchangée) et `FICHE_PRESENTATION` des **actes de gestion**
+>   (champs manquants, conservée).
+> - **Garde** : 409 **`MARCHE_NON_SIGNE`** au dépôt d'un acte sur un marché attribué en ligne mais non signé (et à la soumission).
+> - **Côté front** : l'onglet « Pièces » lit la liste servie (plus de pièce `PAPIER` en ligne) ; les pièces déjà jointes d'office se
+>   repèrent par la présence d'une pièce du type ; l'écran d'administration des pièces par sous-type peut exposer `condition`.
