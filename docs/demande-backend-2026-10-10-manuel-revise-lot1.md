@@ -183,3 +183,18 @@ selon les listes servies ; relecture des mentions des avis et lettres (B3).
 > - **Garde** : 409 **`MARCHE_NON_SIGNE`** au dépôt d'un acte sur un marché attribué en ligne mais non signé (et à la soumission).
 > - **Côté front** : l'onglet « Pièces » lit la liste servie (plus de pièce `PAPIER` en ligne) ; les pièces déjà jointes d'office se
 >   repèrent par la présence d'une pièce du type ; l'écran d'administration des pièces par sous-type peut exposer `condition`.
+
+> ⚠️ **Backend, 2026-10-13 — B3 en cours : tranche R3a livrée (paramètres, pied, retrait)** ; contrat : `docs/api-endpoints.md`, § *… tranche R3a*.
+> Arbitrages du 13/10 : R3 découpée en **R3a** (ci-dessous), **R3b** (projet d'avis et de lettre dès la fiche, filigrane PROJET, pièce
+> jointe d'office) et **R3c** (mentions complètes, lettre AOR rédigée depuis LETTRE-PI à relire par le pilote) ; le pied d'équivalence est
+> le **pied de page** des documents (gabarits inchangés, parité conservée).
+> - `GET/PUT /api/parametres/sigmp-transition` : `{ finTransition, decisionReference, decisionDate }` + calculés `transitionEnCours`,
+>   `pied` (« Document produit par la plateforme PRS 2.0 en application de la décision n° … du … » ou « Projet — équivalence SIGMP en
+>   attente »). Trois clés `t_parametre` (`SIGMP_FIN_TRANSITION`, `SIGMP_DECISION_REFERENCE`, `SIGMP_DECISION_DATE`), pas une seule
+>   `SIGMP_DECISION_EQUIVALENCE` : référence et date séparées, exigées ensemble.
+> - Le pied est porté par l'avis et les lettres **à l'impression** ; l'AGPM dérivé n'a pas de document côté backend : le front imprime
+>   `pied` lui-même.
+> - Au terme de la transition, les pièces `FACULTATIVE_EN_LIGNE` (R2) disparaissent des listes en ligne — pas de passage par
+>   `OBLIGATOIRE = false` : la condition de ligne de R2 suffit. Le « projet d'AGPM/PPM imprimé du SIGMP » n'existe pas au référentiel des
+>   plans ; rien à retirer. Les points de grille P12/P17 ne sont pas touchés dans ce lot.
+> - **Côté front** : écran d'administration du paramètre (date + décision) ; afficher `pied` sur l'AGPM dérivé imprimé.
