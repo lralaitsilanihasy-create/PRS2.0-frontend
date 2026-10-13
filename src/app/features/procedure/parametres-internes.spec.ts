@@ -97,6 +97,7 @@ describe('Paramètres internes de la procédure (remise électronique, 27/09 ; m
     expect(put.request.body).toEqual({
       quorum: 2,
       dateCeremonie: '2026-10-01T09:00',
+      caoQuorum: null,
       depositaire: { nom: 'Dépositaire de la procédure', organisme: 'Étude notariale', fonction: null, contact: null, email: 'depositaire@exemple.mg', telephone: null },
     });
     put.flush({ ...DONNEES, dateCeremonie: '2026-10-01T09:00', etat: 'COMPLETS', anomalies: [] });

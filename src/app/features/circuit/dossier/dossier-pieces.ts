@@ -36,7 +36,8 @@ import { DossierContenuStore } from './dossier-contenu.store';
               <li class="pe-ligne" [class.pe-ligne--manque]="t.obligatoire && !deposees().has(t.idTypePiece)">
                 <span class="pe-etat" aria-hidden="true">{{ deposees().has(t.idTypePiece) ? '✓' : t.obligatoire ? '✕' : '–' }}</span>
                 <span class="pe-lib">{{ t.libellePiece }}</span>
-                <span class="pe-tag">{{ deposees().has(t.idTypePiece) ? 'jointe' : t.obligatoire ? 'obligatoire, manquante' : 'facultative' }}</span>
+                <!-- ⚠️ R2 (V102) — une pièce « FACULTATIVE_EN_LIGNE » (imprimé du SIGMP pendant la transition) est servie facultative en ligne. -->
+                <span class="pe-tag">{{ deposees().has(t.idTypePiece) ? 'jointe' : t.obligatoire ? 'obligatoire, manquante' : t.condition === 'FACULTATIVE_EN_LIGNE' ? 'facultative en ligne (transition SIGMP)' : 'facultative' }}</span>
               </li>
             }
           </ul>

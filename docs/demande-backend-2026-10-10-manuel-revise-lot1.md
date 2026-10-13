@@ -254,3 +254,13 @@ selon les listes servies ; relecture des mentions des avis et lettres (B3).
 > - Règles branchées : `DOCUMENTS_EVALUATION_SIGNES` (2-III-A P5) et `QUORUM_COMMISSION` (2-III-C P3 / P14), bloquantes, dossier de marché.
 > - **Côté front** : synthèse des contrôles en tête de l'examen (lecture seule) ; saisie des contrôles B avec observation ; à la soumission,
 >   afficher `details.controles` du 400 ; bouton PDF de la synthèse.
+
+> ✅ **Front, 2026-10-13 — tranche FR1 branchée (paramètres, pièces, gabarits)**, recette dans le navigateur (ADMIN01, PRMP001, responsable de
+> la procédure 40) : écrans d'administration « Quorum de la commission d'appel d'offres » (`/admin/referentiels/cao-quorum`) et « Transition
+> SIGMP » (`/admin/referentiels/sigmp-transition`, réglée puis effacée en recette) ; l'écran « Délais » gagne les neuf délais de la loi
+> (lecture) et les sept délais paramétrables (valeur, actif) ; le champ « Quorum de la commission (délibération) » des paramètres internes
+> (règle globale affichée, surcharge `MAJORITE` / `TOUS` / nombre) ; l'onglet Pièces lit la liste résolue (le dossier 100371 en ligne ne
+> demande plus la fiche de présentation ni les PV de la Commission ; « facultative en ligne (transition SIGMP) » nommée) ; le pied
+> d'équivalence imprimé sur l'AGPM dérivé (magasin partagé `SigmpTransitionStore`) ; gabarits `AVIS-F`, `AVIS-T`, `LETTRE-PI` resynchronisés
+> et `LETTRE-AOR` copié — **à relire par le pilote**. Observation de recette : sur le dossier 100371 (créé le 07/10, avant la jointure
+> d'office), le devis estimatif est « manquant » ; les dossiers créés depuis l'ont.

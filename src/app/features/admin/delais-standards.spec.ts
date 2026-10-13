@@ -18,7 +18,8 @@ describe('Délais standards — par sous-type (manuel de contrôle, M5b — V99)
   let toast: { success: ReturnType<typeof vi.fn>; error: ReturnType<typeof vi.fn>; info: ReturnType<typeof vi.fn> };
   const racine = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const texte = (el: Element | null | undefined): string => (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
-  const lignes = () => Array.from(racine().querySelectorAll('.dst__st tbody tr'));
+  // ⚠️ R6a — l'écran porte aussi les délais de la loi et les délais paramétrables : on ne lit que la section des sous-types.
+  const lignes = () => Array.from(racine().querySelectorAll('[aria-labelledby="dst-st-titre"] tbody tr'));
 
   beforeEach(() => {
     toast = { success: vi.fn(), error: vi.fn(), info: vi.fn() };
@@ -27,6 +28,8 @@ describe('Délais standards — par sous-type (manuel de contrôle, M5b — V99)
     fixture = TestBed.createComponent(DelaisStandards);
     fixture.detectChanges();
     http.expectOne('/api/delais-standards').flush([]);
+    http.expectOne('/api/delais-legaux').flush([]);
+    http.expectOne('/api/delais-parametres').flush([]);
     http.expectOne('/api/sous-type-dossiers').flush([
       { idSousType: 'DSS', libelleSousType: 'Déclaration sans suite', idTypeDossier: 'DSS' },
       { idSousType: 'DAOO', libelleSousType: 'DAO ouvert', idTypeDossier: 'DMC' },

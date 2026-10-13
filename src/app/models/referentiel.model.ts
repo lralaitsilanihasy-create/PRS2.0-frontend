@@ -287,6 +287,59 @@ export interface TypePieceJointe {
    */
   categorie?: string | null;
   forme?: string | null;
+  /**
+   * ⚠️ Manuel révisé, R2 (V102, 13/10) — la condition de ligne : `PAPIER` = exigée seulement hors de l'application (absente de la liste
+   * résolue d'un dossier en ligne) ; `FACULTATIVE_EN_LIGNE` = listée, obligatoire hors ligne, facultative en ligne (`obligatoire: false`
+   * dans la liste résolue) — l'avis spécifique et la lettre d'invitation pendant la transition SIGMP ; nul : comme avant.
+   */
+  condition?: 'PAPIER' | 'FACULTATIVE_EN_LIGNE' | null;
+}
+
+/**
+ * ⚠️ Manuel révisé, R1 (V101) — la règle du quorum de la CAO, globale (`GET`/`PUT /api/parametres/cao-quorum`, PUT Administrateur) :
+ * `MAJORITE` (plus de la moitié des membres désignés), `TOUS`, ou un nombre en chaîne (`"2"`). Surchargeable par procédure
+ * (`ParametresInternes.caoQuorum`).
+ */
+export interface ParametreCaoQuorum {
+  regle: string;
+}
+
+/**
+ * ⚠️ Manuel révisé, R3a (13/10) — la transition SIGMP : les documents générés remplacent les imprimés du SIGMP ; tant que
+ * `transitionEnCours`, la pièce « imprimé SIGMP » reste acceptée mais facultative ; `pied` est imprimé au pied des avis et lettres
+ * (le front le porte sur l'AGPM dérivé). `GET`/`PUT /api/parametres/sigmp-transition` ; dates `AAAA-MM-JJ`.
+ */
+export interface ParametreSigmpTransition {
+  finTransition: string | null;
+  decisionReference: string | null;
+  decisionDate: string | null;
+  transitionEnCours: boolean;
+  pied: string;
+}
+
+/** ⚠️ Manuel révisé, R6a (V106) — un des neuf délais de la loi n° 2016-055 (`GET /api/delais-legaux`, table en code, lecture seule). */
+export interface DelaiLegal {
+  numero: number;
+  code: string;
+  valeur: number;
+  unite: string;
+  sens: string;
+  texte: string;
+  pointDepart: string;
+  article: string;
+  effet: string;
+  bloquant: boolean;
+}
+
+/** ⚠️ R6a (V106) — un délai administrable (`t_delai_parametre`), signalé, jamais bloquant ; `PUT /api/delais-parametres/{code}` (Administrateur). */
+export interface DelaiParametre {
+  code: string;
+  valeur: number;
+  unite: 'JOURS' | 'JOURS_FRANCS' | 'JOURS_OUVRABLES' | 'MOIS' | (string & {});
+  texte: string | null;
+  actif: boolean;
+  dateMaj?: string | null;
+  imActeur?: string | null;
 }
 
 /** Type (famille) de dossier — `DDP` / `DMC` / `DDM`. PK = idTypeDossier (string). */

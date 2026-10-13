@@ -110,6 +110,10 @@ export interface ParametresInternes {
   avertissements?: { regle: string; message: string }[] | null;
   /** ⚠️ Lot 2b (V66) — la part de secours (S3), hors `nombreParts`. */
   partDeSecours?: PartDeSecours | null;
+  /** ⚠️ R1 (V101) — la surcharge du quorum de la CAO de cette procédure (nul : la règle globale s'applique). */
+  caoQuorum?: string | null;
+  /** ⚠️ R1 (V101) — la règle effectivement appliquée (surcharge, sinon la règle globale). */
+  caoQuorumEffectif?: string | null;
   journal: EntreeJournalParametres[];
 }
 
@@ -143,6 +147,8 @@ export interface ParametresInternesCorps {
   quorum: number | null;
   dateCeremonie: string | null;
   depositaire: Depositaire | null;
+  /** ⚠️ R1 (V101) — la surcharge du quorum de la CAO pour cette procédure (`MAJORITE`, `TOUS`, `"n"`) ; nul ou absent : la règle globale. */
+  caoQuorum?: string | null;
 }
 
 /** ⚠️ Lot 2a (V67) — l'état de la commission d'appel d'offres, tel que la fiche le dit à qui la lit. */

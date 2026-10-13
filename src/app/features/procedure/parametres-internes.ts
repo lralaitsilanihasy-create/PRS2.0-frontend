@@ -99,6 +99,23 @@ import { CeremonieResponsable } from './ceremonie-responsable';
               <span class="form-hint">Entre 2 et le nombre de membres ; proposé : {{ quorumPropose() }}. Un quorum égal au nombre de membres ne tolère aucune perte (S1).</span>
               @if (erreurDe('quorum'); as m) { <span class="form-error">{{ m }}</span> }
             </label>
+            <!-- ⚠️ R1 (V101) — le quorum délibératif de la CAO : règle globale de l'Administrateur, surchargeable ici pour la procédure. -->
+            <div class="form-group">
+              <label class="form-label" for="pi-cao-quorum">Quorum de la commission (délibération)</label>
+              <div class="pi__quorum-cao">
+                <select class="form-control" id="pi-cao-quorum" [value]="caoMode()" (change)="caoMode.set($any($event.target).value)">
+                  <option value="">Règle globale{{ d.caoQuorumEffectif && !d.caoQuorum ? ' — ' + libelleQuorum(d.caoQuorumEffectif) : '' }}</option>
+                  <option value="MAJORITE">Majorité des membres désignés</option>
+                  <option value="TOUS">Tous les membres désignés</option>
+                  <option value="NOMBRE">Un nombre de membres</option>
+                </select>
+                @if (caoMode() === 'NOMBRE') {
+                  <input class="form-control pi__court" type="number" min="1" step="1" aria-label="Nombre minimal de membres" [value]="caoNombre()" (input)="caoNombre.set($any($event.target).value)" />
+                }
+              </div>
+              <span class="form-hint">Se vérifie à la clôture des séances et à la production du rapport ; le président, ou son représentant désigné, est toujours requis. Dans une commission de deux membres, la majorité vaut l'unanimité.</span>
+              @if (erreurDe('caoQuorum'); as m) { <span class="form-error">{{ m }}</span> }
+            </div>
             <label class="form-group">
               <span class="form-label">Date de la cérémonie des clés <span class="pi__code">INT-SE-04</span></span>
               <input class="form-control" id="pi-ceremonie" type="datetime-local" [value]="dateCeremonie() ?? ''" (input)="dateCeremonie.set($any($event.target).value || null)" />
@@ -202,6 +219,8 @@ import { CeremonieResponsable } from './ceremonie-responsable';
     .pi__lecture { padding: 0.45rem 0.6rem; border-radius: 8px; background: var(--n-100); color: var(--n-700); font-size: 0.9rem; }
     .pi__calc { margin-left: 0.4rem; font-size: 0.74rem; font-style: italic; color: var(--n-500); }
     .pi__court { max-width: 8rem; }
+    .pi__quorum-cao { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    .pi__quorum-cao select { max-width: 22rem; }
     .pi__pied { display: flex; gap: 0.6rem; }
     .pi__h2 { margin: 0.5rem 0 0; font-size: 1.05rem; }
     .pi__journal { font-size: 0.86rem; }
@@ -272,9 +291,24 @@ export class ParametresInternesEcran implements OnInit {
     });
   }
 
+  // ── ⚠️ R1 (V101) — la surcharge du quorum de la CAO ──
+  readonly caoMode = signal<'' | 'MAJORITE' | 'TOUS' | 'NOMBRE'>('');
+  readonly caoNombre = signal('');
+  /** La règle à envoyer : `null` = règle globale ; sinon `MAJORITE`, `TOUS` ou le nombre en chaîne. */
+  private caoQuorumCorps(): string | null {
+    const m = this.caoMode();
+    return m === '' ? null : m === 'NOMBRE' ? this.caoNombre().trim() || null : m;
+  }
+  libelleQuorum(regle: string): string {
+    return regle === 'MAJORITE' ? 'majorité' : regle === 'TOUS' ? 'tous' : `au moins ${regle}`;
+  }
+
   private poser(d: ParametresInternes): void {
     this.donnees.set(d);
     this.quorum.set(d.quorum ?? null);
+    const cq = d.caoQuorum ?? null;
+    this.caoMode.set(cq == null ? '' : cq === 'MAJORITE' || cq === 'TOUS' ? cq : 'NOMBRE');
+    this.caoNombre.set(cq != null && cq !== 'MAJORITE' && cq !== 'TOUS' ? cq : '');
     this.dateCeremonie.set(d.dateCeremonie ?? null);
     const dep = d.partDeSecours?.depositaire ?? null;
     this.depNom.set(dep?.nom ?? '');
@@ -311,7 +345,7 @@ export class ParametresInternesEcran implements OnInit {
           telephone: this.depTelephone().trim() || null,
         }
       : null;
-    this.service.enregistrerParametresInternes(id, { quorum: this.quorum(), dateCeremonie: this.dateCeremonie(), depositaire }).subscribe({
+    this.service.enregistrerParametresInternes(id, { quorum: this.quorum(), dateCeremonie: this.dateCeremonie(), depositaire, caoQuorum: this.caoQuorumCorps() }).subscribe({
       next: (d) => {
         this.saving.set(false);
         this.poser(d);

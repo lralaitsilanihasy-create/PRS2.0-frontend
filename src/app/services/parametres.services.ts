@@ -3,7 +3,18 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
-import { ConservationOffres, ParametreAgpmSeuil, ParametreCompteDao, ParametreRemiseElectronique, ParametresCandidats, PurgeOffres } from '../models';
+import {
+  ConservationOffres,
+  DelaiLegal,
+  DelaiParametre,
+  ParametreAgpmSeuil,
+  ParametreCaoQuorum,
+  ParametreCompteDao,
+  ParametreRemiseElectronique,
+  ParametreSigmpTransition,
+  ParametresCandidats,
+  PurgeOffres,
+} from '../models';
 import { skipErrorToast } from '../core/errors/api-error';
 
 /**
@@ -105,5 +116,64 @@ export class ConservationOffresService {
   /** 409 `CONSERVATION_NON_FIXEE` ou `CONSERVATION_EN_COURS` (`details.echeance`). */
   purger(idDmc: number): Observable<PurgeOffres> {
     return this.http.post<PurgeOffres>(`${this.url}/${idDmc}/purger`, null, { context: skipErrorToast() });
+  }
+}
+
+/**
+ * ⚠️ Manuel révisé, R1 (V101, 10/10) — la règle du quorum de la CAO (`MAJORITE`, `TOUS` ou un nombre), globale ; lue par tout
+ * authentifié, réglée par l'Administrateur (400 `QUORUM_REGLE_INVALIDE`).
+ */
+@Injectable({ providedIn: 'root' })
+export class ParametreCaoQuorumService {
+  private readonly http = inject(HttpClient);
+  private readonly url = `${environment.apiUrl}/parametres/cao-quorum`;
+
+  lire(): Observable<ParametreCaoQuorum> {
+    return this.http.get<ParametreCaoQuorum>(this.url, { context: skipErrorToast() });
+  }
+
+  definir(regle: string): Observable<ParametreCaoQuorum> {
+    return this.http.put<ParametreCaoQuorum>(this.url, { regle }, { context: skipErrorToast() });
+  }
+}
+
+/**
+ * ⚠️ Manuel révisé, R3a (13/10) — la transition SIGMP (date de fin, décision d'équivalence) ; lue par tout authentifié (le pied
+ * s'imprime sur l'AGPM dérivé), réglée par l'Administrateur. Une valeur nulle efface ; 400 nominatif (dates, référence, décision
+ * incomplète : référence et date vont ensemble).
+ */
+@Injectable({ providedIn: 'root' })
+export class ParametreSigmpTransitionService {
+  private readonly http = inject(HttpClient);
+  private readonly url = `${environment.apiUrl}/parametres/sigmp-transition`;
+
+  lire(): Observable<ParametreSigmpTransition> {
+    return this.http.get<ParametreSigmpTransition>(this.url, { context: skipErrorToast() });
+  }
+
+  definir(corps: Pick<ParametreSigmpTransition, 'finTransition' | 'decisionReference' | 'decisionDate'>): Observable<ParametreSigmpTransition> {
+    return this.http.put<ParametreSigmpTransition>(this.url, corps, { context: skipErrorToast() });
+  }
+}
+
+/**
+ * ⚠️ Manuel révisé, R6a (V106, 13/10) — les neuf délais de la loi (lecture seule, table en code) et les délais administrables
+ * (`t_delai_parametre`, signalés, jamais bloquants) ; `PUT` réservé à l'Administrateur, un champ absent garde sa valeur.
+ */
+@Injectable({ providedIn: 'root' })
+export class DelaisLegauxService {
+  private readonly http = inject(HttpClient);
+  private readonly base = environment.apiUrl;
+
+  legaux(): Observable<DelaiLegal[]> {
+    return this.http.get<DelaiLegal[]>(`${this.base}/delais-legaux`, { context: skipErrorToast() });
+  }
+
+  parametres(): Observable<DelaiParametre[]> {
+    return this.http.get<DelaiParametre[]>(`${this.base}/delais-parametres`, { context: skipErrorToast() });
+  }
+
+  regler(code: string, corps: Partial<Pick<DelaiParametre, 'valeur' | 'unite' | 'texte' | 'actif'>>): Observable<DelaiParametre> {
+    return this.http.put<DelaiParametre>(`${this.base}/delais-parametres/${encodeURIComponent(code)}`, corps, { context: skipErrorToast() });
   }
 }

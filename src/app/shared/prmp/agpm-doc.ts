@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 
+import { SigmpTransitionStore } from '../../core/sigmp/sigmp-transition.store';
 import { DocumentVisionneuse } from '../ui/document-visionneuse';
 import {
   AUCUN_NUMERO,
@@ -83,6 +84,8 @@ import { LigneAgpm } from './agpm';
       } @else {
         <p class="doc-paragraphe">Aucun marché en mode déclencheur d'AGPM — l'avis est sans objet pour ce plan.</p>
       }
+      <!-- ⚠️ R3a (13/10) — le pied d'équivalence SIGMP, comme sur l'avis et les lettres imprimés par le serveur. -->
+      @if (pied(); as p) { <p class="doc-pied-sigmp">{{ p }}</p> }
     </div>
   `,
   // ⚠️ 2026-09-14 (décision des chefs) — plus d'en-tête ORANGE « à la couleur de l'onglet » (demande
@@ -90,9 +93,16 @@ import { LigneAgpm } from './agpm';
   // (styles/_document-officiel.scss), en-têtes gris clair et bordures noires.
   styles: `
     .doc-note--apres { margin: 0.5rem 0 0; }
+    .doc-pied-sigmp { margin: 1rem 0 0; font-size: 0.72rem; color: var(--n-500); text-align: center; }
   `,
 })
 export class AgpmDoc {
+  /**
+   * ⚠️ R3a — le seul appel du composant : le pied d'équivalence SIGMP, lu une fois par session par le magasin partagé (le serveur
+   * l'imprime lui-même sur l'avis et les lettres ; l'AGPM dérivé est rendu ici). Absent tant qu'il n'est pas lu.
+   */
+  private readonly sigmp = inject(SigmpTransitionStore);
+  readonly pied = computed(() => this.sigmp.pied());
   /** Lignes du projet d'AGPM, DÉJÀ calculées (fonction pure partagée). */
   readonly lignes = input.required<LigneAgpm[]>();
   readonly exercice = input<number | null | undefined>(null);
