@@ -135,3 +135,20 @@ l'attributaire ; paramètres `RECOURS_SUSPENSIFS`, `SIGNATURE_OFFRE`, délais pa
 >   blocage jusqu'à l'avis exprès restent.
 > - **Côté front** : afficher la réception présumée et `joursReception` sur le délai d'attente ; les limites de délivrance sur les pièces ;
 >   `depart` / `enRetard` sur l'avis d'attribution et le badge `avisEnRetard` ; `relanceLe` sur la demande de sans suite.
+
+> ⚠️ **Backend, 2026-10-13 — B2 : tranche R7 livrée (questions des candidats, V109)** ; contrat : `docs/api-endpoints.md`, § *… lot 2,
+> tranche R7*. Arbitrages du 13/10 : auteur = **candidat ayant retiré le DAO** (registre des retraits, 403 `DOSSIER_NON_RETIRE`) ; les
+> questions répondues sont **publiques et anonymisées** sur la page de la procédure, et chaque candidat ayant retiré est notifié ;
+> **répondre = diffuser** (`publieeLe` = `repondueLe`, une réponse définitive par question).
+> - Candidat / public : `GET /api/procedures-en-ligne/{idDmc}/questions` (sans session : fenêtre `{ dateLimite, clotureLe, closes,
+>   joursAvantLimite }` + questions répondues anonymisées), `GET …/questions/{id}/fichier`, `GET …/questions/miennes` (CANDIDAT),
+>   `POST …/questions { question }` → 201 ; 409 `QUESTIONS_CLOSES` `{ dateLimite, clotureLe, joursAvantLimite }` après J−10 (J−10 compris
+>   recevable), `DATE_LIMITE_INCONNUE` ; 400 `QUESTION_OBLIGATOIRE`.
+> - PRMP : `GET /api/fiches-marche/{idDmc}/questions` (avec `auteur` / `auteurCompte`), `POST …/questions/{id}/reponse` (multipart `texte`
+>   + `fichier` PDF/JPEG/PNG facultatif ; 409 `DEJA_REPONDUE`), `GET …/questions/pdf`. Notifications `QUESTION_POSEE` (PRMP) et
+>   `QUESTION_REPONDUE` (candidats ayant retiré) ; journal de la procédure `QUESTION_POSEE` / `QUESTION_REPONDUE`.
+> - Dossier de marché : pièce `QUESTIONS_REPONSES` (PDF des questions répondues) jointe d'office à la création, s'il y en a.
+> - **Écarts** : page publique (la demande visait les seuls candidats ayant retiré) ; pas de geste de publication distinct ; la table
+>   s'appelle `t_question_candidat` avec `ID_ENTREPRISE` en plus.
+> - **Côté front** : formulaire de question sur la page de la procédure (fermé quand `closes`, afficher `clotureLe`), liste publique des
+>   réponses, écran PRMP des questions avec réponse et fichier, badge sur `QUESTION_POSEE`.
