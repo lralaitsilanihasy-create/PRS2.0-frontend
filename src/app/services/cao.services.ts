@@ -2,6 +2,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import type { ContexteRepresentant, RepresentantCao } from '../models/cao.model';
+
 import { environment } from '../../environments/environment';
 import { skipErrorToast } from '../core/errors/api-error';
 import {
@@ -74,6 +76,14 @@ export class CaoEspaceService {
   /** `GET /mes-procedures` — les procédures où le membre connecté siège. */
   mesProcedures(): Observable<MaProcedureCao[]> {
     return this.http.get<MaProcedureCao[]>(`${this.base}/mes-procedures`);
+  }
+
+  /**
+   * ⚠️ R1 (V101) — le président désigne, **par contexte** (séance d'ouverture, seconde séance, rapport, AMI), le membre qui le
+   * représente pour le quorum ; `im` nul retire la désignation. 400 `CONTEXTE_INVALIDE` / `REPRESENTANT_INVALIDE`, 403 sinon.
+   */
+  designerRepresentant(idDmc: number, contexte: ContexteRepresentant, im: string | null): Observable<RepresentantCao> {
+    return this.http.post<RepresentantCao>(`${this.base}/procedures/${idDmc}/representant`, { contexte, im }, { context: skipErrorToast() });
   }
 
   /** `GET /procedures/{idDmc}` — 403 s'il n'y siège pas, 404. Silencieux : l'écran le dit. */

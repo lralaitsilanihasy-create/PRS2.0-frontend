@@ -1,3 +1,4 @@
+import type { QuorumCao, SignataireAttendu } from './cao.model';
 /**
  * ⚠️ AMI en ligne, tranche AMI-a (07/10, V82 ; `demande-backend-2026-10-07-ami-pi.md`, §B1, §B2) — l'appel à manifestation
  * d'intérêt d'une procédure de prestations intellectuelles (loi 2016-055, art. 32 et 42-II). Les critères vivent sur l'AMI, pas
@@ -200,7 +201,9 @@ export interface RapportPreselection {
   signe: boolean;
   signeLe: string | null;
   signatures: SignatureAmi[];
-  attendues: { im: string; nom: string }[];
+  attendues: SignataireAttendu[];
+  /** ⚠️ R1 (V101) — le quorum de la CAO sur les signataires appelés ; le rapport signé vaut PV de validation de l'AMI (Q4). */
+  quorum?: QuorumCao | null;
 }
 
 /** `GET /api/fiches-marche/{idDmc}/ami/preselection` — PRMP, UGPM, CAO ; 404 sans AMI publié. */

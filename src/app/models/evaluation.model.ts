@@ -1,4 +1,4 @@
-import type { RabaisLu } from './cao.model';
+import type { QuorumCao, RabaisLu, SignataireAttendu } from './cao.model';
 
 /**
  * ⚠️ Évaluation des offres, lot 1 (demande du 07/10, livrée en tranches 1a à 1d : V76, V77, V78) — les objets de
@@ -244,7 +244,9 @@ export interface RapportEvaluation {
   signe: boolean;
   signeLe: string | null;
   signatures: SignatureRapport[];
-  signaturesAttendues: { im: string; nom: string }[];
+  signaturesAttendues: SignataireAttendu[];
+  /** ⚠️ R1 (V101) — le quorum de la CAO sur les signataires appelés ; le rapport signé vaut PV de validation (Q4). */
+  quorum?: QuorumCao | null;
 }
 
 export interface Evaluation {

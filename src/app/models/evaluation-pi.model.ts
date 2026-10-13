@@ -1,3 +1,4 @@
+import type { PvSeance } from './cao.model';
 import { Correction, RefusCandidat } from './evaluation.model';
 
 /**
@@ -149,6 +150,11 @@ export interface SeanceFinanciere {
   ronde: number | null;
   motif: string | null;
   rondes: RondeSeanceFinanciere[];
+  /**
+   * ⚠️ R1 (V101) — le PV de la seconde séance se signe par les présents (`…/seance/financiere/pv/signer`, `…/pv/empechement`) ;
+   * la clôture et l'évaluation financière n'attendent pas ces signatures (écart assumé par le backend).
+   */
+  pv?: PvSeance | null;
 }
 
 // ── Tranche PI-d2a (V89) : évaluation financière, classement selon la méthode, négociation ──

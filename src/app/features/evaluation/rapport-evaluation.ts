@@ -7,6 +7,7 @@ import { ouvrirBlobSur, telechargerBlob } from '../../core/securite/fichiers-sur
 import { Evaluation } from '../../models';
 import { EvaluationService } from '../../services';
 import { dateHeureFr } from '../candidat/libelles-candidat';
+import { QuorumCaoVue, suffixeQualite } from '../procedure/quorum-cao';
 import { DroitsEvaluation } from './droits-evaluation';
 import { refusEvaluation } from './libelles-evaluation';
 
@@ -19,6 +20,7 @@ import { refusEvaluation } from './libelles-evaluation';
 @Component({
   selector: 'app-rapport-evaluation',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [QuorumCaoVue],
   template: `
     @let ev = evaluation();
     <section class="card re" aria-labelledby="re-titre">
@@ -61,6 +63,8 @@ import { refusEvaluation } from './libelles-evaluation';
           </ul>
         }
         @if (r.signaturesAttendues.length) { <p class="text-sm re__attendues">En attente : {{ nomsAttendus() }}</p> }
+        <!-- ⚠️ R1 (V101) — le rapport signé vaut PV de validation (Q4) : le quorum de la commission y est servi. -->
+        <app-quorum-cao [quorum]="r.quorum" />
 
         @if (jeDoisSigner()) {
           <div class="re__signer">
@@ -135,7 +139,7 @@ export class RapportEvaluationVue {
     this.pi() ? this.evaluation().lots.every((l) => l.proposition != null) : this.evaluation().lots.every((l) => l.etape === 'RAPPORT'),
   );
   readonly attendues = computed(() => this.evaluation().rapport?.signaturesAttendues ?? []);
-  readonly nomsAttendus = computed(() => this.attendues().map((a) => a.nom).join(', '));
+  readonly nomsAttendus = computed(() => this.attendues().map((a) => a.nom + suffixeQualite(a.qualite)).join(', '));
   readonly jeDoisSigner = computed(() => this.droits().membre && this.attendues().some((a) => a.im === this.moi()));
   readonly attenduesSaufMoi = computed(() => this.attendues().filter((a) => a.im !== this.moi()));
   /** Le président constate ; le responsable aussi (« à défaut » : le serveur tranche, comme pour le PV d'ouverture). */

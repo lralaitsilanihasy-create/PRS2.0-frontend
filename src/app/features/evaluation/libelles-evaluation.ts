@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 
 import { ApiError, codeErreur } from '../../core/errors/api-error';
 import { DecisionAnormale, EtapeEvaluation, EtatDemande, EtatEvaluation, GroupeCritere, QualificationRejet, RegleCorrection } from '../../models';
+import { messageQuorum } from '../procedure/quorum-cao';
 
 export const LIBELLES_ETAT_EVALUATION: Readonly<Record<EtatEvaluation, string>> = {
   EN_COURS: 'En cours',
@@ -94,6 +95,7 @@ function details(e: ApiError | HttpErrorResponse, cle: string): string {
 export function refusEvaluation(e: ApiError): string {
   const offres = details(e, 'offres');
   switch (codeErreur(e)) {
+    case 'QUORUM_NON_ATTEINT': return messageQuorum(e);
     case 'SEANCE_NON_CLOSE': return 'L’évaluation ne s’ouvre qu’une fois le PV d’ouverture signé de tous.';
     case 'EVALUATION_DEJA_OUVERTE': return 'L’évaluation est déjà ouverte.';
     case 'DEJA_DECLARE': return 'Votre déclaration est déjà signée : elle ne se reprend pas.';

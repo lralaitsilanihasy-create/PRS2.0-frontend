@@ -3,12 +3,22 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output, si
 import { ApiError, codeErreur } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur } from '../../core/securite/fichiers-surs';
-import { Seance } from '../../models';
-import { SeanceService } from '../../services';
+import { PvSeance, Seance, SeanceFinanciere } from '../../models';
+import { EvaluationPiService, SeanceService } from '../../services';
 import { dateHeureFr } from '../candidat/libelles-candidat';
+import { QuorumCaoVue, messageQuorum, suffixeQualite } from './quorum-cao';
 
 /** Qui regarde : un membre de la CAO (il signe ; président, il constate un empêchement), le responsable, ou un lecteur. */
 export type VueSignatures = 'membre' | 'responsable' | 'lecture';
+/** Le PV signé : celui de la séance d'ouverture (V70), ou celui de la seconde séance d'une consultation (⚠️ R1, V101). */
+export type ContexteSignatures = 'OUVERTURE' | 'FINANCIERE';
+
+/** Un membre de la commission, tel que les deux séances le connaissent. */
+export interface MembreSignataire {
+  im: string;
+  nom: string;
+  president: boolean;
+}
 
 /**
  * ⚠️ V70 (arbitrage du pilote, 04/10, `demande-backend-2026-10-04-arbitrages-soumission-en-ligne` §B2) — les **signatures du
@@ -16,17 +26,23 @@ export type VueSignatures = 'membre' | 'responsable' | 'lecture';
  * les signataires sont figés à la production du PV ; l'extrait n'est publié qu'à la dernière signature.
  * Un signataire qui ne peut pas signer : le **président** constate l'empêchement, avec un motif imprimé au PV — ou le
  * **responsable** si le président est lui-même empêché. Le serveur reste l'autorité : un refus est nommé, jamais deviné.
+ *
+ * ⚠️ Manuel révisé, R1 (V101, 13/10) — le même bloc sert le **PV de la seconde séance** (`contexte="FINANCIERE"`) ; il affiche le
+ * **quorum** de la commission servi avec le PV et la **qualité** des signataires (président, représentant désigné, membre) ; un
+ * empêchement qui rendrait le quorum inatteignable est refusé par le serveur (409 `QUORUM_NON_ATTEINT`), nommé ici avec ses valeurs.
  */
 @Component({
   selector: 'app-signatures-pv',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [QuorumCaoVue],
   template: `
-    @if (seance().pv; as pv) {
+    @if (pv(); as pv) {
       <section class="sp" aria-labelledby="sp-titre">
         <h3 id="sp-titre" class="sp__h3">
           Signatures du PV
           <span class="badge" [class.badge-success]="pv.signe" [class.badge-warning]="!pv.signe && attendues().length" [class.badge-neutral]="anterieur()">{{ pv.signe ? 'PV signé' : anterieur() ? 'Signé sur papier (PV antérieur à la signature en ligne)' : 'À signer — ' + attendues().length + ' signature(s) attendue(s)' }}</span>
         </h3>
+        <app-quorum-cao [quorum]="pv.quorum" />
         @if (pv.signatures?.length) {
           <ul class="sp__liste" aria-label="Signatures posées">
             @for (g of pv.signatures; track g.im) {
@@ -52,7 +68,7 @@ export type VueSignatures = 'membre' | 'responsable' | 'lecture';
             <div class="sp__actions">
               <button type="button" class="btn btn-outline btn-sm" [disabled]="travail()" (click)="relire()">Relire le PV (PDF)</button>
               <label class="sp__case"><input type="checkbox" [checked]="lu()" (change)="lu.set($any($event.target).checked)" /> J'ai relu le PV et je le signe</label>
-              <button type="button" class="btn btn-primary btn-sm" [disabled]="!lu() || travail()" (click)="signer()">Signer le PV d'ouverture</button>
+              <button type="button" class="btn btn-primary btn-sm" [disabled]="!lu() || travail()" (click)="signer()">{{ contexte() === 'FINANCIERE' ? 'Signer le PV de la seconde séance' : "Signer le PV d'ouverture" }}</button>
             </div>
           </div>
         }
@@ -65,7 +81,7 @@ export type VueSignatures = 'membre' | 'responsable' | 'lecture';
                 <span class="form-label">Signataire empêché</span>
                 <select class="form-control" (change)="empeche.set($any($event.target).value)">
                   <option value="" [selected]="!empeche()">— Choisir —</option>
-                  @for (a of attenduesSaufMoi(); track a.im) { <option [value]="a.im" [selected]="empeche() === a.im">{{ a.nom }}</option> }
+                  @for (a of attenduesSaufMoi(); track a.im) { <option [value]="a.im" [selected]="empeche() === a.im">{{ a.nom }}{{ qualite(a.qualite) }}</option> }
                 </select>
               </label>
               <label class="form-group">
@@ -94,46 +110,56 @@ export type VueSignatures = 'membre' | 'responsable' | 'lecture';
 })
 export class SignaturesPv {
   readonly idDmc = input.required<number>();
-  readonly seance = input.required<Seance>();
+  /** Le PV (celui de la séance d'ouverture, ou celui de la seconde séance) ; rien n'est rendu sans PV. */
+  readonly pv = input<PvSeance | null | undefined>(null);
+  /** Les membres de la commission, pour savoir qui préside. */
+  readonly membres = input<MembreSignataire[]>([]);
   readonly vue = input.required<VueSignatures>();
+  readonly contexte = input<ContexteSignatures>('OUVERTURE');
   /** Identifiant de l'utilisateur connecté (`K…` pour un membre de la CAO). */
   readonly moi = input<string | null>(null);
+  /** Séance d'ouverture à jour après un geste (contexte `OUVERTURE`). */
   readonly geste = output<Seance>();
+  /** Seconde séance à jour après un geste (contexte `FINANCIERE`). */
+  readonly gesteFinanciere = output<SeanceFinanciere>();
 
   private readonly service = inject(SeanceService);
+  private readonly pi = inject(EvaluationPiService);
   private readonly toast = inject(ToastService);
 
   readonly dateHeure = dateHeureFr;
+  readonly qualite = suffixeQualite;
   readonly travail = signal(false);
   readonly erreur = signal<string | null>(null);
   readonly lu = signal(false);
   readonly empeche = signal('');
   readonly motif = signal('');
 
-  readonly attendues = computed(() => this.seance().pv?.signaturesAttendues ?? []);
+  readonly attendues = computed(() => this.pv()?.signaturesAttendues ?? []);
   /** Un PV produit avant V70 : ni signature ni signataire attendu — il porte des lignes de signature sur papier. */
   readonly anterieur = computed(() => {
-    const pv = this.seance().pv;
+    const pv = this.pv();
     return !!pv && !pv.signe && !(pv.signatures?.length) && !this.attendues().length;
   });
-  readonly nomsAttendus = computed(() => this.attendues().map((a) => a.nom).join(', '));
+  readonly nomsAttendus = computed(() => this.attendues().map((a) => a.nom + suffixeQualite(a.qualite)).join(', '));
   readonly jeDoisSigner = computed(() => this.attendues().some((a) => a.im === this.moi()));
   readonly attenduesSaufMoi = computed(() => this.attendues().filter((a) => a.im !== this.moi()));
   /** Le président constate ; le responsable aussi, mais seulement une fois le président lui-même empêché (contrat V70). */
   readonly peutConstater = computed(() => {
-    const s = this.seance();
-    if (s.pv?.signe || !this.attenduesSaufMoi().length) return false;
-    if (this.vue() === 'membre') return s.membres.some((m) => m.im === this.moi() && m.president);
+    const pv = this.pv();
+    if (!pv || pv.signe || !this.attenduesSaufMoi().length) return false;
+    if (this.vue() === 'membre') return this.membres().some((m) => m.im === this.moi() && m.president);
     if (this.vue() === 'responsable') {
-      const president = s.membres.find((m) => m.president);
-      return !!president && (s.pv?.signatures ?? []).some((g) => g.im === president.im && g.empechement);
+      const president = this.membres().find((m) => m.president);
+      return !!president && (pv.signatures ?? []).some((g) => g.im === president.im && g.empechement);
     }
     return false;
   });
 
   relire(): void {
     this.travail.set(true);
-    this.service.pv(this.idDmc()).subscribe({
+    const lecture = this.contexte() === 'FINANCIERE' ? this.pi.pvSeanceFinanciere(this.idDmc()) : this.service.pv(this.idDmc());
+    lecture.subscribe({
       next: (b) => {
         this.travail.set(false);
         ouvrirBlobSur(b);
@@ -145,6 +171,10 @@ export class SignaturesPv {
   signer(): void {
     this.travail.set(true);
     this.erreur.set(null);
+    if (this.contexte() === 'FINANCIERE') {
+      this.pi.signerPvFinanciere(this.idDmc()).subscribe({ next: (s) => this.apresFinanciere(s, s.pv?.signe ? 'Votre signature est posée : le PV de la seconde séance est signé de tous.' : 'Votre signature est posée sur le PV.'), error: (e: ApiError) => this.echec(e) });
+      return;
+    }
     this.service.signerPv(this.idDmc()).subscribe({
       next: (s) => {
         this.travail.set(false);
@@ -159,7 +189,13 @@ export class SignaturesPv {
   constater(): void {
     this.travail.set(true);
     this.erreur.set(null);
-    this.service.constaterEmpechement(this.idDmc(), this.empeche(), this.motif().trim()).subscribe({
+    const im = this.empeche();
+    const motif = this.motif().trim();
+    if (this.contexte() === 'FINANCIERE') {
+      this.pi.empechementFinanciere(this.idDmc(), im, motif).subscribe({ next: (s) => this.apresFinanciere(s, "L'empêchement est constaté ; il est imprimé au PV."), error: (e: ApiError) => this.echec(e) });
+      return;
+    }
+    this.service.constaterEmpechement(this.idDmc(), im, motif).subscribe({
       next: (s) => {
         this.travail.set(false);
         this.empeche.set('');
@@ -169,6 +205,15 @@ export class SignaturesPv {
       },
       error: (e: ApiError) => this.echec(e),
     });
+  }
+
+  private apresFinanciere(s: SeanceFinanciere, texte: string): void {
+    this.travail.set(false);
+    this.lu.set(false);
+    this.empeche.set('');
+    this.motif.set('');
+    this.gesteFinanciere.emit(s);
+    this.toast.success(texte);
   }
 
   private echec(e: ApiError): void {
@@ -188,6 +233,9 @@ export class SignaturesPv {
         return;
       case 'NON_SIGNATAIRE':
         this.erreur.set("Cette personne n'est pas signataire du PV.");
+        return;
+      case 'QUORUM_NON_ATTEINT':
+        this.erreur.set(messageQuorum(e));
         return;
     }
     this.erreur.set(e.message || "Le geste n'a pas abouti.");

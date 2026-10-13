@@ -253,16 +253,59 @@ export interface SignaturePv {
   constatePar: string | null;
 }
 
+/** ⚠️ Manuel révisé, R1 (V101) — la qualité d'un signataire attendu : le président, le représentant qu'il a désigné pour ce contexte, un membre. */
+export type QualiteSignataire = 'PRESIDENT' | 'REPRESENTANT' | 'MEMBRE';
+
+/** Un signataire attendu (PV d'ouverture, PV de la seconde séance, rapport d'évaluation, rapport de présélection). */
+export interface SignataireAttendu {
+  im: string;
+  nom: string;
+  /** ⚠️ R1 — absent sur un PV antérieur à V101. */
+  qualite?: QualiteSignataire | null;
+}
+
+/**
+ * ⚠️ Manuel révisé, R1 (V101, arbitrage Q5 du 10/10) — le quorum délibératif de la CAO, servi avec chaque PV ou rapport : la règle
+ * appliquée (`MAJORITE`, `TOUS` ou un nombre), le requis, l'obtenu, et le président (ou son représentant désigné pour ce contexte).
+ * Il **bloque** la clôture des séances, la production du rapport et l'arrêt de la liste (409 `QUORUM_NON_ATTEINT`).
+ */
+export interface QuorumCao {
+  regle: string;
+  requis: number;
+  obtenus: number;
+  atteint: boolean;
+  presidentRequis: boolean;
+  presidentSigne: boolean;
+  /** Le représentant désigné par le président pour ce contexte (`K…`), ou `null`. */
+  representant: string | null;
+  representantNom: string | null;
+}
+
+/** ⚠️ R1 — les contextes pour lesquels le président désigne un représentant (`POST /api/cao/procedures/{idDmc}/representant`). */
+export type ContexteRepresentant = 'SEANCE' | 'SEANCE_FINANCIERE' | 'RAPPORT' | 'AMI';
+
+export interface RepresentantCao {
+  idDmc: number;
+  contexte: ContexteRepresentant;
+  im: string | null;
+  nom: string | null;
+  designeLe: string | null;
+  designePar: string | null;
+}
+
 /**
  * Le PV de la séance. ⚠️ V70 : signé électroniquement par chaque membre présent (signataires figés à la production) ; l'extrait
  * n'est publié qu'à la dernière signature. `signe` dit aussi la signature d'un PV de constat (S5), séance restée `ILLISIBLE`.
+ * ⚠️ R1 (V101) : `quorum` et la `qualite` des signataires attendus.
  */
 export interface PvSeance {
   produit: boolean;
   publie: boolean;
   signe?: boolean;
+  signeLe?: string | null;
   signatures?: SignaturePv[];
-  signaturesAttendues?: { im: string; nom: string }[];
+  signaturesAttendues?: SignataireAttendu[];
+  quorum?: QuorumCao | null;
 }
 
 /** Une part chiffrée pour la clé de l'appelant ; `enveloppe` seulement si l'offre a été scellée pour une clé archivée (S4). */

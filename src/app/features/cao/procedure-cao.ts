@@ -1,9 +1,20 @@
-import { ChangeDetectionStrategy, Component, DOCUMENT, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DOCUMENT, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
+import { AuthService } from '../../core/auth/auth.service';
+import { ApiError, codeErreur } from '../../core/errors/api-error';
 import { dateFr } from '../../core/interim/interim-libelles';
-import { VueProcedureCao } from '../../models';
+import { ToastService } from '../../core/notifications/toast.service';
+import { ContexteRepresentant, VueProcedureCao } from '../../models';
 import { CaoEspaceService } from '../../services';
+
+/** ⚠️ R1 — les contextes pour lesquels le président désigne un représentant, en clair. */
+const CONTEXTES: Readonly<Record<ContexteRepresentant, string>> = {
+  SEANCE: "la séance d'ouverture",
+  SEANCE_FINANCIERE: 'la seconde séance',
+  RAPPORT: "le rapport d'évaluation",
+  AMI: 'la présélection',
+};
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { LIBELLES_CATEGORIES } from '../prmp/fiche-marche/fiche-marche-modele';
 import { dateHeureFr } from '../candidat/libelles-candidat';
@@ -60,6 +71,34 @@ import { SeanceMembre } from './seance-membre';
             </li>
           }
         </ul>
+        <!-- ⚠️ Manuel révisé, R1 (V101) — le président désigne, par séance, le membre qui le représente pour le quorum. -->
+        @if (v.president) {
+          <details class="pc__representant">
+            <summary>Désigner mon représentant…</summary>
+            <p class="text-sm text-muted">Le quorum de la commission exige le président ou son représentant, désigné pour un contexte précis. Sans désignation, vous êtes vous-même requis.</p>
+            <div class="pc__representant-form">
+              <label class="form-group">
+                <span class="form-label">Pour</span>
+                <select class="form-control" [value]="contexte()" (change)="contexte.set($any($event.target).value)">
+                  <option value="SEANCE">la séance d'ouverture</option>
+                  @if (v.procedure.categorie === 'PRESTATIONS_INTELLECTUELLES') { <option value="SEANCE_FINANCIERE">la seconde séance (enveloppes financières)</option> }
+                  <option value="RAPPORT">le rapport d'évaluation</option>
+                  @if (v.procedure.categorie === 'PRESTATIONS_INTELLECTUELLES') { <option value="AMI">la présélection (AMI)</option> }
+                </select>
+              </label>
+              <label class="form-group">
+                <span class="form-label">Membre</span>
+                <select class="form-control" [value]="representant()" (change)="representant.set($any($event.target).value)">
+                  <option value="">— Personne (je suis requis) —</option>
+                  @for (m of membresRepresentables(); track m.im) { <option [value]="m.im">{{ m.nom }}</option> }
+                </select>
+              </label>
+              <button type="button" class="btn btn-outline btn-sm" [disabled]="travailRepresentant()" (click)="designer()">{{ representant() ? 'Désigner' : 'Retirer la désignation' }}</button>
+            </div>
+            @if (designation(); as d) { <p class="text-sm" role="status">{{ d }}</p> }
+            @if (erreurRepresentant(); as e) { <p class="form-error" role="alert">{{ e }}</p> }
+          </details>
+        }
       </section>
 
       <!-- ⚠️ Lot 4 (V69) — la séance d'ouverture : apporter ses parts, puis la lecture. -->
@@ -94,12 +133,55 @@ import { SeanceMembre } from './seance-membre';
     .pc__membres { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
     .pc__membre { display: flex; flex-direction: column; font-size: var(--text-sm); }
     .pc__eval { align-self: flex-start; }
+    .pc__representant summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; }
+    .pc__representant-form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.6rem; align-items: end; padding-top: 0.4rem; }
+    @media (max-width: 700px) { .pc__representant-form { grid-template-columns: 1fr; } }
   `,
 })
 export class ProcedureCao implements OnInit {
   private readonly service = inject(CaoEspaceService);
   private readonly route = inject(ActivatedRoute);
   private readonly document = inject(DOCUMENT);
+  private readonly toast = inject(ToastService);
+  private readonly auth = inject(AuthService);
+
+  // ── ⚠️ R1 (V101) — le représentant du président, par contexte ──
+  readonly contexte = signal<ContexteRepresentant>('SEANCE');
+  readonly representant = signal('');
+  readonly travailRepresentant = signal(false);
+  readonly designation = signal<string | null>(null);
+  readonly erreurRepresentant = signal<string | null>(null);
+  /** Les membres de la commission ayant un compte, hors le président lui-même. */
+  readonly membresRepresentables = computed(() =>
+    (this.vue()?.cao.membres ?? [])
+      .filter((m) => !m.president && m.compte?.idCompte && m.compte.idCompte !== this.auth.ref())
+      .map((m) => ({ im: m.compte!.idCompte!, nom: `${m.nom} ${m.prenom ?? ''}`.trim() })),
+  );
+
+  designer(): void {
+    if (this.travailRepresentant()) return;
+    this.travailRepresentant.set(true);
+    this.erreurRepresentant.set(null);
+    const im = this.representant() || null;
+    this.service.designerRepresentant(this.idDmc, this.contexte(), im).subscribe({
+      next: (r) => {
+        this.travailRepresentant.set(false);
+        const quoi = CONTEXTES[r.contexte] ?? r.contexte;
+        this.designation.set(r.im ? `${r.nom} vous représente pour ${quoi} (désigné le ${dateHeureFr(r.designeLe)}).` : `Aucun représentant pour ${quoi} : vous êtes requis.`);
+        this.toast.success(r.im ? 'Représentant désigné.' : 'Désignation retirée.');
+      },
+      error: (e: ApiError) => {
+        this.travailRepresentant.set(false);
+        const code = codeErreur(e);
+        this.erreurRepresentant.set(
+          code === 'REPRESENTANT_INVALIDE' ? 'Ce membre ne peut pas vous représenter (hors commission, ou sans compte actif).'
+          : code === 'CONTEXTE_INVALIDE' ? 'Ce contexte n’existe pas pour cette procédure.'
+          : e.status === 403 ? 'Seul le président désigne son représentant.'
+          : e.message || 'La désignation n’a pas abouti.',
+        );
+      },
+    });
+  }
 
   readonly idDmc = Number(this.route.snapshot.paramMap.get('idDmc'));
   readonly categories = LIBELLES_CATEGORIES;

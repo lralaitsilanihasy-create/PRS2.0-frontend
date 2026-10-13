@@ -69,6 +69,19 @@ export class EvaluationPiService {
     return this.http.post<SeanceFinanciere>(this.seance(idDmc, '/cloturer'), { presents, autres, observations }, { context: skipErrorToast() });
   }
 
+  /**
+   * ⚠️ R1 (V101) — un membre présent signe le PV de la seconde séance ; 403 `NON_PRESENT`, 409 `PV_NON_PRODUIT` / `DEJA_SIGNE`.
+   * La clôture et l'évaluation financière n'attendent pas ces signatures.
+   */
+  signerPvFinanciere(idDmc: number): Observable<SeanceFinanciere> {
+    return this.http.post<SeanceFinanciere>(this.seance(idDmc, '/pv/signer'), null, { context: skipErrorToast() });
+  }
+
+  /** ⚠️ R1 — le président (ou le responsable) constate un empêchement ; 400 `MOTIF_ABSENT` / `NON_SIGNATAIRE`, 409 `DEJA_SIGNE` / `QUORUM_NON_ATTEINT`. */
+  empechementFinanciere(idDmc: number, im: string, motif: string): Observable<SeanceFinanciere> {
+    return this.http.post<SeanceFinanciere>(this.seance(idDmc, '/pv/empechement'), { im, motif }, { context: skipErrorToast() });
+  }
+
   /** Le PV de la séance (PDF, ou Word) ; `ronde` pour une séance complémentaire. */
   pvSeanceFinanciere(idDmc: number, format: 'pdf' | 'docx' = 'pdf', ronde?: number): Observable<Blob> {
     let params = new HttpParams();

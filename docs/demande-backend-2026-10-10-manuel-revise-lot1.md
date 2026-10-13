@@ -264,3 +264,14 @@ selon les listes servies ; relecture des mentions des avis et lettres (B3).
 > d'équivalence imprimé sur l'AGPM dérivé (magasin partagé `SigmpTransitionStore`) ; gabarits `AVIS-F`, `AVIS-T`, `LETTRE-PI` resynchronisés
 > et `LETTRE-AOR` copié — **à relire par le pilote**. Observation de recette : sur le dossier 100371 (créé le 07/10, avant la jointure
 > d'office), le devis estimatif est « manquant » ; les dossiers créés depuis l'ont.
+
+> ✅ **Front, 2026-10-13 — tranche FR2 branchée (quorum et signatures, R1)**, recette dans le navigateur (président de la commission de la
+> procédure 40, responsable ADMIN01) : le bloc `app-quorum-cao` (requis / obtenus / règle / président ou représentant) sous le PV
+> d'ouverture, le PV de la seconde séance, le rapport d'évaluation et le rapport de présélection ; la **qualité** des signataires attendus
+> (président, représentant du président) ; le bloc de signatures sert désormais aussi le **PV de la seconde séance** (`contexte="FINANCIERE"`,
+> signer / empêchement) ; « Désigner mon représentant… » dans l'espace CAO du président, par contexte (séance, seconde séance, rapport,
+> présélection — les deux derniers selon la catégorie), désigné puis retiré en recette ; le refus 409 `QUORUM_NON_ATTEINT` est nommé avec
+> ses valeurs partout où il peut survenir (clôture des séances, rapport, liste de l'AMI, empêchements). Constat de recette : le rapport de
+> la procédure 40 sert « quorum atteint, 2 sur 2, représentant du président signataire » dès la désignation ; les PV produits avant V101
+> (séance d'ouverture 40, seconde séance 50) n'ont ni quorum ni signataires attendus : le bloc les présente comme « PV antérieur à la
+> signature en ligne ».

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, input, output, signal } from '@angular/core';
 
+import { AuthService } from '../../core/auth/auth.service';
 import { ApiError, codeErreur, corpsErreur } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { telechargerBlob } from '../../core/securite/fichiers-surs';
@@ -7,6 +8,8 @@ import { EnveloppeFinanciere, SeanceFinanciere } from '../../models';
 import { EvaluationPiService } from '../../services';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 import { ApportParts } from '../procedure/apport-parts';
+import { messageQuorum } from '../procedure/quorum-cao';
+import { MembreSignataire, SignaturesPv } from '../procedure/signatures-pv';
 import { DroitsEvaluation, EspaceEvaluation } from './droits-evaluation';
 import { ariary } from './libelles-evaluation';
 
@@ -41,6 +44,7 @@ export function refusSeanceFinanciere(e: ApiError): string {
     case 'SEANCE_NON_DECHIFFREE': return 'Les enveloppes ne sont pas encore ouvertes : le quorum des parts n’est pas atteint.';
     case 'SEANCE_CLOSE': return 'La séance est close.';
     case 'MEMBRE_INCONNU': return 'Un présent coché n’est pas membre de la commission.';
+    case 'QUORUM_NON_ATTEINT': return messageQuorum(e);
     case 'CATEGORIE_SANS_NOTATION_TECHNIQUE': return 'La seconde séance ne concerne que les prestations intellectuelles.';
     case 'SEANCE_FINANCIERE_EN_COURS': return 'Une séance financière est déjà en cours : close-la d’abord.';
     case 'COMPLEMENTAIRE_SANS_OBJET': return 'Aucune enveloppe n’attend une séance complémentaire : elle suit l’échec d’une négociation.';
@@ -61,7 +65,7 @@ export function refusSeanceFinanciere(e: ApiError): string {
 @Component({
   selector: 'app-seance-financiere',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ApportParts],
+  imports: [ApportParts, SignaturesPv],
   template: `
     <section class="card sf" aria-labelledby="sf-titre">
       <h2 id="sf-titre" class="sf__titre">Seconde séance d’ouverture — enveloppes financières</h2>
@@ -161,6 +165,10 @@ export function refusSeanceFinanciere(e: ApiError): string {
             <button type="button" class="btn btn-outline btn-sm" [disabled]="travail()" (click)="pv('docx')">PV (Word)</button>
           </div>
         }
+        <!-- ⚠️ R1 (V101) — le PV de la seconde séance se signe par les présents, avec le quorum de la commission. -->
+        @if (s.pv?.produit) {
+          <app-signatures-pv contexte="FINANCIERE" [idDmc]="idDmc()" [pv]="s.pv" [membres]="membresPv()" [vue]="detenteur() ? 'membre' : conduite() ? 'responsable' : 'lecture'" [moi]="moi()" (gesteFinanciere)="recevoirSignature($event)" />
+        }
 
         @if (s.etat === 'CLOSE' && conduite()) {
           <details class="sf__secours">
@@ -227,6 +235,13 @@ export class SeanceFinanciereVue implements OnInit, OnDestroy {
   /** Le responsable conduit (coquille interne) ; un membre de la commission détient une part (espace CAO). */
   readonly conduite = computed(() => this.espace() === 'interne' && this.droits().responsable);
   readonly detenteur = computed(() => this.espace() === 'cao' && this.droits().membre);
+  // ── ⚠️ R1 (V101) — les signatures du PV de la seconde séance ──
+  private readonly auth = inject(AuthService);
+  readonly moi = computed(() => this.auth.ref());
+  readonly membresPv = computed<MembreSignataire[]>(() => this.membres().map((m) => ({ im: m.membre, nom: m.nom || m.membre, president: m.president })));
+  recevoirSignature(s: SeanceFinanciere): void {
+    this.recevoir(s);
+  }
   readonly autresTexte = computed(() => this.autres().map((a) => a.nom + (a.qualite ? ' (' + a.qualite + ')' : '')).join(', '));
   private sondage: ReturnType<typeof setInterval> | undefined;
 

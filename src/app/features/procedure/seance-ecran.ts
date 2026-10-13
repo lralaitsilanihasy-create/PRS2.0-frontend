@@ -3,6 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError, codeErreur } from '../../core/errors/api-error';
+import { messageQuorum } from './quorum-cao';
 import { ToastService } from '../../core/notifications/toast.service';
 import { telechargerBlob } from '../../core/securite/fichiers-surs';
 import { EtatSeance, Seance } from '../../models';
@@ -166,7 +167,7 @@ export function quorumLibelle(s: Seance): string {
         @if (s.pv?.produit) {
           <!-- ⚠️ V70 (§B2) : le PV se signe par les membres présents, depuis leur espace ; publié à la dernière signature. -->
           <section class="card se__bloc" aria-label="Signatures du PV d'ouverture">
-            <app-signatures-pv [idDmc]="idDmc" [seance]="s" [vue]="conduite() ? 'responsable' : 'lecture'" (geste)="seance.set($event)" />
+            <app-signatures-pv [idDmc]="idDmc" [pv]="s.pv" [membres]="s.membres" [vue]="conduite() ? 'responsable' : 'lecture'" (geste)="seance.set($event)" />
             <div class="se__actions">
               <button type="button" class="btn btn-primary" [disabled]="travail()" (click)="telechargerPv()">Enregistrer le PV (PDF)</button>
               @if (s.pv?.publie) { <span class="text-sm text-muted">Publié sur la procédure en ligne (extrait sans les alertes).</span> }
@@ -310,6 +311,9 @@ export class SeanceEcran implements OnInit, OnDestroy {
         return;
       case 'SEANCE_NON_DECHIFFREE':
         this.message.set("Les offres ne sont pas encore ouvertes : le quorum n'est pas atteint.");
+        return;
+      case 'QUORUM_NON_ATTEINT':
+        this.message.set(messageQuorum(e));
         return;
     }
     this.message.set(e.message || "Le geste n'a pas abouti.");

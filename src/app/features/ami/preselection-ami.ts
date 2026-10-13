@@ -11,6 +11,7 @@ import { ExpressionNotee, Preselection } from '../../models';
 import { AmiService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr } from '../candidat/libelles-candidat';
+import { QuorumCaoVue, messageQuorum, suffixeQualite } from '../procedure/quorum-cao';
 
 /** Les refus nommés de la tranche AMI-b (V83). */
 export const MESSAGES_PRESELECTION: Readonly<Record<string, string>> = {
@@ -39,6 +40,7 @@ export const MESSAGES_PRESELECTION: Readonly<Record<string, string>> = {
 
 export function messagePreselection(e: ApiError, defaut: string): string {
   const code = codeErreur(e);
+  if (code === 'QUORUM_NON_ATTEINT') return messageQuorum(e);
   if (code === 'NOTATION_INCOMPLETE') {
     const n = corpsErreur<{ details?: { expressions?: unknown[] } }>(e)?.details?.expressions ?? [];
     return `${MESSAGES_PRESELECTION['NOTATION_INCOMPLETE']}${n.length ? ' : n° ' + n.join(', ') : ''}.`;
@@ -72,7 +74,7 @@ interface NoteEnCours {
 @Component({
   selector: 'app-preselection-ami',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur],
+  imports: [RouterLink, EtatErreur, QuorumCaoVue],
   template: `
     @if (espace === 'cao') {
       <nav class="ps__ariane" aria-label="Fil d'Ariane">
@@ -251,8 +253,10 @@ interface NoteEnCours {
             @for (s of r.signatures; track s.im) {
               <li><strong>{{ s.nom }}</strong> : {{ s.empechement ? 'empêché — ' + s.motif + ' (constaté par ' + s.constatePar + ')' : 'signé le ' + dateHeure(s.date) }}{{ s.observation ? ' — « ' + s.observation + ' »' : '' }}</li>
             }
-            @for (a of attendues(); track a.im) { <li><strong>{{ a.nom }}</strong> : <span class="text-muted">signature attendue</span></li> }
+            @for (a of attendues(); track a.im) { <li><strong>{{ a.nom }}</strong>{{ qualite(a.qualite) }} : <span class="text-muted">signature attendue</span></li> }
           </ul>
+          <!-- ⚠️ R1 (V101) — le rapport signé vaut PV de validation de l'AMI (Q4) : le quorum de la commission y est servi. -->
+          <app-quorum-cao [quorum]="r.quorum" />
           @if (jeSigne()) {
             <label class="form-label" for="ps-obs-sig">Observation (facultative)</label>
             <input id="ps-obs-sig" class="form-control" [value]="observationSignature()" (input)="observationSignature.set(valeur($event))" />
@@ -363,6 +367,7 @@ export class PreselectionAmi implements OnInit {
     return r ? r.attendues.filter((a) => !r.signatures.some((s) => s.im === a.im)) : [];
   });
   readonly jeSigne = computed(() => this.ps()?.etat === 'LISTE_ARRETEE' && this.attendues().some((a) => a.im === this.moi()));
+  readonly qualite = suffixeQualite;
 
   // ── Les saisies ──
   readonly conflit = signal<boolean | null>(null);

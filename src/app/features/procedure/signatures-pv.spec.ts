@@ -40,7 +40,9 @@ describe('Signatures du PV d’ouverture (V70)', () => {
     http = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(SignaturesPv);
     fixture.componentRef.setInput('idDmc', 40);
-    fixture.componentRef.setInput('seance', seance);
+    // ⚠️ R1 — le bloc reçoit le PV et les membres (il sert aussi le PV de la seconde séance).
+    fixture.componentRef.setInput('pv', seance.pv);
+    fixture.componentRef.setInput('membres', seance.membres);
     fixture.componentRef.setInput('vue', vue);
     fixture.componentRef.setInput('moi', moi);
     fixture.detectChanges();

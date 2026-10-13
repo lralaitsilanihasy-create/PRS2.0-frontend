@@ -45,7 +45,7 @@ import { dateHeureFr } from '../candidat/libelles-candidat';
         }
         <!-- ⚠️ V70 (§B2) : chaque membre présent signe le PV ici ; le président constate un empêchement. -->
         @if (s.pv?.produit) {
-          <app-signatures-pv [idDmc]="idDmc()" [seance]="s" vue="membre" [moi]="auth.ref()" (geste)="seance.set($event)" />
+          <app-signatures-pv [idDmc]="idDmc()" [pv]="s.pv" [membres]="s.membres" vue="membre" [moi]="auth.ref()" (geste)="seance.set($event)" />
         }
       }
     </section>
