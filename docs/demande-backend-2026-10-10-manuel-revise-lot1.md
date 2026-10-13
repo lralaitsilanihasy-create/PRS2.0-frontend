@@ -226,3 +226,16 @@ selon les listes servies ; relecture des mentions des avis et lettres (B3).
 >   dès la fiche (R3b) devient le projet de lettre. L'avis d'une telle fiche répond `MODE_SANS_AVIS` (disponibilité, impression, projet, mentions).
 > - **Côté front** : écran « relecture des mentions » (liste, écarts de gabarit vs de saisie, sans objet) sur l'avis et la lettre ;
 >   pour un AOR, masquer l'avis et proposer la lettre avec saisie des candidats.
+
+> ⚠️ **Backend, 2026-10-13 — B5 livré (tranche R4, V104)** ; contrat : `docs/api-endpoints.md`, § *… tranche R4*.
+> - `t_dossier_instantane` (dossier, n° de soumission, écran, JSON du DTO de lecture tel que servi, empreinte SHA-256, date, acteur),
+>   immuable par trigger ; écrit à la soumission (n° 1) et à chaque resoumission (n° suivant), dans la même transaction.
+> - Écrans par famille comme demandé (DMC : PLAN, AVIS, AMI, CAO ; DDM : SEANCE, EVALUATION, ATTRIBUTION, CAO, AVIS, PLAN ; DGC :
+>   ATTRIBUTION, ACTE ; DSS : DSS, ATTRIBUTION). **Écart** : un écran dont la donnée n'existe pas à cet instant n'est **pas** figé (404 à la
+>   lecture) plutôt que figé vide ; `AVIS` regroupe les disponibilités de l'avis et des lettres, les publications imprimées et les projets
+>   (R3b) ; `AMI` regroupe l'AMI et la présélection ; `ACTE` l'acte et son marché ; `PLAN` la ligne du plan avec ses valeurs.
+> - `GET /api/dossiers/{id}/instantanes`, `…/{ecran}[?soumission=n]` (JSON figé, dernière soumission par défaut ; 400 `ECRAN_INCONNU`, 404),
+>   `…/{ecran}/pdf` (export générique du JSON). **Écart** : la garde est celle de `GET /api/dossiers/{id}` (profils CNM de la localité,
+>   Président, Administrateur, PRMP/UGPM) — les membres de CAO ne lisent pas ces routes (coquille interne), ils gardent leurs écrans vivants.
+> - **Côté front** : mode figé des écrans Séance, Évaluation, AMI, Attribution, CAO, Avis, Plan pour les profils CNM depuis ces JSON
+>   (mêmes composants, bandeau « Figé à la soumission n° … du … »), bouton d'export PDF.
