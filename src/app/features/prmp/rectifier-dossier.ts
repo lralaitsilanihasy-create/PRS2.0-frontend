@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
+import { messageSoumissionRefusee } from '../../shared/circuit/controles-libelles';
 import { ToastService } from '../../core/notifications/toast.service';
 import { TYPES_PDF, validerFichier } from '../../core/securite/fichiers-surs';
 import {
@@ -797,7 +798,7 @@ export class RectifierDossier {
       error: (e: ApiError) => {
         this.saving.set(false);
         this.resoumission.set(false);
-        this.errResoum.set(e.message || 'Resoumission impossible (la rectification, elle, est enregistrée).');
+        this.errResoum.set(messageSoumissionRefusee(e, 'Resoumission impossible (la rectification, elle, est enregistrée).'));
       },
     });
   }

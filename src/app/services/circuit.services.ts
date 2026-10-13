@@ -191,7 +191,9 @@ export class DossierService extends CrudService<Dossier> {
    * 409 (déjà soumis), 400 (aucun PPM localisé rattaché).
    */
   soumettre(id: number): Observable<Dossier> {
-    return this.http.post<Dossier>(`${this.baseUrl}/${id}/soumettre`, {});
+    // ⚠️ R5 (V105, 13/10) — 400 `CONTROLES_BLOQUANTS` (`details.controles[]`) : chaque écran nomme les contrôles un à un
+    // (`messageSoumissionRefusee`), la boîte générique de l'intercepteur ferait doublon.
+    return this.http.post<Dossier>(`${this.baseUrl}/${id}/soumettre`, {}, { context: skipErrorToast() });
   }
 
   /**

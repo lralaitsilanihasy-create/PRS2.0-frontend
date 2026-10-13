@@ -306,3 +306,21 @@ selon les listes servies ; relecture des mentions des avis et lettres (B3).
 > précède la signature en ligne ; (2) après la soumission de 100378, `GET /api/dossiers/100378/controles` est vide, alors que la tranche R5
 > annonce l'enregistrement de tous les résultats (au moins `DELAI_PUBLICITE`, conforme ici : 32 jours) ; (3) la réponse de `…/soumettre` sert
 > `refeDossier: null` (la référence n'est posée qu'à la réception — rappel, pas une anomalie).
+
+> ✅ **Front, 2026-10-13 — tranche FR5 branchée (contrôles du dossier, R5)**, recette dans le navigateur (PRMP001, MEMANT1, dossiers 100371
+> et 100378 — ce dernier reçu et dispatché pour l'occasion) : le refus 400 `CONTROLES_BLOQUANTS` de la soumission et de la resoumission
+> est **nommé contrôle par contrôle** (référence, libellé, valeurs constatées) sur tous les écrans qui soumettent — la soumission est
+> désormais silencieuse pour l'intercepteur, chaque écran dit son refus (joué sur 100371 : `DOCUMENTS_EVALUATION_SIGNES` et
+> `QUORUM_COMMISSION` listés) ; dans l'examen, un bouton **« Contrôles »** dans l'en-tête (compte des non-conformités, rouge dès une)
+> ouvre à toute étape la liste des contrôles en modale — et la même liste est en tête de la synthèse : le Membre **lève** (conforme ou sans
+> objet, observation) et **ajoute** un contrôle B (point de la grille ou règle libre, observation exigée si non conforme, bloquant au
+> choix) ; l'historique complet reste sous un volet, l'export PDF (`CONTROLES_<dossier>.pdf`) à côté ; sur la page du dossier, un onglet
+> **« Contrôles (n) »** en lecture pour tous ceux qui lisent le dossier (PRMP comprise) ; le refus 409 `CONTROLE_NON_CONFORME` de l'avis
+> favorable reprend le message du serveur et dit où lever. Joués : levée (le dernier résultat fait foi), ajout sur `POINT_20`, onglet
+> PRMP, export PDF, 409 `EXAMEN_ABSENT` avant l'examen et 400 nominatif sans observation (API), 409 `CONTROLE_NON_CONFORME` sur un FAV
+> avec `POINT_20` non levé (API, grille statuée conforme).
+> ⚠️ **Observations pour le backend** : (1) confirmé sur 100378 après réception : **aucun résultat automatique** n'est enregistré à la
+> soumission (seuls ceux du Membre apparaissent) — voir l'encadré FR4 ; (2) **transition R8** : 100378, soumis à 20 h 43 sans les pièces
+> 26 et 28 (condition `PAPIER`, non exigées alors pour une fiche validée), a été refusé à la réception à 21 h 10 parce qu'elles manquaient —
+> depuis V110, la fiche 39, sans `modeRemise`, est lue « papier ». Un dossier soumis sous l'ancienne règle devient irrecevable : à
+> confirmer si c'est voulu (pièces jointes après coup pour poursuivre la recette).

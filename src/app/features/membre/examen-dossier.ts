@@ -21,10 +21,12 @@ import { ApiError, estConflitVersion } from '../../core/errors/api-error';
 import { SortieProtegee } from '../../core/navigation/sortie-protegee';
 import { ToastService } from '../../core/notifications/toast.service';
 import { urlBlobSure } from '../../core/securite/fichiers-surs';
+import { bilanControles, messageControleNonConforme } from '../../shared/circuit/controles-libelles';
 import {
   Avis,
   Capm,
   Chronometrage,
+  ControleResultat,
   DelaiStandard,
   Dossier,
   Examen,
@@ -46,6 +48,7 @@ import {
 import {
   AvisService,
   CapmService,
+  ControleService,
   DelaiStandardService,
   DispatchService,
   DossierService,
@@ -125,6 +128,7 @@ import {
 import { ExamenParcours } from './examen/examen-parcours';
 import { ExamenSynthese } from './examen/examen-synthese';
 import { PreControlePanneau } from '../../shared/pre-controle';
+import { ControlesDossier } from '../../shared/circuit/controles-dossier';
 
 type OngletDocument = 'ppm' | 'fiche' | 'agpm' | 'dao' | 'pieces';
 
@@ -211,6 +215,7 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
     ExamenSynthese,
     ConfirmationSortie,
     PreControlePanneau,
+    ControlesDossier,
   ],
   template: `
     <section class="exam" [class.exam--synthese]="estEtapeAvis() && points().length > 0">
@@ -241,6 +246,12 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
                 <app-icone [nom]="d.genre === 'pause' ? 'pause' : 'clock'" [taille]="15" />{{ d.libelle }}
               </p>
             }
+            <!-- ⚠️ R5 (13/10) — les contrôles du dossier, atteignables à toute étape (la synthèse n'ouvre qu'une fois tout traité) :
+                 le compte dans l'en-tête, la liste en modale — lire, lever, ajouter. -->
+            <button type="button" class="ctrl-pill" [class.ctrl-pill--nc]="bilanControles().nonConformes > 0" [class.ctrl-pill--vide]="!bilanControles().total" aria-haspopup="dialog" title="Contrôles automatiques (serveur) et contrôles du Membre" (click)="controlesOuverts.set(true)">
+              <app-icone nom="shield" [taille]="15" />
+              @if (bilanControles().total) { Contrôles : {{ bilanControles().nonConformes }} non conforme(s) sur {{ bilanControles().total }} } @else { Contrôles }
+            </button>
             <label class="tete__date">
               <span>Date<span class="cnm-sr-only"> d'examen</span></span>
               <input type="date" [value]="dateExamen()" [disabled]="mode() === 'locked'" (input)="dateExamen.set(valeurDe($event))" />
@@ -494,6 +505,10 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
             [saving]="saving()"
             [dispatchConnu]="idDispatch() != null"
             [libellePrecedent]="libelleRetourSynthese()"
+            [controles]="controles()"
+            [controlesEditables]="mode() !== 'locked'"
+            [points]="points()"
+            (controleChange)="chargerControles()"
             (modifier)="modifierObservation($event)"
             (syntheseChange)="synthese.set($event)"
             (avisChange)="avis.set($event)"
@@ -542,6 +557,25 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
          au clic sur le voile (règle du projet). Le panneau y relit ses signalements ; à la fermeture, le
          compteur du bouton est relu. Le titre du panneau dit ce qu'on y fait — le pilote ne l'avait pas
          compris à la première rencontre. -->
+    <!-- ⚠️ R5 (13/10) — les contrôles du dossier en modale : fermeture par le bouton ou Échap (896de8e). -->
+    @if (controlesOuverts() && dossier(); as d) {
+      <div class="modal-backdrop">
+        <div class="modal modal-xl controles-modal" role="dialog" aria-modal="true" aria-label="Contrôles du dossier" appModale (appModaleFermer)="controlesOuverts.set(false)">
+          <div class="modal-header">
+            <h2 class="modal-title">Contrôles du dossier</h2>
+            <button type="button" class="btn-close" aria-label="Fermer" (click)="controlesOuverts.set(false)">✕</button>
+          </div>
+          <div class="modal-body">
+            <p class="controles-modal__aide">
+              Les contrôles automatiques sont évalués par le serveur à la soumission ; vous posez les vôtres (contrôles B) pendant l'examen.
+              Par règle, le dernier résultat posé fait foi : une non-conformité se lève en posant « Conforme » ou « Sans objet » avec votre
+              observation. Une non-conformité non levée interdit l'avis « Favorable » sans réserve.
+            </p>
+            <app-controles-dossier [idDossier]="d.idDossier" [controles]="controles()" [editable]="mode() !== 'locked'" [points]="points()" (pose)="chargerControles()" />
+          </div>
+        </div>
+      </div>
+    }
     <!-- Réinitialiser l'examen : confirmation — fermeture par bouton ou Échap, jamais au clic sur le voile (896de8e). -->
     @if (reinitOuverte()) {
       <div class="modal-backdrop">
@@ -722,6 +756,20 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
    * (compteur du bouton) est lu en silence à l'ouverture de l'examen et relu à la fermeture de la modale.
    */
   private readonly preControleService = inject(PreControleService);
+  /**
+   * ⚠️ Manuel révisé, R5 (V105, 13/10) — les contrôles du dossier : règles automatiques (écrites à la soumission) et contrôles B du
+   * Membre. Lus en silence après le dossier, relus après chaque résultat posé ; la synthèse les présente en tête, l'en-tête les compte.
+   */
+  private readonly controleService = inject(ControleService);
+  readonly controles = signal<ControleResultat[]>([]);
+  readonly bilanControles = computed(() => bilanControles(this.controles()));
+  readonly controlesOuverts = signal(false);
+  chargerControles(): void {
+    this.controleService
+      .liste(this.idDossier)
+      .pipe(catchError(() => of([] as ControleResultat[])))
+      .subscribe((l) => this.controles.set(l));
+  }
   readonly preControleOuvert = signal(false);
   readonly preControleResume = signal<ResumePreControle | null>(null);
   /** La modale a été ouverte au moins une fois : le bouton cesse de battre (il reste rouge s'il y a à regarder). */
@@ -1645,6 +1693,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
         this.pvs.set(r.pvs);
         this.ppm.set(r.ppms.find((p) => p.idDossier === this.idDossier) ?? null);
         this.chargerPreControle(); // compteur du bouton « Pré-contrôle » (silencieux)
+        this.chargerControles(); // contrôles du dossier (R5, silencieux)
         const mines = r.marches.filter((m) => m.idDossier === this.idDossier);
         this.marches.set(mines);
         // Bénéficiaires + prévisions des marchés du dossier (pour le tableau PPM partagé).
@@ -2438,10 +2487,12 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
         error: (e: ApiError) => {
           this.saving.set(false);
           // 400 ciblé (grille incomplète…) : afficher le détail par champ, pas un message générique.
+          // ⚠️ R5 — 409 CONTROLE_NON_CONFORME : une non-conformité non levée interdit l'avis « Favorable » sans réserve.
           const msg =
-            (e.fieldErrors && Object.values(e.fieldErrors).join(' ')) ||
-            e.message ||
-            "Erreur lors de la soumission de l'examen.";
+            messageControleNonConforme(e) ??
+            ((e.fieldErrors && Object.values(e.fieldErrors).join(' ')) ||
+              e.message ||
+              "Erreur lors de la soumission de l'examen.");
           this.formError.set(msg);
           this.toast.error(msg);
         },

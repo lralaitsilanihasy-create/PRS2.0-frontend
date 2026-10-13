@@ -1,10 +1,10 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, TestRequest, provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { AuthService } from '../../../core/auth/auth.service';
-import { Dossier, Instantane, Role, VersionArchivee } from '../../../models';
+import { ControleResultat, Dossier, Instantane, Role, VersionArchivee } from '../../../models';
 import { DossierContenuStore } from './dossier-contenu.store';
 import { DossierDocuments } from './dossier-documents';
 
@@ -82,7 +82,9 @@ describe('DossierDocuments — écrans figés d’un dossier de procédure', () 
     { idInstantane: 2, numeroSoumission: 1, ecran: 'SEANCE', figeLe: '2026-10-13T09:00:00', figePar: 'ADMIN01', empreinte: 'b'.repeat(64), taille: 100 },
   ];
 
-  function monter(role: Role, instantanes: Instantane[]): HTMLElement {
+  const CONTROLE: ControleResultat = { idControle: 1, numeroSoumission: 1, reference: '2-II P2', idPointCtrl: null, regle: 'DELAI_PUBLICITE', libelle: 'Délai de publicité', valeurs: null, resultat: 'CONFORME', bloquant: true, auteur: 'SERVEUR', dateControle: '2026-10-13T09:00:00', observation: null };
+
+  function monter(role: Role, instantanes: Instantane[], controles: ControleResultat[] = []): ComponentFixture<DossierDocuments> {
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting(), DossierContenuStore, { provide: AuthService, useValue: { role: signal<Role | null>(role) } }],
     });
@@ -93,26 +95,40 @@ describe('DossierDocuments — écrans figés d’un dossier de procédure', () 
     while ((attente = http.match(() => true)).length) {
       for (const req of attente) {
         if (req.request.url.endsWith('/instantanes')) req.flush(instantanes);
+        else if (req.request.url.endsWith('/controles')) req.flush(controles);
         else if (req.request.url.endsWith('/chronometrage')) req.flush(null);
         else req.flush([]);
       }
     }
     const fixture = TestBed.createComponent(DossierDocuments);
     fixture.detectChanges();
-    return fixture.nativeElement as HTMLElement;
+    return fixture;
   }
 
   it('le Membre voit « Pièces jointes » et « Écrans figés (n) » en onglets, les pièces ouvertes', () => {
-    const el = monter('MEMBRE', INSTANTANES);
+    const el = monter('MEMBRE', INSTANTANES).nativeElement as HTMLElement;
     const titres = Array.from(el.querySelectorAll('[role="tab"]')).map((b) => (b.textContent ?? '').replace(/\s+/g, ' ').trim());
     expect(titres).toEqual(['Pièces jointes 0', 'Écrans figés 2']);
     expect(el.querySelector('app-dossier-pieces')).not.toBeNull();
     expect(el.querySelector('app-dossier-instantanes')).toBeNull();
   });
 
-  it('sans instantané, pas d’onglet : la section des pièces seule, comme avant', () => {
-    const el = monter('MEMBRE', []);
+  it('sans instantané ni contrôle, pas d’onglet : la section des pièces seule, comme avant', () => {
+    const el = monter('MEMBRE', []).nativeElement as HTMLElement;
     expect(el.querySelector('[role="tablist"]')).toBeNull();
     expect(el.querySelector('app-dossier-pieces')).not.toBeNull();
+  });
+
+  it('⚠️ R5 — avec des contrôles enregistrés, l’onglet « Contrôles (n) » s’ajoute, en lecture (PRMP comprise)', () => {
+    const fixture = monter('PRMP', [], [CONTROLE]);
+    const el = fixture.nativeElement as HTMLElement;
+    const titres = Array.from(el.querySelectorAll('[role="tab"]')).map((b) => (b.textContent ?? '').replace(/\s+/g, ' ').trim());
+    expect(titres).toEqual(['Pièces jointes 0', 'Contrôles 1']);
+    el.querySelectorAll<HTMLButtonElement>('[role="tab"]')[1].click();
+    fixture.detectChanges();
+    expect(el.querySelector('app-controles-dossier')).not.toBeNull();
+    expect(el.querySelector('app-dossier-pieces')).toBeNull();
+    // Lecture seule : ni « Lever… » ni « Ajouter ».
+    expect(Array.from(el.querySelectorAll('app-controles-dossier button')).map((b) => b.textContent?.trim())).toEqual(['Exporter en PDF']);
   });
 });

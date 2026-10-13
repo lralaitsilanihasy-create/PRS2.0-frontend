@@ -5,6 +5,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
+import { messageSoumissionRefusee } from '../../shared/circuit/controles-libelles';
 import { ToastService } from '../../core/notifications/toast.service';
 import { VacanceStore } from '../../core/vacance/vacance.store';
 import { Dossier, Reception } from '../../models';
@@ -277,8 +278,7 @@ export class SuiviDelais {
       },
       error: (e: ApiError) => {
         this.submittingId.set(null);
-        const detail = e.fieldErrors ? Object.values(e.fieldErrors).join(' ') : '';
-        this.toast.error(detail || e.message || 'Échec de la soumission.', 'Soumission impossible');
+        this.toast.error(messageSoumissionRefusee(e), 'Soumission impossible');
       },
     });
   }

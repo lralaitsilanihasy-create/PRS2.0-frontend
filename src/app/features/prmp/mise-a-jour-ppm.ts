@@ -6,6 +6,7 @@ import { catchError, tap } from 'rxjs/operators';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError, estConflitVersion } from '../../core/errors/api-error';
+import { messageSoumissionRefusee } from '../../shared/circuit/controles-libelles';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur, TYPES_PDF, validerFichier } from '../../core/securite/fichiers-surs';
 import {
@@ -883,7 +884,7 @@ export class MiseAJourPpm {
       },
       error: (e: ApiError) => {
         this.enregistrement.set(false);
-        this.toast.error(e.message || 'Soumission impossible.');
+        this.toast.error(messageSoumissionRefusee(e, 'Soumission impossible.'), 'Soumission impossible');
       },
     });
   }

@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { ApiError, codeErreur, corpsErreur } from '../../../core/errors/api-error';
+import { messageControlesBloquants } from '../../../shared/circuit/controles-libelles';
 import { ActeGestion, CategorieMarche, DemandeActe, MarcheActes, SousTypeActe } from '../../../models';
 
 /** Les actes de gestion du manuel (famille `DGC`), dans l'ordre du menu de dépôt. */
@@ -61,6 +62,9 @@ export function manquesDemande(d: DemandeActe, m: Pick<MarcheActes, 'montantInit
 
 /** Le refus du serveur, dit au déposant (détails chiffrés compris). */
 export function messageRefusActe(e: ApiError | HttpErrorResponse): string {
+  // ⚠️ R5 (V105) — la soumission de l'acte passe les contrôles automatiques : les bloquants sont nommés un à un.
+  const bloquants = messageControlesBloquants(e);
+  if (bloquants) return bloquants;
   const details = corpsErreur<{ details?: Record<string, unknown>; message?: string }>(e)?.details ?? {};
   const n = (k: string) => (typeof details[k] === 'number' ? (details[k] as number) : null);
   const d = (k: string) => (typeof details[k] === 'string' ? jj(details[k] as string) : null);

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
-import { Avis } from '../../../models';
+import { Avis, ControleResultat, PointsCtrl } from '../../../models';
+import { ControlesDossier } from '../../../shared/circuit/controles-dossier';
 import { MotifsTypes, insererTexte } from '../../../shared/circuit/motifs-types';
 import { Icone } from '../../../shared/ui/icone';
 import { GroupeRecap, ObservationNumerotee, pluriel } from './examen-modele';
@@ -17,9 +18,20 @@ import { GroupeRecap, ObservationNumerotee, pluriel } from './examen-modele';
 @Component({
   selector: 'app-examen-synthese',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icone, MotifsTypes],
+  imports: [Icone, MotifsTypes, ControlesDossier],
   template: `
     <div class="synth">
+      <!-- ⚠️ Manuel révisé, R5 (V105, 13/10) — en tête de la synthèse, les CONTRÔLES du dossier : les règles automatiques du serveur
+           (à la soumission) et les contrôles B du Membre ; une non-conformité non levée interdit l'avis « Favorable » sans réserve. -->
+      @if (idDossier(); as id) {
+        <section class="panneau synth__controles" aria-labelledby="controles-titre">
+          <header class="panneau__tete">
+            <h2 id="controles-titre">Contrôles du dossier</h2>
+            <small>automatiques (serveur) et du Membre — par règle, le dernier résultat posé fait foi</small>
+          </header>
+          <app-controles-dossier [idDossier]="id" [controles]="controles()" [editable]="controlesEditables()" [points]="points()" (pose)="controleChange.emit()" />
+        </section>
+      }
       <section class="panneau synth__recap" aria-labelledby="recap-titre">
         <header class="panneau__tete">
           <h2 id="recap-titre">Récapitulatif avant soumission</h2>
@@ -159,6 +171,11 @@ export class ExamenSynthese {
   readonly saving = input(false);
   readonly dispatchConnu = input(true);
   readonly libellePrecedent = input('Précédent');
+  /** ⚠️ R5 — les contrôles du dossier (possédés par l'écran, relus à `controleChange`), la grille pour un contrôle B, et le droit de poser. */
+  readonly controles = input<ControleResultat[]>([]);
+  readonly controlesEditables = input(false);
+  readonly points = input<PointsCtrl[]>([]);
+  readonly controleChange = output<void>();
 
   readonly modifier = output<ObservationNumerotee>();
   readonly syntheseChange = output<string>();

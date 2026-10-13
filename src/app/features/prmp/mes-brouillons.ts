@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
+import { messageSoumissionRefusee } from '../../shared/circuit/controles-libelles';
 import { ToastService } from '../../core/notifications/toast.service';
 import { VacanceStore } from '../../core/vacance/vacance.store';
 import { Dossier } from '../../models';
@@ -290,10 +291,9 @@ export class MesBrouillons {
       },
       error: (e: ApiError) => {
         this.submittingId.set(null);
-        // 403/409 → toast centralisé (intercepteur) ; 400 fieldErrors (ex. AGPM sur « piecesJointes »)
-        // n'y produit AUCUN toast (laissé au formulaire) : sans champ ici, on l'affiche nous-mêmes.
-        const detail = e.fieldErrors ? Object.values(e.fieldErrors).join(' ') : '';
-        this.toast.error(detail || e.message || 'Échec de la soumission.', 'Soumission impossible');
+        // L'appel est silencieux pour l'intercepteur : on affiche nous-mêmes le refus — contrôles bloquants (R5)
+        // nommés un à un, erreurs par champ (ex. AGPM sur « piecesJointes »), sinon le message du serveur.
+        this.toast.error(messageSoumissionRefusee(e), 'Soumission impossible');
       },
     });
   }

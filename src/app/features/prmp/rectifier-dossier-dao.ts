@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, forkJoin, of, switchMap } from 'rxjs';
 
 import { ApiError, codeErreur } from '../../core/errors/api-error';
+import { messageSoumissionRefusee } from '../../shared/circuit/controles-libelles';
 import { ToastService } from '../../core/notifications/toast.service';
 import { validerFichier } from '../../core/securite/fichiers-surs';
 import { Dossier, FicheMarche, ObservationPv, PieceJointeDossier, TypePieceJointe, VersionFiche } from '../../models';
@@ -349,7 +350,7 @@ export class RectifierDossierDao {
       error: (e: ApiError) => {
         this.saving.set(false);
         const code = codeErreur(e);
-        this.toast.error(code === 'FICHE_NON_REVISEE' ? 'La fiche n’a pas de version validée postérieure à celle examinée.' : e.message || 'Resoumission impossible.', 'Rectification');
+        this.toast.error(code === 'FICHE_NON_REVISEE' ? 'La fiche n’a pas de version validée postérieure à celle examinée.' : messageSoumissionRefusee(e, 'Resoumission impossible.'), 'Rectification');
       },
     });
   }

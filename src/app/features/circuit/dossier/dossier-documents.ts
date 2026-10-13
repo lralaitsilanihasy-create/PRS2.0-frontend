@@ -1,5 +1,7 @@
-import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 
+import { ControlesDossier } from '../../../shared/circuit/controles-dossier';
+import { controlesEffectifs } from '../../../shared/circuit/controles-libelles';
 import { AgpmDoc } from '../../../shared/prmp/agpm-doc';
 import { FichePresentationDoc } from '../../../shared/prmp/fiche-presentation-doc';
 import { PpmMarchesTable } from '../../../shared/prmp/ppm-marches-table';
@@ -17,7 +19,7 @@ import { DossierVersions } from './dossier-versions';
 @Component({
   selector: 'app-dossier-documents',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PpmMarchesTable, FichePresentationDoc, AgpmDoc, DocumentVisionneuse, DossierPieces, DossierVersions, DossierInstantanes],
+  imports: [PpmMarchesTable, FichePresentationDoc, AgpmDoc, DocumentVisionneuse, DossierPieces, DossierVersions, DossierInstantanes, ControlesDossier],
   host: { '[class.dc-documents--borne]': 'panneauBorne()' },
   template: `
     @if (contenu.estPpm()) {
@@ -114,19 +116,28 @@ import { DossierVersions } from './dossier-versions';
       <!-- ⚠️ Manuel révisé, R4 (V104, 13/10) — pour un dossier de procédure (DMC, DDM, DGC, DSS), les ÉCRANS FIGÉS à la soumission
            prennent place à côté des pièces jointes, en onglets ; sans instantané (dossier soumis avant V104, ou non soumis), la
            section des pièces reste seule, comme avant. -->
-      @if (contenu.instantanesVisible()) {
+      @if (ongletsProcedure()) {
         <div class="onglets-dossier" role="tablist" aria-label="Éléments du dossier">
           <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletProcedure() === 'pieces'"
             [attr.aria-selected]="ongletProcedure() === 'pieces'" (click)="ongletProcedure.set('pieces')">
             Pièces jointes <span class="onglets-dossier__n">{{ contenu.pieces().length }}</span>
           </button>
-          <button type="button" class="onglets-dossier__tab onglets-dossier__tab--gris" role="tab" [class.onglets-dossier__tab--on]="ongletProcedure() === 'figes'"
-            [attr.aria-selected]="ongletProcedure() === 'figes'" (click)="ongletProcedure.set('figes')">
-            Écrans figés <span class="onglets-dossier__n">{{ contenu.instantanes().length }}</span>
-          </button>
+          @if (contenu.instantanesVisible()) {
+            <button type="button" class="onglets-dossier__tab onglets-dossier__tab--gris" role="tab" [class.onglets-dossier__tab--on]="ongletProcedure() === 'figes'"
+              [attr.aria-selected]="ongletProcedure() === 'figes'" (click)="ongletProcedure.set('figes')">
+              Écrans figés <span class="onglets-dossier__n">{{ contenu.instantanes().length }}</span>
+            </button>
+          }
+          <!-- ⚠️ R5 (V105, 13/10) — les contrôles du dossier (automatiques à la soumission, B du Membre), en lecture pour tous ceux qui lisent le dossier. -->
+          @if (contenu.controlesVisible()) {
+            <button type="button" class="onglets-dossier__tab onglets-dossier__tab--vert" role="tab" [class.onglets-dossier__tab--on]="ongletProcedure() === 'controles'"
+              [attr.aria-selected]="ongletProcedure() === 'controles'" (click)="ongletProcedure.set('controles')">
+              Contrôles <span class="onglets-dossier__n">{{ nbControles() }}</span>
+            </button>
+          }
         </div>
       }
-      @if (!contenu.instantanesVisible() || ongletProcedure() === 'pieces') {
+      @if (!ongletsProcedure() || ongletProcedure() === 'pieces') {
         <div class="dc-section">
           <app-dossier-pieces />
         </div>
@@ -134,6 +145,11 @@ import { DossierVersions } from './dossier-versions';
       @if (contenu.instantanesVisible() && ongletProcedure() === 'figes') {
         <div class="dc-section">
           <app-dossier-instantanes />
+        </div>
+      }
+      @if (contenu.controlesVisible() && ongletProcedure() === 'controles') {
+        <div class="dc-section">
+          <app-controles-dossier [idDossier]="contenu.dossier().idDossier" [controles]="contenu.controles()" />
         </div>
       }
     }
@@ -163,8 +179,11 @@ export class DossierDocuments {
   // ── Onglets du dossier (2026-09-03) : fiche / plan / AGPM / pièces / historique (2026-09-06) ──
   /** Onglet actif — ouverture sur le plan, comme le détail PPM. */
   readonly ongletDossier = signal<'ppm' | 'fiche' | 'agpm' | 'pieces' | 'historique'>('ppm');
-  /** ⚠️ R4 (13/10) — dossier de procédure : pièces jointes (ouverture) ou écrans figés à la soumission. */
-  readonly ongletProcedure = signal<'pieces' | 'figes'>('pieces');
+  /** ⚠️ R4 / R5 (13/10) — dossier de procédure : pièces jointes (ouverture), écrans figés à la soumission, contrôles. */
+  readonly ongletProcedure = signal<'pieces' | 'figes' | 'controles'>('pieces');
+  readonly ongletsProcedure = computed(() => this.contenu.instantanesVisible() || this.contenu.controlesVisible());
+  /** Les contrôles tels qu'ils comptent (par règle, le dernier résultat posé) — l'historique complet reste dans l'onglet. */
+  readonly nbControles = computed(() => controlesEffectifs(this.contenu.controles()).length);
   /**
    * ⚠️ 2026-09-14 (décision des chefs) — annotations des documents officiels visibles (statut du
    * marché, versionnement, état d'examen…) : un seul interrupteur pour tous les onglets de l'écran.

@@ -6,6 +6,7 @@ import { catchError, forkJoin, map, of } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError, estConflitVersion } from '../../core/errors/api-error';
+import { messageSoumissionRefusee } from '../../shared/circuit/controles-libelles';
 import { ToastService } from '../../core/notifications/toast.service';
 import { TYPES_PDF, validerFichier } from '../../core/securite/fichiers-surs';
 import { VacanceStore } from '../../core/vacance/vacance.store';
@@ -2284,7 +2285,10 @@ export class SoumettreDossier {
   private echec(e: ApiError): void {
     this.submitting.set(false);
     if (e.fieldErrors) {
-      this.formError.set(e); // 403/409 → toast centralisé (intercepteur)
+      this.formError.set(e);
+    } else {
+      // ⚠️ R5 — la soumission est silencieuse pour l'intercepteur : les contrôles bloquants sont nommés un à un, le reste tel quel.
+      this.toast.error(messageSoumissionRefusee(e), 'Soumission impossible');
     }
   }
 

@@ -35,6 +35,7 @@ import {
   NatureService,
   PieceJointeDossierService,
   PointsCtrlService,
+  ControleService,
   PpmService,
   PvExamenService,
   ReceptionService,
@@ -118,6 +119,7 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
         { provide: ReceptionService, useValue: liste(RECEPTIONS) },
         { provide: DispatchService, useValue: liste(DISPATCHS) },
         { provide: PointsCtrlService, useValue: { grille: () => of([]), list: () => of([]) } },
+        { provide: ControleService, useValue: { liste: () => of([]) } },
         {
           provide: ExamenService,
           useValue: {
@@ -198,6 +200,25 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
     expect(texte('.tete__ent')).toContain("Ministère de l'Économie et des Finances · 3 lignes");
     expect(texte('.consigne')).toContain('Consigne : « Vérifier les modes des lignes 2 à 3 »');
     expect(texte('.delai')).toMatch(/^Reste 10 h · avant mer\.? 16\/09, 09:00$/);
+  });
+
+  it('⚠️ R5 — les contrôles du dossier : un bouton dans l’en-tête, atteignable à toute étape, ouvre leur modale (lever, ajouter)', () => {
+    const bouton = racine().querySelector<HTMLButtonElement>('.ctrl-pill') as HTMLButtonElement;
+    expect(bouton.textContent?.trim()).toBe('Contrôles');
+    ecran.controles.set([
+      { idControle: 1, numeroSoumission: 1, reference: '1-II P3', idPointCtrl: null, regle: 'PIECE_ILLISIBLE', libelle: 'Pièce lisible', valeurs: null, resultat: 'NON_CONFORME', bloquant: false, auteur: 'IM1', dateControle: '2026-10-13T10:00:00', observation: 'Page blanche.' },
+    ]);
+    rendre();
+    expect(bouton.textContent?.replace(/\s+/g, ' ').trim()).toBe('Contrôles : 1 non conforme(s) sur 1');
+    expect(bouton.classList).toContain('ctrl-pill--nc');
+    bouton.click();
+    rendre();
+    const modale = racine().querySelector('[role="dialog"][aria-label="Contrôles du dossier"]') as HTMLElement;
+    expect(modale).not.toBeNull();
+    expect(Array.from(modale.querySelectorAll('button')).map((b) => b.textContent?.trim())).toContain('Lever…');
+    (modale.querySelector('.btn-close') as HTMLButtonElement).click();
+    rendre();
+    expect(racine().querySelector('[aria-label="Contrôles du dossier"]')).toBeNull();
   });
 
   it('parcours : états et compteurs des six étapes, « sans objet » non cliquable', () => {

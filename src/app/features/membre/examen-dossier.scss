@@ -113,6 +113,26 @@
   cursor: pointer;
 }
 .consigne:hover { border-color: #7dd3fc; }
+/* ⚠️ R5 (13/10) — le compte des contrôles du dossier dans l'en-tête ; rouge dès une non-conformité. */
+.ctrl-pill {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  background: #f0fdf4;
+  color: #166534;
+  font-family: var(--font-base);
+  font-size: 0.78125rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ctrl-pill:hover { border-color: #86efac; }
+.ctrl-pill--nc { border-color: #fecaca; background: #fef2f2; color: #991b1b; }
+.ctrl-pill--nc:hover { border-color: #fca5a5; }
 .consigne-complete {
   flex: none;
   display: flex;
@@ -393,6 +413,11 @@
 /* « Réinitialiser » (2026-09-21) : même gabarit que « Pré-contrôle », teinte d'alerte au survol — un geste qui efface. */
 .doc-reinit:hover { background: #fef2f2; border-color: #fca5a5; color: #b91c1c; }
 .reinit-modal { width: min(560px, 95vw); }
+/* ⚠️ R5 (13/10) — la modale des contrôles du dossier : large, la table y garde ses colonnes. */
+/* modal-xl (1020 px) : la table y garde ses six colonnes. */
+.controles-modal .modal-body { max-height: 75vh; overflow: auto; }
+.controles-modal__aide { margin: 0 0 0.75rem; font-size: 0.8125rem; color: var(--n-500); }
+.ctrl-pill--vide { border-color: var(--n-300); background: #fff; color: var(--n-500); }
 .reinit__liste { margin: 0.5rem 0 0.75rem; padding-left: 1.2rem; }
 .reinit__liste li { margin: 0.15rem 0; }
 .doc-precontrole__n {

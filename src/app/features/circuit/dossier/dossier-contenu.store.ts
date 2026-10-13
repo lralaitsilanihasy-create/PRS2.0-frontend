@@ -2,9 +2,10 @@ import { Injectable, Signal, computed, inject, signal } from '@angular/core';
 import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
-import { ActionDossier, Capm, Chronometrage, DiffDossier, Dossier, Instantane, Marche, MarchePrevision, ModePassation, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne, VersionArchivee } from '../../../models';
+import { ActionDossier, Capm, Chronometrage, ControleResultat, DiffDossier, Dossier, Instantane, Marche, MarchePrevision, ModePassation, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne, VersionArchivee } from '../../../models';
 import {
   CapmService,
+  ControleService,
   DossierService,
   EntiteContractService,
   InstantaneService,
@@ -287,6 +288,10 @@ export class DossierContenuStore {
   private readonly instantaneService = inject(InstantaneService);
   readonly instantanes = signal<Instantane[]>([]);
   readonly instantanesVisible = computed(() => !this.estPpm() && this.instantanes().length > 0);
+  /** ⚠️ R5 (V105) — les contrôles du dossier (automatiques et du Membre), lus dans la même vague ; l'onglet n'apparaît qu'avec un résultat. */
+  private readonly controleService = inject(ControleService);
+  readonly controles = signal<ControleResultat[]>([]);
+  readonly controlesVisible = computed(() => !this.estPpm() && this.controles().length > 0);
   /** Une seule vague de rendu : le corps s'affiche quand TOUT est chargé (données + référentiels). */
   readonly loading = signal(true);
   private readonly natureMap = signal<Map<string, string>>(new Map());
@@ -385,7 +390,8 @@ export class DossierContenuStore {
         ...commun,
         // Écrans figés (R4) : dans la vague, silencieux — sans instantané (dossier soumis avant V104, ou non soumis), pas d'onglet.
         instantanes: this.instantaneService.liste(id).pipe(catchError(() => of([] as Instantane[]))),
-      }).subscribe(({ typeMap, localiteMap, entiteMap, pieces, journal, chrono, instantanes }) => {
+        controles: this.controleService.liste(id).pipe(catchError(() => of([] as ControleResultat[]))),
+      }).subscribe(({ typeMap, localiteMap, entiteMap, pieces, journal, chrono, instantanes, controles }) => {
         this.typeMap.set(typeMap);
         this.localiteMap.set(localiteMap);
         this.entiteMap.set(entiteMap);
@@ -393,6 +399,7 @@ export class DossierContenuStore {
         this.journal.set(journal);
         this.chronoDossier.set(chrono);
         this.instantanes.set(instantanes);
+        this.controles.set(controles);
         this.loading.set(false);
       });
       return;

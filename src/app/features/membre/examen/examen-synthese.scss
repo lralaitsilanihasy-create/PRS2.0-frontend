@@ -13,6 +13,9 @@
   grid-template-columns: minmax(0, 1fr) 24rem;
   gap: 0.875rem;
 }
+/* ⚠️ R5 (13/10) — les contrôles du dossier en tête, sur toute la largeur. */
+.synth__controles { grid-column: 1 / -1; }
+.synth__controles app-controles-dossier { padding: 0.75rem 1rem; }
 
 .panneau {
   min-height: 0;

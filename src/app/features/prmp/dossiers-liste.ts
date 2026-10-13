@@ -6,6 +6,7 @@ import { skip } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
+import { messageSoumissionRefusee } from '../../shared/circuit/controles-libelles';
 import { ToastService } from '../../core/notifications/toast.service';
 import { VacanceStore } from '../../core/vacance/vacance.store';
 import { Dossier, Page } from '../../models';
@@ -559,10 +560,9 @@ export class DossiersListe {
       },
       error: (e: ApiError) => {
         this.submittingId.set(null);
-        // Pas de formulaire ici pour porter les fieldErrors (ex. AGPM sur « piecesJointes ») : le toast
-        // centralisé est supprimé en 400 fieldErrors → on affiche nous-mêmes le détail du backend.
-        const detail = e.fieldErrors ? Object.values(e.fieldErrors).join(' ') : '';
-        this.toast.error(detail || e.message || 'Échec de la soumission.', 'Soumission impossible');
+        // Pas de formulaire ici pour porter les fieldErrors (ex. AGPM sur « piecesJointes ») ; les contrôles
+        // bloquants (R5) sont nommés un à un — l'appel est silencieux pour l'intercepteur.
+        this.toast.error(messageSoumissionRefusee(e), 'Soumission impossible');
       },
     });
   }
