@@ -152,3 +152,19 @@ l'attributaire ; paramètres `RECOURS_SUSPENSIFS`, `SIGNATURE_OFFRE`, délais pa
 >   s'appelle `t_question_candidat` avec `ID_ENTREPRISE` en plus.
 > - **Côté front** : formulaire de question sur la page de la procédure (fermé quand `closes`, afficher `clotureLe`), liste publique des
 >   réponses, écran PRMP des questions avec réponse et fichier, badge sur `QUESTION_POSEE`.
+
+> ⚠️ **Backend, 2026-10-13 — B3 : tranche R8 livrée (mode figé, V110)** ; contrat : `docs/api-endpoints.md`, § *… lot 2, tranche R8*.
+> Arbitrages du 13/10 : la migration **ouvre une révision** avec le nouveau mode (version validée intacte, PRMP ressaisit puis valide) ;
+> **point de non-retour** dès une offre en ligne, une cérémonie close ou un lot attribué ; « procédure en ligne » (R2, R5) **lit le mode**
+> de la fiche validée.
+> - `PUT /{idDmc}/cadrage` avec un autre `modeRemise` (clé absente = PAPIER) → **409 `MODE_FIGE`** `{ modeFige, modeDemande }` dès qu'une
+>   version est validée ; l'import ne change pas le mode (signalé dans `erreurs[]`). `FicheMarcheDto.modeFige`, `modeRemiseFige`,
+>   `modeMigreLe` / `modeMigrePar` / `modeMigreMotif`.
+> - `POST /api/fiches-marche/{idDmc}/migrer-mode { modeRemise, motif }` (Administrateur) : révision ouverte avec le nouveau mode, figé à
+>   son tour ; journal `FICHE_MODE_MIGRE` ; 400 `MODE_INVALIDE` / `MOTIF_OBLIGATOIRE` ; 409 `MODE_NON_FIGE`, `MODE_IDENTIQUE`,
+>   `MODE_IRREVERSIBLE` `{ raison: OFFRES | CEREMONIE_CLOSE | ATTRIBUTION }`.
+> - Pièces conditionnées et contrôles automatiques : « en ligne » = fiche validée en remise électronique ; en PAPIER, listes V95 entières et
+>   contrôles `NON_APPLICABLE`.
+> - **Écart** : pas de « re-saisie contrôlée » distincte, la révision suit le circuit ordinaire de validation.
+> - **Côté front** : griser `modeRemise` quand `modeFige`, afficher `modeRemiseFige` et la migration (date, auteur, motif) ; écran
+>   Administrateur de migration avec motif ; message de `MODE_IRREVERSIBLE`.
