@@ -5,6 +5,7 @@ import { FichePresentationDoc } from '../../../shared/prmp/fiche-presentation-do
 import { PpmMarchesTable } from '../../../shared/prmp/ppm-marches-table';
 import { DocumentVisionneuse } from '../../../shared/ui/document-visionneuse';
 import { DossierContenuStore } from './dossier-contenu.store';
+import { DossierInstantanes } from './dossier-instantanes';
 import { DossierPieces } from './dossier-pieces';
 import { DossierVersions } from './dossier-versions';
 
@@ -16,7 +17,7 @@ import { DossierVersions } from './dossier-versions';
 @Component({
   selector: 'app-dossier-documents',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PpmMarchesTable, FichePresentationDoc, AgpmDoc, DocumentVisionneuse, DossierPieces, DossierVersions],
+  imports: [PpmMarchesTable, FichePresentationDoc, AgpmDoc, DocumentVisionneuse, DossierPieces, DossierVersions, DossierInstantanes],
   host: { '[class.dc-documents--borne]': 'panneauBorne()' },
   template: `
     @if (contenu.estPpm()) {
@@ -103,10 +104,38 @@ import { DossierVersions } from './dossier-versions';
     }
 
     <!-- Pièces jointes (onglet pour un PPM ; section directe pour les autres familles) -->
-    @if (!contenu.estPpm() || ongletDossier() === 'pieces') {
-      <div class="dc-section">
-        <app-dossier-pieces />
-      </div>
+    @if (contenu.estPpm()) {
+      @if (ongletDossier() === 'pieces') {
+        <div class="dc-section">
+          <app-dossier-pieces />
+        </div>
+      }
+    } @else {
+      <!-- ⚠️ Manuel révisé, R4 (V104, 13/10) — pour un dossier de procédure (DMC, DDM, DGC, DSS), les ÉCRANS FIGÉS à la soumission
+           prennent place à côté des pièces jointes, en onglets ; sans instantané (dossier soumis avant V104, ou non soumis), la
+           section des pièces reste seule, comme avant. -->
+      @if (contenu.instantanesVisible()) {
+        <div class="onglets-dossier" role="tablist" aria-label="Éléments du dossier">
+          <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletProcedure() === 'pieces'"
+            [attr.aria-selected]="ongletProcedure() === 'pieces'" (click)="ongletProcedure.set('pieces')">
+            Pièces jointes <span class="onglets-dossier__n">{{ contenu.pieces().length }}</span>
+          </button>
+          <button type="button" class="onglets-dossier__tab onglets-dossier__tab--gris" role="tab" [class.onglets-dossier__tab--on]="ongletProcedure() === 'figes'"
+            [attr.aria-selected]="ongletProcedure() === 'figes'" (click)="ongletProcedure.set('figes')">
+            Écrans figés <span class="onglets-dossier__n">{{ contenu.instantanes().length }}</span>
+          </button>
+        </div>
+      }
+      @if (!contenu.instantanesVisible() || ongletProcedure() === 'pieces') {
+        <div class="dc-section">
+          <app-dossier-pieces />
+        </div>
+      }
+      @if (contenu.instantanesVisible() && ongletProcedure() === 'figes') {
+        <div class="dc-section">
+          <app-dossier-instantanes />
+        </div>
+      }
     }
   `,
   styles: `
@@ -134,6 +163,8 @@ export class DossierDocuments {
   // ── Onglets du dossier (2026-09-03) : fiche / plan / AGPM / pièces / historique (2026-09-06) ──
   /** Onglet actif — ouverture sur le plan, comme le détail PPM. */
   readonly ongletDossier = signal<'ppm' | 'fiche' | 'agpm' | 'pieces' | 'historique'>('ppm');
+  /** ⚠️ R4 (13/10) — dossier de procédure : pièces jointes (ouverture) ou écrans figés à la soumission. */
+  readonly ongletProcedure = signal<'pieces' | 'figes'>('pieces');
   /**
    * ⚠️ 2026-09-14 (décision des chefs) — annotations des documents officiels visibles (statut du
    * marché, versionnement, état d'examen…) : un seul interrupteur pour tous les onglets de l'écran.

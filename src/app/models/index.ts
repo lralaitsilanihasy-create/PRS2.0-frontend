@@ -18,3 +18,4 @@ export * from './evaluation.model';
 export * from './ami.model';
 export * from './acte-gestion.model';
 export * from './evaluation-pi.model';
+export * from './instantane.model';

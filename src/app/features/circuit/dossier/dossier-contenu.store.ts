@@ -2,11 +2,12 @@ import { Injectable, Signal, computed, inject, signal } from '@angular/core';
 import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
-import { ActionDossier, Capm, Chronometrage, DiffDossier, Dossier, Marche, MarchePrevision, ModePassation, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne, VersionArchivee } from '../../../models';
+import { ActionDossier, Capm, Chronometrage, DiffDossier, Dossier, Instantane, Marche, MarchePrevision, ModePassation, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne, VersionArchivee } from '../../../models';
 import {
   CapmService,
   DossierService,
   EntiteContractService,
+  InstantaneService,
   LocaliteService,
   MarcheService,
   MarchePrevisionService,
@@ -279,6 +280,13 @@ export class DossierContenuStore {
   });
   readonly marches = signal<Marche[]>([]);
   readonly pieces = signal<PieceJointeDossier[]>([]);
+  /**
+   * ⚠️ Manuel révisé, R4 (V104, 13/10) — les écrans figés à la soumission d'un dossier de procédure (DMC, DDM, DGC, DSS), lus dans la
+   * vague ; un plan (DDP) n'en a pas (il garde ses versions archivées). Silencieux : sans instantané, l'onglet n'apparaît pas.
+   */
+  private readonly instantaneService = inject(InstantaneService);
+  readonly instantanes = signal<Instantane[]>([]);
+  readonly instantanesVisible = computed(() => !this.estPpm() && this.instantanes().length > 0);
   /** Une seule vague de rendu : le corps s'affiche quand TOUT est chargé (données + référentiels). */
   readonly loading = signal(true);
   private readonly natureMap = signal<Map<string, string>>(new Map());
@@ -373,13 +381,18 @@ export class DossierContenuStore {
         : of(null as Chronometrage | null),
     };
     if (!this.estPpm()) {
-      forkJoin(commun).subscribe(({ typeMap, localiteMap, entiteMap, pieces, journal, chrono }) => {
+      forkJoin({
+        ...commun,
+        // Écrans figés (R4) : dans la vague, silencieux — sans instantané (dossier soumis avant V104, ou non soumis), pas d'onglet.
+        instantanes: this.instantaneService.liste(id).pipe(catchError(() => of([] as Instantane[]))),
+      }).subscribe(({ typeMap, localiteMap, entiteMap, pieces, journal, chrono, instantanes }) => {
         this.typeMap.set(typeMap);
         this.localiteMap.set(localiteMap);
         this.entiteMap.set(entiteMap);
         this.pieces.set(pieces);
         this.journal.set(journal);
         this.chronoDossier.set(chrono);
+        this.instantanes.set(instantanes);
         this.loading.set(false);
       });
       return;

@@ -286,3 +286,23 @@ selon les listes servies ; relecture des mentions des avis et lettres (B3).
 > incomplet (coût et paiement du dossier, écart nommé par le backend). ⚠️ **Observation pour le backend** : sur la fiche 50, dont la liste
 > restreinte de l'AMI est définitive, `LISTE_CANDIDATS` est servie « non renseignée (pointillés) » — la relecture évalue le projet (destinataires
 > en pointillés par construction) plutôt que la lettre telle qu'elle s'imprimera avec la liste ; à confirmer si c'est voulu.
+
+> ✅ **Front, 2026-10-13 — tranche FR4 branchée (écrans figés pour la Commission, R4)**, recette dans le navigateur (MEMANT1, PRMP001,
+> dossier 100378 = DMC de la fiche 39, créé et soumis pour l'occasion) : sur la page d'un dossier de procédure (DMC, DDM, DGC, DSS), un onglet
+> **« Écrans figés (n) »** à côté des pièces jointes, dès qu'il existe un instantané (liste lue dans la vague du dossier, silencieuse) ; par
+> soumission (sélecteur, la dernière d'abord) puis par écran (Plan, Avis et lettres, AMI, CAO, Séance, Évaluation, Attribution, Acte, DSS),
+> chacun lu à la demande (`…/instantanes/{ecran}?soumission=n`) sous le bandeau « Figé à la soumission n° … du … par … · empreinte » et un
+> bouton « Exporter en PDF » (`INSTANTANE_<ecran>_<dossier>_s<n>.pdf`, téléchargement sûr). **Écart par rapport au plan annoncé** (« mêmes
+> composants, services remplacés par injection ») : les écrans vivants lisent des sous-ressources que l'instantané ne porte pas (lecture des
+> offres, tableau, qualification, précisions…) et proposent des gestes selon les droits — un écran figé ne doit rien proposer. Ils restent
+> donc intacts ; le JSON figé est rendu par un **gabarit générique** (`app-donnees-figees` : objet en « libellé : valeur », listes d'objets en
+> tableaux, dates et montants mis en forme — le langage de l'export PDF) et, pour la séance, l'évaluation et l'attribution, par une **vue
+> dédiée** en lecture seule (membres, offres, PV et signatures avec quorum ; déclarations, offres par lot avec leurs décisions, proposition,
+> rapport ; lots, attributaire, délai d'attente, signature, notification…), la donnée complète restant sous un volet. Joué en recette : Plan,
+> Avis, CAO (générique) et l'export PDF ; les vues dédiées sont couvertes par les tests unitaires seulement (aucun instantané DDM en base).
+> ⚠️ **Observations pour le backend** : (1) le dossier de marché **100371** (fiche 40, lot 1) ne peut plus être soumis : `DOCUMENTS_EVALUATION_SIGNES`
+> et `QUORUM_COMMISSION` le refusent (PV d'ouverture non signé), mais `POST /api/fiches-marche/40/seance/pv/signer` répond 409
+> `PV_NON_PRODUIT` alors que `GET …/seance` sert `pv.produit = true` (séance close avant V70) — impasse pour toute procédure dont la séance
+> précède la signature en ligne ; (2) après la soumission de 100378, `GET /api/dossiers/100378/controles` est vide, alors que la tranche R5
+> annonce l'enregistrement de tous les résultats (au moins `DELAI_PUBLICITE`, conforme ici : 32 jours) ; (3) la réponse de `…/soumettre` sert
+> `refeDossier: null` (la référence n'est posée qu'à la réception — rappel, pas une anomalie).

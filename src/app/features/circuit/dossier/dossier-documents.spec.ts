@@ -4,7 +4,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 import { AuthService } from '../../../core/auth/auth.service';
-import { Dossier, Role, VersionArchivee } from '../../../models';
+import { Dossier, Instantane, Role, VersionArchivee } from '../../../models';
 import { DossierContenuStore } from './dossier-contenu.store';
 import { DossierDocuments } from './dossier-documents';
 
@@ -68,5 +68,51 @@ describe('DossierDocuments — onglets par profil', () => {
 
   it('sans version archivée, le Vérificateur n’a pas d’onglet historique', () => {
     expect(onglets('VERIFICATEUR', []).some((t) => t.startsWith('Historique'))).toBe(false);
+  });
+});
+
+/**
+ * ⚠️ Manuel révisé, R4 (V104, 13/10) — un dossier de procédure (DMC, DDM, DGC, DSS) qui porte des écrans figés les présente en
+ * onglet à côté des pièces jointes ; sans instantané (dossier soumis avant V104, ou non soumis), la section des pièces reste seule.
+ */
+describe('DossierDocuments — écrans figés d’un dossier de procédure', () => {
+  const DDM: Dossier = { idDossier: 100371, idTypeDossier: 'DDM', statut: 'SOUMIS', idLocalite: 'ANT' };
+  const INSTANTANES: Instantane[] = [
+    { idInstantane: 1, numeroSoumission: 1, ecran: 'PLAN', figeLe: '2026-10-13T09:00:00', figePar: 'ADMIN01', empreinte: 'a'.repeat(64), taille: 100 },
+    { idInstantane: 2, numeroSoumission: 1, ecran: 'SEANCE', figeLe: '2026-10-13T09:00:00', figePar: 'ADMIN01', empreinte: 'b'.repeat(64), taille: 100 },
+  ];
+
+  function monter(role: Role, instantanes: Instantane[]): HTMLElement {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), DossierContenuStore, { provide: AuthService, useValue: { role: signal<Role | null>(role) } }],
+    });
+    const store = TestBed.inject(DossierContenuStore);
+    store.charger(signal(DDM));
+    const http = TestBed.inject(HttpTestingController);
+    let attente: TestRequest[];
+    while ((attente = http.match(() => true)).length) {
+      for (const req of attente) {
+        if (req.request.url.endsWith('/instantanes')) req.flush(instantanes);
+        else if (req.request.url.endsWith('/chronometrage')) req.flush(null);
+        else req.flush([]);
+      }
+    }
+    const fixture = TestBed.createComponent(DossierDocuments);
+    fixture.detectChanges();
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  it('le Membre voit « Pièces jointes » et « Écrans figés (n) » en onglets, les pièces ouvertes', () => {
+    const el = monter('MEMBRE', INSTANTANES);
+    const titres = Array.from(el.querySelectorAll('[role="tab"]')).map((b) => (b.textContent ?? '').replace(/\s+/g, ' ').trim());
+    expect(titres).toEqual(['Pièces jointes 0', 'Écrans figés 2']);
+    expect(el.querySelector('app-dossier-pieces')).not.toBeNull();
+    expect(el.querySelector('app-dossier-instantanes')).toBeNull();
+  });
+
+  it('sans instantané, pas d’onglet : la section des pièces seule, comme avant', () => {
+    const el = monter('MEMBRE', []);
+    expect(el.querySelector('[role="tablist"]')).toBeNull();
+    expect(el.querySelector('app-dossier-pieces')).not.toBeNull();
   });
 });
