@@ -210,3 +210,19 @@ selon les listes servies ; relecture des mentions des avis et lettres (B3).
 >   (comme l'avis) ; il se lit par la pièce du dossier (`idDocumentFiche` renseigné, non supprimable) ou par la route.
 > - **Côté front** : bouton « Projet d'avis » / « Projet de lettre » dès la validation (pdf, docx) ; dans l'onglet Pièces, la pièce
 >   « Projet d'avis spécifique (imprimé du SIGMP) » apparaît désormais jointe d'office pour une fiche validée.
+
+> ⚠️ **Backend, 2026-10-13 — B3 terminé : tranche R3c livrée (mentions complètes, lettre AOR)** ; contrat : `docs/api-endpoints.md`, § *… tranche R3c*.
+> Arbitrages du 13/10 : **gabarits corrigés côté backend** (écart avec la demande, qui ne prévoyait que la vérification) ; avis **indisponible**
+> pour un appel d'offres restreint (`MODE_SANS_AVIS`) ; mentions évaluées sur la **version courante**, même brouillon.
+> - `GET /api/fiches-marche/{idDmc}/avis-specifique/mentions` et `…/lettres-invitation/mentions` : `{ gabarit, gabaritComplet, documentComplet,
+>   mentions[{code, libelle, presenteAuGabarit, renseignee, sansObjet, detail}] }` — les écarts sont nommés dans `detail`. Le compte de l'ARMP
+>   (décision du 01/10) tient lieu des trois formes de paiement et de l'agent comptable (`COMPTE_PAIEMENT`).
+> - **Écart nommé restant** : LETTRE-PI n'a ni coût ni paiement du dossier de consultation (aucun champ PI) — à outiller si un DC payant doit exister.
+> - **À resynchroniser côté front** (`scripts/modeles-dao/modeles/`) : `AVIS-F.txt` (+ LOTS-MAX), `AVIS-T.txt` (+ LOTS-MAX, VISITE, REUNION),
+>   `LETTRE-PI.txt` (+ date/heure limites et adresse de remise), et le nouveau `LETTRE-AOR.txt` — copies dans `src/main/resources/modeles/dao/`
+>   du backend. Le texte de LETTRE-AOR est **à relire par le pilote**.
+> - **Lettre AOR** : choisie par le mode du plan (« … restreint … », DAOR/DAORI), fournitures et travaux ; mêmes routes que la lettre PI,
+>   candidats saisis (`SOURCE = SAISIE`), notification « Invitation à remettre une offre », « Lancé » à la première impression ; le projet
+>   dès la fiche (R3b) devient le projet de lettre. L'avis d'une telle fiche répond `MODE_SANS_AVIS` (disponibilité, impression, projet, mentions).
+> - **Côté front** : écran « relecture des mentions » (liste, écarts de gabarit vs de saisie, sans objet) sur l'avis et la lettre ;
+>   pour un AOR, masquer l'avis et proposer la lettre avec saisie des candidats.
