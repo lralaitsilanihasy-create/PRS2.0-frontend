@@ -147,3 +147,25 @@ Après livraison : mode « figé » des écrans Séance, Évaluation, AMI, Attri
 bandeau et export PDF ; affichage du quorum (requis / obtenus / président) dans les écrans de séance et de rapport ; synthèse des
 contrôles en tête de l'examen (lecture seule) et saisie des contrôles B avec observation ; retrait des pièces de l'onglet « Pièces »
 selon les listes servies ; relecture des mentions des avis et lettres (B3).
+
+> ⚠️ **Backend, 2026-10-10 — B1 et B2 livrés (tranche R1, V101)** ; contrat : `docs/api-endpoints.md`, § *Le manuel révisé pour l'application,
+> lot 1, tranche R1*. Le lot 1 est livré en cinq tranches : **R1** quorum et séance de validation (B1, B2) ; **R2** pièces conditionnées à la
+> procédure en ligne, marché joint d'office, `MARCHE_NON_SIGNE` (B4) ; **R3** SIGMP : transition, projet d'avis dès la fiche, lettre AOR
+> (B3) ; **R4** instantanés (B5) ; **R5** socle des contrôles (B6). Arbitrages du 10/10 : **QB2** — le représentant du président est
+> **désigné par séance** (par contexte, `POST /api/cao/procedures/{idDmc}/representant`), pas un champ durable ; **QB3** — `CAO_QUORUM`
+> **global** (`/api/parametres/cao-quorum`) **surchargeable par procédure** (`caoQuorum` des paramètres internes) ; un empêchement qui
+> rendrait le quorum inatteignable est **refusé** (409 `QUORUM_NON_ATTEINT`) — pas de rapport « à signer » sans issue ; la majorité se
+> compte sur les **membres désignés**, conflits d'intérêts compris.
+> - **B1** : section « Séance de validation » générée dans le rapport d'évaluation (« 10. ») et le rapport de présélection (« 6. ») ; le
+>   rapport PI relate l'arrêt technique du président en section 4. Les pièces `PV_VALIDATION_CAO`, `PV_VALID_TECHNIQUE`, `PV_VALID_FINALE`
+>   sont retirées des listes **en R2** (avec les autres retraits de B4).
+> - **B2** : quorum bloquant aux quatre endroits (séance d'ouverture, seconde séance, rapport, liste AMI) et à chaque empêchement ;
+>   `quorum` et `qualite` servis dans les DTO ; **signatures de la seconde séance** (`…/seance/financiere/pv/signer`, `…/pv/empechement`,
+>   bloc `pv` du DTO) ; la clôture et l'évaluation financière n'attendent pas ces signatures (écart assumé : ne pas bloquer la chaîne
+>   PI-d2a).
+> - **H3** retenue sous la forme « par séance » : le président désigne un représentant pour `SEANCE`, `SEANCE_FINANCIERE`, `RAPPORT` ou
+>   `AMI` ; à défaut il est lui-même requis.
+> - **Effet en recette** : les CAO de deux membres (fiches 40, 44, 50…) ont une majorité égale à l'unanimité ; un conflit d'intérêts ou un
+>   empêchement y bloque (409) tant que `CAO_QUORUM` n'est pas réglé à `1`, globalement ou pour la procédure. **Côté front** : écran
+>   d'administration du quorum, champ `caoQuorum` des paramètres internes, bouton « Désigner mon représentant » dans l'espace CAO, affichage
+>   de `quorum` (requis / obtenus / président) et des `qualite`, signatures du PV de la seconde séance.
