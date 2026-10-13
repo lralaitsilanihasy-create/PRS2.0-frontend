@@ -86,3 +86,20 @@ Après livraison : affichage des neuf délais (requis / constaté / départ) sur
 nommés ; formulaire de questions côté candidat (fermé à J−10) et réponses diffusées ; mode de la procédure figé dans le cadrage ;
 registre des tentatives refusées ; approbation du marché dans l'écran Attribution ; original de l'acte d'engagement dans les pièces de
 l'attributaire ; paramètres `RECOURS_SUSPENSIFS`, `SIGNATURE_OFFRE`, délais paramétrables en administration ; manuel à deux colonnes.
+
+> ⚠️ **Backend, 2026-10-13 — B1 en cours : tranche R6a livrée (délais de la loi, paramètres, délai de publicité ; V106)** ; contrat :
+> `docs/api-endpoints.md`, § *… lot 2, tranche R6a*. Arbitrages du 13/10 : R6 découpée en **R6a** (ci-dessous), **R6b** (règle 5 réputé
+> approuvé, QB4 à arbitrer) et **R6c** (règles 6 QB1, 7, 8, 9) ; la règle de publicité **bloque dès la validation de la fiche** ; les
+> modes se lisent au libellé du mode du plan (« international » 45 j, « consultation » 10 j, « appel d'offres ouvert » 30 j) ; les
+> paramètres sont semés actifs et signalés.
+> - `GET /api/delais-legaux` (neuf délais, table en code) ; `GET /api/delais-parametres`, `PUT /api/delais-parametres/{code}`
+>   (Administrateur) sur `t_delai_parametre` (`code, valeur, unite, texte, actif`) semée : `PUBLICITE_AOR` 15, `PUBLICITE_DC_PI` 30,
+>   `PUBLICITE_AMI` 15, `PUBLICITE_CONTRAT_CADRE` 30, `PUBLICITE_PREQUALIFICATION` 30, `DELAI_AMENAGE` 15 (jours, à confirmer).
+> - Règles 1-2 et 4 : au bilan de la fiche, règle `DELAI_PUBLICITE` (bloquante pour la loi, avertissement pour un paramètre) contre
+>   `B04-SE-17`, à défaut la prévision LANCEMENT du plan ; à l'impression de l'avis, 409 `DELAI_PUBLICITE` `{ code, requis, constate,
+>   depart, limite }` contre `datePublication`. **Écarts** : à la validation, le 409 garde le code `CONTROLES_BLOQUANTS` du bilan (le
+>   détail est dans la règle `DELAI_PUBLICITE` du bilan) ; H2 « plusieurs supports : la plus tardive » ne s'applique pas encore (une
+>   seule `datePublication` est saisie) ; le délai aménagé justifié remplace le délai de la loi par le paramètre `DELAI_AMENAGE` (signalé).
+> - Règle 3 (J−10) : la valeur est dans la table ; le formulaire de questions est B2 (R7).
+> - **Côté front** : écran Délais (loi en lecture, paramètres réglables) ; afficher la règle `DELAI_PUBLICITE` du bilan (requis / constaté /
+>   départ / limite) sur la fiche et le 409 de l'impression.
