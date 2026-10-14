@@ -25,3 +25,4 @@ export * from './acte-gestion.services';
 export * from './evaluation-pi.services';
 export * from './instantanes.services';
 export * from './controles.services';
+export * from './questions.services';

@@ -96,6 +96,10 @@ export function routePourNotification(n: Notification, role: string | null): Cib
     return { genre: 'route', commands: ['/prmp/resultat-examen/lettre-renvois'] };
   }
   // ⚠️ V72 (06/10) — un reçu des frais de dossier à valider : l'écran des reçus de la fiche (`idObjet` = idDmc).
+  // ⚠️ R7 (V109, 13/10) — une question d'un candidat : l'écran des questions de la procédure (`idObjet` = idDmc).
+  if (type === 'QUESTION_POSEE' && (role === 'PRMP' || role === 'UGPM') && n.idObjet != null) {
+    return { genre: 'route', commands: ['/prmp', 'dao', String(n.idObjet), 'questions'] };
+  }
   if (type === 'RECU_A_VALIDER' && (role === 'PRMP' || role === 'UGPM') && n.idObjet != null) {
     return { genre: 'route', commands: ['/prmp', 'dao', String(n.idObjet), 'recus'] };
   }

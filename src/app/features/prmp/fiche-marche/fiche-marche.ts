@@ -283,6 +283,14 @@ export class FicheMarcheEcran {
     // ⚠️ 06/10 — dépôts, retraits et reçus n'existent qu'une fois une version validée (procédure publiable) : pas de bouton vide sur un brouillon.
     return id != null && this.estPrmp() && this.modeElectronique() && this.versions().length > 0 ? ['/prmp', 'dao', id, 'depots'] : null;
   });
+  /**
+   * ⚠️ R7 (V109, 13/10) — les questions des candidats (jusqu'à J−10) : PRMP et UGPM (l'UGPM lit, la PRMP répond), procédure en ligne
+   * seule — en papier, aucune question ne se pose sur la plateforme.
+   */
+  readonly lienQuestions = computed<(string | number)[] | null>(() => {
+    const id = this.idDmc();
+    return id != null && ['PRMP', 'UGPM'].includes(this.auth.role() ?? '') && this.modeElectronique() && this.versions().length > 0 ? ['/prmp', 'dao', id, 'questions'] : null;
+  });
   readonly libellesCao = LIBELLES_ETAT_CAO;
   readonly libellesCeremonie = LIBELLES_ETAT_CEREMONIE;
   /**

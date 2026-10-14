@@ -53,6 +53,8 @@ export const PRMP_ROUTES: Routes = [
   // ⚠️ V72 (06/10, retrait après paiement) — les reçus des frais de dossier, validés par la PRMP ou l'UGPM de la fiche.
   { path: 'dao/:idDmc/recus', loadComponent: () => import('./recus-dao').then((m) => m.RecusDao), data: { title: 'Reçus des frais de dossier', parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }, { label: 'Fiche DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
   // ⚠️ Soumission en ligne, lot 3 (04/10, V68) — le registre des dépôts : le nombre seul avant la date limite.
+  // ⚠️ R7 (V109, 13/10) — les questions des candidats avant la date limite : la PRMP répond, la réponse est diffusée.
+  { path: 'dao/:idDmc/questions', loadComponent: () => import('./questions-dao').then((m) => m.QuestionsDao), data: { title: 'Questions des candidats', parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }, { label: 'Fiche DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
   { path: 'dao/:idDmc/depots', loadComponent: () => import('./depots-dao').then((m) => m.DepotsDao), data: { title: 'Dépôts des offres', parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }, { label: 'Fiche DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
   // ⚠️ Soumission en ligne, lot 2a (04/10, Q11) — la commission d'appel d'offres, désignée par la PRMP (remise électronique).
   { path: 'dao/:idDmc/cao', loadComponent: () => import('./cao-ecran').then((m) => m.CaoEcran), data: { title: 'Commission d’appel d’offres', parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }, { label: 'Fiche DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },

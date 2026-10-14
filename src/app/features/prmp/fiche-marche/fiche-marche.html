@@ -68,6 +68,10 @@
         @if (lienRecus(); as lien) {
           <a class="btn btn-outline btn-sm" [routerLink]="lien">Reçus des frais de dossier</a>
         }
+        <!-- ⚠️ R7 (V109) — les questions des candidats et leurs réponses diffusées. -->
+        @if (lienQuestions(); as lien) {
+          <a class="btn btn-outline btn-sm" [routerLink]="lien">Questions des candidats</a>
+        }
       </div>
     }
   </header>

@@ -300,6 +300,22 @@ l'attributaire ; paramètres `RECOURS_SUSPENSIFS`, `SIGNATURE_OFFRE`, délais pa
 > - **Côté front** : formulaire de question sur la page de la procédure (fermé quand `closes`, afficher `clotureLe`), liste publique des
 >   réponses, écran PRMP des questions avec réponse et fichier, badge sur `QUESTION_POSEE`.
 
+> ✅ **Front, 2026-10-14 — tranche R7 branchée (questions des candidats)**, vérifiée par les tests (recette navigateur groupée avec le
+> reste du lot 2) :
+> - **Page de la procédure en ligne** (publique) : section « Questions des candidats » — la fenêtre (« recevables jusqu'au … inclus, 10 jours
+>   avant la date limite », ou « closes ») et les **réponses diffusées, anonymes**, avec leur pièce jointe ; sans session, l'invitation à se
+>   connecter avec le compte qui a retiré le dossier ; candidat connecté : **ses questions** (en attente / répondue) et le formulaire (4 000
+>   caractères, compteur), fermé quand `closes` ; refus nommés : `DOSSIER_NON_RETIRE` (renvoie à la section du dossier), `QUESTIONS_CLOSES`
+>   (avec la date de clôture), `DATE_LIMITE_INCONNUE`, `QUESTION_TROP_LONGUE`. La section ne paraît pas hors d'une procédure en ligne (404).
+> - **PRMP** — écran `/prmp/dao/{idDmc}/questions` (bouton « Questions des candidats » sur la fiche, PRMP et UGPM, remise électronique,
+>   version validée) : toutes les questions avec leur auteur (raison sociale et compte), le nombre en attente, la réponse **« Répondre et
+>   diffuser »** (texte + pièce facultative, avertissement « diffusée à tous, définitive »), `DEJA_REPONDUE` nommé (et relecture), le PDF
+>   « Questions et réponses » ; l'UGPM lit sans répondre. La notification `QUESTION_POSEE` mène à cet écran.
+> - La pièce `QUESTIONS_REPONSES` du dossier de marché paraît avec les autres pièces (liste générique), sans code dédié.
+> ⚠️ **Demande** — la pastille de menu « question en attente » demande un **compteur serveur** : proposition `questionsEnAttente` dans
+> `GET /api/kpis/badges` (PRMP : questions `EN_ATTENTE` de ses fiches). Le front l'ajoutera à la pastille « Fiches DAO » dès qu'il est servi
+> (pas de recalcul côté front, règle P2 de l'audit). D'ici là : la notification et le nombre en attente de l'écran.
+
 > ⚠️ **Backend, 2026-10-13 — B3 : tranche R8 livrée (mode figé, V110)** ; contrat : `docs/api-endpoints.md`, § *… lot 2, tranche R8*.
 > Arbitrages du 13/10 : la migration **ouvre une révision** avec le nouveau mode (version validée intacte, PRMP ressaisit puis valide) ;
 > **point de non-retour** dès une offre en ligne, une cérémonie close ou un lot attribué ; « procédure en ligne » (R2, R5) **lit le mode**

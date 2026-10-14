@@ -10,6 +10,7 @@ import { ProceduresEnLigneService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { FraisDossier } from './frais-dossier';
 import { ResultatsPublics } from './resultats-publics';
+import { QuestionsProcedureVue } from './questions-procedure';
 import { LIBELLES_CATEGORIES } from '../prmp/fiche-marche/fiche-marche-modele';
 import { LIBELLES_ETAT_PROCEDURE, dateHeureFr, tailleLisible } from './libelles-candidat';
 
@@ -22,7 +23,7 @@ import { LIBELLES_ETAT_PROCEDURE, dateHeureFr, tailleLisible } from './libelles-
 @Component({
   selector: 'app-procedure-en-ligne-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur, FraisDossier, ResultatsPublics],
+  imports: [RouterLink, EtatErreur, FraisDossier, ResultatsPublics, QuestionsProcedureVue],
   template: `
     <nav class="ped__ariane" aria-label="Fil d'Ariane">
       <a routerLink="/candidat/procedures">Procédures ouvertes</a>
@@ -157,6 +158,8 @@ import { LIBELLES_ETAT_PROCEDURE, dateHeureFr, tailleLisible } from './libelles-
             </ul>
           }
         </section>
+        <!-- ⚠️ R7 (V109) — les questions des candidats jusqu'à J−10 ; réponses diffusées, anonymisées. -->
+        <app-questions-procedure [idDmc]="idDmc" [connecte]="connecte()" [lienRetour]="lienRetour()" />
       </div>
     }
   `,
