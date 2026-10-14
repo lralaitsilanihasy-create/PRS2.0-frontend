@@ -39,6 +39,8 @@ export function refus2d(e: ApiError): string {
     case 'INFRUCTUOSITE_NON_PROPOSEE': return 'L’infructuosité se déclare quand le rapport la propose, ou après l’avis défavorable de la Commission sur le dossier de marché.';
     case 'AVIS_NON_DEFAVORABLE': return 'La reprise de l’évaluation suit un avis défavorable de la Commission.';
     case 'AUTRES_LOTS_ATTRIBUES': return `Un autre lot de la procédure est déjà attribué${lots ? ' (lot(s) ' + lots + ')' : ''} : l’évaluation, commune aux lots, ne se rouvre plus.`;
+    // ⚠️ R9c (14/10, réponse du backend) — le dossier de marché soumis d'un autre lot ferme l'évaluation commune.
+    case 'AUTRES_LOTS_SOUMIS': return `Le dossier de marché d’un autre lot est soumis à la Commission${lots ? ' (lot(s) ' + lots + ')' : ''} : l’évaluation, commune aux lots, ne se rouvre pas tant qu’il y est.`;
     case 'NON_RETIRE': return 'Le marché n’est pas retiré : rien à réattribuer.';
     case 'AUCUN_SUIVANT_ELIGIBLE': return 'Aucun candidat suivant n’est éligible : seule une déclaration sans suite reste possible.';
     case 'OFFRE_EXPIREE': return `L’offre du candidat suivant n’est plus valide${typeof details['echeance'] === 'string' ? ' (échue le ' + dateHeureFr(details['echeance'] as string) + ')' : ''}.`;

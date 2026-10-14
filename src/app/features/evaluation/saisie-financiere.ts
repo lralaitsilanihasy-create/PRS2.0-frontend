@@ -61,8 +61,13 @@ export function montantCompareIndicatif(prixCorrige: number | null, remboursable
                     @for (k of corrections(); track k.cle) {
                       <tr>
                         <td><input type="checkbox" [attr.aria-label]="'Retenir : ' + k.libelle" [checked]="k.retenue" [disabled]="!modifiable()" (change)="retenir(k.cle, $any($event.target).checked)" /></td>
-                        <td class="text-sm">{{ regles[k.regle] }}{{ k.proposee ? ' (proposée)' : '' }}</td>
-                        <td>{{ k.libelle }}</td>
+                        <td class="text-sm">{{ regles[k.regle] }}{{ k.proposee ? ' (proposée)' : '' }}@if (k.ecart || !k.proposee) { <span class="badge badge-warning sfi__ecart" title="Correction hors du calcul du serveur, motivée (art. 46-47)">Hors calcul</span> }</td>
+                        <td>{{ k.libelle }}
+                        @if (!k.proposee && modifiable()) {
+                          <!-- Une correction hors calcul saisie avant R9b n'a pas de motif : il se complète ici avant d'enregistrer. -->
+                          <input class="form-control form-control-sm sfi__motif-lu" type="text" [attr.aria-label]="'Motif de la correction ' + k.libelle" placeholder="Motif (obligatoire)" [value]="k.motif ?? ''" (input)="motiver(k.cle, $any($event.target).value)" />
+                        } @else if (k.motif) { <span class="text-sm text-muted sfi__motif-lu">Motif : {{ k.motif }}</span> }
+                      </td>
                         <td class="sfi__num">{{ ariary(k.avant) }}</td>
                         <td class="sfi__num">{{ ariary(k.apres) }}</td>
                         <td>@if (!k.proposee && modifiable()) { <button type="button" class="btn btn-ghost btn-sm" [attr.aria-label]="'Retirer la correction ' + k.libelle" (click)="retirer(k.cle)">✕</button> }</td>
@@ -85,7 +90,9 @@ export function montantCompareIndicatif(prixCorrige: number | null, remboursable
                 <label class="form-group"><span class="form-label">Libellé</span><input class="form-control form-control-sm" type="text" [value]="libelleAjout()" (input)="libelleAjout.set($any($event.target).value)" /></label>
                 <label class="form-group"><span class="form-label">Avant (Ar HT)</span><input class="form-control form-control-sm" type="number" [value]="avantAjout() ?? ''" (input)="avantAjout.set(nombre($any($event.target).value))" /></label>
                 <label class="form-group"><span class="form-label">Après (Ar HT)</span><input class="form-control form-control-sm" type="number" [value]="apresAjout() ?? ''" (input)="apresAjout.set(nombre($any($event.target).value))" /></label>
-                <button type="button" class="btn btn-outline btn-sm" [disabled]="!libelleAjout().trim() || avantAjout() == null || apresAjout() == null" (click)="ajouter()">Ajouter la correction</button>
+                <!-- ⚠️ R9b (V112, art. 46-47) — une correction hors du calcul du serveur se motive ; elle est signalée au dossier de marché. -->
+                <label class="form-group sfi__motif"><span class="form-label">Motif (obligatoire : la correction sort du calcul du serveur)</span><input class="form-control form-control-sm" type="text" [value]="motifAjout()" (input)="motifAjout.set($any($event.target).value)" /></label>
+                <button type="button" class="btn btn-outline btn-sm" [disabled]="!libelleAjout().trim() || avantAjout() == null || apresAjout() == null || !motifAjout().trim()" (click)="ajouter()">Ajouter la correction</button>
               </div>
             }
             @if (prixLuDemande() || (s && s.prixLu == null)) {
@@ -113,7 +120,7 @@ export function montantCompareIndicatif(prixCorrige: number | null, remboursable
               }
             </fieldset>
             @if (modifiable()) {
-              <div class="sfi__actions"><button type="button" class="btn btn-primary btn-sm" [disabled]="travail()" (click)="enregistrer()">{{ refus() ? 'Écarter la proposition' : 'Enregistrer et classer' }}</button></div>
+              <div class="sfi__actions">@if (motifsManquants()) { <span class="text-sm" role="status">Motivez chaque correction hors calcul avant d’enregistrer.</span> }<button type="button" class="btn btn-primary btn-sm" [disabled]="travail() || motifsManquants()" (click)="enregistrer()">{{ refus() ? 'Écarter la proposition' : 'Enregistrer et classer' }}</button></div>
             }
           </div>
         </details>
@@ -135,11 +142,14 @@ export function montantCompareIndicatif(prixCorrige: number | null, remboursable
     .sfi__h4 { margin: 0; font-size: 0.9rem; }
     .sfi__num { text-align: right; white-space: nowrap; }
     .sfi__ajout { display: grid; grid-template-columns: 1fr 2fr 1fr 1fr auto; gap: 0.4rem; align-items: end; }
+    .sfi__motif { grid-column: span 4; }
+    .sfi__ecart { margin-left: 0.35rem; }
+    .sfi__motif-lu { display: block; }
     .sfi__bloc { border: 1px solid var(--n-200); border-radius: 6px; padding: 0.5rem 0.7rem; display: flex; flex-direction: column; gap: 0.4rem; margin: 0; }
     .sfi__ligne { display: grid; grid-template-columns: 1fr 2fr; gap: 0.4rem; }
     .sfi__case { display: inline-flex; gap: 0.4rem; align-items: center; font-size: var(--text-sm); }
-    .sfi__actions { display: flex; justify-content: flex-end; }
-    @media (max-width: 900px) { .sfi__ajout, .sfi__ligne { grid-template-columns: 1fr; } .sfi__resultat { grid-template-columns: repeat(2, auto); } }
+    .sfi__actions { display: flex; justify-content: flex-end; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+    @media (max-width: 900px) { .sfi__motif { grid-column: auto; } .sfi__ajout, .sfi__ligne { grid-template-columns: 1fr; } .sfi__resultat { grid-template-columns: repeat(2, auto); } }
   `,
 })
 export class SaisieFinanciereVue implements OnInit {
@@ -164,6 +174,9 @@ export class SaisieFinanciereVue implements OnInit {
   readonly libelleAjout = signal('');
   readonly avantAjout = signal<number | null>(null);
   readonly apresAjout = signal<number | null>(null);
+  readonly motifAjout = signal('');
+  /** ⚠️ R9b (V112) — une correction hors calcul (`REPORT`, `AUTRE`) sans motif : le serveur refuserait l'enregistrement. */
+  readonly motifsManquants = computed(() => this.corrections().some((k) => !k.proposee && !k.motif?.trim()));
   readonly prixLu = signal<number | null>(null);
   readonly prixLuDemande = signal(false);
   readonly remboursables = signal<number | null>(0);
@@ -212,12 +225,17 @@ export class SaisieFinanciereVue implements OnInit {
     this.corrections.update((l) => l.map((k) => (k.cle === cle ? { ...k, retenue } : k)));
   }
 
+  motiver(cle: number, motif: string): void {
+    this.corrections.update((l) => l.map((k) => (k.cle === cle ? { ...k, motif } : k)));
+  }
+
   retirer(cle: number): void {
     this.corrections.update((l) => l.filter((k) => k.cle !== cle));
   }
 
   ajouter(): void {
-    this.corrections.update((l) => [...l, { cle: ++this.cle, proposee: false, ligne: null, libelle: this.libelleAjout().trim(), avant: this.avantAjout()!, apres: this.apresAjout()!, regle: this.regleAjout(), retenue: true }]);
+    this.corrections.update((l) => [...l, { cle: ++this.cle, proposee: false, ligne: null, libelle: this.libelleAjout().trim(), avant: this.avantAjout()!, apres: this.apresAjout()!, regle: this.regleAjout(), retenue: true, motif: this.motifAjout().trim(), ecart: true }]);
+    this.motifAjout.set('');
     this.libelleAjout.set('');
     this.avantAjout.set(null);
     this.apresAjout.set(null);
@@ -232,7 +250,7 @@ export class SaisieFinanciereVue implements OnInit {
     this.service
       .saisirFinanciere(this.idDmc(), id, {
         prixLu: this.prixLu(),
-        corrections: this.corrections().map(({ ligne, libelle, avant, apres, regle, retenue }) => ({ ligne, libelle, avant, apres, regle, retenue })),
+        corrections: this.corrections().map(({ ligne, libelle, avant, apres, regle, retenue, motif }) => ({ ligne, libelle, avant, apres, regle, retenue, motif: motif ?? null })),
         remboursables: this.remboursables() ?? 0,
         motifRemboursables: this.motifRemboursables().trim() || null,
         refusCandidat: refus ? { motif: this.motifRefus().trim(), clause: this.clauseRefus().trim() } : null,

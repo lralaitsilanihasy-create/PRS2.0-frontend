@@ -58,8 +58,13 @@ interface CorrectionEditee extends Correction {
                   @for (k of corrections(); track k.cle) {
                     <tr>
                       <td><input type="checkbox" [attr.aria-label]="'Retenir : ' + k.libelle" [checked]="k.retenue" [disabled]="!modifiable()" (change)="retenir(k.cle, $any($event.target).checked)" /></td>
-                      <td class="text-sm">{{ regles[k.regle] }}{{ k.proposee ? ' (proposée)' : '' }}</td>
-                      <td>{{ k.libelle }}</td>
+                      <td class="text-sm">{{ regles[k.regle] }}{{ k.proposee ? ' (proposée)' : '' }}@if (k.ecart || !k.proposee) { <span class="badge badge-warning mo__ecart" title="Correction hors du calcul du serveur, motivée (art. 46-47)">Hors calcul</span> }</td>
+                      <td>{{ k.libelle }}
+                        @if (!k.proposee && modifiable()) {
+                          <!-- Une correction hors calcul saisie avant R9b n'a pas de motif : il se complète ici avant d'enregistrer. -->
+                          <input class="form-control form-control-sm mo__motif-lu" type="text" [attr.aria-label]="'Motif de la correction ' + k.libelle" placeholder="Motif (obligatoire)" [value]="k.motif ?? ''" (input)="motiver(k.cle, $any($event.target).value)" />
+                        } @else if (k.motif) { <span class="text-sm text-muted mo__motif-lu">Motif : {{ k.motif }}</span> }
+                      </td>
                       <td class="mo__num">{{ ariary(k.avant) }}</td>
                       <td class="mo__num">{{ ariary(k.apres) }}</td>
                       <td>@if (!k.proposee && modifiable()) { <button type="button" class="btn btn-ghost btn-sm" [attr.aria-label]="'Retirer la correction ' + k.libelle" (click)="retirer(k.cle)">✕</button> }</td>
@@ -82,7 +87,9 @@ interface CorrectionEditee extends Correction {
               <label class="form-group"><span class="form-label">Libellé</span><input class="form-control form-control-sm" type="text" [value]="libelleAjout()" (input)="libelleAjout.set($any($event.target).value)" /></label>
               <label class="form-group"><span class="form-label">Avant (Ar HT)</span><input class="form-control form-control-sm" type="number" [value]="avantAjout() ?? ''" (input)="avantAjout.set(nombre($any($event.target).value))" /></label>
               <label class="form-group"><span class="form-label">Après (Ar HT)</span><input class="form-control form-control-sm" type="number" [value]="apresAjout() ?? ''" (input)="apresAjout.set(nombre($any($event.target).value))" /></label>
-              <button type="button" class="btn btn-outline btn-sm" [disabled]="!libelleAjout().trim() || avantAjout() == null || apresAjout() == null" (click)="ajouter()">Ajouter la correction</button>
+              <!-- ⚠️ R9b (V112, art. 46-47) — une correction hors du calcul du serveur se motive ; elle est signalée au dossier de marché. -->
+                <label class="form-group mo__motif"><span class="form-label">Motif (obligatoire : la correction sort du calcul du serveur)</span><input class="form-control form-control-sm" type="text" [value]="motifAjout()" (input)="motifAjout.set($any($event.target).value)" /></label>
+                <button type="button" class="btn btn-outline btn-sm" [disabled]="!libelleAjout().trim() || avantAjout() == null || apresAjout() == null || !motifAjout().trim()" (click)="ajouter()">Ajouter la correction</button>
             </div>
           }
 
@@ -144,7 +151,7 @@ interface CorrectionEditee extends Correction {
           </fieldset>
 
           @if (modifiable()) {
-            <div class="mo__actions"><button type="button" class="btn btn-primary btn-sm" [disabled]="travail()" (click)="enregistrer()">{{ refus() ? 'Écarter l’offre' : 'Enregistrer et calculer le montant évalué' }}</button></div>
+            <div class="mo__actions">@if (motifsManquants()) { <span class="text-sm" role="status">Motivez chaque correction hors calcul avant d’enregistrer.</span> }<button type="button" class="btn btn-primary btn-sm" [disabled]="travail() || motifsManquants()" (click)="enregistrer()">{{ refus() ? 'Écarter l’offre' : 'Enregistrer et calculer le montant évalué' }}</button></div>
           }
         </div>
       </details>
@@ -164,14 +171,17 @@ interface CorrectionEditee extends Correction {
     .mo__h4 { margin: 0; font-size: 0.9rem; }
     .mo__num { text-align: right; white-space: nowrap; }
     .mo__ajout { display: grid; grid-template-columns: 1fr 2fr 1fr 1fr auto; gap: 0.4rem; align-items: end; }
+    .mo__motif { grid-column: span 4; }
+    .mo__ecart { margin-left: 0.35rem; }
+    .mo__motif-lu { display: block; }
     .mo__grille { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
     .mo__bloc { border: 1px solid var(--n-200); border-radius: 6px; padding: 0.5rem 0.7rem; display: flex; flex-direction: column; gap: 0.4rem; }
     .mo__case { display: inline-flex; gap: 0.4rem; align-items: center; font-size: var(--text-sm); }
     .mo__critere { display: grid; grid-template-columns: 2fr 1fr 2fr auto; gap: 0.4rem; }
     .mo__refus { grid-template-columns: 2fr 1fr; }
     .mo__plus { align-self: flex-start; }
-    .mo__actions { display: flex; justify-content: flex-end; }
-    @media (max-width: 900px) { .mo__ajout, .mo__grille, .mo__critere { grid-template-columns: 1fr; } .mo__resultat { grid-template-columns: repeat(2, auto); } }
+    .mo__actions { display: flex; justify-content: flex-end; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+    @media (max-width: 900px) { .mo__motif { grid-column: auto; } .mo__ajout, .mo__grille, .mo__critere { grid-template-columns: 1fr; } .mo__resultat { grid-template-columns: repeat(2, auto); } }
   `,
 })
 export class MontantOffre implements OnInit {
@@ -195,6 +205,9 @@ export class MontantOffre implements OnInit {
   readonly libelleAjout = signal('');
   readonly avantAjout = signal<number | null>(null);
   readonly apresAjout = signal<number | null>(null);
+  readonly motifAjout = signal('');
+  /** ⚠️ R9b (V112) — une correction hors calcul (`REPORT`, `AUTRE`) sans motif : le serveur refuserait l'enregistrement. */
+  readonly motifsManquants = computed(() => this.corrections().some((k) => !k.proposee && !k.motif?.trim()));
   readonly prixLu = signal<number | null>(null);
   readonly prixLuDemande = signal(false);
   readonly rabais = signal<number | null>(null);
@@ -265,12 +278,17 @@ export class MontantOffre implements OnInit {
     this.corrections.update((l) => l.map((k) => (k.cle === cle ? { ...k, retenue } : k)));
   }
 
+  motiver(cle: number, motif: string): void {
+    this.corrections.update((l) => l.map((k) => (k.cle === cle ? { ...k, motif } : k)));
+  }
+
   retirer(cle: number): void {
     this.corrections.update((l) => l.filter((k) => k.cle !== cle));
   }
 
   ajouter(): void {
-    this.corrections.update((l) => [...l, { cle: ++this.cle, proposee: false, ligne: null, libelle: this.libelleAjout().trim(), avant: this.avantAjout()!, apres: this.apresAjout()!, regle: this.regleAjout(), retenue: true }]);
+    this.corrections.update((l) => [...l, { cle: ++this.cle, proposee: false, ligne: null, libelle: this.libelleAjout().trim(), avant: this.avantAjout()!, apres: this.apresAjout()!, regle: this.regleAjout(), retenue: true, motif: this.motifAjout().trim(), ecart: true }]);
+    this.motifAjout.set('');
     this.libelleAjout.set('');
     this.avantAjout.set(null);
     this.apresAjout.set(null);
@@ -295,7 +313,7 @@ export class MontantOffre implements OnInit {
     this.service
       .montant(this.idDmc(), this.offre().idOffre, {
         prixLu: this.prixLu(),
-        corrections: this.corrections().map(({ ligne, libelle, avant, apres, regle, retenue }) => ({ ligne, libelle, avant, apres, regle, retenue })),
+        corrections: this.corrections().map(({ ligne, libelle, avant, apres, regle, retenue, motif }) => ({ ligne, libelle, avant, apres, regle, retenue, motif: motif ?? null })),
         refusCandidat: refus ? { motif: this.motifRefus().trim(), clause: this.clauseRefus().trim() } : null,
         // Un rabais conditionnel ne se saisit pas (400 RABAIS_CONDITIONNEL) ; un montant égal à la proposition se passe de motif.
         rabais: this.conditionnel() || this.rabais() == null ? null : { montant: this.rabais()!, lecture: this.lectureRabais().trim() || null, motif: this.corrige() ? this.motifRabais().trim() || null : null },

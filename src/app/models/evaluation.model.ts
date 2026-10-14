@@ -73,6 +73,12 @@ export interface Correction {
   apres: number;
   regle: RegleCorrection;
   retenue?: boolean;
+  /**
+   * ⚠️ R9b (V112, art. 46-47) — `REPORT` et `AUTRE`, hors du calcul du serveur, se motivent (400 `MOTIF_OBLIGATOIRE`) et portent
+   * `ecart: true` ; `PU_PREVAUT` / `LETTRES_PREVALENT` reprennent exactement une proposition (400 `CORRECTION_NON_PROPOSEE`).
+   */
+  motif?: string | null;
+  ecart?: boolean | null;
 }
 
 export interface Rabais {
@@ -142,6 +148,8 @@ export type DecisionAnormale = 'NON_SUSPECTEE' | 'SUSPECTEE' | 'MAINTENUE' | 'RE
 export interface Anormale extends Auteur {
   suspectee: boolean;
   decision: DecisionAnormale | null;
+  /** ⚠️ R9b (V112, art. 48) — rejet après l'échéance sans réponse du candidat : le défaut de réponse vaut refus de justifier. */
+  defautReponse?: boolean | null;
   motif: string | null;
   justification: DemandeEvaluation | null;
 }

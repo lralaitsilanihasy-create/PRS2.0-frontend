@@ -88,6 +88,8 @@ export class IndicateursPrixVue implements OnInit {
         @if (a?.decision) {
           <span class="badge" [class.badge-success]="a!.decision === 'NON_SUSPECTEE' || a!.decision === 'MAINTENUE'" [class.badge-warning]="a!.decision === 'SUSPECTEE'" [class.badge-danger]="a!.decision === 'REJETEE'">{{ libelles[a!.decision!] }}</span>
         } @else { <span class="badge badge-warning">À décider</span> }
+        <!-- ⚠️ R9b (V112, art. 48) — l'échéance passée sans réponse vaut refus de justifier : le rejet le dit. -->
+        @if (a?.defautReponse) { <span class="badge badge-neutral" title="Le candidat n’a pas répondu à la demande de justification avant l’échéance : son silence vaut refus de justifier (art. 48).">Défaut de réponse</span> }
       </header>
       @if (a?.motif) { <p class="text-sm ao__motif">{{ a!.motif }}@if (a?.nom) { <span class="text-muted"> — {{ a!.nom }}, {{ dateHeure(a!.le) }}</span> }</p> }
 

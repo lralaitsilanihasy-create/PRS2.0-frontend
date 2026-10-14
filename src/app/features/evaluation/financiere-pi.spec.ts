@@ -104,7 +104,7 @@ describe('Évaluation financière, classement et négociation (lot 3 PI, tranche
     const put = http.expectOne('/api/fiches-marche/49/evaluation/financiere/offres/f-1');
     expect(put.request.body).toEqual({
       prixLu: null,
-      corrections: [{ ligne: 2, libelle: 'Total ligne 2', avant: 1000, apres: 1200, regle: 'PU_PREVAUT', retenue: true }],
+      corrections: [{ ligne: 2, libelle: 'Total ligne 2', avant: 1000, apres: 1200, regle: 'PU_PREVAUT', retenue: true, motif: null }],
       remboursables: 5000000, motifRemboursables: 'Billets d’avion et per diem', refusCandidat: null,
     });
     put.flush(FINANCIERE);

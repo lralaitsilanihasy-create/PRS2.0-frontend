@@ -68,12 +68,35 @@ const LIBELLES_ENVELOPPE: Readonly<Record<EnveloppeOffre, string>> = { TECHNIQUE
         } @else {
           <div class="empty-state"><p class="empty-state-title">Aucune offre déposée.</p></div>
         }
+        <!-- ⚠️ R9b (V112, art. 44) — les tentatives refusées hors délai, horodatées par le serveur ; elles figurent aussi au PV d'ouverture. -->
+        @if (r.clos && r.tentativesRefusees; as tr) {
+          <h2 class="dd__h2">Tentatives de dépôt refusées hors délai : {{ tr.length }}</h2>
+          @if (tr.length) {
+            <div class="table-card">
+              <table class="dd__table">
+                <caption class="cnm-sr-only">Les tentatives de dépôt refusées après la date limite</caption>
+                <thead><tr><th scope="col">Horodatage</th><th scope="col">Entreprise</th><th scope="col">NIF</th><th scope="col">Lot</th>@if (pi()) { <th scope="col">Enveloppe</th> }<th scope="col">Geste refusé</th></tr></thead>
+                <tbody>
+                  @for (t of tr; track $index) {
+                    <tr>
+                      <td class="nowrap cnm-mono">{{ horodatage(t.horodatage) }}</td><td>{{ t.entreprise ?? 'Candidat sans entreprise déclarée' }}</td><td class="cnm-mono">{{ t.nif ?? '—' }}</td><td>{{ t.lot ?? '—' }}</td>@if (pi()) { <td>{{ t.enveloppe ? enveloppes[t.enveloppe] : '—' }}</td> }
+                      <td>{{ gestes[t.geste] ?? t.geste }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <p class="text-sm text-muted">Aucune tentative après la date limite.</p>
+          }
+        }
       }
     </section>
   `,
   styles: `
     .dd { display: flex; flex-direction: column; gap: 0.75rem; }
     .dd__nombre { margin: 0; font-size: 1rem; }
+    .dd__h2 { margin: 0.5rem 0 0; font-size: 1rem; }
     .dd__table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
     .dd__table th, .dd__table td { text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--n-200); }
     /* 06/10 — pas de couleur ici : l’en-tête global est bleu à texte blanc (gris sur bleu < AA). */
@@ -91,6 +114,13 @@ export class DepotsDao implements OnInit {
   readonly taille = tailleLisible;
   readonly formater = formaterEmpreinte;
   readonly courte = empreinteCourte;
+  readonly gestes: Readonly<Record<string, string>> = { CREATION: 'Création de l’offre', MORCEAU: 'Envoi d’un morceau', SCELLEMENT: 'Scellement' };
+
+  /** L'horodatage du serveur, à la seconde (« 14/10/2026 à 10:00:03 »). */
+  horodatage(iso: string): string {
+    const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}:\d{2}:\d{2})/.exec(iso);
+    return m ? `${m[3]}/${m[2]}/${m[1]} à ${m[4]}` : this.dateHeure(iso);
+  }
 
   readonly chargement = signal(true);
   readonly erreur = signal(false);

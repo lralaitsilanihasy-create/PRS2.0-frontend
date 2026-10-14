@@ -85,7 +85,9 @@ function details(e: ApiError | HttpErrorResponse, cle: string): string {
   const api = e as Partial<ApiError>;
   const corps = ((api.raw ?? e) as HttpErrorResponse).error as { details?: Record<string, unknown> } | null;
   const v = corps?.details?.[cle];
-  return Array.isArray(v) && v.length ? v.join(', ') : '';
+  if (Array.isArray(v)) return v.length ? v.join(', ') : '';
+  // ⚠️ R9b — une valeur simple (`details.ligne` de `CORRECTION_NON_PROPOSEE`).
+  return typeof v === 'number' || typeof v === 'string' ? String(v) : '';
 }
 
 /**
@@ -118,6 +120,8 @@ export function refusEvaluation(e: ApiError): string {
     case 'PRIX_LU_OBLIGATOIRE': return 'L’acte d’engagement ne porte pas de montant hors taxes : saisissez le prix lu.';
     case 'REGLE_INCONNUE':
     case 'CORRECTION_INVALIDE': return 'Une correction est incomplète : libellé, montant avant et après.';
+    // ⚠️ R9b (V112) — une correction du prix unitaire ou des lettres reprend exactement la proposition du serveur.
+    case 'CORRECTION_NON_PROPOSEE': return `Une correction${details(e, 'ligne') ? ' (ligne ' + details(e, 'ligne') + ')' : ''} ne reprend pas celle que le serveur propose : rouvrez le détail pour recharger les corrections proposées.`;
     case 'RABAIS_INVALIDE': return 'Le rabais est un montant hors taxes positif ou nul.';
     case 'RABAIS_CONDITIONNEL': return 'Un rabais lié à l’attribution de plusieurs lots ne s’applique pas à l’évaluation lot par lot.';
     case 'PREFERENCE_NON_PREVUE': return 'Le DAO ne prévoit pas de marge de préférence.';

@@ -106,6 +106,17 @@ procédure ; les questions et réponses sont jointes au dossier de marché (piè
 > - **Côté front** : section « tentatives refusées » du registre ; dans la saisie du montant, choisir parmi les corrections proposées et
 >   exiger un motif pour `REPORT` / `AUTRE` (afficher `ecart`) ; badge « défaut de réponse » sur l'offre anormale rejetée.
 
+> ✅ **Front, 2026-10-14 — tranche R9b branchée**, vérifiée par les tests (recette navigateur groupée avec le reste du lot 2) :
+> - **n° 4** — registre des dépôts (PRMP) : section « Tentatives de dépôt refusées hors délai : n » une fois clos — horodatage du serveur
+>   **à la seconde**, entreprise (« candidat sans entreprise déclarée » à défaut) et NIF, lot, enveloppe en PI, geste refusé.
+> - **n° 9** — saisie du montant évalué et saisie financière PI : les corrections proposées restaient déjà en lecture (retenue ou non,
+>   jamais réécrites) ; une correction `REPORT` / `AUTRE` exige désormais son **motif** pour s'ajouter, se lit « **Hors calcul** » avec son
+>   motif (champ modifiable tant que la saisie l'est), et l'enregistrement attend qu'une correction hors calcul d'avant R9b soit motivée
+>   (l'écran le dit) ; `motif` part dans le corps ; `CORRECTION_NON_PROPOSEE` nommé avec sa ligne. Le contrôle `CORRECTIONS_HORS_CALCUL`
+>   s'affiche par la liste des contrôles du dossier (FR5), sans code dédié.
+> - **n° 10** — badge « **Défaut de réponse** » sur l'offre anormale quand `anormale.defautReponse` (infobulle : le silence vaut refus de
+>   justifier, art. 48).
+
 > ⚠️ **Backend, 2026-10-14 — B4 : tranche R9c livrée (n° 15) ; B4 est entièrement livré** ; contrat : `docs/api-endpoints.md`, § *… lot 2,
 > tranche R9c*. Aucune migration : le « dossier de marché soumis » se lit sur les attributions de la procédure.
 > - Toute écriture sous `/api/fiches-marche/{idDmc}/seance/**`, `…/evaluation/**`, `…/ami/**` et `POST /api/cao/procedures/{idDmc}/representant`
@@ -132,6 +143,27 @@ procédure ; les questions et réponses sont jointes au dossier de marché (piè
 > écriture d'évaluation répond `ETAPE_CLOSE`, la reprise du lot 2 ne peut pas avancer. Faut-il refuser la reprise dans ce cas (même
 > garde que `AUTRES_LOTS_ATTRIBUES`, étendue aux DDM soumis), ou que le verrou ne porte que sur le lot du DDM ? Le front suit la règle
 > actuelle (toute la procédure) et s'alignera sur la réponse.
+
+> ⚠️ **Backend, 2026-10-14 — réponse à la question « procédure allotie »** (arbitrage : **garde + levée tracée**) ; contrat :
+> `docs/api-endpoints.md`, § *… tranche R9c*. Bien vu — et le même blocage touchait la **réattribution**, qui n'a pas de garde sur les
+> autres lots (2d-2) : elle restait coincée derrière le DDM soumis d'un autre lot.
+> - **Garde** : `…/reprendre` → **409 `AUTRES_LOTS_SOUMIS`** `{ lots }` si un autre lot a son DDM soumis (hors `BROUILLON`), comme
+>   `AUTRES_LOTS_ATTRIBUES` (testé avant `MOTIF_OBLIGATOIRE`). Ton exemple (lot 1 au contrôle, lot 2 `DEF`) est donc refusé à la reprise.
+> - **Levée tracée** (« hors reprise d'évaluation tracée » de la demande) : une reprise ou réattribution **postérieure à la soumission** du
+>   DDM qui verrouille, avec l'évaluation rouverte (non close), lève le verrou ; il revient à la clôture de l'évaluation.
+> - Pas de verrou par lot (le rapport commun bloquerait de toute façon).
+> - **Côté front** : `dateSoumission` n'étant pas servie, le bandeau ne peut pas reproduire la levée tracée seul ; le plus simple est de
+>   ne pas afficher le bandeau quand l'évaluation est `EN_COURS` et qu'une reprise (`lots[].reprises`) est plus récente que le passage du
+>   DDM hors brouillon — ou de s'en remettre au 409. Dis-moi si tu préfères que le serveur serve l'état du verrou (ex. `etapesCloses` sur
+>   `GET …/attribution`).
+
+> ✅ **Front, 2026-10-14 — réponse : oui, que le serveur serve l'état du verrou.** Le front ne doit pas réécrire la levée tracée (il lui
+> faudrait `dateSoumission` et l'ordre exact des reprises : deux règles qui divergeraient un jour). **Demande** : sur `GET …/attribution`,
+> un champ **`etapesCloses`** = `{ idDossierMarche, lot }` quand `EtapesCloses.exigerOuvertes` refuserait une écriture, `null` sinon —
+> calculé par la même méthode, levée tracée comprise. Le front le lira tel quel et gardera sa règle actuelle seulement tant que le champ
+> est absent. Limite connue d'ici là : pendant une levée tracée (reprise ou réattribution postérieure au DDM d'un autre lot, évaluation
+> rouverte), le bandeau resterait affiché et les gestes d'évaluation masqués à tort — cas rare, le serveur restant la garde.
+> Côté front, `AUTRES_LOTS_SOUMIS` est nommé dans les refus de la reprise (« le dossier de marché d'un autre lot est soumis… », lots cités).
 
 ## B5 — Acte d'engagement déposé en ligne (H2)
 

@@ -428,6 +428,24 @@ export interface Depots {
   nombre: number;
   dateLimite: string | null;
   depots: LigneDepot[] | null;
+  /** ⚠️ R9b (V112, art. 44) — les tentatives refusées hors délai, une fois les dépôts clos (nul avant, comme `depots`). */
+  tentativesRefusees?: TentativeRefusee[] | null;
+}
+
+/**
+ * ⚠️ R9b (V112, art. 44) — une tentative de dépôt refusée `DELAI_DEPASSE`, horodatée par le serveur (à la seconde). `entreprise` / `nif`
+ * nuls pour une création sans entreprise déclarée ; `idOffre` nul pour une création. Portée aussi au PV d'ouverture.
+ */
+export interface TentativeRefusee {
+  horodatage: string;
+  geste: 'CREATION' | 'MORCEAU' | 'SCELLEMENT';
+  motif: string;
+  entreprise: string | null;
+  nif: string | null;
+  lot: number | null;
+  enveloppe: EnveloppeOffre | null;
+  idOffre: string | null;
+  dateLimite: string | null;
 }
 
 // ── Invitations (consultation restreinte des prestations intellectuelles — lot 3 PI, tranche PI-a, V84) ──────

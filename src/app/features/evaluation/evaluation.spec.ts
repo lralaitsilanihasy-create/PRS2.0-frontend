@@ -426,3 +426,64 @@ describe('Attribution, tranche 2a : le dossier de marché d’un lot', () => {
     });
   });
 });
+
+// ⚠️ R9b (V112, 14/10, art. 46-47) — une correction hors du calcul du serveur se motive et se signale.
+describe('Corrections hors calcul (R9b)', () => {
+  let fixture: ComponentFixture<MontantOffre>;
+  let http: HttpTestingController;
+  const racine = (): HTMLElement => fixture.nativeElement as HTMLElement;
+  const bouton = (texte: string): HTMLButtonElement => Array.from(racine().querySelectorAll('button')).find((b) => b.textContent?.includes(texte)) as HTMLButtonElement;
+  const saisir = (label: string, valeur: string): void => {
+    const champ = Array.from(racine().querySelectorAll('label')).find((l) => l.textContent?.includes(label))!.querySelector('input') as HTMLInputElement;
+    champ.value = valeur;
+    champ.dispatchEvent(new Event('input'));
+  };
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), { provide: ToastService, useValue: { success: vi.fn() } }] });
+    http = TestBed.inject(HttpTestingController);
+    fixture = TestBed.createComponent(MontantOffre);
+    fixture.componentRef.setInput('idDmc', 40);
+    fixture.componentRef.setInput('offre', { ...OFFRE, conformite: { ...OFFRE.conformite!, decision: 'CONFORME' } });
+    fixture.componentRef.setInput('droits', DECIDEUR);
+    fixture.detectChanges();
+    const details = racine().querySelector('details') as HTMLDetailsElement;
+    details.open = true;
+    details.dispatchEvent(new Event('toggle'));
+    http.expectOne('/api/fiches-marche/40/evaluation/offres/o-1/corrections-proposees').flush([]);
+    fixture.detectChanges();
+  });
+
+  afterEach(() => http.verify());
+
+  it('sans motif, la correction ne s’ajoute pas ; avec, elle part motivée et se lit « hors calcul »', () => {
+    saisir('Libellé', 'Report du sous-total');
+    saisir('Avant', '100');
+    saisir('Après', '120');
+    fixture.detectChanges();
+    expect(bouton('Ajouter la correction').disabled).toBe(true);
+    saisir('Motif (obligatoire', 'Erreur de report page 4');
+    fixture.detectChanges();
+    bouton('Ajouter la correction').click();
+    fixture.detectChanges();
+    expect(racine().querySelector('tbody')?.textContent).toContain('Hors calcul');
+    bouton('Enregistrer et calculer').click();
+    const put = http.expectOne('/api/fiches-marche/40/evaluation/offres/o-1/montant');
+    expect(put.request.body.corrections[0]).toMatchObject({ regle: 'REPORT', motif: 'Erreur de report page 4' });
+    put.flush({ code: 'CORRECTION_NON_PROPOSEE', message: 'x', details: { ligne: 3, regle: 'PU_PREVAUT' } }, { status: 400, statusText: 'Bad Request' });
+    fixture.detectChanges();
+    expect(racine().textContent).toContain('(ligne 3) ne reprend pas celle que le serveur propose');
+  });
+
+  it('une correction hors calcul sans motif (saisie d’avant R9b) bloque l’enregistrement jusqu’à son motif', () => {
+    fixture.componentInstance.corrections.set([{ cle: 1, proposee: false, ligne: null, libelle: 'Ancienne', avant: 1, apres: 2, regle: 'AUTRE', retenue: true, motif: null }]);
+    fixture.detectChanges();
+    expect(bouton('Enregistrer et calculer').disabled).toBe(true);
+    expect(racine().textContent).toContain('Motivez chaque correction hors calcul');
+    const champ = racine().querySelector('tbody input[type=text]') as HTMLInputElement;
+    champ.value = 'Motif complété';
+    champ.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(bouton('Enregistrer et calculer').disabled).toBe(false);
+  });
+});
