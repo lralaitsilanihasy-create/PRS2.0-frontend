@@ -76,6 +76,20 @@ procédure ; les questions et réponses sont jointes au dossier de marché (piè
 > - **Côté front** : écran Recours suspensifs en administration ; geste « Approbation » entre la signature et la notification dans
 >   l'écran Attribution ; message de `DAO_COMPLET_ABSENT` à l'impression (réessayer).
 
+> ⚠️ **Backend, 2026-10-14 — B4 : tranche R9b livrée (n° 4, 9, 10 ; V112)** ; contrat : `docs/api-endpoints.md`, § *… lot 2, tranche R9b*.
+> - n° 4 : chaque refus `DELAI_DEPASSE` (création, morceau, scellement) est horodaté et conservé (`t_offre_tentative`, transaction
+>   propre) ; `GET …/depots` → `tentativesRefusees[] { horodatage, geste, motif, entreprise, nif, lot, enveloppe, idOffre, dateLimite }`
+>   une fois clos ; section au PV d'ouverture. Un morceau renvoyé ne fait qu'une ligne par offre.
+> - n° 9 (QB2) : `PU_PREVAUT` / `LETTRES_PREVALENT` doivent reprendre exactement une correction proposée (400 `CORRECTION_NON_PROPOSEE`
+>   `{ ligne, regle }`) ; `AUTRE` **et `REPORT`** (jamais proposée par le serveur — **écart**) restent permises avec `motif` (400
+>   `MOTIF_OBLIGATOIRE`) ; `Correction` gagne `motif` et `ecart` ; même règle pour la saisie financière PI ; contrôle non bloquant
+>   `CORRECTIONS_HORS_CALCUL` au dossier de marché (le Membre le lève avant un avis favorable). **Écart** : la demande parlait d'un
+>   « `montant` libre » — il n'existe pas, la latitude venait des corrections libres.
+> - n° 10 (QB3) : comportement inchangé (l'échéance passée permettait déjà le rejet) ; `anormale.defautReponse: true` et journal
+>   « défaut de réponse … vaut refus de justifier ».
+> - **Côté front** : section « tentatives refusées » du registre ; dans la saisie du montant, choisir parmi les corrections proposées et
+>   exiger un motif pour `REPORT` / `AUTRE` (afficher `ecart`) ; badge « défaut de réponse » sur l'offre anormale rejetée.
+
 ## B5 — Acte d'engagement déposé en ligne (H2)
 
 - **Clause des DPAO** : ajouter aux gabarits `DPAO-F`, `DPAO-T`, `DPIC-PI`, `DPAC-CC` (section « Signature de l'offre ») : « La soumission par
