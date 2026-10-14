@@ -6,13 +6,14 @@ import { ApiError, codeErreur } from '../../core/errors/api-error';
 import { messageQuorum } from './quorum-cao';
 import { ToastService } from '../../core/notifications/toast.service';
 import { telechargerBlob } from '../../core/securite/fichiers-surs';
-import { EtatSeance, Seance } from '../../models';
-import { SeanceService } from '../../services';
+import { DossierSoumis, EtatSeance, Seance } from '../../models';
+import { AttributionService, SeanceService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 import { ApportParts } from './apport-parts';
 import { LectureSeance } from './lecture-seance';
 import { SignaturesPv } from './signatures-pv';
+import { EtapeClose } from '../evaluation/etapes-closes';
 
 export const LIBELLES_ETAT_SEANCE: Readonly<Record<EtatSeance, string>> = {
   A_VENIR: 'À venir',
@@ -54,7 +55,7 @@ export function quorumLibelle(s: Seance): string {
 @Component({
   selector: 'app-seance-ecran',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur, ApportParts, LectureSeance, SignaturesPv],
+  imports: [RouterLink, EtatErreur, ApportParts, LectureSeance, SignaturesPv, EtapeClose],
   template: `
     <section class="se">
       <header class="page-header page-header--actions">
@@ -79,6 +80,8 @@ export function quorumLibelle(s: Seance): string {
           <span class="text-sm">Quorum : <strong>{{ quorum() }}</strong> détenteurs{{ s.secoursEmploye ? ' (part de secours employée)' : '' }}</span>
         </div>
         @if (message(); as m) { <div class="alert alert-danger" role="alert">{{ m }}</div> }
+        <!-- ⚠️ R9c (14/10) — un dossier de marché soumis ferme la séance : la conduite passe en lecture. -->
+        <app-etape-close [dossier]="etapeClose()" [lienDossier]="!!lienFiche()" />
 
         <div class="se__grille">
           <section class="card se__bloc" aria-labelledby="se-membres">
@@ -199,6 +202,7 @@ export function quorumLibelle(s: Seance): string {
 export class SeanceEcran implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly service = inject(SeanceService);
+  private readonly attribution = inject(AttributionService);
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
 
@@ -222,8 +226,10 @@ export class SeanceEcran implements OnInit, OnDestroy {
   readonly autreQualite = signal('');
   private sondage: ReturnType<typeof setInterval> | undefined;
 
-  /** PRMP et UGPM lisent ; tout autre lecteur servi est le responsable (le serveur refuse les autres). */
-  readonly conduite = computed(() => !['PRMP', 'UGPM'].includes(this.auth.role() ?? ''));
+  /** ⚠️ R9c (14/10) — le dossier de marché soumis qui ferme la séance ; relu à chaque chargement (une reprise le lève). */
+  readonly etapeClose = signal<DossierSoumis | null>(null);
+  /** PRMP et UGPM lisent ; tout autre lecteur servi est le responsable (le serveur refuse les autres) — en lecture, étape close. */
+  readonly conduite = computed(() => !['PRMP', 'UGPM'].includes(this.auth.role() ?? '') && !this.etapeClose());
   readonly lienFiche = computed(() => (['PRMP', 'UGPM'].includes(this.auth.role() ?? '') ? ['/prmp', 'dao', this.idDmc] : null));
   readonly quorum = computed(() => {
     const s = this.seance();
@@ -257,6 +263,7 @@ export class SeanceEcran implements OnInit, OnDestroy {
       next: (s) => {
         this.seance.set(s);
         this.chargement.set(false);
+        if (s.etat === 'CLOSE') this.attribution.dossierSoumis(this.idDmc).subscribe((d) => this.etapeClose.set(d));
       },
       error: (e: { status?: number }) => {
         this.chargement.set(false);

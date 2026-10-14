@@ -4,12 +4,13 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { EntreeJournalEvaluation, ETAPES_EVALUATION, EtapeEvaluation, Evaluation, Financiere, LotEvaluation, Negociations, OffreEvaluee, Technique } from '../../models';
-import { EvaluationPiService, EvaluationService } from '../../services';
+import { DossierSoumis, EntreeJournalEvaluation, ETAPES_EVALUATION, EtapeEvaluation, Evaluation, Financiere, LotEvaluation, Negociations, OffreEvaluee, Technique } from '../../models';
+import { AttributionService, EvaluationPiService, EvaluationService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 import { DroitsEvaluation, EspaceEvaluation, droitsEvaluation, etapeArretee, etapeAtteinte } from './droits-evaluation';
 import { AttributionLots } from './attribution-lots';
+import { EtapeClose } from './etapes-closes';
 import { AnormaleOffre, IndicateursPrixVue } from './etape-anormales';
 import { ConformiteOffre } from './etape-conformite';
 import { MontantOffre, TableauEvaluation } from './etape-montant';
@@ -35,7 +36,7 @@ import { RapportEvaluationVue } from './rapport-evaluation';
 @Component({
   selector: 'app-evaluation-ecran',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur, AttributionLots, ConformiteOffre, MontantOffre, TableauEvaluation, IndicateursPrixVue, AnormaleOffre, EtapeQualification, EtapeTechnique, SeanceFinanciereVue, EtapeFinanciere, NegociationPi, SansSuiteVue, RapportEvaluationVue],
+  imports: [RouterLink, EtatErreur, AttributionLots, ConformiteOffre, MontantOffre, TableauEvaluation, IndicateursPrixVue, AnormaleOffre, EtapeQualification, EtapeTechnique, SeanceFinanciereVue, EtapeFinanciere, NegociationPi, SansSuiteVue, RapportEvaluationVue, EtapeClose],
   template: `
     <!-- La coquille interne porte son fil d'Ariane (parents déclarés sur la route) ; l'espace CAO n'en a pas : l'écran le pose. -->
     @if (espace === 'cao') {
@@ -78,6 +79,8 @@ import { RapportEvaluationVue } from './rapport-evaluation';
         <span class="text-sm text-muted">Confidentiel jusqu'à l'information des candidats (art. 12-V, 35-V).</span>
       </div>
       @if (message(); as m) { <div class="alert alert-danger" role="alert">{{ m }}</div> }
+      <!-- ⚠️ R9c (14/10) — un dossier de marché soumis ferme l'évaluation : les gestes d'écriture se retirent (droits). -->
+      <app-etape-close [dossier]="etapeClose()" [lienDossier]="prmpOuUgpm()" />
 
       <!-- P6 : la déclaration préalable de chaque membre. -->
       <section class="card ev__bloc" aria-labelledby="ev-decl">
@@ -219,7 +222,7 @@ import { RapportEvaluationVue } from './rapport-evaluation';
           <app-etape-financiere [idDmc]="idDmc" [financiere]="f" [lot]="lot()?.lot ?? 1" [droits]="droits()" (maj)="apresFinanciere($event)" />
         }
         @if (negociations(); as n) {
-          <app-negociation-pi [idDmc]="idDmc" [negociations]="n" [lot]="lot()?.lot ?? 1" [conduite]="prmpOuUgpm()" (maj)="apresNegociation($event)" />
+          <app-negociation-pi [idDmc]="idDmc" [negociations]="n" [lot]="lot()?.lot ?? 1" [conduite]="prmpOuUgpm() && !etapeClose()" (maj)="apresNegociation($event)" />
         }
       }
 
@@ -312,6 +315,9 @@ export class EvaluationEcran implements OnInit {
   readonly financiere = signal<Financiere | null>(null);
   readonly negociations = signal<Negociations | null>(null);
   private readonly pi = inject(EvaluationPiService);
+  private readonly attribution = inject(AttributionService);
+  /** ⚠️ R9c (14/10) — le dossier de marché soumis qui ferme l'évaluation ; relu à chaque chargement (une reprise le lève). */
+  readonly etapeClose = signal<DossierSoumis | null>(null);
   /** ⚠️ PI-d1 — l'évaluation technique est arrêtée sur chaque lot : la seconde séance peut s'ouvrir. */
   readonly techniqueArretee = computed(() => {
     const t = this.technique();
@@ -320,7 +326,7 @@ export class EvaluationEcran implements OnInit {
   readonly etapesVisibles = computed<readonly EtapeEvaluation[]>(() => (this.technique() ? ['CONFORMITE', 'EVALUATION', 'RAPPORT'] : this.ordreEtapes));
 
   readonly moi = computed(() => this.auth.ref());
-  readonly droits = computed<DroitsEvaluation>(() => droitsEvaluation(this.evaluation(), this.espace, this.moi(), this.auth.role()));
+  readonly droits = computed<DroitsEvaluation>(() => droitsEvaluation(this.evaluation(), this.espace, this.moi(), this.auth.role(), !!this.etapeClose()));
   readonly lot = computed<LotEvaluation | null>(() => this.evaluation()?.lots.find((l) => l.lot === this.lotChoisi()) ?? this.evaluation()?.lots[0] ?? null);
   readonly lienFiche = computed(() => (['PRMP', 'UGPM'].includes(this.auth.role() ?? '') ? ['/prmp', 'dao', this.idDmc] : null));
   readonly qui = computed(() => {
@@ -350,6 +356,7 @@ export class EvaluationEcran implements OnInit {
         this.nonOuverte.set(false);
         this.appliquer(ev, true);
         this.chargerTechnique();
+        this.attribution.dossierSoumis(this.idDmc).subscribe((d) => this.etapeClose.set(d));
         this.document.title = `Évaluation — procédure ${this.idDmc} — PRS 2.0`;
       },
       error: (e: ApiError) => {

@@ -5,8 +5,8 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ApiError, codeErreur } from '../../core/errors/api-error';
 import { dateFr } from '../../core/interim/interim-libelles';
 import { ToastService } from '../../core/notifications/toast.service';
-import { ContexteRepresentant, VueProcedureCao } from '../../models';
-import { CaoEspaceService } from '../../services';
+import { ContexteRepresentant, DossierSoumis, VueProcedureCao } from '../../models';
+import { AttributionService, CaoEspaceService } from '../../services';
 
 /** ⚠️ R1 — les contextes pour lesquels le président désigne un représentant, en clair. */
 const CONTEXTES: Readonly<Record<ContexteRepresentant, string>> = {
@@ -71,8 +71,11 @@ import { SeanceMembre } from './seance-membre';
             </li>
           }
         </ul>
-        <!-- ⚠️ Manuel révisé, R1 (V101) — le président désigne, par séance, le membre qui le représente pour le quorum. -->
-        @if (v.president) {
+        <!-- ⚠️ Manuel révisé, R1 (V101) — le président désigne, par séance, le membre qui le représente pour le quorum.
+             ⚠️ R9c (14/10) — plus de désignation une fois un dossier de marché soumis : les séances sont closes. -->
+        @if (v.president && etapeClose(); as d) {
+          <p class="text-sm text-muted">La désignation d’un représentant est close : le dossier de marché n° {{ d.idDossier }} (lot {{ d.lot }}) est soumis à la Commission.</p>
+        } @else if (v.president) {
           <details class="pc__representant">
             <summary>Désigner mon représentant…</summary>
             <p class="text-sm text-muted">Le quorum de la commission exige le président ou son représentant, désigné pour un contexte précis. Sans désignation, vous êtes vous-même requis.</p>
@@ -140,6 +143,7 @@ import { SeanceMembre } from './seance-membre';
 })
 export class ProcedureCao implements OnInit {
   private readonly service = inject(CaoEspaceService);
+  private readonly attribution = inject(AttributionService);
   private readonly route = inject(ActivatedRoute);
   private readonly document = inject(DOCUMENT);
   private readonly toast = inject(ToastService);
@@ -193,6 +197,8 @@ export class ProcedureCao implements OnInit {
   readonly refuse = signal(false);
   readonly erreur = signal(false);
   readonly vue = signal<VueProcedureCao | null>(null);
+  /** ⚠️ R9c (14/10) — le dossier de marché soumis qui ferme la séance, l'évaluation et l'AMI (et la désignation du représentant). */
+  readonly etapeClose = signal<DossierSoumis | null>(null);
 
   ngOnInit(): void {
     this.charger();
@@ -205,6 +211,7 @@ export class ProcedureCao implements OnInit {
     this.service.procedure(this.idDmc).subscribe({
       next: (v) => {
         this.vue.set(v);
+        this.attribution.dossierSoumis(this.idDmc).subscribe((d) => this.etapeClose.set(d));
         this.document.title = `${v.procedure.reference || 'Procédure'} — Commission d’appel d’offres — PRS 2.0`;
         this.chargement.set(false);
       },

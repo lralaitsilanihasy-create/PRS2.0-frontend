@@ -78,6 +78,11 @@ export function errorTitle(status: number, code?: string): string {
   if (code === CODE_CONFLIT_VERSION) {
     return 'Donnée modifiée entre-temps';
   }
+  // ⚠️ R9c (14/10) — la séance, l'évaluation ou l'AMI d'une procédure dont un dossier de marché est soumis : le message du
+  // serveur nomme le dossier et la seule voie de réouverture (reprise après avis défavorable, réattribution).
+  if (code === 'ETAPE_CLOSE') {
+    return 'Étape close';
+  }
   switch (status) {
     case 0:
       return 'Connexion';

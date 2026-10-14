@@ -24,12 +24,19 @@ export interface DroitsEvaluation {
  * l'écran nomme le refus. Le responsable n'est pas un rôle de session mais une identité ; comme pour la séance, la coquille
  * interne le suppose hors PRMP et UGPM, et le serveur tranche.
  */
-export function droitsEvaluation(ev: Evaluation | null, espace: EspaceEvaluation, moi: string | null, role: string | null): DroitsEvaluation {
+export function droitsEvaluation(
+  ev: Evaluation | null,
+  espace: EspaceEvaluation,
+  moi: string | null,
+  role: string | null,
+  close = false,
+): DroitsEvaluation {
   const maDeclaration = espace === 'cao' && ev ? ev.declarations.find((d) => d.membre === moi) ?? null : null;
   const membre = !!maDeclaration;
   const declaree = !!maDeclaration?.signeeLe;
   const conflit = !!maDeclaration?.conflit;
-  const enCours = ev?.etat === 'EN_COURS';
+  // ⚠️ R9c (14/10) — un dossier de marché soumis ferme l'évaluation : plus aucun geste d'écriture, les lectures restent.
+  const enCours = ev?.etat === 'EN_COURS' && !close;
   const decider = membre && declaree && !conflit && enCours;
   return {
     membre,
@@ -38,7 +45,7 @@ export function droitsEvaluation(ev: Evaluation | null, espace: EspaceEvaluation
     decider,
     president: decider && !!maDeclaration?.president,
     prmp: espace === 'interne' && role === 'PRMP' && enCours,
-    responsable: espace === 'interne' && !['PRMP', 'UGPM'].includes(role ?? ''),
+    responsable: espace === 'interne' && !['PRMP', 'UGPM'].includes(role ?? '') && !close,
   };
 }
 

@@ -569,3 +569,22 @@ export interface Attribution {
   idDmc: number;
   lots: LotAttribution[];
 }
+
+/** Le dossier de marché soumis qui ferme les étapes de la procédure, et son lot. */
+export interface DossierSoumis {
+  idDossier: number;
+  lot: number;
+}
+
+/**
+ * ⚠️ R9c (14/10, manuel révisé lot 2 §B4 n° 15) — **l'immutabilité des étapes closes** : dès qu'un dossier de marché (DDM) de la
+ * procédure est soumis à la Commission, la séance, l'évaluation et l'AMI ne s'écrivent plus (409 `ETAPE_CLOSE`). Même règle que
+ * le serveur (`EtapesCloses.dossierSoumis`) : le premier lot, dans l'ordre, dont le dossier n'est plus un brouillon. Un DDM
+ * brouillon ne ferme rien ; la reprise et la réattribution retirent l'attribution qui le porte, et le verrou se lève de lui-même.
+ */
+export function dossierSoumis(att: Attribution | null): DossierSoumis | null {
+  const lot = [...(att?.lots ?? [])]
+    .sort((a, b) => a.lot - b.lot)
+    .find((l) => !!l.dossierMarche?.statut && l.dossierMarche.statut !== 'BROUILLON');
+  return lot?.dossierMarche ? { idDossier: lot.dossierMarche.idDossier, lot: lot.lot } : null;
+}

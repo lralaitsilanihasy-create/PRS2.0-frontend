@@ -7,11 +7,12 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ApiError, codeErreur, corpsErreur } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur, telechargerBlob } from '../../core/securite/fichiers-surs';
-import { ExpressionNotee, Preselection } from '../../models';
-import { AmiService } from '../../services';
+import { DossierSoumis, ExpressionNotee, Preselection } from '../../models';
+import { AmiService, AttributionService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 import { QuorumCaoVue, messageQuorum, suffixeQualite } from '../procedure/quorum-cao';
+import { EtapeClose } from '../evaluation/etapes-closes';
 
 /** Les refus nommés de la tranche AMI-b (V83). */
 export const MESSAGES_PRESELECTION: Readonly<Record<string, string>> = {
@@ -74,7 +75,7 @@ interface NoteEnCours {
 @Component({
   selector: 'app-preselection-ami',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur, QuorumCaoVue],
+  imports: [RouterLink, EtatErreur, QuorumCaoVue, EtapeClose],
   template: `
     @if (espace === 'cao') {
       <nav class="ps__ariane" aria-label="Fil d'Ariane">
@@ -108,6 +109,8 @@ interface NoteEnCours {
         <span class="text-sm text-muted">{{ p.nombreRetenus ?? 6 }} places · note minimale {{ p.noteMinimale != null ? p.noteMinimale + ' / 100' : 'aucune' }}{{ p.nombreRelances ? ' · relancé ' + p.nombreRelances + ' fois' : '' }}</span>
       </div>
       @if (message(); as m) { <div class="alert alert-danger" role="alert"><span>{{ m }}</span></div> }
+      <!-- ⚠️ R9c (14/10) — un dossier de marché soumis ferme l'AMI : les gestes se retirent. -->
+      <app-etape-close [dossier]="etapeClose()" [lienDossier]="!!lienAmi()" />
       @if (p.etat === 'EN_ATTENTE') {
         <p class="text-sm" role="status">Les expressions d’intérêt se lisent après la date limite. D’ici là, la commission peut signer ses déclarations.</p>
       }
@@ -320,6 +323,7 @@ interface NoteEnCours {
 })
 export class PreselectionAmi implements OnInit {
   private readonly service = inject(AmiService);
+  private readonly attribution = inject(AttributionService);
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
@@ -341,17 +345,19 @@ export class PreselectionAmi implements OnInit {
   // ── Qui regarde ──
   private readonly moi = computed(() => this.auth.ref());
   readonly maDeclaration = computed(() => (this.espace === 'cao' ? this.ps()?.declarations.find((d) => d.membre === this.moi()) ?? null : null));
-  readonly enCours = computed(() => ['EN_ATTENTE', 'NOTATION'].includes(this.ps()?.etat ?? ''));
+  /** ⚠️ R9c (14/10) — le dossier de marché soumis qui ferme l'AMI ; lu une fois la liste définitive. */
+  readonly etapeClose = signal<DossierSoumis | null>(null);
+  readonly enCours = computed(() => ['EN_ATTENTE', 'NOTATION'].includes(this.ps()?.etat ?? '') && !this.etapeClose());
   readonly presidentDeclare = computed(() => {
     const d = this.maDeclaration();
-    return !!d?.president && !!d.signeeLe && !d.conflit;
+    return !!d?.president && !!d.signeeLe && !d.conflit && !this.etapeClose();
   });
   readonly decider = computed(() => {
     const d = this.maDeclaration();
-    return !!d?.signeeLe && !d.conflit && this.ps()?.etat === 'NOTATION';
+    return !!d?.signeeLe && !d.conflit && this.ps()?.etat === 'NOTATION' && !this.etapeClose();
   });
   readonly president = computed(() => this.decider() && !!this.maDeclaration()?.president);
-  readonly prmp = computed(() => this.espace === 'interne' && this.auth.role() === 'PRMP');
+  readonly prmp = computed(() => this.espace === 'interne' && this.auth.role() === 'PRMP' && !this.etapeClose());
   readonly lienAmi = computed(() => (this.espace === 'interne' && ['PRMP', 'UGPM'].includes(this.auth.role() ?? '') ? ['/prmp', 'dao', this.idDmc, 'ami'] : null));
   readonly qui = computed(() => {
     if (this.espace === 'cao') return this.maDeclaration()?.president ? 'président de la commission' : 'membre de la commission';
@@ -366,7 +372,7 @@ export class PreselectionAmi implements OnInit {
     const r = this.ps()?.rapport;
     return r ? r.attendues.filter((a) => !r.signatures.some((s) => s.im === a.im)) : [];
   });
-  readonly jeSigne = computed(() => this.ps()?.etat === 'LISTE_ARRETEE' && this.attendues().some((a) => a.im === this.moi()));
+  readonly jeSigne = computed(() => this.ps()?.etat === 'LISTE_ARRETEE' && this.attendues().some((a) => a.im === this.moi()) && !this.etapeClose());
   readonly qualite = suffixeQualite;
 
   // ── Les saisies ──
@@ -404,6 +410,7 @@ export class PreselectionAmi implements OnInit {
   private recevoir(p: Preselection): void {
     this.ps.set(p);
     this.chargement.set(false);
+    if (p.etat === 'DEFINITIVE') this.attribution.dossierSoumis(this.idDmc).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((d) => this.etapeClose.set(d));
     // La grille repart de la note retenue par le serveur : une saisie d'un autre membre s'y lit au rafraîchissement.
     const s: Record<string, NoteEnCours> = {};
     for (const x of p.expressions) for (const n of x.notes) s[`${x.id}|${n.code}`] = { note: n.note != null ? String(n.note) : '', motif: n.motif ?? '' };

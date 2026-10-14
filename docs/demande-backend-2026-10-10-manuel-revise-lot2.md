@@ -66,7 +66,9 @@ procédure ; les questions et réponses sont jointes au dossier de marché (piè
 > **R9c** (n° 15, verrou sur la séance, l'évaluation et l'AMI).
 > - n° 2 : l'impression de l'avis **et des lettres d'invitation** assemble le DAO complet s'il manque (synchrone, ~20 s) ; échec → 409
 >   `DAO_COMPLET_ABSENT` `{ version }`. **Écart** : sans assemblage actif sur le serveur (Word absent), la règle ne s'applique pas ; la
->   disponibilité ne l'annonce pas.
+>   disponibilité ne l'annonce pas. ⚠️ **14/10, suite à la remarque du front** : elle l'annonce désormais — `disponibilite` (avis et
+>   lettres) gagne `daoComplet` = `PRODUIT` · `A_ASSEMBLER` · `SANS_ASSEMBLAGE` · `null` (sans version validée), indicatif (`disponible`
+>   n'en dépend pas).
 > - n° 13 : `GET /api/parametres/recours-suspensifs` → `{ types, connus }` ; `PUT` (Administrateur) `{ types: [...] }`, vide = aucun,
 >   400 `RECOURS_INVALIDE` ; défaut `REVISION_ARMP`, `REFERE` ; lu à chaque question, recours déjà déclarés compris.
 > - n° 14 : `POST /api/fiches-marche/{idDmc}/attribution/lots/{lot}/approbation` (multipart `autorite`, `dateApprobation`, `fichier`) ;
@@ -99,6 +101,23 @@ procédure ; les questions et réponses sont jointes au dossier de marché (piè
 >   (un profil non habilité reçoit 409, pas 403) ; les réponses des candidats aux demandes de précision / justification ne sont pas visées.
 > - **Côté front** : griser les gestes de séance, d'évaluation et d'AMI quand un DDM est soumis (lire `lots[].dossierMarche` de
 >   l'attribution) ; message de `ETAPE_CLOSE` renvoyant à la reprise.
+
+> ✅ **Front, 2026-10-14 — tranche R9c branchée (étapes closes)**, vérifiée par les tests (recette navigateur groupée avec le reste du lot 2,
+> après le redémarrage qui applique V111-V113) : le front lit le verrou sur `GET …/attribution` avec **la règle du serveur** — le premier
+> lot, dans l'ordre, dont le dossier de marché n'est plus `BROUILLON` (`dateSoumission` n'est pas servie : le statut en tient lieu) ; une
+> attribution illisible (404 avant l'évaluation, profil sans lecture) vaut « pas de verrou », le serveur restant la garde. Un bandeau
+> **« Étape close »** nomme le dossier et son lot et renvoie à la reprise ou à la réattribution (lien vers le dossier pour la PRMP et
+> l'UGPM) sur la **séance d'ouverture** (la conduite passe en lecture), l'**évaluation** (interne et CAO : décider, arrêter, rouvrir,
+> produire le rapport, séance complémentaire PI, négociation — retirés), la **présélection de l'AMI** ; sur la page procédure de la CAO,
+> la **désignation du représentant** du président est remplacée par une mention. Les lectures (PV, rapport, PDF, Word) restent ouvertes ;
+> l'attribution et la déclaration sans suite, hors verrou, ne changent pas. Le refus `ETAPE_CLOSE` s'affiche sous le titre « Étape close »
+> avec le message du serveur.
+> ⚠️ **Question pour le backend — procédure allotie** : `reprendre` refuse si un **autre lot est attribué** (`AUTRES_LOTS_ATTRIBUES`),
+> mais pas si un autre lot porte un DDM **soumis et non encore attribué** (au contrôle, ou avis favorable sans attribution). Exemple :
+> lot 1 au contrôle, lot 2 refusé (`DEF`) puis repris → l'évaluation rouvre (`EN_COURS`), mais le DDM du lot 1 la garde fermée : toute
+> écriture d'évaluation répond `ETAPE_CLOSE`, la reprise du lot 2 ne peut pas avancer. Faut-il refuser la reprise dans ce cas (même
+> garde que `AUTRES_LOTS_ATTRIBUES`, étendue aux DDM soumis), ou que le verrou ne porte que sur le lot du DDM ? Le front suit la règle
+> actuelle (toute la procédure) et s'alignera sur la réponse.
 
 ## B5 — Acte d'engagement déposé en ligne (H2)
 

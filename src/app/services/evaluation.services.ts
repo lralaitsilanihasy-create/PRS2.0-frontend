@@ -1,11 +1,13 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, catchError, map, of } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { skipErrorToast } from '../core/errors/api-error';
 import {
   Attribution,
+  DossierSoumis,
+  dossierSoumis,
   Explication,
   InfructuositeCorps,
   SansSuite,
@@ -208,6 +210,17 @@ export class AttributionService {
 
   lire(idDmc: number): Observable<Attribution> {
     return this.http.get<Attribution>(`${this.base}/${idDmc}/attribution`, { context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ R9c (14/10) — le dossier de marché soumis qui ferme la séance, l'évaluation et l'AMI ; nul sans lui, et nul quand
+   * l'attribution ne se lit pas (évaluation non ouverte : 404 ; profil sans lecture) — le serveur reste la garde.
+   */
+  dossierSoumis(idDmc: number): Observable<DossierSoumis | null> {
+    return this.lire(idDmc).pipe(
+      map(dossierSoumis),
+      catchError(() => of(null)),
+    );
   }
 
   /** 201 avec l'attribution ; 409 `EVALUATION_NON_CLOSE`, `LOT_INFRUCTUEUX`, `DOSSIER_EXISTANT` (avec `idDossier`). */
