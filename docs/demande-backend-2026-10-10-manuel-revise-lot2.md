@@ -331,3 +331,16 @@ l'attributaire ; paramètres `RECOURS_SUSPENSIFS`, `SIGNATURE_OFFRE`, délais pa
 > - **Écart** : pas de « re-saisie contrôlée » distincte, la révision suit le circuit ordinaire de validation.
 > - **Côté front** : griser `modeRemise` quand `modeFige`, afficher `modeRemiseFige` et la migration (date, auteur, motif) ; écran
 >   Administrateur de migration avec motif ; message de `MODE_IRREVERSIBLE`.
+
+> ✅ **Front, 2026-10-14 — tranche R8 branchée (mode figé)**, vérifiée par les tests (recette navigateur groupée avec le reste du lot 2) :
+> - **Cadrage** : quand `modeFige`, la question « Comment les offres sont-elles remises ? » montre `modeRemiseFige`, verrouillée, marquée
+>   « figé depuis la première validation », avec l'explication (fixé à la création ; seule la migration de l'Administrateur, avant le point
+>   de non-retour). Le cadrage effectif — conditions, blocs, liens de la remise électronique — lit le mode figé, et **le `PUT …/cadrage`
+>   porte toujours `modeRemise` = le mode figé** (le cadrage nu d'une fiche ancienne peut ne pas avoir la clé, qui vaudrait papier → 409).
+> - **Migration** : bouton « Migrer le mode de remise… » sur la fiche, **Administrateur seul** et fiche figée ; modale (`appModale`) qui
+>   propose l'autre mode, explique la révision ouverte et exige le motif (1 000 caractères) ; refus nommés — `MODE_IRREVERSIBLE` selon sa
+>   raison (offres déposées en ligne, cérémonie close, lot attribué), `MODE_IDENTIQUE`, `MODE_NON_FIGE`, `MOTIF_*`, `DOSSIER_EN_EXAMEN`, 403 ;
+>   la fiche se relit ensuite.
+> - **Version migrée** : bandeau « Mode de remise migré vers la remise … le … par … — motif : … », et en brouillon « complétez ce que ce
+>   mode exige, puis validez la version ».
+> - L'import du DAO affiche déjà ses `erreurs[]` (dont `modeRemise`) sans code dédié.

@@ -21,6 +21,7 @@ import { FichePieces } from './fiche-pieces';
 import { CritereTechnique, FicheSousCriteres } from './fiche-sous-criteres';
 import { ListeASauver } from './liste-a-sauver';
 import { ImportDao } from './import-dao';
+import { MigrationMode } from './migration-mode';
 import { AvisSpecifique } from '../../../shared/prmp/avis-specifique';
 import { LettresInvitation } from '../../../shared/prmp/lettres-invitation';
 import { SansSuiteVue } from '../../evaluation/sans-suite';
@@ -113,6 +114,7 @@ function routeAbsente(e: HttpErrorResponse | ApiError): boolean {
   selector: 'app-fiche-marche',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    MigrationMode,
     FicheBesoin,
     FicheMoyens,
     FichePieces,
@@ -348,6 +350,8 @@ export class FicheMarcheEcran {
   // choisi) : c'est ce cadrage que lisent les conditions, le résumé et la complétude ; le serveur reçoit le nu.
   private readonly cadrageEffectif = computed<Cadrage>(() => avecDefauts({
     ...this.cadrage(),
+    // ⚠️ R8 (V110) — le mode figé fait foi, même si le cadrage nu ne porte pas la clé (qui vaudrait « papier »).
+    ...(this.fiche()?.modeFige && this.fiche()?.modeRemiseFige ? { modeRemise: this.fiche()!.modeRemiseFige! } : {}),
     typeMarche: this.typeMarche(),
     categorie: this.categorieEffective(),
   }));
@@ -664,8 +668,20 @@ export class FicheMarcheEcran {
   }
 
   reponse(q: QuestionCadrage): string {
+    if (this.modeFigeSur(q.cle)) return String(this.fiche()?.modeRemiseFige ?? '');
     // la réponse par défaut d'une question se montre cochée, sans être une réponse envoyée
     return String(this.cadrage()[q.cle] ?? q.defaut ?? '');
+  }
+
+  /** ⚠️ R8 (V110, arbitrage Q1) — le mode de remise ne change plus dès qu'une version est validée (seule voie : la migration). */
+  /** `AAAA-MM-JJTHH:MM…` → « JJ/MM/AAAA à HH:MM ». */
+  dateHeureMigration(iso: string): string {
+    const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}:\d{2})/.exec(iso);
+    return m ? `${m[3]}/${m[2]}/${m[1]} à ${m[4]}` : iso;
+  }
+
+  modeFigeSur(cle: string): boolean {
+    return cle === 'modeRemise' && !!this.fiche()?.modeFige;
   }
 
   complement(q: QuestionCadrage): Valeur {
@@ -677,7 +693,9 @@ export class FicheMarcheEcran {
     if (id == null || !this.cadrageOk() || this.saving()) return;
     this.saving.set(true);
     // ⚠️ Lot 1c — `this.cadrage()` ne porte QUE les réponses : le type vient du plan et n'est pas renvoyé.
-    this.ficheService.cadrage(id, this.cadrage()).subscribe({
+    // ⚠️ R8 (V110) — le mode figé part toujours : sans la clé, le serveur lirait « papier » et refuserait (409 MODE_FIGE).
+    const fige = this.fiche()?.modeFige ? this.fiche()?.modeRemiseFige : null;
+    this.ficheService.cadrage(id, fige ? { ...this.cadrage(), modeRemise: fige } : this.cadrage()).subscribe({
       next: (f) => {
         this.saving.set(false);
         this.appliquer(f);

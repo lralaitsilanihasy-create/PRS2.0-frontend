@@ -359,6 +359,9 @@ export interface BilanControles {
 }
 
 /** `GET /api/fiches-marche/{idDmc}` — livraison backend du 22/09 : `idFiche` nul = fiche virtuelle (version 1, brouillon) avant le premier enregistrement. */
+/** Le mode de remise des offres (cadrage `modeRemise`, H3) : papier ou électronique, jamais les deux. */
+export type ModeRemise = 'PAPIER' | 'ELECTRONIQUE';
+
 export interface FicheMarche {
   idFiche?: number | null;
   idDmc: number;
@@ -382,6 +385,16 @@ export interface FicheMarche {
    */
   typeOutille?: boolean | null;
   statut: StatutFiche;
+  /**
+   * ⚠️ R8 (V110, 13/10 ; arbitrage Q1) — le mode de remise est **figé** dès qu'une version validée existe : `modeRemiseFige` est le mode à
+   * garder (`PUT …/cadrage` avec un autre mode, ou sans la clé qui vaut papier → 409 `MODE_FIGE`). Seule exception : la migration
+   * documentée par l'Administrateur, portée par la version qui l'a reçue (`modeMigre*`).
+   */
+  modeFige?: boolean;
+  modeRemiseFige?: ModeRemise | null;
+  modeMigreLe?: string | null;
+  modeMigrePar?: string | null;
+  modeMigreMotif?: string | null;
   version: number;
   cadrage: Cadrage;
   /** `{ code: valeur }` des champs saisis. */

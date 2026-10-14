@@ -784,6 +784,24 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     expect(texte(racine().querySelector('.fm__cadrage'))).toContain('Alloti · 3 lots');
   });
 
+  // ⚠️ R8 (V110, 13/10 ; arbitrage Q1) — le mode de remise figé dès la première version validée.
+  it('mode figé : la question est verrouillée, le cadrage renvoie toujours le mode figé, la migration se lit sur la version', () => {
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ modeFige: true, modeRemiseFige: 'ELECTRONIQUE', modeMigreLe: '2026-10-13T20:00:00', modeMigrePar: 'ADMIN01', modeMigreMotif: 'Plateforme indisponible au lancement' }));
+    http.match(() => true).forEach((r) => r.flush(null));
+    const c = fixture.componentInstance;
+    expect(c.modeFigeSur('modeRemise')).toBe(true);
+    expect(c.modeFigeSur('alloti')).toBe(false);
+    expect(c.reponse({ cle: 'modeRemise', defaut: 'PAPIER' } as never)).toBe('ELECTRONIQUE');
+    expect(texte(racine().querySelector('.alert-warning'))).toContain('migré vers la remise électronique le 13/10/2026 à 20:00 par ADMIN01 — motif : Plateforme indisponible au lancement');
+    // Le cadrage nu ne porte pas la clé : sans elle, le serveur lirait « papier » et refuserait (MODE_FIGE).
+    c.enregistrerCadrage();
+    const put = http.expectOne('/api/fiches-marche/42/cadrage');
+    expect((put.request.body as { cadrage: Record<string, unknown> }).cadrage['modeRemise']).toBe('ELECTRONIQUE');
+    put.flush(fiche({ modeFige: true, modeRemiseFige: 'ELECTRONIQUE' }));
+    http.match(() => true).forEach((r) => r.flush(null));
+  });
+
   it('blocs : dessinés depuis le référentiel, rubrique fermée par le cadrage cachée, champ PPM en lecture, PUT du bloc avec les seules valeurs saisies', () => {
     monter('UGPM', 42);
     ouvrir(REFERENTIEL, fiche());

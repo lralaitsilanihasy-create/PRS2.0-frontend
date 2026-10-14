@@ -72,9 +72,19 @@
         @if (lienQuestions(); as lien) {
           <a class="btn btn-outline btn-sm" [routerLink]="lien">Questions des candidats</a>
         }
+        <!-- ⚠️ R8 (V110) — la migration documentée du mode figé : Administrateur seul. -->
+        @if (estAdmin() && f.modeFige && f.modeRemiseFige) {
+          <app-migration-mode [idDmc]="f.idDmc" [modeActuel]="f.modeRemiseFige" (migree)="charger()" />
+        }
       </div>
     }
   </header>
+  <!-- ⚠️ R8 (V110) — la version qui porte une migration la dit : à ressaisir puis valider par la PRMP. -->
+  @if (fiche()?.modeMigreLe; as le) {
+    <div class="alert alert-warning" role="status">
+      <span>Mode de remise <strong>migré</strong> vers la remise {{ fiche()?.modeRemiseFige === 'ELECTRONIQUE' ? 'électronique' : 'papier' }} le {{ dateHeureMigration(le) }}{{ fiche()?.modeMigrePar ? ' par ' + fiche()?.modeMigrePar : '' }}{{ fiche()?.modeMigreMotif ? ' — motif : ' + fiche()?.modeMigreMotif : '' }}. {{ figee() ? '' : 'Complétez ce que ce mode exige, puis validez la version.' }}</span>
+    </div>
+  }
 
   <!-- ⚠️ Remise électronique (27/09, Q8) — l'Administrateur désigne ou retire le responsable de la procédure DEPUIS la
        fiche, qu'il lit sans la modifier. Il ne voit jamais les paramètres internes eux-mêmes (403 serveur). -->
@@ -324,17 +334,21 @@
                     <!-- ⚠️ Demande du pilote (23/09) — l'allotissement vient du nombre de lots du plan : la question
                          reste lisible, la réponse est celle du plan, et elle ne se modifie pas ici. -->
                     @if (imposee(q.cle)) { <span class="fm__q-plan">repris du plan de passation</span> }
+                    @if (modeFigeSur(q.cle)) { <span class="fm__q-plan">figé depuis la première validation</span> }
                     <span class="fm__q-docs">{{ q.documents }}</span>
                   </div>
                   @if (imposee(q.cle)) {
                     <p class="fm__q-aide">Le plan de passation annonce <strong>{{ nbLotsPlan() }} lot{{ nbLotsPlan()! > 1 ? 's' : '' }}</strong> pour cette ligne : le marché est donc {{ nbLotsPlan()! > 1 ? 'alloti' : 'non alloti' }}. Corrigez le plan si c'est inexact.</p>
+                  } @else if (modeFigeSur(q.cle)) {
+                    <!-- ⚠️ R8 (V110, arbitrage Q1) — pas de bascule en cours de route ; seule l'Administrateur migre, en le motivant. -->
+                    <p class="fm__q-aide">Le mode de remise est fixé à la création de la procédure : il ne change plus depuis la première version validée. Seul l’Administrateur peut le migrer, en le motivant, tant qu’aucune offre n’est déposée en ligne, que la cérémonie des clés n’est pas close et qu’aucun lot n’est attribué.</p>
                   } @else if (q.aide) {
                     <p class="fm__q-aide">{{ q.aide }}</p>
                   }
                   <div class="fm__q-opts" role="radiogroup" [attr.aria-label]="q.libelle">
                     @for (o of optionsDe(q); track o.code) {
                       <label class="fm__opt" [class.fm__opt--on]="reponse(q) === o.code" [class.fm__opt--off]="!!o.indisponible">
-                        <input type="radio" [name]="'q-' + q.cle" [value]="o.code" [checked]="reponse(q) === o.code" [disabled]="!!o.indisponible || figee() || imposee(q.cle)" (change)="repondre(q.cle, o.code)" />
+                        <input type="radio" [name]="'q-' + q.cle" [value]="o.code" [checked]="reponse(q) === o.code" [disabled]="!!o.indisponible || figee() || imposee(q.cle) || modeFigeSur(q.cle)" (change)="repondre(q.cle, o.code)" />
                         <span class="fm__opt-l">{{ o.libelle }}</span>
                         @if (o.indisponible) { <span class="fm__opt-ind">{{ o.indisponible }}</span> }
                         @if (o.aide) { <span class="fm__opt-aide">{{ o.aide }}</span> }

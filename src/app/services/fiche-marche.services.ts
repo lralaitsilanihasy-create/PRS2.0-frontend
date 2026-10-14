@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { skipErrorToast } from '../core/errors/api-error';
-import { AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, Depots, DisponibiliteAvis, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, MaterielExige, MentionsDocument, ParametresInternes, ParametresInternesCorps, PersonnelExige, PieceExigee, ProcedureInterne, SousCritere, PublicationAvis, SpecificationsTechniques, PublicationLettres, RecuDao, ReferentielFiche, RetraitDao, TypeMarche, VersionFiche } from '../models';
+import { ModeRemise, AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, Depots, DisponibiliteAvis, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, MaterielExige, MentionsDocument, ParametresInternes, ParametresInternesCorps, PersonnelExige, PieceExigee, ProcedureInterne, SousCritere, PublicationAvis, SpecificationsTechniques, PublicationLettres, RecuDao, ReferentielFiche, RetraitDao, TypeMarche, VersionFiche } from '../models';
 import { CrudService } from './api/crud.service';
 
 /**
@@ -105,7 +105,16 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
     return this.http.get<FicheMarche>(`${this.baseUrl}/${idDmc}`, { context: skipErrorToast() });
   }
 
-  /** `PUT /{idDmc}/cadrage` — fixe le type de marché et les réponses ; 409 si la version est VALIDEE. */
+  /**
+   * ⚠️ R8 (V110) — `POST /{idDmc}/migrer-mode` : la migration documentée du mode figé, **Administrateur seul** ; ouvre une révision.
+   * 400 `MODE_INVALIDE`, `MOTIF_OBLIGATOIRE`, `MOTIF_TROP_LONG` ; 409 `MODE_NON_FIGE`, `MODE_IDENTIQUE`, `MODE_IRREVERSIBLE`
+   * (`details.raison`), `DOSSIER_EN_EXAMEN`.
+   */
+  migrerMode(idDmc: number, modeRemise: ModeRemise, motif: string): Observable<FicheMarche> {
+    return this.http.post<FicheMarche>(`${this.baseUrl}/${idDmc}/migrer-mode`, { modeRemise, motif }, { context: skipErrorToast() });
+  }
+
+  /** `PUT /{idDmc}/cadrage` — fixe le type de marché et les réponses ; 409 si la version est VALIDEE, ⚠️ R8 `MODE_FIGE`. */
   cadrage(idDmc: number, cadrage: Cadrage): Observable<FicheMarche> {
     return this.http.put<FicheMarche>(`${this.baseUrl}/${idDmc}/cadrage`, { cadrage });
   }
