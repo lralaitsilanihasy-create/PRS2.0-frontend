@@ -57,6 +57,8 @@ export function refusSansSuite(e: ApiError): string {
               <span class="text-sm">demandée le {{ jj(c.demandeLe) }}</span>
               @if (c.recuLe) { <span class="text-sm">· reçue le {{ jj(c.recuLe) }}</span> }
               @if (c.echeance && c.etat === 'AU_CONTROLE') { <span class="text-sm" [class.ss__retard]="c.echeanceDepassee">· avis attendu au plus tard le {{ jour(c.echeance) }}{{ c.echeanceDepassee ? ' (dépassé)' : '' }}</span> }
+              <!-- ⚠️ R6c (V108, règle 9) — la relance unique à l'échéance passée ; le silence ne vaut pas accord. -->
+              @if (c.relanceLe && c.etat === 'AU_CONTROLE') { <span class="text-sm">· relance envoyée le {{ jour(c.relanceLe) }} : la déclaration attend toujours l’avis exprès de la Commission</span> }
             </p>
             <p class="text-sm ss__motifs">Motifs : {{ c.motifs }}</p>
             <div class="ss__actions">

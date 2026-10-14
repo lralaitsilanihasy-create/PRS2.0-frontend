@@ -25,6 +25,7 @@ import {
   CircuitTimeline,
   EtapeInfo,
   StatutBadge,
+  ReputeApprouve,
   etapeIndexForDossier,
   etapeSuivante,
   statutDossierLabel,
@@ -47,7 +48,7 @@ import { ReceptionForm } from './reception-form';
 @Component({
   selector: 'app-dossiers-pipeline',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, NgTemplateOutlet, StatutBadge, CircuitTimeline, DetailPvModal, EtatErreur, DispatchForm, ReceptionForm],
+  imports: [RouterLink, NgTemplateOutlet, StatutBadge, ReputeApprouve, CircuitTimeline, DetailPvModal, EtatErreur, DispatchForm, ReceptionForm],
   template: `
     <section class="pipeline">
       <header class="page-header pipeline__header">
@@ -124,7 +125,7 @@ import { ReceptionForm } from './reception-form';
                   <td>{{ typeDossierLabel(d) }}</td>
                   <td>{{ entiteLabel(d) }}</td>
                   <td>{{ localiteLabel(d) }}</td>
-                  <td><app-statut-badge [statut]="d.statut" [label]="badgeLabel(d.statut)" /></td>
+                  <td><app-statut-badge [statut]="d.statut" [label]="badgeLabel(d.statut)" /><app-repute-approuve [le]="d.reputeApprouveLe" [court]="true" /></td>
                   <td>
                     <div class="td-actions actions-end">
                       <ng-container [ngTemplateOutlet]="actionsTpl" [ngTemplateOutletContext]="{ $implicit: d, info }" />
@@ -153,7 +154,7 @@ import { ReceptionForm } from './reception-form';
                   </span>
                 }
                 <div class="dossier-card__head-right">
-                  <app-statut-badge [statut]="d.statut" [label]="badgeLabel(d.statut)" />
+                  <app-statut-badge [statut]="d.statut" [label]="badgeLabel(d.statut)" /><app-repute-approuve [le]="d.reputeApprouveLe" [court]="true" />
                   <ng-container [ngTemplateOutlet]="actionsTpl" [ngTemplateOutletContext]="{ $implicit: d, info }" />
                 </div>
               </div>

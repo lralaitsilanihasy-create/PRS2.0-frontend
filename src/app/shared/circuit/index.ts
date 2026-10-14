@@ -4,6 +4,7 @@
  */
 export * from './circuit-workflow';
 export * from './statut-badge';
+export * from './repute-approuve';
 export * from './circuit-timeline';
 export * from './observation-pv-card';
 export * from './pv-workflow';

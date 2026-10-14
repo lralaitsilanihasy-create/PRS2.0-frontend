@@ -577,6 +577,8 @@ export class MainLayout {
             // ⚠️ 09/10 (attribution 2d-1, V91) — s'y ajoutent les gestes d'attribution qui attendent la PRMP : lots à attribuer,
             // lots signables, avis d'attribution à publier, explications sans réponse (on y arrive par la fiche, puis l'évaluation).
             c['/prmp/dao'] = ['recusAValider', 'lotsAAttribuer', 'lotsSignables', 'avisAPublier', 'explicationsSansReponse'].reduce((n, k) => n + (compteurs[k] ?? 0), 0);
+            // ⚠️ R6c (V108, règle 8) — les avis d'attribution en retard (échéance de 30 jours passée sans publication) : pastille d'alerte.
+            this.alerts.update((a) => ({ ...a, '/prmp/dao': compteurs['avisEnRetard'] ?? 0 }));
             break;
           case 'UGPM':
             // ⚠️ 06/10 — l'UGPM valide aussi les reçus des frais de dossier des fiches de sa PRMP.

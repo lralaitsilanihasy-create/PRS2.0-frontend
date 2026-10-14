@@ -270,6 +270,19 @@ l'attributaire ; paramètres `RECOURS_SUSPENSIFS`, `SIGNATURE_OFFRE`, délais pa
 > - **Côté front** : afficher la réception présumée et `joursReception` sur le délai d'attente ; les limites de délivrance sur les pièces ;
 >   `depart` / `enRetard` sur l'avis d'attribution et le badge `avisEnRetard` ; `relanceLe` sur la demande de sans suite.
 
+> ✅ **Front, 2026-10-14 — tranche FR6 branchée (R6b et R6c)**, vérifiée par les tests (recette navigateur groupée avec le reste du lot 2) :
+> - **R6b** — badge « **Réputé approuvé** » (vert, à côté du badge de statut, jamais à sa place) sur « Tous les dossiers » (tableau et
+>   cartes), la page du dossier, la consultation, la liste des dossiers de la PRMP et son suivi des délais ; infobulle : art. 26-IV, date,
+>   « l'examen continue ; un avis rendu après coup vaut observation » (QB4). Les notifications `PLAN_REPUTE_APPROUVE` et `RELANCE_SANS_SUITE`
+>   portent le titre du serveur et ouvrent le dossier (comportement par défaut). L'éligibilité des lignes à la fiche DAO reste servie par le
+>   serveur : rien à changer côté front.
+> - **R6c** — délai d'attente : « réception présumée de l'information le …, n jours après l'envoi, ou affichage s'il est plus tardif » ;
+>   pièces de l'attributaire : les dates de délivrance les plus anciennes admises, et `PIECE_TROP_ANCIENNE` nommé avec la nature, la date
+>   et la limite ; avis d'attribution : « 30 jours après la réception de la notification par le titulaire, le … », badge « En retard » /
+>   « Publié après l'échéance » ; **pastille d'alerte** rouge `avisEnRetard` sur l'entrée « Fiches DAO » de la PRMP (à côté du compteur
+>   existant, aucune entrée de menu ajoutée) ; sans suite : « relance envoyée le … : la déclaration attend toujours l'avis exprès ».
+>   `RECEPTION_LETTRE` paraît d'elle-même dans l'écran Délais (liste générique des délais paramétrables).
+
 > ⚠️ **Backend, 2026-10-13 — B2 : tranche R7 livrée (questions des candidats, V109)** ; contrat : `docs/api-endpoints.md`, § *… lot 2,
 > tranche R7*. Arbitrages du 13/10 : auteur = **candidat ayant retiré le DAO** (registre des retraits, 403 `DOSSIER_NON_RETIRE`) ; les
 > questions répondues sont **publiques et anonymisées** sur la page de la procédure, et chaque candidat ayant retiré est notifié ;

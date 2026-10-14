@@ -24,7 +24,7 @@ import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DetailPpmModal } from '../../shared/prmp';
-import { StatutBadge } from '../../shared/circuit';
+import { ReputeApprouve, StatutBadge } from '../../shared/circuit';
 import { CompleterPiecesDepotModal } from './completer-pieces-depot-modal';
 import { DossiersRefreshStore } from './dossiers-refresh.store';
 
@@ -42,7 +42,7 @@ type Groupe = 'brouillon' | 'soumis';
 @Component({
   selector: 'app-dossiers-liste',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, DatePipe, DetailPpmModal, EtatErreur, ModaleDirective, StatutBadge, CompleterPiecesDepotModal],
+  imports: [RouterLink, DatePipe, DetailPpmModal, EtatErreur, ModaleDirective, StatutBadge, ReputeApprouve, CompleterPiecesDepotModal],
   template: `
     <section>
       <header class="page-header page-header--actions" [class.page-header--colle]="encastre">
@@ -72,7 +72,7 @@ type Groupe = 'brouillon' | 'soumis';
                 <tr [id]="'dl-row-' + d.idDossier" [class.dl-row-focus]="d.idDossier === focusId()" [class.cnm-row-cloture]="d.datesEtapes?.['CLOTURE']">
                   <td>{{ reference(d) }}</td>
                   <td>{{ entiteLabel(d) }}</td>
-                  <td>@if (d.statut) { <app-statut-badge [statut]="d.statut" /> } @else { — }</td>
+                  <td>@if (d.statut) { <app-statut-badge [statut]="d.statut" /> } @else { — }<app-repute-approuve [le]="d.reputeApprouveLe" [court]="true" /></td>
                   <td>{{ sousTypeLabel(d) }}</td>
                   <td>{{ localiteLabel(d) }}</td>
                   <!-- Chronométrage (2026-09-01) : date calculée SERVEUR, présente sur les listes.

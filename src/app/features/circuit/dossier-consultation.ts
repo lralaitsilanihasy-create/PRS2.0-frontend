@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, input, output, sign
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { Dossier } from '../../models';
-import { ChronometrageDossier, StatutBadge } from '../../shared/circuit';
+import { ChronometrageDossier, ReputeApprouve, StatutBadge } from '../../shared/circuit';
 import { DossierContenuStore } from './dossier/dossier-contenu.store';
 import { DossierDocuments } from './dossier/dossier-documents';
 import { DossierIdentite } from './dossier/dossier-identite';
@@ -28,7 +28,7 @@ import { DossierJournal } from './dossier/dossier-journal';
 @Component({
   selector: 'app-dossier-consultation',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, ModaleDirective, ChronometrageDossier, DossierIdentite, DossierDocuments, DossierJournal],
+  imports: [StatutBadge, ReputeApprouve, ModaleDirective, ChronometrageDossier, DossierIdentite, DossierDocuments, DossierJournal],
   providers: [DossierContenuStore],
   template: `
     <div class="modal-backdrop modal-backdrop--sans-flou" [class.closing]="closing()">
@@ -54,6 +54,7 @@ import { DossierJournal } from './dossier/dossier-journal';
             <div class="dc-chips">
               <span class="dc-chip dc-chip-type">{{ contenu.typeLabel() }}</span>
               <app-statut-badge [statut]="dossier().statut" />
+              <app-repute-approuve [le]="dossier().reputeApprouveLe" />
             </div>
             <button type="button" class="dc-close" aria-label="Fermer" (click)="fermer()">✕</button>
           </div>

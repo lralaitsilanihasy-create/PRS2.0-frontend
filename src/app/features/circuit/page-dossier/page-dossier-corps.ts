@@ -5,7 +5,7 @@ import { Router, RouterLink, UrlTree } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { Dispatch, Dossier, SOUS_TYPES_FICHE_DAO } from '../../../models';
 import { ModaleDirective } from '../../../shared/a11y/modale.directive';
-import { ChronometrageDossier, StatutBadge } from '../../../shared/circuit';
+import { ChronometrageDossier, ReputeApprouve, StatutBadge } from '../../../shared/circuit';
 import { jourSemaineDate } from '../../../shared/circuit/frise-delai';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { Icone } from '../../../shared/ui/icone';
@@ -57,6 +57,7 @@ const HAUT_TOPBAR = 48;
     Icone,
     EtatErreur,
     StatutBadge,
+    ReputeApprouve,
     ModaleDirective,
     ChronometrageDossier,
     DossierIdentite,
@@ -113,6 +114,7 @@ const HAUT_TOPBAR = 48;
           </p>
           <div class="pd-puces">
             <app-statut-badge [statut]="dossier().statut" />
+            <app-repute-approuve [le]="dossier().reputeApprouveLe" />
             @if (sousType()) {
               <span class="pd-puce">{{ sousType() }}</span>
             }

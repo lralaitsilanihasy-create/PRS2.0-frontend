@@ -11,7 +11,7 @@ import { VacanceStore } from '../../core/vacance/vacance.store';
 import { Dossier, Reception } from '../../models';
 import { DossierService, EntiteContractService, LocaliteService, ReceptionService, ReferenceLookupService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
-import { StatutBadge } from '../../shared/circuit';
+import { ReputeApprouve, StatutBadge } from '../../shared/circuit';
 import { LienDossier } from '../circuit/page-dossier/lien-dossier';
 import { CompleterPiecesDepotModal } from './completer-pieces-depot-modal';
 import { DossiersRefreshStore } from './dossiers-refresh.store';
@@ -31,7 +31,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
 @Component({
   selector: 'app-suivi-delais',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, RouterLink, EtatErreur, StatutBadge, CompleterPiecesDepotModal],
+  imports: [DatePipe, RouterLink, EtatErreur, StatutBadge, ReputeApprouve, CompleterPiecesDepotModal],
   template: `
     <section>
       <header class="page-header">
@@ -101,7 +101,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                       —
                     }
                   </td>
-                  <td><app-statut-badge [statut]="d.statut" /></td>
+                  <td><app-statut-badge [statut]="d.statut" /><app-repute-approuve [le]="d.reputeApprouveLe" [court]="true" /></td>
                   <!-- Actions contextuelles (le clic-ligne reste pour le détail) : Rectifier, Soumettre un
                        brouillon, Compléter les pièces d'un dépôt — chacune affichée seulement si elle s'applique. -->
                   <td>

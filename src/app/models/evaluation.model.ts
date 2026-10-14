@@ -359,7 +359,11 @@ export interface LotAttribution {
    */
   approbation?: { autorite: string; date: string; le: string; par: string | null; fichier: FichierAttribution | null } | null;
   notification?: { date: string; le: string; par: string | null; recueLe: string | null; receptionDeclaree: boolean } | null;
-  avisAttribution?: { echeance: string; datePublication: string | null; publieLe: string | null; par: string | null; disponible: boolean } | null;
+  /**
+   * ⚠️ R6c (V108, règle 8) — `depart` : la réception de la notification par le titulaire (déclarée, ou accusé de lecture), à défaut
+   * la notification ; `echeance` = départ + 30 jours ; `enRetard` : échéance passée sans publication, ou publication au-delà.
+   */
+  avisAttribution?: { depart?: string | null; echeance: string; datePublication: string | null; publieLe: string | null; par: string | null; disponible: boolean; enRetard?: boolean | null } | null;
   piecesAttributaire?: PiecesAttributaire | null;
   retrait?: { le: string; par: string | null; motif: string } | null;
   /** ⚠️ 2d-1 (V91, §B6) — la déclaration d'infructuosité du lot ; nulle sans elle. */
@@ -419,6 +423,8 @@ export interface DemandeSansSuite {
   /** Réception + 5 jours. */
   echeance: string | null;
   echeanceDepassee: boolean;
+  /** ⚠️ R6c (V108, règle 9) — la relance unique émise à l'échéance passée sans avis (PRMP, membre, Présidents de la localité). */
+  relanceLe?: string | null;
   avis: string | null;
   etat: EtatSansSuite;
   decisionReference: string | null;
@@ -478,6 +484,12 @@ export interface DelaiAttente {
   signableLe: string;
   jours: number;
   ecoule: boolean;
+  /**
+   * ⚠️ R6c (V108, règle 6) — la **réception présumée** de l'information par les non-retenus : l'envoi + `joursReception` jours
+   * (paramètre `RECEPTION_LETTRE`) ; l'affichage au siège, s'il est plus tardif, reste le départ. Absents avant V108.
+   */
+  receptionLe?: string | null;
+  joursReception?: number | null;
 }
 
 export interface Explication {
@@ -550,6 +562,9 @@ export interface PiecesAttributaire {
    * original déposé n'est pas reconnu conforme.
    */
   aeOriginalExige?: boolean;
+  /** ⚠️ R6c (V108, règle 7) — la date de délivrance la plus ancienne admise (six mois fiscale, trois mois sociale, à l'information). */
+  limiteFiscale?: string | null;
+  limiteSociale?: string | null;
   aeOriginalConforme?: boolean | null;
 }
 

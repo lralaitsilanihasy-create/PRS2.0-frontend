@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { ApiError, codeErreur } from '../../core/errors/api-error';
+import { ApiError, codeErreur, corpsErreur } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur, telechargerBlob, validerFichier } from '../../core/securite/fichiers-surs';
 import { Attribution, FichierAttribution, LotAttribution, TypeRecours } from '../../models';
@@ -56,6 +56,8 @@ const MESSAGES: Readonly<Record<string, string>> = {
   MARCHE_NON_APPROUVE: 'Aucune notification sans l’approbation du marché (art. 54).',
   CHAMP_TROP_LONG: 'Un champ dépasse la longueur admise.',
   // ⚠️ R10 (V113, 14/10) — l'original signé de l'acte d'engagement, en remise électronique.
+  // ⚠️ R6c (V108, règle 7) — complété par la limite servie (`messagePieceTropAncienne`).
+  PIECE_TROP_ANCIENNE: 'Cette pièce est trop ancienne pour être reconnue conforme : déclarez-la non conforme, avec un motif.',
   AE_ORIGINAL_MANQUANT: 'L’original signé de l’acte d’engagement doit être déposé et reconnu conforme avant la signature (offre déposée et scellée en ligne).',
   DEJA_NOTIFIE: 'Le marché est déjà notifié.',
   NON_NOTIFIE: 'Le marché n’est pas encore notifié.',
@@ -63,6 +65,14 @@ const MESSAGES: Readonly<Record<string, string>> = {
 };
 
 const ISSUES: Readonly<Record<string, string>> = { REJETE: 'Rejeté', ACCUEILLI: 'Accueilli', AUTRE: 'Autre issue' };
+
+/** ⚠️ R6c (V108, règle 7) — 400 `PIECE_TROP_ANCIENNE` à la vérification : `details { nature, dateDelivrance, limite, reference }`. */
+export function messagePieceTropAncienne(e: ApiError): string {
+  const d = corpsErreur<{ details?: { nature?: string; dateDelivrance?: string; limite?: string } }>(e)?.details ?? {};
+  const jj = (iso?: string): string => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso ?? ''); return m ? `${m[3]}/${m[2]}/${m[1]}` : '?'; };
+  const quoi = d.nature === 'SOCIALE' ? 'La situation sociale' : d.nature === 'FISCALE' ? 'La situation fiscale' : 'La pièce';
+  return `${quoi} est délivrée le ${jj(d.dateDelivrance)}, avant la limite du ${jj(d.limite)} : elle ne peut être reconnue conforme. Déclarez-la non conforme, avec un motif ; l’attributaire en déposera une plus récente.`;
+}
 
 /** Aujourd'hui, au format des champs de date (`AAAA-MM-JJ`), à l'heure locale. */
 function aujourdhui(): string {
@@ -127,7 +137,8 @@ function aujourdhui(): string {
           </div>
           @if (l.delaiAttente; as d) {
             <p class="text-sm" [class.al__ok]="d.ecoule">
-              Délai d’attente : {{ d.jours }} jours francs à compter du {{ date(d.debut) }} (plus tardive de l’information et de l’affichage) —
+              <!-- ⚠️ R6c (V108, règle 6) — le départ est la réception présumée (envoi + n jours), ou l'affichage s'il est plus tardif. -->
+              Délai d’attente : {{ d.jours }} jours francs à compter du {{ date(d.debut) }} ({{ d.receptionLe ? 'réception présumée de l’information le ' + date(d.receptionLe) + ', ' + d.joursReception + ' jour' + ((d.joursReception ?? 0) > 1 ? 's' : '') + ' après l’envoi, ou affichage s’il est plus tardif' : 'plus tardive de l’information et de l’affichage' }}) —
               @if (d.ecoule) { <strong>écoulé</strong> : la signature est possible depuis le {{ date(d.signableLe) }}. } @else { signature possible à partir du <strong>{{ date(d.signableLe) }}</strong>. }
             </p>
           }
@@ -214,7 +225,7 @@ function aujourdhui(): string {
         @if (l.piecesAttributaire; as pa) {
           <section class="al__bloc" aria-label="Pièces de l'attributaire">
             <h4 class="al__h4">Pièces de l’attributaire</h4>
-            <p class="text-sm">À déposer avant le <strong>{{ date(pa.echeance) }}</strong>{{ pa.delaiDepasse ? ' — échéance passée' : '' }} : situation fiscale de moins de six mois ({{ etatPiece(pa.fiscaleConforme) }}), situation sociale de moins de trois mois ({{ etatPiece(pa.socialeConforme) }}).</p>
+            <p class="text-sm">À déposer avant le <strong>{{ date(pa.echeance) }}</strong>{{ pa.delaiDepasse ? ' — échéance passée' : '' }} : situation fiscale de moins de six mois ({{ etatPiece(pa.fiscaleConforme) }}), situation sociale de moins de trois mois ({{ etatPiece(pa.socialeConforme) }}).@if (pa.limiteFiscale || pa.limiteSociale) { Délivrées au plus tôt le {{ date(pa.limiteFiscale) }} (fiscale) et le {{ date(pa.limiteSociale) }} (sociale) : une pièce plus ancienne ne peut être reconnue conforme. }</p>
             <!-- ⚠️ R10 (V113, 14/10) — offre déposée et scellée en ligne : l'original signé de l'acte d'engagement, avant la signature. -->
             @if (pa.aeOriginalExige) {
               <p class="text-sm">Offre déposée et scellée en ligne : l’<strong>original signé de l’acte d’engagement</strong> est remis avant la signature du marché, sans l’échéance des quinze jours ({{ etatPiece(pa.aeOriginalConforme ?? null) }}).</p>
@@ -350,13 +361,14 @@ function aujourdhui(): string {
           <section class="al__bloc" [class.al__fait]="av.publieLe" aria-label="Avis d'attribution">
             <h4 class="al__h4">Avis d’attribution (art. 53)</h4>
             @if (av.publieLe) {
-              <p class="text-sm">Publié le {{ date(av.datePublication) }} — échéance du {{ date(av.echeance) }}.</p>
+              <p class="text-sm">Publié le {{ date(av.datePublication) }} — échéance du {{ date(av.echeance) }}.@if (av.enRetard) { <span class="badge badge-warning">Publié après l’échéance</span> }</p>
               <div class="al__actions">
                 <button type="button" class="btn btn-outline btn-sm" (click)="ouvrir(service.avis(idDmc(), l.lot))">Avis (PDF)</button>
                 <button type="button" class="btn btn-ghost btn-sm" (click)="enregistrer(service.avis(idDmc(), l.lot, 'docx'), 'avis-attribution-' + idDmc() + '-lot' + l.lot + '.docx')">Word</button>
               </div>
             } @else {
-              <p class="text-sm">À publier avant le <strong>{{ date(av.echeance) }}</strong> (30 jours après la notification).</p>
+              <!-- ⚠️ R6c (V108, règle 8) — 30 jours depuis la réception de la notification par le titulaire ; non bloquant. -->
+              <p class="text-sm">À publier avant le <strong>{{ date(av.echeance) }}</strong> (30 jours après {{ av.depart ? 'la réception de la notification par le titulaire, le ' + date(av.depart) : 'la notification' }}).@if (av.enRetard) { <span class="badge badge-danger">En retard</span> }</p>
               @if (prmp()) {
                 <div class="al__ligne">
                   <label class="form-group"><span class="form-label">Date de publication</span><input class="form-control" type="date" [value]="champ('apub')" (input)="poser('apub', $any($event.target).value)" /></label>
@@ -480,6 +492,7 @@ export class AttributionLot {
       },
       error: (e: ApiError) => {
         this.occupe.set(false);
+        if (codeErreur(e) === 'PIECE_TROP_ANCIENNE') { this.erreur.set(messagePieceTropAncienne(e)); return; }
         this.erreur.set(MESSAGES[codeErreur(e) ?? ''] ?? (e.status === 413 ? 'Le fichier dépasse la taille admise.' : e.message || 'Le geste n’a pas abouti.'));
       },
     });

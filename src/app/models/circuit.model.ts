@@ -73,6 +73,11 @@ export interface Dossier {
   imVerificateurCible?: string | null;
   /** Nom complet du Vérificateur cible, résolu serveur. `null` pour PRMP/UGPM. */
   nomVerificateurCible?: string | null;
+  /**
+   * ⚠️ R6b (V107, 13/10 ; art. 26-IV) — plan **réputé approuvé** : soumis, sans PV signé dix jours ouvrables après ; marqueur daté posé
+   * par le serveur (pas un statut : le circuit continue, un PV signé ensuite vaut observation). Nul sinon.
+   */
+  reputeApprouveLe?: string | null;
   /** Assistant CIBLE de l'archivage (rattaché du Vérificateur ayant validé) — mêmes règles : null normal, ciblage sans garde. `null` pour PRMP/UGPM. */
   imAssistantCible?: string | null;
   /** Nom complet de l'Assistant cible, résolu serveur. `null` pour PRMP/UGPM. */
