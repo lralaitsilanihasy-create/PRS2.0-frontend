@@ -545,7 +545,44 @@ export interface LigneEligible {
    */
   idNature?: number | null;
   libelleNature?: string | null;
+  /**
+   * ⚠️ Demandé au backend le 14/10 (`docs/demande-backend-2026-10-14-sous-type-ligne.md`) — le sous-type du dossier que
+   * la fiche de cette ligne produira (`DAOO`, `DAOOI`, `DAOOPREQUAL`, `DAOR`, `DAORI`, `DC`). Absent tant que non servi :
+   * `sousTypeDeLigne` le déduit alors par la règle du serveur.
+   */
+  sousType?: string | null;
 }
+
+/**
+ * Le sous-type du dossier que produira la fiche d'une ligne : celui que sert le serveur, sinon la règle du serveur
+ * (`SousTypesDossier.dossierMiseEnConcurrence`, regles-gestion.md, M1 du 08/10) appliquée au mode et à la catégorie de la
+ * ligne — prestations intellectuelles → `DC` ; mode international → `DAOOI` (`DAORI` s'il est restreint) ; avec
+ * pré-qualification → `DAOOPREQUAL` ; restreint → `DAOR` ; sinon `DAOO`. ⚠️ Repli provisoire : à retirer quand `sousType` est servi.
+ */
+export function sousTypeDeLigne(l: Pick<LigneEligible, 'sousType' | 'libelleMode' | 'categorie'>): string {
+  if (l.sousType) return l.sousType;
+  if (l.categorie === 'PRESTATIONS_INTELLECTUELLES') return 'DC';
+  const m = (l.libelleMode ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+  const restreint = m.includes('restreint');
+  if (m.includes('international')) return restreint ? 'DAORI' : 'DAOOI';
+  if (m.includes('pre-qualification') || m.includes('prequalification') || m.includes('pre qualification')) return 'DAOOPREQUAL';
+  return restreint ? 'DAOR' : 'DAOO';
+}
+
+/**
+ * Les sous-types qu'une fiche DAO produit, présentés à la PRMP (libellés du référentiel « Sous-types de dossier ») :
+ * le mode de passation que doit porter la ligne du plan, et les documents que la fiche remplit.
+ */
+const PRESENTATIONS: Record<string, { libelle: string; titre: string; ligne: string; raison: string; documents: string }> = {
+  DAOO: { libelle: 'Dossier d’appel d’offres ouvert', titre: 'Un appel d’offres ouvert se prépare dans sa fiche DAO', ligne: 'une ligne du plan dont le mode de passation est l’appel d’offres ouvert', raison: 'c’est le mode de passation de la ligne qui fait le sous-type du dossier', documents: 'Le DPAO (le DPAC pour un contrat-cadre), l’acte d’engagement et le CCAP' },
+  DAOOI: { libelle: 'Dossier d’appel d’offres ouvert international', titre: 'Un appel d’offres ouvert international se prépare dans sa fiche DAO', ligne: 'une ligne du plan dont le mode de passation est l’appel d’offres ouvert international', raison: 'c’est le mode de passation de la ligne qui fait le sous-type du dossier', documents: 'Le DPAO (le DPAC pour un contrat-cadre), l’acte d’engagement et le CCAP' },
+  DAOOPREQUAL: { libelle: 'Dossier d’appel d’offres ouvert avec pré-qualification', titre: 'Un appel d’offres avec pré-qualification se prépare dans sa fiche DAO', ligne: 'une ligne du plan dont le mode de passation est l’appel d’offres avec pré-qualification', raison: 'c’est le mode de passation de la ligne qui fait le sous-type du dossier', documents: 'Le DPAO (le DPAC pour un contrat-cadre), l’acte d’engagement et le CCAP' },
+  DAOR: { libelle: 'Dossier d’appel d’offres restreint', titre: 'Un appel d’offres restreint se prépare dans sa fiche DAO', ligne: 'une ligne du plan dont le mode de passation est l’appel d’offres restreint', raison: 'c’est le mode de passation de la ligne qui fait le sous-type du dossier', documents: 'Le DPAO (le DPAC pour un contrat-cadre), l’acte d’engagement et le CCAP' },
+  DAORI: { libelle: 'Dossier d’appel d’offres restreint international', titre: 'Un appel d’offres restreint international se prépare dans sa fiche DAO', ligne: 'une ligne du plan dont le mode de passation est l’appel d’offres restreint international', raison: 'c’est le mode de passation de la ligne qui fait le sous-type du dossier', documents: 'Le DPAO (le DPAC pour un contrat-cadre), l’acte d’engagement et le CCAP' },
+  DC: { libelle: 'Dossier de consultation (prestations intellectuelles)', titre: 'Une consultation de prestations intellectuelles se prépare dans sa fiche', ligne: 'une ligne du plan de prestations intellectuelles', raison: 'c’est la nature de la ligne qui en fait une consultation, quel que soit son mode de passation', documents: 'Les données particulières des instructions aux consultants (DPIC) et les pièces de la consultation' },
+};
+/** L'ancien sous-type `DAO` (dossiers relus d'avant la migration M1) se présente comme `DAOO`. */
+export const PRESENTATION_SOUS_TYPE_FICHE: Readonly<Record<string, { libelle: string; titre: string; ligne: string; raison: string; documents: string }>> = { ...PRESENTATIONS, DAO: PRESENTATIONS['DAOO'] };
 
 /** `DmcDto` (existant, lot 3a) — un DMC par ligne de marché. */
 export interface Dmc {

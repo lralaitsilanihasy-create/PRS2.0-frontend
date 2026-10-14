@@ -19,7 +19,7 @@ import { LignePpmOfficielle } from '../../shared/prmp/document-officiel';
 import { DocumentVisionneuse } from '../../shared/ui/document-visionneuse';
 import { FichePresentation, calculerFichePresentation } from '../../shared/prmp/fiche-presentation';
 import { LigneAgpm, calculerAgpm } from '../../shared/prmp/agpm';
-import { AnomalieTranscription, Capm, Compte, Dossier, EntiteContract, FormeMarche, Marche, MarchePrevision, Ministere, ModePassation, Nature, Organigramme, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, SOUS_TYPES_FICHE_DAO, SousTypeDossier, StatutMarche, TypePieceJointe } from '../../models';
+import { AnomalieTranscription, Capm, Compte, Dossier, EntiteContract, FormeMarche, Marche, MarchePrevision, Ministere, ModePassation, Nature, Organigramme, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, SOUS_TYPES_FICHE_DAO, PRESENTATION_SOUS_TYPE_FICHE, SousTypeDossier, StatutMarche, TypePieceJointe } from '../../models';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import {
   CapmService,
@@ -508,15 +508,18 @@ interface ApercuDossier {
                  localité comprises. Ce formulaire reste le SECOURS d'un DAO préparé hors de l'application — replié,
                  nommé comme tel, jamais présenté à égalité. Les autres sous-types (consultation, gré à gré…) n'ont
                  pas de fiche : pour eux, le formulaire est le seul chemin et reste déplié. -->
-            @if (appelOffres()) {
+            <!-- ⚠️ 14/10 (constat du pilote) — l'encadré parle du sous-type choisi, et le bouton le transmet : la liste des
+                 lignes ne propose que celles dont la fiche produira CE sous-type (le serveur le déduit du mode de la ligne). -->
+            @if (appelOffres() && presentation(); as pr) {
               <section class="sd__fiche" data-testid="sd-dao-fiche" aria-labelledby="sd-fiche-t">
-                <h2 class="sd__sub" id="sd-fiche-t">Un appel d’offres se prépare dans sa fiche DAO</h2>
+                <h2 class="sd__sub" id="sd-fiche-t">{{ pr.titre }}</h2>
                 <p class="sd__fiche-p">
-                  Le DPAO, l’acte d’engagement et le CCAP se remplissent une seule fois, dans un formulaire alimenté par la ligne
-                  du plan de passation. À la validation de la fiche, <strong>le dossier à soumettre est créé pour vous</strong> :
-                  entité contractante et localité comprises, sans les ressaisir ici.
+                  Choisissez {{ pr.ligne }} : {{ pr.raison }}.
+                  {{ pr.documents }} se remplissent une seule fois, dans un formulaire alimenté par cette ligne. À la validation de
+                  la fiche, <strong>le dossier à soumettre est créé pour vous</strong> : entité contractante et localité comprises,
+                  sans les ressaisir ici.
                 </p>
-                <a class="btn btn-primary" routerLink="/prmp/dao">Choisir la ligne du plan de passation</a>
+                <a class="btn btn-primary" routerLink="/prmp/dao" [queryParams]="{ sousType: sousTypeChoisi() }">Choisir la ligne du plan de passation</a>
               </section>
             }
 
@@ -1167,8 +1170,10 @@ export class SoumettreDossier {
    * ⚠️ Lot 1b (23/09) — sous-type `DAO` choisi : le dossier se produit depuis la **fiche DAO**, et ce formulaire
    * devient le secours. Suit le sous-type, pas la famille : consultation et gré à gré n'ont pas de fiche.
    */
-  private readonly sousTypeChoisi = toSignal(this.dossierForm.controls.idSousType.valueChanges, { initialValue: null as string | null });
+  readonly sousTypeChoisi = toSignal(this.dossierForm.controls.idSousType.valueChanges, { initialValue: null as string | null });
   readonly appelOffres = computed(() => SOUS_TYPES_FICHE_DAO.has(this.sousTypeChoisi() ?? ''));
+  /** Ce que l'encadré dit du sous-type choisi : le mode que doit porter la ligne, les documents que la fiche remplit. */
+  readonly presentation = computed(() => PRESENTATION_SOUS_TYPE_FICHE[this.sousTypeChoisi() ?? ''] ?? null);
 
   /** Import PPM PDF (pré-remplissage read-only) : état d'analyse + avertissements du parsing. */
   readonly importing = signal(false);

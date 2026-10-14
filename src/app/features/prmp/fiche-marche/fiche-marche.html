@@ -192,6 +192,13 @@
         <a routerLink="/prmp/dao">Voir toutes les lignes éligibles</a>
       </p>
     }
+    <!-- ⚠️ 14/10 — venu de « Créer dossier » avec un sous-type : seules ses lignes, et pourquoi. -->
+    @if (libelleSousTypeFiltre(); as st) {
+      <p class="fm__filtre" data-testid="fm-filtre-sous-type">
+        Lignes dont la fiche produira un <strong>{{ st.charAt(0).toLowerCase() + st.slice(1) }}</strong> — {{ raisonSousTypeFiltre() }}.
+        <a routerLink="/prmp/dao">Voir toutes les lignes éligibles</a>
+      </p>
+    }
     <!-- ⚠️ Colonnes bornées (23/09) : une désignation de plan peut tenir sur dix lignes (lots décrits en toutes
          lettres) — sans largeur fixe, elle poussait le mode, le montant et le BOUTON D'ACTION hors de l'écran. -->
     <div class="table-card">
@@ -231,7 +238,11 @@
               </td>
             </tr>
           } @empty {
-            <tr><td colspan="7" class="fm__vide">{{ filtreDossier() != null ? 'Aucune ligne éligible dans ce plan de passation' : 'Aucune ligne de plan de passation éligible' }} : il faut un PPM au PV signé, dont le mode de passation est un appel d'offres, sans DAO déjà préparé.</td></tr>
+            @if (libelleSousTypeFiltre(); as st) {
+              <tr><td colspan="7" class="fm__vide">Aucune ligne éligible pour un {{ st.charAt(0).toLowerCase() + st.slice(1) }} — {{ raisonSousTypeFiltre() }}. Il faut une ligne d'un PPM au PV signé, sans DAO déjà préparé ; une ligne mal renseignée se corrige dans le plan de passation.</td></tr>
+            } @else {
+              <tr><td colspan="7" class="fm__vide">{{ filtreDossier() != null ? 'Aucune ligne éligible dans ce plan de passation' : 'Aucune ligne de plan de passation éligible' }} : il faut un PPM au PV signé, dont le mode de passation est un appel d'offres, sans DAO déjà préparé.</td></tr>
+            }
           }
         </tbody>
       </table>
