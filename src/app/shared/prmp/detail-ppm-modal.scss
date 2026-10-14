@@ -327,6 +327,9 @@
 }
 .dpm-date-row { display: flex; align-items: center; gap: var(--cnm-space-2); }
 .dpm-date-row .form-control { flex: 1; }
+/* ⚠️ Q-pièce (V114) — processus sans objet : la case, puis le motif sous la ligne. */
+.dpm-date-so { display: inline-flex; align-items: center; gap: 0.3rem; white-space: nowrap; font-size: var(--text-sm); }
+.dpm-date-motif { padding: 0 0 var(--cnm-space-2) var(--cnm-space-4); }
 .dpm-date-err { color: var(--danger-text); display: block; }
 
 /* ════════════════════════════════════════════════════════════════

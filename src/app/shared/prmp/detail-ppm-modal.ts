@@ -668,10 +668,16 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
                         }
                       }
                     </select>
-                    <input class="form-control" type="date" formControlName="dateDebut" />
-                    <input class="form-control" type="date" formControlName="dateFin" />
-                    <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="retirerDate(ef, $index)">✕</button>
+                    <input class="form-control" type="date" formControlName="dateDebut" aria-label="Date de début" />
+                    <input class="form-control" type="date" formControlName="dateFin" aria-label="Date de fin" />
+                    <label class="dpm-date-so"><input type="checkbox" formControlName="sansObjet" (change)="basculerSansObjet(ctrl)" /> Sans objet</label>
+                    <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" aria-label="Retirer ce processus" (click)="retirerDate(ef, $index)">✕</button>
                   </div>
+                  @if (ctrl.get('sansObjet')!.value) {
+                    <div class="dpm-date-motif" [formGroup]="ctrl">
+                      <input class="form-control" formControlName="motifSansObjet" maxlength="500" aria-label="Motif : pourquoi cette étape n’existe pas pour ce marché" placeholder="Motif : pourquoi cette étape n’existe pas pour ce marché" />
+                    </div>
+                  }
                   @if (procErreur(ctrl.get('idCapm')!.value)) {
                     <span class="form-error dpm-date-err">{{ procErreur(ctrl.get('idCapm')!.value) }}</span>
                   }
@@ -794,10 +800,16 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
                       }
                     }
                   </select>
-                  <input class="form-control" type="date" formControlName="dateDebut" />
-                  <input class="form-control" type="date" formControlName="dateFin" />
-                  <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="retirerDate(createForm, $index)">✕</button>
+                  <input class="form-control" type="date" formControlName="dateDebut" aria-label="Date de début" />
+                  <input class="form-control" type="date" formControlName="dateFin" aria-label="Date de fin" />
+                  <label class="dpm-date-so"><input type="checkbox" formControlName="sansObjet" (change)="basculerSansObjet(ctrl)" /> Sans objet</label>
+                  <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" aria-label="Retirer ce processus" (click)="retirerDate(createForm, $index)">✕</button>
                 </div>
+                @if (ctrl.get('sansObjet')!.value) {
+                  <div class="dpm-date-motif" [formGroup]="ctrl">
+                    <input class="form-control" formControlName="motifSansObjet" maxlength="500" aria-label="Motif : pourquoi cette étape n’existe pas pour ce marché" placeholder="Motif : pourquoi cette étape n’existe pas pour ce marché" />
+                  </div>
+                }
               }
               <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" [disabled]="!peutAjouterDate(createForm)" (click)="ajouterDate(createForm)">+ Ajouter une date</button>
             </div>
@@ -1738,17 +1750,50 @@ export class DetailPpmModal implements OnInit {
         err[p.idCapm!] = `La date de début de ${lib} doit être postérieure ou égale à la date de fin de ${libPrec}.`;
       }
     }
+    // ⚠️ Q-pièce (V114) — un processus sans objet porte son motif.
+    for (const g of controls) {
+      const id = g.get('idCapm')!.value as number | null;
+      if (id != null && g.get('sansObjet')?.value && !String(g.get('motifSansObjet')?.value ?? '').trim()) {
+        err[id] = 'Donnez le motif : pourquoi cette étape n’existe pas pour ce marché.';
+      }
+    }
     this.procErreurs.set(err);
     return Object.keys(err).length === 0;
   }
   private ligneDate(p?: Partial<MarchePrevision>): FormGroup {
+    const so = !!p?.sansObjet;
     return this.fb.group({
       idPrevision: [p?.idPrevision ?? null],
       idCapm: [p?.idCapm ?? null, Validators.required],
-      dateDebut: [p?.dateDebut ?? '', Validators.required],
+      dateDebut: [{ value: p?.dateDebut ?? '', disabled: so }, so ? [] : Validators.required],
       // Date de fin **optionnelle** (backend : `dateFin` nullable ; chronologie ignorée si absente).
-      dateFin: [p?.dateFin ?? ''],
+      dateFin: [{ value: p?.dateFin ?? '', disabled: so }],
+      // ⚠️ Q-pièce (backend Q1, V114, 14/10) — processus sans objet pour ce marché : ni date, un motif obligatoire.
+      sansObjet: [so],
+      motifSansObjet: [p?.motifSansObjet ?? '', so ? Validators.required : []],
     });
+  }
+  /** « Sans objet » coché : dates vidées et verrouillées, début non exigé ; décoché : retour à la date obligatoire. */
+  basculerSansObjet(ctrl: FormGroup): void {
+    const so = !!ctrl.get('sansObjet')!.value;
+    const debut = ctrl.get('dateDebut')!;
+    const fin = ctrl.get('dateFin')!;
+    if (so) {
+      debut.setValue('');
+      fin.setValue('');
+      debut.clearValidators();
+      debut.disable();
+      fin.disable();
+      ctrl.get('motifSansObjet')!.setValidators(Validators.required);
+    } else {
+      ctrl.get('motifSansObjet')!.clearValidators();
+      debut.setValidators(Validators.required);
+      debut.enable();
+      fin.enable();
+      ctrl.get('motifSansObjet')!.setValue('');
+    }
+    debut.updateValueAndValidity();
+    ctrl.get('motifSansObjet')!.updateValueAndValidity();
   }
   datesControls(form: FormGroup): FormGroup[] {
     return (form.get('datesPrev') as FormArray).controls as FormGroup[];
@@ -1829,6 +1874,8 @@ export class DetailPpmModal implements OnInit {
       idCapm: number | null;
       dateDebut: string;
       dateFin: string;
+      sansObjet?: boolean;
+      motifSansObjet?: string;
     }[];
     this.submittingEdit.set(true);
     this.reconcilierDates(
@@ -1845,10 +1892,16 @@ export class DetailPpmModal implements OnInit {
     );
   }
 
+  /** Un processus daté (début, fin facultative) ou sans objet (aucune date, le motif) — Q-pièce, V114. */
+  private datesOuSansObjet(r: { dateDebut: string; dateFin: string; sansObjet?: boolean; motifSansObjet?: string }): Partial<MarchePrevision> {
+    return r.sansObjet
+      ? { sansObjet: true, motifSansObjet: (r.motifSansObjet ?? '').trim() }
+      : { dateDebut: r.dateDebut, dateFin: r.dateFin || undefined };
+  }
   private reconcilierDates(
     idDetail: number,
     original: MarchePrevision[],
-    rows: { idPrevision: number | null; idCapm: number | null; dateDebut: string; dateFin: string }[],
+    rows: { idPrevision: number | null; idCapm: number | null; dateDebut: string; dateFin: string; sansObjet?: boolean; motifSansObjet?: string }[],
     done: () => void,
     fail: () => void,
   ): void {
@@ -1864,20 +1917,16 @@ export class DetailPpmModal implements OnInit {
             idPrevision: r.idPrevision as number,
             idDetail,
             idCapm: r.idCapm as number,
-            dateDebut: r.dateDebut,
-            // Date de fin optionnelle : chaîne vide → omise (date ISO ou rien, pas '').
-            dateFin: r.dateFin || undefined,
-          }),
+            ...this.datesOuSansObjet(r),
+          } as MarchePrevision),
         ),
         ...toCreate.map((r, i) =>
           this.previsionService.create({
             idPrevision: base + i + 1,
             idDetail,
             idCapm: r.idCapm as number,
-            dateDebut: r.dateDebut,
-            // Date de fin optionnelle : chaîne vide → omise (date ISO ou rien, pas '').
-            dateFin: r.dateFin || undefined,
-          }),
+            ...this.datesOuSansObjet(r),
+          } as MarchePrevision),
         ),
       ];
       if (!ops.length) {

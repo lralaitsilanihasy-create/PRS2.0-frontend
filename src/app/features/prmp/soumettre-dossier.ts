@@ -92,6 +92,8 @@ interface ApercuMarche {
   dateAttribution: string;
   coherenceErr: string | null;
   sansDates: boolean;
+  /** ⚠️ Q-pièce (V114) — processus du modèle de son mode ni datés ni sans objet : la soumission du plan sera refusée. */
+  capmManquants: string[];
 }
 /** Snapshot du dossier PPM à créer, mis en forme comme le PPM officiel (aucune création). */
 interface ApercuDossier {
@@ -1757,6 +1759,10 @@ export class SoumettreDossier {
           dateAttribution: dateDe('ATTRIBUTION'),
           coherenceErr: this.erreurCoherenceBenefs(g),
           sansDates: processus.length === 0,
+          capmManquants: this.factory
+            .capmsEffectifs(this.capms(), this.modesList(), l['modeLibelle'] as string)
+            .filter((c) => !processus.some((p) => p['idCapm'] === c.idCapm && (p['dateDebut'] || p['sansObjet'])))
+            .map((c) => c.libelleProcessus ?? '#' + c.idCapm),
         };
       });
     const v = this.ppmForm.getRawValue();
@@ -1861,6 +1867,7 @@ export class SoumettreDossier {
       const nom = m.designationMarche || `marché ${i + 1}`;
       if (m.coherenceErr) w.push(`« ${nom} » : ${m.coherenceErr}`);
       if (m.sansDates) w.push(`« ${nom} » : aucune date prévisionnelle (au moins un processus est obligatoire).`);
+      else if (m.capmManquants.length) w.push(`« ${nom} » : calendrier incomplet — à dater ou marquer sans objet avant la soumission : ${m.capmManquants.join(', ')}.`);
       if ((m.designationMarche ?? '').length > OBJET_MARCHE_MAX)
         w.push(`Marché ${i + 1} : l'objet dépasse la limite serveur de ${OBJET_MARCHE_MAX} caractères (${(m.designationMarche ?? '').length}).`);
     });
@@ -2182,12 +2189,8 @@ export class SoumettreDossier {
         beneficiaires: beneficiaires.length ? beneficiaires : undefined,
         // Lots (allotissement) — optionnels ; le serveur crée une t_lot par élément (aucun contrôle de somme).
         lots: lots.length ? lots : undefined,
-        processus: ((l['processus'] as Record<string, unknown>[]) ?? []).map((p) => ({
-          idCapm: p['idCapm'] as number,
-          dateDebut: p['dateDebut'] as string,
-          // Date de fin optionnelle : chaîne vide → omise (le backend attend une date ISO ou rien, pas '').
-          dateFin: (p['dateFin'] as string) || undefined,
-        })),
+        // Datés ou sans objet (Q-pièce, V114) : la fabrique construit chaque processus comme le serveur l'attend.
+        processus: this.factory.processusPourEnvoi(l['processus'] as Record<string, unknown>[]),
       };
     });
     this.saisie

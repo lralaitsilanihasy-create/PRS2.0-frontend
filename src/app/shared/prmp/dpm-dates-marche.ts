@@ -36,7 +36,8 @@ export function libelleCapm(capms: readonly Capm[], id: number): string {
               <thead><tr><th scope="col">Processus</th><th scope="col">Période prévisionnelle</th></tr></thead>
               <tbody>
                 @for (d of dates(); track d.idPrevision) {
-                  <tr><td>{{ capmLabel(d.idCapm) }}</td><td class="cnm-mono">{{ d.dateDebut || '—' }} → {{ d.dateFin || '—' }}</td></tr>
+                  <!-- ⚠️ Q-pièce (V114) — un processus sans objet se lit avec son motif, jamais comme une date manquante. -->
+                  <tr><td>{{ capmLabel(d.idCapm) }}</td>@if (d.sansObjet) { <td><em>Sans objet</em>@if (d.motifSansObjet) { — {{ d.motifSansObjet }} }</td> } @else { <td class="cnm-mono">{{ d.dateDebut || '—' }} → {{ d.dateFin || '—' }}</td> }</tr>
                 }
               </tbody>
             </table>

@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 
-import { Capm, FormeMarche, ModePassation, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot } from '../../models';
+import { Capm, FormeMarche, ModePassation, ProcessusMarche, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot } from '../../models';
 
 /**
  * Fabrique **partagée** des sous-formulaires d'une ligne de marché PPM (marché, bénéficiaire, lot,
@@ -42,13 +42,28 @@ export class PpmFormFactory {
   }
 
   /** Groupe processus prévisionnel { idCapm*, dateDebut*, dateFin? } (uid stable ; date de fin optionnelle). */
-  processusGroup(p?: { idCapm?: number | null; dateDebut?: string; dateFin?: string }): FormGroup {
+  processusGroup(p?: { idCapm?: number | null; dateDebut?: string; dateFin?: string; sansObjet?: boolean; motifSansObjet?: string | null }): FormGroup {
     return this.fb.group({
       uid: [this.nextUid()],
       idCapm: [p?.idCapm ?? null, Validators.required],
-      dateDebut: [p?.dateDebut ?? '', Validators.required],
+      dateDebut: [p?.dateDebut ?? '', p?.sansObjet ? [] : Validators.required],
       dateFin: [p?.dateFin ?? ''],
+      // ⚠️ Q-pièce (backend Q1, V114, 14/10) — processus sans objet pour la ligne : ni date, un motif.
+      sansObjet: [!!p?.sansObjet],
+      motifSansObjet: [p?.motifSansObjet ?? ''],
     });
+  }
+
+  /**
+   * Les processus d'une ligne tels que le serveur les attend (`ProcessusMarche`) : daté (début, fin facultative) ou sans objet
+   * (aucune date, le motif). Chaîne vide → omise : le serveur attend une date ISO ou rien.
+   */
+  processusPourEnvoi(liste: Record<string, unknown>[] | null | undefined): ProcessusMarche[] {
+    return (liste ?? []).map((p) =>
+      p['sansObjet']
+        ? { idCapm: p['idCapm'] as number, sansObjet: true, motifSansObjet: ((p['motifSansObjet'] as string) ?? '').trim() }
+        : { idCapm: p['idCapm'] as number, dateDebut: p['dateDebut'] as string, dateFin: (p['dateFin'] as string) || undefined },
+    );
   }
 
   /** Ligne de marché complète (au moins un bénéficiaire ; nature/mode en saisie libre ; forme = défaut). */
@@ -220,11 +235,7 @@ export class PpmFormFactory {
       justifDelaiAmenage: (l['justifDelaiAmenage'] as string)?.trim() || undefined,
       beneficiaires: beneficiaires.length ? beneficiaires : undefined,
       lots: lots.length ? lots : undefined,
-      processus: ((l['processus'] as Record<string, unknown>[]) ?? []).map((p) => ({
-        idCapm: p['idCapm'] as number,
-        dateDebut: p['dateDebut'] as string,
-        dateFin: (p['dateFin'] as string) || undefined,
-      })),
+      processus: this.processusPourEnvoi(l['processus'] as Record<string, unknown>[]),
     };
   }
 }

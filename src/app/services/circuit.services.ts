@@ -49,6 +49,15 @@ export class DossierService extends CrudService<Dossier> {
   protected readonly resource = 'dossiers';
 
   /**
+   * ⚠️ Q-pièce (backend Q2, V115, 14/10) — `GET /api/dossiers/{id}/calendrier-annuel` : le calendrier annuel de passation produit
+   * par l'application (PDF), depuis le plan ou depuis un dossier né d'une fiche (plan de sa ligne). 409 `CALENDRIER_INDISPONIBLE`
+   * pour un dossier sans plan dans l'application. Silencieux pour l'intercepteur : l'écran nomme le refus.
+   */
+  calendrierAnnuel(id: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${id}/calendrier-annuel`, { responseType: 'blob', context: skipErrorToast() });
+  }
+
+  /**
    * ⚠️ Manuel de contrôle, M2 (V95) — `GET /api/dossiers/{id}/pieces-exigees` : les pièces exigées **de ce dossier**, selon son
    * sous-type, obligation résolue par la catégorie et la forme de sa fiche. C'est la liste que la soumission et la recevabilité lisent.
    */

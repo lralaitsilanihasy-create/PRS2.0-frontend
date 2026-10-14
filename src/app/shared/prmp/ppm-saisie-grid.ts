@@ -284,28 +284,44 @@ export const OBJET_MARCHE_MAX = 4000;
             <span class="modal-title">CAPM du marché</span>
           </div>
           <div class="modal-body">
-            <p class="form-hint">Tous les processus du <strong>modèle CAPM de ce mode</strong> sont listés — renseignez les dates des processus concernés (<strong>au moins un</strong> ; les lignes non datées ne sont pas enregistrées). Les <strong>dates de début du PDF</strong> ne sont pas modifiables ; la <strong>date de fin</strong> (optionnelle) est pré-proposée à la veille du début suivant.</p>
+            <!-- ⚠️ Q-pièce (arbitrage du pilote, 14/10 ; backend Q1, V114) — le calendrier est complet : chaque processus du modèle
+                 est daté, ou marqué « sans objet » avec un motif. Un brouillon s'enregistre incomplet ; la soumission du plan le refuse. -->
+            <p class="form-hint">Tous les processus du <strong>modèle CAPM de ce mode</strong> sont listés : <strong>datez chacun</strong>, ou cochez
+              <strong>« Sans objet »</strong> avec un motif si l’étape n’existe pas pour ce marché. Le plan ne se soumet qu’avec un calendrier
+              complet. Les <strong>dates de début du PDF</strong> ne sont pas modifiables ; la <strong>date de fin</strong> (optionnelle) est
+              pré-proposée à la veille du début suivant.</p>
+            @if (procRestants(); as n) {
+              <p class="form-hint sd-proc-restants" role="status">{{ n }} processus ni daté{{ n > 1 ? 's' : '' }} ni sans objet : le plan ne pourra pas être soumis en l’état.</p>
+            }
             <div class="sd-proc-head" aria-hidden="true">
               <span>Processus</span>
               <span class="sd-proc-head-date">Début</span>
               <span class="sd-proc-head-date">Fin</span>
+              <span>Sans objet</span>
               <span></span>
             </div>
             @for (ctrl of procControls(); track ctrl.get('uid')!.value) {
               @if (titrePhase($index); as t) { <div class="sd-proc-phase">{{ t }}</div> }
               <div class="sd-proc-row" [formGroup]="ctrl">
                 <span class="sd-proc-lib" [title]="libelleProc(ctrl)">{{ libelleProc(ctrl) }}</span>
-                <input class="form-control sd-proc-date" type="date" formControlName="dateDebut" />
-                <input class="form-control sd-proc-date" type="date" formControlName="dateFin" />
+                <input class="form-control sd-proc-date" type="date" formControlName="dateDebut" [attr.aria-label]="'Début : ' + libelleProc(ctrl)" />
+                <input class="form-control sd-proc-date" type="date" formControlName="dateFin" [attr.aria-label]="'Fin : ' + libelleProc(ctrl)" />
+                <input type="checkbox" class="sd-proc-so" formControlName="sansObjet" (change)="basculerSansObjet(ctrl)" [attr.aria-label]="'Sans objet : ' + libelleProc(ctrl)" />
                 <button
                   type="button"
                   class="btn btn-secondary btn-sm sd-proc-clear"
                   [disabled]="!ligneDatee(ctrl)"
                   (click)="effacerProc(ctrl)"
-                  title="Supprimer ce processus (efface ses dates — il ne sera pas enregistré)"
-                  aria-label="Supprimer ce processus"
+                  title="Effacer les dates de ce processus"
+                  aria-label="Effacer les dates de ce processus"
                 >✕</button>
               </div>
+              @if (ctrl.get('sansObjet')!.value) {
+                <div class="sd-proc-motif" [formGroup]="ctrl">
+                  <input class="form-control" formControlName="motifSansObjet" maxlength="500"
+                    [attr.aria-label]="'Motif « sans objet » : ' + libelleProc(ctrl)" placeholder="Pourquoi cette étape n’existe pas pour ce marché" />
+                </div>
+              }
               @if (procErreur(ctrl.get('idCapm')!.value)) {
                 <span class="form-error sd-proc-err">{{ procErreur(ctrl.get('idCapm')!.value) }}</span>
               }
@@ -433,7 +449,10 @@ export const OBJET_MARCHE_MAX = 4000;
     .psg-statut--restauree { background: #DBEAFE; color: #1D4ED8; }
     /* Modal CAPM : colonnes ALIGNÉES sur toutes les lignes (libellé fluide | Début | Fin | ✕ fixes) —
        même gabarit de grille pour l'en-tête et chaque ligne, chaque date reste en face de son processus. */
-    .sd-proc-head, .sd-proc-row { display: grid; grid-template-columns: minmax(0, 1fr) 9.5rem 9.5rem 2.4rem; gap: 0.5rem; align-items: center; }
+    .sd-proc-head, .sd-proc-row { display: grid; grid-template-columns: minmax(0, 1fr) 9.5rem 9.5rem 5rem 2.4rem; gap: 0.5rem; align-items: center; }
+    .sd-proc-so { justify-self: center; width: 1.1rem; height: 1.1rem; }
+    .sd-proc-motif { padding: 0 0 0.3rem 1rem; }
+    .sd-proc-restants { color: var(--warning-text, #8a5a00); font-weight: 600; }
     .sd-proc-head { margin-top: 0.6rem; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--n-400); }
     .sd-proc-head-date { text-align: center; }
     .sd-proc-row { padding: 0.15rem 0; }
@@ -827,6 +846,30 @@ export class PpmSaisieGrid {
     ctrl.get('dateFin')!.setValue('');
     ctrl.markAsDirty();
   }
+  /** ⚠️ Q-pièce (V114) — « sans objet » coché : les dates se vident et se verrouillent ; décoché, le début redevient saisissable. */
+  basculerSansObjet(ctrl: FormGroup): void {
+    const so = !!ctrl.get('sansObjet')!.value;
+    const debut = ctrl.get('dateDebut')!;
+    const fin = ctrl.get('dateFin')!;
+    if (so) {
+      debut.setValue('');
+      fin.setValue('');
+      debut.disable();
+      fin.disable();
+    } else {
+      debut.enable();
+      fin.enable();
+      ctrl.get('motifSansObjet')!.setValue('');
+    }
+    ctrl.markAsDirty();
+  }
+  /** Processus du modal ni datés ni sans objet : le plan ne se soumettra pas en l'état (le serveur refuse CAPM_INCOMPLET). */
+  procRestants(): number {
+    return this.procControls().filter((c) => {
+      const v = c.getRawValue() as { dateDebut: string; sansObjet: boolean };
+      return !v.dateDebut && !v.sansObjet;
+    }).length;
+  }
   /** Libellé (fixe) du processus d'une ligne du modal — chaque ligne du modèle est affichée, datée ou non. */
   libelleProc(ctrl: FormGroup): string {
     const id = ctrl.get('idCapm')!.value as number | null;
@@ -914,10 +957,11 @@ export class PpmSaisieGrid {
     this.datesCapms.set(effectifs);
     this.datesForm.clear();
     // TOUS les processus du modèle sont affichés (comme le document CAPM) ; seuls les datés seront enregistrés.
-    const existants = new Map<number, { dateDebut: string; dateFin: string }>();
+    interface Existant { dateDebut: string; dateFin: string; sansObjet?: boolean; motifSansObjet?: string }
+    const existants = new Map<number, Existant>();
     (g.get('processus') as FormArray).controls.forEach((p) => {
-      const v = (p as FormGroup).getRawValue() as { idCapm: number | null; dateDebut: string; dateFin: string };
-      if (v.idCapm != null) existants.set(v.idCapm, { dateDebut: v.dateDebut, dateFin: v.dateFin });
+      const v = (p as FormGroup).getRawValue() as { idCapm: number | null } & Existant;
+      if (v.idCapm != null) existants.set(v.idCapm, { dateDebut: v.dateDebut, dateFin: v.dateFin, sansObjet: v.sansObjet, motifSansObjet: v.motifSansObjet });
     });
     // Réaffectation : des dates posées sur des processus HORS grille effective (ex. communs importés
     // avant le modèle du mode, ou mode changé après coup) sont REMAPPÉES par mot-clé sur la tâche
@@ -932,13 +976,14 @@ export class PpmSaisieGrid {
         existants.delete(idCapm);
       }
     }
-    const pousser = (idCapm: number, ex?: { dateDebut: string; dateFin: string }) => {
-      const grp = this.factory.processusGroup({ idCapm, dateDebut: ex?.dateDebut ?? '', dateFin: ex?.dateFin ?? '' });
+    const pousser = (idCapm: number, ex?: Existant) => {
+      const grp = this.factory.processusGroup({ idCapm, dateDebut: ex?.dateDebut ?? '', dateFin: ex?.dateFin ?? '', sansObjet: ex?.sansObjet, motifSansObjet: ex?.motifSansObjet });
       // Dates optionnelles ligne à ligne (le Valider ne retient que les lignes datées).
       grp.get('dateDebut')!.removeValidators(Validators.required);
       grp.get('dateDebut')!.updateValueAndValidity();
       // Date de début issue du PDF (non vide) → verrouillée (non modifiable) ; une saisie manuelle reste éditable.
       if (ex?.dateDebut) grp.get('dateDebut')!.disable();
+      if (ex?.sansObjet) { grp.get('dateDebut')!.disable(); grp.get('dateFin')!.disable(); }
       this.datesForm.push(grp);
     };
     for (const c of effectifs) {
@@ -960,12 +1005,19 @@ export class PpmSaisieGrid {
     const g = this.datesCible();
     if (!g) return;
     this.erreurDates.set(null);
-    // Lignes datées = début renseigné ; une fin seule est incomplète ; les lignes vides sont ignorées.
+    // Lignes datées = début renseigné ; sans objet = motif obligatoire, aucune date ; une fin seule est incomplète ; les lignes
+    // vides ne sont pas enregistrées (le brouillon peut rester incomplet : la soumission du plan le refusera).
     const err: Record<number, string> = {};
     const datees: FormGroup[] = [];
+    const sansObjet: FormGroup[] = [];
     for (const c of this.procControls()) {
-      const v = c.getRawValue() as { idCapm: number | null; dateDebut: string; dateFin: string };
+      const v = c.getRawValue() as { idCapm: number | null; dateDebut: string; dateFin: string; sansObjet: boolean; motifSansObjet: string };
       if (v.idCapm == null) continue;
+      if (v.sansObjet) {
+        if (!v.motifSansObjet?.trim()) err[v.idCapm] = 'Donnez le motif : pourquoi cette étape n’existe pas pour ce marché.';
+        else sansObjet.push(c);
+        continue;
+      }
       if (!v.dateDebut && v.dateFin) {
         err[v.idCapm] = 'Renseignez la date de début (ou retirez la date de fin).';
         continue;
@@ -976,14 +1028,14 @@ export class PpmSaisieGrid {
       this.procErreurs.set(err);
       return;
     }
-    if (!datees.length) {
-      this.erreurDates.set('Datez au moins un processus.');
+    if (!datees.length && !sansObjet.length) {
+      this.erreurDates.set('Datez au moins un processus, ou marquez-le sans objet.');
       return;
     }
     if (!this.validerChronologie(datees)) return;
     const arr = g.get('processus') as FormArray;
     arr.clear();
-    datees.forEach((c) => arr.push(this.factory.processusGroup(c.getRawValue())));
+    [...datees, ...sansObjet].forEach((c) => arr.push(this.factory.processusGroup(c.getRawValue())));
     g.markAsDirty();
     this.datesCible.set(null);
   }

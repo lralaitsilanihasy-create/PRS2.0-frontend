@@ -325,7 +325,8 @@ export class PpmMarchesTable implements OnInit {
         const prevs = prevByDetail.get(m.idDetail) ?? [];
         const dateDe = (kw: string): string => {
           const p = prevs.find((x) => (capm.get(String(x.idCapm)) ?? '').toUpperCase().includes(kw));
-          return p ? dateOfficielle(p.dateDebut) : '';
+          // ⚠️ Q-pièce (V114) — étape sans objet pour ce marché : dite comme telle, pas laissée vide.
+          return p ? (p.sansObjet ? 'sans objet' : dateOfficielle(p.dateDebut)) : '';
         };
         return {
           source: m,

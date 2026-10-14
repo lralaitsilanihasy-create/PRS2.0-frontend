@@ -61,8 +61,23 @@ export function messageControlesBloquants(e: ApiError | HttpErrorResponse): stri
 export function messageSoumissionRefusee(e: ApiError, repli = 'Échec de la soumission.'): string {
   const bloquants = messageControlesBloquants(e);
   if (bloquants) return bloquants;
+  const capm = messageCapmIncomplet(e);
+  if (capm) return capm;
   const detail = e.fieldErrors ? Object.values(e.fieldErrors).join(' ') : '';
   return detail || e.message || repli;
+}
+
+/**
+ * ⚠️ Q-pièce (backend Q1, V114, 14/10) — le refus 409 `CAPM_INCOMPLET` à la soumission d'un plan : chaque ligne doit dater ou marquer
+ * « sans objet » tous les processus du calendrier de son mode. `details.lignes` = `[{ idDetail, designation, processus: [libellés] }]`.
+ */
+export function messageCapmIncomplet(e: ApiError | HttpErrorResponse): string | null {
+  if (codeErreur(e) !== 'CAPM_INCOMPLET') return null;
+  const lignes = corpsErreur<{ details?: { lignes?: { designation?: string | null; processus?: string[] }[] } }>(e)?.details?.lignes ?? [];
+  const tete = 'Le calendrier prévisionnel est incomplet : chaque ligne doit dater, ou marquer « sans objet » avec un motif, tous les processus de son mode de passation.';
+  if (!lignes.length) return tete;
+  const detail = lignes.map((l) => `« ${l.designation || 'ligne sans objet'} » : ${(l.processus ?? []).join(', ')}`).join(' ; ');
+  return `${tete} À compléter — ${detail}.`;
 }
 
 /** Le refus 409 `CONTROLE_NON_CONFORME` de l'avis « Favorable » sans réserve ; `null` pour une autre erreur. */

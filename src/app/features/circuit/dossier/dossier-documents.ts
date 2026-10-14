@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 
+import { CalendrierAnnuel } from '../../../shared/circuit/calendrier-annuel';
 import { ControlesDossier } from '../../../shared/circuit/controles-dossier';
 import { controlesEffectifs } from '../../../shared/circuit/controles-libelles';
 import { AgpmDoc } from '../../../shared/prmp/agpm-doc';
@@ -19,7 +20,7 @@ import { DossierVersions } from './dossier-versions';
 @Component({
   selector: 'app-dossier-documents',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PpmMarchesTable, FichePresentationDoc, AgpmDoc, DocumentVisionneuse, DossierPieces, DossierVersions, DossierInstantanes, ControlesDossier],
+  imports: [PpmMarchesTable, FichePresentationDoc, AgpmDoc, DocumentVisionneuse, DossierPieces, DossierVersions, DossierInstantanes, ControlesDossier, CalendrierAnnuel],
   host: { '[class.dc-documents--borne]': 'panneauBorne()' },
   template: `
     @if (contenu.estPpm()) {
@@ -64,6 +65,8 @@ import { DossierVersions } from './dossier-versions';
              versionnement en annotations, masquables (interrupteur commun aux onglets).
              Dans un panneau hôte borné (vérification), l'en-tête du plan y reste collant. -->
         <div class="dc-section">
+          <!-- ⚠️ Q-pièce (14/10, backend V115) — le calendrier annuel produit par l'application, à la place de la pièce signée. -->
+          <app-calendrier-annuel [idDossier]="contenu.dossier().idDossier" />
           <app-document-visionneuse [interrupteur]="true" [(annotations)]="annotationsDoc" [class.doc-entete-collante]="panneauBorne() || enteteCollante()">
             <app-ppm-marches-table [marches]="contenu.marches()" [beneficiaires]="contenu.serviceBenefs()" [previsions]="contenu.previsions()" [changements]="contenu.changements()" [legendeTitre]="contenu.legendeChangements()" [detailsChangements]="contenu.detailsChangements()" />
           </app-document-visionneuse>
@@ -139,6 +142,8 @@ import { DossierVersions } from './dossier-versions';
       }
       @if (!ongletsProcedure() || ongletProcedure() === 'pieces') {
         <div class="dc-section">
+          <!-- ⚠️ Q-pièce (14/10) — un dossier né d'une fiche DAO lit le calendrier annuel du plan de sa ligne. -->
+          @if (contenu.dossier().idDmc) { <app-calendrier-annuel [idDossier]="contenu.dossier().idDossier" /> }
           <app-dossier-pieces />
         </div>
       }

@@ -296,13 +296,23 @@ export interface MarchePrevision {
   dateFin?: string;
   /** Lecture seule (réponse) — `t_capm.ordre`, pour le tri d'affichage. */
   ordre?: number;
+  /**
+   * ⚠️ Q-pièce (backend Q1, V114, 14/10) — processus marqué « sans objet » pour cette ligne par la PRMP : aucune date
+   * (`dateDebut` vide), un motif obligatoire (500 caractères). Compte comme renseigné pour le calendrier complet.
+   */
+  sansObjet?: boolean;
+  motifSansObjet?: string | null;
 }
 
 /** Un processus prévisionnel d'un marché à la saisie (`POST /api/saisies/ppm`). */
 export interface ProcessusMarche {
   idCapm: number;
-  dateDebut: string; // yyyy-MM-dd
+  /** yyyy-MM-dd — absente quand le processus est sans objet. */
+  dateDebut?: string;
   dateFin?: string; // yyyy-MM-dd — optionnelle (fin non connue / période ouverte)
+  /** ⚠️ Q-pièce (V114) — sans objet pour cette ligne : pas de date, un motif. */
+  sansObjet?: boolean;
+  motifSansObjet?: string;
 }
 
 /**

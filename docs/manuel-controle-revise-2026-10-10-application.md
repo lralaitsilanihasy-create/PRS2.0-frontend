@@ -736,5 +736,16 @@ Restent à trancher : **Q1**, **Q7** à **Q13**, **Q15** à **Q17**, **Q-pièce*
 >   vérifiée par la PRMP, **bloquante avant la signature du marché** (comme les pièces fiscales et sociales).
 > - **Paramètre par procédure** `SIGNATURE_OFFRE` : `SCELLE_PLUS_ORIGINAL` (défaut) / `CERTIFIEE` (quand l'écosystème le permettra).
 
-Suite : demande backend lot 2 (`demande-backend-2026-10-10-manuel-revise-lot2.md`). Restent ouverts : Q7 à Q12, Q15 à Q17, Q-pièce, et les
+Suite : demande backend lot 2 (`demande-backend-2026-10-10-manuel-revise-lot2.md`). Restent ouverts : Q7 à Q12, Q15 à Q17, et les
 valeurs « à confirmer » ci-dessus.
+
+> ⚠️ **2026-10-14 — Q-pièce tranchée (§22).**
+
+## 22. Arbitrage du pilote (2026-10-14) : Q-pièce — calendrier annuel et canevas de rapport
+
+| Question | Décision du pilote | Conséquence |
+|---|---|---|
+| **Calendrier annuel de passation** : dériver un document des prévisions de l'exercice ? | *« La saisie du calendrier annuel de passation est obligatoire lors de la création du plan de passation. »* Précisé le 14/10 : **toutes les étapes datées** — chaque ligne date **tous** les processus du modèle de calendrier (CAPM) de son mode de passation. | La règle « au moins un processus daté » devient « tous les processus du modèle datés », à la création du plan et à chaque nouvelle version. Le calendrier annuel est **produit par l'application** à partir du plan contrôlé ; la pièce « Calendrier annuel de passation mis à jour et signé » **n'est plus demandée** au dossier d'appel d'offres conduit dans l'application. |
+| **Canevas de rapport d'évaluation** : faire valider son canevas une fois et retirer la pièce ? | *« Le modèle de canevas de rapport d'évaluation va dépendre du sous-type de dossier ; ce canevas est celui qui sera utilisé à l'étape de l'évaluation des offres. »* Précisé le 14/10 : **les modèles sont fournis par le pilote**, un par sous-type. | La pièce « Canevas de rapport d'évaluation » **n'est plus demandée** au dépôt du dossier : le canevas est un modèle de l'application, choisi par le sous-type du dossier, et c'est sur lui que le rapport d'évaluation est produit. Tant que les modèles ne sont pas fournis, le rapport garde le plan du guide (livré le 07/10). Rejoint la question Q15 (modèles et annexes du manuel). |
+
+Suite : `demande-backend-2026-10-14-q-piece.md`.
