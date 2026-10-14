@@ -344,6 +344,12 @@ export interface LotAttribution {
   recours?: Recours[];
   signature?: { dateSignature: string; le: string; par: string | null; fichier: FichierAttribution | null } | null;
   enregistrement?: { date: string; reference: string | null; le: string; fichier: FichierAttribution | null } | null;
+  /**
+   * ⚠️ R9a (V111, 14/10, art. 54) — l'approbation du marché par l'autorité compétente, entre la signature et la notification ; nulle
+   * avant le geste. Indépendante de l'enregistrement ; la notification exige les deux (409 `MARCHE_NON_APPROUVE`). Un lot notifié avant
+   * V111 n'en a pas.
+   */
+  approbation?: { autorite: string; date: string; le: string; par: string | null; fichier: FichierAttribution | null } | null;
   notification?: { date: string; le: string; par: string | null; recueLe: string | null; receptionDeclaree: boolean } | null;
   avisAttribution?: { echeance: string; datePublication: string | null; publieLe: string | null; par: string | null; disponible: boolean } | null;
   piecesAttributaire?: PiecesAttributaire | null;

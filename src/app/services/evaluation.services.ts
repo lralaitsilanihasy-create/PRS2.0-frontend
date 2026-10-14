@@ -343,7 +343,16 @@ export class AttributionService {
     return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/enregistrement`, this.formulaire({ dateEnregistrement, reference: reference ?? '' }, fichier), this.ctx);
   }
 
-  /** 409 `NON_ENREGISTRE` : aucune notification sans enregistrement (art. 54). */
+  /**
+   * ⚠️ R9a (V111, 14/10) — l'approbation du marché (PRMP) : `autorite`, `dateApprobation` entre la signature et aujourd'hui, la décision
+   * en fichier. 400 `CHAMP_OBLIGATOIRE`, `CHAMP_TROP_LONG`, `DATE_INVALIDE`, `FICHIER_OBLIGATOIRE` ; 409 `NON_SIGNE`, `DEJA_APPROUVE`,
+   * `DEJA_NOTIFIE`.
+   */
+  approuver(idDmc: number, lot: number, autorite: string, dateApprobation: string, fichier: File): Observable<Attribution> {
+    return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/approbation`, this.formulaire({ autorite, dateApprobation }, fichier), this.ctx);
+  }
+
+  /** 409 `MARCHE_NON_APPROUVE` (R9a), `NON_ENREGISTRE` : aucune notification sans approbation ni enregistrement (art. 54). */
   notifier(idDmc: number, lot: number, dateNotification: string, dateReception: string | null): Observable<Attribution> {
     return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/notification`, { dateNotification, dateReception }, this.ctx);
   }

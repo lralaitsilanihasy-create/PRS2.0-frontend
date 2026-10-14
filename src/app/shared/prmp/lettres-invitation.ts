@@ -10,7 +10,7 @@ import { CandidatInvite, DisponibiliteAvis, DocumentFiche, Preselection, RetenuA
 import { AmiService } from '../../services/ami.services';
 import { FicheMarcheService } from '../../services/fiche-marche.services';
 import { ModaleDirective } from '../a11y/modale.directive';
-import { erreurCandidat, horodatage, jjmmaaaa, lettresImprimees, messageIndisponible } from './avis-specifique-modele';
+import { erreurCandidat, horodatage, jjmmaaaa, lettresImprimees, messageDaoCompletAbsent, messageIndisponible } from './avis-specifique-modele';
 import { MentionsDocumentVue } from './mentions-document';
 
 /** Une ligne de la liste restreinte en cours de saisie (`id` : clé de suivi stable). */
@@ -157,6 +157,7 @@ export class LettresInvitation implements OnInit {
           this.envoi.set(false);
           this.ouverte.set(false);
           this.documents.update((d) => [...produits, ...d]);
+          this.etat.update((e) => (e && e.daoComplet === 'A_ASSEMBLER' ? { ...e, daoComplet: 'PRODUIT' } : e));
           const n = this.listeAmi()?.length ?? corps.candidats.length;
           this.toast.success(`${n} lettre${n > 1 ? 's' : ''} d’invitation imprimée${n > 1 ? 's' : ''} : en tête de la liste, en PDF et en Word.`);
         },
@@ -179,6 +180,11 @@ export class LettresInvitation implements OnInit {
             const raison = corpsErreur<{ details?: { raison?: string } }>(e)?.details?.raison ?? null;
             this.refus.set(messageIndisponible(raison) ?? 'Les lettres d’invitation ne sont plus disponibles pour ce dossier.');
             this.charger();
+            return;
+          }
+          // ⚠️ R9a (V111) — le DAO complet, assemblé à l'impression s'il manque, n'a pas pu l'être.
+          if (e.status === 409 && codeErreur(e) === 'DAO_COMPLET_ABSENT') {
+            this.refus.set(messageDaoCompletAbsent(e, 'lettres'));
             return;
           }
           this.refus.set('L’impression a échoué. Réessayez.');

@@ -10,6 +10,7 @@ import {
   ParametreAgpmSeuil,
   ParametreCaoQuorum,
   ParametreCompteDao,
+  ParametreRecoursSuspensifs,
   ParametreRemiseElectronique,
   ParametreSigmpTransition,
   ParametresCandidats,
@@ -153,6 +154,21 @@ export class ParametreSigmpTransitionService {
 
   definir(corps: Pick<ParametreSigmpTransition, 'finTransition' | 'decisionReference' | 'decisionDate'>): Observable<ParametreSigmpTransition> {
     return this.http.put<ParametreSigmpTransition>(this.url, corps, { context: skipErrorToast() });
+  }
+}
+
+/** ⚠️ Manuel révisé lot 2, R9a (V111, 14/10) — les recours suspensifs : lus par tout authentifié, réglés par l'Administrateur. */
+@Injectable({ providedIn: 'root' })
+export class ParametreRecoursSuspensifsService {
+  private readonly http = inject(HttpClient);
+  private readonly url = `${environment.apiUrl}/parametres/recours-suspensifs`;
+
+  lire(): Observable<ParametreRecoursSuspensifs> {
+    return this.http.get<ParametreRecoursSuspensifs>(this.url, { context: skipErrorToast() });
+  }
+
+  definir(types: string[]): Observable<ParametreRecoursSuspensifs> {
+    return this.http.put<ParametreRecoursSuspensifs>(this.url, { types }, { context: skipErrorToast() });
   }
 }
 

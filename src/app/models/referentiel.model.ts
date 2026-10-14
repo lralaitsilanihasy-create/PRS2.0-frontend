@@ -1,4 +1,5 @@
 import { EtapeCircuit } from './circuit.model';
+import { TypeRecours } from './evaluation.model';
 
 /** Référentiels (lecture ouverte, écriture ADMINISTRATEUR) + suggestion de mode. */
 
@@ -315,6 +316,16 @@ export interface ParametreSigmpTransition {
   decisionDate: string | null;
   transitionEnCours: boolean;
   pied: string;
+}
+
+/**
+ * ⚠️ Manuel révisé lot 2, R9a (V111, 14/10, titre VIII) — les recours qui **suspendent la signature** : sous-ensemble des types
+ * connus, vide = aucun ; lu par tout authentifié, réglé par l'Administrateur. Lu à chaque question par le serveur (y compris pour un
+ * recours déjà déclaré). `GET`/`PUT /api/parametres/recours-suspensifs` ; 400 `RECOURS_INVALIDE`.
+ */
+export interface ParametreRecoursSuspensifs {
+  types: TypeRecours[];
+  connus: TypeRecours[];
 }
 
 /** ⚠️ Manuel révisé, R6a (V106) — un des neuf délais de la loi n° 2016-055 (`GET /api/delais-legaux`, table en code, lecture seule). */

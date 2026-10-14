@@ -171,6 +171,16 @@ export function horodatage(iso: string | null | undefined): string {
 }
 
 /**
+ * ⚠️ R9a (V111, 14/10, art. 31) — le refus 409 `DAO_COMPLET_ABSENT` de l'impression de l'avis ou des lettres : le DAO complet de la
+ * version validée n'a pas pu être assemblé. Le rattrapage périodique du serveur le reprend : réessayer plus tard.
+ */
+export function messageDaoCompletAbsent(e: ApiError | HttpErrorResponse, quoi: 'avis' | 'lettres'): string {
+  const version = corpsErreur<{ details?: { version?: number } }>(e)?.details?.version;
+  const doc = quoi === 'avis' ? 'L’avis ne s’imprime' : 'Les lettres ne s’impriment';
+  return `${doc} qu’avec le dossier d’appel d’offres complet${version != null ? ' de la version ' + version : ''}, qui n’a pas pu être assemblé. Le serveur le reprendra de lui-même : réessayez dans quelques minutes.`;
+}
+
+/**
  * ⚠️ Manuel révisé, R6a (V106, 13/10 ; loi n° 2016-055 art. 35-II et 41-II) — le refus 409 `DELAI_PUBLICITE` à l'impression de l'avis :
  * la date limite de remise est à moins du délai légal de la date de publication saisie. `details` : `code`, `requis`, `constate`,
  * `depart`, `limite`.

@@ -4,8 +4,8 @@ import { RouterLink } from '@angular/router';
 import { ApiError, codeErreur, corpsErreur } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur, telechargerBlob } from '../../core/securite/fichiers-surs';
-import { Attribution, LotAttribution } from '../../models';
-import { AttributionService } from '../../services';
+import { Attribution, LotAttribution, TypeRecours } from '../../models';
+import { AttributionService, ParametreRecoursSuspensifsService } from '../../services';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 import { AttributionLot } from './attribution-lot';
 import { DecisionsLot } from './decisions-lot';
@@ -73,7 +73,7 @@ const ETATS_SIGNES: readonly string[] = ['SIGNE', 'NOTIFIE', 'PUBLIE', 'RETIRE',
               }
             </div>
             <!-- ⚠️ Tranches 2b et 2c — de l'avis de la Commission à l'avis d'attribution. -->
-            @if (l.dossierMarche?.avis || l.attributaire) { <app-attribution-lot [idDmc]="idDmc()" [lot]="l" [prmp]="prmp()" (maj)="maj($event)" /> }
+            @if (l.dossierMarche?.avis || l.attributaire) { <app-attribution-lot [idDmc]="idDmc()" [lot]="l" [prmp]="prmp()" [recoursSuspensifs]="recoursSuspensifs()" (maj)="maj($event)" /> }
             <!-- ⚠️ 2d-1 (V91) — infructuosité, reprise après avis défavorable, et l'historique des reprises. -->
             <app-decisions-lot [idDmc]="idDmc()" [lot]="l" [prmp]="prmp()" (maj)="maj($event)" />
             @if (peutCreer(l)) {
@@ -103,7 +103,10 @@ export class AttributionLots implements OnInit {
   readonly prmp = input(false);
 
   private readonly service = inject(AttributionService);
+  private readonly recours = inject(ParametreRecoursSuspensifsService);
   private readonly toast = inject(ToastService);
+  /** ⚠️ R9a (V111, 14/10) — les recours suspensifs du réglage de l'Administrateur, lus une fois pour tous les lots ; nul si illisible. */
+  readonly recoursSuspensifs = signal<TypeRecours[] | null>(null);
   readonly etats = LIBELLES_ETAT;
   readonly avis = LIBELLES_AVIS;
   readonly ariary = ariary;
@@ -118,6 +121,7 @@ export class AttributionLots implements OnInit {
 
   ngOnInit(): void {
     this.charger();
+    if (this.prmp()) this.recours.lire().subscribe({ next: (p) => this.recoursSuspensifs.set(p.types), error: () => this.recoursSuspensifs.set(null) });
   }
 
   charger(): void {

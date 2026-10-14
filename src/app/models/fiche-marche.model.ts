@@ -673,6 +673,12 @@ export interface DisponibiliteAvis {
   statutPv: string | null;
   statutDossier: string | null;
   idDossierSoumis: number | null;
+  /**
+   * ⚠️ R9a (V111, 14/10, art. 31) — l'avis et les lettres exigent le DAO complet de la version validée : `PRODUIT` ; `A_ASSEMBLER`
+   * (assemblé à l'impression, ~20 s, qui peut rendre 409 `DAO_COMPLET_ABSENT`) ; `SANS_ASSEMBLAGE` (serveur sans Word : la règle ne
+   * s'applique pas) ; nul sans version validée. Indicatif : `disponible` n'en dépend pas.
+   */
+  daoComplet?: 'PRODUIT' | 'A_ASSEMBLER' | 'SANS_ASSEMBLAGE' | null;
 }
 
 /**

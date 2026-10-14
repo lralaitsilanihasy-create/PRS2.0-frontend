@@ -120,12 +120,16 @@
           </fieldset>
         }
 
+        <!-- ⚠️ R9a (V111) — le DAO complet manque : l'impression l'assemble d'abord (la requête attend), ou rend DAO_COMPLET_ABSENT. -->
+        @if (etat()?.daoComplet === 'A_ASSEMBLER') {
+          <div class="alert alert-info" role="status"><span>Le dossier d’appel d’offres complet de la version validée n’est pas encore assemblé : l’impression l’assemble d’abord, ce qui prend une vingtaine de secondes.</span></div>
+        }
         @if (refus(); as r) { <div class="alert alert-danger" role="alert"><span>{{ r }}</span></div> }
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline" [disabled]="envoi()" (click)="fermer()">Annuler</button>
         <button type="button" class="btn btn-primary" [disabled]="envoi() || !complete()" (click)="imprimer()">
-          {{ envoi() ? 'Impression…' : 'Imprimer ' + nombreLettres() + ' lettre' + (nombreLettres() > 1 ? 's' : '') }}
+          {{ envoi() ? (etat()?.daoComplet === 'A_ASSEMBLER' ? 'Assemblage du DAO complet…' : 'Impression…') : 'Imprimer ' + nombreLettres() + ' lettre' + (nombreLettres() > 1 ? 's' : '') }}
         </button>
       </div>
     </div>

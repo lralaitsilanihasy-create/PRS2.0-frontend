@@ -5,6 +5,7 @@ import { ApiError, codeErreur } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur, telechargerBlob, validerFichier } from '../../core/securite/fichiers-surs';
 import { Attribution, FichierAttribution, LotAttribution, TypeRecours } from '../../models';
+import { LIBELLES_RECOURS, MENTION_NON_SUSPENSIF, MENTION_SUSPENSIF } from './libelles-evaluation';
 import { AttributionService } from '../../services';
 import { dateFr } from '../../core/interim/interim-libelles';
 import { dateHeureFr } from '../candidat/libelles-candidat';
@@ -50,16 +51,15 @@ const MESSAGES: Readonly<Record<string, string>> = {
   NON_SIGNE: 'Le marché n’est pas encore signé.',
   DEJA_ENREGISTRE: 'Le marché est déjà enregistré.',
   NON_ENREGISTRE: 'Aucune notification sans enregistrement (art. 54).',
+  // ⚠️ R9a (V111, 14/10) — l'approbation du marché, avant la notification (art. 54).
+  DEJA_APPROUVE: 'Le marché est déjà approuvé.',
+  MARCHE_NON_APPROUVE: 'Aucune notification sans l’approbation du marché (art. 54).',
+  CHAMP_TROP_LONG: 'Un champ dépasse la longueur admise.',
   DEJA_NOTIFIE: 'Le marché est déjà notifié.',
   NON_NOTIFIE: 'Le marché n’est pas encore notifié.',
   DEJA_PUBLIE: 'L’avis d’attribution est déjà publié.',
 };
 
-export const LIBELLES_RECOURS: Readonly<Record<TypeRecours, string>> = {
-  REEXAMEN: 'Demande de réexamen auprès de la PRMP (art. 79) — non suspensive, réponse sous 10 jours',
-  REVISION_ARMP: 'Demande en révision auprès de l’ARMP (art. 80) — suspend la signature, 20 jours au plus',
-  REFERE: 'Référé précontractuel (art. 78) — suspend la signature, 20 jours au plus',
-};
 const ISSUES: Readonly<Record<string, string>> = { REJETE: 'Rejeté', ACCUEILLI: 'Accueilli', AUTRE: 'Autre issue' };
 
 /** Aujourd'hui, au format des champs de date (`AAAA-MM-JJ`), à l'heure locale. */
@@ -195,7 +195,7 @@ function aujourdhui(): string {
                 <label class="form-group"><span class="form-label">Type</span>
                   <select class="form-control" (change)="poser('rtype', $any($event.target).value)">
                     <option value="">—</option>
-                    @for (t of typesRecours; track t) { <option [value]="t" [selected]="champ('rtype') === t">{{ libellesRecours[t] }}</option> }
+                    @for (t of typesRecours; track t) { <option [value]="t" [selected]="champ('rtype') === t">{{ libelleTypeRecours(t) }}</option> }
                   </select>
                 </label>
                 <label class="form-group"><span class="form-label">Reçu le</span><input class="form-control" type="date" [value]="champ('rdate')" (input)="poser('rdate', $any($event.target).value)" /></label>
@@ -263,7 +263,7 @@ function aujourdhui(): string {
           </details>
         }
 
-        <!-- 7. Signature, 8. enregistrement, 9. notification, 10. avis -->
+        <!-- 7. Signature, 8. approbation et enregistrement (indépendants l'un de l'autre), 9. notification, 10. avis -->
         @if (l.signature; as sg) {
           <section class="al__bloc al__fait" aria-label="Signature"><h4 class="al__h4">Marché signé le {{ date(sg.dateSignature) }}</h4>
             @if (sg.fichier) { <button type="button" class="btn btn-ghost btn-sm al__btn" (click)="ouvrirFichier(sg.fichier)">{{ sg.fichier.nom }}</button> }
@@ -275,7 +275,24 @@ function aujourdhui(): string {
             <div class="al__ligne">
               <label class="form-group"><span class="form-label">Date de signature</span><input class="form-control" type="date" [value]="champ('sdate')" (input)="poser('sdate', $any($event.target).value)" /></label>
               <label class="form-group al__large"><span class="form-label">Le marché signé (PDF, JPEG, PNG)</span><input class="form-control" type="file" accept="application/pdf,image/jpeg,image/png" (change)="choisir('sfichier', $any($event.target))" /></label>
-              <button type="button" class="btn btn-primary btn-sm" [disabled]="!champ('sdate') || !fichier('sfichier') || occupe()" (click)="geste(service.signer(idDmc(), l.lot, champ('sdate'), fichier('sfichier')!), 'Le marché signé est déposé ; enregistrez-le avant de le notifier.')">Déposer le marché signé</button>
+              <button type="button" class="btn btn-primary btn-sm" [disabled]="!champ('sdate') || !fichier('sfichier') || occupe()" (click)="geste(service.signer(idDmc(), l.lot, champ('sdate'), fichier('sfichier')!), 'Le marché signé est déposé ; approuvez-le et enregistrez-le avant de le notifier.')">Déposer le marché signé</button>
+            </div>
+          </section>
+        }
+        <!-- ⚠️ R9a (V111, 14/10) — l'approbation du marché par l'autorité compétente (art. 54) : sans elle, pas de notification. -->
+        @if (l.approbation; as ap) {
+          <section class="al__bloc al__fait" aria-label="Approbation"><h4 class="al__h4">Approuvé le {{ date(ap.date) }} — {{ ap.autorite }}</h4>
+            @if (ap.fichier) { <button type="button" class="btn btn-ghost btn-sm al__btn" (click)="ouvrirFichier(ap.fichier)">{{ ap.fichier.nom }}</button> }
+          </section>
+        } @else if (prmp() && l.signature && !l.notification) {
+          <section class="al__bloc" aria-label="Approbation">
+            <h4 class="al__h4">Approbation du marché (art. 54)</h4>
+            <p class="text-sm text-muted">Par l’autorité compétente, à une date comprise entre la signature et aujourd’hui ; la décision d’approbation est jointe.</p>
+            <div class="al__ligne">
+              <label class="form-group al__large"><span class="form-label">Autorité d’approbation</span><input class="form-control" type="text" maxlength="200" [value]="champ('aaut')" (input)="poser('aaut', $any($event.target).value)" /></label>
+              <label class="form-group"><span class="form-label">Date d’approbation</span><input class="form-control" type="date" [min]="l.signature?.dateSignature ?? null" [max]="aujourdhui" [value]="champ('adate')" (input)="poser('adate', $any($event.target).value)" /></label>
+              <label class="form-group al__large"><span class="form-label">Décision d’approbation (PDF, JPEG, PNG)</span><input class="form-control" type="file" accept="application/pdf,image/jpeg,image/png" (change)="choisir('afichier', $any($event.target))" /></label>
+              <button type="button" class="btn btn-primary btn-sm" [disabled]="!champ('aaut').trim() || !champ('adate') || !fichier('afichier') || occupe()" (click)="geste(service.approuver(idDmc(), l.lot, champ('aaut').trim(), champ('adate'), fichier('afichier')!), 'Le marché est approuvé.')">Déclarer l’approbation</button>
             </div>
           </section>
         }
@@ -296,7 +313,7 @@ function aujourdhui(): string {
             </section>
           }
         }
-        @if (l.enregistrement) {
+        @if (l.notification || (l.enregistrement && l.approbation)) {
           @if (l.notification; as nt) {
             <section class="al__bloc al__fait" aria-label="Notification">
               <h4 class="al__h4">Notifié le {{ date(nt.date) }}</h4>
@@ -312,6 +329,8 @@ function aujourdhui(): string {
               </div>
             </section>
           }
+        } @else if (prmp() && l.signature && !l.retrait) {
+          <p class="text-sm text-muted">La notification s’ouvre quand le marché est <strong>approuvé</strong> et <strong>enregistré</strong> (art. 54){{ manqueNotification(l) }}.</p>
         }
         @if (l.avisAttribution; as av) {
           <section class="al__bloc" [class.al__fait]="av.publieLe" aria-label="Avis d'attribution">
@@ -362,6 +381,8 @@ export class AttributionLot {
   readonly lot = input.required<LotAttribution>();
   /** La PRMP de la fiche : seule à agir sur l'attribution (l'UGPM lit). */
   readonly prmp = input(false);
+  /** ⚠️ R9a (V111) — les recours qui suspendent la signature, selon le réglage du moment ; nul : non lu (la liste n'en dit rien). */
+  readonly recoursSuspensifs = input<TypeRecours[] | null>(null);
   readonly maj = output<Attribution | null>();
 
   readonly service = inject(AttributionService);
@@ -372,12 +393,26 @@ export class AttributionLot {
   readonly dateHeure = dateHeureFr;
   readonly libellesRecours = LIBELLES_RECOURS;
   readonly typesRecours = Object.keys(LIBELLES_RECOURS) as TypeRecours[];
+
+  /** Le type à déclarer, avec son effet sur la signature d'après le réglage de l'Administrateur (R9a). */
+  libelleTypeRecours(t: TypeRecours): string {
+    const s = this.recoursSuspensifs();
+    return s ? `${LIBELLES_RECOURS[t]} — ${s.includes(t) ? MENTION_SUSPENSIF : MENTION_NON_SUSPENSIF}` : LIBELLES_RECOURS[t];
+  }
   readonly issues = ISSUES;
   readonly codesIssues = Object.keys(ISSUES);
 
   readonly occupe = signal(false);
   readonly erreur = signal<string | null>(null);
   readonly dateAffichage = signal(aujourdhui());
+  /** Borne haute des dates de geste (approbation). */
+  readonly aujourdhui = aujourdhui();
+
+  /** Ce qui manque encore à la notification (R9a) : l'approbation, l'enregistrement, ou les deux. */
+  manqueNotification(l: LotAttribution): string {
+    const manque = [!l.approbation ? 'l’approbation' : null, !l.enregistrement ? 'l’enregistrement' : null].filter(Boolean);
+    return manque.length ? ` — il manque ${manque.join(' et ')}` : '';
+  }
   private readonly champs = signal<Record<string, string>>({});
   private readonly fichiers = signal<Record<string, File | null>>({});
   readonly etatLot = computed(() => this.lot().etat);

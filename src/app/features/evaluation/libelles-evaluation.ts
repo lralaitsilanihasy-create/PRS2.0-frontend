@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { ApiError, codeErreur } from '../../core/errors/api-error';
-import { DecisionAnormale, EtapeEvaluation, EtatDemande, EtatEvaluation, GroupeCritere, QualificationRejet, RegleCorrection } from '../../models';
+import { DecisionAnormale, EtapeEvaluation, EtatDemande, EtatEvaluation, GroupeCritere, QualificationRejet, RegleCorrection, TypeRecours } from '../../models';
 import { messageQuorum } from '../procedure/quorum-cao';
 
 export const LIBELLES_ETAT_EVALUATION: Readonly<Record<EtatEvaluation, string>> = {
@@ -152,3 +152,16 @@ export function refusEvaluation(e: ApiError): string {
   if (e.status === 403) return 'Ce geste ne vous est pas ouvert.';
   return e.message || 'Le geste n’a pas abouti.';
 }
+
+/**
+ * Les recours du titre VIII. ⚠️ R9a (V111, 14/10) — leur effet **suspensif** sur la signature n'est plus fixe : l'Administrateur le
+ * règle (`/api/parametres/recours-suspensifs`) ; le libellé ne le dit donc plus, l'écran l'ajoute d'après le réglage du moment
+ * (`MENTION_SUSPENSIF`), et un recours déclaré porte son `bloquant` servi.
+ */
+export const LIBELLES_RECOURS: Readonly<Record<TypeRecours, string>> = {
+  REEXAMEN: 'Demande de réexamen auprès de la PRMP (art. 79) — réponse sous 10 jours',
+  REVISION_ARMP: 'Demande en révision auprès de l’ARMP (art. 80)',
+  REFERE: 'Référé précontractuel (art. 78)',
+};
+export const MENTION_SUSPENSIF = 'suspend la signature, 20 jours au plus';
+export const MENTION_NON_SUSPENSIF = 'non suspensif';

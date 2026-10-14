@@ -10,7 +10,7 @@ import { ChampFiche, DisponibiliteAvis, DocumentFiche, PublicationAvis } from '.
 import { ChampFicheMarcheService, FicheMarcheService } from '../../services/fiche-marche.services';
 import { ParametreCompteDaoService } from '../../services/parametres.services';
 import { ModaleDirective } from '../a11y/modale.directive';
-import { avisImprimes, champsVidesAvis, horodatage, jjmmaaaa, messageDelaiPublicite, messageIndisponible } from './avis-specifique-modele';
+import { avisImprimes, champsVidesAvis, horodatage, jjmmaaaa, messageDaoCompletAbsent, messageDelaiPublicite, messageIndisponible } from './avis-specifique-modele';
 import { MentionsDocumentVue } from './mentions-document';
 
 type CleSaisie = keyof PublicationAvis;
@@ -153,6 +153,7 @@ export class AvisSpecifique implements OnInit {
           this.envoi.set(false);
           this.ouverte.set(false);
           this.documents.update((d) => [...produits, ...d]);
+          this.etat.update((e) => (e && e.daoComplet === 'A_ASSEMBLER' ? { ...e, daoComplet: 'PRODUIT' } : e));
           this.toast.success('Avis spécifique imprimé : il est en tête de la liste, en PDF et en Word.');
         },
         error: (e: ApiError | HttpErrorResponse) => {
@@ -172,6 +173,11 @@ export class AvisSpecifique implements OnInit {
           // ⚠️ R6a (V106) — le délai de publicité de la loi (30 j, 45 j international, 10 j consultation) bloque l'impression.
           if (e.status === 409 && codeErreur(e) === 'DELAI_PUBLICITE') {
             this.refus.set(messageDelaiPublicite(e));
+            return;
+          }
+          // ⚠️ R9a (V111) — le DAO complet, assemblé à l'impression s'il manque, n'a pas pu l'être.
+          if (e.status === 409 && codeErreur(e) === 'DAO_COMPLET_ABSENT') {
+            this.refus.set(messageDaoCompletAbsent(e, 'avis'));
             return;
           }
           this.refus.set('L’impression a échoué. Réessayez.');

@@ -78,6 +78,20 @@ procédure ; les questions et réponses sont jointes au dossier de marché (piè
 > - **Côté front** : écran Recours suspensifs en administration ; geste « Approbation » entre la signature et la notification dans
 >   l'écran Attribution ; message de `DAO_COMPLET_ABSENT` à l'impression (réessayer).
 
+> ✅ **Front, 2026-10-14 — tranche R9a branchée**, vérifiée par les tests (recette navigateur groupée avec le reste du lot 2, après le
+> redémarrage qui applique V111-V113) :
+> - **n° 13** — écran Administrateur **« Recours suspensifs »** (sommaire des référentiels, sans entrée de menu : le menu de
+>   l'Administrateur sature) : une case par type de `connus`, aucune cochée = aucun recours suspensif (dit à l'écran), refus
+>   `RECOURS_INVALIDE` nommé. Les libellés des recours de l'écran Attribution ne disent plus « suspend la signature » en dur : la liste de
+>   déclaration l'ajoute d'après le réglage du moment (lu une fois pour tous les lots, PRMP seule), un recours déclaré porte son
+>   `bloquant` servi.
+> - **n° 14** — geste **« Déclarer l'approbation »** après la signature (autorité, date bornée par la signature et aujourd'hui, décision
+>   jointe), lu ensuite « Approuvé le … — autorité » avec sa pièce ; la notification ne s'ouvre qu'une fois le marché **approuvé et
+>   enregistré** (l'écran dit ce qui manque), un lot notifié avant V111 reste lisible ; `DEJA_APPROUVE` et `MARCHE_NON_APPROUVE` nommés.
+> - **n° 2** — `daoComplet` de la disponibilité lu : à `A_ASSEMBLER`, la modale de l'avis et celle des lettres préviennent que
+>   l'impression assemble d'abord le DAO complet (~20 s) et le bouton le dit pendant l'attente ; 409 `DAO_COMPLET_ABSENT` nommé avec sa
+>   version (« le serveur le reprendra de lui-même : réessayez dans quelques minutes »).
+
 > ⚠️ **Backend, 2026-10-14 — B4 : tranche R9b livrée (n° 4, 9, 10 ; V112)** ; contrat : `docs/api-endpoints.md`, § *… lot 2, tranche R9b*.
 > - n° 4 : chaque refus `DELAI_DEPASSE` (création, morceau, scellement) est horodaté et conservé (`t_offre_tentative`, transaction
 >   propre) ; `GET …/depots` → `tentativesRefusees[] { horodatage, geste, motif, entreprise, nif, lot, enveloppe, idOffre, dateLimite }`
