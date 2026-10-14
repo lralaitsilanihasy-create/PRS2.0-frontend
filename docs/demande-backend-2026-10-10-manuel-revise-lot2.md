@@ -59,6 +59,23 @@ procédure ; les questions et réponses sont jointes au dossier de marché (piè
 | 15 | Immutabilité des étapes closes | verrou d'écriture : toute écriture sur la séance, l'évaluation ou l'AMI d'une procédure dont le dossier de marché est **soumis** est refusée (409 `ETAPE_CLOSE`), hors reprise d'évaluation tracée (`t_attribution_reprise`) ; complète l'instantané du lot 1 (B5) |
 | 1, 3, 5-8, 11-12 | — | **[existe]** ou couverts par B1 (n° 1, 3) et le lot 1 (n° 6 quorum) |
 
+> ⚠️ **Backend, 2026-10-14 — B4 en cours : tranche R9a livrée (n° 2, 13, 14 ; V111)** ; contrat : `docs/api-endpoints.md`, § *… lot 2,
+> tranche R9a*. Arbitrages du 14/10 : R9 en **trois sous-tranches** — **R9a** (n° 2, 13, 14), **R9b** (n° 4 ; n° 9 avec QB2 : la
+> correction `AUTRE` est **gardée**, motif obligatoire et signalée comme écart, les autres corrections doivent correspondre aux
+> corrections proposées ; n° 10 avec QB3 : l'échéance passée sans réponse **vaut** réponse tracée, le défaut de réponse est écrit),
+> **R9c** (n° 15, verrou sur la séance, l'évaluation et l'AMI).
+> - n° 2 : l'impression de l'avis **et des lettres d'invitation** assemble le DAO complet s'il manque (synchrone, ~20 s) ; échec → 409
+>   `DAO_COMPLET_ABSENT` `{ version }`. **Écart** : sans assemblage actif sur le serveur (Word absent), la règle ne s'applique pas ; la
+>   disponibilité ne l'annonce pas.
+> - n° 13 : `GET /api/parametres/recours-suspensifs` → `{ types, connus }` ; `PUT` (Administrateur) `{ types: [...] }`, vide = aucun,
+>   400 `RECOURS_INVALIDE` ; défaut `REVISION_ARMP`, `REFERE` ; lu à chaque question, recours déjà déclarés compris.
+> - n° 14 : `POST /api/fiches-marche/{idDmc}/attribution/lots/{lot}/approbation` (multipart `autorite`, `dateApprobation`, `fichier`) ;
+>   409 `DEJA_APPROUVE` ; `LotAttribution.approbation { autorite, date, le, par, fichier }` ; la notification rend 409
+>   `MARCHE_NON_APPROUVE` sans elle, sa date ne précède ni l'approbation ni l'enregistrement. Colonnes `APPROBATION_AUTORITE` /
+>   `APPROBATION_DATE` comme demandé, plus `APPROUVE_LE` / `APPROUVE_PAR` pour le geste.
+> - **Côté front** : écran Recours suspensifs en administration ; geste « Approbation » entre la signature et la notification dans
+>   l'écran Attribution ; message de `DAO_COMPLET_ABSENT` à l'impression (réessayer).
+
 ## B5 — Acte d'engagement déposé en ligne (H2)
 
 - **Clause des DPAO** : ajouter aux gabarits `DPAO-F`, `DPAO-T`, `DPIC-PI`, `DPAC-CC` (section « Signature de l'offre ») : « La soumission par
