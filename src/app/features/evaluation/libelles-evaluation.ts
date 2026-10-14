@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { ApiError, codeErreur } from '../../core/errors/api-error';
-import { DecisionAnormale, EtapeEvaluation, EtatDemande, EtatEvaluation, GroupeCritere, QualificationRejet, RegleCorrection, TypeRecours } from '../../models';
+import { DecisionAnormale, EtapeEvaluation, EtatDemande, EtatEvaluation, GroupeCritere, QualificationRejet, RegleCorrection, TypePieceAttributaire, TypeRecours } from '../../models';
 import { messageQuorum } from '../procedure/quorum-cao';
 
 export const LIBELLES_ETAT_EVALUATION: Readonly<Record<EtatEvaluation, string>> = {
@@ -169,3 +169,10 @@ export const LIBELLES_RECOURS: Readonly<Record<TypeRecours, string>> = {
 };
 export const MENTION_SUSPENSIF = 'suspend la signature, 20 jours au plus';
 export const MENTION_NON_SUSPENSIF = 'non suspensif';
+
+/** Les pièces de l'attributaire : fiscale et sociale (art. 20-I) ; ⚠️ R10 (V113) l'original signé de l'acte d'engagement. */
+export const LIBELLES_PIECE_ATTRIBUTAIRE: Readonly<Record<TypePieceAttributaire, string>> = {
+  FISCALE: 'Fiscale',
+  SOCIALE: 'Sociale',
+  ACTE_ENGAGEMENT_ORIGINAL: 'Original signé de l’acte d’engagement',
+};

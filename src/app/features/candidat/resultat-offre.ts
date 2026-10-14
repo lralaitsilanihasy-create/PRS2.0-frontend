@@ -5,9 +5,10 @@ import { dateFr } from '../../core/interim/interim-libelles';
 import { ApiError, codeErreur } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur, telechargerBlob, validerFichier } from '../../core/securite/fichiers-surs';
-import { Explication, ResultatOffre } from '../../models';
+import { Explication, PiecesAttributaire, ResultatOffre, TypePieceAttributaire } from '../../models';
 import { CandidatResultatService } from '../../services';
 import { dateHeureFr } from './libelles-candidat';
+import { LIBELLES_PIECE_ATTRIBUTAIRE } from '../evaluation/libelles-evaluation';
 
 const MESSAGES: Readonly<Record<string, string>> = {
   QUESTION_OBLIGATOIRE: 'Votre question est obligatoire.',
@@ -70,25 +71,29 @@ const MESSAGES: Readonly<Record<string, string>> = {
         @if (r.retenu && r.piecesAttributaire; as pa) {
           <div class="ro__pieces">
             <p class="text-sm"><strong>Vos pièces fiscale et sociale</strong>, à déposer avant le <strong>{{ date(pa.echeance) }}</strong> (art. 20-I) : situation fiscale de moins de six mois, situation sociale cotisante de moins de trois mois. Sans elles, le marché vous est retiré.</p>
+            <!-- ⚠️ R10 (V113, 14/10) — le dépôt scellé a valu signature pendant la procédure ; l'original signé est remis avant la signature. -->
+            @if (pa.aeOriginalExige) {
+              <p class="text-sm">Votre offre a été déposée et scellée en ligne : remettez aussi l’<strong>original signé de votre acte d’engagement</strong> avant la signature du marché, et déposez-en le scan ici (sans l’échéance des quinze jours){{ pa.aeOriginalConforme ? ' — reconnu conforme' : '' }}.</p>
+            }
             @for (p of pa.pieces; track p.id) {
               <p class="text-sm">
-                {{ p.type === 'FISCALE' ? 'Fiscale' : 'Sociale' }}, délivrée le {{ date(p.dateDelivrance) }} — {{ p.nom }} :
+                {{ libellesPieces[p.type] }}, {{ p.type === 'ACTE_ENGAGEMENT_ORIGINAL' ? 'remis le' : 'délivrée le' }} {{ date(p.dateDelivrance) }} — {{ p.nom }} :
                 @if (p.conforme === true) { <span class="badge badge-success">conforme</span> }
                 @else if (p.conforme === false) { <span class="badge badge-danger">non conforme — {{ p.motif }}</span> }
                 @else { <span class="badge badge-warning">en vérification</span> }
               </p>
             }
-            @if (!pa.delaiDepasse && !r.dateSignature && !r.retire) {
+            @if (typesOfferts(pa).length && !r.dateSignature && !r.retire) {
+              @let t = typeChoisi(pa);
               <div class="ro__ligne">
                 <label class="form-group"><span class="form-label">Pièce</span>
                   <select class="form-control" (change)="type.set($any($event.target).value)">
-                    <option value="FISCALE" [selected]="type() === 'FISCALE'">Situation fiscale</option>
-                    <option value="SOCIALE" [selected]="type() === 'SOCIALE'">Situation sociale</option>
+                    @for (o of typesOfferts(pa); track o) { <option [value]="o" [selected]="t === o">{{ libellesDepot[o] }}</option> }
                   </select>
                 </label>
-                <label class="form-group"><span class="form-label">Délivrée le</span><input class="form-control" type="date" [value]="dateDelivrance()" (input)="dateDelivrance.set($any($event.target).value)" /></label>
+                <label class="form-group"><span class="form-label">{{ t === 'ACTE_ENGAGEMENT_ORIGINAL' ? 'Remis le (facultatif)' : 'Délivrée le' }}</span><input class="form-control" type="date" [value]="dateDelivrance()" (input)="dateDelivrance.set($any($event.target).value)" /></label>
                 <label class="form-group ro__large"><span class="form-label">Fichier (PDF, JPEG, PNG)</span><input #champPiece class="form-control" type="file" accept="application/pdf,image/jpeg,image/png" (change)="choisir($any($event.target))" /></label>
-                <button type="button" class="btn btn-primary btn-sm" [disabled]="!dateDelivrance() || !fichier() || occupe()" (click)="deposer(champPiece)">Déposer</button>
+                <button type="button" class="btn btn-primary btn-sm" [disabled]="(t !== 'ACTE_ENGAGEMENT_ORIGINAL' && !dateDelivrance()) || !fichier() || occupe()" (click)="deposer(champPiece, t)">Déposer</button>
               </div>
             }
           </div>
@@ -127,7 +132,26 @@ export class ResultatOffreCandidat implements OnInit {
   readonly resultat = signal<ResultatOffre | null>(null);
   readonly explications = signal<Explication[]>([]);
   readonly question = signal('');
-  readonly type = signal<'FISCALE' | 'SOCIALE'>('FISCALE');
+  readonly type = signal<TypePieceAttributaire>('FISCALE');
+  readonly libellesPieces = LIBELLES_PIECE_ATTRIBUTAIRE;
+  readonly libellesDepot: Readonly<Record<TypePieceAttributaire, string>> = {
+    FISCALE: 'Situation fiscale',
+    SOCIALE: 'Situation sociale',
+    ACTE_ENGAGEMENT_ORIGINAL: 'Original signé de l’acte d’engagement (scan)',
+  };
+
+  /** Les pièces encore déposables : fiscale et sociale avant l'échéance ; ⚠️ R10 l'original de l'AE tant qu'il n'est pas conforme. */
+  typesOfferts(pa: PiecesAttributaire): TypePieceAttributaire[] {
+    const t: TypePieceAttributaire[] = pa.delaiDepasse ? [] : ['FISCALE', 'SOCIALE'];
+    if (pa.aeOriginalExige && !pa.aeOriginalConforme) t.push('ACTE_ENGAGEMENT_ORIGINAL');
+    return t;
+  }
+
+  /** Le choix de la liste, ou la première pièce offerte s'il ne l'est plus. */
+  typeChoisi(pa: PiecesAttributaire): TypePieceAttributaire {
+    const t = this.typesOfferts(pa);
+    return t.includes(this.type()) ? this.type() : t[0];
+  }
   readonly dateDelivrance = signal('');
   readonly fichier = signal<File | null>(null);
   readonly occupe = signal(false);
@@ -175,12 +199,12 @@ export class ResultatOffreCandidat implements OnInit {
   }
 
   /** Le champ fichier est vidé après le dépôt : il ne doit pas montrer un fichier que l'écran a déjà envoyé. */
-  deposer(champ?: HTMLInputElement): void {
+  deposer(champ?: HTMLInputElement, type: TypePieceAttributaire = this.type()): void {
     const f = this.fichier();
     if (!f) return;
     this.occupe.set(true);
     this.erreur.set(null);
-    this.service.deposerPiece(this.idOffre(), this.type(), this.dateDelivrance(), f).subscribe({
+    this.service.deposerPiece(this.idOffre(), type, this.dateDelivrance() || null, f).subscribe({
       next: (pa) => {
         this.occupe.set(false);
         this.fichier.set(null);

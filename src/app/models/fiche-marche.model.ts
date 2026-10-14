@@ -114,8 +114,13 @@ export interface ParametresInternes {
   caoQuorum?: string | null;
   /** ⚠️ R1 (V101) — la règle effectivement appliquée (surcharge, sinon la règle globale). */
   caoQuorumEffectif?: string | null;
+  /** ⚠️ R10 (V113) — la signature de l'offre (valeur effective) : `SCELLE_PLUS_ORIGINAL` (défaut) ; `CERTIFIEE` réservé, sans effet. */
+  signatureOffre?: SignatureOffre | null;
   journal: EntreeJournalParametres[];
 }
+
+/** ⚠️ R10 (V113) — dépôt scellé puis original signé de l'acte d'engagement ; ou signature certifiée (réservée, pas encore branchée). */
+export type SignatureOffre = 'SCELLE_PLUS_ORIGINAL' | 'CERTIFIEE';
 
 /**
  * Le dépositaire de la part de secours (ADR-0013, S3). ⚠️ V71 (05/10) : il a un **compte externe** (`D…`) et génère lui-même
@@ -149,6 +154,8 @@ export interface ParametresInternesCorps {
   depositaire: Depositaire | null;
   /** ⚠️ R1 (V101) — la surcharge du quorum de la CAO pour cette procédure (`MAJORITE`, `TOUS`, `"n"`) ; nul ou absent : la règle globale. */
   caoQuorum?: string | null;
+  /** ⚠️ R10 (V113) — **toujours envoyé** : son absence remet la valeur par défaut. 400 `SIGNATURE_OFFRE_INVALIDE`. */
+  signatureOffre?: SignatureOffre | null;
 }
 
 /** ⚠️ Lot 2a (V67) — l'état de la commission d'appel d'offres, tel que la fiche le dit à qui la lit. */

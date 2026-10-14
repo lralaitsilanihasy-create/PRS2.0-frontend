@@ -192,6 +192,19 @@ procédure ; les questions et réponses sont jointes au dossier de marché (piè
 > - **Côté front** : pièce « original de l'acte d'engagement » dans l'écran Attribution (dépôt PRMP, vérification) et dans l'espace de
 >   l'attributaire ; message de `AE_ORIGINAL_MANQUANT` ; réglage `signatureOffre` en administration de la procédure.
 
+> ✅ **Front, 2026-10-14 — tranche R10 branchée**, vérifiée par les tests (recette navigateur groupée avec le reste du lot 2) :
+> - **Gabarits** : copies `DPAO-F`, `DPAO-T`, `DPIC-PI`, `DPAC-CC` resynchronisées (commit `17f977c`, identiques au backend octet pour
+>   octet, clause déclarée en ajout dans `scripts/modeles-dao/decrire.mjs`).
+> - **Écran Attribution (PRMP)** — volet « Pièces de l'attributaire » : quand `aeOriginalExige`, l'original est annoncé avec son état ;
+>   les pièces `ACTE_ENGAGEMENT_ORIGINAL` se lisent « Original signé de l'acte d'engagement · remis le … » et se vérifient comme les autres ;
+>   la PRMP qui a reçu l'original l'enregistre (« Enregistrer l'original reçu » : date de remise facultative, scan) tant qu'il n'est pas
+>   conforme ; le bloc « Signer le marché » cite l'original ; `AE_ORIGINAL_MANQUANT` nommé.
+> - **Espace de l'attributaire** (résultat de l'offre) : l'original se dépose comme une pièce (« Remis le », facultatif), **y compris
+>   après l'échéance des quinze jours** tant qu'il n'est pas conforme ; la phrase rappelle que le dépôt scellé a valu signature.
+> - **Paramètres internes** : liste « Signature de l'offre » — `SCELLE_PLUS_ORIGINAL` ; `CERTIFIEE` affichée mais non choisissable
+>   (réservée, sans effet) sauf si elle est déjà la valeur ; la valeur lue est **toujours renvoyée** au `PUT` (son absence remettrait le
+>   défaut) ; `SIGNATURE_OFFRE_INVALIDE` nommé.
+
 ## Questions au backend
 
 | # | Question |

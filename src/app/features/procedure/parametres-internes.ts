@@ -5,7 +5,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { ApiError, codeErreur, erreursParChamp } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { ParametresInternes } from '../../models';
+import { ParametresInternes, SignatureOffre } from '../../models';
 import { FicheMarcheService } from '../../services/fiche-marche.services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { LIBELLES_ETAT_PART_SECOURS, classePart } from '../cao/libelles-cao';
@@ -116,6 +116,16 @@ import { CeremonieResponsable } from './ceremonie-responsable';
               <span class="form-hint">Se vérifie à la clôture des séances et à la production du rapport ; le président, ou son représentant désigné, est toujours requis. Dans une commission de deux membres, la majorité vaut l'unanimité.</span>
               @if (erreurDe('caoQuorum'); as m) { <span class="form-error">{{ m }}</span> }
             </div>
+            <!-- ⚠️ R10 (V113, 14/10) — la signature de l'offre ; toujours renvoyée au PUT (son absence remettrait le défaut). -->
+            <label class="form-group">
+              <span class="form-label">Signature de l’offre</span>
+              <select class="form-control" [value]="signatureOffre()" (change)="signatureOffre.set($any($event.target).value)">
+                <option value="SCELLE_PLUS_ORIGINAL">Dépôt scellé, puis original signé de l’acte d’engagement remis par l’attributaire</option>
+                <option value="CERTIFIEE" [disabled]="signatureOffre() !== 'CERTIFIEE'">Signature électronique certifiée — réservée, pas encore en service</option>
+              </select>
+              <span class="form-hint">Le dépôt scellé vaut signature pendant la procédure ; l’attributaire remet l’original signé de son acte d’engagement avant la signature du marché. La signature certifiée, réservée, reste sans effet : l’original est exigé dans tous les cas.</span>
+              @if (erreurDe('signatureOffre'); as m) { <span class="form-error">{{ m }}</span> }
+            </label>
             <label class="form-group">
               <span class="form-label">Date de la cérémonie des clés <span class="pi__code">INT-SE-04</span></span>
               <input class="form-control" id="pi-ceremonie" type="datetime-local" [value]="dateCeremonie() ?? ''" (input)="dateCeremonie.set($any($event.target).value || null)" />
@@ -294,6 +304,7 @@ export class ParametresInternesEcran implements OnInit {
   // ── ⚠️ R1 (V101) — la surcharge du quorum de la CAO ──
   readonly caoMode = signal<'' | 'MAJORITE' | 'TOUS' | 'NOMBRE'>('');
   readonly caoNombre = signal('');
+  readonly signatureOffre = signal<SignatureOffre>('SCELLE_PLUS_ORIGINAL');
   /** La règle à envoyer : `null` = règle globale ; sinon `MAJORITE`, `TOUS` ou le nombre en chaîne. */
   private caoQuorumCorps(): string | null {
     const m = this.caoMode();
@@ -310,6 +321,7 @@ export class ParametresInternesEcran implements OnInit {
     this.caoMode.set(cq == null ? '' : cq === 'MAJORITE' || cq === 'TOUS' ? cq : 'NOMBRE');
     this.caoNombre.set(cq != null && cq !== 'MAJORITE' && cq !== 'TOUS' ? cq : '');
     this.dateCeremonie.set(d.dateCeremonie ?? null);
+    this.signatureOffre.set(d.signatureOffre ?? 'SCELLE_PLUS_ORIGINAL');
     const dep = d.partDeSecours?.depositaire ?? null;
     this.depNom.set(dep?.nom ?? '');
     this.depOrganisme.set(dep?.organisme ?? '');
@@ -345,7 +357,7 @@ export class ParametresInternesEcran implements OnInit {
           telephone: this.depTelephone().trim() || null,
         }
       : null;
-    this.service.enregistrerParametresInternes(id, { quorum: this.quorum(), dateCeremonie: this.dateCeremonie(), depositaire, caoQuorum: this.caoQuorumCorps() }).subscribe({
+    this.service.enregistrerParametresInternes(id, { quorum: this.quorum(), dateCeremonie: this.dateCeremonie(), depositaire, caoQuorum: this.caoQuorumCorps(), signatureOffre: this.signatureOffre() }).subscribe({
       next: (d) => {
         this.saving.set(false);
         this.poser(d);
@@ -394,6 +406,8 @@ export class ParametresInternesEcran implements OnInit {
         return 'Renseignez l’adresse du dépositaire, enregistrez, puis renvoyez l’invitation.';
       case 'DEPOSITAIRE_INCOMPATIBLE':
         return 'Cette personne ne peut pas être dépositaire : PRMP, UGPM, responsable, membre de la CAO de la procédure ou candidat.';
+      case 'SIGNATURE_OFFRE_INVALIDE':
+        return 'Ce mode de signature de l’offre n’est pas reconnu.';
       case 'CEREMONIE_CLOSE':
         return 'La cérémonie des clés est close : rouvrez-la (section ci-dessous) avant de changer le quorum, la date ou le dépositaire.';
       default:

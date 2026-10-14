@@ -522,9 +522,12 @@ export interface Recours {
   decision: { date: string; issue: 'REJETE' | 'ACCUEILLI' | 'AUTRE'; motif: string; le: string; par: string | null; fichiers: FichierAttribution[] } | null;
 }
 
+/** ⚠️ R10 (V113) — `ACTE_ENGAGEMENT_ORIGINAL` : l'original signé, en remise électronique ; `dateDelivrance` = date de remise. */
+export type TypePieceAttributaire = 'FISCALE' | 'SOCIALE' | 'ACTE_ENGAGEMENT_ORIGINAL';
+
 export interface PieceAttributaire {
   id: number;
-  type: 'FISCALE' | 'SOCIALE';
+  type: TypePieceAttributaire;
   dateDelivrance: string;
   nom: string;
   taille: number | null;
@@ -541,6 +544,13 @@ export interface PiecesAttributaire {
   fiscaleConforme: boolean | null;
   socialeConforme: boolean | null;
   pieces: PieceAttributaire[];
+  /**
+   * ⚠️ R10 (V113, 14/10) — l'original signé de l'acte d'engagement, exigé de l'attributaire quand la procédure est en **remise
+   * électronique** (rien en papier), sans l'échéance de 15 jours ; la signature répond 409 `AE_ORIGINAL_MANQUANT` tant que le dernier
+   * original déposé n'est pas reconnu conforme.
+   */
+  aeOriginalExige?: boolean;
+  aeOriginalConforme?: boolean | null;
 }
 
 /** `GET /api/candidat/offres/{idOffre}/resultat` — 404 avant l'information des candidats. */

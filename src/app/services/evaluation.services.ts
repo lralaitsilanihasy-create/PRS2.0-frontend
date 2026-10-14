@@ -12,6 +12,7 @@ import {
   InfructuositeCorps,
   SansSuite,
   PiecesAttributaire,
+  TypePieceAttributaire,
   ResultatOffre,
   ResultatPublic,
   CodeVerification,
@@ -344,6 +345,14 @@ export class AttributionService {
   }
 
   /**
+   * ⚠️ R10 (V113, 14/10) — l'original signé de l'acte d'engagement reçu par la PRMP (scan) : `dateRemise` facultative (pas à venir).
+   * 400 `DATE_INVALIDE`, `FICHIER_OBLIGATOIRE` ; 409 `NON_INFORME`, `DEJA_SIGNE`, `LOT_RETIRE`. Vérifié ensuite comme une pièce.
+   */
+  deposerAeOriginal(idDmc: number, lot: number, dateRemise: string | null, fichier: File): Observable<Attribution> {
+    return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/acte-engagement-original`, this.formulaire(dateRemise ? { dateRemise } : {}, fichier), this.ctx);
+  }
+
+  /**
    * ⚠️ R9a (V111, 14/10) — l'approbation du marché (PRMP) : `autorite`, `dateApprobation` entre la signature et aujourd'hui, la décision
    * en fichier. 400 `CHAMP_OBLIGATOIRE`, `CHAMP_TROP_LONG`, `DATE_INVALIDE`, `FICHIER_OBLIGATOIRE` ; 409 `NON_SIGNE`, `DEJA_APPROUVE`,
    * `DEJA_NOTIFIE`.
@@ -417,11 +426,14 @@ export class CandidatResultatService {
     return this.http.get(`${this.base}/${idOffre}/explications/${id}/fichier`, { responseType: 'blob', context: skipErrorToast() });
   }
 
-  /** Attributaire : 400 `PIECE_PERIMEE`, `FORMAT_INVALIDE` ; 409 `DELAI_DEPASSE`, `DEJA_SIGNE`, `LOT_RETIRE`. */
-  deposerPiece(idOffre: string, type: 'FISCALE' | 'SOCIALE', dateDelivrance: string, fichier: File): Observable<PiecesAttributaire> {
+  /**
+   * Attributaire : 400 `PIECE_PERIMEE`, `FORMAT_INVALIDE` ; 409 `DELAI_DEPASSE`, `DEJA_SIGNE`, `LOT_RETIRE`. ⚠️ R10 (V113) —
+   * `ACTE_ENGAGEMENT_ORIGINAL` : sans l'échéance de 15 jours ; `dateDelivrance` = date de remise, facultative (défaut : aujourd'hui).
+   */
+  deposerPiece(idOffre: string, type: TypePieceAttributaire, dateDelivrance: string | null, fichier: File): Observable<PiecesAttributaire> {
     const fd = new FormData();
     fd.append('type', type);
-    fd.append('dateDelivrance', dateDelivrance);
+    if (dateDelivrance) fd.append('dateDelivrance', dateDelivrance);
     fd.append('fichier', fichier, fichier.name);
     return this.http.post<PiecesAttributaire>(`${this.base}/${idOffre}/pieces-attributaire`, fd, this.ctx);
   }

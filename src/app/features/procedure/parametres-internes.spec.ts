@@ -98,6 +98,8 @@ describe('Paramètres internes de la procédure (remise électronique, 27/09 ; m
       quorum: 2,
       dateCeremonie: '2026-10-01T09:00',
       caoQuorum: null,
+      // ⚠️ R10 (V113) — toujours envoyé : son absence remettrait le défaut.
+      signatureOffre: 'SCELLE_PLUS_ORIGINAL',
       depositaire: { nom: 'Dépositaire de la procédure', organisme: 'Étude notariale', fonction: null, contact: null, email: 'depositaire@exemple.mg', telephone: null },
     });
     put.flush({ ...DONNEES, dateCeremonie: '2026-10-01T09:00', etat: 'COMPLETS', anomalies: [] });

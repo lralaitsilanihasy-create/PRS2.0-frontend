@@ -5,7 +5,7 @@ import { ApiError, codeErreur } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur, telechargerBlob, validerFichier } from '../../core/securite/fichiers-surs';
 import { Attribution, FichierAttribution, LotAttribution, TypeRecours } from '../../models';
-import { LIBELLES_RECOURS, MENTION_NON_SUSPENSIF, MENTION_SUSPENSIF } from './libelles-evaluation';
+import { LIBELLES_PIECE_ATTRIBUTAIRE, LIBELLES_RECOURS, MENTION_NON_SUSPENSIF, MENTION_SUSPENSIF } from './libelles-evaluation';
 import { AttributionService } from '../../services';
 import { dateFr } from '../../core/interim/interim-libelles';
 import { dateHeureFr } from '../candidat/libelles-candidat';
@@ -55,6 +55,8 @@ const MESSAGES: Readonly<Record<string, string>> = {
   DEJA_APPROUVE: 'Le marché est déjà approuvé.',
   MARCHE_NON_APPROUVE: 'Aucune notification sans l’approbation du marché (art. 54).',
   CHAMP_TROP_LONG: 'Un champ dépasse la longueur admise.',
+  // ⚠️ R10 (V113, 14/10) — l'original signé de l'acte d'engagement, en remise électronique.
+  AE_ORIGINAL_MANQUANT: 'L’original signé de l’acte d’engagement doit être déposé et reconnu conforme avant la signature (offre déposée et scellée en ligne).',
   DEJA_NOTIFIE: 'Le marché est déjà notifié.',
   NON_NOTIFIE: 'Le marché n’est pas encore notifié.',
   DEJA_PUBLIE: 'L’avis d’attribution est déjà publié.',
@@ -211,11 +213,15 @@ function aujourdhui(): string {
         <!-- 5. Pièces fiscales et sociales de l'attributaire (art. 20-I) -->
         @if (l.piecesAttributaire; as pa) {
           <section class="al__bloc" aria-label="Pièces de l'attributaire">
-            <h4 class="al__h4">Pièces fiscales et sociales de l’attributaire</h4>
+            <h4 class="al__h4">Pièces de l’attributaire</h4>
             <p class="text-sm">À déposer avant le <strong>{{ date(pa.echeance) }}</strong>{{ pa.delaiDepasse ? ' — échéance passée' : '' }} : situation fiscale de moins de six mois ({{ etatPiece(pa.fiscaleConforme) }}), situation sociale de moins de trois mois ({{ etatPiece(pa.socialeConforme) }}).</p>
+            <!-- ⚠️ R10 (V113, 14/10) — offre déposée et scellée en ligne : l'original signé de l'acte d'engagement, avant la signature. -->
+            @if (pa.aeOriginalExige) {
+              <p class="text-sm">Offre déposée et scellée en ligne : l’<strong>original signé de l’acte d’engagement</strong> est remis avant la signature du marché, sans l’échéance des quinze jours ({{ etatPiece(pa.aeOriginalConforme ?? null) }}).</p>
+            }
             @for (p of pa.pieces; track p.id) {
               <div class="al__piece">
-                <span class="text-sm">{{ p.type === 'FISCALE' ? 'Fiscale' : 'Sociale' }} · délivrée le {{ date(p.dateDelivrance) }} · déposée le {{ dateHeure(p.deposeLe) }}</span>
+                <span class="text-sm">{{ libellesPieces[p.type] }} · {{ p.type === 'ACTE_ENGAGEMENT_ORIGINAL' ? 'remis le' : 'délivrée le' }} {{ date(p.dateDelivrance) }} · déposée le {{ dateHeure(p.deposeLe) }}</span>
                 <button type="button" class="btn btn-ghost btn-sm" (click)="ouvrir(service.fichier(idDmc(), p.id))">{{ p.nom }}</button>
                 @if (p.conforme === true) { <span class="badge badge-success">Conforme</span> }
                 @else if (p.conforme === false) { <span class="badge badge-danger">Non conforme — {{ p.motif }}</span> }
@@ -226,6 +232,14 @@ function aujourdhui(): string {
                 } @else { <span class="badge badge-warning">À vérifier</span> }
               </div>
             } @empty { <p class="text-sm text-muted">Aucune pièce déposée.</p> }
+            @if (prmp() && pa.aeOriginalExige && !pa.aeOriginalConforme && !l.signature && !l.retrait) {
+              <!-- La PRMP qui a reçu l'original le dépose elle-même (scan), puis le vérifie comme une pièce. -->
+              <div class="al__ligne">
+                <label class="form-group"><span class="form-label">Original reçu le (facultatif)</span><input class="form-control" type="date" [max]="aujourdhui" [value]="champ('aedate')" (input)="poser('aedate', $any($event.target).value)" /></label>
+                <label class="form-group al__large"><span class="form-label">Scan de l’original signé (PDF, JPEG, PNG)</span><input class="form-control" type="file" accept="application/pdf,image/jpeg,image/png" (change)="choisir('aefichier', $any($event.target))" /></label>
+                <button type="button" class="btn btn-outline btn-sm" [disabled]="!fichier('aefichier') || occupe()" (click)="geste(service.deposerAeOriginal(idDmc(), l.lot, champ('aedate') || null, fichier('aefichier')!), 'L’original est enregistré ; vérifiez-le pour ouvrir la signature.')">Enregistrer l’original reçu</button>
+              </div>
+            }
             @if (prmp() && pa.delaiDepasse && !(pa.fiscaleConforme && pa.socialeConforme) && !l.signature && !l.retrait) {
               <div class="al__ligne">
                 <label class="form-group al__large"><span class="form-label">Motif du retrait (art. 20-I)</span><input class="form-control" type="text" [value]="champ('retrait')" (input)="poser('retrait', $any($event.target).value)" /></label>
@@ -271,7 +285,7 @@ function aujourdhui(): string {
         } @else if (prmp() && !l.retrait) {
           <section class="al__bloc" aria-label="Signer le marché">
             <h4 class="al__h4">Signer le marché</h4>
-            <p class="text-sm text-muted">Ouvert quand le délai d’attente est écoulé, sans recours suspensif, et les deux pièces de l’attributaire reconnues conformes.</p>
+            <p class="text-sm text-muted">Ouvert quand le délai d’attente est écoulé, sans recours suspensif, et les deux pièces de l’attributaire reconnues conformes{{ l.piecesAttributaire?.aeOriginalExige ? ', ainsi que l’original signé de son acte d’engagement' : '' }}.</p>
             <div class="al__ligne">
               <label class="form-group"><span class="form-label">Date de signature</span><input class="form-control" type="date" [value]="champ('sdate')" (input)="poser('sdate', $any($event.target).value)" /></label>
               <label class="form-group al__large"><span class="form-label">Le marché signé (PDF, JPEG, PNG)</span><input class="form-control" type="file" accept="application/pdf,image/jpeg,image/png" (change)="choisir('sfichier', $any($event.target))" /></label>
@@ -392,6 +406,7 @@ export class AttributionLot {
   readonly date = dateFr;
   readonly dateHeure = dateHeureFr;
   readonly libellesRecours = LIBELLES_RECOURS;
+  readonly libellesPieces = LIBELLES_PIECE_ATTRIBUTAIRE;
   readonly typesRecours = Object.keys(LIBELLES_RECOURS) as TypeRecours[];
 
   /** Le type à déclarer, avec son effet sur la signature d'après le réglage de l'Administrateur (R9a). */
