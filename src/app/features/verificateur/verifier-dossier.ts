@@ -71,10 +71,26 @@ interface Echange {
         <app-chronometrage-dossier [idDossier]="idDossier" [compact]="true" />
       </div></div>
 
+      <!-- ⚠️ 14/10 (refonte des présentations) — le bandeau ne décrivait que le cas « favorable avec réserves », même sur un dossier
+           favorable ou défavorable : il suit désormais le mode de l'écran. -->
       <div class="alert alert-info">
-        Vérification possible uniquement sur un dossier en vérification (PV signé, avis favorable avec
-        réserve). Statuez chaque observation du PV — levée (définitive) ou maintenue ; quand toutes sont
-        levées, le dossier passe à la transmission SIGMP.
+        @switch (modeSigmp()) {
+          @case ('decision') {
+            PV signé avec l'avis <strong>{{ avisLabel() }}</strong> : aucune observation à lever. Il reste à transmettre la décision
+            à SIGMP ; l'Assistant archive ensuite le PV et clôt le dossier.
+          }
+          @case ('levee') {
+            Toutes les observations du PV sont levées : il reste à transmettre l'approbation à SIGMP ; l'Assistant archive ensuite
+            le PV et clôt le dossier.
+          }
+          @case ('transmise') {
+            La décision est transmise à SIGMP : le dossier attend l'archivage du PV par l'Assistant.
+          }
+          @default {
+            PV signé avec l'avis favorable avec réserves : statuez chaque observation du PV — levée (définitive) ou maintenue ;
+            quand toutes sont levées, le dossier passe à la transmission SIGMP.
+          }
+        }
       </div>
 
       @if (loading()) {

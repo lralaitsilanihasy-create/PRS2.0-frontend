@@ -312,7 +312,11 @@ export class PageDossierCorps implements OnInit {
   // ── Étape en cours et gestes (lot F3) ────────────────────────────────────────────────────────
   readonly vue = computed<VueEtape | null>(() => {
     const g = this.gestes();
-    return g.etat === 'pret' ? vueEtape(this.dossier(), g.gestes, this.auth.role()) : null;
+    if (g.etat !== 'pret') return null;
+    // ⚠️ 14/10 (refonte des présentations) — un acte de gestion en brouillon montrait deux boutons de soumission : le geste servi
+    // « Soumettre le dossier » et celui de son encart (« Soumettre l'acte à la Commission », avec ses pièces exigées). L'encart suffit.
+    const gestes = this.dossier().idTypeDossier === 'DGC' ? { ...g.gestes, taches: g.gestes.taches.filter((t) => t.geste !== 'SOUMETTRE') } : g.gestes;
+    return vueEtape(this.dossier(), gestes, this.auth.role());
   });
   readonly montant = computed(() => {
     const g = this.gestes();

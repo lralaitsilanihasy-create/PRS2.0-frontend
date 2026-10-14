@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, InjectionToken, computed, inject, input } from '@angular/core';
 
 /**
  * ⚠️ Manuel révisé, R4 (13/10) — le rendu **générique** d'un JSON figé (instantané d'un écran), le même langage que l'export PDF du
@@ -150,17 +150,71 @@ const LIBELLES_CLES: Readonly<Record<string, string>> = {
   dateEnvoi: "Date d'envoi",
   lieu: 'Lieu',
   candidats: 'Candidats',
+  // ⚠️ 14/10 — les valeurs de la fiche reprises du plan (ValeursPpmService), figées en clés majuscules : leur libellé exact.
+  ENTITE: 'Entité contractante',
+  ADRESSE: "Adresse de l'entité",
+  MINISTERE: 'Ministère',
+  LOCALITE: 'Localité',
+  PRMP: 'PRMP',
+  PRMP_EMAIL: 'Courriel de la PRMP',
+  PRMP_TEL: 'Téléphone de la PRMP',
+  PPM_REFERENCE: 'Référence du plan de passation',
+  PPM_EXERCICE: 'Exercice du plan',
+  PPM_VERSION: 'Version du plan',
+  DOSSIER_REFERENCE: 'Référence du dossier de planification',
+  NATURE: 'Nature du marché',
+  MODE: 'Mode de passation',
+  FORME_MARCHE: 'Forme du marché',
+  OBJET: 'Objet du marché',
+  MONTANT_ESTIMATIF: 'Montant estimatif',
+  FINANCEMENT: 'Financement',
+  COMPTES: 'Comptes',
+  BENEFICIAIRES: 'Bénéficiaires',
+  NB_LOTS_PPM: 'Nombre de lots au plan',
+  LOTS_DESIGNATION: 'Désignation des lots',
+  LOTS_MONTANTS: 'Montants des lots',
+  DATES_PREVISIONNELLES: 'Dates prévisionnelles',
 };
 
 /** Les clés qui portent un montant en ariary (`montant`, `montEstim`, `prixLu`, `total`…) ; un nombre sans cette marque s'affiche tel quel (année, numéro, rang). */
 const CLES_MONTANT = /mont|prix|total|rabais|ajustement|garantie/i;
 
+/** Les sigles gardés en capitales dans un intitulé déplié (« PRMP email » et non « Prmp email »). */
+const SIGLES_CLES: ReadonlySet<string> = new Set(['prmp', 'ugpm', 'ppm', 'agpm', 'dao', 'dmc', 'cao', 'ami', 'pv', 'cnm', 'sigmp', 'nif', 'stat', 'rcs', 'ht', 'ttc', 'tva', 'ae', 'pi', 'armp', 'soa', 'jmp']);
+/** Les mots d'un intitulé déplié qui portent un accent ou s'écrivent autrement en clair. */
+const MOTS_CLES: Readonly<Record<string, string>> = {
+  entite: 'entité', ministere: 'ministère', localite: 'localité', reference: 'référence', numero: 'numéro', num: 'n°', tel: 'téléphone',
+  telephone: 'téléphone', email: 'adresse électronique', mont: 'montant', estim: 'estimé', prevision: 'prévision', prevu: 'prévu',
+  prevue: 'prévue', categorie: 'catégorie', procedure: 'procédure', seance: 'séance', evaluation: 'évaluation', delai: 'délai',
+  duree: 'durée', debut: 'début', echeance: 'échéance', depot: 'dépôt', depots: 'dépôts', cle: 'clé', cles: 'clés', ceremonie: 'cérémonie',
+  periode: 'période', beneficiaire: 'bénéficiaire', beneficiaires: 'bénéficiaires', reception: 'réception', decision: 'décision',
+  etat: 'état', etape: 'étape', critere: 'critère', criteres: 'critères', piece: 'pièce', pieces: 'pièces', specifique: 'spécifique',
+  general: 'général', generale: 'générale', annee: 'année', derogatoire: 'dérogatoire', amenage: 'aménagé', autorite: 'autorité',
+  qualite: 'qualité', quantite: 'quantité', unite: 'unité', designation: 'désignation', resultat: 'résultat', reponse: 'réponse',
+};
+
 export function libelleCle(cle: string): string {
   const connu = LIBELLES_CLES[cle];
   if (connu) return connu;
-  const deplie = cle.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/_/g, ' ').toLowerCase();
+  const mots = cle.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/_/g, ' ').toLowerCase().split(' ').filter(Boolean);
+  const deplie = mots.map((m) => (SIGLES_CLES.has(m) ? m.toUpperCase() : (MOTS_CLES[m] ?? m))).join(' ');
   return deplie.charAt(0).toUpperCase() + deplie.slice(1);
 }
+
+/** Les valeurs codées connues de tous (énumérations du serveur), par clé : la forme du marché. */
+const VALEURS_CODEES: Readonly<Record<string, Readonly<Record<string, string>>>> = {
+  formeMarche: { QUANTITE_FIXE: 'Quantité fixe', A_COMMANDE: 'À commande', CONTRAT_CADRE: 'Contrat-cadre' },
+  FORME_MARCHE: { QUANTITE_FIXE: 'Quantité fixe', A_COMMANDE: 'À commande', CONTRAT_CADRE: 'Contrat-cadre' },
+};
+
+/**
+ * Traduit les valeurs qui renvoient à un référentiel administrable (identifiant d'une nature, d'un mode, code d'un statut de marché).
+ * Optionnel : fourni par l'écran qui monte le rendu (l'onglet des écrans figés) ; sans lui, la valeur s'affiche telle quelle.
+ */
+export interface ResolveurFiges {
+  resoudre(cle: string, valeur: string | number): string | null;
+}
+export const RESOLVEUR_FIGES = new InjectionToken<ResolveurFiges>('RESOLVEUR_FIGES');
 
 export function estSimple(v: unknown): v is Simple {
   return v == null || typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean';
@@ -261,6 +315,7 @@ export function formeDe(v: unknown): FormeFigee {
   `,
 })
 export class DonneesFigees {
+  private readonly resolveur = inject(RESOLVEUR_FIGES, { optional: true });
   readonly valeur = input.required<unknown>();
   /** La clé parente, pour le format (un montant s'affiche en ariary). */
   readonly cle = input('');
@@ -269,8 +324,19 @@ export class DonneesFigees {
   readonly forme = computed<FormeFigee>(() => {
     const v = this.valeur();
     const forme = formeDe(v);
-    return forme.type === 'texte' && estSimple(v) ? { type: 'texte', texte: texteSimple(v, this.cle()) } : forme;
+    return forme.type === 'texte' && estSimple(v) ? { type: 'texte', texte: this.enClair(v, this.cle()) } : forme;
   });
   readonly json = computed(() => JSON.stringify(this.valeur()));
-  readonly texte = (v: unknown, cle: string): string => (estSimple(v) ? texteSimple(v, cle) : Array.isArray(v) ? 'aucun' : '—');
+  readonly texte = (v: unknown, cle: string): string => (estSimple(v) ? this.enClair(v, cle) : Array.isArray(v) ? 'aucun' : '—');
+
+  /** Une valeur simple en clair : le référentiel (résolveur), puis l'énumération connue, puis le format générique. */
+  private enClair(v: Simple, cle: string): string {
+    if (v != null && v !== '' && typeof v !== 'boolean') {
+      const resolu = this.resolveur?.resoudre(cle, v);
+      if (resolu) return resolu;
+      const code = VALEURS_CODEES[cle]?.[String(v)];
+      if (code) return code;
+    }
+    return texteSimple(v, cle);
+  }
 }

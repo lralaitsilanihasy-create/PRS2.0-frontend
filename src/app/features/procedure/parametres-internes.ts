@@ -96,7 +96,7 @@ import { CeremonieResponsable } from './ceremonie-responsable';
             <label class="form-group">
               <span class="form-label">Quorum de déchiffrement (k) <span class="pi__code">INT-SE-03</span></span>
               <input class="form-control pi__court" id="pi-quorum" type="number" min="2" [max]="d.nombreParts || null" [value]="quorum() ?? ''" (input)="quorum.set($any($event.target).valueAsNumber || null)" />
-              <span class="form-hint">Entre 2 et le nombre de membres ; proposé : {{ quorumPropose() }}. Un quorum égal au nombre de membres ne tolère aucune perte (S1).</span>
+              <span class="form-hint">Entre 2 et le nombre de membres ; proposé : {{ quorumPropose() }}. Un quorum égal au nombre de membres ne tolère aucune perte de part.</span>
               @if (erreurDe('quorum'); as m) { <span class="form-error">{{ m }}</span> }
             </label>
             <!-- ⚠️ R1 (V101) — le quorum délibératif de la CAO : règle globale de l'Administrateur, surchargeable ici pour la procédure. -->
@@ -120,8 +120,8 @@ import { CeremonieResponsable } from './ceremonie-responsable';
             <label class="form-group">
               <span class="form-label">Signature de l’offre</span>
               <select class="form-control" [value]="signatureOffre()" (change)="signatureOffre.set($any($event.target).value)">
-                <option value="SCELLE_PLUS_ORIGINAL">Dépôt scellé, puis original signé de l’acte d’engagement remis par l’attributaire</option>
-                <option value="CERTIFIEE" [disabled]="signatureOffre() !== 'CERTIFIEE'">Signature électronique certifiée — réservée, pas encore en service</option>
+                <option value="SCELLE_PLUS_ORIGINAL">Dépôt scellé, puis original de l’acte d’engagement</option>
+                <option value="CERTIFIEE" [disabled]="signatureOffre() !== 'CERTIFIEE'">Signature certifiée (pas encore en service)</option>
               </select>
               <span class="form-hint">Le dépôt scellé vaut signature pendant la procédure ; l’attributaire remet l’original signé de son acte d’engagement avant la signature du marché. La signature certifiée, réservée, reste sans effet : l’original est exigé dans tous les cas.</span>
               @if (erreurDe('signatureOffre'); as m) { <span class="form-error">{{ m }}</span> }
@@ -129,7 +129,7 @@ import { CeremonieResponsable } from './ceremonie-responsable';
             <label class="form-group">
               <span class="form-label">Date de la cérémonie des clés <span class="pi__code">INT-SE-04</span></span>
               <input class="form-control" id="pi-ceremonie" type="datetime-local" [value]="dateCeremonie() ?? ''" (input)="dateCeremonie.set($any($event.target).value || null)" />
-              <span class="form-hint">Avant la publication de l'avis (règle 8).</span>
+              <span class="form-hint">Avant la publication de l'avis.</span>
               @if (erreurDe('dateCeremonie'); as m) { <span class="form-error">{{ m }}</span> }
             </label>
             <div class="form-group">
@@ -177,11 +177,12 @@ import { CeremonieResponsable } from './ceremonie-responsable';
                     <button type="button" class="btn btn-outline btn-sm" [disabled]="saving()" (click)="inviterDepositaire()">Renvoyer l'invitation</button>
                   }
                 } @else {
-                  <span class="text-sm pi__manque">Sans adresse : le dépositaire n'a pas de compte. Renseignez son adresse, puis enregistrez.</span>
+                  <!-- ⚠️ 14/10 — un dépositaire saisi avant le champ « Adresse électronique » garde son adresse sous « Contact » : on le dit. -->
+                  <span class="text-sm pi__manque">Sans adresse : le dépositaire n'a pas de compte. @if (contactEstUneAdresse()) { Son adresse figure sous « Contact » : reportez-la dans « Adresse électronique », puis enregistrez. } @else { Renseignez son adresse, puis enregistrez. }</span>
                 }
               </p>
             }
-            <span class="form-hint">Libre : vous le désignez pour chaque procédure (arbitrage du pilote, 04/10). Il reçoit une invitation par courriel, puis génère lui-même sa clé de secours depuis son espace : personne d'autre ne voit sa phrase (décision du 05/10).</span>
+            <span class="form-hint">Libre : vous le désignez pour chaque procédure. Il reçoit une invitation par courriel, puis génère lui-même sa clé de secours depuis son espace : personne d'autre ne voit sa phrase.</span>
             @if (erreurDe('depositaire'); as m) { <span class="form-error">{{ m }}</span> }
           </fieldset>
 
@@ -262,6 +263,10 @@ export class ParametresInternesEcran implements OnInit {
   readonly depOrganisme = signal('');
   readonly depFonction = signal('');
   readonly depContact = signal('');
+  /** Le contact saisi ressemble à une adresse électronique alors que le champ dédié est vide (dépositaire saisi avant ce champ). */
+  contactEstUneAdresse(): boolean {
+    return !this.depEmail().trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.depContact().trim());
+  }
   readonly depEmail = signal('');
   readonly depTelephone = signal('');
   readonly comptesDepositaire: Readonly<Record<string, string>> = { A_INVITER: 'Compte à inviter', INVITE: 'Invitation envoyée', ACTIF: 'Compte actif', ARCHIVE: 'Compte archivé' };

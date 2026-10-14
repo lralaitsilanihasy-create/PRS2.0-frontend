@@ -6,7 +6,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ToastService } from '../../../core/notifications/toast.service';
 import { Dossier, Instantane } from '../../../models';
 import { DossierContenuStore } from './dossier-contenu.store';
+import { RESOLVEUR_FIGES, ResolveurFiges } from '../../../shared/ui/donnees-figees';
 import { DossierInstantanes, libelleEcranInstantane } from './dossier-instantanes';
+
+const RESOLVEUR: ResolveurFiges = { resoudre: (cle, v) => (cle === 'idNature' && v === 1 ? 'Travaux' : cle === 'statut' && v === 'PREVU' ? 'Prévu' : null) };
 
 const DOSSIER: Dossier = { idDossier: 100371, idTypeDossier: 'DDM', statut: 'SOUMIS', idLocalite: 'ANT' };
 
@@ -59,6 +62,8 @@ describe('Écrans figés d’un dossier (manuel révisé, R4)', () => {
         { provide: ToastService, useValue: toast },
       ],
     });
+    // ⚠️ 14/10 — le résolveur des référentiels (nature, mode, statut) est remplacé par une table fixe : pas de lecture réseau.
+    TestBed.overrideComponent(DossierInstantanes, { set: { providers: [{ provide: RESOLVEUR_FIGES, useValue: RESOLVEUR }] } });
     http = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(DossierInstantanes);
     fixture.detectChanges();

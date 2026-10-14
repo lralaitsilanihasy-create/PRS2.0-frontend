@@ -6,10 +6,11 @@ import { telechargerBlob } from '../../../core/securite/fichiers-surs';
 import { Instantane } from '../../../models';
 import { InstantaneService } from '../../../services';
 import { horodatage } from '../../../shared/prmp/avis-specifique-modele';
-import { DonneesFigees } from '../../../shared/ui/donnees-figees';
+import { DonneesFigees, RESOLVEUR_FIGES } from '../../../shared/ui/donnees-figees';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { DossierContenuStore } from './dossier-contenu.store';
 import { InstantaneAttributionVue, InstantaneEvaluationVue, InstantaneSeanceVue } from './instantanes-vues';
+import { ReferentielsFiges } from './referentiels-figes';
 
 /** L'ordre de lecture des écrans d'une soumission : la procédure, puis ses séances, puis ses suites. */
 const ORDRE_ECRANS: readonly string[] = ['PLAN', 'AVIS', 'AMI', 'CAO', 'SEANCE', 'EVALUATION', 'ATTRIBUTION', 'ACTE', 'DSS'];
@@ -43,6 +44,8 @@ const VUES_DEDIEES: readonly string[] = ['SEANCE', 'EVALUATION', 'ATTRIBUTION'];
   selector: 'app-dossier-instantanes',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [EtatErreur, DonneesFigees, InstantaneSeanceVue, InstantaneEvaluationVue, InstantaneAttributionVue],
+  // ⚠️ 14/10 — les identifiants et codes de référentiel des écrans figés se lisent en clair (nature, mode, statut de marché).
+  providers: [ReferentielsFiges, { provide: RESOLVEUR_FIGES, useExisting: ReferentielsFiges }],
   template: `
     <div class="dc-section-head">
       <div class="section-block-title">

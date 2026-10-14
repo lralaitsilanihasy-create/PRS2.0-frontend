@@ -9,6 +9,7 @@ import { Offre, libelleEtatOffre } from '../models';
 import { MesOffres } from './candidat/mes-offres';
 import { ResultatsPublics } from './candidat/resultats-publics';
 import { NotificationsPage } from './transverse/notifications-page';
+import { DonneesFigees, RESOLVEUR_FIGES, libelleCle } from '../shared/ui/donnees-figees';
 
 // ⚠️ 14/10 — anomalies d'affichage relevées pendant la refonte des présentations, corrigées.
 describe('Corrections de la refonte — libellés en clair', () => {
@@ -96,5 +97,30 @@ describe('Corrections de la refonte — « Mes offres » après la date limite',
     const t = monter(true);
     expect(t).toContain('Remplacer');
     expect(t).toContain('Retirer…');
+  });
+});
+
+describe('Corrections de la refonte — les écrans figés en clair', () => {
+  it('les clés de la fiche ont leur libellé ; une clé inconnue retrouve ses accents et ses sigles', () => {
+    expect(libelleCle('PRMP_EMAIL')).toBe('Courriel de la PRMP');
+    expect(libelleCle('ENTITE')).toBe('Entité contractante');
+    expect(libelleCle('PPM_REFERENCE')).toBe('Référence du plan de passation');
+    expect(libelleCle('localiteDepot')).toBe('Localité dépôt');
+    expect(libelleCle('nifCandidat')).toBe('NIF candidat');
+  });
+
+  it('identifiants de référentiel traduits par le résolveur, énumérations en clair', () => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: RESOLVEUR_FIGES, useValue: { resoudre: (cle: string, v: string | number) => (cle === 'idNature' && v === 1 ? 'Travaux' : cle === 'statut' && v === 'PREVU' ? 'Prévu' : null) } }],
+    });
+    const f = TestBed.createComponent(DonneesFigees);
+    f.componentRef.setInput('valeur', { idNature: 1, statut: 'PREVU', formeMarche: 'CONTRAT_CADRE', idMode: 7 });
+    f.detectChanges();
+    const t = ((f.nativeElement as HTMLElement).textContent ?? '').replace(/\s+/g, ' ');
+    expect(t).toContain('NatureTravaux');
+    expect(t).toContain('StatutPrévu');
+    expect(t).toContain('Forme du marchéContrat-cadre');
+    expect(t).toContain('Mode de passation7');
+    TestBed.resetTestingModule();
   });
 });
