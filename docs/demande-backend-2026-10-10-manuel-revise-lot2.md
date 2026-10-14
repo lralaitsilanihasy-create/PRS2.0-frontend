@@ -90,6 +90,16 @@ procédure ; les questions et réponses sont jointes au dossier de marché (piè
 > - **Côté front** : section « tentatives refusées » du registre ; dans la saisie du montant, choisir parmi les corrections proposées et
 >   exiger un motif pour `REPORT` / `AUTRE` (afficher `ecart`) ; badge « défaut de réponse » sur l'offre anormale rejetée.
 
+> ⚠️ **Backend, 2026-10-14 — B4 : tranche R9c livrée (n° 15) ; B4 est entièrement livré** ; contrat : `docs/api-endpoints.md`, § *… lot 2,
+> tranche R9c*. Aucune migration : le « dossier de marché soumis » se lit sur les attributions de la procédure.
+> - Toute écriture sous `/api/fiches-marche/{idDmc}/seance/**`, `…/evaluation/**`, `…/ami/**` et `POST /api/cao/procedures/{idDmc}/representant`
+>   → **409 `ETAPE_CLOSE`** `{ idDossierMarche, lot }` dès qu'un DDM de la procédure est soumis ; lectures ouvertes.
+> - Hors verrou : `…/attribution/lots/{lot}/reprendre` et `…/reattribuer` (tracées dans `t_attribution_reprise`), qui lèvent le verrou en
+>   retirant l'attribution portant le DDM. **Écarts** : pas de table de verrou (lu à la volée) ; le 409 précède le contrôle des droits
+>   (un profil non habilité reçoit 409, pas 403) ; les réponses des candidats aux demandes de précision / justification ne sont pas visées.
+> - **Côté front** : griser les gestes de séance, d'évaluation et d'AMI quand un DDM est soumis (lire `lots[].dossierMarche` de
+>   l'attribution) ; message de `ETAPE_CLOSE` renvoyant à la reprise.
+
 ## B5 — Acte d'engagement déposé en ligne (H2)
 
 - **Clause des DPAO** : ajouter aux gabarits `DPAO-F`, `DPAO-T`, `DPIC-PI`, `DPAC-CC` (section « Signature de l'offre ») : « La soumission par
@@ -101,6 +111,21 @@ procédure ; les questions et réponses sont jointes au dossier de marché (piè
 - **Paramètre par procédure** `SIGNATURE_OFFRE` (`t_parametre_interne_procedure`) : `SCELLE_PLUS_ORIGINAL` (défaut) / `CERTIFIEE` (réservé ;
   sans effet tant que la certification n'est pas branchée).
 - Le projet de marché (art. 3, pièces constitutives) cite « l'acte d'engagement original remis le … ».
+
+> ⚠️ **Backend, 2026-10-14 — B5 : tranche R10 livrée (V113) ; le lot 2 (B1 à B5) est entièrement livré** ; contrat : `docs/api-endpoints.md`,
+> § *… lot 2, tranche R10*.
+> - Clause ajoutée dans le bloc remise électronique (`{{SI:B04-SE}}`) de `DPAO-F` / `DPAO-T` (§ 7.3), `DPIC-PI` (§ 8.3, « la proposition »)
+>   et `DPAC-CC` (§ 5.2). **Écart** : pas de section « Signature de l'offre » dans les gabarits, la clause suit la remise électronique ;
+>   elle vaut à la prochaine validation (documents validés non régénérés). **Le front resynchronise ses copies des quatre gabarits.**
+> - `ACTE_ENGAGEMENT_ORIGINAL` : dépôt par l'attributaire (`pieces-attributaire`, `type=ACTE_ENGAGEMENT_ORIGINAL`, sans l'échéance de
+>   15 jours) ou par la PRMP (`POST …/attribution/lots/{lot}/acte-engagement-original`, `dateRemise` + `fichier`), vérification par
+>   `…/pieces/{id}/verifier` ; signature → 409 `AE_ORIGINAL_MANQUANT` ; `piecesAttributaire.aeOriginalExige` / `aeOriginalConforme`.
+>   **Écart** : exigé seulement quand la procédure est en remise électronique (mode figé) — en papier, l'offre porte déjà l'acte signé.
+> - Projet de marché : « original signé à remettre… », puis « original signé remis le … » une fois reconnu conforme et le projet refait.
+> - `signatureOffre` dans `PUT/GET …/parametres-internes` (`SCELLE_PLUS_ORIGINAL` défaut, `CERTIFIEE` réservé et sans effet), 400
+>   `SIGNATURE_OFFRE_INVALIDE`.
+> - **Côté front** : pièce « original de l'acte d'engagement » dans l'écran Attribution (dépôt PRMP, vérification) et dans l'espace de
+>   l'attributaire ; message de `AE_ORIGINAL_MANQUANT` ; réglage `signatureOffre` en administration de la procédure.
 
 ## Questions au backend
 
