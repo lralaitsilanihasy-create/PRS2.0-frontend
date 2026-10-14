@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { ApiError, codeErreur, corpsErreur } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur, telechargerBlob, validerFichier } from '../../core/securite/fichiers-surs';
-import { Attribution, FichierAttribution, LotAttribution, TypeRecours } from '../../models';
+import { Attribution, FichierAttribution, LotAttribution, PiecesAttributaire, TypePieceAttributaire, TypeRecours } from '../../models';
 import { LIBELLES_PIECE_ATTRIBUTAIRE, LIBELLES_RECOURS, MENTION_NON_SUSPENSIF, MENTION_SUSPENSIF } from './libelles-evaluation';
 import { AttributionService } from '../../services';
 import { dateFr } from '../../core/interim/interim-libelles';
@@ -225,10 +225,10 @@ function aujourdhui(): string {
         @if (l.piecesAttributaire; as pa) {
           <section class="al__bloc" aria-label="Pièces de l'attributaire">
             <h4 class="al__h4">Pièces de l’attributaire</h4>
-            <p class="text-sm">À déposer avant le <strong>{{ date(pa.echeance) }}</strong>{{ pa.delaiDepasse ? ' — échéance passée' : '' }} : situation fiscale de moins de six mois ({{ etatPiece(pa.fiscaleConforme) }}), situation sociale de moins de trois mois ({{ etatPiece(pa.socialeConforme) }}).@if (pa.limiteFiscale || pa.limiteSociale) { Délivrées au plus tôt le {{ date(pa.limiteFiscale) }} (fiscale) et le {{ date(pa.limiteSociale) }} (sociale) : une pièce plus ancienne ne peut être reconnue conforme. }</p>
+            <p class="text-sm">À déposer avant le <strong>{{ date(pa.echeance) }}</strong>{{ pa.delaiDepasse ? ' — échéance passée' : '' }} : situation fiscale de moins de six mois ({{ etatPiece(pa, 'FISCALE', pa.fiscaleConforme) }}), situation sociale de moins de trois mois ({{ etatPiece(pa, 'SOCIALE', pa.socialeConforme) }}).@if (pa.limiteFiscale || pa.limiteSociale) { Délivrées au plus tôt le {{ date(pa.limiteFiscale) }} (fiscale) et le {{ date(pa.limiteSociale) }} (sociale) : une pièce plus ancienne ne peut être reconnue conforme. }</p>
             <!-- ⚠️ R10 (V113, 14/10) — offre déposée et scellée en ligne : l'original signé de l'acte d'engagement, avant la signature. -->
             @if (pa.aeOriginalExige) {
-              <p class="text-sm">Offre déposée et scellée en ligne : l’<strong>original signé de l’acte d’engagement</strong> est remis avant la signature du marché, sans l’échéance des quinze jours ({{ etatPiece(pa.aeOriginalConforme ?? null) }}).</p>
+              <p class="text-sm">Offre déposée et scellée en ligne : l’<strong>original signé de l’acte d’engagement</strong> est remis avant la signature du marché, sans l’échéance des quinze jours ({{ etatPiece(pa, 'ACTE_ENGAGEMENT_ORIGINAL', pa.aeOriginalConforme) }}).</p>
             }
             @for (p of pa.pieces; track p.id) {
               <div class="al__piece">
@@ -466,8 +466,15 @@ export class AttributionLot {
     this.fichiers.update((x) => ({ ...x, [cle]: erreur ? null : f }));
   }
 
-  etatPiece(c: boolean | null): string {
-    return c === true ? 'conforme' : c === false ? 'non conforme' : 'à déposer ou à vérifier';
+  /**
+   * L'état d'une pièce, lu sur le dernier dépôt de ce type : le serveur répond `false` aussi quand rien n'est déposé (constaté en
+   * recette le 14/10 sur l'original de l'AE), et « non conforme » ne se dit que d'une pièce vérifiée et refusée.
+   */
+  etatPiece(pa: PiecesAttributaire, type: TypePieceAttributaire, conforme: boolean | null | undefined): string {
+    const derniere = pa.pieces.filter((p) => p.type === type).at(-1);
+    if (!derniere) return 'à déposer';
+    if (conforme === true || derniere.conforme === true) return 'conforme';
+    return derniere.conforme === false ? 'non conforme' : 'à vérifier';
   }
 
   declarer(): void {

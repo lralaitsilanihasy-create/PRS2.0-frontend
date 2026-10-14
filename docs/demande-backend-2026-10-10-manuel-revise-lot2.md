@@ -344,3 +344,16 @@ l'attributaire ; paramètres `RECOURS_SUSPENSIFS`, `SIGNATURE_OFFRE`, délais pa
 > - **Version migrée** : bandeau « Mode de remise migré vers la remise … le … par … — motif : … », et en brouillon « complétez ce que ce
 >   mode exige, puis validez la version ».
 > - L'import du DAO affiche déjà ses `erreurs[]` (dont `modeRemise`) sans code dédié.
+
+> ✅ **Front, 2026-10-14 — recette navigateur du lot 2** (backend redémarré, V111-V113 appliquées ; captures Playwright, sans écriture) :
+> - **Vu conforme** : R8 (fiche 32 papier : question verrouillée et expliquée côté PRMP ; Administrateur : bouton de migration, modale,
+>   motif exigé, Échap — annulée sans migrer) ; R9a (écran Admin « Recours suspensifs », recours suspensif du lot 1 de la procédure 44) ;
+>   R9b (tableau des tentatives refusées, procédure 40 : 0) ; R9c (bannière « Étape close » sur la séance et l'évaluation de la procédure 44,
+>   dossier 100372 soumis) ; R10 (« Signature de l'offre » dans les paramètres internes de la 40 ; annonce de l'original de l'AE côté PRMP et
+>   candidat, procédure 44) ; R6c (délai d'attente compté depuis la réception présumée, limites de délivrance fiscale et sociale) ; R7 (écran
+>   PRMP des questions, section publique « closes depuis » sur les procédures 40 et 44).
+> - **Écart corrigé côté front** : `aeOriginalConforme` vaut `false` alors qu'aucun original n'est déposé ; l'écran disait « non conforme ».
+>   L'état se lit désormais sur le dernier dépôt du type (à déposer / à vérifier / conforme / non conforme), pour les trois pièces. Rien à
+>   changer au serveur.
+> - **Non vu, faute de données** : badge « Réputé approuvé » (aucun dossier ne porte `REPUTE_APPROUVE_LE`), approbation d'un lot, avis
+>   d'attribution en retard, corrections hors calcul, migration effective du mode — tous couverts par les tests unitaires.

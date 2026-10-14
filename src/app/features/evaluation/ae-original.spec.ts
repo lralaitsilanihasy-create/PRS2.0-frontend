@@ -50,6 +50,17 @@ describe('R10 — l’original de l’acte d’engagement, côté PRMP', () => {
     expect(t).toContain('ainsi que l’original signé de son acte d’engagement');
   });
 
+  it('l’état se lit sur le dernier dépôt : « à déposer » tant que rien n’est déposé, même si le serveur répond false (recette du 14/10)', () => {
+    const c = fixture.componentInstance;
+    const vide: PiecesAttributaire = { ...PIECES, aeOriginalConforme: false, pieces: [] };
+    expect(c.etatPiece(vide, 'ACTE_ENGAGEMENT_ORIGINAL', false)).toBe('à déposer');
+    expect(c.etatPiece(PIECES, 'ACTE_ENGAGEMENT_ORIGINAL', false)).toBe('à vérifier');
+    const refuse = { ...PIECES.pieces[0], conforme: false };
+    expect(c.etatPiece({ ...PIECES, pieces: [refuse] }, 'ACTE_ENGAGEMENT_ORIGINAL', false)).toBe('non conforme');
+    expect(c.etatPiece({ ...PIECES, pieces: [refuse, { ...refuse, id: 8, conforme: true }] }, 'ACTE_ENGAGEMENT_ORIGINAL', false)).toBe('conforme');
+    expect(c.etatPiece(vide, 'FISCALE', true)).toBe('à déposer');
+  });
+
   it('la PRMP enregistre l’original reçu (date facultative) ; la signature refusée le nomme', () => {
     const comp = fixture.componentInstance as unknown as { fichiers: { set(v: Record<string, File>): void } };
     comp.fichiers.set({ aefichier: new File(['x'], 'scan.pdf', { type: 'application/pdf' }) });
