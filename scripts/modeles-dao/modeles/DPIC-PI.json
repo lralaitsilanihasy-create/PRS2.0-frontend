@@ -145,7 +145,7 @@
   },
   {
    "type": "ligne",
-   "texte": "8.3. Remise des Propositions par voie électronique\u001f{{SI:PAPIER}}\u001eLe mode de remise des Propositions par voie électronique n'est pas possible dans le cadre de la présente consultation.\u001e{{FINSI:PAPIER}}\u001e{{SI:B04-SE}}\u001e[[CLAUSE À FOURNIR PAR LE JURISTE : conditions et modalités de la remise électronique des Propositions — plateforme ({{B04-SE-02}}), heure de référence ({{B04-SE-04}}), signature exigée ({{B04-SE-05}}), formats ({{B04-SE-07}}) et tailles admis ({{B04-SE-08}} Mo par fichier, {{B04-SE-09}} Mo par proposition), ouverture électronique en séance seulement, assistance ({{B04-SE-14}}), indisponibilité et prorogation ({{B04-SE-12}} h, {{B04-SE-13}} jours ouvrables)]]\u001e{{FINSI:B04-SE}}"
+   "texte": "8.3. Remise des Propositions par voie électronique\u001f{{SI:PAPIER}}\u001eLe mode de remise des Propositions par voie électronique n'est pas possible dans le cadre de la présente consultation.\u001e{{FINSI:PAPIER}}\u001e{{SI:B04-SE}}\u001e[[CLAUSE À FOURNIR PAR LE JURISTE : conditions et modalités de la remise électronique des Propositions — plateforme ({{B04-SE-02}}), heure de référence ({{B04-SE-04}}), signature exigée ({{B04-SE-05}}), formats ({{B04-SE-07}}) et tailles admis ({{B04-SE-08}} Mo par fichier, {{B04-SE-09}} Mo par proposition), ouverture électronique en séance seulement, assistance ({{B04-SE-14}}), indisponibilité et prorogation ({{B04-SE-12}} h, {{B04-SE-13}} jours ouvrables)]]\u001eLa soumission par la plateforme, effectuée depuis le compte authentifié du candidat et scellée par celle-ci, vaut signature de la proposition et de l'acte d'engagement au sens de l'article 31 du Code. L'attributaire remet l'original signé de son acte d'engagement avant la signature du marché.\u001e{{FINSI:B04-SE}}"
   },
   {
    "type": "ligne",
@@ -824,6 +824,7 @@
  ],
  "ajouts": [
   "[[CLAUSE À FOURNIR PAR LE JURISTE : conditions et modalités de la remise électronique des Propositions — plateforme ({{B04-SE-02}}), heure de référence ({{B04-SE-04}}), signature exigée ({{B04-SE-05}}), formats ({{B04-SE-07}}) et tailles admis ({{B04-SE-08}} Mo par fichier, {{B04-SE-09}} Mo par proposition), ouverture électronique en séance seulement, assistance ({{B04-SE-14}}), indisponibilité et prorogation ({{B04-SE-12}} h, {{B04-SE-13}} jours ouvrables)]]",
+  "La soumission par la plateforme, effectuée depuis le compte authentifié du candidat et scellée par celle-ci, vaut signature de la proposition et de l'acte d'engagement au sens de l'article 31 du Code. L'attributaire remet l'original signé de son acte d'engagement avant la signature du marché.",
   "{{B04-EP-01}}",
   "{{B05-PF-11}}",
   "{{B05-PF-12}}",
