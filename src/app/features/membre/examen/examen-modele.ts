@@ -139,7 +139,9 @@ export const LIBELLES_ETAPES: Readonly<Record<CleEtapeParcours, string>> = {
   lignes: 'Lignes du plan',
   agpm: "Projet d'AGPM",
   pieces: 'Pièces jointes',
-  dossier: 'Contrôles du dossier',
+  // ⚠️ 14/10 — « Contrôles du dossier » se confondait avec les contrôles du manuel révisé (en-tête « Contrôles : n non conforme(s) ») :
+  // cette étape est la grille des points de contrôle du dossier.
+  dossier: 'Grille du dossier',
   synthese: 'Synthèse et avis',
 };
 

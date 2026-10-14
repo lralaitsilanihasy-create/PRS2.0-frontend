@@ -4,7 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { DossierSoumis, EntreeJournalEvaluation, ETAPES_EVALUATION, EtapeEvaluation, Evaluation, Financiere, LotEvaluation, Negociations, OffreEvaluee, Technique } from '../../models';
+import { DossierSoumis, EntreeJournalEvaluation, ETAPES_EVALUATION, EtapeEvaluation, Evaluation, Financiere, LotEvaluation, Negociations, OffreEvaluee, Technique, libelleEtatOffre } from '../../models';
 import { AttributionService, EvaluationPiService, EvaluationService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr } from '../candidat/libelles-candidat';
@@ -122,11 +122,11 @@ import { RapportEvaluationVue } from './rapport-evaluation';
       @if (lot(); as l) {
         <ol class="ev__etapes" aria-label="Étapes de l'évaluation">
           @for (e of etapesVisibles(); track e) {
-            <li class="ev__etape" [class.ev__etape--faite]="arretee(l, e)" [class.ev__etape--courante]="courante(l) === e">
+            <li class="ev__etape" [class.ev__etape--faite]="arretee(l, e) || rapportSigne(e)" [class.ev__etape--courante]="courante(l) === e && !rapportSigne(e)">
               <button type="button" class="ev__etape-b" [disabled]="!atteinte(l, e)" [attr.aria-current]="etapeChoisie() === e ? 'step' : null" (click)="etapeChoisie.set(e)">
                 <span class="ev__etape-n">{{ numeros[e] }}</span>
                 <span>{{ libelleEtape(e) }}</span>
-                <span class="text-sm text-muted">{{ arretee(l, e) ? 'arrêtée' : courante(l) === e ? 'en cours' : 'à venir' }}</span>
+                <span class="text-sm text-muted">{{ etatEtape(l, e) }}</span>
               </button>
             </li>
           }
@@ -208,7 +208,7 @@ import { RapportEvaluationVue } from './rapport-evaluation';
         <section class="card ev__bloc" aria-labelledby="ev-non">
           <h2 id="ev-non" class="ev__h2">Offres non évaluées</h2>
           <ul class="ev__decl">
-            @for (n of ev.nonEvaluees; track $index) { <li>Offre n° {{ n.numero ?? '—' }} · {{ nomEntreprise(n.entreprise) }} — {{ n.etat }}{{ n.motif ? ' : ' + n.motif : '' }}</li> }
+            @for (n of ev.nonEvaluees; track $index) { <li>Offre n° {{ n.numero ?? '—' }} · {{ nomEntreprise(n.entreprise) }} — {{ etatOffre(n.etat) }}{{ n.motif ? ' : ' + n.motif : '' }}</li> }
           </ul>
         </section>
       }
@@ -276,6 +276,7 @@ import { RapportEvaluationVue } from './rapport-evaluation';
   `,
 })
 export class EvaluationEcran implements OnInit {
+  readonly etatOffre = libelleEtatOffre;
   private readonly service = inject(EvaluationService);
   private readonly route = inject(ActivatedRoute);
   private readonly auth = inject(AuthService);
@@ -402,6 +403,23 @@ export class EvaluationEcran implements OnInit {
     const t = this.lotTechnique(l);
     if (!t || !t.conformiteArretee) return l.etape;
     return t.arret ? 'RAPPORT' : 'EVALUATION';
+  }
+
+  /**
+   * ⚠️ 14/10 (refonte des présentations) — l'étape « Rapport » n'est jamais « arrêtée » comme les autres : elle disait « en cours »
+   * sur un rapport signé de tous. Elle suit désormais l'état de l'évaluation : à signer, puis signé.
+   */
+  rapportSigne(e: EtapeEvaluation): boolean {
+    return e === 'RAPPORT' && this.evaluation()?.etat === 'CLOSE';
+  }
+  etatEtape(l: LotEvaluation, e: EtapeEvaluation): string {
+    if (this.arretee(l, e)) return 'arrêtée';
+    if (e === 'RAPPORT' && this.courante(l) === e) {
+      const etat = this.evaluation()?.etat;
+      if (etat === 'CLOSE') return 'signé';
+      if (etat === 'RAPPORT_A_SIGNER') return 'à signer';
+    }
+    return this.courante(l) === e ? 'en cours' : 'à venir';
   }
 
   libelleEtape(e: EtapeEvaluation): string {

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-import { Attribution, Evaluation, LotAttribution, OffreEvaluee, QualiteSignataire, Seance, SignataireAttendu } from '../../../models';
+import { Attribution, Evaluation, LotAttribution, OffreEvaluee, QualiteSignataire, Seance, SignataireAttendu, libelleEtatOffre } from '../../../models';
 import { horodatage, jjmmaaaa } from '../../../shared/prmp/avis-specifique-modele';
 import { LIBELLES_ANORMALE, LIBELLES_ETAPE, LIBELLES_ETAT_EVALUATION, ariary } from '../../evaluation/libelles-evaluation';
 import { QuorumCaoVue } from '../../procedure/quorum-cao';
@@ -222,7 +222,7 @@ export class InstantaneSeanceVue {
       <div class="table-responsive">
         <table class="cnm-table iv__table">
           <thead><tr><th scope="col">N°</th><th scope="col">Entreprise</th><th scope="col">État</th><th scope="col">Motif</th></tr></thead>
-          <tbody>@for (o of ev.nonEvaluees; track $index) { <tr><td>{{ o.numero ?? '—' }}</td><td>{{ entreprise(o.entreprise) }}</td><td>{{ o.etat }}</td><td>{{ o.motif ?? '—' }}</td></tr> }</tbody>
+          <tbody>@for (o of ev.nonEvaluees; track $index) { <tr><td>{{ o.numero ?? '—' }}</td><td>{{ entreprise(o.entreprise) }}</td><td>{{ etatOffre(o.etat) }}</td><td>{{ o.motif ?? '—' }}</td></tr> }</tbody>
         </table>
       </div>
     }
@@ -259,6 +259,7 @@ export class InstantaneSeanceVue {
   `,
 })
 export class InstantaneEvaluationVue {
+  readonly etatOffre = libelleEtatOffre;
   readonly evaluation = input.required<Evaluation>();
   readonly horodatage = horodatage;
   readonly ariary = ariary;

@@ -18,9 +18,19 @@ import { ResultatsPublicsService } from '../../services';
       <section class="card rp" aria-labelledby="rp-titre">
         <h2 id="rp-titre" class="rp__h2">Résultat de l'appel d'offres</h2>
         @for (r of resultats(); track r.lot) {
+          <!-- ⚠️ 14/10 — un lot infructueux ou une procédure sans suite s'affichaient « Lot 2 — / Résultat communiqué le · affiché le »
+               (champs vides) : le serveur les sert avec leur motif et la date de la décision. -->
           <div class="rp__lot">
+            @if (r.sansSuite) {
+              <p class="text-sm"><strong>Procédure déclarée sans suite</strong>{{ r.dateDecision ? ' le ' + date(r.dateDecision) : '' }}</p>
+              @if (r.motifsSansSuite) { <p class="text-sm text-muted">Motifs : {{ r.motifsSansSuite }}</p> }
+            } @else if (r.infructueux) {
+              <p class="text-sm"><strong>{{ r.lot ? 'Lot ' + r.lot + ' — ' : '' }}déclaré infructueux</strong>{{ r.dateDecision ? ' le ' + date(r.dateDecision) : '' }}</p>
+              @if (r.motifInfructuosite) { <p class="text-sm text-muted">Motif : {{ r.motifInfructuosite }}</p> }
+            } @else {
             <p class="text-sm"><strong>{{ r.lot ? 'Lot ' + r.lot + ' — ' : '' }}{{ r.attributaire }}</strong>{{ r.montant != null ? ' · ' + montant(r.montant) + ' hors taxes' : '' }}</p>
             <p class="text-sm text-muted">Résultat communiqué le {{ date(r.dateInformation) }} · affiché le {{ date(r.dateAffichage) }}{{ r.datePublicationAvis ? ' · avis d’attribution publié le ' + date(r.datePublicationAvis) : '' }}</p>
+            }
             @if (r.avisDisponible) { <button type="button" class="btn btn-secondary btn-sm rp__btn" (click)="avis(r.lot)">Lire l’avis d’attribution (PDF)</button> }
           </div>
         }

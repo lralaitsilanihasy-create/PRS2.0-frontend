@@ -39,13 +39,15 @@ import { ModePassationService, TypeDmcService } from '../../services';
                   <td>
                     <select
                       class="form-control dm__select"
-                      [value]="m.idTypeDmc ?? ''"
+                      [attr.aria-label]="'Type de DMC du mode ' + (m.libelle || m.idMode)"
                       [disabled]="saving() === m.idMode"
                       (change)="mapper(m, $any($event.target).value)"
                     >
-                      <option value="">— Non mappé —</option>
+                      <!-- ⚠️ 14/10 — la valeur du select était posée AVANT ses options (boucle) : la liste affichait « Non mappé » sur
+                           un mode mappé. L’option retenue est désormais marquée elle-même (selected). -->
+                      <option value="" [selected]="!m.idTypeDmc">— Non mappé —</option>
                       @for (t of typesActifs(); track t.idTypeDmc) {
-                        <option [value]="t.idTypeDmc">{{ t.code }} — {{ t.libelle }}</option>
+                        <option [value]="t.idTypeDmc" [selected]="t.idTypeDmc === m.idTypeDmc">{{ t.code }} — {{ t.libelle }}</option>
                       }
                     </select>
                   </td>

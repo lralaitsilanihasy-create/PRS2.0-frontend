@@ -232,7 +232,7 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
     expect(lignes.getAttribute('aria-current')).toBe('step');
     expect(lignes.textContent).toContain('0 sur 3');
     expect(etapeParcours('Pièces jointes').textContent).toContain('0 sur 2');
-    expect(etapeParcours('Contrôles du dossier').textContent).toContain('À faire');
+    expect(etapeParcours('Grille du dossier').textContent).toContain('À faire');
 
     valider(); // ligne 1 : RAS par défaut
     choisirObservation(11); // ligne 2 : une correction sur le point 1
@@ -343,7 +343,7 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
     expect(groupe('Lignes du plan')).toContain('2 lignes sans observation');
     expect(groupe('Pièces jointes')).toContain('Pièce 2');
     expect(groupe('Pièces jointes')).toContain('Document non signé par la PRMP');
-    expect(groupe('Contrôles du dossier')).toContain('RAS');
+    expect(groupe('Grille du dossier')).toContain('RAS');
     expect(Array.from(racine().querySelectorAll('.o__n')).map((n) => n.textContent?.trim())).toEqual(['1', '2']);
     expect(texte('.recap__consigne')).toContain('lignes 2 et 3 ; observations sur la ligne 2.');
     expect(texte('.next')).toContain('Le projet de PV est créé en brouillon avec 2 observations');
@@ -459,7 +459,7 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
         ],
       });
       expect(etapeParcours('Lignes du plan').textContent).toContain('1 sur 3');
-      expect(etapeParcours('Contrôles du dossier').textContent).toContain('À faire');
+      expect(etapeParcours('Grille du dossier').textContent).toContain('À faire');
       expect(texte('.grille__eyebrow')).toBe('Ligne 2 sur 3');
       expect(ecran.etatLigneFn(1)).toBe('done-ras');
       expect(ecran.etatLigneFn(3)).toBe('pending');

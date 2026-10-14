@@ -1,12 +1,13 @@
 import { ChangeDetectionStrategy, Component, DOCUMENT, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { catchError, forkJoin, map, of } from 'rxjs';
 
 import { ApiError, codeErreur } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { empreinteCourte, formaterEmpreinte } from '../../core/securite/cles-detenteur';
 import { telechargerBlob } from '../../core/securite/fichiers-surs';
 import { EnveloppeOffre, EtatOffre, Offre } from '../../models';
-import { OffresCandidatService } from '../../services';
+import { OffresCandidatService, ProceduresEnLigneService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DemandesOffre } from './demandes-offre';
 import { ResultatOffreCandidat } from './resultat-offre';
@@ -88,6 +89,8 @@ export function enveloppeManquante(o: Offre, toutes: Offre[]): EnveloppeOffre | 
             @if (o.etat === 'DEPOSEE') {
               <div class="mo__actions">
                 <button type="button" class="btn btn-sm btn-outline" [disabled]="enCours() === o.idOffre" (click)="accuse(o)">Accusé (PDF)</button>
+                <!-- ⚠️ 14/10 — remplacer et retirer seulement tant que les dépôts sont ouverts (et si le DAO l'autorise). -->
+                @if (modifiable(o)) {
                 <a class="btn btn-sm btn-outline" [routerLink]="['/candidat', 'procedures', o.idDmc, 'offre']" [queryParams]="{ remplace: o.idOffre, lot: o.lot, enveloppe: o.enveloppe }">Remplacer</a>
                 @if (aRetirer() !== o.idOffre) {
                   <button type="button" class="btn btn-sm btn-outline" (click)="aRetirer.set(o.idOffre)">Retirer…</button>
@@ -96,6 +99,7 @@ export function enveloppeManquante(o: Offre, toutes: Offre[]): EnveloppeOffre | 
                     <button type="button" class="btn btn-sm btn-danger" [disabled]="enCours() === o.idOffre" (click)="retirer(o)">Confirmer le retrait</button>
                     <button type="button" class="btn btn-sm btn-outline" (click)="aRetirer.set(null)">Annuler</button>
                   </span>
+                }
                 }
               </div>
             }
@@ -124,6 +128,9 @@ export function enveloppeManquante(o: Offre, toutes: Offre[]): EnveloppeOffre | 
 })
 export class MesOffres implements OnInit {
   private readonly service = inject(OffresCandidatService);
+  private readonly procedures = inject(ProceduresEnLigneService);
+  /** Par procédure : peut-on encore remplacer ou retirer (dépôts ouverts à l'horloge du serveur, remplacement autorisé par le DAO) ? */
+  private readonly ouvertes = signal<ReadonlyMap<number, boolean>>(new Map());
   private readonly toast = inject(ToastService);
 
   readonly etats = LIBELLES_ETAT;
@@ -148,6 +155,22 @@ export class MesOffres implements OnInit {
     this.charger();
   }
 
+  /**
+   * ⚠️ 14/10 — « Remplacer » et « Retirer… » restaient proposés après la date limite : la fiche publique de chaque procédure dit si
+   * les dépôts sont ouverts. Une fiche illisible ne masque rien (le serveur refuse de toute façon après l'échéance).
+   */
+  modifiable(o: Offre): boolean {
+    return this.ouvertes().get(o.idDmc) !== false;
+  }
+
+  private lireProcedures(ids: number[]): void {
+    if (!ids.length) return;
+    forkJoin(ids.map((id) => this.procedures.detail(id).pipe(
+      map((p) => [id, p.depotsOuverts === true && p.remplacementAutorise !== false] as const),
+      catchError(() => of(null)),
+    ))).subscribe((liste) => this.ouvertes.set(new Map(liste.filter((x) => x !== null))));
+  }
+
   charger(): void {
     this.chargement.set(true);
     this.erreur.set(false);
@@ -156,6 +179,7 @@ export class MesOffres implements OnInit {
         // Les dépôts inachevés se purgent seuls : on ne les montre pas.
         this.offres.set(l.filter((o) => o.etat !== 'EN_COURS'));
         this.chargement.set(false);
+        this.lireProcedures([...new Set(l.map((o) => o.idDmc))]);
       },
       error: () => {
         this.erreur.set(true);

@@ -601,6 +601,13 @@ export interface ResultatPublic {
   dateAffichage: string | null;
   datePublicationAvis?: string | null;
   avisDisponible?: boolean;
+  /** Tranche 2d — lot déclaré infructueux (attributaire et montant nuls) : son motif et la date de la décision. */
+  infructueux?: boolean;
+  motifInfructuosite?: string | null;
+  dateDecision?: string | null;
+  /** Tranche 2d — procédure déclarée sans suite : une seule entrée, `lot` nul. */
+  sansSuite?: boolean;
+  motifsSansSuite?: string | null;
 }
 
 /** `GET /api/fiches-marche/{idDmc}/attribution` — 404 tant que l'évaluation n'est pas ouverte. */

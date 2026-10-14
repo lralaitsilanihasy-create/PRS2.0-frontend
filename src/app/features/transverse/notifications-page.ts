@@ -11,6 +11,19 @@ import { Dossier, Notification, Role } from '../../models';
 import { DossierService, NotificationService } from '../../services';
 import { DossierConsultation } from '../circuit/dossier-consultation';
 
+/** Les sigles d'un code de notification, gardés en capitales dans son libellé. */
+const SIGLES: ReadonlySet<string> = new Set(['PV', 'CC', 'PRMP', 'UGPM', 'CAO', 'AMI', 'DAO', 'DMC', 'PPM', 'AGPM', 'SIGMP', 'AE', 'PI', 'CNM', 'ARMP']);
+/** Les mots d'un code de notification qui portent un accent en français. */
+const ACCENTS: Readonly<Record<string, string>> = {
+  A: 'à', ACCEPTE: 'accepté', AJOUTEE: 'ajoutée', ANNULE: 'annulé', APPROUVE: 'approuvé', APRES: 'après', ATTRIBUE: 'attribué',
+  CEREMONIE: 'cérémonie', CLES: 'clés', CLOTURE: 'clôture', CREE: 'créé', DECISION: 'décision', DEFINITIF: 'définitif', DELAI: 'délai',
+  DEPASSEMENT: 'dépassement', DEPOSEE: 'déposée', DEPOT: 'dépôt', DEPOTS: 'dépôts', DESIGNE: 'désigné', DIFFUSEE: 'diffusée',
+  ECHEANCE: 'échéance', ECHU: 'échu', ELIGIBLE: 'éligible', ENREGISTRE: 'enregistré', EVALUATION: 'évaluation', INTERIM: 'intérim',
+  NOTIFIE: 'notifié', PIECE: 'pièce', PIECES: 'pièces', POSEE: 'posée', PRECISION: 'précision', PRET: 'prêt', PUBLIE: 'publié',
+  PUBLIEES: 'publiées', RECEPTION: 'réception', RECU: 'reçu', RECUE: 'reçue', REFUSE: 'refusé', REPONSE: 'réponse', REPUTE: 'réputé',
+  REEXAMINER: 'réexaminer', SEANCE: 'séance', SIGNE: 'signé', VALIDEE: 'validée', VERIFICATION: 'vérification', VERIFIER: 'vérifier',
+};
+
 /** Profils disposant d'un écran messagerie (routage des notifications MESSAGE). */
 const MESSAGERIE_ROLES: Record<string, string> = {
   CHEF_COMMISSION: 'cc',
@@ -370,8 +383,13 @@ export class NotificationsPage {
     return isNaN(d.getTime()) ? iso : new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'short' }).format(d);
   }
 
-  /** Libellé lisible d'un type d'événement (code brut humanisé). */
+  /**
+   * Libellé lisible d'un type d'événement, tiré du code. ⚠️ 14/10 (refonte des présentations) — le filtre affichait « Cles publiees »,
+   * « Recu a valider » : les mots du code retrouvent leurs accents, et les sigles restent en capitales.
+   */
   libelleType(t: string): string {
-    return t.replaceAll('_', ' ').toLowerCase().replace(/^./, (c) => c.toUpperCase());
+    const mots = t.split('_').map((m) => SIGLES.has(m) ? m : (ACCENTS[m] ?? m.toLowerCase()));
+    const texte = mots.join(' ');
+    return texte.charAt(0).toUpperCase() + texte.slice(1);
   }
 }

@@ -1200,7 +1200,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       if (r.statut !== 'OBS') return;
       out.push({ ...vide, groupe: 'pieces', etape: this.offsetPieces() + i, titre: `Pièce ${i + 1}`, sousTitre: this.libellePiece(p), texte: r.observation.trim(), idDetail: null, idPt: null, index: 0, idPiece: p.idPiece ?? null });
     });
-    if (this.hasEtapeDossier()) pousser('dossier', this.etapeDossierIdx(), 'Contrôles du dossier', null, this.pointsDossier());
+    if (this.hasEtapeDossier()) pousser('dossier', this.etapeDossierIdx(), 'Grille du dossier', null, this.pointsDossier());
     return out.map((o, i) => ({ ...o, numero: i + 1 }));
   });
   /** Cellules observées du plan (encadré + pastille), bénéficiaire compris. */
@@ -1450,10 +1450,10 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
     }
     return {
       ...base,
-      eyebrow: 'Contrôles du dossier',
+      eyebrow: 'Grille du dossier',
       titre: 'Points inter-lignes : fractionnement, cohérence',
-      raison: raison('les contrôles du dossier'),
-      libelleValider: 'Valider les contrôles du dossier',
+      raison: raison('la grille du dossier'),
+      libelleValider: 'Valider la grille du dossier',
       libellePrecedent: precedent,
     };
   });

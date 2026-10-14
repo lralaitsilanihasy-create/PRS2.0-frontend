@@ -8,6 +8,7 @@ import { Attribution, LotAttribution, TypeRecours } from '../../models';
 import { AttributionService, ParametreRecoursSuspensifsService } from '../../services';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 import { AttributionLot } from './attribution-lot';
+import { DOSSIER_STATUT_LABELS } from '../../shared/circuit/circuit-workflow';
 import { DecisionsLot } from './decisions-lot';
 import { ariary } from './libelles-evaluation';
 
@@ -16,6 +17,14 @@ const LIBELLES_ETAT: Readonly<Record<string, string>> = {
   PROPOSE: 'Proposition du rapport — dossier de marché à créer',
   AU_CONTROLE: 'Au contrôle de la Commission',
   AVIS_RENDU: 'Avis de la Commission rendu',
+  // ⚠️ 14/10 (refonte des présentations) — les états de la tranche 2b s'affichaient en code brut (« INFORME »).
+  ATTRIBUE: 'Attribué',
+  INFORME: 'Candidats informés — délai d’attente en cours',
+  SIGNABLE: 'Délai d’attente écoulé — signature possible',
+  SIGNE: 'Marché signé',
+  NOTIFIE: 'Marché notifié',
+  PUBLIE: 'Avis d’attribution publié',
+  RETIRE: 'Attribution retirée',
   INFRUCTUEUX: 'Déclaré infructueux',
 };
 const LIBELLES_AVIS: Readonly<Record<string, string>> = { FAV: 'Favorable', FAVR: 'Favorable avec réserves', DEF: 'Défavorable' };
@@ -52,7 +61,7 @@ const ETATS_SIGNES: readonly string[] = ['SIGNE', 'NOTIFIE', 'PUBLIE', 'RETIRE',
             }
             @if (l.dossierMarche; as d) {
               <p class="text-sm">
-                Dossier de marché n° <span class="cnm-mono">{{ d.idDossier }}</span> ({{ d.sousType }}){{ d.statut ? ' · ' + d.statut : '' }}{{ d.creeLe ? ' · créé le ' + dateHeure(d.creeLe) : '' }}{{ d.creePar ? ' par ' + d.creePar : '' }}
+                Dossier de marché n° <span class="cnm-mono">{{ d.idDossier }}</span> ({{ d.sousType }}){{ d.statut ? ' · ' + statutDossier(d.statut) : '' }}{{ d.creeLe ? ' · créé le ' + dateHeure(d.creeLe) : '' }}{{ d.creePar ? ' par ' + d.creePar : '' }}
                 @if (d.avis) { · avis de la Commission : <strong>{{ avis[d.avis] ?? d.avis }}</strong> }
               </p>
             }
@@ -108,6 +117,10 @@ export class AttributionLots implements OnInit {
   /** ⚠️ R9a (V111, 14/10) — les recours suspensifs du réglage de l'Administrateur, lus une fois pour tous les lots ; nul si illisible. */
   readonly recoursSuspensifs = signal<TypeRecours[] | null>(null);
   readonly etats = LIBELLES_ETAT;
+  /** Le statut du dossier de marché en clair (« En vérification »), jamais le code. */
+  statutDossier(s: string): string {
+    return DOSSIER_STATUT_LABELS[s] ?? s;
+  }
   readonly avis = LIBELLES_AVIS;
   readonly ariary = ariary;
   readonly dateHeure = dateHeureFr;

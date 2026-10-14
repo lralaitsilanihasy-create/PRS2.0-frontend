@@ -43,7 +43,8 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
         </div>
       </header>
       <!-- Phrase de rôle (proposition 2026-09-22, lot B) : à quoi sert l'écran, pour qui. -->
-      <p class="page-role">Vos dossiers en cours à la Commission, avec leur statut, leur date d'enregistrement et la fin de traitement prévue ; les brouillons ne sont pas ici.</p>
+      <!-- ⚠️ 14/10 — la phrase disait « les brouillons ne sont pas ici » alors que la liste les porte depuis le 13/09 (demande pilote). -->
+      <p class="page-role">Tous vos dossiers, du brouillon à la clôture : leur statut, leur date d'enregistrement à la Commission et la fin de traitement prévue. La PRMP y soumet ses brouillons.</p>
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>

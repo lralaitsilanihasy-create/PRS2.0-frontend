@@ -356,6 +356,12 @@ export interface BesoinEnLigne {
 
 export type EtatOffre = 'EN_COURS' | 'DEPOSEE' | 'REMPLACEE' | 'RETIREE' | 'ECARTEE';
 
+/** L'état d'une offre en clair, vu de la commission et de la PRMP (évaluation, écrans figés) — jamais le code (« REMPLACEE »). */
+export function libelleEtatOffre(etat: string | null | undefined): string {
+  const L: Readonly<Record<EtatOffre, string>> = { EN_COURS: 'En cours', DEPOSEE: 'Déposée', REMPLACEE: 'Remplacée', RETIREE: 'Retirée', ECARTEE: 'Écartée' };
+  return etat ? (L[etat as EtatOffre] ?? etat) : '—';
+}
+
 /** ⚠️ V86 (lot 3 PI, PI-b) — les deux enveloppes d'une proposition de prestations intellectuelles, scellées chacune à part. */
 export type EnveloppeOffre = 'TECHNIQUE' | 'FINANCIERE';
 
