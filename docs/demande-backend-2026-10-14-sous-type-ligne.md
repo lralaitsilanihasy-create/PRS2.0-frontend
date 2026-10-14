@@ -36,3 +36,19 @@ le paramètre serveur n'est utile que si la liste devient longue.
 > - **Repli provisoire** : tant que `sousType` n'est pas servi, le front applique la règle du serveur au mode
 >   (`libelleMode`) et à la catégorie de la ligne (`sousTypeDeLigne`, `models/fiche-marche.model.ts`). Dès que B1 est livré, le
 >   champ servi l'emporte et la copie de la règle sera retirée.
+
+> ✅ **Backend, 2026-10-14 — B1 et B2 livrés, sans migration** (`DmcService.eligibles`, `LigneEligibleDto.sousType`) :
+> - **B1** : `sousType` sur chaque ligne, par `SousTypesDossier.dossierMiseEnConcurrence` — le libellé du mode de la ligne en
+>   vigueur et sa catégorie (`PRESTATIONS_INTELLECTUELLES` → `DC`). Une ligne sans catégorie (`categorieOutillee = false`)
+>   reçoit la règle du mode seul. Le repli du front peut être retiré.
+> - **B2** : `?sousType=` (casse indifférente) filtre côté serveur ; un code hors des six (`DAOO`, `DAOR`, `DAOOI`, `DAORI`,
+>   `DAOOPREQUAL`, `DC`) → 400 `SOUS_TYPE_INCONNU`, `DAO` compris.
+> - **H1 confirmée** : le champ porte la règle **à la date de la lecture**, même pour une ligne `dejaDao`. Quand la fiche a déjà
+>   produit son dossier, le sous-type qui fait foi est celui du dossier (`DossierDto.idTypeDossier`), figé à sa création ; les
+>   deux ne divergent que si le mode ou la nature de la ligne a changé dans une version ultérieure du plan.
+> - **H2 confirmée** : `DAO` n'est jamais servi.
+
+> ✅ **Front, 2026-10-14 — repli retiré, demande close.** La copie de la règle (`sousTypeDeLigne`) est supprimée : « Appels
+> d'offres » filtre sur le `sousType` servi (`?sousType=` reste un paramètre de l'écran ; la liste complète est lue une fois et
+> filtrée sur place, B2 n'est pas appelé). Le code `DAO` reçu dans l'adresse se lit `DAOO`, comme au serveur. Tests adaptés
+> (les lignes de test portent leur `sousType`) ; la règle elle-même n'est plus testée côté front, elle l'est côté serveur.

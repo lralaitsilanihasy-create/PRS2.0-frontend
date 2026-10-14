@@ -255,10 +255,11 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
   });
 
   it('14/10 (pilote) — ?sousType= depuis « Créer dossier » : seules les lignes de ce sous-type, avec le bandeau qui le dit', () => {
-    const preq = { ...LIGNES[0], idDetail: 21, designationMarche: 'Pont (pré-qualification)', libelleMode: 'APPEL D’OFFRE AVEC PRE-QUALIFICATION' };
-    const pi = { ...LIGNES[0], idDetail: 22, designationMarche: 'Étude', categorie: 'PRESTATIONS_INTELLECTUELLES' as const };
+    const preq = { ...LIGNES[0], idDetail: 21, designationMarche: 'Pont (pré-qualification)', libelleMode: 'APPEL D’OFFRE AVEC PRE-QUALIFICATION', sousType: 'DAOOPREQUAL' };
+    const pi = { ...LIGNES[0], idDetail: 22, designationMarche: 'Étude', categorie: 'PRESTATIONS_INTELLECTUELLES' as const, sousType: 'DC' };
     monter('PRMP', null, { sousType: 'DAOOPREQUAL' });
-    http.expectOne('/api/dmcs/eligibles').flush([...LIGNES, preq, pi]);
+    // Le sous-type de chaque ligne est servi par le serveur (backend e16a4f5) ; les lignes de LIGNES sont des DAOO.
+    http.expectOne('/api/dmcs/eligibles').flush([...LIGNES.map((l) => ({ ...l, sousType: 'DAOO' })), preq, pi]);
     rendre();
     const lignes = Array.from(racine().querySelectorAll('tbody tr'));
     expect(lignes.length).toBe(1);
@@ -268,7 +269,7 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
 
     // Aucune ligne du sous-type : le message dit pourquoi, et où corriger.
     monter('PRMP', null, { sousType: 'DAOR' });
-    http.expectOne('/api/dmcs/eligibles').flush(LIGNES);
+    http.expectOne('/api/dmcs/eligibles').flush(LIGNES.map((l) => ({ ...l, sousType: 'DAOO' })));
     rendre();
     expect(texte(racine().querySelector('.fm__vide'))).toContain('Aucune ligne éligible pour un dossier d’appel d’offres restreint');
     expect(texte(racine().querySelector('.fm__vide'))).toContain('se corrige dans le plan de passation');

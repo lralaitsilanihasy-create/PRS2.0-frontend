@@ -546,27 +546,11 @@ export interface LigneEligible {
   idNature?: number | null;
   libelleNature?: string | null;
   /**
-   * ⚠️ Demandé au backend le 14/10 (`docs/demande-backend-2026-10-14-sous-type-ligne.md`) — le sous-type du dossier que
-   * la fiche de cette ligne produira (`DAOO`, `DAOOI`, `DAOOPREQUAL`, `DAOR`, `DAORI`, `DC`). Absent tant que non servi :
-   * `sousTypeDeLigne` le déduit alors par la règle du serveur.
+   * ⚠️ Backend e16a4f5 (14/10, `docs/demande-backend-2026-10-14-sous-type-ligne.md`) — le sous-type du dossier que la fiche
+   * de cette ligne produira (`DAOO`, `DAOOI`, `DAOOPREQUAL`, `DAOR`, `DAORI`, `DC`), calculé par le serveur à la lecture avec
+   * la règle de la validation (mode de la ligne, catégorie). Une fiche qui a déjà produit son dossier : le sous-type de ce dossier fait foi.
    */
   sousType?: string | null;
-}
-
-/**
- * Le sous-type du dossier que produira la fiche d'une ligne : celui que sert le serveur, sinon la règle du serveur
- * (`SousTypesDossier.dossierMiseEnConcurrence`, regles-gestion.md, M1 du 08/10) appliquée au mode et à la catégorie de la
- * ligne — prestations intellectuelles → `DC` ; mode international → `DAOOI` (`DAORI` s'il est restreint) ; avec
- * pré-qualification → `DAOOPREQUAL` ; restreint → `DAOR` ; sinon `DAOO`. ⚠️ Repli provisoire : à retirer quand `sousType` est servi.
- */
-export function sousTypeDeLigne(l: Pick<LigneEligible, 'sousType' | 'libelleMode' | 'categorie'>): string {
-  if (l.sousType) return l.sousType;
-  if (l.categorie === 'PRESTATIONS_INTELLECTUELLES') return 'DC';
-  const m = (l.libelleMode ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
-  const restreint = m.includes('restreint');
-  if (m.includes('international')) return restreint ? 'DAORI' : 'DAOOI';
-  if (m.includes('pre-qualification') || m.includes('prequalification') || m.includes('pre qualification')) return 'DAOOPREQUAL';
-  return restreint ? 'DAOR' : 'DAOO';
 }
 
 /**

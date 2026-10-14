@@ -9,7 +9,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { ouvrirBlobSur, telechargerBlob } from '../../../core/securite/fichiers-surs';
 import { ApiError, codeErreur, corpsErreur, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
-import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, CompteDesignable, DocumentDao, DocumentFiche, EtatParametresInternes, TypeChamp, FicheMarche, LigneEligible, ObservationPv, PRESENTATION_SOUS_TYPE_FICHE, ReferentielFiche, RubriqueFiche, TypeMarche, VersionFiche, sousTypeDeLigne } from '../../../models';
+import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, CompteDesignable, DocumentDao, DocumentFiche, EtatParametresInternes, TypeChamp, FicheMarche, LigneEligible, ObservationPv, PRESENTATION_SOUS_TYPE_FICHE, ReferentielFiche, RubriqueFiche, TypeMarche, VersionFiche } from '../../../models';
 import { ChampFicheMarcheService, DmcService, FicheMarcheService } from '../../../services/fiche-marche.services';
 import { ObservationPvService } from '../../../services/circuit.services';
 import { decomposerObservation } from '../../../shared/circuit/observation-pv-card';
@@ -198,7 +198,7 @@ export class FicheMarcheEcran {
   readonly filtreDossier = computed(() => this.raccourci().dossier);
   /**
    * ⚠️ 14/10 (constat du pilote) — `?sousType=` depuis « Créer dossier » : seules les lignes dont la fiche produira ce
-   * sous-type sont proposées (`sousTypeDeLigne`). Le libellé vient du référentiel des sous-types produits par une fiche.
+   * sous-type sont proposées (`sousType` servi par le serveur). Le libellé vient du référentiel des sous-types produits par une fiche.
    */
   readonly filtreSousType = computed(() => this.raccourci().sousType);
   readonly raisonSousTypeFiltre = computed(() => PRESENTATION_SOUS_TYPE_FICHE[this.filtreSousType() ?? '']?.raison ?? 'le sous-type se déduit de la ligne');
@@ -216,7 +216,7 @@ export class FicheMarcheEcran {
     const d = this.filtreDossier();
     const t = this.filtreSousType();
     const t2 = t === 'DAO' ? 'DAOO' : t;
-    return this.eligibles().filter((l) => (d == null || l.idDossier === d) && (t2 == null || sousTypeDeLigne(l) === t2));
+    return this.eligibles().filter((l) => (d == null || l.idDossier === d) && (t2 == null || l.sousType === t2));
   });
   readonly refDossierFiltre = computed(() => {
     const d = this.filtreDossier();
