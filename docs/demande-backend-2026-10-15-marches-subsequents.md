@@ -81,6 +81,48 @@ Textes lus :
 > ⚠️ **2026-10-15, livré avec B0 :** l'avertissement **`MULTI_ATTRIBUTAIRE_NON_OUTILLE`** apparaît au bilan
 > (`bilanControles.avertissements`), bloc `B07`, `champs` vide. Il se déclenche dès que le cadrage porte
 > `attributaires = MULTI` et ne bloque jamais la validation. Il sera retiré à la livraison de MT.
+>
+> ⚠️ **2026-10-15, tranche MT livrée en partie : MT-a (l'évaluation).** MT est découpée en deux.
+>
+> **MT-a, livrée :**
+> - La post-qualification d'un contrat-cadre multi-attributaire décide **chaque** offre classée, dans l'ordre. `QUALIFICATION`
+>   ne s'arrête que lorsque toutes sont décidées (409 `ETAPE_INCOMPLETE` sinon).
+> - `lots[].proposition` porte `titulaires[]` (`idOffre, numero, candidat, montant, montantTtc, delai, rang`, les qualifiées
+>   dans l'ordre du classement) et `seulTitulaireQualifie` (constat de l'art. 17). Les champs de tête restent ceux du premier
+>   titulaire.
+> - Le rapport énumère les titulaires.
+> - La PRMP peut déclarer le lot infructueux quand un seul titulaire est qualifié (point B0 n° 4).
+>
+> **MT-b, à suivre : l'attribution à plusieurs titulaires.**
+> - MT-b1 : V122, table des titulaires du lot ; attribution à tous les titulaires ; lettres d'attribution et de non-retenu qui
+>   nomment les titulaires ; résultat du candidat et page publique.
+> - MT-b2 : pièces de chaque titulaire, signature unique du contrat-cadre par la PRMP et les titulaires (art. 15), notification à
+>   chaque titulaire, avis d'attribution qui les liste.
+>
+> **Questions au pilote pour MT-b :**
+> 1. Les pièces fiscales et sociales sont-elles exigées de chaque titulaire avant la signature ?
+> 2. Le retrait d'un titulaire laisse-t-il le contrat-cadre aux autres, ou le retrait et la réattribution sont-ils refusés en
+>    multi-attributaire pour l'instant ?
+> 3. Le projet de marché soumis à la Commission nomme-t-il tous les titulaires ?
+> 4. Le nombre de titulaires est-il plafonné ?
+>
+> D'ici MT-b, l'attribution ne désigne que le premier titulaire. L'avertissement `MULTI_ATTRIBUTAIRE_NON_OUTILLE` le dit
+> désormais ainsi.
+>
+> ⚠️ **2026-10-15, réponses du pilote pour MT-b (décret n° 2019-1064) :**
+> 1. **Oui** : les pièces fiscales et sociales sont exigées de **chaque** titulaire avant la signature. Chacun signe le
+>    contrat-cadre et en est partie (art. 15) : la règle de l'attributaire vaut pour chacun.
+> 2. Le retrait d'un titulaire **laisse le contrat-cadre aux autres**. La réattribution à un candidat non titulaire est
+>    **refusée** : « une fois conclu, un contrat-cadre n'est plus ouvert à de nouveaux opérateurs économiques » (art. 18). S'il
+>    ne reste qu'un titulaire, c'est le cas de l'art. 17 : la PRMP peut déclarer la procédure infructueuse.
+> 3. **Oui** : le projet de marché soumis à la Commission nomme **tous** les titulaires. Il n'y a qu'un contrat-cadre, signé par
+>    la PRMP et tous les titulaires (art. 15). MT-b1 peut démarrer.
+> 4. **Pas de plafond dans le décret.** Demandé : un nombre maximal de titulaires **facultatif** dans la fiche (DAO) ; vide,
+>    tous les qualifiés peuvent être retenus.
+>
+> **Point à prendre dans MT-b1 (art. 13 et 14) :** les titulaires sont « sélectionnés par la **PRMP** parmi les candidats
+> qualifiés », sur proposition de la CAO. `titulaires[]` de MT-a est donc une **proposition** : à l'attribution, la PRMP retient
+> tout ou partie des qualifiés (dans la limite du point 4), pas l'ensemble d'office.
 
 ## Lot MS-1 — Le contrat-cadre (ou le marché à commandes) en vigueur
 

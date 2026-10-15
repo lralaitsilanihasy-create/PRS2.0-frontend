@@ -11,6 +11,7 @@ import { AttributionLot } from './attribution-lot';
 import { DOSSIER_STATUT_LABELS } from '../../shared/circuit/circuit-workflow';
 import { DecisionsLot } from './decisions-lot';
 import { ariary } from './libelles-evaluation';
+import { TitulairesProposes } from './titulaires-proposes';
 
 const LIBELLES_ETAT: Readonly<Record<string, string>> = {
   EN_EVALUATION: 'Évaluation en cours',
@@ -40,7 +41,7 @@ const ETATS_SIGNES: readonly string[] = ['SIGNE', 'NOTIFIE', 'PUBLIE', 'RETIRE',
 @Component({
   selector: 'app-attribution-lots',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, AttributionLot, DecisionsLot],
+  imports: [RouterLink, AttributionLot, DecisionsLot, TitulairesProposes],
   template: `
     <!-- ⚠️ 09/10 (2d) — montré aussi pendant une reprise de l’évaluation : le lot, la décision et le rapport archivé restent lisibles. -->
     @if (visible() && attribution(); as a) {
@@ -57,6 +58,7 @@ const ETATS_SIGNES: readonly string[] = ['SIGNE', 'NOTIFIE', 'PUBLIE', 'RETIRE',
                 <p class="text-sm">Le rapport propose de déclarer le lot <strong>infructueux</strong>{{ p.motifInfructuosite ? ' : ' + p.motifInfructuosite : ' (aucune offre qualifiée)' }} — décision de la PRMP.</p>
               } @else {
                 <p class="text-sm">Proposition du rapport : offre n° {{ p.numero }} · <strong>{{ p.candidat }}</strong> — {{ ariary(p.montant) }} HT · délai {{ p.delai ?? '—' }}</p>
+                <app-titulaires-proposes [proposition]="p" [lot]="l.lot" />
               }
             }
             @if (l.dossierMarche; as d) {

@@ -9,6 +9,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { LotAttribution, SansSuite } from '../../models';
 import { DecisionsLot, infructuositeDeclarable, refus2d, repriseOuverte } from './decisions-lot';
 import { SansSuiteVue } from './sans-suite';
+import { TitulairesProposes } from './titulaires-proposes';
 
 const LOT = (extra: Partial<LotAttribution>): LotAttribution =>
   ({ lot: 1, etat: 'AVIS_RENDU', proposition: null, dossierMarche: null, projetDisponible: false, ...extra }) as LotAttribution;
@@ -30,6 +31,37 @@ describe('Attribution, tranche 2d (V91-V93)', () => {
     expect(repriseOuverte(LOT({ dossierMarche: DEF }))).toBe(true);
     expect(infructuositeDeclarable(LOT({ dossierMarche: DEF, attributaire: { idOffre: 'o', numero: 1, candidat: 'X', nif: null, montant: 1, montantTtc: 1, delai: null, motif: null, le: '', par: null } }))).toBe(false);
     expect(infructuositeDeclarable(LOT({ dossierMarche: DEF, infructuosite: { le: '', par: null, motif: 'x', decisionReference: null, decisionDate: null, suite: null } }))).toBe(false);
+  });
+
+  it('MT-a (décret art. 17) : un seul titulaire qualifié d’un contrat-cadre ouvre la déclaration d’infructuosité', () => {
+    const p = { idOffre: 'o-1', numero: 1, candidat: 'Seul', montant: 10, montantTtc: 12, delai: null, infructueux: false };
+    expect(infructuositeDeclarable(LOT({ etat: 'PROPOSE', proposition: { ...p, seulTitulaireQualifie: true } }))).toBe(true);
+    expect(infructuositeDeclarable(LOT({ etat: 'PROPOSE', proposition: { ...p, seulTitulaireQualifie: false } }))).toBe(false);
+  });
+
+  it('MT-a : les titulaires proposés en tableau, et le constat de l’art. 17', () => {
+    preparer();
+    const f = TestBed.createComponent(TitulairesProposes);
+    const t = (rang: number, n: number) => ({ idOffre: 'o-' + n, numero: n, candidat: 'Entreprise ' + n, montant: 1000 * n, montantTtc: 1200 * n, delai: '30 jours', rang });
+    f.componentRef.setInput('proposition', { idOffre: 'o-4', numero: 4, candidat: 'Entreprise 4', montant: 4000, montantTtc: 4800, delai: null, infructueux: false, titulaires: [t(1, 4), t(2, 2)] });
+    f.componentRef.setInput('lot', 1);
+    f.detectChanges();
+    const el = f.nativeElement as HTMLElement;
+    expect(texte(el)).toContain('2 titulaires proposés');
+    expect(texte(el)).toContain('art. 13');
+    expect(el.querySelectorAll('tbody tr').length).toBe(2);
+    expect(texte(el.querySelector('tbody tr'))).toContain('Entreprise 4');
+    expect(el.querySelector('[role="note"]')).toBeNull();
+
+    f.componentRef.setInput('proposition', { idOffre: 'o-4', numero: 4, candidat: 'Entreprise 4', montant: 4000, montantTtc: 4800, delai: null, infructueux: false, titulaires: [t(1, 4)], seulTitulaireQualifie: true });
+    f.detectChanges();
+    expect(texte(el)).toContain('1 titulaire proposé');
+    expect(texte(el.querySelector('[role="note"]'))).toContain('art. 17');
+
+    // Hors multi-attributaire : rien.
+    f.componentRef.setInput('proposition', { idOffre: 'o-4', numero: 4, candidat: 'Entreprise 4', montant: 4000, montantTtc: 4800, delai: null, infructueux: false, titulaires: [], seulTitulaireQualifie: false });
+    f.detectChanges();
+    expect(texte(el)).toBe('');
   });
 
   it('nomme les refus de la tranche 2d', () => {

@@ -14,9 +14,13 @@ export const LIBELLES_SUITE: Readonly<Record<SuiteInfructuosite, string>> = {
   NEGOCIEE: 'Procédure négociée',
 };
 
-/** L'infructuosité se déclare quand le rapport la propose ou que le dossier de marché est refusé — jamais après l'attribution (art. 56-VI). */
+/**
+ * L'infructuosité se déclare quand le rapport la propose ou que le dossier de marché est refusé — jamais après l'attribution (art. 56-VI).
+ * ⚠️ MT-a (15/10) — aussi quand un contrat-cadre multi-attributaire ne dégage qu'un titulaire (décret n° 2019-1064, art. 17).
+ */
 export function infructuositeDeclarable(l: LotAttribution): boolean {
-  return !l.infructuosite && !l.attributaire && (!!l.proposition?.infructueux || l.dossierMarche?.avis === 'DEF');
+  return !l.infructuosite && !l.attributaire
+    && (!!l.proposition?.infructueux || !!l.proposition?.seulTitulaireQualifie || l.dossierMarche?.avis === 'DEF');
 }
 
 /** La reprise de l'évaluation suit un avis défavorable sur le dossier de marché (Q3). */

@@ -245,6 +245,24 @@ export interface PropositionAttribution {
   idOffreFinanciere?: string | null;
   /** ⚠️ PI-d2b — le motif de l'infructuosité proposée (PI) : toutes écartées, une seule conforme, aucune au score minimum… */
   motifInfructuosite?: string | null;
+  /**
+   * ⚠️ MT-a (15/10, décret n° 2019-1064 art. 13) — contrat-cadre multi-attributaire : les offres qualifiées, dans l'ordre du
+   * classement, que la CAO propose comme titulaires ; vide hors multi-attributaire. Les champs de tête sont ceux du premier.
+   */
+  titulaires?: TitulairePropose[] | null;
+  /** ⚠️ MT-a — un seul titulaire qualifié (art. 17) : la PRMP peut déclarer le lot infructueux. */
+  seulTitulaireQualifie?: boolean | null;
+}
+
+/** ⚠️ MT-a — un titulaire proposé d'un contrat-cadre multi-attributaire. */
+export interface TitulairePropose {
+  idOffre: string;
+  numero: number | null;
+  candidat: string | null;
+  montant: number | null;
+  montantTtc: number | null;
+  delai: string | number | null;
+  rang: number | null;
 }
 
 export interface LotEvaluation {

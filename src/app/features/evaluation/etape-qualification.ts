@@ -8,6 +8,7 @@ import { EvaluationService, SeanceService } from '../../services';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 import { DroitsEvaluation, etapeArretee } from './droits-evaluation';
 import { LIBELLES_GROUPE_CRITERE, ariary, refusEvaluation } from './libelles-evaluation';
+import { TitulairesProposes } from './titulaires-proposes';
 
 /**
  * La **post-qualification** d'un lot (étape 5 du guide, art. 20, 47-V) : le serveur sert l'offre **dont c'est le tour** (la
@@ -18,6 +19,7 @@ import { LIBELLES_GROUPE_CRITERE, ariary, refusEvaluation } from './libelles-eva
  */
 @Component({
   selector: 'app-etape-qualification',
+  imports: [TitulairesProposes],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (lot().proposition; as p) {
@@ -27,6 +29,7 @@ import { LIBELLES_GROUPE_CRITERE, ariary, refusEvaluation } from './libelles-eva
         } @else {
           <p><strong>Proposition d'attribution — lot {{ lot().lot }}</strong> : offre n° {{ p.numero }} · {{ p.candidat }}</p>
           <p class="text-sm">Montant {{ ariary(p.montant) }} HT (prix corrigé, rabais déduit) · {{ ariary(p.montantTtc) }} TTC lu · délai d'exécution {{ p.delai ?? '—' }} (acte d'engagement)</p>
+          <app-titulaires-proposes [proposition]="p" [lot]="lot().lot" />
         }
       </section>
     }
