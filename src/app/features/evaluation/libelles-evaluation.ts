@@ -109,8 +109,8 @@ export function refusEvaluation(e: ApiError): string {
     case 'ETAPE_PRECEDENTE_OUVERTE': return 'L’étape précédente n’est pas arrêtée.';
     case 'ETAPE_INCOMPLETE': return `L’étape ne peut pas être arrêtée : ${offres ? 'offre(s) n° ' + offres + ' sans décision.' : 'une offre attend sa décision.'}`;
     case 'EGALITE_A_DEPARTAGER': return `Égalité en tête à départager${offres ? ' (offres n° ' + offres + ')' : ''} : la CAO les ordonne, avec un motif, à l’étape 3.`;
-    case 'RAPPORT_SIGNE': return 'Le rapport est produit : les étapes ne se rouvrent plus.';
-    case 'MOTIF_OBLIGATOIRE': return 'Le motif est obligatoire.';
+    // ⚠️ V120 (§B5) — un rapport en signature se retire (président) avant de rouvrir une étape ; signé de tous, il ne se retire plus.
+    case 'RAPPORT_SIGNE': return 'Le rapport est produit : pour rouvrir une étape, le président le retire d’abord. Un rapport signé de tous ne se retire plus : l’évaluation est close.';    case 'MOTIF_OBLIGATOIRE': return 'Le motif est obligatoire.';
     case 'CLAUSE_OBLIGATOIRE': return 'La clause du DAO visée est obligatoire.';
     case 'QUALIFICATION_OBLIGATOIRE': return 'Une offre écartée doit être qualifiée (irrecevable, non conforme, inappropriée, inacceptable).';
     case 'QUESTION_OBLIGATOIRE': return 'La question est obligatoire.';

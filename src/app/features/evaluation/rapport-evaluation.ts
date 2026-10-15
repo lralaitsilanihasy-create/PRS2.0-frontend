@@ -4,9 +4,10 @@ import { Observable } from 'rxjs';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur, telechargerBlob } from '../../core/securite/fichiers-surs';
-import { Evaluation } from '../../models';
+import { Evaluation, RapportRetire } from '../../models';
 import { EvaluationService } from '../../services';
 import { dateHeureFr } from '../candidat/libelles-candidat';
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { QuorumCaoVue, suffixeQualite } from '../procedure/quorum-cao';
 import { DroitsEvaluation } from './droits-evaluation';
 import { refusEvaluation } from './libelles-evaluation';
@@ -16,11 +17,15 @@ import { refusEvaluation } from './libelles-evaluation';
  * plan du guide ; signé par les membres de la CAO (hors ceux qui ont déclaré un conflit), chacun pouvant y joindre une
  * **observation** de désaccord ; un empêchement est constaté par le président (à défaut, le responsable). À la dernière
  * signature, l'évaluation est close et la PRMP notifiée. Le rapport n'est pas public.
+ *
+ * ⚠️ V120 (15/10, guide de la CAO, §B5 ; décision du pilote) — la troisième issue du PV de validation du guide : avant la dernière
+ * signature, le président (ou son représentant désigné pour le rapport) **retire** le rapport, motif obligatoire, pour faire reprendre
+ * l'évaluation. Les signatures tombent ; le rapport retiré reste lisible ; la commission rouvre l'étape de son choix.
  */
 @Component({
   selector: 'app-rapport-evaluation',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [QuorumCaoVue],
+  imports: [QuorumCaoVue, ModaleDirective],
   template: `
     @let ev = evaluation();
     <section class="card re" aria-labelledby="re-titre">
@@ -77,6 +82,13 @@ import { refusEvaluation } from './libelles-evaluation';
           </div>
         }
 
+        @if (peutRetirer()) {
+          <div class="re__retrait">
+            <p class="text-sm">La commission ne valide pas ce rapport ? Retirez-le avec son motif : les signatures posées tombent et l’évaluation reprend.</p>
+            <button type="button" class="btn btn-outline btn-sm re__btn" [disabled]="travail()" (click)="ouvrirRetrait()">Retirer le rapport</button>
+          </div>
+        }
+
         @if (peutConstater()) {
           <details class="re__empechement">
             <summary>Constater l'empêchement d'un signataire…</summary>
@@ -95,8 +107,46 @@ import { refusEvaluation } from './libelles-evaluation';
           </details>
         }
       }
+      @if (retires().length) {
+        <div class="re__retires">
+          <h3 class="re__h3">Rapports retirés</h3>
+          <ul class="re__liste">
+            @for (x of retires(); track x.id) {
+              <li>
+                Produit le {{ dateHeure(x.produitLe) }}, retiré le {{ dateHeure(x.retireLe) }}{{ x.nom ? ' par ' + x.nom : '' }} — motif : « {{ x.motif }} »
+                @if (x.signatures) { <span class="text-sm text-muted"> · {{ x.signatures }}</span> }
+                <button type="button" class="btn btn-ghost btn-sm" [disabled]="travail()" [attr.aria-label]="'Lire le rapport retiré le ' + dateHeure(x.retireLe)" (click)="lireRetire(x)">Lire (PDF)</button>
+              </li>
+            }
+          </ul>
+        </div>
+      }
       @if (erreur(); as e) { <div class="alert alert-danger" role="alert">{{ e }}</div> }
     </section>
+
+    <!-- Fermeture par le bouton ou Échap seulement (règle du 13/09). -->
+    @if (retrait()) {
+      <div class="modal-backdrop">
+        <div class="modal" role="dialog" aria-modal="true" aria-label="Retirer le rapport d’évaluation" appModale (appModaleFermer)="fermerRetrait()">
+          <div class="modal-header">
+            <span class="modal-title">Retirer le rapport d’évaluation</span>
+            <button type="button" class="btn-close" aria-label="Fermer sans retirer" [disabled]="travail()" (click)="fermerRetrait()">✕</button>
+          </div>
+          <div class="modal-body">
+            <p class="text-sm">Les {{ nbSignees() }} signature(s) déjà posée(s) tombent, chaque membre de la commission est averti et l’évaluation reprend : la commission rouvre l’étape à revoir, puis le responsable produit un nouveau rapport, qui citera ce retrait.</p>
+            <label class="form-group"><span class="form-label">Motif (porté au rapport suivant)</span>
+              <textarea class="form-control" rows="3" [value]="motifRetrait()" (input)="motifRetrait.set($any($event.target).value)"></textarea>
+              <span class="form-hint">Par exemple : demande d’éclaircissement à un candidat, recadrage de l’évaluation d’un lot.</span>
+            </label>
+            @if (erreur(); as e) { <div class="alert alert-danger" role="alert">{{ e }}</div> }
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" [disabled]="travail()" (click)="fermerRetrait()">Annuler</button>
+            <button type="button" class="btn btn-danger" [disabled]="!motifRetrait().trim() || travail()" (click)="retirer()">{{ travail() ? 'Retrait…' : 'Retirer le rapport' }}</button>
+          </div>
+        </div>
+      </div>
+    }
   `,
   styles: `
     .re { padding: 0.9rem 1.1rem; display: flex; flex-direction: column; gap: 0.5rem; }
@@ -109,6 +159,9 @@ import { refusEvaluation } from './libelles-evaluation';
     .re__case { display: inline-flex; gap: 0.4rem; align-items: center; font-size: var(--text-sm); }
     .re__btn { align-self: flex-start; }
     .re__empechement summary { cursor: pointer; font-size: var(--text-sm); }
+    .re__retrait { display: flex; flex-direction: column; gap: 0.4rem; }
+    .re__retrait p { margin: 0; }
+    .re__h3 { margin: 0.5rem 0 0.25rem; font-size: 0.95rem; }
     .re__form { display: grid; grid-template-columns: 1fr 2fr auto; gap: 0.5rem; align-items: end; padding-top: 0.5rem; }
     @media (max-width: 700px) { .re__form { grid-template-columns: 1fr; } }
   `,
@@ -134,6 +187,21 @@ export class RapportEvaluationVue {
   readonly motif = signal('');
   readonly travail = signal(false);
   readonly erreur = signal<string | null>(null);
+
+  /** ⚠️ V120 (§B5) */
+  readonly retrait = signal(false);
+  readonly motifRetrait = signal('');
+  readonly retires = computed<RapportRetire[]>(() => this.evaluation().rapportsRetires ?? []);
+  readonly nbSignees = computed(() => (this.evaluation().rapport?.signatures ?? []).filter((g) => !g.empechement).length);
+  /** Le président, ou le représentant désigné pour le rapport (qualité servie parmi les signataires attendus) ; le serveur tranche (403). */
+  readonly peutRetirer = computed(() => {
+    const ev = this.evaluation();
+    if (!ev.rapport || ev.rapport.signe || !this.droits().membre) return false;
+    const moi = this.moi();
+    const president = ev.declarations.some((d) => d.membre === moi && d.president);
+    const representant = ev.rapport.signaturesAttendues.some((a) => a.im === moi && a.qualite === 'REPRESENTANT');
+    return president || representant;
+  });
 
   readonly toutArrete = computed(() =>
     this.pi() ? this.evaluation().lots.every((l) => l.proposition != null) : this.evaluation().lots.every((l) => l.etape === 'RAPPORT'),
@@ -165,6 +233,31 @@ export class RapportEvaluationVue {
     this.geste(this.service.constaterEmpechement(this.idDmc(), this.empeche(), this.motif().trim()), 'L’empêchement est constaté ; il est porté au rapport.', () => {
       this.empeche.set('');
       this.motif.set('');
+    });
+  }
+
+  ouvrirRetrait(): void {
+    this.motifRetrait.set('');
+    this.erreur.set(null);
+    this.retrait.set(true);
+  }
+
+  fermerRetrait(): void {
+    if (!this.travail()) this.retrait.set(false);
+  }
+
+  retirer(): void {
+    this.geste(this.service.retirerRapport(this.idDmc(), this.motifRetrait().trim()), 'Le rapport est retiré : la commission rouvre l’étape à revoir.', () => this.retrait.set(false));
+  }
+
+  lireRetire(x: RapportRetire): void {
+    this.travail.set(true);
+    this.service.rapportRetire(this.idDmc(), x.id).subscribe({
+      next: (b) => {
+        this.travail.set(false);
+        ouvrirBlobSur(b);
+      },
+      error: (e: ApiError) => this.echec(e),
     });
   }
 

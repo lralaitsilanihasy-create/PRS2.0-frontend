@@ -36,6 +36,11 @@ d'évaluation est produit sur le **canevas du sous-type** du dossier (DAOO, DAOO
 seront intégrés (gabarits du code, comme les modèles de PV, ou référentiel administrable) et ce que le front doit afficher (le canevas
 utilisé, nommé sur le rapport ?).
 
+> ⚠️ **15/10 — corrigé par le pilote** : le canevas suit la **catégorie** (fournitures, travaux, prestations intellectuelles), pas le
+> sous-type, et les modèles sont ceux du **Guide de la Commission d'Appel d'Offres** (`docs/GuideCAO/`, annexes 1 à 3) : les sous-types
+> d'appel d'offres ne diffèrent que par le mode de passation, pas par l'évaluation. Ce §B3 est clos ; la suite est portée par
+> `demande-backend-2026-10-15-modeles-guide-cao.md`.
+
 ## Hypothèses (à confirmer ou corriger)
 
 - H1 — B1 ne s'applique qu'aux plans **créés ou mis à jour** après la livraison ; un plan déjà contrôlé n'est pas invalidé. Son

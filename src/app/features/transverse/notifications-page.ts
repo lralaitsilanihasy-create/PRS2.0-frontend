@@ -20,7 +20,7 @@ const ACCENTS: Readonly<Record<string, string>> = {
   DEPASSEMENT: 'dépassement', DEPOSEE: 'déposée', DEPOT: 'dépôt', DEPOTS: 'dépôts', DESIGNE: 'désigné', DIFFUSEE: 'diffusée',
   ECHEANCE: 'échéance', ECHU: 'échu', ELIGIBLE: 'éligible', ENREGISTRE: 'enregistré', EVALUATION: 'évaluation', INTERIM: 'intérim',
   NOTIFIE: 'notifié', PIECE: 'pièce', PIECES: 'pièces', POSEE: 'posée', PRECISION: 'précision', PRET: 'prêt', PUBLIE: 'publié',
-  PUBLIEES: 'publiées', RECEPTION: 'réception', RECU: 'reçu', RECUE: 'reçue', REFUSE: 'refusé', REPONSE: 'réponse', REPUTE: 'réputé',
+  PUBLIEES: 'publiées', RECEPTION: 'réception', RECU: 'reçu', RECUE: 'reçue', REFUSE: 'refusé', REPONSE: 'réponse', REPUTE: 'réputé', RETIRE: 'retiré',
   REEXAMINER: 'réexaminer', SEANCE: 'séance', SIGNE: 'signé', VALIDEE: 'validée', VERIFICATION: 'vérification', VERIFIER: 'vérifier',
 };
 

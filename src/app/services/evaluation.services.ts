@@ -174,6 +174,20 @@ export class EvaluationService {
     return this.http.post<Evaluation>(this.url(idDmc, '/rapport/signer'), { observation }, this.ctx);
   }
 
+  /**
+   * ⚠️ V120 (§B5) — président, ou son représentant désigné pour le rapport : retire le rapport avant la dernière signature (les
+   * signatures tombent, l'évaluation reprend). 400 `MOTIF_OBLIGATOIRE`, 403, 409 `RAPPORT_NON_PRODUIT`, `RAPPORT_SIGNE`.
+   */
+  retirerRapport(idDmc: number, motif: string): Observable<Evaluation> {
+    return this.http.post<Evaluation>(this.url(idDmc, '/rapport/retirer'), { motif }, this.ctx);
+  }
+
+  /** Un rapport retiré (PDF, ou Word). */
+  rapportRetire(idDmc: number, id: number, format: 'pdf' | 'docx' = 'pdf'): Observable<Blob> {
+    const params = format === 'docx' ? new HttpParams().set('format', 'docx') : new HttpParams();
+    return this.http.get(this.url(idDmc, `/rapport/retires/${id}`), { params, responseType: 'blob', context: skipErrorToast() });
+  }
+
   /** Président (à défaut, le responsable) : 400 `MOTIF_ABSENT`, `NON_SIGNATAIRE`. */
   constaterEmpechement(idDmc: number, im: string, motif: string): Observable<Evaluation> {
     return this.http.post<Evaluation>(this.url(idDmc, '/rapport/empechement'), { im, motif }, this.ctx);

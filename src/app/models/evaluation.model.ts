@@ -257,6 +257,20 @@ export interface RapportEvaluation {
   quorum?: QuorumCao | null;
 }
 
+/**
+ * ⚠️ V120 (15/10, guide de la CAO, §B5) — un rapport retiré par le président (ou son représentant désigné pour le rapport) avant la
+ * dernière signature : gardé, lisible par `GET …/evaluation/rapport/retires/{id}`. `signatures` : texte lisible des signatures tombées.
+ */
+export interface RapportRetire {
+  id: number;
+  produitLe: string;
+  retireLe: string;
+  retirePar: string | null;
+  nom: string | null;
+  motif: string;
+  signatures: string | null;
+}
+
 export interface Evaluation {
   idDmc: number;
   etat: EtatEvaluation;
@@ -266,6 +280,8 @@ export interface Evaluation {
   lots: LotEvaluation[];
   nonEvaluees: OffreNonEvaluee[];
   rapport?: RapportEvaluation | null;
+  /** ⚠️ V120 — les rapports retirés avant leur validation, du plus ancien au plus récent (absent avant V120). */
+  rapportsRetires?: RapportRetire[] | null;
 }
 
 /** `GET …/lots/{lot}/tableau` — le tableau d'évaluation du guide (p. 9). */
