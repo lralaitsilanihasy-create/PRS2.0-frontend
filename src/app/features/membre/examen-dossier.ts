@@ -1129,9 +1129,10 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
         { cle: 'pieces' as const, libelle: 'Pièces jointes', nombre: this.nbPieces() },
       ];
     }
+    // ⚠️ 15/10 (demande du pilote) — la fiche de présentation avant le plan, dans l'ordre du parcours d'examen (étape 1 : la fiche).
     return [
-      { cle: 'ppm' as const, libelle: 'Plan de passation', nombre: this.lignesDuPlan().length },
       { cle: 'fiche' as const, libelle: 'Fiche de présentation', nombre: this.ficheDoc().nbMarchesConcernes },
+      { cle: 'ppm' as const, libelle: 'Plan de passation', nombre: this.lignesDuPlan().length },
       ...(this.agpmDoc().length || this.hasEtapeAgpm() ? [{ cle: 'agpm' as const, libelle: "Projet d'AGPM", nombre: this.agpmDoc().length }] : []),
       // ⚠️ Lot B — le dossier soumis PRODUIT par une fiche DAO la porte (`idDmc`) : elle se lit et s'observe ici.
       ...(this.dossier()?.idDmc != null ? [{ cle: 'dao' as const, libelle: 'Fiche DAO', nombre: null }] : []),
