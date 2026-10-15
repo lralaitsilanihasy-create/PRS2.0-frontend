@@ -749,6 +749,11 @@ export interface DisponibiliteAvis {
    * s'applique pas) ; nul sans version validée. Indicatif : `disponible` n'en dépend pas.
    */
   daoComplet?: 'PRODUIT' | 'A_ASSEMBLER' | 'SANS_ASSEMBLAGE' | null;
+  /**
+   * ⚠️ 15/10 (décret n° 2019-1064, art. 9 ; demande « marchés subséquents », B0) — contrat-cadre seulement : les supports de
+   * publicité minimaux, en rappel près de la saisie des supports. Rien n'est exigé ; liste vide hors contrat-cadre.
+   */
+  supportsMinimaux?: string[] | null;
 }
 
 /**

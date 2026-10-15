@@ -82,6 +82,17 @@
             <span class="form-hint">Par exemple : « le quotidien … du 06/10/2026 et le site de l’ARMP ». Vide, l’avis ne cite que le Journal des Marchés Publics.</span>
             @if (erreurs().supports; as m) { <span class="form-error">{{ m }}</span> }
           </label>
+          <!-- ⚠️ 15/10 (décret n° 2019-1064, art. 9) — contrat-cadre : les supports de publicité minimaux, en rappel (rien n'est exigé). -->
+          @if (etat()?.supportsMinimaux?.length) {
+            <div class="alert alert-info avs__large avs__minimaux" role="note">
+              <span>
+                Contrat-cadre : la mise en concurrence se publie au minimum sur les supports suivants (décret n° 2019-1064, art. 9) — citez ceux utilisés ci-dessus.
+                <ul class="avs__vides">
+                  @for (s of etat()!.supportsMinimaux!; track s) { <li>{{ s }}</li> }
+                </ul>
+              </span>
+            </div>
+          }
         </div>
 
         @if (preparation()) {

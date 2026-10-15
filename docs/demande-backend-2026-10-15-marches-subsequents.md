@@ -49,6 +49,35 @@ Textes lus :
    le point « plafond de durée du contrat-cadre » qui attendait le juriste : le décret le tranche. Contrôle à la validation de la
    fiche (`B02-DC-01`, `B07-DU-05`) : au-delà de 24 mois, une justification est exigée.
 
+> ⚠️ **2026-10-15, livraison backend de B0 : points 1, 2 et 5 livrés ; 3 vérifié ; 4 reporté.**
+> 1. **Délais livrés, rendus bloquants.** Ce ne sont plus deux paramètres : ce sont deux **délais légaux**, n° 10
+>    `PUBLICITE_CONTRAT_CADRE_AO` (10 jours) et n° 11 `PUBLICITE_CONTRAT_CADRE_CONSULTATION` (5 jours). Ils sont **bloquants**
+>    comme ceux de la loi, à la validation (`DELAI_PUBLICITE`) et à l'impression de l'avis (409). Ils s'appliquent au mode
+>    « consultation », puis à tout autre mode. V121 désactive `PUBLICITE_CONTRAT_CADRE`. `GET /api/delais-legaux` sert onze
+>    délais.
+> 2. **Livré en rappel.** `GET …/avis-specifique/disponibilite` porte `supportsMinimaux` : les cinq supports de l'art. 9,
+>    une liste vide hors contrat-cadre. Rien n'est exigé ; le front l'affiche près de la saisie des `supports`.
+> 3. **Vérifié, conforme pour un titulaire.** Les dix jours francs et l'avis d'attribution sous trente jours sont les délais
+>    légaux n° 6 et 8, déjà appliqués à l'attribution. **Écart :** l'évaluation s'arrête à la première offre qualifiée et
+>    l'attribution désigne **un** attributaire par lot. Le contrat-cadre **multi-attributaire**, qui doit retenir plusieurs
+>    titulaires, n'existe donc pas encore. Il manque aussi la notification « à tous les candidats » des titulaires multiples.
+> 4. **Reporté pour la même raison.** Le constat « un seul titulaire qualifié » suppose l'évaluation à plusieurs titulaires.
+>    Il viendra avec elle, en tête de MS-1 ou dans une tranche à part, à arbitrer.
+> 5. **Livré.** Règle bloquante `DUREE_CONTRAT_CADRE_MAX`, qui lit `B02-DC-01`, `B02-DC-02` et `B07-DU-05` (× 12 mois).
+>    Au-delà de 24 mois, la justification **`B02-DC-05`** est exigée. C'est un champ nouveau, facultatif, imprimé par aucun
+>    document. Script `docs/referentiel/2026-10-15-duree-contrat-cadre.sql`.
+>
+> **Front (15/10) :** `supportsMinimaux` est affiché en rappel dans la modale d'impression de l'avis, sous la saisie des
+> supports (encadré absent hors contrat-cadre, rien d'exigé).
+>
+> ⚠️ **2026-10-15, arbitrage du pilote sur les points 3 et 4 : une tranche à part, AVANT MS-1** (tranche « MT —
+> plusieurs titulaires »). Elle reprend l'évaluation et l'attribution **existantes** du contrat-cadre : retenir plusieurs offres
+> qualifiées par lot, rapport et proposition d'attribution à plusieurs titulaires, notification des titulaires à tous les
+> candidats, et le constat « un seul titulaire qualifié » (décret art. 17, point 4). MS-1 n'en dépend pas pour démarrer : il
+> lit une liste de titulaires, d'un ou de plusieurs. Le nouvel ordre est donné en H5.
+> D'ici la livraison de MT, le cadrage « Multi-attributaire » reste sélectionnable alors que l'attribution ne désigne qu'un
+> titulaire : **demandé**, un avertissement non bloquant à la validation de la fiche qui le dit.
+
 ## Lot MS-1 — Le contrat-cadre (ou le marché à commandes) en vigueur
 
 - À la notification, un objet **« contrat en vigueur »** : titulaire(s) — liste **fermée**, aucun nouvel opérateur (décret art. 18) ;
@@ -128,6 +157,7 @@ Textes lus :
 - H4 — Facturation, mandatement et paiement (loi art. 72, 74) restent hors de l'application.
 - H5 — Ordre de livraison proposé : B0, puis MS-1, MS-2, MS-3, MS-4 (le bon de commande du contrat-cadre suit l'attribution du
   marché subséquent, décret art. 33).
+  > ⚠️ 15/10 (arbitrage du pilote) — l'ordre devient : **B0, MT (plusieurs titulaires), MS-1, MS-2, MS-3, MS-4**.
 
 ## Ce que le front fera
 

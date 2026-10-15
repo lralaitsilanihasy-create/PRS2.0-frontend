@@ -206,6 +206,19 @@ describe('Avis spécifique — l’encart et la modale d’impression', () => {
     expect(boutonModale('Imprimer l’avis').disabled).toBe(true);
   });
 
+  it('décret 2019-1064 art. 9 — contrat-cadre : les supports minimaux en rappel dans la modale', () => {
+    monter(dispo({ disponible: true, idAvis: 'FAV', statutPv: 'SIGNE', supportsMinimaux: ['Site web de l’acheteur public', 'Site de l’ARMP'] }));
+    bouton('Imprimer l’avis spécifique')!.click();
+    rendre();
+    http.expectOne('/api/fiches-marche/38').flush({ idDmc: 38, typeMarche: 'CONTRAT_CADRE', categorie: 'FOURNITURES_SERVICES', cadrage: {}, valeurs: {}, valeursPpm: {}, nbLots: 1 });
+    http.expectOne((r) => r.url === '/api/champs-fiche-marche').flush({ blocs: [], champs: [] });
+    http.expectOne('/api/parametres/compte-dao').flush(COMPTE);
+    http.expectOne('/api/dossiers/100/publication-agpm').flush(JOURNAL);
+    rendre();
+    const note = racine().querySelector('[role="dialog"] .avs__minimaux');
+    expect(Array.from(note!.querySelectorAll('li')).map(texte)).toEqual(['Site web de l’acheteur public', 'Site de l’ARMP']);
+  });
+
   it('V118 — la raison PUBLICATION_AGPM_ABSENTE est nommée', () => {
     monter(dispo({ raison: 'PUBLICATION_AGPM_ABSENTE', idAvis: 'FAV', statutPv: 'SIGNE' }));
     expect(texte(racine().querySelector('.avs__attente'))).toContain('Déposez-la une fois sur le plan contrôlé');
