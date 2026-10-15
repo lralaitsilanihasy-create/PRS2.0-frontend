@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, ou
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { DecisionAnormale, DemandeEvaluation, Evaluation, IndicateursPrix, OffreEvaluee } from '../../models';
+import { DecisionAnormale, DemandeEvaluation, EstimationEvaluation, Evaluation, IndicateursPrix, OffreEvaluee } from '../../models';
 import { EvaluationService } from '../../services';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 import { DemandeVue } from './demande-vue';
@@ -39,6 +39,29 @@ import { LIBELLES_ANORMALE, ariary, ecartPourCent, refusEvaluation } from './lib
             </tbody>
           </table>
         </div>
+        <!-- ⚠️ Q11 (arbitrage du pilote, 14/10 ; V116) — l'estimation de la PRMP, article par article, lue à la demande. Jamais publiée. -->
+        <details class="ip__estim" (toggle)="lireEstimation($event)">
+          <summary>Estimation détaillée de la PRMP (non publiée)</summary>
+          @switch (estimation()) {
+            @case ('chargement') { <p class="text-sm" role="status">Chargement…</p> }
+            @case ('absente') { <p class="text-sm">Pas d’estimation détaillée pour ce lot : la fiche a été validée avant que les prix estimés soient demandés.</p> }
+            @case (null) {}
+            @default {
+              @let e = $any(estimation());
+              <p class="text-sm ip__methode">Total estimé : <strong>{{ ariary(e.totalEstime) }}</strong> HT · montant du lot au plan : <strong>{{ ariary(e.montantPlan) }}</strong></p>
+              <div class="cnm-table-wrap">
+                <table class="cnm-table">
+                  <thead><tr><th scope="col">N°</th><th scope="col">Désignation</th><th scope="col">Unité</th><th scope="col">Quantité</th><th scope="col">Prix unitaire estimé HT</th><th scope="col">Montant</th></tr></thead>
+                  <tbody>
+                    @for (a of e.articles; track $index) {
+                      <tr><td>{{ a.numeroPrix || a.ordre || $index + 1 }}</td><td>{{ a.designation }}</td><td>{{ a.unite }}</td><td class="ip__num">{{ a.quantite ?? '—' }}</td><td class="ip__num">{{ ariary(a.prixUnitaireEstime) }}</td><td class="ip__num">{{ ariary(a.montant) }}</td></tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          }
+        </details>
       </section>
     }
     @if (erreur(); as e) { <div class="alert alert-danger" role="alert">{{ e }}</div> }
@@ -48,6 +71,7 @@ import { LIBELLES_ANORMALE, ariary, ecartPourCent, refusEvaluation } from './lib
     .ip__h3 { margin: 0; font-size: 0.95rem; }
     .ip__methode { margin: 0; }
     .ip__num { text-align: right; white-space: nowrap; }
+    .ip__estim summary { cursor: pointer; font-weight: 600; font-size: 0.88rem; }
   `,
 })
 export class IndicateursPrixVue implements OnInit {
@@ -59,6 +83,23 @@ export class IndicateursPrixVue implements OnInit {
   readonly ecart = ecartPourCent;
   readonly indicateurs = signal<IndicateursPrix | null>(null);
   readonly erreur = signal<string | null>(null);
+  /** L'estimation détaillée, lue à la première ouverture du volet ; `absente` = 404 (fiche validée avant la règle). */
+  readonly estimation = signal<EstimationEvaluation | 'chargement' | 'absente' | null>(null);
+
+  lireEstimation(ev: Event): void {
+    if (!(ev.target as HTMLDetailsElement).open || this.estimation() !== null) return;
+    this.estimation.set('chargement');
+    this.service.estimation(this.idDmc(), this.lot()).subscribe({
+      next: (e) => this.estimation.set(e),
+      error: (e: ApiError) => {
+        if (e.status === 404) this.estimation.set('absente');
+        else {
+          this.estimation.set(null);
+          this.erreur.set(refusEvaluation(e));
+        }
+      },
+    });
+  }
 
   ngOnInit(): void {
     this.service.indicateursPrix(this.idDmc(), this.lot()).subscribe({

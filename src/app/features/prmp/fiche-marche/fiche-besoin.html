@@ -49,6 +49,7 @@
               <th scope="col" class="bs__c-b">Libellé au bordereau</th>
               <th scope="col" class="bs__c-u">Unité</th>
               <th scope="col" class="bs__c-q">Quantité</th>
+              <th scope="col" class="bs__c-pe">Prix unitaire estimé (HT) <span class="bs__np">non publié</span></th>
               <th scope="col" class="bs__c-pl">Plafond (%)</th>
               <th scope="col" class="bs__c-sd">Sous-détail</th>
               <th scope="col" class="bs__c-a"><span class="bs__sr">Actions</span></th>
@@ -57,7 +58,7 @@
           <tbody>
             @for (s of series(); track $index) {
               <tr class="bs__serie">
-                <th scope="colgroup" colspan="9">
+                <th scope="colgroup" colspan="10">
                   @if (s.code) {
                     <span class="bs__serie-t">Série {{ s.code }} —</span>
                     @if (lecture()) {
@@ -118,6 +119,14 @@
                       @if (erreurDe(r, 'quantite'); as msg) { <span class="form-error">{{ msg }}</span> }
                     }
                   </td>
+                  <td class="bs__c-pe">
+                    @if (lecture()) {
+                      <span class="bs__lu">{{ l.prixUnitaireEstime != null ? montantAr(l.prixUnitaireEstime) : '' }}</span>
+                    } @else {
+                      <input class="form-control" type="number" min="0" step="0.01" [value]="l.prixUnitaireEstime ?? ''" [attr.aria-label]="'Prix unitaire estimé HT de l’article ' + (r + 1)" (input)="saisirNombre(l, 'prixUnitaireEstime', $event)" />
+                      @if (erreurDe(r, 'prixUnitaireEstime'); as msg) { <span class="form-error">{{ msg }}</span> }
+                    }
+                  </td>
                   <td class="bs__c-pl">
                     @if (lecture()) { <span class="bs__lu">{{ l.plafond != null ? l.plafond + ' %' : '' }}</span> } @else {
                       <input class="form-control" type="number" min="0" max="100" step="0.01" [value]="l.plafond ?? ''" [attr.aria-label]="'Plafond en % des travaux de l’article ' + (r + 1)" (input)="saisirNombre(l, 'plafond', $event)" />
@@ -157,6 +166,7 @@
               } @else {
                 <th scope="col" class="bs__c-q">Quantité</th>
               }
+              <th scope="col" class="bs__c-pe">Prix unitaire estimé (HT) <span class="bs__np">non publié</span></th>
               <th scope="col" class="bs__c-a"><span class="bs__sr">Actions</span></th>
             </tr>
           </thead>
@@ -215,6 +225,14 @@
                     }
                   </td>
                 }
+                  <td class="bs__c-pe">
+                    @if (lecture()) {
+                      <span class="bs__lu">{{ l.prixUnitaireEstime != null ? montantAr(l.prixUnitaireEstime) : '' }}</span>
+                    } @else {
+                      <input class="form-control" type="number" min="0" step="0.01" [value]="l.prixUnitaireEstime ?? ''" [attr.aria-label]="'Prix unitaire estimé HT de l’article ' + ($index + 1)" (input)="saisirNombre(l, 'prixUnitaireEstime', $event)" />
+                      @if (erreurDe($index, 'prixUnitaireEstime'); as msg) { <span class="form-error">{{ msg }}</span> }
+                    }
+                  </td>
                 <td class="bs__c-a">
                   @if (!lecture()) {
                     <button type="button" class="bs__ic" aria-label="Monter cet article" [disabled]="$first" (click)="deplacer(l, -1)">↑</button>
@@ -226,7 +244,7 @@
               @if (l.ouverte) {
                 <tr class="bs__carac">
                   <td></td>
-                  <td [attr.colspan]="aCommande() ? 4 : 3">
+                  <td [attr.colspan]="aCommande() ? 5 : 4">
                     @if (!l.caracteristiques.length) {
                       <p class="bs__etat">Aucune caractéristique exigée — le contrôle « besoin incomplet » la réclamera.</p>
                     }
@@ -255,6 +273,23 @@
       <p class="bs__etat" role="status">
         Aucun article@if (lotAffiche(); as n) { au lot {{ n }}}. @if (!lecture()) { Ajoutez-en un : c'est lui qui portera les quantités du bordereau. }
       </p>
+    }
+
+    <!-- ⚠️ Q11 (arbitrage du pilote, 14/10 ; backend V116) — l'estimation du lot face au plan, en direct. La validation de la fiche
+         exige un prix pour chaque article et un total égal au montant du lot au plan. Jamais publiée. -->
+    @if (duLot().length) {
+      @let est = estimationDuLot();
+      <div class="bs__estim" role="status" [class.bs__estim--ok]="est.ecart === 0 && !est.sansPrix">
+        <span><strong>Estimation{{ lotAffiche() != null ? ' du lot ' + lotAffiche() : '' }}</strong> : {{ montantAr(est.total) }} HT</span>
+        @if (est.plan != null) {
+          <span>· montant au plan : {{ montantAr(est.plan) }}</span>
+          @if (est.ecart !== 0) { <span class="bs__estim-ecart">· écart : {{ montantAr(est.ecart) }} — la validation de la fiche sera refusée</span> }
+        } @else {
+          <span>· le plan ne porte pas de montant pour ce lot : le total ne lui est pas comparé</span>
+        }
+        @if (est.sansPrix) { <span class="bs__estim-ecart">· {{ est.sansPrix }} article(s) sans prix estimé</span> }
+        <span class="bs__np">non publié : ni le DAO, ni les candidats ne voient ces prix</span>
+      </div>
     }
 
     @if (!lecture()) {

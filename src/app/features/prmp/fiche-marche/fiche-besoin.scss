@@ -215,3 +215,21 @@
   font-size: 0.82rem;
   color: var(--n-500);
 }
+
+/* ⚠️ Q11 (14/10) — le prix unitaire estimé, jamais publié, et l'estimation du lot face au plan. */
+.bs__c-pe { width: 10rem; }
+.bs__np { display: inline-block; margin-left: 0.3rem; font-size: 0.72rem; font-weight: 500; color: var(--n-500); text-transform: none; letter-spacing: 0; }
+.bs__estim {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.5rem;
+  align-items: baseline;
+  margin-top: 0.75rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--warning-bdr);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--warning-bg);
+  font-size: 0.86rem;
+}
+.bs__estim--ok { border-color: var(--success-bdr, #bbf7d0); background: var(--success-bg, #f0fdf4); }
+.bs__estim-ecart { color: var(--warning-text); font-weight: 600; }

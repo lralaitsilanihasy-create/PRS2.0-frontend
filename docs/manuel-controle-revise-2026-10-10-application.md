@@ -736,7 +736,7 @@ Restent à trancher : **Q1**, **Q7** à **Q13**, **Q15** à **Q17**, **Q-pièce*
 >   vérifiée par la PRMP, **bloquante avant la signature du marché** (comme les pièces fiscales et sociales).
 > - **Paramètre par procédure** `SIGNATURE_OFFRE` : `SCELLE_PLUS_ORIGINAL` (défaut) / `CERTIFIEE` (quand l'écosystème le permettra).
 
-Suite : demande backend lot 2 (`demande-backend-2026-10-10-manuel-revise-lot2.md`). Restent ouverts : Q7 à Q12, Q15 à Q17, et les
+Suite : demande backend lot 2 (`demande-backend-2026-10-10-manuel-revise-lot2.md`). Restent ouverts : Q7 à Q10, Q12, Q15 à Q17, et les
 valeurs « à confirmer » ci-dessus.
 
 > ⚠️ **2026-10-14 — Q-pièce tranchée (§22).**
@@ -749,3 +749,15 @@ valeurs « à confirmer » ci-dessus.
 | **Canevas de rapport d'évaluation** : faire valider son canevas une fois et retirer la pièce ? | *« Le modèle de canevas de rapport d'évaluation va dépendre du sous-type de dossier ; ce canevas est celui qui sera utilisé à l'étape de l'évaluation des offres. »* Précisé le 14/10 : **les modèles sont fournis par le pilote**, un par sous-type. | La pièce « Canevas de rapport d'évaluation » **n'est plus demandée** au dépôt du dossier : le canevas est un modèle de l'application, choisi par le sous-type du dossier, et c'est sur lui que le rapport d'évaluation est produit. Tant que les modèles ne sont pas fournis, le rapport garde le plan du guide (livré le 07/10). Rejoint la question Q15 (modèles et annexes du manuel). |
 
 Suite : `demande-backend-2026-10-14-q-piece.md`.
+
+> ⚠️ **2026-10-14 — Q11 tranchée (§23).**
+
+## 23. Arbitrage du pilote (2026-10-14) : Q11 — les prix estimatifs dans la fiche
+
+| Question | Décision du pilote | Conséquence |
+|---|---|---|
+| **Saisie** : les prix estimatifs se saisissent-ils dans la fiche DAO ? | **Oui, obligatoires** : un prix unitaire estimé par article du bordereau et du devis quantitatif. | La fiche ne se valide pas sans un prix estimé pour chaque article. L'application produit le **devis quantitatif estimatif** et le **bordereau des prix estimatifs**, joints d'office au dossier ; les pièces « Bordereau des prix estimatifs signé » et « DQE estimatif signé » **ne sont plus demandées** au dossier conduit dans l'application (la validation tracée vaut signature, R2). |
+| **Lecture** : qui lit les prix estimatifs ? | **La PRMP et son UGPM, les profils de la Commission, et les membres de la commission d'appel d'offres** (après l'ouverture des offres, pour juger notamment les offres anormales). | Jamais publiés, jamais montrés aux candidats : absents du DAO complet, de l'avis et de toute page publique. |
+| **Contrôle** à la saisie | **Bloquant** : pour chaque lot, le total estimé (quantité × prix unitaire) **égale le montant du lot au plan**. | La validation de la fiche est refusée tant qu'un lot s'écarte, avec l'écart nommé (lot, total estimé, montant du plan). Remplace la tolérance prévue au point 2-P37. |
+
+Suite : `demande-backend-2026-10-14-q11-prix-estimatifs.md`.

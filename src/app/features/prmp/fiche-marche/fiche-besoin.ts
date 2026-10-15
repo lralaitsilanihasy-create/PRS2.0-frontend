@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, ou
 
 import { ApiError, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
-import { ArticleFiche, CategorieDao, TypeMarche } from '../../../models';
+import { ArticleFiche, CategorieDao, EstimationLot, TypeMarche } from '../../../models';
 import { FicheMarcheService } from '../../../services/fiche-marche.services';
 import { ModaleDirective } from '../../../shared/a11y/modale.directive';
 import { grouperParSerie, libelleBordereauPropose, lireCollage, numerosEnDouble } from './dqe';
@@ -58,6 +58,8 @@ export class FicheBesoin implements ListeASauver {
    * n° de prix, série en intertitre, quantités décimales, sous-détail et plafond ; la caractéristique n'est pas exigée.
    */
   readonly categorie = input<CategorieDao | null>(null);
+  /** ⚠️ Q11 (V116) — l'estimation servie avec la fiche, pour le montant du plan de chaque lot. */
+  readonly estimations = input<EstimationLot[] | null>(null);
   /** Le besoin vient d'être enregistré : la page mère relit son bilan de contrôles. */
   readonly enregistre = output<void>();
 
@@ -116,6 +118,22 @@ export class FicheBesoin implements ListeASauver {
     return lots.filter((lot) => empreinte(this.chargeDu(lot)) !== (refs.get(lot) ?? '[]'));
   });
   readonly modifie = computed(() => this.lotsModifies().length > 0);
+
+  /**
+   * ⚠️ Q11 (arbitrage du pilote, 14/10) — l'estimation du lot affiché, recalculée à chaque frappe : Σ quantité × prix unitaire estimé
+   * (quantité maximum d'un marché à commandes), face au montant du lot au plan servi par le serveur. La validation exige l'égalité.
+   */
+  readonly estimationDuLot = computed(() => {
+    const lot = this.lotAffiche();
+    const lignes = this.duLot();
+    const sansPrix = lignes.filter((l) => l.prixUnitaireEstime == null).length;
+    const total = lignes.reduce((t, l) => t + (Number(this.aCommande() ? l.quantiteMax : l.quantite) || 0) * (Number(l.prixUnitaireEstime) || 0), 0);
+    const plan = (this.estimations() ?? []).find((e) => (e.lot ?? null) === (lot ?? null))?.montantPlan ?? null;
+    return { total: Math.round(total * 100) / 100, plan, ecart: plan == null ? null : Math.round((total - plan) * 100) / 100, sansPrix, nb: lignes.length };
+  });
+  montantAr(v: number | null): string {
+    return v == null ? '—' : `${new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 }).format(v)} Ar`;
+  }
 
   readonly lotsCopiables = computed(() => this.lots().filter((n) => n !== this.lotAffiche() && (this.comptes().get(n) ?? 0) > 0));
 
@@ -258,7 +276,7 @@ export class FicheBesoin implements ListeASauver {
     this.toast.info(`${lus.length} article(s) ajouté(s)${lot ? ` au lot ${lot}` : ''} — à vérifier avant d'enregistrer.`);
   }
 
-  saisirNombre(ligne: LigneBesoin, champ: 'quantiteMin' | 'quantiteMax' | 'quantite' | 'plafond', ev: Event): void {
+  saisirNombre(ligne: LigneBesoin, champ: 'quantiteMin' | 'quantiteMax' | 'quantite' | 'plafond' | 'prixUnitaireEstime', ev: Event): void {
     const brut = (ev.target as HTMLInputElement).value;
     const valeur = brut === '' ? null : Number(brut);
     this.lignes.update((l) => l.map((x) => (x.cle === ligne.cle ? { ...x, [champ]: valeur } : x)));
@@ -297,6 +315,7 @@ export class FicheBesoin implements ListeASauver {
         libelleBordereau: l.libelleBordereau,
         sousDetail: l.sousDetail,
         plafond: l.plafond,
+        prixUnitaireEstime: l.prixUnitaireEstime,
         ouverte: false,
       }));
     if (!copies.length) return;
@@ -318,6 +337,7 @@ export class FicheBesoin implements ListeASauver {
         quantiteMax: this.aCommande() ? l.quantiteMax : null,
         quantite: this.aCommande() ? null : l.quantite,
         caracteristiques: l.caracteristiques.map((c) => ({ libelle: c.libelle, exigence: c.exigence })),
+        prixUnitaireEstime: l.prixUnitaireEstime ?? null,
         ...(this.travaux()
           ? {
               numeroPrix: l.numeroPrix?.trim() || null,

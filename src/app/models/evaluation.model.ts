@@ -290,6 +290,17 @@ export interface LigneTableau {
 }
 
 /** `GET …/lots/{lot}/indicateurs-prix` — des indicateurs, jamais une décision. */
+/**
+ * ⚠️ Q11 (B4, V116) — `GET …/evaluation/lots/{lot}/estimation` : l'estimation de la PRMP, article par article, lue par la commission
+ * d'appel d'offres une fois l'évaluation ouverte (404 avant, ou pour une fiche validée avant la règle). Jamais publiée.
+ */
+export interface EstimationEvaluation {
+  lot: number | null;
+  montantPlan: number | null;
+  totalEstime: number | null;
+  articles: { ordre: number | null; numeroPrix: string | null; designation: string; unite: string; quantite: number | null; prixUnitaireEstime: number | null; montant: number | null }[];
+}
+
 export interface IndicateursPrix {
   /** `B06-EO-07` ; nul sans méthode au DAO. */
   methodeDao: string | null;

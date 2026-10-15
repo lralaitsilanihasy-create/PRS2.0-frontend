@@ -52,6 +52,8 @@ export const LIBELLES_PIECES: Readonly<Record<PieceProduite, string>> = {
   C2: 'C2 — modèle de garantie',
   AVIS: 'Avis spécifique d’appel d’offres',
   LETTRE_INVITATION: 'Lettre d’invitation',
+  BORDEREAU_ESTIMATIF: 'Bordereau des prix estimatifs (non publié)',
+  DQE_ESTIMATIF: 'Devis quantitatif et estimatif (non publié)',
 };
 
 /** L'ordre de lecture d'une liste de pièces : le dossier d'abord, ses annexes ensuite. */

@@ -23,7 +23,9 @@ export type DocumentDao = 'DPAO' | 'DPAC' | 'DPIC' | 'AE' | 'CCAP' | 'AUCUN';
  */
 /** ⚠️ 30/09 — `AVIS` : l'avis spécifique d'appel d'offres, produit À LA DEMANDE après le PV (jamais à la validation). */
 /** ⚠️ V73 (06/10) — `DAO_COMPLET` : le dossier d'appel d'offres en un seul document (Word et PDF), qui remplace les pièces séparées. */
-export type PieceProduite = DocumentDao | 'DAO_COMPLET' | 'LF' | 'BP' | 'TC' | 'A1' | 'A2' | 'A3' | 'A4' | 'C1' | 'C2' | 'AVIS' | 'LETTRE_INVITATION';
+export type PieceProduite = DocumentDao | 'DAO_COMPLET' | 'LF' | 'BP' | 'TC' | 'A1' | 'A2' | 'A3' | 'A4' | 'C1' | 'C2' | 'AVIS' | 'LETTRE_INVITATION'
+  // ⚠️ Q11 (V117, 14/10) — produits à la validation, un PDF par lot, jamais publiés ni servis aux candidats.
+  | 'BORDEREAU_ESTIMATIF' | 'DQE_ESTIMATIF';
 export type SourceChamp = 'PPM' | 'SAISIE' | 'CADRAGE';
 /**
  * ⚠️ Lot 5 (24/09) — la **catégorie** de dossier d'appel d'offres, second axe du référentiel. Elle se déduit de la
@@ -364,6 +366,8 @@ export type ModeRemise = 'PAPIER' | 'ELECTRONIQUE';
 
 export interface FicheMarche {
   idFiche?: number | null;
+  /** ⚠️ Q11 (V116) — l'estimation de chaque lot face au plan ; `null` hors du besoin (prestations intellectuelles). */
+  estimations?: EstimationLot[] | null;
   idDmc: number;
   idDetail: number;
   idDossier: number;
@@ -503,6 +507,23 @@ export interface ArticleFiche {
   sousDetail?: boolean | null;
   /** Plafond du prix en % du montant des travaux (installation de chantier : 10). */
   plafond?: number | null;
+  /**
+   * ⚠️ Q11 (arbitrage du pilote, 14/10 ; backend V116) — prix unitaire estimé HT de l'article, en ariary. Obligatoire pour valider la
+   * fiche (`PRIX_ESTIME_MANQUANT`), facultatif à l'écriture. **Jamais publié** : lu par la PRMP, l'UGPM, la Commission, et la commission
+   * d'appel d'offres après l'ouverture des offres.
+   */
+  prixUnitaireEstime?: number | null;
+}
+
+/** ⚠️ Q11 (V116) — l'estimation d'un lot face au plan (`FicheMarcheDto.estimations`) ; `lot` nul sur une ligne non allotie. */
+export interface EstimationLot {
+  lot: number | null;
+  /** Montant HT du lot au plan ; `null` si le plan n'en porte pas (avertissement seulement). */
+  montantPlan: number | null;
+  totalEstime: number | null;
+  ecart: number | null;
+  nbArticles: number;
+  articlesSansPrix: string[];
 }
 
 /** `GET /api/fiches-marche/{idDmc}/versions` — une version VALIDÉE, de quoi lister l'historique (le détail : `/versions/{n}`). */

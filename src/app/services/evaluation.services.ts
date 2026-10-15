@@ -21,6 +21,7 @@ import {
   EntreeJournalEvaluation,
   EtapeEvaluation,
   Evaluation,
+  EstimationEvaluation,
   IndicateursPrix,
   LigneTableau,
   MontantRequest,
@@ -124,6 +125,11 @@ export class EvaluationService {
 
   tableau(idDmc: number, lot: number): Observable<LigneTableau[]> {
     return this.http.get<LigneTableau[]>(this.url(idDmc, `/lots/${lot}/tableau`), this.ctx);
+  }
+
+  /** ⚠️ Q11 (B4, V116) — l'estimation détaillée de la PRMP (lecteurs de l'évaluation ; 404 sans estimation). */
+  estimation(idDmc: number, lot: number): Observable<EstimationEvaluation> {
+    return this.http.get<EstimationEvaluation>(`${this.base}/${idDmc}/evaluation/lots/${lot}/estimation`, this.ctx);
   }
 
   indicateursPrix(idDmc: number, lot: number): Observable<IndicateursPrix> {

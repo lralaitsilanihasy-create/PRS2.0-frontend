@@ -117,6 +117,31 @@ describe('Besoin de la fiche DAO (bloc B12, livraison V45 du 25/09)', () => {
       .toEqual(['Aucune caractéristique exigée — le contrôle « besoin incomplet » la réclamera.']);
   });
 
+  it('⚠️ Q11 (14/10) — prix unitaire estimé par article : le total du lot face au montant du plan, en direct, puis envoyé', () => {
+    monter();
+    fixture.componentRef.setInput('estimations', [{ lot: 1, montantPlan: 3000000, totalEstime: null, ecart: null, nbArticles: 2, articlesSansPrix: [] }]);
+    ouvrir(ARTICLES);
+    const prix = (): HTMLInputElement[] => Array.from(racine().querySelectorAll('input[aria-label^="Prix unitaire estimé"]'));
+    expect(prix().length).toBe(2);
+    expect(texte(racine().querySelector('.bs__estim'))).toContain('2 article(s) sans prix estimé');
+
+    ecrire(prix()[0], '200000'); // 12 × 200 000 = 2 400 000
+    ecrire(prix()[1], '150000'); // 3 × 150 000 = 450 000 → total 2 850 000, écart −150 000
+    rendre();
+    const bilan = texte(racine().querySelector('.bs__estim'));
+    expect(bilan).toContain('montant au plan');
+    expect(bilan).toContain('la validation de la fiche sera refusée');
+
+    ecrire(prix()[1], '200000'); // 3 × 200 000 = 600 000 → total 3 000 000 = plan
+    rendre();
+    expect(racine().querySelector('.bs__estim--ok')).not.toBeNull();
+
+    bouton('Enregistrer le lot 1').click();
+    const put = http.expectOne((r) => r.url === '/api/fiches-marche/42/articles' && r.params.get('lot') === '1');
+    expect((put.request.body as { articles: ArticleFiche[] }).articles.map((a) => a.prixUnitaireEstime)).toEqual([200000, 200000]);
+    put.flush(ARTICLES.filter((a) => a.lot === 1).map((a) => ({ ...a, prixUnitaireEstime: 200000 })));
+  });
+
   it('l’ordre affiché fait foi : monter un article renumérote le bordereau, et part dans cet ordre', () => {
     monter();
     ouvrir(ARTICLES);
@@ -161,8 +186,8 @@ describe('Besoin de la fiche DAO (bloc B12, livraison V45 du 25/09)', () => {
     // Quantité fixe : une seule quantité, et les bornes du marché à commande restent nulles.
     expect(put.request.body).toEqual({
       articles: [
-        { lot: 2, designation: 'Chaise de bureau', unite: 'U', quantiteMin: null, quantiteMax: null, quantite: 40, caracteristiques: [] },
-        { lot: 2, designation: 'Table de réunion', unite: 'U', quantiteMin: null, quantiteMax: null, quantite: 6, caracteristiques: [] },
+        { lot: 2, designation: 'Chaise de bureau', unite: 'U', quantiteMin: null, quantiteMax: null, quantite: 40, caracteristiques: [], prixUnitaireEstime: null },
+        { lot: 2, designation: 'Table de réunion', unite: 'U', quantiteMin: null, quantiteMax: null, quantite: 6, caracteristiques: [], prixUnitaireEstime: null },
       ],
     });
     put.flush([
@@ -178,11 +203,11 @@ describe('Besoin de la fiche DAO (bloc B12, livraison V45 du 25/09)', () => {
     monter({ typeMarche: 'A_COMMANDE' });
     ouvrir([{ idArticle: 1, lot: 1, ordre: 1, designation: 'Carburant', unite: 'L', quantiteMin: 1000, quantiteMax: 5000, caracteristiques: [] }]);
     expect(Array.from(racine().querySelectorAll('thead th')).map((th) => texte(th)))
-      .toEqual(['N°', 'Désignation', 'Unité', 'Quantité min.', 'Quantité max.', 'Actions']);
+      .toEqual(['N°', 'Désignation', 'Unité', 'Quantité min.', 'Quantité max.', 'Prix unitaire estimé (HT) non publié', 'Actions']);
     bouton('Enregistrer le lot 1').click();
     const put = http.expectOne((r) => r.url === '/api/fiches-marche/42/articles' && r.params.get('lot') === '1');
     expect(put.request.body).toEqual({
-      articles: [{ lot: 1, designation: 'Carburant', unite: 'L', quantiteMin: 1000, quantiteMax: 5000, quantite: null, caracteristiques: [] }],
+      articles: [{ lot: 1, designation: 'Carburant', unite: 'L', quantiteMin: 1000, quantiteMax: 5000, quantite: null, caracteristiques: [], prixUnitaireEstime: null }],
     });
     put.flush([{ idArticle: 1, lot: 1, ordre: 1, designation: 'Carburant', unite: 'L', quantiteMin: 1000, quantiteMax: 5000, caracteristiques: [] }]);
   });
@@ -237,7 +262,7 @@ describe('Besoin de la fiche DAO (bloc B12, livraison V45 du 25/09)', () => {
     ouvrir(ARTICLES);
     expect(racine().querySelector('input')).toBeNull();
     expect(Array.from(racine().querySelectorAll('tbody tr:not(.bs__carac) .bs__lu')).map((s) => texte(s)))
-      .toEqual(['Ordinateur portable', 'U', '12', 'Imprimante laser', 'U', '3']);
+      .toEqual(['Ordinateur portable', 'U', '12', '', 'Imprimante laser', 'U', '3', '']);
     const libelles = Array.from(racine().querySelectorAll('button')).map((b) => texte(b));
     expect(libelles.some((l) => l.startsWith('Enregistrer') || l.startsWith('+ Article') || l.startsWith('Dupliquer'))).toBe(false);
     // Les exigences se lisent elles aussi, une fois dépliées.
@@ -286,7 +311,7 @@ describe('Besoin de la fiche DAO (bloc B12, livraison V45 du 25/09)', () => {
     expect(Array.from(racine().querySelectorAll('.bs__serie')).map((t) => intertitre(t))).toEqual(['Série 000 — Installation', 'Série 500 — Ouvrages']);
     const articles = lignes().filter((l) => !l.classList.contains('bs__serie'));
     // Champs texte : série, n° de prix, désignation, libellé au bordereau, unité ; champs nombre : quantité, plafond.
-    const plafond = (l: Element): string => (l.querySelectorAll('input[type="number"]')[1] as HTMLInputElement).value;
+    const plafond = (l: Element): string => (l.querySelector('input[aria-label^="Plafond"]') as HTMLInputElement).value;
     expect(articles.map((l) => [...[0, 1, 3].map((i) => saisie(l, i).value), plafond(l)])).toEqual([
       ['000', '001', 'Le forfait', '10'],
       ['500', '510', 'Le mètre cube', ''],
