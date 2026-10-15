@@ -12,6 +12,7 @@ import { TYPES_PDF, validerFichier } from '../../core/securite/fichiers-surs';
 import { VacanceStore } from '../../core/vacance/vacance.store';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { DetailPpmModal } from '../../shared/prmp/detail-ppm-modal';
+import { PiecesAJoindre } from './pieces-a-joindre';
 import { PpmFormFactory } from '../../shared/prmp/ppm-form-factory';
 import { OBJET_MARCHE_MAX, PpmSaisieGrid } from '../../shared/prmp/ppm-saisie-grid';
 import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
@@ -127,7 +128,7 @@ interface ApercuDossier {
 @Component({
   selector: 'app-soumettre-dossier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, DetailPpmModal, ModaleDirective, PpmSaisieGrid, PpmMarchesTable, DocumentVisionneuse],
+  imports: [ReactiveFormsModule, RouterLink, DetailPpmModal, ModaleDirective, PpmSaisieGrid, PpmMarchesTable, DocumentVisionneuse, PiecesAJoindre],
   template: `
     <section class="sd">
       <header class="page-header page-header--actions">
@@ -528,7 +529,10 @@ interface ApercuDossier {
             <!-- ⚠️ 15/10 (décision du pilote) — un dossier d'appel d'offres ou de consultation se prépare DANS l'application : le secours
                  « dossier préparé hors de l'application » (dossier vide + documents joints) est retiré pour ces sous-types. Les autres
                  sous-types (pré-qualification, demande de proposition, rapport justificatif…) gardent le formulaire. -->
-            @if (appelOffres()) {
+            <!-- ⚠️ 15/10 (constat du pilote) — sans sous-type, l'écran montrait les pièces par défaut de la famille (CCAG, CCTP…) et un
+                 bouton « Créer le dossier » : rien ne s'affiche avant le choix, qui décide du chemin (fiche DAO ou formulaire). -->
+            @if (appelOffres() || !sousTypeChoisi()) {
+              @if (!sousTypeChoisi()) { <p class="form-hint">Le sous-type choisi décide du chemin : la fiche DAO pour un appel d’offres ou une consultation, ce formulaire pour les autres.</p> }
               <footer class="sd__foot">
                 <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
               </footer>
@@ -638,6 +642,9 @@ interface ApercuDossier {
                   Ce brouillon est éditable tant qu'il n'est pas soumis. Vous pourrez le retrouver
                   dans « Mes brouillons » pour le reprendre plus tard.
                 </p>
+                <!-- ⚠️ 15/10 — un dossier produit par la fiche DAO n'avait nulle part où joindre les pièces qui ne sortent pas de la fiche
+                     (descriptif technique et plans des travaux, V119…) : la liste exigée par le serveur, pièce par pièce. -->
+                <app-pieces-a-joindre [idDossier]="d.idDossier" />
                 <footer class="sd__foot sd__foot--main">
                   <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
                   <!-- Soumission réservée à la PRMP ; l'UGPM édite le brouillon mais ne soumet pas (backend 403). -->

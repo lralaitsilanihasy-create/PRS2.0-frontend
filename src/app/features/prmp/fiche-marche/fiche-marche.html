@@ -828,13 +828,11 @@
                      viennent de la ligne du plan, plus de double saisie. Réservé à la PRMP, sur une fiche validée. -->
                 @if (idDossierSoumis(); as idd) {
                   <p class="fm__ok">Dossier à soumettre créé depuis cette fiche.</p>
-                  <!-- V73 (06/10) : le DAO complet porte déjà les spécifications techniques (si jointes) et le CCAG. -->
-                  @if (aDaoComplet()) {
-                    <p>Il reste à y joindre les pièces qui ne sortent pas de la fiche, puis à le soumettre à la Commission : estimation du coût, garantie de soumission.</p>
-                  } @else {
-                    <p>Il reste à y joindre les pièces qui ne sortent pas de la fiche, puis à le soumettre à la Commission : cahier des clauses techniques particulières, estimation du coût, garantie de soumission, cahier des clauses administratives générales.</p>
-                  }
-                  <a class="btn btn-primary" [routerLink]="['/prmp/dossier', idd]">Ouvrir le dossier n° {{ idd }}</a>
+                  <!-- ⚠️ 15/10 — la liste figée (estimation, garantie, CCAG, CCTP) était périmée : l'estimation est produite (Q11), le CCAG est
+                       dans le DAO complet, la garantie n'est plus exigée. La liste exacte est celle du serveur, dans le brouillon. -->
+                  <p>Il reste à y joindre les pièces qui ne sortent pas de la fiche (pour des travaux : le descriptif technique et les plans), puis à le soumettre à la Commission.</p>
+                  <a class="btn btn-primary" routerLink="/prmp/soumettre-dossier" [queryParams]="{ reprendre: idd }">Joindre les pièces et soumettre</a>
+                  <a class="btn btn-outline" [routerLink]="['/prmp/dossier', idd]">Ouvrir le dossier n° {{ idd }}</a>
                   <!-- ⚠️ 30/09 (AV-3) — l'avis spécifique, après le PV signé favorable (FAVR : réserves levées). L'application
                        le produit : il a quitté la liste des pièces à joindre à la main. -->
                   <!-- ⚠️ 01/10 (AV-4) — les prestations intellectuelles n'ont pas d'avis : leurs candidats reçoivent une lettre. -->
