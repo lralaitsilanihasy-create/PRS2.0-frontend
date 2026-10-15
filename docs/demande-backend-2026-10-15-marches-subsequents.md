@@ -116,6 +116,10 @@ Textes lus :
   l'exclusivité contractuelle […] et peut procéder à cet achat en recourant à une mise en concurrence en dehors du contrat-cadre ».
   À la remise en concurrence (MS-2), l'écart de chaque offre au prix moyen est montré, et la deuxième remise consécutive au-delà de
   30 % est signalée. Ce champ est à ajouter au référentiel dès le point B0 (il sert au DAO avant les marchés subséquents).
+
+  > ⚠️ **2026-10-15, livré (champ et impression) avec `demande-backend-2026-10-15-formulaire-type-contrat-cadre.md`.**
+  > Code `B07-MA-07`. Il s'imprime à l'art. 4 de l'AE-CC, avec les deux clauses de l'art. 23 du décret. L'écart au
+  > prix moyen, montré à la remise en concurrence, reste à faire avec MS-2.
 - H1 — La CAO « en collège restreint » est la CAO déjà désignée pour le contrat-cadre, réduite (quorum propre à fixer) ; à
   confirmer par le juriste.
 - H2 — Les titulaires sont les entreprises des offres retenues, avec leurs comptes candidats ; un titulaire sans compte reçoit la

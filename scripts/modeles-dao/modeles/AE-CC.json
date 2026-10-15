@@ -45,8 +45,6 @@
   "MULTI-REFERENCEMENT-CATALOGUE": "attributaires = MULTI et B05-PM-02 = NON et B05-PM-05 = OUI",
   "MULTI-PRIX-BORDEREAU": "attributaires = MULTI et B05-PM-02 = OUI et B05-PM-05 != OUI",
   "MULTI-PRIX-CATALOGUE": "attributaires = MULTI et B05-PM-02 = OUI et B05-PM-05 = OUI",
-  "AVANCE": "avance = OUI",
-  "AVANCE-SOUS-TRAITANT": "B08-FI-05 = OUI",
   "EXECUTION-COMMUNE": "B09-EA-01 = OUI",
   "EXECUTION-SANS": "B09-EA-01 = NON",
   "VERIFICATION-CCAG": "B09-VA-01 = Dispositions du CCAG applicables",
@@ -58,12 +56,27 @@
   "GARANTIE-CCAG": "B09-GP-01 = OUI et B09-GP-05 = OUI",
   "ASSURANCE-NON": "B09-AU-01 = NON",
   "ASSURANCE-OUI": "B09-AU-01 = OUI",
-  "PRIX-CRITERE": "attributaires = MONO ou B05-PM-02 = OUI"
+  "PRIX-CRITERE": "attributaires = MONO ou B05-PM-02 = OUI",
+  "ACTUALISATION": "B05-PM-06 renseigne",
+  "MINIMUM": "B05-MT-03 renseigne",
+  "SANS-MINIMUM": "B05-MT-03 vide"
  },
  "blocs": [
   {
    "type": "centre",
    "texte": "{{B01-AC-01}}"
+  },
+  {
+   "type": "centre",
+   "texte": "{{B01-AC-02}}"
+  },
+  {
+   "type": "centre",
+   "texte": "Personne responsable des marchés publics : {{B01-AC-05}}"
+  },
+  {
+   "type": "centre",
+   "texte": "Courriel : {{B01-AC-06}} – Téléphone : {{B01-AC-07}}"
   },
   {
    "type": "centre",
@@ -531,6 +544,18 @@
   },
   {
    "type": "para",
+   "texte": "Les règles de détermination du prix moyen du marché économique sont les suivantes : {{B07-MA-07}}"
+  },
+  {
+   "type": "para",
+   "texte": "Au cas où, après deux mises en concurrence ayant donné lieu à la présentation d’offres supérieures de 30 % au prix moyen du marché économique, déterminé selon les règles ci-dessus, l’acheteur public est, pour cet achat, délié de l’exclusivité contractuelle dont bénéficient les titulaires du contrat-cadre et peut procéder à cet achat en recourant à une mise en concurrence en dehors du contrat-cadre."
+  },
+  {
+   "type": "para",
+   "texte": "En cas d’absence répétée d’offres raisonnables, le contrat-cadre est résilié à l’égard du ou des titulaires fautifs (décret n° 2019-1064 du 28 mai 2019, article 23)."
+  },
+  {
+   "type": "para",
    "texte": "{{FINSI:MULTI}}"
   },
   {
@@ -851,7 +876,27 @@
   },
   {
    "type": "para",
+   "texte": "{{SI:SANS-MINIMUM}}"
+  },
+  {
+   "type": "para",
    "texte": "Le montant du contrat-cadre, conclu sans minimum ni maximum, est estimé à : {{B05-MT-01}} H.T. et {{B05-MT-02}} T.T.C.."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SANS-MINIMUM}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MINIMUM}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le montant du contrat-cadre, conclu avec un minimum de {{B05-MT-03}} H.T. et sans maximum, est estimé à : {{B05-MT-01}} H.T. et {{B05-MT-02}} T.T.C.."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MINIMUM}}"
   },
   {
    "type": "sous_titre",
@@ -999,11 +1044,15 @@
   },
   {
    "type": "para",
+   "texte": "{{SI:ACTUALISATION}}"
+  },
+  {
+   "type": "para",
    "texte": "Si le bon de commande ou l’ordre de commencer les prestations intervient après l’expiration du délai de validité de l’offre du titulaire, les prix peuvent être actualisés au moyen de la formule suivante :"
   },
   {
    "type": "para",
-   "texte": "Indice n P n = Po () Indice o"
+   "texte": "Pn = Po × (Indice n / Indice o)"
   },
   {
    "type": "para",
@@ -1014,12 +1063,16 @@
    "texte": "Po est le prix des prestations au moment de la remise de l’offre, Indice n est le dernier indice connu au moment de l’actualisation, Indice o est le dernier indice connu au moment de la remise de l’offre."
   },
   {
-   "type": "sous_titre",
-   "texte": "ARTICLE 10 – Clauses de financement et de sureté des marchés subséquents conclus sur la base du présent contrat-cadre"
+   "type": "para",
+   "texte": "L’indice retenu est : {{B05-PM-06}}."
   },
   {
    "type": "para",
-   "texte": "{{SI:AVANCE}}"
+   "texte": "{{FINSI:ACTUALISATION}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 10 – Clauses de financement et de sureté des marchés subséquents conclus sur la base du présent contrat-cadre"
   },
   {
    "type": "sous_titre",
@@ -1066,24 +1119,12 @@
    "texte": "Les modalités de remboursement de l’avance s’effectueront conformément aux dispositions de l’article 72.III du Code des Marchés Publics."
   },
   {
-   "type": "para",
-   "texte": "{{FINSI:AVANCE}}"
-  },
-  {
-   "type": "para",
-   "texte": "{{SI:AVANCE-SOUS-TRAITANT}}"
-  },
-  {
    "type": "sous_titre",
    "texte": "10.5 – Versement d’une avance au sous-traitant du titulaire du présent accord"
   },
   {
    "type": "para",
    "texte": "Une avance sera accordée au sous-traitant dans les conditions fixées par le code des marchés publics, sauf renonciation expresse par ce dernier dans l’acte spécial de sous-traitance. Dans le cas où le titulaire sous-traite une part du marché postérieurement à la notification de celui-ci, il doit rembourser la partie de l’avance correspondant au montant des prestations sous-traitées, même si le sous-traitant ne souhaite pas bénéficier de l’avance."
-  },
-  {
-   "type": "para",
-   "texte": "{{FINSI:AVANCE-SOUS-TRAITANT}}"
   },
   {
    "type": "sous_titre",
@@ -1311,11 +1352,15 @@
   },
   {
    "type": "para",
+   "texte": "{{B08-FP-01}}"
+  },
+  {
+   "type": "para",
    "texte": "Les prestations qui ont données lieu à un commencement d’exécution du marché ouvrent droit à des acomptes."
   },
   {
    "type": "para",
-   "texte": "Le règlement des prestations se fera {{B08-FP-01}}."
+   "texte": "Le règlement des prestations se fera {{B08-FP-05}}."
   },
   {
    "type": "sous_titre",
@@ -1475,7 +1520,15 @@
   },
   {
    "type": "para",
+   "texte": "{{SI:SANS-MINIMUM}}"
+  },
+  {
+   "type": "para",
    "texte": "La résiliation n’ouvrira droit au profit du titulaire à aucune indemnité."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SANS-MINIMUM}}"
   },
   {
    "type": "sous_titre",

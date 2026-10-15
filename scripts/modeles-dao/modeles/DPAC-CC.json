@@ -29,6 +29,18 @@
    "texte": "{{B01-AC-01}}"
   },
   {
+   "type": "centre",
+   "texte": "{{B01-AC-02}}"
+  },
+  {
+   "type": "centre",
+   "texte": "Personne responsable des marchés publics : {{B01-AC-05}}"
+  },
+  {
+   "type": "centre",
+   "texte": "Courriel : {{B01-AC-06}} – Téléphone : {{B01-AC-07}}"
+  },
+  {
    "type": "para",
    "texte": "MARCHE DE : {{B01-AC-12}}"
   },
