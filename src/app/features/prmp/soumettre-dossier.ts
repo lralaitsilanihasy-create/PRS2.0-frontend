@@ -525,10 +525,15 @@ interface ApercuDossier {
               </section>
             }
 
-            <details class="sd__reste" [open]="!appelOffres()">
-              @if (appelOffres()) {
-                <summary class="sd__reste-t">Le dossier est déjà préparé hors de l’application ? Créer un dossier vide et y joindre les documents.</summary>
-              }
+            <!-- ⚠️ 15/10 (décision du pilote) — un dossier d'appel d'offres ou de consultation se prépare DANS l'application : le secours
+                 « dossier préparé hors de l'application » (dossier vide + documents joints) est retiré pour ces sous-types. Les autres
+                 sous-types (pré-qualification, demande de proposition, rapport justificatif…) gardent le formulaire. -->
+            @if (appelOffres()) {
+              <footer class="sd__foot">
+                <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
+              </footer>
+            } @else {
+            <div class="sd__reste">
             <div class="cnm-form-grid">
               <label class="form-group">
                 <span class="form-label">Entité contractante *</span>
@@ -601,7 +606,8 @@ interface ApercuDossier {
                 {{ submitting() ? 'Création…' : 'Créer le dossier' }}
               </button>
             </footer>
-            </details>
+            </div>
+            }
           </form>
         }
 
@@ -2227,6 +2233,8 @@ export class SoumettreDossier {
   }
 
   creerDossier(): void {
+    // ⚠️ 15/10 — un sous-type d'appel d'offres ne se crée que par sa fiche DAO (le formulaire n'est plus affiché ; garde de principe).
+    if (this.appelOffres()) return;
     if (this.dossierForm.invalid) {
       this.dossierForm.markAllAsTouched();
       return;
