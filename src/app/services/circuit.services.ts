@@ -29,6 +29,7 @@ import {
   Page,
   PvActionRequest,
   PvExamen,
+  PublicationAgpm,
   PvNavette,
   Reception,
   ReceptionExiste,
@@ -55,6 +56,28 @@ export class DossierService extends CrudService<Dossier> {
    */
   calendrierAnnuel(id: number): Observable<Blob> {
     return this.http.get(`${this.baseUrl}/${id}/calendrier-annuel`, { responseType: 'blob', context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ V118 (15/10) — `GET /api/dossiers/{id}/publication-agpm` : la publication de l'AGPM en vigueur, lue depuis le plan ou depuis tout
+   * dossier dont la ligne relève du plan. 404 sans publication. Silencieux.
+   */
+  publicationAgpm(id: number): Observable<PublicationAgpm> {
+    return this.http.get<PublicationAgpm>(`${this.baseUrl}/${id}/publication-agpm`, { context: skipErrorToast() });
+  }
+
+  /** Le scan du journal en vigueur (PDF). */
+  publicationAgpmContenu(id: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${id}/publication-agpm/contenu`, { responseType: 'blob', context: skipErrorToast() });
+  }
+
+  /**
+   * `POST /api/dossiers/{idPlan}/publication-agpm` (multipart : `fichier`, `journal`, `numero`, `dateParution`, `referenceAgpm`) —
+   * PRMP propriétaire et son UGPM, plan au PV signé favorable ; remplace la publication en vigueur. 400 nominatif ; 409 `PAS_UN_PLAN`,
+   * `PLAN_NON_CONTROLE`. Silencieux.
+   */
+  deposerPublicationAgpm(idPlan: number, fd: FormData): Observable<PublicationAgpm> {
+    return this.http.post<PublicationAgpm>(`${this.baseUrl}/${idPlan}/publication-agpm`, fd, { context: skipErrorToast() });
   }
 
   /**

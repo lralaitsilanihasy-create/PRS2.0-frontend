@@ -30,3 +30,18 @@ La création d'un dossier hors fiche (la saisie d'un dossier vide, `POST` de la 
   ligne du plan de passation » ; plus de volet « préparé hors de l'application », plus de bouton « Créer le dossier ». Garde de
   principe dans la création.
 - À brancher après B1 : le refus nommé, si un ancien écran ou un appel direct tentait encore la création.
+
+> ✅ **Backend, 2026-10-15 — réponse** :
+>
+> **B1 — livré.** `POST /api/saisies/dossier` refuse un sous-type de `SousTypesDossier.PRODUITS_PAR_FICHE` (`DAOO`, `DAOR`, `DAOOI`,
+> `DAORI`, `DAOOPREQUAL`, `DC` ; l'ancien code `DAO`, lu `DAOO`, aussi) : **409 `DOSSIER_PAR_FICHE`**, « Un dossier d'appel d'offres ou de
+> consultation (DAOO) se prépare dans sa fiche DAO : choisissez la ligne du plan de passation, la validation de la fiche produit le
+> dossier. ». Même refus pour la création brute de l'Administrateur (`POST /api/dossiers`). Seule `POST /api/fiches-marche/{idDmc}/dossier`
+> crée ces dossiers. `DPREQUAL`, `DP`, `RJ` et les sous-types du dossier de marché restent saisissables.
+>
+> **H1** confirmée (seule la création est fermée ; les dossiers existants gardent leur cycle). **H2** confirmée (pas d'exception pour
+> l'Administrateur). **H3** confirmée (rien retiré du référentiel).
+
+> ✅ **Front, 2026-10-15 — branché** : « Créer dossier » nomme le refus `DOSSIER_PAR_FICHE` (« … se prépare dans sa fiche DAO : choisissez
+> la ligne du plan de passation… ») si un appel direct le provoquait encore. Contre-recette réelle sur le JAR de 5bbda11 (V118) :
+> `POST /api/saisies/dossier` `DAOO` → 409 `DOSSIER_PAR_FICHE`, message conforme.

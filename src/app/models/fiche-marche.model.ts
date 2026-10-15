@@ -668,12 +668,18 @@ export interface DocumentFiche {
 
 // ── Avis spécifique d'appel d'offres (demande du 30/09, livrée : V56) ─────────────────────────────────────────────
 
-/** Corps de `POST …/avis-specifique` et trace gardée avec chaque avis produit. Dates `AAAA-MM-JJ` ; les quatre sont exigées. */
+/**
+ * Corps de `POST …/avis-specifique` et trace gardée avec chaque avis produit. Dates `AAAA-MM-JJ`.
+ * ⚠️ V118 (15/10, H1 « figés ») — `jmpNumero` et `jmpDate` ne s'envoient plus (le serveur les ignore) : ils se lisent sur la publication de
+ * l'AGPM déposée sur le plan, et la trace porte en plus `journal` et `referenceAgpm`. Seule `datePublication` est exigée.
+ */
 export interface PublicationAvis {
   datePublication: string;
-  jmpNumero: string;
-  jmpDate: string;
   supports: string;
+  jmpNumero?: string | null;
+  jmpDate?: string | null;
+  journal?: string | null;
+  referenceAgpm?: string | null;
 }
 
 /**
@@ -717,6 +723,8 @@ export type RaisonAvisIndisponible =
   | 'AVIS_NON_FAVORABLE'
   | 'RESERVES_NON_LEVEES'
   | 'FICHE_NON_VALIDEE'
+  /** ⚠️ V118 (15/10) — la publication de l'AGPM n'est pas déposée sur le plan : l'avis cite son journal. */
+  | 'PUBLICATION_AGPM_ABSENTE'
   | 'CATEGORIE_SANS_LETTRE'
   /** ⚠️ Manuel révisé, R3c (13/10) — appel d'offres restreint : pas d'avis, une lettre d'invitation (gabarit LETTRE-AOR). */
   | 'MODE_SANS_AVIS'

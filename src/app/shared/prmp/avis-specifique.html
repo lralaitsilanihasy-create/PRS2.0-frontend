@@ -65,16 +65,17 @@
             <input class="form-control" type="date" [value]="saisie().datePublication" (input)="poser('datePublication', $any($event.target).value)" />
             @if (erreurs().datePublication; as m) { <span class="form-error">{{ m }}</span> }
           </label>
-          <label class="form-group">
-            <span class="form-label">N° du Journal des Marchés Publics de l’avis général <span class="avs__facultatif">(facultatif)</span></span>
-            <input class="form-control" type="text" [value]="saisie().jmpNumero" (input)="poser('jmpNumero', $any($event.target).value)" />
-            @if (erreurs().jmpNumero; as m) { <span class="form-error">{{ m }}</span> }
-          </label>
-          <label class="form-group">
-            <span class="form-label">Date de ce Journal des Marchés Publics</span>
-            <input class="form-control" type="date" [value]="saisie().jmpDate" (input)="poser('jmpDate', $any($event.target).value)" />
-            @if (erreurs().jmpDate; as m) { <span class="form-error">{{ m }}</span> }
-          </label>
+          <!-- ⚠️ V118 (15/10) — le Journal des Marchés Publics de l'avis général se lit sur le plan, il ne se saisit plus. -->
+          <div class="form-group avs__large">
+            <span class="form-label">Journal de l’avis général (AGPM), déposé sur le plan</span>
+            @if (preparation()) {
+              <span class="form-hint" role="status">Lecture du plan…</span>
+            } @else if (journalPlan(); as j) {
+              <span class="avs__journal">{{ j.journal }}@if (j.numero) { n° {{ j.numero }}} du {{ jj(j.dateParution) }} · AGPM {{ j.referenceAgpm }}</span>
+            } @else {
+              <span class="form-error">La publication de l’avis général n’est pas déposée sur le plan de passation : l’avis ne peut pas la citer. Déposez-la une fois sur le plan contrôlé (page du dossier du plan), puis revenez imprimer l’avis.</span>
+            }
+          </div>
           <label class="form-group avs__large">
             <span class="form-label">Autres supports de publication et leurs dates <span class="avs__facultatif">(facultatif)</span></span>
             <textarea class="form-control" rows="2" [value]="saisie().supports" (input)="poser('supports', $any($event.target).value)"></textarea>

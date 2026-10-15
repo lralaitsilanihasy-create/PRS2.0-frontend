@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, signal } f
 
 import { CalendrierAnnuel } from '../../../shared/circuit/calendrier-annuel';
 import { ControlesDossier } from '../../../shared/circuit/controles-dossier';
+import { PublicationAgpmPanneau } from '../../../shared/circuit/publication-agpm';
 import { controlesEffectifs } from '../../../shared/circuit/controles-libelles';
 import { AgpmDoc } from '../../../shared/prmp/agpm-doc';
 import { FichePresentationDoc } from '../../../shared/prmp/fiche-presentation-doc';
@@ -20,7 +21,7 @@ import { DossierVersions } from './dossier-versions';
 @Component({
   selector: 'app-dossier-documents',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PpmMarchesTable, FichePresentationDoc, AgpmDoc, DocumentVisionneuse, DossierPieces, DossierVersions, DossierInstantanes, ControlesDossier, CalendrierAnnuel],
+  imports: [PpmMarchesTable, FichePresentationDoc, AgpmDoc, DocumentVisionneuse, DossierPieces, DossierVersions, DossierInstantanes, ControlesDossier, CalendrierAnnuel, PublicationAgpmPanneau],
   host: { '[class.dc-documents--borne]': 'panneauBorne()' },
   template: `
     @if (contenu.estPpm()) {
@@ -67,6 +68,8 @@ import { DossierVersions } from './dossier-versions';
         <div class="dc-section">
           <!-- ⚠️ Q-pièce (14/10, backend V115) — le calendrier annuel produit par l'application, à la place de la pièce signée. -->
           <app-calendrier-annuel [idDossier]="contenu.dossier().idDossier" />
+          <!-- ⚠️ V118 (15/10) — la publication de l'AGPM se dépose une fois sur le plan contrôlé ; chaque dossier du plan la reprend. -->
+          <app-publication-agpm [idDossier]="contenu.dossier().idDossier" [plan]="true" />
           <app-document-visionneuse [interrupteur]="true" [(annotations)]="annotationsDoc" [class.doc-entete-collante]="panneauBorne() || enteteCollante()">
             <app-ppm-marches-table [marches]="contenu.marches()" [beneficiaires]="contenu.serviceBenefs()" [previsions]="contenu.previsions()" [changements]="contenu.changements()" [legendeTitre]="contenu.legendeChangements()" [detailsChangements]="contenu.detailsChangements()" />
           </app-document-visionneuse>
@@ -144,6 +147,8 @@ import { DossierVersions } from './dossier-versions';
         <div class="dc-section">
           <!-- ⚠️ Q-pièce (14/10) — un dossier né d'une fiche DAO lit le calendrier annuel du plan de sa ligne. -->
           @if (contenu.dossier().idDmc) { <app-calendrier-annuel [idDossier]="contenu.dossier().idDossier" /> }
+          <!-- ⚠️ V118 (15/10) — la publication de l'AGPM du plan, reprise d'office (muette sans plan ni publication). -->
+          <app-publication-agpm [idDossier]="contenu.dossier().idDossier" />
           <app-dossier-pieces />
         </div>
       }

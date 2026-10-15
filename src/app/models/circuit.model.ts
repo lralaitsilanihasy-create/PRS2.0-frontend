@@ -750,3 +750,23 @@ export interface PvActionRequest {
    */
   coSignataires?: string[];
 }
+
+/**
+ * ⚠️ V118 (15/10, décision du pilote) — la publication de l'AGPM (le journal), déposée une fois sur le plan contrôlé et reprise d'office par
+ * chaque dossier du plan. `heritee` : lue sur une version précédente du plan ; `enVigueur` : faux pour une publication remplacée.
+ */
+export interface PublicationAgpm {
+  idPublication: number;
+  idDossierPlan: number;
+  journal: string;
+  numero: string | null;
+  dateParution: string;
+  referenceAgpm: string;
+  nomFichier: string;
+  taille: number | null;
+  deposePar: string | null;
+  deposeLe: string | null;
+  remplaceeLe: string | null;
+  enVigueur: boolean;
+  heritee: boolean;
+}

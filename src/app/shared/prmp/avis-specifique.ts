@@ -6,19 +6,22 @@ import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { ApiError, codeErreur, corpsErreur, erreursParChamp } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur, telechargerBlob } from '../../core/securite/fichiers-surs';
-import { ChampFiche, DisponibiliteAvis, DocumentFiche, PublicationAvis } from '../../models';
+import { ChampFiche, DisponibiliteAvis, DocumentFiche, PublicationAgpm, PublicationAvis } from '../../models';
+import { DossierService } from '../../services';
 import { ChampFicheMarcheService, FicheMarcheService } from '../../services/fiche-marche.services';
 import { ParametreCompteDaoService } from '../../services/parametres.services';
 import { ModaleDirective } from '../a11y/modale.directive';
 import { avisImprimes, champsVidesAvis, horodatage, jjmmaaaa, messageDaoCompletAbsent, messageDelaiPublicite, messageIndisponible } from './avis-specifique-modele';
 import { MentionsDocumentVue } from './mentions-document';
 
-type CleSaisie = keyof PublicationAvis;
+type CleSaisie = 'datePublication' | 'supports';
 
 /**
  * ⚠️ **Avis spécifique d'appel d'offres** (plan du 30/09, lot AV-3 ; demande backend livrée, V56).
  *
  * Une fois l'examen terminé — PV signé FAV, ou FAVR après la levée des réserves —, la PRMP imprime l'avis à publier.
+ * ⚠️ V118 (15/10) — le numéro et la date du Journal des Marchés Publics de l'avis général ne se saisissent plus : ils se lisent sur la
+ * publication de l'AGPM déposée sur le plan, montrée dans la modale.
  * La règle est lue du serveur (`…/disponibilite`), jamais réécrite ici. Les informations de PUBLICATION (date de
  * l'avis, JMP de l'avis général, supports) se saisissent à l'impression : ce ne sont pas des données du DAO (Q4).
  * Chaque impression produit une nouvelle paire .pdf/.docx ; les précédentes restent listées.
@@ -38,6 +41,7 @@ export class AvisSpecifique implements OnInit {
   private readonly referentiel = inject(ChampFicheMarcheService);
   private readonly compte = inject(ParametreCompteDaoService);
   private readonly toast = inject(ToastService);
+  private readonly dossiers = inject(DossierService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly idDmc = input.required<number>();
@@ -60,14 +64,16 @@ export class AvisSpecifique implements OnInit {
   readonly ouverte = signal(false);
   readonly preparation = signal(false);
   readonly envoi = signal(false);
-  readonly saisie = signal<PublicationAvis>({ datePublication: '', jmpNumero: '', jmpDate: '', supports: '' });
+  readonly saisie = signal<{ datePublication: string; supports: string }>({ datePublication: '', supports: '' });
+  /** ⚠️ V118 — la publication de l'AGPM du plan, citée par l'avis ; `null` : non déposée (ou illisible). */
+  readonly journalPlan = signal<PublicationAgpm | null>(null);
   readonly erreurs = signal<Partial<Record<CleSaisie, string>>>({});
   readonly refus = signal<string | null>(null);
   readonly vides = signal<ChampFiche[]>([]);
   /** §B8 — le compte bancaire de l'ARMP n'est pas réglé : l'avis imprimera des pointillés à sa place. */
   readonly compteNonRegle = signal(false);
-  /** ⚠️ 30/09 (§B7.5) — seules les deux dates sont exigées : le numéro du JMP et les supports peuvent rester vides, comme sur l'avis réel. */
-  readonly complete = computed(() => this.saisie().datePublication.trim() !== '' && this.saisie().jmpDate.trim() !== '');
+  /** ⚠️ V118 — seule la date de l'avis est exigée ; sans publication de l'AGPM sur le plan, le serveur refuserait. */
+  readonly complete = computed(() => this.saisie().datePublication.trim() !== '' && this.journalPlan() !== null);
   readonly occupe = signal(false);
 
   readonly jj = jjmmaaaa;
@@ -98,15 +104,19 @@ export class AvisSpecifique implements OnInit {
    */
   ouvrir(): void {
     const dernier = this.imprimes()[0]?.publication;
-    this.saisie.set(dernier ? { ...dernier } : { datePublication: '', jmpNumero: '', jmpDate: '', supports: '' });
+    this.saisie.set({ datePublication: dernier?.datePublication ?? '', supports: dernier?.supports ?? '' });
+    this.journalPlan.set(null);
     this.erreurs.set({});
     this.refus.set(null);
     this.vides.set([]);
     this.ouverte.set(true);
     this.preparation.set(true);
     this.compteNonRegle.set(false);
-    // Une seule vague : les champs vides de la fiche, et le compte bancaire de l'ARMP (§B8 : non réglé = pointillés).
+    // Une seule vague : les champs vides de la fiche, le compte bancaire de l'ARMP (§B8 : non réglé = pointillés), et (V118) la
+    // publication de l'AGPM du plan, lue depuis le dossier soumis.
+    const idDossier = this.etat()?.idDossierSoumis ?? null;
     forkJoin({
+      journal: idDossier == null ? of(null) : this.dossiers.publicationAgpm(idDossier).pipe(catchError(() => of(null))),
       vides: this.fiches.lire(this.idDmc()).pipe(
         switchMap((f) =>
           this.referentiel.referentiel(f.typeMarche ?? undefined, f.categorie ?? null).pipe(
@@ -118,7 +128,8 @@ export class AvisSpecifique implements OnInit {
       compte: this.compte.lire().pipe(catchError(() => of(null))),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ vides, compte }) => {
+      .subscribe(({ journal, vides, compte }) => {
+        this.journalPlan.set(journal);
         this.vides.set(vides);
         this.compteNonRegle.set(!!compte && !(compte.banque && compte.titulaire && compte.numeroCompte));
         this.preparation.set(false);
@@ -141,8 +152,6 @@ export class AvisSpecifique implements OnInit {
     this.refus.set(null);
     const corps: PublicationAvis = {
       datePublication: this.saisie().datePublication.trim(),
-      jmpNumero: this.saisie().jmpNumero.trim(),
-      jmpDate: this.saisie().jmpDate.trim(),
       supports: this.saisie().supports.trim(),
     };
     this.fiches

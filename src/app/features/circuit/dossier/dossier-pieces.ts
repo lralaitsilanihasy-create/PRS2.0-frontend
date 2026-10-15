@@ -60,6 +60,7 @@ import { DossierContenuStore } from './dossier-contenu.store';
                   @if (p.libellePiece && p.nomFichier) { <span class="piece-file">{{ p.nomFichier }}</span> }
                 </span>
                 @if (p.idDocumentFiche) { <span class="piece-fiche" title="Produite par la fiche DAO : elle se corrige dans la fiche, pas ici.">fiche DAO</span> }
+                @if (origine(p); as o) { <span class="piece-fiche" [title]="o.titre">{{ o.libelle }}</span> }
               </div>
               <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)">Ouvrir <span class="arrow">↗</span></button>
             </div>
@@ -86,6 +87,7 @@ import { DossierContenuStore } from './dossier-contenu.store';
                   @if (p.libellePiece && p.nomFichier) { <span class="piece-file">{{ p.nomFichier }}</span> }
                 </span>
                 @if (p.idDocumentFiche) { <span class="piece-fiche" title="Produite par la fiche DAO : elle se corrige dans la fiche, pas ici.">fiche DAO</span> }
+                @if (origine(p); as o) { <span class="piece-fiche" [title]="o.titre">{{ o.libelle }}</span> }
                 <span class="vc-tag">Corrigée</span>
               </div>
               <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)">Ouvrir <span class="arrow">↗</span></button>
@@ -111,6 +113,7 @@ import { DossierContenuStore } from './dossier-contenu.store';
                   @if (p.libellePiece && p.nomFichier) { <span class="piece-file">{{ p.nomFichier }}</span> }
                 </span>
                 @if (p.idDocumentFiche) { <span class="piece-fiche" title="Produite par la fiche DAO : elle se corrige dans la fiche, pas ici.">fiche DAO</span> }
+                @if (origine(p); as o) { <span class="piece-fiche" [title]="o.titre">{{ o.libelle }}</span> }
                 <span class="lr-tag">LR</span>
               </div>
               <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)">Ouvrir <span class="arrow">↗</span></button>
@@ -175,6 +178,8 @@ export class DossierPieces {
   readonly piecesCorrigees = computed(() => this.contenu.pieces().filter((p) => !p.apresLettreRenvoi && p.versionCorrigee));
 
   /** Télécharge et ouvre une pièce jointe dans un nouvel onglet (lecture seule). */
+  readonly origine = originePiece;
+
   ouvrirPiece(p: PieceJointeDossier): void {
     if (p.idPiece == null) {
       return;
@@ -184,4 +189,20 @@ export class DossierPieces {
       error: () => this.toast.error("Impossible d'ouvrir la pièce."),
     });
   }
+}
+
+/**
+ * ⚠️ V118 (15/10) — une pièce jointe d'office par l'application, sans marque propre au serveur : reconnue à son nom de fichier.
+ * La publication de l'AGPM reprise du plan (`PUBLICATION_AGPM_<référence>.pdf`) et le relevé d'ouverture des expressions de l'AMI
+ * (`releve-ouverture-ami_<idDmc>.pdf`, sous la pièce du PV de l'AMI).
+ */
+export function originePiece(p: PieceJointeDossier): { libelle: string; titre: string } | null {
+  const nom = p.nomFichier ?? '';
+  if (nom.startsWith('PUBLICATION_AGPM_')) {
+    return { libelle: 'reprise du plan', titre: 'Déposée une fois sur le plan de passation, et reprise d’office par chaque dossier du plan.' };
+  }
+  if (nom.startsWith('releve-ouverture-ami_')) {
+    return { libelle: 'AMI en ligne', titre: 'Produit par l’application avec le rapport de présélection signé, dont les signatures le valident.' };
+  }
+  return null;
 }

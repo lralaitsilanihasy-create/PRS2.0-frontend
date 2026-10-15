@@ -5,7 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, forkJoin, map, of } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
-import { ApiError, estConflitVersion } from '../../core/errors/api-error';
+import { ApiError, codeErreur, estConflitVersion } from '../../core/errors/api-error';
 import { messageSoumissionRefusee } from '../../shared/circuit/controles-libelles';
 import { ToastService } from '../../core/notifications/toast.service';
 import { TYPES_PDF, validerFichier } from '../../core/securite/fichiers-surs';
@@ -2300,6 +2300,11 @@ export class SoumettreDossier {
   }
   private echec(e: ApiError): void {
     this.submitting.set(false);
+    // ⚠️ 15/10 (backend 5bbda11) — un dossier d'appel d'offres ou de consultation ne se crée que par sa fiche DAO.
+    if (codeErreur(e) === 'DOSSIER_PAR_FICHE') {
+      this.toast.error('Un dossier d’appel d’offres ou de consultation se prépare dans sa fiche DAO : choisissez la ligne du plan de passation, la validation de la fiche produit le dossier.', 'Création impossible');
+      return;
+    }
     if (e.fieldErrors) {
       this.formError.set(e);
     } else {
