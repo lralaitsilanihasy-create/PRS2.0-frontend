@@ -113,13 +113,15 @@ describe('Examen préliminaire d’une offre (étape 2)', () => {
     champs[2].dispatchEvent(new Event('input'));
     fixture.detectChanges();
     bouton('Enregistrer la décision').click();
+    // ⚠️ Guide de la CAO (§B3.2) — le PUT remplace toute la décision : les spécifications sont lues d'abord (offre par pièces : aucune).
+    http.expectOne('/api/fiches-marche/40/evaluation/offres/o-1/specifications').flush([]);
     const put = http.expectOne('/api/fiches-marche/40/evaluation/offres/o-1/conformite');
     expect(put.request.method).toBe('PUT');
     expect(put.request.body).toEqual({
       verifications: [
-        { code: 'AE_PRIX', satisfaite: true, observation: null },
-        { code: 'GARANTIE', satisfaite: null, observation: null },
-        { code: 'FRAIS_DOSSIER', satisfaite: false, observation: null },
+        { code: 'AE_PRIX', cote: 'C', observation: null },
+        { code: 'GARANTIE', cote: null, satisfaite: null, observation: null },
+        { code: 'FRAIS_DOSSIER', cote: 'NC', observation: null },
       ],
       decision: 'ECARTEE',
       qualification: 'NON_CONFORME',
@@ -133,7 +135,62 @@ describe('Examen préliminaire d’une offre (étape 2)', () => {
     monter(DECIDEUR);
     (racine().querySelectorAll('input[type=radio]')[0] as HTMLInputElement).dispatchEvent(new Event('change'));
     fixture.detectChanges();
-    expect(racine().textContent).toContain('1 vérification(s) non satisfaite(s)');
+    expect(racine().textContent).toContain('1 rubrique(s) non conforme(s)');
+  });
+
+  it('guide de la CAO (§B3) : la grille cotée C/SC/NC/SO, et les spécifications techniques cotées, dans le même PUT', () => {
+    const grille: OffreEvaluee = {
+      ...OFFRE,
+      conformite: {
+        ...OFFRE.conformite!,
+        verifications: [
+          { code: 'AE_PRIX', libelle: 'Acte d’engagement et prix', proposee: true, constat: 'Montant lu', satisfaite: true, observation: null, coteProposee: 'C', cote: null },
+          { code: 'AE_DATE_SIGNE', libelle: 'Acte d’engagement daté et signé', proposee: null, constat: null, satisfaite: null, observation: null, coteProposee: null, cote: null },
+          { code: 'VISITE_LIEUX', libelle: 'Certificat de visite des lieux', proposee: null, constat: 'Non exigée', satisfaite: null, observation: null, coteProposee: 'SO', cote: null },
+        ],
+      },
+    };
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), { provide: ToastService, useValue: { success: vi.fn() } }] });
+    http = TestBed.inject(HttpTestingController);
+    fixture = TestBed.createComponent(ConformiteOffre);
+    fixture.componentRef.setInput('idDmc', 40);
+    fixture.componentRef.setInput('offre', grille);
+    fixture.componentRef.setInput('droits', DECIDEUR);
+    fixture.detectChanges();
+    const ligne = (n: number) => racine().querySelectorAll('.co__grille tbody tr')[n] as HTMLElement;
+    expect(ligne(1).textContent).toContain('À examiner');
+    expect((ligne(2).querySelector('select') as HTMLSelectElement).value).toBe('SO');
+
+    const date = ligne(1).querySelector('select') as HTMLSelectElement;
+    date.value = 'SC';
+    date.dispatchEvent(new Event('change'));
+    // Le volet des spécifications : lu à l'ouverture, cote de départ = déclaration du candidat.
+    const volet = racine().querySelector('details.co__specs') as HTMLDetailsElement;
+    volet.open = true;
+    volet.dispatchEvent(new Event('toggle'));
+    http.expectOne('/api/fiches-marche/40/evaluation/offres/o-1/specifications').flush([
+      { idArticle: 1, article: 'Ordinateur portable', marque: 'X', modele: 'Y', idCaracteristique: 10, caracteristique: 'Mémoire', exigee: '16 Go', proposee: '8 Go', declareeConforme: true, coteProposee: 'C', cote: null, observation: null },
+    ]);
+    fixture.detectChanges();
+    const spec = racine().querySelector('.co__grille--specs select') as HTMLSelectElement;
+    expect(spec.value).toBe('C');
+    spec.value = 'NC';
+    spec.dispatchEvent(new Event('change'));
+
+    (racine().querySelectorAll('input[type=radio]')[0] as HTMLInputElement).dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    bouton('Enregistrer la décision').click();
+    const put = http.expectOne('/api/fiches-marche/40/evaluation/offres/o-1/conformite');
+    expect(put.request.body).toMatchObject({
+      verifications: [
+        { code: 'AE_PRIX', cote: 'C', observation: null },
+        { code: 'AE_DATE_SIGNE', cote: 'SC', observation: null },
+        { code: 'VISITE_LIEUX', cote: 'SO', observation: null },
+      ],
+      specifications: [{ idArticle: 1, idCaracteristique: 10, cote: 'NC', observation: null }],
+      decision: 'CONFORME',
+    });
+    put.flush(EVALUATION);
   });
 
   it('étape arrêtée, ou lecteur : aucun geste de décision', () => {

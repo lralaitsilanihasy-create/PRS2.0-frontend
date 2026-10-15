@@ -206,3 +206,15 @@ ré-évaluation** (demande d'éclaircissement, recadrage…). Aujourd'hui, une f
 
 > Le rapport (section 3) imprime pour chaque offre la grille cotée (rubrique, valeur relevée, cote, observation) et, en fournitures,
 > le tableau de conformité technique coté. Le rapport PI imprime la même grille (rubriques non applicables : SO).
+
+> ✅ **Front, 2026-10-15 — tranche 2 branchée** (`features/evaluation/etape-conformite.ts`) :
+> - **B3.1** : la grille de l'examen préliminaire montre toutes les rubriques servies (neuf vérifications et rubriques du guide), avec la
+>   valeur relevée, la proposition du serveur (`coteProposee`, sinon l'ancienne `proposee`) et une **cote** C · SC · NC · SO ou « À
+>   examiner » ; cote de départ = celle de la commission, sinon la proposée. Le PUT envoie la cote seule (« à examiner » : cote et
+>   `satisfaite` nulles). La décision sur l'offre reste distincte, avec le rappel des rubriques non conformes.
+> - **B3.2** : volet « Spécifications techniques » (lu à l'ouverture) : article, marque et modèle, caractéristique, exigée, proposée,
+>   déclaration du candidat, cote C · SC · NC, observation ; vide → « rien à coter en ligne (offre par pièces) ». Comme le PUT remplace
+>   toute la décision, les spécifications sont lues avant l'enregistrement si le volet n'a pas été ouvert, et leurs cotes renvoyées.
+> - Refus nommés : `COTE_INVALIDE`, `COTE_INCOHERENTE`, `SPECIFICATION_INCONNUE`.
+> - B3.3 à B3.5 : documents du serveur, rien à afficher de plus.
+> - JAR relancé sur ce4f8ad (V120 déjà appliquée) ; recette navigateur **à faire** faute d'évaluation en base depuis le 14/10.

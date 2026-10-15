@@ -27,11 +27,17 @@ import {
   MontantRequest,
   Qualification,
   QualificationRejet,
+  CoteConformite,
+  SpecificationOffre,
 } from '../models';
 
-/** Corps de `PUT …/conformite`. */
+/**
+ * Corps de `PUT …/conformite`. ⚠️ Guide de la CAO (§B3) : la `cote` fixe `satisfaite` ; les `specifications` cotées partent dans le
+ * même PUT, qui remplace toute la décision (renvoyer toutes les cotes à chaque enregistrement).
+ */
 export interface ConformiteCorps {
-  verifications: { code: CodeVerification; satisfaite: boolean | null; observation?: string | null }[];
+  verifications: { code: CodeVerification; cote?: CoteConformite | null; satisfaite?: boolean | null; observation?: string | null }[];
+  specifications?: { idArticle: number; idCaracteristique: number; cote: CoteConformite; observation?: string | null }[];
   decision: 'CONFORME' | 'ECARTEE';
   qualification?: QualificationRejet | null;
   motif?: string | null;
@@ -84,6 +90,11 @@ export class EvaluationService {
   /** Président, motif obligatoire : rouvre l'étape et les suivantes du lot. 409 `RAPPORT_SIGNE`, `ETAPE_NON_ARRETEE`. */
   rouvrir(idDmc: number, lot: number, etape: EtapeEvaluation, motif: string): Observable<Evaluation> {
     return this.http.post<Evaluation>(this.url(idDmc, `/lots/${lot}/etapes/${etape}/rouvrir`), { motif }, this.ctx);
+  }
+
+  /** ⚠️ Guide de la CAO (§B3.2) — les spécifications techniques d'une offre, à coter (vide pour une offre déposée par pièces). */
+  specifications(idDmc: number, idOffre: string): Observable<SpecificationOffre[]> {
+    return this.http.get<SpecificationOffre[]>(this.url(idDmc, `/offres/${idOffre}/specifications`), this.ctx);
   }
 
   conformite(idDmc: number, idOffre: string, corps: ConformiteCorps): Observable<Evaluation> {

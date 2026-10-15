@@ -16,7 +16,31 @@ export const ETAPES_EVALUATION: readonly Exclude<EtapeEvaluation, 'RAPPORT'>[] =
 export type QualificationRejet = 'IRRECEVABLE' | 'NON_CONFORME' | 'INAPPROPRIEE' | 'INACCEPTABLE';
 
 export type CodeVerification =
-  | 'AE_PRIX' | 'GARANTIE' | 'OFFRE_UNIQUE' | 'EXCLUSION' | 'POUVOIRS' | 'PIECES' | 'CONFORMITE_TECHNIQUE' | 'INTEGRITE' | 'FRAIS_DOSSIER';
+  | 'AE_PRIX' | 'GARANTIE' | 'OFFRE_UNIQUE' | 'EXCLUSION' | 'POUVOIRS' | 'PIECES' | 'CONFORMITE_TECHNIQUE' | 'INTEGRITE' | 'FRAIS_DOSSIER'
+  // ⚠️ Guide de la CAO, tranche 2 (§B3.1, 15/10) — les rubriques du guide, à la suite des neuf vérifications.
+  | 'AE_DATE_SIGNE' | 'VALIDITE_OFFRE' | 'DELAI' | 'BORDEREAU' | 'SOMMES_TIERS' | 'GARANTIE_VALIDITE' | 'VISITE_LIEUX' | 'AUTRES_CONDITIONS';
+
+/** ⚠️ Guide de la CAO (§B3) — la cote du guide : conforme, substantiellement conforme, non conforme, sans objet. Nulle : à examiner. */
+export type CoteConformite = 'C' | 'SC' | 'NC' | 'SO';
+
+/**
+ * ⚠️ Guide de la CAO (§B3.2) — `GET …/offres/{idOffre}/specifications` : une caractéristique d'un article d'une offre de fournitures
+ * déposée par formulaires, cotée par la commission (C, SC ou NC). Vide pour une offre déposée par pièces.
+ */
+export interface SpecificationOffre {
+  idArticle: number;
+  article: string;
+  marque: string | null;
+  modele: string | null;
+  idCaracteristique: number;
+  caracteristique: string;
+  exigee: string | null;
+  proposee: string | null;
+  declareeConforme: boolean | null;
+  coteProposee: CoteConformite | null;
+  cote: CoteConformite | null;
+  observation: string | null;
+}
 
 export interface DeclarationMembre {
   /** Identifiant du membre (`K…`). */
@@ -46,6 +70,9 @@ export interface VerificationConformite {
   /** La valeur de la CAO si elle a décidé, la proposée sinon. */
   satisfaite: boolean | null;
   observation: string | null;
+  /** ⚠️ Guide de la CAO (§B3.1) — la cote proposée par le serveur, et celle de la commission ; nulle : à examiner. */
+  coteProposee?: CoteConformite | null;
+  cote?: CoteConformite | null;
 }
 
 /** Qui a décidé, et quand — commun à chaque décision. */

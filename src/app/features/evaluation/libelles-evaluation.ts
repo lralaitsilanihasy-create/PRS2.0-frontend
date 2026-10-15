@@ -137,6 +137,10 @@ export function refusEvaluation(e: ApiError): string {
     case 'QUALIFICATION_INCOHERENTE': return 'Une offre qualifiée satisfait tous les critères.';
     case 'PAS_LE_TOUR_DE_CETTE_OFFRE': return 'Ce n’est pas le tour de cette offre : la post-qualification suit le classement.';
     case 'ETAPES_INCOMPLETES': return `Le rapport attend que toutes les étapes soient arrêtées${details(e, 'lots') ? ' (lot(s) ' + details(e, 'lots') + ')' : ''}.`;
+    // ⚠️ Guide de la CAO (§B3) — la grille cotée.
+    case 'COTE_INVALIDE': return 'Cote invalide : conforme, substantiellement conforme, non conforme ou sans objet.';
+    case 'COTE_INCOHERENTE': return 'La cote et la décision d’une rubrique se contredisent.';
+    case 'SPECIFICATION_INCONNUE': return 'Une spécification cotée n’appartient pas au tableau de cette offre : rechargez l’écran.';
     case 'RAPPORT_DEJA_PRODUIT': return 'Le rapport est déjà produit.';
     case 'RAPPORT_NON_PRODUIT': return 'Le rapport n’est pas encore produit.';
     case 'NON_SIGNATAIRE': return 'Cette personne n’est pas appelée à signer le rapport.';
