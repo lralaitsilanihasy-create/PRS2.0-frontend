@@ -77,6 +77,10 @@ Textes lus :
 > lit une liste de titulaires, d'un ou de plusieurs. Le nouvel ordre est donné en H5.
 > D'ici la livraison de MT, le cadrage « Multi-attributaire » reste sélectionnable alors que l'attribution ne désigne qu'un
 > titulaire : **demandé**, un avertissement non bloquant à la validation de la fiche qui le dit.
+>
+> ⚠️ **2026-10-15, livré avec B0 :** l'avertissement **`MULTI_ATTRIBUTAIRE_NON_OUTILLE`** apparaît au bilan
+> (`bilanControles.avertissements`), bloc `B07`, `champs` vide. Il se déclenche dès que le cadrage porte
+> `attributaires = MULTI` et ne bloque jamais la validation. Il sera retiré à la livraison de MT.
 
 ## Lot MS-1 — Le contrat-cadre (ou le marché à commandes) en vigueur
 
