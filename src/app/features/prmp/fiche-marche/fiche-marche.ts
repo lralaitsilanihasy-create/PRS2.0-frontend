@@ -18,6 +18,7 @@ import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { FicheBesoin } from './fiche-besoin';
 import { FicheMoyens } from './fiche-moyens';
 import { FichePieces } from './fiche-pieces';
+import { PpmIdentification } from './ppm-identification';
 import { CritereTechnique, FicheSousCriteres } from './fiche-sous-criteres';
 import { ListeASauver } from './liste-a-sauver';
 import { ImportDao } from './import-dao';
@@ -118,6 +119,7 @@ function routeAbsente(e: HttpErrorResponse | ApiError): boolean {
     FicheBesoin,
     FicheMoyens,
     FichePieces,
+    PpmIdentification,
     FicheSousCriteres,
     ImportDao,
     AvisSpecifique,

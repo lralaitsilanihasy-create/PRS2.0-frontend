@@ -192,10 +192,10 @@
 
 .fm__ppm { margin-top: 0.9rem; padding: 0.6rem 1rem; }
 .fm__ppm summary { cursor: pointer; font-weight: 600; font-size: 0.88rem; }
-.fm__ppm-l { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 0.4rem 1rem; margin: 0.7rem 0 0; }
-.fm__ppm-l div { display: flex; flex-direction: column; }
-.fm__etape-s, .fm__opt-aide, .fm__ppm-l dt, .fm__forme { font-size: 0.74rem; color: var(--n-500); }
-.fm__ppm-l dd { margin: 0; font-family: var(--cnm-mono); font-size: 0.82rem; }
+
+
+.fm__etape-s, .fm__opt-aide, .fm__forme { font-size: 0.74rem; color: var(--n-500); }
+
 
 .fm__ctrls h2 { margin: 0; padding: 0.8rem 1rem 0.5rem; font-size: 0.95rem; }
 .fm__ctrls-vide, .fm__total, .fm__ctrls li, .fm__q-aide { font-size: 0.8rem; }

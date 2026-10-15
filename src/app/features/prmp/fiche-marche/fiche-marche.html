@@ -272,9 +272,7 @@
       <details class="fm__ppm" open>
         <summary>{{ b01.libelle }} — {{ valeursPpm().length }} informations reprises de la ligne du PPM, verrouillées</summary>
         @if (valeursPpm().length) {
-          <dl class="fm__ppm-l">
-            @for (v of valeursPpm(); track v.code) { <div><dt>{{ v.libelle }}</dt><dd>{{ v.valeur ?? '—' }}</dd></div> }
-          </dl>
+          <app-ppm-identification [valeurs]="valeursPpm()" />
         } @else {
           <p class="fm__attendus">Servies par le serveur avec la fiche — rien à saisir ici.</p>
         }
@@ -865,9 +863,7 @@
           <details class="fm__ppm" [open]="etape() === 1">
             <summary>{{ b01.libelle }} — {{ valeursPpm().length }} informations reprises de la ligne du PPM, verrouillées</summary>
             @if (valeursPpm().length) {
-              <dl class="fm__ppm-l">
-                @for (v of valeursPpm(); track v.code) { <div><dt>{{ v.libelle }}</dt><dd>{{ v.valeur ?? '—' }}</dd></div> }
-              </dl>
+              <app-ppm-identification [valeurs]="valeursPpm()" />
             } @else {
               <p class="fm__attendus">Servies par le serveur avec la fiche — rien à saisir ici.</p>
             }
