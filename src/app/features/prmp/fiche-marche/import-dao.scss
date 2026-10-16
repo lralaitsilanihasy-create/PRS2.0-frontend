@@ -165,3 +165,7 @@
 .idao__passage { margin: 0.4rem 0 0.8rem; }
 .idao__passage p { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin: 0 0 0.3rem; }
 .idao__passage-texte { display: block; white-space: pre-line; font-size: 0.84rem; color: var(--n-700); background: var(--n-50); border-left: 3px solid var(--p-300); padding: 0.5rem 0.7rem; max-height: 12rem; overflow: auto; }
+
+// ⚠️ 16/10 — un lot d'articles lus : sa case en tête, puis le tableau des articles.
+.idao__lot { margin: 0.4rem 0 1rem; padding: 0.5rem 0.7rem; border-left: 3px solid var(--p-300); background: var(--n-50); }
+.idao__lot-tete { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.4rem; cursor: pointer; }

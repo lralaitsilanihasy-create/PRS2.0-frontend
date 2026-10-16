@@ -4,8 +4,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 
 import { ToastService } from '../../../core/notifications/toast.service';
-import { CategorieDao, ChampFiche, ImportDaoResult, PropositionImport, TypeMarche } from '../../../models';
-import { ImportDao, cocheeDOffice, importPossible, memeValeur } from './import-dao';
+import { ArticleFiche, ArticleImport, CategorieDao, ChampFiche, ImportDaoResult, PropositionImport, TypeMarche } from '../../../models';
+import { ImportDao, cocheeDOffice, importPossible, lotCocheDOffice, lotsImport, memeValeur, versArticleFiche } from './import-dao';
 
 const champ = (code: string, libelle: string): ChampFiche =>
   ({ code, bloc: code.slice(0, 3), rubrique: code.slice(0, 6), rang: 1, libelle, type: 'TEXTE', source: 'SAISIE', documentMaitre: 'DPAC', reprises: [], typesMarche: ['CONTRAT_CADRE'], condition: null, obligatoire: false }) as unknown as ChampFiche;
@@ -230,5 +230,95 @@ describe('Import du DAO — la revue avant d’écrire (demande du pilote du 28/
     expect(ecrit).toHaveBeenCalledWith('Camions bennes ≥ 10 000 kg\t6\tau moins 4 en propre');
     await Promise.resolve();
     expect(toast.info).toHaveBeenCalledWith('Passage copié. Ouvrez « Matériel exigé — bloc B13 », puis « Coller une liste ».');
+  });
+
+  // ── ⚠️ 16/10 — les articles du besoin lus dans les tableaux (demande « import-specifications », livrée) ──────────
+  const art = (lot: number | null, numero: string, designation: string, autres: Partial<ArticleImport> = {}): ArticleImport => ({
+    lot, numero, designation, unite: 'Unité', quantite: 1, quantiteMin: null, quantiteMax: null, serie: null, serieLibelle: null,
+    caracteristiques: [{ libelle: 'Spécification', exigence: 'De bonne qualité' }],
+    confiance: { article: 'haute', caracteristiques: 'moyenne' }, pages: { bordereau: 24, specification: 27 }, anomalies: [], ...autres,
+  });
+  const ARTICLES: ArticleImport[] = [
+    art(1, '01', 'Bombe air comprimé 500ml', { designationSpecification: 'Bombe air comprimé 100ml' }),
+    art(1, '02', 'Crème lavande'),
+    art(2, '01', 'Balai rigide'),
+    art(3, '01', 'Éponge', { anomalies: ['LOT_HORS_PLAN : le lot 3 n’existe pas au plan'] }),
+  ];
+  /** La fiche porte déjà 2 articles au lot 2 : ce lot n'est pas coché d'office. */
+  const ACTUELS: ArticleFiche[] = [
+    { lot: 2, designation: 'Balai', unite: 'Unité', quantite: 2, caracteristiques: [] },
+    { lot: 2, designation: 'Seau', unite: 'Unité', quantite: 1, caracteristiques: [] },
+  ];
+  function lireArticles(resultat: Partial<ImportDaoResult> = {}): void {
+    choisir(DOCX);
+    http.expectOne('/api/fiches-marche/27/import').flush({ ...RESULTAT, ...resultat, articles: ARTICLES });
+    const req = http.expectOne('/api/fiches-marche/27/articles');
+    expect(req.request.method).toBe('GET');
+    req.flush(ACTUELS);
+    fixture.detectChanges();
+  }
+  const lots = (): HTMLElement[] => Array.from(racine().querySelectorAll('.idao__lot'));
+  const caseLot = (i: number): HTMLInputElement => lots()[i].querySelector('input[type="checkbox"]') as HTMLInputElement;
+
+  it('règles pures des articles : regroupement par lot, coché d’office sur besoin vide, conversion sans prix', () => {
+    const l = lotsImport(ARTICLES, ACTUELS);
+    expect(l.map((x) => [x.cle, x.articles.length, x.actuels, x.motifs.length])).toEqual([['1', 2, 0, 0], ['2', 1, 2, 0], ['3', 1, 0, 1]]);
+    expect(l.map(lotCocheDOffice)).toEqual([true, false, false]);
+    expect(lotsImport([art(null, '001', 'Installation de chantier')], [])[0].cle).toBe('unique');
+    expect(versArticleFiche(art(null, '529', 'Maçonnerie de moellons', { unite: 'M3', quantite: 2825, serie: '500', serieLibelle: 'OUVRAGES' }))).toEqual({
+      lot: null, designation: 'Maçonnerie de moellons', unite: 'M3', quantite: 2825, quantiteMin: null, quantiteMax: null,
+      numeroPrix: '529', serie: '500', serieLibelle: 'OUVRAGES', caracteristiques: [{ libelle: 'Spécification', exigence: 'De bonne qualité' }],
+    });
+  });
+
+  it('la revue des articles : lot vide coché, lot déjà saisi à cocher soi-même, lot en anomalie bloqué, écart montré', () => {
+    monter();
+    lireArticles();
+    expect(lots().length).toBe(3);
+    expect(caseLot(0).checked).toBe(true);
+    expect(texte(lots()[0])).toContain('la fiche n’en porte aucun');
+    expect(texte(lots()[0])).toContain('les spécifications disent : « Bombe air comprimé 100ml »');
+    expect(caseLot(1).checked).toBe(false);
+    expect(texte(lots()[1])).toContain('la fiche en porte 2 : ils seraient remplacés');
+    expect(caseLot(2).disabled).toBe(true);
+    expect(texte(lots()[2])).toContain('LOT_HORS_PLAN');
+  });
+
+  it('seuls des articles retenus : un PUT par lot coché, avec la trace de l’import ; le besoin est rechargé', () => {
+    monter();
+    let recharge = 0;
+    fixture.componentInstance.besoinImporte.subscribe(() => recharge++);
+    lireArticles({ propositions: [], cadrage: [] });
+    bouton('Appliquer').click();
+    const req = http.expectOne((r) => r.url === '/api/fiches-marche/27/articles' && r.method === 'PUT');
+    expect(req.request.params.get('lot')).toBe('1');
+    expect(req.request.body.importFichier).toBe('DAO-contrat-cadre.docx');
+    expect(req.request.body.importEmpreinte).toBe('a'.repeat(64));
+    expect(req.request.body.articles.map((a: ArticleFiche) => a.designation)).toEqual(['Bombe air comprimé 500ml', 'Crème lavande']);
+    req.flush([]);
+    fixture.detectChanges();
+    expect(recharge).toBe(1);
+    expect(toast.success).toHaveBeenCalledWith(expect.stringContaining('2 articles du besoin (1 lot)'));
+    expect(racine().querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it('champs puis lots : un lot refusé est dit exactement, après les valeurs déjà écrites ; la revue reste ouverte', () => {
+    monter();
+    let rendue: unknown = null;
+    fixture.componentInstance.applique.subscribe((f) => (rendue = f));
+    lireArticles();
+    bouton('Appliquer').click();
+    http.expectOne('/api/fiches-marche/27/import/appliquer').flush({ idFiche: 1, version: 4, statut: 'BROUILLON', cadrage: {}, valeurs: {} });
+    http.expectOne((r) => r.url === '/api/fiches-marche/27/articles' && r.method === 'PUT').flush(
+      { status: 400, erreurs: [{ champ: 'articles[1].unite', message: 'unité obligatoire' }] },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    fixture.detectChanges();
+    expect(rendue).toMatchObject({ version: 4 });
+    const alerte = texte(racine().querySelector('.alert-danger'));
+    expect(alerte).toContain('Écrit : les valeurs de la fiche.');
+    expect(alerte).toContain('Refusé : le lot 1 — unité obligatoire');
+    expect(racine().querySelector('[role="dialog"]')).not.toBeNull();
+    expect(fixture.componentInstance.cochees().size + fixture.componentInstance.cadrageCoche().size).toBe(0);   // ne repartent pas
   });
 });

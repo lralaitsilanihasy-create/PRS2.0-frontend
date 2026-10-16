@@ -46,6 +46,8 @@ export class FicheBesoin implements ListeASauver {
   private readonly toast = inject(ToastService);
 
   readonly idDmc = input.required<number>();
+  /** ⚠️ 16/10 — incrémentée par l'écran quand l'import du DAO a repris des lots : le besoin se relit. */
+  readonly version = input(0);
   /** Nombre de lots de la ligne du plan ; `0` ou `1` = pas d'onglets, un seul besoin. */
   readonly nbLots = input<number>(0);
   readonly saisieParLot = input<boolean>(false);
@@ -140,6 +142,7 @@ export class FicheBesoin implements ListeASauver {
   constructor() {
     effect(() => {
       const id = this.idDmc();
+      this.version();   // ⚠️ 16/10 — relire le besoin quand l'import du DAO en a repris des lots
       this.chargement.set(true);
       this.fiches.articles(id).subscribe({
         next: (a) => {

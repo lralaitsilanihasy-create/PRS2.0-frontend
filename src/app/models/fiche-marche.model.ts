@@ -841,6 +841,40 @@ export interface ImportDaoResult {
   avertissements: string[];
   /** ⚠️ 03/10 — passages de listes (contrat demandé) ; absent tant que le serveur ne le sert pas. */
   passages?: PassageImport[] | null;
+  /**
+   * ⚠️ 16/10 — le besoin (bloc `B12`) lu dans les **tableaux** du DAO (`demande-backend-2026-10-16-import-specifications`,
+   * livré). Lecture seule : les lots retenus s'écrivent par `PUT …/articles?lot=k`, avec la trace de l'import.
+   */
+  articles?: ArticleImport[] | null;
+}
+
+/**
+ * ⚠️ 16/10 — un article lu dans les tableaux du DAO (bordereau ou DQE, spécifications, définition des prix en travaux).
+ * Les prix ne sont jamais lus.
+ */
+export interface ArticleImport {
+  /** Rang du lot au plan ; `null` sur une ligne non allotie. */
+  lot: number | null;
+  /** Tel qu'écrit dans le DAO (« 001 », « 529 ») ; le n° de prix en travaux. */
+  numero: string;
+  designation: string;
+  unite: string | null;
+  quantite: number | null;
+  quantiteMin: number | null;
+  quantiteMax: number | null;
+  /** Travaux : la série du DQE (« 500 ») et son libellé (« OUVRAGES »). */
+  serie: string | null;
+  serieLibelle: string | null;
+  /** Sans « libellé : » dans le DAO, le serveur pose le libellé « Spécification » (la validation exige les deux). */
+  caracteristiques: { libelle: string; exigence: string }[];
+  /** `article` : haute (lu au bordereau), moyenne (seulement aux spécifications) ; `caracteristiques` : moyenne, nulle sans. */
+  confiance: { article: ConfianceImport; caracteristiques: ConfianceImport | null };
+  /** Pages du PDF ; `null` pour un Word. */
+  pages: { bordereau: number | null; specification: number | null } | null;
+  /** Présent seulement si les spécifications nomment l'article autrement (écart signalé aussi en avertissement). */
+  designationSpecification?: string | null;
+  /** Chaque entrée commence par son code (`LOT_HORS_PLAN : …`, `QUANTITES_INCOMPATIBLES : …`) : non retenable. */
+  anomalies: string[];
 }
 
 /** Corps de `PUT …/import/appliquer` : les seules lignes retenues par la PRMP, avec la trace du fichier lu. */

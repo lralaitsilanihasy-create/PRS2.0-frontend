@@ -1332,6 +1332,13 @@ export class FicheMarcheEcran {
     this.controler();
   }
 
+  /** ⚠️ 16/10 — des lots d'articles repris par l'import : le bloc besoin se relit, le bilan se recalcule. */
+  readonly versionBesoin = signal(0);
+  besoinImporte(): void {
+    this.versionBesoin.update((v) => v + 1);
+    this.besoinEnregistre();
+  }
+
   private appliquer(f: FicheMarche): void {
     this.fiche.set(f);
     this.cadrage.set({ ...f.cadrage });

@@ -4,7 +4,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output, si
 import { ApiError, corpsErreur, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
 import { TYPES_DOCX, TYPES_PDF, validerFichier } from '../../../core/securite/fichiers-surs';
-import { CategorieDao, ChampFiche, ConfianceImport, FicheMarche, ImportDaoResult, PassageImport, PropositionImport, ReponseCadrageImport, TypeMarche } from '../../../models';
+import { ArticleFiche, ArticleImport, CategorieDao, ChampFiche, ConfianceImport, FicheMarche, ImportDaoResult, PassageImport, PropositionImport, ReponseCadrageImport, TypeMarche } from '../../../models';
 import { FicheMarcheService } from '../../../services/fiche-marche.services';
 import { ModaleDirective } from '../../../shared/a11y/modale.directive';
 import { Icone } from '../../../shared/ui/icone';
@@ -50,6 +50,53 @@ export function cocheeDOffice(p: PropositionImport): boolean {
 type Ligne = PropositionImport & { libelle: string; bloc: string; identique: boolean; bloquee: boolean };
 
 /**
+ * ⚠️ 16/10 — les articles lus d'un même lot, tels que la revue les présente : on reprend un lot entier ou rien
+ * (`PUT …/articles?lot=k` remplace le besoin du lot). `actuels` : ce que la fiche porte déjà pour ce lot.
+ */
+export interface LotImport {
+  cle: string;
+  lot: number | null;
+  articles: ArticleImport[];
+  actuels: number;
+  /** Un article en anomalie (lot hors plan, quantités incompatibles) bloque le lot : rien n'en est repris. */
+  motifs: string[];
+}
+
+export function cleLot(lot: number | null): string { return lot == null ? 'unique' : String(lot); }
+
+/** Les articles lus, regroupés par lot dans l'ordre du document, face au besoin déjà saisi. */
+export function lotsImport(lus: readonly ArticleImport[], actuels: readonly ArticleFiche[]): LotImport[] {
+  const lots = new Map<string, LotImport>();
+  for (const a of lus) {
+    const cle = cleLot(a.lot);
+    if (!lots.has(cle)) lots.set(cle, { cle, lot: a.lot, articles: [], actuels: actuels.filter((x) => cleLot(x.lot ?? null) === cle).length, motifs: [] });
+    const l = lots.get(cle)!;
+    l.articles.push(a);
+    for (const m of a.anomalies) if (!l.motifs.includes(m)) l.motifs.push(m);
+  }
+  return [...lots.values()];
+}
+
+/** Coché d'office : un lot sans anomalie qui remplit un besoin VIDE — jamais ce qui remplacerait une saisie. */
+export function lotCocheDOffice(l: LotImport): boolean { return !l.motifs.length && l.actuels === 0; }
+
+/** Un article lu, en article de la fiche. Le serveur pose l'ordre ; `numeroPrix` et la série ne valent qu'en travaux. */
+export function versArticleFiche(a: ArticleImport): ArticleFiche {
+  return {
+    lot: a.lot,
+    designation: a.designation,
+    unite: a.unite ?? '',
+    quantite: a.quantite,
+    quantiteMin: a.quantiteMin,
+    quantiteMax: a.quantiteMax,
+    numeroPrix: a.numero,
+    serie: a.serie,
+    serieLibelle: a.serieLibelle,
+    caracteristiques: a.caracteristiques.map((c) => ({ libelle: c.libelle, exigence: c.exigence })),
+  };
+}
+
+/**
  * ⚠️ **Import du DAO** (demande du pilote du 28/09 ; plan `docs/plan-2026-09-28-import-dao.md`, contrat
  * `docs/demande-backend-2026-09-28-import-dao.md`) — la fiche reste le formulaire : le serveur LIT le document
  * (`POST …/import`, rien n'est écrit), cet écran montre ce qu'il a lu, avec l'extrait et la confiance, et la PRMP
@@ -74,6 +121,8 @@ export class ImportDao {
   /** Fiche encore vierge : l'import est proposé en tête du cadrage ; sinon, un simple bouton « Réimporter ». */
   readonly vierge = input(false);
   readonly applique = output<FicheMarche>();
+  /** ⚠️ 16/10 — des lots d'articles ont été repris : le bloc besoin doit se recharger. */
+  readonly besoinImporte = output<void>();
 
   readonly importable = computed(() => importPossible(this.typeMarche(), this.categorie()));
   readonly lecture = signal(false);
@@ -102,7 +151,21 @@ export class ImportDao {
   readonly blocs = computed(() => [...new Set(this.lignes().map((l) => l.bloc))]);
   lignesDuBloc(bloc: string): Ligne[] { return this.lignes().filter((l) => l.bloc === bloc); }
 
-  readonly nbRetenues = computed(() => this.cochees().size + this.cadrageCoche().size);
+  // ── Articles du besoin (16/10) ────────────────────────────────────────────────────────────
+  /** Le besoin déjà saisi, lu à l'arrivée du résultat ; `null` tant qu'il n'est pas connu (rien n'est coché d'office). */
+  readonly actuels = signal<ArticleFiche[] | null>(null);
+  readonly lotsCoches = signal<ReadonlySet<string>>(new Set());
+  readonly lotsLus = computed(() => lotsImport(this.resultat()?.articles ?? [], this.actuels() ?? []));
+  basculerLot(cle: string): void {
+    this.lotsCoches.update((s) => { const n = new Set(s); if (n.has(cle)) n.delete(cle); else n.add(cle); return n; });
+  }
+  libelleLot(l: { lot: number | null }): string { return l.lot == null ? 'le besoin' : `le lot ${l.lot}`; }
+  quantites(a: ArticleImport): string {
+    if (a.quantiteMin != null || a.quantiteMax != null) return `${this.affiche(a.quantiteMin)} à ${this.affiche(a.quantiteMax)}`;
+    return this.affiche(a.quantite);
+  }
+
+  readonly nbRetenues = computed(() => this.cochees().size + this.cadrageCoche().size + this.lotsCoches().size);
   readonly nbAVerifier = computed(() => this.lignes().filter((l) => l.confiance !== 'haute' && !l.identique && !l.bloquee).length);
 
   // ── Lecture ───────────────────────────────────────────────────────────────────────────────
@@ -127,7 +190,19 @@ export class ImportDao {
         this.cochees.set(new Set(r.propositions.filter(cocheeDOffice).map((p) => p.code)));
         // Une réponse n'est retenue d'office que si la question est vraiment sans réponse (défaut compris).
         this.cadrageCoche.set(new Set(r.cadrage.filter((c) => { const v = this.actuelleCadrage(c); return v == null || v === ''; }).map((c) => c.cle)));
+        this.actuels.set(null);
+        this.lotsCoches.set(new Set());
         this.resultat.set(r);
+        // ⚠️ 16/10 — des articles lus : ce que la fiche porte déjà décide de ce qui est coché d'office (un lot vide).
+        if (r.articles?.length) {
+          this.ficheService.articles(this.idDmc()).subscribe({
+            next: (a) => {
+              this.actuels.set(a);
+              this.lotsCoches.set(new Set(lotsImport(r.articles ?? [], a).filter(lotCocheDOffice).map((l) => l.cle)));
+            },
+            error: () => this.actuels.set(null),
+          });
+        }
       },
       error: (e: ApiError | HttpErrorResponse) => {
         this.lecture.set(false);
@@ -196,16 +271,21 @@ export class ImportDao {
     for (const p of r.propositions) if (this.cochees().has(p.code) && p.valeur != null) valeurs[p.code] = p.valeur;
     const cadrage: Record<string, string | number> = {};
     for (const c of r.cadrage) if (this.cadrageCoche().has(c.cle)) cadrage[c.cle] = c.valeur;
+    const lots = this.lotsLus().filter((l) => this.lotsCoches().has(l.cle) && !l.motifs.length);
+    const n = Object.keys(valeurs).length, m = Object.keys(cadrage).length;
     this.envoi.set(true);
     this.refus.set(new Map());
     this.refusGeneral.set(null);
+    // ⚠️ 16/10 — deux écritures : les champs (atomique, comme avant), puis le besoin lot par lot. Sans champ retenu,
+    // seuls les lots s'écrivent.
+    if (!n && !m) { this.ecrireLots(r, lots, 0, false); return; }
     this.ficheService.appliquerImport(this.idDmc(), { cadrage, valeurs, fichier: r.fichier, empreinte: r.empreinte }).subscribe({
       next: (f) => {
-        this.envoi.set(false);
-        this.resultat.set(null);
-        const n = Object.keys(valeurs).length, m = Object.keys(cadrage).length;
-        this.toast.success(`Fiche pré-remplie depuis ${r.fichier} : ${n} valeur${n > 1 ? 's' : ''}, ${m} réponse${m > 1 ? 's' : ''} de cadrage. Relisez-la bloc par bloc.`);
         this.applique.emit(f);
+        // Les champs sont écrits : ils ne doivent pas repartir si un lot est refusé et que la PRMP réapplique.
+        this.cochees.set(new Set());
+        this.cadrageCoche.set(new Set());
+        this.ecrireLots(r, lots, 0, true, `${n} valeur${n > 1 ? 's' : ''}, ${m} réponse${m > 1 ? 's' : ''} de cadrage`);
       },
       error: (e: ApiError | HttpErrorResponse) => {
         this.envoi.set(false);
@@ -215,6 +295,39 @@ export class ImportDao {
         this.refusGeneral.set(parChamp.size
           ? `Rien n’a été écrit : ${parChamp.size} ligne${parChamp.size > 1 ? 's' : ''} refusée${parChamp.size > 1 ? 's' : ''} (en rouge ci-dessous).`
           : corpsErreur<{ message?: string }>(e)?.message ?? 'L’application a échoué : rien n’a été écrit.');
+      },
+    });
+  }
+
+  /**
+   * ⚠️ 16/10 — le besoin des lots cochés, un lot après l'autre (`PUT …/articles?lot=k` remplace le besoin du lot), avec
+   * la trace de l'import pour le journal du dossier. Au premier refus, on s'arrête et on dit exactement ce qui est écrit.
+   */
+  private ecrireLots(r: ImportDaoResult, lots: LotImport[], i: number, champsEcrits: boolean, bilanChamps = ''): void {
+    if (i === lots.length) {
+      this.envoi.set(false);
+      this.resultat.set(null);
+      const nbArticles = lots.reduce((s, l) => s + l.articles.length, 0);
+      const bilanLots = lots.length ? `${nbArticles} article${nbArticles > 1 ? 's' : ''} du besoin (${lots.length} lot${lots.length > 1 ? 's' : ''})` : '';
+      this.toast.success(`Fiche pré-remplie depuis ${r.fichier} : ${[bilanChamps, bilanLots].filter(Boolean).join(', ')}. Relisez-la bloc par bloc.`);
+      if (lots.length) this.besoinImporte.emit();
+      return;
+    }
+    const l = lots[i];
+    this.ficheService.enregistrerBesoin(this.idDmc(), l.lot, l.articles.map(versArticleFiche), { importFichier: r.fichier, importEmpreinte: r.empreinte }).subscribe({
+      next: () => {
+        // Repris : il ne doit pas repartir si la suite est refusée et que la PRMP réapplique.
+        this.lotsCoches.update((s) => { const x = new Set(s); x.delete(l.cle); return x; });
+        this.ecrireLots(r, lots, i + 1, champsEcrits, bilanChamps);
+      },
+      error: (e: ApiError | HttpErrorResponse) => {
+        this.envoi.set(false);
+        // Les champs, s'il y en avait, sont déjà rendus au parent ; les lots écrits avant le refus doivent se voir.
+        if (i > 0) this.besoinImporte.emit();
+        const parChamp = erreursParChamp(e);
+        const motif = parChamp.size ? [...parChamp.values()].slice(0, 3).join(' ; ') : corpsErreur<{ message?: string }>(e)?.message ?? 'refus du serveur';
+        const deja = [champsEcrits ? 'les valeurs de la fiche' : '', ...lots.slice(0, i).map((x) => this.libelleLot(x))].filter(Boolean);
+        this.refusGeneral.set(`${deja.length ? `Écrit : ${deja.join(', ')}. ` : ''}Refusé : ${this.libelleLot(l)} — ${motif}. Rien n’a été écrit pour ce lot ni pour les suivants.`);
       },
     });
   }

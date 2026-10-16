@@ -63,6 +63,17 @@ Lecture seule, comme le reste de l'import. Nouveau champ de `ImportDaoResult` :
   et sa colonne nommée. **Moyenne** pour les caractéristiques (découpage) et pour une définition de prix de travaux.
 - Les prix ne sont jamais lus : un DAO n'en porte pas.
 
+> ⚠️ **2026-10-16, livraison backend (B1) :** `ImportDaoResult.articles[]` est livré tel que demandé. Le contrat complet est dans
+> `docs/api-endpoints.md` du backend, § *L'import du DAO*, encadré « les articles lus dans les tableaux ». Précisions :
+> - `confiance.article` vaut `haute` pour un article lu au bordereau, `moyenne` pour un article lu seulement aux spécifications ;
+>   `confiance.caracteristiques` vaut `moyenne`, et nul sans caractéristique.
+> - `pages` est nul pour un Word.
+> - Chaque entrée de `anomalies[]` est une phrase qui **commence par son code** (`LOT_HORS_PLAN : …`), comme les propositions
+>   portent des messages.
+> - **Durée** : la lecture des tableaux tourne en parallèle de la lecture par modèle. Sur un DAO PDF d'une centaine de pages,
+>   PDFBox prend une vingtaine de secondes à chacune ; l'import ne s'allonge que de quelques secondes (environ 26 s au lieu de 20 s
+>   sur le 297).
+
 ## B2 — Écrire : par la ressource existante, sans nouvelle route
 
 Le front propose les articles lus, lot par lot, dans l'écran d'import ; la PRMP coche les lots à reprendre. À
@@ -72,6 +83,15 @@ remplace les lots cochés par les articles lus. Rien à ajouter à `…/import/a
 Question au backend : faut-il garder la **trace** de l'import (fichier, empreinte) sur les articles, comme
 `…/import/appliquer` la garde pour les champs ? Si oui, deux champs facultatifs dans le corps de `PUT …/articles`
 (`importFichier`, `importEmpreinte`) suffiraient ; sinon le front n'envoie rien de plus.
+
+> ⚠️ **2026-10-16, réponse et livraison backend (B2) : oui, la trace est gardée.** `PUT …/articles` accepte les deux champs
+> facultatifs `importFichier` et `importEmpreinte` (SHA-256 hexadécimal, celle de la lecture).
+> - Ils vont ensemble : l'un sans l'autre donne un 400 nominatif (`importFichier` ou `importEmpreinte`).
+> - Présents, ils écrivent au journal du dossier `FICHE_IMPORTEE` : « besoin pré-rempli par import de <fichier> (<12 caractères>) :
+>   n article(s)[, lot k] ».
+> - Absents, rien ne change.
+>
+> Le front écrivant la liste complète sans `?lot=`, le journal compte tous les articles envoyés, lots non cochés compris.
 
 ## B3 — Les règles de lecture (à porter depuis `lire-specs.mjs`)
 
@@ -111,11 +131,28 @@ Même principe que `LecturePdf` (ADR-0012) : le portage tel quel du prototype, c
     significatifs manquent **dans les deux sens** — « Fourniture et pose transmission AV. G/D » / « Transmission AV. G/D »
     et les abréviations du DQE (« Couche de roulement en MS ») ne sont pas des écarts.
 
+> ⚠️ **2026-10-16, livraison backend (B3) :** le portage est livré (`LectureTableaux`), avec la sémantique JavaScript des
+> expressions (`\s` Unicode, `\b` ASCII). **Un seul écart, à la règle 11** : les nombres ne se comparent que si les **deux**
+> désignations en portent.
+> - Raison : tel quel, le prototype signale au DAO 297 « Ordinateurs portables » / « Ordinateur portable I3 ». Le « 3 » d'« I3 »
+>   fait diverger les nombres. Sa propre mesure annonce pourtant 0 écart pour ce DAO, et la recette exige « les trois écarts réels
+>   et aucun autre ».
+> - Une précision d'un seul côté n'est pas une contradiction. 500 ml / 100 ml, 1 l / 950 cl et B2 / B1 restent signalés.
+
 ## B4 — Le Word : les tableaux sont déjà des tableaux
 
 Pour un `.docx`, la géométrie (règles 1, 2, 5) est inutile : les tableaux natifs portent leurs cellules (cellules
 fusionnées comprises) et un tableau ne se coupe pas d'une page à l'autre. Les règles 3, 4 et 6 à 11 s'appliquent telles
 quelles. Le front n'a pas de DAO Word réel à tableaux pour le mesurer : à vérifier sur ceux produits par l'application.
+
+> ⚠️ **2026-10-16, livraison backend (B4) :** le Word lit les tableaux natifs (`gridSpan` pour les cellules fusionnées en largeur,
+> `vMerge` pour la hauteur). Deux adaptations, faute de géométrie :
+> - **Lot** : il est lu dans les **trois paragraphes** qui précèdent le tableau, à la place des 70 points.
+> - **Texte « d'un seul tenant »** : une cellule d'**un seul paragraphe de plus de 80 caractères**. Les lignes pleines jusqu'au bord
+>   n'existent pas en Word.
+>
+> Un test couvre ce chemin, sur un `.docx` construit en mémoire (bordereau à min/max, spécifications, lot au-dessus). Il reste à
+> mesurer sur des DAO Word réels.
 
 ## B5 — Anomalies et avertissements
 
@@ -128,6 +165,12 @@ quelles. Le front n'a pas de DAO Word réel à tableaux pour le mesurer : à vé
   - article du bordereau sans spécification, ou spécification sans article du bordereau ;
   - contrat-cadre : quantités du bordereau « à titre indicatif » (6114, 6213 portent 1 partout).
 
+> ⚠️ **2026-10-16, livraison backend (B5) :** livré tel que demandé, avec deux précisions et un ajout.
+> - `LOT_HORS_PLAN` couvre aussi une **ligne allotie dont le document ne dit pas le lot**.
+> - L'avertissement d'écart cite les deux textes, et l'article porte alors `designationSpecification`.
+> - Ajout : un avertissement quand une caractéristique dépasse la longueur que la validation du besoin admet (libellé 300,
+>   exigence 500 caractères) ; et un autre quand les tableaux sont illisibles (`articles` vide, le reste de l'import inchangé).
+
 ## Hypothèses à confirmer
 
 - **H1** — Un DAO non alloti (pas de « Lot n : ») dont la ligne du plan n'a qu'un lot : les articles vont à ce lot.
@@ -136,6 +179,15 @@ quelles. Le front n'a pas de DAO Word réel à tableaux pour le mesurer : à vé
 - **H3** — En travaux, la définition du prix (« Ce prix rémunère au mètre cube… ») est proposée comme caractéristiques
   de l'article, faute de colonne dédiée. Les exigences de matériaux du CPS (CBR, dosages, normes), rédigées par
   matériau et non par prix, ne sont pas lues.
+
+> ⚠️ **2026-10-16, réponses du backend :**
+> - **H1 — retenue**, sous la forme de l'API : sur une ligne non allotie, les articles n'ont **pas de lot** (`lot: null`), comme le
+>   besoin d'une telle ligne. Un lot lu supérieur à 1 y est `LOT_HORS_PLAN`.
+> - **H2 — la validation du besoin exige les deux colonnes.** Le serveur remplit donc **`exigence`** avec le texte entier, sous le
+>   libellé **« Spécification »** : « De bonne qualité » devient `{ libelle: "Spécification", exigence: "De bonne qualité" }`. Une
+>   caractéristique « Libellé : valeur » est inchangée.
+> - **H3 — retenue** telle quelle : en travaux, la définition du prix est découpée sur les puces et proposée comme caractéristiques.
+>   Elle passe donc, elle aussi, par la règle de H2.
 
 ## Limites assumées
 
@@ -147,3 +199,10 @@ Tableaux quadrillés seulement (un bordereau sans filets ne sera pas reconnu) ; 
 Les cinq DAO de la mesure (fichiers du pilote, non versionnés ; le front les transmet sur demande) : la sortie du
 serveur doit égaler `scripts/import-dao/attendus-articles/*.json` sur `lot`, `numero`, `designation`, `unite`,
 quantités, `serie`, et le nombre de caractéristiques, plus les trois écarts réels et aucun autre.
+
+> ⚠️ **2026-10-16, recette backend verte** (`LectureTableauxRecetteTest`) : les cinq DAO de la mesure, lus depuis les
+> Téléchargements du poste, donnent **136 articles sur 136** identiques aux sorties de référence copiées sous
+> `src/test/resources/import-dao/attendus-articles`. La comparaison porte sur `lot`, numéro, désignation, désignation des
+> spécifications, unité, quantités, série et nombre de caractéristiques. On retrouve les **trois écarts réels seuls**, grâce à
+> l'écart de la règle 11 noté plus haut. Sans les fichiers (la CI), la recette est ignorée. `PRS_DAO_DIR` désigne un autre
+> dossier.

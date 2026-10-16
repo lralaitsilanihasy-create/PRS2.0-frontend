@@ -151,10 +151,13 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
    * `PUT /{idDmc}/articles?lot=n` — **remplacement en bloc** du besoin d'un lot : la grille envoie ses lignes
    * dans l'ordre affiché, le serveur recrée les articles et pose leur `ordre`. Sans `lot`, c'est tout le
    * besoin d'une ligne non allotie. 400 nominatifs par article (affichés dans la grille, pas en toast).
+   * ⚠️ 16/10 — `trace` : le besoin vient de l'import du DAO ; les deux champs vont ensemble (400 sinon) et le serveur
+   * l'écrit au journal du dossier (`FICHE_IMPORTEE`).
    */
-  enregistrerBesoin(idDmc: number, lot: number | null, articles: ArticleFiche[]): Observable<ArticleFiche[]> {
+  enregistrerBesoin(idDmc: number, lot: number | null, articles: ArticleFiche[],
+                    trace?: { importFichier: string; importEmpreinte: string }): Observable<ArticleFiche[]> {
     const params = lot == null ? undefined : new HttpParams().set('lot', lot);
-    return this.http.put<ArticleFiche[]>(`${this.baseUrl}/${idDmc}/articles`, { articles }, { params, context: skipErrorToast() });
+    return this.http.put<ArticleFiche[]>(`${this.baseUrl}/${idDmc}/articles`, { articles, ...trace }, { params, context: skipErrorToast() });
   }
 
   /**

@@ -60,6 +60,51 @@
           </table>
         }
 
+        <!-- ⚠️ 16/10 — le besoin lu dans les tableaux du DAO : on reprend un lot entier ou rien ; un lot déjà saisi
+             n'est jamais coché d'office, et ses articles seraient remplacés. -->
+        @if (lotsLus().length) {
+          <h3 class="idao__titre">Articles du besoin (bloc B12) — lus dans les tableaux du DAO</h3>
+          <p class="idao__aide">Les articles, unités et quantités sont lus case par case ; les caractéristiques sont
+            <span class="badge badge-warning">à vérifier</span> : leur découpage en lignes peut être imparfait. Les prix ne sont jamais lus.</p>
+          @for (l of lotsLus(); track l.cle) {
+            <section class="idao__lot" [class.idao__terne]="l.motifs.length">
+              <label class="idao__lot-tete">
+                <input type="checkbox" [checked]="lotsCoches().has(l.cle)" [disabled]="l.motifs.length > 0 || envoi()" (change)="basculerLot(l.cle)" />
+                <span><strong>Reprendre les {{ l.articles.length }} article{{ l.articles.length > 1 ? 's' : '' }} {{ l.lot == null ? 'du besoin' : 'du lot ' + l.lot }}</strong></span>
+                @if (actuels() === null) { <span class="idao__note">besoin actuel de la fiche non lu</span> }
+                @else if (l.actuels) { <span class="idao__note">la fiche en porte {{ l.actuels }} : ils seraient remplacés</span> }
+                @else { <span class="idao__note">la fiche n’en porte aucun</span> }
+              </label>
+              @for (m of l.motifs; track m) { <span class="idao__motif">{{ m }}</span> }
+              <table class="idao__table">
+                <thead><tr><th scope="col">N°</th><th scope="col">Désignation</th><th scope="col">Unité</th><th scope="col">Quantité</th><th scope="col">Caractéristiques</th></tr></thead>
+                <tbody>
+                  @for (a of l.articles; track $index) {
+                    <tr>
+                      <td>{{ a.numero }}</td>
+                      <td>
+                        @if (a.serie) { <span class="idao__code">{{ a.serie }} {{ a.serieLibelle }}</span> }
+                        <span class="idao__libelle">{{ a.designation }}</span>
+                        @if (a.designationSpecification) { <span class="idao__motif">les spécifications disent : « {{ a.designationSpecification }} »</span> }
+                        @if (a.confiance.article !== 'haute') { <span class="idao__note">lu seulement aux spécifications — à vérifier</span> }
+                      </td>
+                      <td>{{ affiche(a.unite) }}</td>
+                      <td>{{ quantites(a) }}</td>
+                      <td>
+                        @if (a.caracteristiques.length) {
+                          <details class="idao__extrait"><summary>{{ a.caracteristiques.length }} caractéristique{{ a.caracteristiques.length > 1 ? 's' : '' }}</summary>
+                            <ul class="idao__liste">@for (c of a.caracteristiques; track $index) { <li><strong>{{ c.libelle }}</strong> : {{ c.exigence }}</li> }</ul>
+                          </details>
+                        } @else { — }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </section>
+          }
+        }
+
         @for (b of blocs(); track b) {
           <h3 class="idao__titre">Bloc {{ b }}</h3>
           <table class="idao__table">

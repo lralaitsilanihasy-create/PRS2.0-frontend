@@ -11,7 +11,9 @@ const norm = (s) => s.normalize('NFKD').replace(/[̀-ͯ]/g, '').toUpperCase().re
 const nombresDe = (x) => (norm(x).match(/\d+(?:[,.]\d+)?/g) ?? []).join('|');
 const motsDe = (x) => norm(x).replace(/[^A-Z0-9 ]/g, ' ').split(' ').filter((w) => w.length > 2 && !/^(DES|LES|POUR|AVEC|PAR|SUR|UNE)$/.test(w)).map((w) => w.replace(/S$/, ''));
 const manque = (p, q) => { const mq = new Set(motsDe(q)), mp = motsDe(p); return mp.length && mp.filter((w) => !mq.has(w)).length / mp.length > 0.5; };
-const ecart = (a, b) => nombresDe(a) !== nombresDe(b) || (manque(a, b) && manque(b, a));
+// ⚠️ 16/10 (correction du portage backend) : les nombres ne se comparent que si les DEUX désignations en portent —
+// « Ordinateurs portables » / « Ordinateur portable I3 » (297) est une précision, pas une contradiction.
+const ecart = (a, b) => (nombresDe(a) && nombresDe(b) && nombresDe(a) !== nombresDe(b)) || (manque(a, b) && manque(b, a));
 // Désignation de bordereau sans son suffixe de prix : « , l'unité à… », « Le forfait à… », « (insérer le prix…) ».
 const nettoie = (x) => x.replace(/\s*\(?\s*ins[ée]rer le prix.*$/i, '').replace(/\s*,?\s*(?:l['’]\s*|le\s+|la\s+)\p{L}+\s+à(?!\p{L}).*$/iu, '').trim();
 
