@@ -182,3 +182,22 @@ source **`clause`**, les informations d'un **catalogue court** que le modèle n'
 - **Listes** : la passe ne découpe rien (essai : 1 liste juste sur 6) ; elle repère le passage.
 - **Second temps (03/10)** : validité « de l'offre » et « (75j) » (2463, MTP : 75), fenêtre de 4 pour la garantie (MEN :
   9 900 000 / 7 200 000), passages du personnel (MEN, MTP). Banc identique.
+
+## Les articles et leurs spécifications — lecture des tableaux (16/10, `PdfGrille.java` + `lire-specs.mjs`)
+
+La lecture par modèle ne lit que des champs. Les **articles** du besoin (bloc `B12` : désignation, unité, quantités,
+caractéristiques) sont dans des **tableaux**, qu'elle ne sait pas lire. Le prototype les reconstruit depuis le PDF :
+
+```bash
+java -cp "<pdfbox, fontbox, pdfbox-io, commons-logging>" PdfGrille.java dao.pdf > grille.tsv   # mots positionnés + filets
+node lire-specs.mjs grille.tsv --json=articles.json
+```
+
+- **`PdfGrille.java`** : chaque mot avec sa position (`M page x0 y x1 texte`), chaque filet horizontal (`H page y x0 x1`)
+  et vertical (`V page x y0 y1`). Le filigrane incliné est écarté comme dans `PdfLignes` ; un **fond rempli** (ombrage
+  d'en-tête) n'est pas un filet.
+- **`lire-specs.mjs`** : cellules → tableaux reconnus par leurs **intitulés de colonnes** → articles par lot. Les règles
+  sont décrites dans `docs/demande-backend-2026-10-16-import-specifications.md`, §B3, qui en demande le portage.
+- **Jeu de référence** (`attendus-articles/`) : la sortie sur cinq DAO réels (2463 MESupReS, 297 Paositra, 6114 MEF,
+  Ankily-Mahasoa MTP, 6213 MEF). 136 articles justes sur 136 ; trois écarts réels signalés (500 ml / 100 ml,
+  1 l / 950 cl, béton B2 / B1), aucune fausse alerte. Les PDF ne sont pas versionnés (fichiers du pilote).
