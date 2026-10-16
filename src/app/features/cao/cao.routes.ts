@@ -26,6 +26,12 @@ export const CAO_ROUTES: Routes = [
     loadComponent: () => import('./remises-cao').then((m) => m.RemisesCao),
   },
   {
+    // ⚠️ Lot MS-4 (V127, 16/10) — les réceptions des commandes : le président établit le PV, chaque membre le signe.
+    path: 'receptions',
+    canActivate: [externeConnecteGuard],
+    loadComponent: () => import('./receptions-membre').then((m) => m.ReceptionsMembre),
+  },
+  {
     path: 'procedures/:idDmc',
     canActivate: [externeConnecteGuard],
     loadComponent: () => import('./procedure-cao').then((m) => m.ProcedureCao),

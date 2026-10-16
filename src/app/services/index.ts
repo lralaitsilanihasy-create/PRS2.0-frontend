@@ -28,3 +28,5 @@ export * from './controles.services';
 export * from './questions.services';
 export * from './contrats-vigueur.services';
 export * from './remises.services';
+export * from './bons-commande.services';
+export * from './receptions-commandes.services';

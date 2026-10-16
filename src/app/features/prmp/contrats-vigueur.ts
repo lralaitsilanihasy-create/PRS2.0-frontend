@@ -10,11 +10,16 @@ import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 import { ariary } from '../evaluation/libelles-evaluation';
 import { ProfilRemise, RemiseDetail, refusRemise } from '../remises/remise-detail';
+import { BonsCommandeContrat } from '../bons-commande/bons-commande-contrat';
+import { CommissionReceptionPanneau } from '../receptions/commission-reception';
 
 const ALERTES: Readonly<Record<string, { texte: string; classe: string }>> = {
   RECONDUCTION_A_DECIDER: { texte: 'Reconduction à décider', classe: 'badge-warning' },
   ECHEANCE_PROCHE: { texte: 'Échéance dans moins de 30 jours', classe: 'badge-warning' },
   ECHU: { texte: 'Échu', classe: 'badge-danger' },
+  // ⚠️ Lot MS-3 (V126) — les alertes de consommation, jamais bloquantes.
+  MINIMUM_NON_ATTEINT: { texte: 'Minimum annuel non atteint', classe: 'badge-warning' },
+  MONTANT_ESTIME_DEPASSE: { texte: 'Montant estimé dépassé', classe: 'badge-warning' },
 };
 
 const TYPES: Readonly<Record<string, string>> = {
@@ -53,13 +58,13 @@ function aujourdhui(): string {
  */
 @Component({
   selector: 'app-contrats-vigueur',
-  imports: [EtatErreur, RemiseDetail],
+  imports: [EtatErreur, RemiseDetail, BonsCommandeContrat, CommissionReceptionPanneau],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="cv">
       <header class="cv__tete">
         <h1 class="cv__h1">Contrats en vigueur</h1>
-        <p class="text-sm text-muted cv__intro">Contrats-cadres et marchés à commandes notifiés : leurs titulaires, leurs échéances et leurs reconductions. Les remises en concurrence et les bons de commande s’y ajouteront.</p>
+        <p class="text-sm text-muted cv__intro">Contrats-cadres et marchés à commandes notifiés : titulaires, échéances et reconductions, remises en concurrence, bons de commande et leur réception.</p>
         <div class="cv__filtres" role="group" aria-label="Filtrer les contrats">
           @for (f of filtres; track f.cle) {
             <button type="button" class="btn btn-sm" [class.btn-primary]="filtre() === f.cle" [class.btn-outline]="filtre() !== f.cle" [attr.aria-pressed]="filtre() === f.cle" (click)="filtre.set(f.cle)">{{ f.libelle }} ({{ compte(f.cle) }})</button>
@@ -164,6 +169,16 @@ function aujourdhui(): string {
                     }
                   }
 
+                  <!-- ⚠️ Lot MS-3 (V126, 16/10) — les bons de commande ; relus quand une remise change (une attribution ouvre l'émission). -->
+                  <h2 class="cv__h2">Bons de commande <span class="text-muted text-sm">— {{ c.typeMarche === 'MARCHE_A_COMMANDES' ? 'marché à commandes (loi n° 2016-055, art. 30)' : 'des marchés subséquents attribués (décret n° 2019-1064, art. 33)' }}</span></h2>
+                  @for (k of [cleBons()]; track k) {
+                    <app-bons-commande-contrat [contrat]="c" [prmp]="prmp()" [ugpm]="ugpm()" [presideeParPrmp]="presideeParPrmp()" />
+                  }
+
+                  <!-- ⚠️ Lot MS-4 (V127, 16/10) — la commission de réception, désignée par décision de la PRMP (Q1 ; loi art. 13). -->
+                  <h2 class="cv__h2">Commission de réception <span class="text-muted text-sm">— loi n° 2016-055, art. 13</span></h2>
+                  <app-commission-reception [idContrat]="c.id" [peutDesigner]="prmp() || ugpm()" (lue)="presideeParPrmp.set(!!$event && $event.membres.length > 0 && $event.presideeParPrmp)" />
+
                   @if (prmp() && reconductionOuverte(c)) {
                     <fieldset class="cv__form">
                       <legend class="form-label">Décider la reconduction de la période en cours</legend>
@@ -262,6 +277,10 @@ export class ContratsVigueur implements OnInit {
 
   // ⚠️ Lot MS-2 — les remises du contrat ouvert, et le formulaire de lancement.
   readonly remises = signal<Remise[]>([]);
+  /** Recrée le bloc des bons de commande (relecture de la consommation). */
+  readonly cleBons = signal(0);
+  /** ⚠️ MS-4 — la PRMP préside la commission de réception du contrat ouvert. */
+  readonly presideeParPrmp = signal(false);
   readonly chargementRemises = signal(false);
   readonly erreurRemises = signal<string | null>(null);
   readonly refusLancement = signal<string | null>(null);
@@ -302,6 +321,7 @@ export class ContratsVigueur implements OnInit {
   basculer(id: number): void {
     this.ouvert.set(this.ouvert() === id ? null : id);
     this.remises.set([]);
+    this.presideeParPrmp.set(false);
     this.lancement.set({});
     this.refusLancement.set(null);
     if (this.ouvert() === id && this.contrats().find((c) => c.id === id)?.typeMarche !== 'MARCHE_A_COMMANDES') this.chargerRemises(id);
@@ -328,6 +348,7 @@ export class ContratsVigueur implements OnInit {
 
   remiseAJour(r: Remise): void {
     this.remises.update((l) => l.map((x) => (x.id === r.id ? r : x)));
+    this.cleBons.update((k) => k + 1);
   }
 
   lr(cle: string): string {

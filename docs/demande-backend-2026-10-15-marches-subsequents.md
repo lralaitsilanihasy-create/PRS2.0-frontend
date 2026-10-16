@@ -262,12 +262,67 @@ Textes lus :
 - Contrôles : marché à commandes — cumul **au plus le maximum**, alerte avant l'échéance si le **minimum** n'est pas atteint (loi
   art. 30-II) ; contrat-cadre — cumul face au montant maximal estimé (décret art. 8), signalé ; aucun bon après l'échéance.
 
+> ⚠️ **2026-10-16, livraison backend de MS-3 (V126) :** contrat complet dans `docs/api-endpoints.md` du backend, § *Les bons de
+> commande — lot MS-3*.
+> - **Routes** :
+>   - `POST /api/contrats-en-vigueur/{id}/bons-commande` (PRMP) `{ idRemise, objet, lieuLivraison, delaiLivraison, observations,
+>     lignes[{ idArticle, designation, unite, quantite, prixUnitaire }] }` ;
+>   - `GET` sur la même route : la **consommation** (cumuls, minimum et maximum de l'année, marchés subséquents et leur reste,
+>     alertes, bons) ;
+>   - `GET /api/bons-commande/{id}`, `…/document` (`?format=docx`), `POST /api/bons-commande/{id}/annulation` `{ motif }` ;
+>   - titulaire : `GET /api/candidat/bons-commande`, `GET /api/candidat/bons-commande/{id}/document`.
+> - **Écarts et précisions** :
+>   - **Émission par la PRMP seule** : le bon l'engage. L'UGPM le lit sans l'émettre.
+>   - **Accusé tracé** = la **première lecture** du bon par le titulaire dans son espace, pas d'accusé séparé. Il est notifié à la PRMP
+>     (`BON_COMMANDE_ACCUSE`).
+>   - **Contrat-cadre** : le bon se rattache à une remise **attribuée** (`idRemise`), au titulaire retenu. Les prix sont **saisis**,
+>     car le devis du marché subséquent est un fichier, pas un bordereau structuré. Les bons du marché subséquent ne dépassent pas son
+>     **montant retenu** (409 `MONTANT_SUBSEQUENT_DEPASSE`), une limite que la demande ne prévoyait pas.
+>   - **Marché à commandes** : un article du besoin (`idArticle`) prend le prix du **bordereau scellé** de l'offre quand il est
+>     lisible (`prixDuBordereau`). Un autre prix → 400 `PRIX_HORS_BORDEREAU` ; sinon le prix est saisi. Minimum et maximum sont
+>     **annuels** (`B05-TP-02/03`), comptés par **année contractuelle** depuis la notification.
+>   - **Annulation** motivée par la PRMP : le bon sort des cumuls et le titulaire est notifié (ajout).
+>   - **Pas encore** : un plafond **en quantité** par article (seul le montant est contrôlé) et le TTC sur le bon (il porte le HT).
+> - **Alertes**, servies aussi dans `ContratVigueurDto.alertes` :
+>   - `MINIMUM_NON_ATTEINT` : à trente jours de la fin de l'année contractuelle ;
+>   - `MONTANT_ESTIME_DEPASSE` : contrat-cadre.
+> - **Notifications** : `BON_COMMANDE` et `BON_COMMANDE_ANNULE` (titulaire), `BON_COMMANDE_ACCUSE` (PRMP).
+
 ## Lot MS-4 — La réception
 
 - Livraison déclarée, puis **réception** par la commission de réception (loi art. 13) : réception, ajournement, réfaction ou rejet
   (CCAG fournitures, art. 22), **PV signé** de ses membres sous la présidence de la PRMP ; provisoire, puis définitive au terme du
   délai de garantie (`B09-GP-03`) s'il y en a un.
 - Retard : pénalités calculées à titre indicatif selon le contrat (`B07-PE-*`), sans retenue automatique.
+
+> ⚠️ **2026-10-16, livraison backend de MS-4 (V127) :** contrat complet dans `docs/api-endpoints.md` du backend, § *La réception des
+> commandes — lot MS-4*. Le DTO s'appelle **`ReceptionCommandeDto`**, `ReceptionDto` désignant déjà la réception des dossiers par la
+> Commission.
+> - **Routes** :
+>   - commission : `GET` et `PUT /api/contrats-en-vigueur/{id}/commission-reception` `{ decision{ reference, date }, presideeParPrmp,
+>     membres[{ nom, prenom, email, fonction, president }] }` ;
+>   - livraison : `POST /api/receptions-commandes/bons/{idBon}/livraison` (PRMP, UGPM) et `POST /api/candidat/bons-commande/{id}/livraison`
+>     (titulaire) ;
+>   - lecture : `GET /api/receptions-commandes/bons/{idBon}` (état de réception du bon) et `GET /api/receptions-commandes/miennes`
+>     (espace du membre) ;
+>   - PV : `GET /api/receptions-commandes/{id}`, `POST …/pv` (président), `POST …/signature`, `GET …/pv` ;
+>   - réception définitive : `POST /api/receptions-commandes/bons/{idBon}/definitive` ;
+>   - titulaire : `GET /api/candidat/bons-commande/{id}/receptions`, `…/receptions/{idReception}/pv` (PV signé).
+> - **Écarts et hypothèses** :
+>   - **Présidence (Q1)** : la PRMP préside par défaut (`presideeParPrmp`). Elle signe alors elle-même, avec son compte PRMP. Sinon, un
+>     membre la représente.
+>   - **Comptes des membres** : un compte K…, le même mécanisme que la CAO (invitation par courriel, activation
+>     `POST /api/cao/activation`). Le membre se connecte avec ce compte : son profil reste `MEMBRE_CAO`.
+>   - **Garantie** : `B09-GP-03` pour le contrat-cadre, **`B09-DG-01` pour le marché à commandes** (le champ de ce formulaire). Sans
+>     délai de garantie, la réception provisoire vaut définitive.
+>   - **Pénalité indicative** : le contrat ne fixe pas de taux journalier dans un champ. ⚠️ Hypothèse : **1 ‰ du montant du bon par
+>     jour**, la pénalité du CCAP courant, modifiable au PV (`tauxJournalier`). Plafond : `B09-PR-02` s'il est saisi, sinon le plafond
+>     légal (15 %, 10 % en PI). Aucune pénalité quand `B07-PE-01` vaut « Non applicables ». Le retard court de l'émission du bon + son
+>     délai, lu en jours, semaines ou mois.
+>   - **Pas encore** : la réception partielle (par article).
+> - **Notifications** : `COMMISSION_RECEPTION` et `LIVRAISON_DECLAREE` (membres), `RECEPTION_A_SIGNER` (signataires),
+>   `RECEPTION_PRONONCEE` (titulaire et PRMP).
+> - **Alerte** : `RECEPTION_DEFINITIVE_A_PRONONCER` (`DuBon.alertes`), une fois le délai de garantie écoulé.
 
 ## Questions et hypothèses
 

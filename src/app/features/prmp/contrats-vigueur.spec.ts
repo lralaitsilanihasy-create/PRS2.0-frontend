@@ -41,6 +41,10 @@ describe('Contrats en vigueur (MS-1)', () => {
   }
 
   afterEach(() => {
+    // ⚠️ MS-3 — le bloc des bons de commande lit la consommation du contrat ouvert.
+    http.match((r) => r.url.endsWith('/bons-commande')).forEach((r) => r.flush({ idContrat: 7, typeMarche: 'CONTRAT_CADRE', cumulHt: 0, anneeDebut: null, anneeFin: null, cumulAnnee: null, minimum: null, maximum: null, resteMaximum: null, montantEstime: null, subsequents: [], alertes: [], bons: [] }));
+    // ⚠️ MS-4 — la commission de réception du contrat ouvert.
+    http.match((r) => r.url.endsWith('/commission-reception')).forEach((r) => r.flush({ idContrat: 7, decisionReference: null, decisionDate: null, presideeParPrmp: true, membres: [], majLe: null, majPar: null }));
     http.verify();
     TestBed.resetTestingModule();
   });

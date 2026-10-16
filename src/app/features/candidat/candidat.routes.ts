@@ -50,6 +50,12 @@ export const CANDIDAT_ROUTES: Routes = [
     loadComponent: () => import('./remises-titulaire').then((m) => m.RemisesTitulaire),
   },
   {
+    // ⚠️ Lot MS-3 (V126, 16/10) — les bons de commande reçus ; la première ouverture vaut accusé de réception.
+    path: 'bons-commande',
+    canActivate: [externeConnecteGuard],
+    loadComponent: () => import('./bons-commande-titulaire').then((m) => m.BonsCommandeTitulaire),
+  },
+  {
     path: 'entreprise',
     canActivate: [externeConnecteGuard],
     loadComponent: () => import('./entreprise-candidat').then((m) => m.EntrepriseCandidat),
