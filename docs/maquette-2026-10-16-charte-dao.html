@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Charte des DAO générés</title>
+<!--
+  Maquette du 16/10/2026 — charte de présentation des dossiers d'appel d'offres produits par l'application.
+  Accompagne docs/demande-backend-2026-10-16-charte-dao.md (B1 à B6). Arbitrages du pilote du 16/10 : police Arial,
+  instructions aux candidats et CCAG reproduits, tableaux du besoin imprimés dans le document, emblème national.
+  Exemple : fiche 2, ligne 303337 « Fourniture d'articles de bureau (CONTRAT - CADRE) » ; feuille 9 : un DQE de travaux.
+  À l'écran, chaque feuille A4 est un cadre ; à l'impression, une page.
+-->
+<style>
+:root {
+  --police: Arial, Helvetica, 'Liberation Sans', sans-serif;
+  --corps: 10.5pt;
+  --tableau: 9.5pt;
+  --entete-pied: 8.5pt;
+  --gris-entete: #e3e3e3;
+  --filet: 0.5pt solid #000;
+  --fond-ecran: #8a8f98;
+}
+@page { size: A4; margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--fond-ecran); color: #000; }
+body { font-family: var(--police); font-size: var(--corps); line-height: 1.3; }
+
+/* Une feuille A4 : marges 22 / 20 / 20 / 24 mm (haut, droite, bas, gauche) */
+.feuille { position: relative; width: 210mm; height: 297mm; margin: 10mm auto; padding: 22mm 20mm 20mm 24mm; background: #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .35); overflow: hidden; page-break-after: always; break-after: page; }
+@media print { html, body { background: #fff; } .feuille { margin: 0; box-shadow: none; } .note { display: none; } }
+@media (max-width: 820px) { .feuille { transform-origin: top left; } }
+
+/* En-tête et pied courants (toutes les pages sauf la garde et les séparateurs) */
+.entete-courant { position: absolute; top: 10mm; left: 24mm; right: 20mm; font-size: var(--entete-pied); border-bottom: var(--filet);
+  padding-bottom: 1mm; display: flex; justify-content: space-between; gap: 6mm; }
+.pied-courant { position: absolute; bottom: 9mm; left: 24mm; right: 20mm; font-size: var(--entete-pied); border-top: var(--filet);
+  padding-top: 1mm; display: flex; justify-content: space-between; gap: 6mm; }
+
+p { margin: 0 0 1.8mm; text-align: justify; }
+
+/* Hiérarchie des titres */
+.t-partie { text-align: center; font-weight: bold; font-size: 13pt; text-transform: uppercase; margin: 0; }
+.t-section { text-align: center; font-weight: bold; font-size: 12pt; margin: 10mm 0 0; }
+.t-article { font-weight: bold; font-size: 11pt; text-transform: uppercase; border-bottom: var(--filet); padding-bottom: .6mm; margin: 5mm 0 2.5mm; }
+.t-sous { font-weight: bold; text-decoration: underline; margin: 3mm 0 1.5mm; }
+.t-annexe { text-align: center; font-weight: bold; text-decoration: underline; margin: 2mm 0 4mm; }
+.t-tableau { font-weight: bold; margin: 2mm 0 1.5mm; }
+.retrait { margin-left: 8mm; }
+
+/* Bloc de l'autorité (garde et séparateurs) */
+.autorite { text-align: center; font-weight: bold; font-size: 10pt; }
+.autorite p { text-align: center; margin: 0; }
+.embleme { width: 30mm; height: 30mm; margin: 0 auto 3mm; border: 1px dashed #777; display: flex; align-items: center; justify-content: center;
+  font-size: 7.5pt; font-weight: normal; color: #444; text-align: center; padding: 2mm; }
+.dao { text-align: center; font-weight: bold; font-size: 12pt; margin: 6mm 0 0; }
+.dao--grand { font-size: 15pt; margin-top: 22mm; }
+.objet { font-weight: bold; font-size: 12pt; margin: 20mm 0 0; text-align: left; }
+.objet u { text-decoration: underline; }
+.mention { font-weight: bold; margin: 12mm 0 0; text-align: left; }
+.mention i { text-decoration: underline; }
+
+/* Sommaire */
+.sommaire li { list-style: none; display: flex; align-items: baseline; margin: 0 0 2.2mm; }
+.sommaire ul { margin: 0; padding: 0; }
+.sommaire .n1 { font-weight: bold; margin-top: 6mm; }
+.sommaire .n2 { font-weight: bold; padding-left: 7mm; }
+.sommaire .n3 { padding-left: 15mm; font-size: 10pt; }
+.sommaire .pts { flex: 1; border-bottom: 1px dotted #000; margin: 0 1.5mm; transform: translateY(-1mm); }
+
+/* Tableaux : filets fins, en-tête grisé répété sur chaque page, ligne jamais coupée */
+table { border-collapse: collapse; width: 100%; font-size: var(--tableau); margin: 0 0 4mm; }
+th, td { border: var(--filet); padding: 1mm 1.5mm; vertical-align: top; text-align: left; }
+thead th { background: var(--gris-entete); font-weight: bold; }
+thead { display: table-header-group; }
+tr { break-inside: avoid; page-break-inside: avoid; }
+td.num, th.num { text-align: right; white-space: nowrap; }
+td.n { width: 8mm; }
+tr.serie td { font-weight: bold; background: #f3f3f3; }
+tr.total td { font-weight: bold; }
+
+.signe { text-align: right; font-weight: bold; margin-top: 4mm; }
+
+/* Annotations de la maquette (n'apparaissent pas à l'impression) */
+.note { position: absolute; right: 20mm; bottom: 17mm; max-width: 70mm; background: #fff4c2; border: 1px solid #c9a400; padding: 1.5mm 2mm;
+  font-size: 7.5pt; line-height: 1.25; color: #3a3000; z-index: 2; }
+.note b { display: block; margin-bottom: .5mm; }
+
+/* Feuille de la charte */
+.charte table { font-size: 9pt; }
+.echantillon { border: var(--filet); padding: 2mm 3mm; margin: 0 0 3mm; }
+</style>
+</head>
+<body>
+
+<!-- 1. Page de garde -->
+<section class="feuille" aria-label="Page de garde">
+  <div class="note"><b>B2 — Page de garde</b>Emblème national (le même pour toutes les autorités), autorité, PRMP, mode, n°, « Lancé le », objet et lots, financement, imputation. Ni en-tête ni pied.</div>
+  <div class="autorite">
+    <div class="embleme">Emblème national</div>
+    <p>MINISTERE DE L'ECONOMIE ET DES FINANCES</p><p>-------------</p>
+    <p>SECRETARIAT GENERAL</p><p>-------------</p>
+    <p>PERSONNE RESPONSABLE DES MARCHES PUBLICS</p><p>-------------</p>
+  </div>
+  <p class="dao dao--grand">DOSSIER D'APPEL D'OFFRES OUVERT</p>
+  <p class="dao">N° 07-CC/MEF/SG/PRMP.2027</p>
+  <p class="dao">Lancé le 18/01/2027</p>
+  <p class="objet"><u>Objet</u> : Fourniture d’articles de bureau (CONTRAT - CADRE), en un lot unique</p>
+  <p class="mention"><i>FINANCEMENT</i> : RPI</p>
+  <p class="mention"><i>IMPUTATION BUDGETAIRE</i> : 6111</p>
+</section>
+
+<!-- 2. Sommaire général -->
+<section class="feuille sommaire" aria-label="Sommaire général">
+  <div class="note"><b>B2 — Sommaire général</b>Plan ARMP (déjà livré, V73-V74), quatre niveaux, numéros de page. Les tableaux du besoin (B3) y prennent leur place.</div>
+  <p class="t-partie" style="margin:8mm 0 4mm">Sommaire général</p>
+  <ul>
+    <li class="n1"><span>PREMIERE PARTIE : PROCEDURE D'APPEL D'OFFRES</span></li>
+    <li class="n2"><span>1.1. - Instructions aux candidats</span><span class="pts"></span><span>3</span></li>
+    <li class="n2"><span>1.2. - Données particulières d'appel à concurrence (DPAC)</span><span class="pts"></span><span>21</span></li>
+    <li class="n2"><span>1.3. - Formulaires de soumission</span><span class="pts"></span><span>29</span></li>
+    <li class="n3"><span>A. - Modèles de fiches de renseignements (A1 à A4)</span><span class="pts"></span><span>30</span></li>
+    <li class="n3"><span>B. - Modèle d'attestation du fabricant - Non utilisé</span><span class="pts"></span><span>38</span></li>
+    <li class="n1"><span>DEUXIEME PARTIE : MARCHE</span></li>
+    <li class="n2"><span>2.1. - Acte d'engagement</span><span class="pts"></span><span>40</span></li>
+    <li class="n3"><span>Annexe 1 : Cadre du bordereau des prix</span><span class="pts"></span><span>50</span></li>
+    <li class="n3"><span>Annexe 2 : Etat des sommes versées à des tiers</span><span class="pts"></span><span>51</span></li>
+    <li class="n3"><span>Annexe 3 : Déclaration des bénéficiaires effectifs</span><span class="pts"></span><span>52</span></li>
+    <li class="n2"><span>2.2. - Cahier des prescriptions spéciales</span><span class="pts"></span><span>54</span></li>
+    <li class="n3"><span>Spécifications techniques</span><span class="pts"></span><span>55</span></li>
+    <li class="n2"><span>2.3. - Cahier des clauses administratives générales</span><span class="pts"></span><span>59</span></li>
+  </ul>
+</section>
+
+<!-- 3. Séparateur de partie -->
+<section class="feuille" aria-label="Page de séparation de partie">
+  <div class="note"><b>B2 — Séparateur</b>Devant chaque section du sommaire (1.1 à 2.3) : rappel de l'autorité, du n°, de l'objet, puis la partie et la section. Ni en-tête ni pied. Remplace les couvertures propres aux documents types.</div>
+  <div class="autorite">
+    <p>MINISTERE DE L'ECONOMIE ET DES FINANCES</p><p>-------------</p>
+    <p>SECRETARIAT GENERAL</p><p>-------------</p>
+    <p>PERSONNE RESPONSABLE DES MARCHES PUBLICS</p><p>-------------</p>
+  </div>
+  <p class="dao" style="margin-top:18mm">DOSSIER D'APPEL D'OFFRES OUVERT</p>
+  <p class="dao">N° 07-CC/MEF/SG/PRMP.2027</p>
+  <p class="dao">Lancé le 18/01/2027</p>
+  <p class="objet"><u>Objet</u> : Fourniture d’articles de bureau (CONTRAT - CADRE)</p>
+  <p class="t-partie" style="margin-top:34mm">DEUXIEME PARTIE : MARCHE</p>
+  <p class="t-section">2.1. - ACTE D'ENGAGEMENT</p>
+</section>
+
+<!-- 4. Page de texte courante -->
+<section class="feuille" aria-label="Page de texte courante">
+  <div class="note"><b>B1 — Page courante</b>Arial 10,5 pt, justifié, interligne 1,3. Article : capitales grasses sur filet. Sous-article : gras souligné. En-tête : n° et objet ; pied : autorité, version, page n / N. Le texte reste celui du document type ARMP.</div>
+  <div class="entete-courant"><span>DAO n° 07-CC/MEF/SG/PRMP.2027</span><span>Fourniture d’articles de bureau (CONTRAT - CADRE)</span></div>
+  <p class="t-article">Article 4 : Dossier de consultation</p>
+  <p class="t-sous">4.1 Composition du dossier</p>
+  <p>Le dossier comprend : les données particulières d'appel à concurrence, les formulaires de soumission, l'acte d'engagement valant cahier des clauses administratives particulières et ses annexes, le cahier des prescriptions spéciales et le cahier des clauses administratives générales.</p>
+  <p class="t-sous">4.2 Retrait du dossier</p>
+  <p>Le dossier peut être consulté ou retiré à l'adresse ci-après, contre paiement d'une somme non remboursable de quatre-vingt mille (80 000) Ariary :</p>
+  <p class="retrait">- Bureau de la Personne Responsable des Marchés Publics, porte 112, 1er étage ;</p>
+  <p class="retrait">- Antaninarenina, Antananarivo 101, les jours ouvrables de 8 heures 30 à 15 heures 30.</p>
+  <p class="t-article">Article 5 : Date et heure limites de remise des offres</p>
+  <table>
+    <thead><tr><th>Etape</th><th>Date</th><th>Heure</th></tr></thead>
+    <tbody>
+      <tr><td>Date limite de remise des offres</td><td>18/02/2027</td><td>10 h 00</td></tr>
+      <tr><td>Ouverture des plis</td><td>18/02/2027</td><td>10 h 00</td></tr>
+    </tbody>
+  </table>
+  <p>Toute offre reçue après la date et l'heure limites de remise des offres est déclarée hors délai, écartée et renvoyée au candidat sans avoir été ouverte.</p>
+  <div class="pied-courant"><span>Ministère de l'Economie et des Finances — PRMP</span><span>Fiche v3 validée le 12/01/2027</span><span>page 24 / 60</span></div>
+</section>
+
+<!-- 5. Annexe 1 : cadre du bordereau des prix -->
+<section class="feuille" aria-label="Cadre du bordereau des prix">
+  <div class="note"><b>B3 — Bordereau des prix (annexe 1 de l'AE)</b>Généré depuis le besoin B12, un tableau par lot. Désignation « …, la rame à ….Ariary ». Le classeur xlsx reste fourni pour la saisie du candidat.</div>
+  <div class="entete-courant"><span>DAO n° 07-CC/MEF/SG/PRMP.2027</span><span>Fourniture d’articles de bureau (CONTRAT - CADRE)</span></div>
+  <p class="t-annexe">ANNEXE 1 — CADRE DU BORDEREAU DES PRIX</p>
+  <p class="t-tableau">Fourniture d’articles de bureau (CONTRAT - CADRE)</p>
+  <table>
+    <thead><tr><th class="n">N°</th><th>DESIGNATION DES ARTICLES ET PRIX UNITAIRE EN TOUTES LETTRES</th><th>UNITE</th><th class="num">QUANTITE</th><th>PRIX UNITAIRE</th><th>MONTANT EN ARIARY</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Rame de papier A4 80 g, la rame à ….Ariary</td><td>Rame</td><td class="num">3 000</td><td></td><td></td></tr>
+      <tr><td>2</td><td>Stylo à bille bleu, la boîte à ….Ariary</td><td>Boîte</td><td class="num">400</td><td></td><td></td></tr>
+      <tr><td>3</td><td>Stylo à bille rouge, la boîte à ….Ariary</td><td>Boîte</td><td class="num">100</td><td></td><td></td></tr>
+      <tr><td>4</td><td>Crayon à papier HB, la boîte à ….Ariary</td><td>Boîte</td><td class="num">120</td><td></td><td></td></tr>
+      <tr><td>5</td><td>Surligneur fluorescent, le paquet à ….Ariary</td><td>Paquet</td><td class="num">150</td><td></td><td></td></tr>
+      <tr><td>6</td><td>Agrafeuse de bureau, l’unité à ….Ariary</td><td>Unité</td><td class="num">80</td><td></td><td></td></tr>
+      <tr><td>7</td><td>Boîte d’agrafes 24/6, la boîte à ….Ariary</td><td>Boîte</td><td class="num">600</td><td></td><td></td></tr>
+      <tr><td>8</td><td>Classeur à levier dos 8 cm, l’unité à ….Ariary</td><td>Unité</td><td class="num">900</td><td></td><td></td></tr>
+      <tr class="total"><td></td><td colspan="4">Montant de l’offre</td><td></td></tr>
+    </tbody>
+  </table>
+  <p><b>Arrêté le montant du marché à la somme de ………………… (en lettres et en chiffres) Ariary.</b></p>
+  <p>Les quantités sont indicatives : le contrat-cadre s’exécute par bons de commande, aux prix unitaires ci-dessus.</p>
+  <p>Fait à ……………………, le ……………………</p><p class="signe">Le candidat</p>
+  <div class="pied-courant"><span>Ministère de l'Economie et des Finances — PRMP</span><span>Fiche v3 validée le 12/01/2027</span><span>page 50 / 60</span></div>
+</section>
+
+<!-- 6. Spécifications techniques -->
+<section class="feuille" aria-label="Spécifications techniques">
+  <div class="note"><b>B3 — Spécifications techniques (2.2)</b>Une caractéristique par ligne, « Libellé : exigence ». Colonne du candidat vide. Un descriptif joint par la PRMP (B2 du 06/10) suit le tableau, il ne le remplace pas.</div>
+  <div class="entete-courant"><span>DAO n° 07-CC/MEF/SG/PRMP.2027</span><span>Fourniture d’articles de bureau (CONTRAT - CADRE)</span></div>
+  <p class="t-annexe">SPECIFICATIONS TECHNIQUES</p>
+  <p class="t-tableau">Fourniture d’articles de bureau (CONTRAT - CADRE)</p>
+  <table>
+    <thead><tr><th class="n">N°</th><th>DESIGNATIONS</th><th>SPECIFICATIONS MINIMUMS REQUISES</th><th>PROPOSITIONS DU CANDIDAT</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><b>Rame de papier A4 80 g</b></td><td>Format : A4<br>Grammage : 80 g/m²<br>Conditionnement : rame de 500 feuilles</td><td></td></tr>
+      <tr><td>2</td><td><b>Stylo à bille bleu</b></td><td>Pointe : moyenne<br>Encre : bleue<br>Conditionnement : boîte de 50</td><td></td></tr>
+      <tr><td>5</td><td><b>Surligneur fluorescent</b></td><td>Pointe : biseautée<br>Couleurs : jaune, vert, rose, orange<br>Conditionnement : paquet de 4</td><td></td></tr>
+      <tr><td>6</td><td><b>Agrafeuse de bureau</b></td><td>Capacité : 25 feuilles au moins<br>Agrafes : 24/6 et 26/6<br>Structure : métallique</td><td></td></tr>
+      <tr><td>8</td><td><b>Classeur à levier dos 8 cm</b></td><td>Format : A4<br>Dos : 8 cm<br>Matière : carton plastifié</td><td></td></tr>
+    </tbody>
+  </table>
+  <p class="signe" style="font-weight:normal">Fait à Antananarivo, le ……………………<br><b>Le candidat,</b></p>
+  <div class="pied-courant"><span>Ministère de l'Economie et des Finances — PRMP</span><span>Fiche v3 validée le 12/01/2027</span><span>page 55 / 60</span></div>
+</section>
+
+<!-- 7. Liste des fournitures et calendrier de livraison -->
+<section class="feuille" aria-label="Liste des fournitures et calendrier de livraison">
+  <div class="note"><b>B3 — Liste et calendrier (2.2, appel d’offres de fournitures)</b>Destination : B09-LL-01 (par lot) ; délai : B09-DX-01 jours. Dernière colonne au candidat. Pas produit pour un contrat-cadre, sauf marchés subséquents uniques à délai fixé par l’autorité.</div>
+  <div class="entete-courant"><span>DAO n° 26/00-…/PRMP/AOO</span><span>Fourniture de matériels informatiques</span></div>
+  <p class="t-annexe">ANNEXE AUX SPECIFICATIONS TECHNIQUES</p>
+  <p class="t-tableau" style="text-align:center">LISTE DES FOURNITURES ET CALENDRIER DE LIVRAISON</p>
+  <p class="t-tableau">Lot 1 : Ordinateurs portables</p>
+  <table>
+    <thead><tr><th class="n">N°</th><th>Fournitures</th><th>Destination finale</th><th>Délai de livraison au plus tard</th><th>Délai offert par le candidat</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Ordinateur portable I3</td><td>Centre d’approvisionnement, Alarobia, Antananarivo 101</td><td>30 jours à compter du lendemain de la notification de l’ordre de service</td><td></td></tr>
+      <tr><td>2</td><td>Ordinateur portable I5</td><td>Centre d’approvisionnement, Alarobia, Antananarivo 101</td><td>30 jours à compter du lendemain de la notification de l’ordre de service</td><td></td></tr>
+      <tr><td>3</td><td>Ordinateur portable I7</td><td>Centre d’approvisionnement, Alarobia, Antananarivo 101</td><td>30 jours à compter du lendemain de la notification de l’ordre de service</td><td></td></tr>
+    </tbody>
+  </table>
+  <p>Fait à ……………………, le ……………………</p><p class="signe">Le candidat</p>
+  <div class="pied-courant"><span>Autorité contractante — PRMP</span><span>Fiche v1 validée le …</span><span>page n / N</span></div>
+</section>
+
+<!-- 8. Ligne allotie : un tableau par lot -->
+<section class="feuille" aria-label="Bordereau d'une ligne allotie">
+  <div class="note"><b>B3 — Ligne allotie</b>Un tableau par lot, titré « Lot k : intitulé du lot au plan », numérotation des articles reprise à 1 dans chaque lot ; un lot commence sur une nouvelle page.</div>
+  <div class="entete-courant"><span>DAO n° 26/00-…/PRMP/AOO</span><span>Fourniture de matériels informatiques</span></div>
+  <p class="t-annexe">ANNEXE 1 — CADRE DU BORDEREAU DES PRIX</p>
+  <p class="t-tableau">Lot 1 : Ordinateurs portables</p>
+  <table>
+    <thead><tr><th class="n">N°</th><th>DESIGNATION DES ARTICLES ET PRIX UNITAIRE EN TOUTES LETTRES</th><th>UNITE</th><th class="num">QUANTITE</th><th>PRIX UNITAIRE</th><th>MONTANT EN ARIARY</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Ordinateur portable I3, l’unité à ….Ariary</td><td>U</td><td class="num">300</td><td></td><td></td></tr>
+      <tr><td>2</td><td>Ordinateur portable I5, l’unité à ….Ariary</td><td>U</td><td class="num">120</td><td></td><td></td></tr>
+      <tr><td>3</td><td>Ordinateur portable I7, l’unité à ….Ariary</td><td>U</td><td class="num">17</td><td></td><td></td></tr>
+      <tr class="total"><td></td><td colspan="4">Montant de l’offre — lot 1</td><td></td></tr>
+    </tbody>
+  </table>
+  <p>Fait à ……………………, le ……………………</p><p class="signe">Le candidat</p>
+  <div class="pied-courant"><span>Autorité contractante — PRMP</span><span>Fiche v1 validée le …</span><span>page n / N</span></div>
+</section>
+
+<!-- 9. Travaux : bordereau et détail quantitatif estimatif -->
+<section class="feuille" aria-label="Bordereau et DQE de travaux">
+  <div class="note"><b>B3 — Travaux</b>Deux tableaux : le bordereau des prix unitaires (prix en lettres, sans quantité), puis ce DQE (quantité, montant). Mêmes n° de prix et lignes de série (000, 500…) en gras grisé, sans unité.</div>
+  <div class="entete-courant"><span>DAO n° …/MTP/PRMP</span><span>Travaux d’entretien routier</span></div>
+  <p class="t-annexe">DETAIL QUANTITATIF ET ESTIMATIF</p>
+  <table>
+    <thead><tr><th class="n">N° prix</th><th>DESIGNATION DES OUVRAGES</th><th>UNITE</th><th class="num">QUANTITE</th><th>PRIX UNITAIRE</th><th>MONTANT EN ARIARY</th></tr></thead>
+    <tbody>
+      <tr class="serie"><td>000</td><td colspan="5">INSTALLATION DE CHANTIER</td></tr>
+      <tr><td>001</td><td>Installation et repli de chantier</td><td>Fft</td><td class="num">1</td><td></td><td></td></tr>
+      <tr class="serie"><td>500</td><td colspan="5">OUVRAGES</td></tr>
+      <tr><td>529</td><td>Maçonnerie de moellons</td><td>M3</td><td class="num">2 825</td><td></td><td></td></tr>
+      <tr><td>531</td><td>Béton B1 dosé à 250 kg/m³</td><td>M3</td><td class="num">140</td><td></td><td></td></tr>
+      <tr class="total"><td></td><td colspan="4">Total hors taxes</td><td></td></tr>
+      <tr class="total"><td></td><td colspan="4">TVA 20 %</td><td></td></tr>
+      <tr class="total"><td></td><td colspan="4">Total toutes taxes comprises</td><td></td></tr>
+    </tbody>
+  </table>
+  <div class="pied-courant"><span>Autorité contractante — PRMP</span><span>Fiche v1 validée le …</span><span>page n / N</span></div>
+</section>
+
+<!-- 10. Récapitulatif de la charte -->
+<section class="feuille charte" aria-label="Récapitulatif de la charte">
+  <div class="entete-courant"><span>Charte des DAO générés</span><span>Maquette du 16/10/2026</span></div>
+  <p class="t-partie" style="margin:4mm 0 5mm">Charte des DAO générés — récapitulatif</p>
+  <table>
+    <thead><tr><th>Élément</th><th>Règle</th></tr></thead>
+    <tbody>
+      <tr><td>Police</td><td>Arial (repli : Liberation Sans) pour tout le dossier, textes fixes compris ; noir seul (dossier photocopié)</td></tr>
+      <tr><td>Corps de texte</td><td>10,5 pt, justifié, interligne 1,3 ; espace après paragraphe 1,8 mm</td></tr>
+      <tr><td>Marges</td><td>haut 22 mm, droite 20 mm, bas 20 mm, gauche 24 mm (reliure)</td></tr>
+      <tr><td>Partie</td><td>13 pt, gras, capitales, centré</td></tr>
+      <tr><td>Section (1.1 … 2.3)</td><td>12 pt, gras, centré, sur la page de séparation</td></tr>
+      <tr><td>Article</td><td>11 pt, gras, capitales, filet bas 0,5 pt</td></tr>
+      <tr><td>Sous-article</td><td>10,5 pt, gras, souligné</td></tr>
+      <tr><td>Tableaux</td><td>9,5 pt ; filets 0,5 pt ; en-tête gras sur gris #E3E3E3, répété sur chaque page ; une ligne n’est jamais coupée</td></tr>
+      <tr><td>En-tête courant</td><td>8,5 pt : « DAO n° … » à gauche, objet à droite, filet bas</td></tr>
+      <tr><td>Pied courant</td><td>8,5 pt : autorité — version de la fiche et date de validation — « page n / N » (numérotation continue)</td></tr>
+      <tr><td>Garde, séparateurs</td><td>sans en-tête ni pied ; chaque section commence sur une nouvelle page</td></tr>
+      <tr><td>Lisibilité à la relecture</td><td>pas de césure ni de coupure au trait d’union ; un paragraphe ne se coupe pas entre deux pages ; une caractéristique par ligne « Libellé : exigence » ; intitulés de colonnes fixes (voir B4)</td></tr>
+    </tbody>
+  </table>
+  <p class="t-sous">Échantillons</p>
+  <div class="echantillon"><p class="t-article" style="margin-top:0">Article 9 : Évaluation des offres</p><p class="t-sous">9.1 Conversion en Ariary</p><p>Texte courant en Arial 10,5 pt, justifié.</p></div>
+  <div class="pied-courant"><span>Charte des DAO générés</span><span>docs/demande-backend-2026-10-16-charte-dao.md</span><span>page 10 / 10</span></div>
+</section>
+
+</body>
+</html>
