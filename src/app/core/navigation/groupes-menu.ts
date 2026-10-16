@@ -121,6 +121,8 @@ export const GROUPES_PAR_CHEMIN: Readonly<Record<string, { groupe: CleGroupe; co
   dao: { groupe: 'travail', court: 'Appels' },
   // ⚠️ 06/10 — entrée DYNAMIQUE (main-layout) : le responsable d'au moins une procédure en ligne.
   '/procedures-en-ligne': { groupe: 'travail', court: 'Procédures' },
+  // ⚠️ Lot MS-1 (V124, 16/10) — les contrats-cadres et marchés à commandes notifiés (PRMP, UGPM).
+  'contrats-en-vigueur': { groupe: 'travail', court: 'Contrats' },
 
   // ── Décisions : les productions de l'examen et les demandes à statuer ──
   'resultat-examen': { groupe: 'decisions', court: 'PV' },

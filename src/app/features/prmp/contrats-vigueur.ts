@@ -1,0 +1,291 @@
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+
+import { AuthService } from '../../core/auth/auth.service';
+import { ApiError, codeErreur, corpsErreur } from '../../core/errors/api-error';
+import { dateFr } from '../../core/interim/interim-libelles';
+import { ToastService } from '../../core/notifications/toast.service';
+import { AlerteContrat, ContratVigueur, DecisionReconduction } from '../../models';
+import { ContratsVigueurService } from '../../services';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
+import { dateHeureFr } from '../candidat/libelles-candidat';
+import { ariary } from '../evaluation/libelles-evaluation';
+
+const ALERTES: Readonly<Record<string, { texte: string; classe: string }>> = {
+  RECONDUCTION_A_DECIDER: { texte: 'Reconduction à décider', classe: 'badge-warning' },
+  ECHEANCE_PROCHE: { texte: 'Échéance dans moins de 30 jours', classe: 'badge-warning' },
+  ECHU: { texte: 'Échu', classe: 'badge-danger' },
+};
+
+const TYPES: Readonly<Record<string, string>> = {
+  CONTRAT_CADRE: 'Contrat-cadre',
+  MARCHE_A_COMMANDES: 'Marché à commandes',
+};
+
+/** Les refus de la reconduction, dits à la PRMP. */
+export function refusReconduction(e: ApiError): string {
+  const details = corpsErreur<{ details?: { finMaximale?: string } }>(e)?.details ?? {};
+  switch (codeErreur(e)) {
+    case 'DECISION_INVALIDE': return 'Choisissez de reconduire ou de ne pas reconduire.';
+    case 'DECISION_OBLIGATOIRE': return 'La référence de votre décision écrite est obligatoire.';
+    case 'DATE_INVALIDE': return 'La date de la décision se situe entre la prise d’effet du contrat et aujourd’hui.';
+    case 'CONTRAT_ECHU': return 'Le contrat est échu : il ne se reconduit plus.';
+    case 'NON_RECONDUCTIBLE': return 'Ce contrat n’est pas reconductible (fiche validée).';
+    case 'RECONDUCTIONS_EPUISEES': return 'Toutes les reconductions prévues ont été décidées.';
+    case 'DUREE_MAX_ATTEINTE': return `Une reconduction dépasserait la durée maximale du contrat${details.finMaximale ? ' (fin au plus tard le ' + dateFr(details.finMaximale) + ')' : ''}.`;
+    case 'DEJA_DECIDE': return 'La décision de cette période est déjà prise.';
+  }
+  if (e.status === 403) return 'La reconduction se décide par la PRMP de la procédure.';
+  return e.message || 'La décision n’a pas abouti.';
+}
+
+/** Aujourd'hui, au format des champs de date. */
+function aujourdhui(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/**
+ * ⚠️ Lot MS-1 (V124, 16/10 ; demande « marchés subséquents ») — **les contrats en vigueur** : un par lot notifié de contrat-cadre ou
+ * de marché à commandes. Ce qui le régit est figé depuis la fiche validée ; ses titulaires forment une liste fermée (décret
+ * n° 2019-1064, art. 18). La PRMP y décide par écrit la **reconduction** de chaque période (AE-CC, art. 7.3) ; l'UGPM lit.
+ * Les alertes (reconduction à décider, échéance proche, échu) sont calculées par le serveur. Une ligne s'ouvre sur place.
+ */
+@Component({
+  selector: 'app-contrats-vigueur',
+  imports: [EtatErreur],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <section class="cv">
+      <header class="cv__tete">
+        <h1 class="cv__h1">Contrats en vigueur</h1>
+        <p class="text-sm text-muted cv__intro">Contrats-cadres et marchés à commandes notifiés : leurs titulaires, leurs échéances et leurs reconductions. Les remises en concurrence et les bons de commande s’y ajouteront.</p>
+        <div class="cv__filtres" role="group" aria-label="Filtrer les contrats">
+          @for (f of filtres; track f.cle) {
+            <button type="button" class="btn btn-sm" [class.btn-primary]="filtre() === f.cle" [class.btn-outline]="filtre() !== f.cle" [attr.aria-pressed]="filtre() === f.cle" (click)="filtre.set(f.cle)">{{ f.libelle }} ({{ compte(f.cle) }})</button>
+          }
+        </div>
+      </header>
+
+      @if (chargement()) {
+        <p class="text-muted" role="status">Chargement des contrats…</p>
+      } @else if (erreurListe(); as m) {
+        <app-etat-erreur [message]="m" aide="La liste n’a pas pu être lue." (reessayer)="charger()" />
+      } @else if (!visibles().length) {
+        <p class="text-muted">{{ contrats().length ? 'Aucun contrat dans ce filtre.' : 'Aucun contrat en vigueur : un contrat se crée à la notification d’un lot de contrat-cadre ou de marché à commandes.' }}</p>
+      } @else {
+        <ul class="cv__liste">
+          @for (c of visibles(); track c.id) {
+            <li class="card cv__carte" [class.cv__carte--echu]="c.etat === 'ECHU'">
+              <button type="button" class="cv__ligne" [attr.aria-expanded]="ouvert() === c.id" [attr.aria-controls]="'cv-detail-' + c.id" (click)="basculer(c.id)">
+                <span class="cv__type">{{ type(c) }}</span>
+                <span class="cv__objet"><strong>{{ c.objet || 'Objet non renseigné' }}</strong>@if (c.acheteur) { <span class="text-muted"> · {{ c.acheteur }}</span> }<span class="text-muted"> · fiche {{ c.idDmc }}, lot {{ c.lot }}</span></span>
+                <span class="cv__echeance">Fin le <strong>{{ date(c.dateFin) }}</strong></span>
+                <span class="cv__badges">
+                  @for (a of c.alertes; track a) { <span class="badge" [class]="alerte(a).classe">{{ alerte(a).texte }}</span> }
+                  @if (!c.alertes.length) { <span class="badge badge-success">En vigueur</span> }
+                </span>
+              </button>
+
+              @if (ouvert() === c.id) {
+                <div class="cv__detail" [id]="'cv-detail-' + c.id">
+                  <dl class="cv__grille">
+                    <div><dt>Prise d’effet</dt><dd>{{ date(c.dateEffet) }} (notification)</dd></div>
+                    <div><dt>Période</dt><dd>{{ c.periodeMois ?? '—' }} mois · fin le {{ date(c.dateFin) }}</dd></div>
+                    <div><dt>Durée maximale</dt><dd>{{ c.dureeMaxMois ?? '—' }} mois{{ c.finMaximale ? ' · au plus tard le ' + date(c.finMaximale) : '' }}</dd></div>
+                    <div><dt>Reconduction</dt><dd>{{ c.reconductible ? c.reconductions + ' sur ' + (c.reconductionsMax ?? '—') + ' décidée(s)' + (c.preavisMois ? ' · préavis ' + c.preavisMois + ' mois' : '') : 'non reconductible' }}</dd></div>
+                    @if (c.reconductible && c.dateLimiteDecision) { <div><dt>Décision attendue avant le</dt><dd>{{ date(c.dateLimiteDecision) }}</dd></div> }
+                    @if (c.montantEstime != null) { <div><dt>Montant estimé</dt><dd>{{ ariary(c.montantEstime) }} HT</dd></div> }
+                    @if (c.montantMinimum != null) { <div><dt>Minimum</dt><dd>{{ ariary(c.montantMinimum) }}</dd></div> }
+                    @if (c.montantMaximum != null) { <div><dt>Maximum</dt><dd>{{ ariary(c.montantMaximum) }}</dd></div> }
+                    @if (c.formeSubsequents) { <div><dt>Forme des marchés subséquents</dt><dd>{{ c.formeSubsequents }}</dd></div> }
+                    @if (c.rythme) { <div><dt>Rythme</dt><dd>{{ c.rythme }}</dd></div> }
+                    @if (c.calendrier) { <div class="cv__large"><dt>Calendrier</dt><dd>{{ c.calendrier }}</dd></div> }
+                  </dl>
+
+                  <h2 class="cv__h2">Titulaires <span class="text-muted text-sm">— liste fermée (décret n° 2019-1064, art. 18)</span></h2>
+                  <div class="cnm-table-wrap">
+                    <table class="cnm-table cv__table" [attr.aria-label]="'Titulaires du contrat ' + c.id">
+                      <thead><tr><th scope="col">Rang</th><th scope="col">Offre</th><th scope="col">Titulaire</th><th scope="col">NIF</th><th scope="col" class="cv__num">Offre indicative HT</th><th scope="col">Délai</th></tr></thead>
+                      <tbody>
+                        @for (t of c.titulaires; track t.idOffre) {
+                          <tr><td>{{ t.rang ?? '—' }}</td><td>n° {{ t.numero ?? '—' }}</td><td>{{ t.candidat || '—' }}</td><td class="cnm-mono">{{ t.nif || '—' }}</td><td class="cv__num">{{ ariary(t.montant) }}</td><td>{{ t.delai ?? '—' }}</td></tr>
+                        } @empty { <tr><td colspan="6" class="text-muted">Aucun titulaire.</td></tr> }
+                      </tbody>
+                    </table>
+                  </div>
+
+                  @if (c.decisions.length) {
+                    <h2 class="cv__h2">Décisions de reconduction</h2>
+                    <ul class="cv__decisions">
+                      @for (d of c.decisions; track d.id) {
+                        <li class="text-sm">
+                          <strong>{{ d.decision === 'RECONDUIRE' ? 'Reconduit' : 'Non reconduit' }}</strong> — décision {{ d.reference }} du {{ date(d.dateDecision) }}{{ d.nouvelleFin ? ' : fin reportée au ' + date(d.nouvelleFin) : '' }}
+                          @if (d.horsPreavis) { <span class="badge badge-warning">Hors préavis</span> }
+                          <span class="text-muted"> · enregistrée le {{ dateHeure(d.le) }}{{ d.par ? ' par ' + d.par : '' }}</span>
+                        </li>
+                      }
+                    </ul>
+                  }
+
+                  @if (prmp() && reconductionOuverte(c)) {
+                    <fieldset class="cv__form">
+                      <legend class="form-label">Décider la reconduction de la période en cours</legend>
+                      <div class="cv__radios">
+                        <label><input type="radio" [name]="'cv-dec-' + c.id" [checked]="decision() === 'RECONDUIRE'" (change)="decision.set('RECONDUIRE')" /> Reconduire</label>
+                        <label><input type="radio" [name]="'cv-dec-' + c.id" [checked]="decision() === 'NE_PAS_RECONDUIRE'" (change)="decision.set('NE_PAS_RECONDUIRE')" /> Ne pas reconduire</label>
+                      </div>
+                      <div class="cv__champs">
+                        <label class="form-group"><span class="form-label">Référence de la décision écrite</span><input class="form-control" type="text" [value]="reference()" (input)="reference.set($any($event.target).value)" /></label>
+                        <label class="form-group"><span class="form-label">Date de la décision</span><input class="form-control" type="date" [min]="c.dateEffet" [max]="aujourdhui" [value]="dateDecision()" (input)="dateDecision.set($any($event.target).value)" /></label>
+                      </div>
+                      @if (c.dateLimiteDecision && aujourdhui > c.dateLimiteDecision) {
+                        <p class="text-sm cv__alerte">La limite du préavis ({{ date(c.dateLimiteDecision) }}) est passée : la décision sera acceptée, mais marquée hors préavis.</p>
+                      }
+                      @if (refus(); as r) { <div class="alert alert-danger" role="alert">{{ r }}</div> }
+                      <div><button type="button" class="btn btn-primary btn-sm" [disabled]="!decision() || !reference().trim() || !dateDecision() || occupe()" (click)="decider(c)">Enregistrer la décision</button></div>
+                    </fieldset>
+                  }
+                </div>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  `,
+  styles: `
+    .cv { display: flex; flex-direction: column; gap: 0.9rem; }
+    .cv__tete { display: flex; flex-direction: column; gap: 0.4rem; }
+    .cv__h1 { margin: 0; font-size: 1.3rem; }
+    .cv__intro { margin: 0; }
+    .cv__filtres { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .cv__liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+    .cv__carte { padding: 0; overflow: hidden; }
+    .cv__carte--echu { opacity: 0.85; }
+    .cv__ligne { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: grid; grid-template-columns: 9rem 1fr auto auto; gap: 0.8rem; align-items: center; padding: 0.7rem 1rem; }
+    .cv__ligne:focus-visible { outline: 2px solid var(--p-600); outline-offset: -2px; }
+    .cv__ligne:hover { background: var(--n-100); }
+    .cv__type { font-size: 0.78rem; font-weight: 700; color: var(--p-700); text-transform: uppercase; letter-spacing: 0.03em; }
+    .cv__objet { min-width: 0; overflow-wrap: anywhere; }
+    .cv__echeance { font-size: var(--text-sm); white-space: nowrap; }
+    .cv__badges { display: flex; gap: 0.3rem; flex-wrap: wrap; justify-content: flex-end; }
+    .cv__detail { border-top: 1px solid var(--n-200); padding: 0.8rem 1rem; display: flex; flex-direction: column; gap: 0.6rem; }
+    .cv__grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: 0.5rem 1.2rem; margin: 0; }
+    .cv__grille dt { font-size: 0.74rem; color: var(--n-500); }
+    .cv__grille dd { margin: 0; font-size: 0.88rem; }
+    .cv__large { grid-column: 1 / -1; }
+    .cv__h2 { margin: 0.3rem 0 0; font-size: 0.95rem; color: var(--p-700); }
+    .cv__table { font-size: 0.84rem; }
+    .cv__table thead th { background: var(--p-100); color: var(--p-800); }
+    .cv__num { text-align: right; white-space: nowrap; }
+    .cv__decisions { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.25rem; }
+    .cv__form { border: 1px solid var(--n-200); border-radius: 6px; padding: 0.6rem 0.8rem; display: flex; flex-direction: column; gap: 0.5rem; margin: 0; }
+    .cv__radios { display: flex; gap: 1.2rem; font-size: var(--text-sm); }
+    .cv__champs { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+    .cv__alerte { margin: 0; color: var(--warning-text); }
+    @media (max-width: 800px) { .cv__ligne { grid-template-columns: 1fr; gap: 0.3rem; } .cv__badges { justify-content: flex-start; } }
+  `,
+})
+export class ContratsVigueur implements OnInit {
+  private readonly service = inject(ContratsVigueurService);
+  private readonly auth = inject(AuthService);
+  private readonly toast = inject(ToastService);
+
+  readonly date = dateFr;
+  readonly dateHeure = dateHeureFr;
+  readonly ariary = ariary;
+  readonly aujourdhui = aujourdhui();
+  readonly filtres = [
+    { cle: 'TOUS', libelle: 'Tous' },
+    { cle: 'ALERTES', libelle: 'À surveiller' },
+    { cle: 'EN_VIGUEUR', libelle: 'En vigueur' },
+    { cle: 'ECHU', libelle: 'Échus' },
+  ] as const;
+
+  readonly chargement = signal(true);
+  readonly erreurListe = signal<string | null>(null);
+  readonly contrats = signal<ContratVigueur[]>([]);
+  readonly filtre = signal<'TOUS' | 'ALERTES' | 'EN_VIGUEUR' | 'ECHU'>('TOUS');
+  readonly ouvert = signal<number | null>(null);
+
+  readonly decision = signal<DecisionReconduction | null>(null);
+  readonly reference = signal('');
+  readonly dateDecision = signal(aujourdhui());
+  readonly occupe = signal(false);
+  readonly refus = signal<string | null>(null);
+
+  /** La PRMP décide ; l'UGPM, la Commission et l'Administrateur lisent (le serveur reste la garde). */
+  readonly prmp = computed(() => this.auth.role() === 'PRMP');
+  /** Les contrats à surveiller d'abord, puis par échéance. */
+  readonly visibles = computed(() => {
+    const f = this.filtre();
+    return this.contrats()
+      .filter((c) => f === 'TOUS' || (f === 'ALERTES' ? c.alertes.length > 0 : c.etat === f))
+      .sort((a, b) => Number(b.alertes.length > 0) - Number(a.alertes.length > 0) || a.dateFin.localeCompare(b.dateFin));
+  });
+
+  ngOnInit(): void {
+    this.charger();
+  }
+
+  charger(): void {
+    this.chargement.set(true);
+    this.erreurListe.set(null);
+    this.service.lister().subscribe({
+      next: (l) => {
+        this.contrats.set(l);
+        this.chargement.set(false);
+      },
+      error: (e: ApiError) => {
+        this.chargement.set(false);
+        this.erreurListe.set(e.status === 403 ? 'Les contrats en vigueur ne sont pas ouverts à votre profil.' : 'Les contrats en vigueur n’ont pas pu être chargés.');
+      },
+    });
+  }
+
+  compte(cle: string): number {
+    return this.contrats().filter((c) => cle === 'TOUS' || (cle === 'ALERTES' ? c.alertes.length > 0 : c.etat === cle)).length;
+  }
+
+  basculer(id: number): void {
+    this.ouvert.set(this.ouvert() === id ? null : id);
+    this.decision.set(null);
+    this.reference.set('');
+    this.dateDecision.set(aujourdhui());
+    this.refus.set(null);
+  }
+
+  type(c: ContratVigueur): string {
+    return TYPES[c.typeMarche ?? ''] ?? (c.typeMarche || 'Contrat');
+  }
+
+  alerte(a: AlerteContrat): { texte: string; classe: string } {
+    return ALERTES[a] ?? { texte: a, classe: 'badge-neutral' };
+  }
+
+  /** Une reconduction encore possible : contrat en vigueur, reconductible, reconductions non épuisées (le serveur garde le reste). */
+  reconductionOuverte(c: ContratVigueur): boolean {
+    return c.etat === 'EN_VIGUEUR' && c.reconductible && (c.reconductionsMax == null || c.reconductions < c.reconductionsMax)
+      && (c.alertes.includes('RECONDUCTION_A_DECIDER') || !c.decisions.some((d) => d.finAvant === c.dateFin));
+  }
+
+  decider(c: ContratVigueur): void {
+    const decision = this.decision();
+    if (!decision) return;
+    this.occupe.set(true);
+    this.refus.set(null);
+    this.service.reconduction(c.id, { decision, reference: this.reference().trim(), dateDecision: this.dateDecision() }).subscribe({
+      next: (maj) => {
+        this.occupe.set(false);
+        this.contrats.update((l) => l.map((x) => (x.id === maj.id ? maj : x)));
+        this.decision.set(null);
+        this.reference.set('');
+        this.toast.success(decision === 'RECONDUIRE' ? `Le contrat est reconduit : il prend fin le ${dateFr(maj.dateFin)}.` : 'La décision de ne pas reconduire est enregistrée.');
+      },
+      error: (e: ApiError) => {
+        this.occupe.set(false);
+        this.refus.set(refusReconduction(e));
+      },
+    });
+  }
+}

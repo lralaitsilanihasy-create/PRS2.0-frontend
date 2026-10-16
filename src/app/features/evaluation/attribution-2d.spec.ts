@@ -43,7 +43,7 @@ describe('Attribution, tranche 2d (V91-V93)', () => {
     preparer();
     const f = TestBed.createComponent(TitulairesProposes);
     const t = (rang: number, n: number) => ({ idOffre: 'o-' + n, numero: n, candidat: 'Entreprise ' + n, montant: 1000 * n, montantTtc: 1200 * n, delai: '30 jours', rang });
-    f.componentRef.setInput('proposition', { idOffre: 'o-4', numero: 4, candidat: 'Entreprise 4', montant: 4000, montantTtc: 4800, delai: null, infructueux: false, titulaires: [t(1, 4), t(2, 2)] });
+    f.componentRef.setInput('titulaires', [t(1, 4), t(2, 2)]);
     f.componentRef.setInput('lot', 1);
     f.detectChanges();
     const el = f.nativeElement as HTMLElement;
@@ -53,15 +53,32 @@ describe('Attribution, tranche 2d (V91-V93)', () => {
     expect(texte(el.querySelector('tbody tr'))).toContain('Entreprise 4');
     expect(el.querySelector('[role="note"]')).toBeNull();
 
-    f.componentRef.setInput('proposition', { idOffre: 'o-4', numero: 4, candidat: 'Entreprise 4', montant: 4000, montantTtc: 4800, delai: null, infructueux: false, titulaires: [t(1, 4)], seulTitulaireQualifie: true });
+    f.componentRef.setInput('titulaires', [t(1, 4)]);
+    f.componentRef.setInput('seul', true);
     f.detectChanges();
     expect(texte(el)).toContain('1 titulaire proposé');
     expect(texte(el.querySelector('[role="note"]'))).toContain('art. 17');
 
+    // MT-b1 : les titulaires retenus par la PRMP.
+    f.componentRef.setInput('titulaires', [t(1, 4), t(2, 2)]);
+    f.componentRef.setInput('seul', false);
+    f.componentRef.setInput('retenus', true);
+    f.detectChanges();
+    expect(texte(el)).toContain('Contrat-cadre attribué à 2 titulaires');
+    expect(texte(el)).not.toContain('art. 13');
+
     // Hors multi-attributaire : rien.
-    f.componentRef.setInput('proposition', { idOffre: 'o-4', numero: 4, candidat: 'Entreprise 4', montant: 4000, montantTtc: 4800, delai: null, infructueux: false, titulaires: [], seulTitulaireQualifie: false });
+    f.componentRef.setInput('titulaires', []);
     f.detectChanges();
     expect(texte(el)).toBe('');
+  });
+
+  it('MT-b2 (art. 17) : un seul titulaire restant avant la signature rouvre l’infructuosité, malgré l’attribution', () => {
+    const suivi = (id: string, retire: boolean) => ({ idOffre: id, numero: 1, candidat: id, rang: 1, pieces: null, notificationRecueLe: null, retrait: retire ? { le: '', par: null, motif: 'x' } : null });
+    const attributaire = { idOffre: 'a', numero: 1, candidat: 'A', nif: null, montant: 1, montantTtc: 1, delai: null, motif: null, le: '', par: null };
+    expect(infructuositeDeclarable(LOT({ attributaire, suiviTitulaires: [suivi('a', false), suivi('b', true)] }))).toBe(true);
+    expect(infructuositeDeclarable(LOT({ attributaire, suiviTitulaires: [suivi('a', false), suivi('b', false)] }))).toBe(false);
+    expect(infructuositeDeclarable(LOT({ attributaire, signature: { dateSignature: '', le: '', par: null, fichier: null }, suiviTitulaires: [suivi('a', false), suivi('b', true)] }))).toBe(false);
   });
 
   it('nomme les refus de la tranche 2d', () => {

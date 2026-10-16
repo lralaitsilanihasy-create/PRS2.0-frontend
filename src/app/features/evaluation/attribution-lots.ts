@@ -58,7 +58,7 @@ const ETATS_SIGNES: readonly string[] = ['SIGNE', 'NOTIFIE', 'PUBLIE', 'RETIRE',
                 <p class="text-sm">Le rapport propose de déclarer le lot <strong>infructueux</strong>{{ p.motifInfructuosite ? ' : ' + p.motifInfructuosite : ' (aucune offre qualifiée)' }} — décision de la PRMP.</p>
               } @else {
                 <p class="text-sm">Proposition du rapport : offre n° {{ p.numero }} · <strong>{{ p.candidat }}</strong> — {{ ariary(p.montant) }} HT · délai {{ p.delai ?? '—' }}</p>
-                <app-titulaires-proposes [proposition]="p" [lot]="l.lot" />
+                <app-titulaires-proposes [titulaires]="p.titulaires" [seul]="p.seulTitulaireQualifie" [lot]="l.lot" />
               }
             }
             @if (l.dossierMarche; as d) {

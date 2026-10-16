@@ -46,6 +46,8 @@ export const PRMP_ROUTES: Routes = [
   // jamais un import de PDF. Atteinte depuis « Créer dossier » (sous-type DAO) : pas une entrée de menu.
   // `dao` = choix de la ligne éligible ; `dao/:idDmc` = le parcours en sept étapes. Écran développé CONTRE le
   // contrat proposé au backend (demande-backend-2026-09-22-fiche-marche-dao.md) : il se replie sur l'esquisse.
+  // ⚠️ Lot MS-1 (V124, 16/10) — les contrats-cadres et marchés à commandes notifiés : titulaires, échéances, reconductions.
+  { path: 'contrats-en-vigueur', loadComponent: () => import('./contrats-vigueur').then((m) => m.ContratsVigueur), data: { title: 'Contrats en vigueur' } },
   { path: 'dao', loadComponent: () => import('./fiche-marche/fiche-marche').then((m) => m.FicheMarcheEcran), data: { title: 'Fiche DAO', concentration: true } },
   { path: 'dao/:idDmc', loadComponent: () => import('./fiche-marche/fiche-marche').then((m) => m.FicheMarcheEcran), data: { title: 'Fiche DAO', concentration: true } },
   // ⚠️ Soumission en ligne, lot 1 (04/10, §B8) — le registre des retraits du DAO par les candidats, PRMP de la fiche seule.

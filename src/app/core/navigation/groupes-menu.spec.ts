@@ -177,6 +177,7 @@ describe('sectionsMenu — dérivation des rubriques', () => {
       'Créer dossier',
       'Mettre à jour un PPM',
       'Appels d’offres',
+      'Contrats en vigueur',
     ]);
     expect(sections[1].items.map((i) => i.label)).toEqual(['PV et lettres de renvoi', 'Demandes de retrait']);
     expect(sections[2].items.map((i) => i.label)).toEqual(['Calendrier']);

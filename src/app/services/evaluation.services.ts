@@ -276,8 +276,10 @@ export class AttributionService {
   // ── Tranche 2b (V80) : attribuer, informer, explications. Tous les gestes : PRMP de la fiche seule. ──
 
   /** 409 `AVIS_NON_RENDU`, `AVIS_DEFAVORABLE`, `OFFRE_NON_PROPOSEE`, `LOT_INFRUCTUEUX`, `DEJA_ATTRIBUE` (Q4 : l'offre proposée seule). */
-  attribuer(idDmc: number, lot: number, motif: string | null): Observable<Attribution> {
-    return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/attribuer`, { motif }, this.ctx);
+  // ⚠️ MT-b1 (V122, 15/10) — contrat-cadre multi-attributaire : `titulaires` = les offres retenues parmi les proposées (absent : toutes) ;
+  // 400 `MOTIF_OBLIGATOIRE` si une partie seulement, `TITULAIRES_TROP_NOMBREUX` au-delà de B07-MA-08 ; 409 `OFFRE_NON_PROPOSEE` (`details.offres`).
+  attribuer(idDmc: number, lot: number, motif: string | null, titulaires: string[] | null = null): Observable<Attribution> {
+    return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/attribuer`, titulaires ? { motif, titulaires } : { motif }, this.ctx);
   }
 
   /** Lettres produites et signées, délai de dix jours francs ; 400 `DATE_AFFICHAGE_OBLIGATOIRE` / `_INVALIDE`, 409 `DEJA_INFORME`. */
@@ -318,8 +320,9 @@ export class AttributionService {
   }
 
   /** Art. 20-I : après l'échéance des pièces, si elles ne sont pas toutes deux conformes ; 409 `DELAI_EN_COURS`, `PIECES_CONFORMES`. */
-  retirer(idDmc: number, lot: number, motif: string): Observable<Attribution> {
-    return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/retirer`, { motif }, this.ctx);
+  // ⚠️ MT-b2 (V123, 16/10) — en multi-attributaire, `idOffre` (obligatoire) retire UN titulaire : le contrat-cadre continue avec les autres.
+  retirer(idDmc: number, lot: number, motif: string, idOffre: string | null = null): Observable<Attribution> {
+    return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/retirer`, idOffre ? { motif, idOffre } : { motif }, this.ctx);
   }
 
   // ── 2d-1 (V91) : infructuosité, reprise après avis défavorable ; 2d-2 (V92) : réattribution après retrait ──
@@ -379,8 +382,12 @@ export class AttributionService {
    * ⚠️ R10 (V113, 14/10) — l'original signé de l'acte d'engagement reçu par la PRMP (scan) : `dateRemise` facultative (pas à venir).
    * 400 `DATE_INVALIDE`, `FICHIER_OBLIGATOIRE` ; 409 `NON_INFORME`, `DEJA_SIGNE`, `LOT_RETIRE`. Vérifié ensuite comme une pièce.
    */
-  deposerAeOriginal(idDmc: number, lot: number, dateRemise: string | null, fichier: File): Observable<Attribution> {
-    return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/acte-engagement-original`, this.formulaire(dateRemise ? { dateRemise } : {}, fichier), this.ctx);
+  // ⚠️ MT-b2 (V123) — `idOffre` : le titulaire dont c'est l'original, obligatoire en multi-attributaire (400 `TITULAIRE_OBLIGATOIRE`, 409 `NON_TITULAIRE`).
+  deposerAeOriginal(idDmc: number, lot: number, dateRemise: string | null, fichier: File, idOffre: string | null = null): Observable<Attribution> {
+    const champs: Record<string, string> = {};
+    if (dateRemise) champs['dateRemise'] = dateRemise;
+    if (idOffre) champs['idOffre'] = idOffre;
+    return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/acte-engagement-original`, this.formulaire(champs, fichier), this.ctx);
   }
 
   /**

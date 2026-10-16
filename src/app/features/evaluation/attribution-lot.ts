@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { Observable } from 'rxjs';
 
@@ -10,6 +11,7 @@ import { AttributionService } from '../../services';
 import { dateFr } from '../../core/interim/interim-libelles';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 import { ariary } from './libelles-evaluation';
+import { TitulairesProposes } from './titulaires-proposes';
 
 const MESSAGES: Readonly<Record<string, string>> = {
   AVIS_NON_RENDU: 'La Commission n’a pas encore rendu son avis sur le dossier de marché.',
@@ -62,7 +64,20 @@ const MESSAGES: Readonly<Record<string, string>> = {
   DEJA_NOTIFIE: 'Le marché est déjà notifié.',
   NON_NOTIFIE: 'Le marché n’est pas encore notifié.',
   DEJA_PUBLIE: 'L’avis d’attribution est déjà publié.',
+  // ⚠️ MT-b1 et MT-b2 (V122, V123) — le contrat-cadre multi-attributaire.
+  TITULAIRES_TROP_NOMBREUX: 'Le nombre de titulaires retenus dépasse le nombre maximal fixé dans la fiche (DAO).',
+  TITULAIRE_OBLIGATOIRE: 'Désignez le titulaire concerné.',
+  NON_TITULAIRE: 'Cette offre n’est pas titulaire du contrat-cadre.',
+  REATTRIBUTION_EXCLUE_CONTRAT_CADRE: 'Un contrat-cadre ne se réattribue pas : une fois conclu, il n’est plus ouvert à de nouveaux opérateurs (décret n° 2019-1064, art. 18).',
 };
+
+/** ⚠️ MT-b1 et MT-b2 — les refus qui nomment des offres (`details.offres`) les citent quand ce sont des numéros. */
+const AVEC_OFFRES = new Set(['OFFRE_NON_PROPOSEE', 'PIECES_NON_CONFORMES', 'AE_ORIGINAL_MANQUANT']);
+export function offresEnDefaut(e: ApiError): string {
+  const offres = corpsErreur<{ details?: { offres?: unknown } }>(e)?.details?.offres;
+  const numeros = Array.isArray(offres) ? offres.filter((o): o is number => typeof o === 'number') : [];
+  return numeros.length ? ` (offre${numeros.length > 1 ? 's' : ''} n° ${numeros.join(', ')})` : '';
+}
 
 const ISSUES: Readonly<Record<string, string>> = { REJETE: 'Rejeté', ACCUEILLI: 'Accueilli', AUTRE: 'Autre issue' };
 
@@ -91,6 +106,7 @@ function aujourdhui(): string {
  */
 @Component({
   selector: 'app-attribution-lot',
+  imports: [NgTemplateOutlet, TitulairesProposes],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @let l = lot();
@@ -99,10 +115,33 @@ function aujourdhui(): string {
       @if (l.attributaire; as a) {
         <section class="al__bloc al__fait" aria-label="Attribution">
           <h4 class="al__h4">Attribué</h4>
-          <p class="text-sm">Offre n° {{ a.numero }} · <strong>{{ a.candidat }}</strong>{{ a.nif ? ' (NIF ' + a.nif + ')' : '' }} — {{ ariary(a.montant) }} HT · délai {{ a.delai ?? '—' }} — le {{ dateHeure(a.le) }}</p>
+          @if (l.titulaires?.length) {
+            <!-- ⚠️ MT-b1 (V122) — les titulaires retenus par la PRMP ; le motif d'une sélection partielle. -->
+            <app-titulaires-proposes [titulaires]="l.titulaires" [retenus]="true" [lot]="l.lot" />
+            <p class="text-sm">Le {{ dateHeure(a.le) }}{{ a.motif ? ' — ' + a.motif : '' }}</p>
+          } @else {
+            <p class="text-sm">Offre n° {{ a.numero }} · <strong>{{ a.candidat }}</strong>{{ a.nif ? ' (NIF ' + a.nif + ')' : '' }} — {{ ariary(a.montant) }} HT · délai {{ a.delai ?? '—' }} — le {{ dateHeure(a.le) }}</p>
+          }
         </section>
       } @else if (l.dossierMarche?.avis === 'DEF') {
         <p class="text-sm al__alerte">Avis défavorable de la Commission : le marché ne s’attribue pas. La PRMP reprend l’évaluation ou déclare le lot infructueux (ci-dessous).</p>
+      } @else if (prmp() && l.dossierMarche?.avis && l.proposition?.titulaires?.length && !l.proposition?.infructueux) {
+        <!-- ⚠️ MT-b1 (V122, décret n° 2019-1064 art. 13-14) — la PRMP retient tout ou partie des titulaires proposés ; motif si une partie seulement. -->
+        <section class="al__bloc" aria-label="Attribuer le contrat-cadre">
+          <h4 class="al__h4">Attribuer le contrat-cadre</h4>
+          <p class="text-sm">Retenez les titulaires parmi ceux que la commission d’appel d’offres propose (art. 13 du décret). Tous sont cochés : décochez ceux que vous ne retenez pas, avec un motif.</p>
+          <fieldset class="al__choix">
+            <legend class="sr-only">Titulaires retenus</legend>
+            @for (t of l.proposition!.titulaires!; track t.idOffre) {
+              <label class="text-sm"><input type="checkbox" [checked]="!exclus().has(t.idOffre)" (change)="basculer(t.idOffre)" />
+                Rang {{ t.rang ?? '—' }} · offre n° {{ t.numero ?? '—' }} · <strong>{{ t.candidat }}</strong> — {{ ariary(t.montant) }} HT</label>
+            }
+          </fieldset>
+          @if (exclus().size) {
+            <label class="form-group"><span class="form-label">Motif de la sélection partielle</span><input class="form-control" type="text" [value]="champ('amotif')" (input)="poser('amotif', $any($event.target).value)" /></label>
+          }
+          <button type="button" class="btn btn-primary btn-sm al__btn" [disabled]="occupe() || !retenus(l).length || (exclus().size > 0 && !champ('amotif').trim())" (click)="attribuerTitulaires(l)">Attribuer à {{ retenus(l).length }} titulaire{{ retenus(l).length > 1 ? 's' : '' }}</button>
+        </section>
       } @else if (prmp() && l.dossierMarche?.avis && l.proposition && !l.proposition.infructueux) {
         <section class="al__bloc" aria-label="Attribuer">
           <h4 class="al__h4">Attribuer le marché</h4>
@@ -221,10 +260,30 @@ function aujourdhui(): string {
           }
         </section>
 
-        <!-- 5. Pièces fiscales et sociales de l'attributaire (art. 20-I) -->
-        @if (l.piecesAttributaire; as pa) {
+        <!-- 5. Pièces fiscales et sociales de l'attributaire (art. 20-I) ; ⚠️ MT-b2 (V123) — de chaque titulaire du contrat-cadre. -->
+        @if (multi()) {
+          @for (t of l.suiviTitulaires ?? []; track t.idOffre) {
+            <section class="al__bloc" [class.al__fait]="t.retrait" [attr.aria-label]="'Titulaire ' + (t.candidat ?? '')">
+              <h4 class="al__h4">Titulaire — rang {{ t.rang ?? '—' }} · offre n° {{ t.numero ?? '—' }} · {{ t.candidat }}</h4>
+              @if (t.retrait; as rt) {
+                <p class="text-sm al__alerte">Retiré le {{ dateHeure(rt.le) }} : {{ rt.motif }}. Le contrat-cadre continue avec les autres titulaires.</p>
+              } @else {
+                @if (t.pieces; as pa) {
+                  <ng-container *ngTemplateOutlet="piecesTpl; context: { $implicit: pa, t: t }" />
+                } @else { <p class="text-sm text-muted">Aucune pièce attendue pour l’instant.</p> }
+                @if (l.notification) {
+                  <p class="text-sm">{{ t.notificationRecueLe ? 'Notification reçue le ' + dateHeure(t.notificationRecueLe) + '.' : 'Réception de la notification en attente : sa première lecture en fera foi.' }}</p>
+                }
+              }
+            </section>
+          }
+        } @else if (l.piecesAttributaire; as pa) {
           <section class="al__bloc" aria-label="Pièces de l'attributaire">
             <h4 class="al__h4">Pièces de l’attributaire</h4>
+            <ng-container *ngTemplateOutlet="piecesTpl; context: { $implicit: pa, t: null }" />
+          </section>
+        }
+        <ng-template #piecesTpl let-pa let-t="t">
             <p class="text-sm">À déposer avant le <strong>{{ date(pa.echeance) }}</strong>{{ pa.delaiDepasse ? ' — échéance passée' : '' }} : situation fiscale de moins de six mois ({{ etatPiece(pa, 'FISCALE', pa.fiscaleConforme) }}), situation sociale de moins de trois mois ({{ etatPiece(pa, 'SOCIALE', pa.socialeConforme) }}).@if (pa.limiteFiscale || pa.limiteSociale) { Délivrées au plus tôt le {{ date(pa.limiteFiscale) }} (fiscale) et le {{ date(pa.limiteSociale) }} (sociale) : une pièce plus ancienne ne peut être reconnue conforme. }</p>
             <!-- ⚠️ R10 (V113, 14/10) — offre déposée et scellée en ligne : l'original signé de l'acte d'engagement, avant la signature. -->
             @if (pa.aeOriginalExige) {
@@ -232,37 +291,44 @@ function aujourdhui(): string {
             }
             @for (p of pa.pieces; track p.id) {
               <div class="al__piece">
-                <span class="text-sm">{{ libellesPieces[p.type] }} · {{ p.type === 'ACTE_ENGAGEMENT_ORIGINAL' ? 'remis le' : 'délivrée le' }} {{ date(p.dateDelivrance) }} · déposée le {{ dateHeure(p.deposeLe) }}</span>
+                <span class="text-sm">{{ libellePiece(p.type) }} · {{ p.type === 'ACTE_ENGAGEMENT_ORIGINAL' ? 'remis le' : 'délivrée le' }} {{ date(p.dateDelivrance) }} · déposée le {{ dateHeure(p.deposeLe) }}</span>
                 <button type="button" class="btn btn-ghost btn-sm" (click)="ouvrir(service.fichier(idDmc(), p.id))">{{ p.nom }}</button>
                 @if (p.conforme === true) { <span class="badge badge-success">Conforme</span> }
                 @else if (p.conforme === false) { <span class="badge badge-danger">Non conforme — {{ p.motif }}</span> }
                 @else if (prmp()) {
                   <button type="button" class="btn btn-outline btn-sm" [disabled]="occupe()" (click)="geste(service.verifierPiece(idDmc(), l.lot, p.id, true, null), 'La pièce est reconnue conforme.')">Conforme</button>
                   <input class="form-control form-control-sm al__motif" type="text" placeholder="Motif" [attr.aria-label]="'Motif de non-conformité de la pièce ' + p.nom" [value]="champ('pm' + p.id)" (input)="poser('pm' + p.id, $any($event.target).value)" />
-                  <button type="button" class="btn btn-outline btn-sm" [disabled]="!champ('pm' + p.id).trim() || occupe()" (click)="geste(service.verifierPiece(idDmc(), l.lot, p.id, false, champ('pm' + p.id).trim()), 'La pièce est déclarée non conforme ; l’attributaire peut en déposer une autre avant l’échéance.')">Non conforme</button>
+                  <button type="button" class="btn btn-outline btn-sm" [disabled]="!champ('pm' + p.id).trim() || occupe()" (click)="geste(service.verifierPiece(idDmc(), l.lot, p.id, false, champ('pm' + p.id).trim()), 'La pièce est déclarée non conforme ; le titulaire peut en déposer une autre avant l’échéance.')">Non conforme</button>
                 } @else { <span class="badge badge-warning">À vérifier</span> }
               </div>
             } @empty { <p class="text-sm text-muted">Aucune pièce déposée.</p> }
             @if (prmp() && pa.aeOriginalExige && !pa.aeOriginalConforme && !l.signature && !l.retrait) {
-              <!-- La PRMP qui a reçu l'original le dépose elle-même (scan), puis le vérifie comme une pièce. -->
+              <!-- La PRMP qui a reçu l'original le dépose elle-même (scan), puis le vérifie comme une pièce ; en multi-attributaire, pour CE titulaire. -->
               <div class="al__ligne">
-                <label class="form-group"><span class="form-label">Original reçu le (facultatif)</span><input class="form-control" type="date" [max]="aujourdhui" [value]="champ('aedate')" (input)="poser('aedate', $any($event.target).value)" /></label>
-                <label class="form-group al__large"><span class="form-label">Scan de l’original signé (PDF, JPEG, PNG)</span><input class="form-control" type="file" accept="application/pdf,image/jpeg,image/png" (change)="choisir('aefichier', $any($event.target))" /></label>
-                <button type="button" class="btn btn-outline btn-sm" [disabled]="!fichier('aefichier') || occupe()" (click)="geste(service.deposerAeOriginal(idDmc(), l.lot, champ('aedate') || null, fichier('aefichier')!), 'L’original est enregistré ; vérifiez-le pour ouvrir la signature.')">Enregistrer l’original reçu</button>
+                <label class="form-group"><span class="form-label">Original reçu le (facultatif)</span><input class="form-control" type="date" [max]="aujourdhui" [value]="champ('aedate' + cle(t))" (input)="poser('aedate' + cle(t), $any($event.target).value)" /></label>
+                <label class="form-group al__large"><span class="form-label">Scan de l’original signé (PDF, JPEG, PNG)</span><input class="form-control" type="file" accept="application/pdf,image/jpeg,image/png" (change)="choisir('aefichier' + cle(t), $any($event.target))" /></label>
+                <button type="button" class="btn btn-outline btn-sm" [disabled]="!fichier('aefichier' + cle(t)) || occupe()" (click)="geste(service.deposerAeOriginal(idDmc(), l.lot, champ('aedate' + cle(t)) || null, fichier('aefichier' + cle(t))!, t?.idOffre ?? null), 'L’original est enregistré ; vérifiez-le pour ouvrir la signature.')">Enregistrer l’original reçu</button>
               </div>
             }
             @if (prmp() && pa.delaiDepasse && !(pa.fiscaleConforme && pa.socialeConforme) && !l.signature && !l.retrait) {
               <div class="al__ligne">
-                <label class="form-group al__large"><span class="form-label">Motif du retrait (art. 20-I)</span><input class="form-control" type="text" [value]="champ('retrait')" (input)="poser('retrait', $any($event.target).value)" /></label>
-                <button type="button" class="btn btn-danger btn-sm" [disabled]="!champ('retrait').trim() || occupe()" (click)="geste(service.retirer(idDmc(), l.lot, champ('retrait').trim()), 'Le marché est retiré ; l’attributaire est notifié.')">Retirer le marché</button>
+                <label class="form-group al__large"><span class="form-label">Motif du retrait (art. 20-I)</span><input class="form-control" type="text" [value]="champ('retrait' + cle(t))" (input)="poser('retrait' + cle(t), $any($event.target).value)" /></label>
+                @if (t) {
+                  <!-- ⚠️ MT-b2 (V123, réponse 2 du pilote) — un titulaire est retiré seul : le contrat-cadre continue avec les autres. -->
+                  <button type="button" class="btn btn-danger btn-sm" [disabled]="!champ('retrait' + cle(t)).trim() || occupe()" (click)="geste(service.retirer(idDmc(), l.lot, champ('retrait' + cle(t)).trim(), t.idOffre), 'Le titulaire est retiré et notifié ; le contrat-cadre continue avec les autres.')">Retirer ce titulaire</button>
+                } @else {
+                  <button type="button" class="btn btn-danger btn-sm" [disabled]="!champ('retrait').trim() || occupe()" (click)="geste(service.retirer(idDmc(), l.lot, champ('retrait').trim()), 'Le marché est retiré ; l’attributaire est notifié.')">Retirer le marché</button>
+                }
               </div>
             }
-          </section>
-        }
+        </ng-template>
         @if (l.retrait; as rt) {
           <p class="text-sm al__alerte">Marché <strong>retiré</strong> le {{ dateHeure(rt.le) }} : {{ rt.motif }}.</p>
-          <!-- ⚠️ 2d-2 (V92, Q8) — au candidat suivant : sa post-qualification (ou, en PI, sa négociation), offre encore valide, nouvelle information. -->
-          @if (prmp()) {
+          @if (multi()) {
+            <!-- ⚠️ MT-b1 (art. 18) — un contrat-cadre conclu n'est plus ouvert à de nouveaux opérateurs : pas de réattribution. -->
+            <p class="text-sm text-muted">Un contrat-cadre ne se réattribue pas à un candidat non titulaire (décret n° 2019-1064, art. 18).</p>
+          } @else if (prmp()) {
+            <!-- ⚠️ 2d-2 (V92, Q8) — au candidat suivant : sa post-qualification (ou, en PI, sa négociation), offre encore valide, nouvelle information. -->
             <div class="al__ligne">
               <label class="form-group al__large"><span class="form-label">Motif de la réattribution</span><input class="form-control" type="text" [value]="champ('reattribution')" (input)="poser('reattribution', $any($event.target).value)" /></label>
               <button type="button" class="btn btn-primary btn-sm" [disabled]="!champ('reattribution').trim() || occupe()" (click)="geste(service.reattribuer(idDmc(), l.lot, champ('reattribution').trim()), 'L’évaluation est rouverte pour le candidat suivant : nouveau rapport, nouveau dossier, nouvelle information.')">Réattribuer au candidat suivant</button>
@@ -296,7 +362,11 @@ function aujourdhui(): string {
         } @else if (prmp() && !l.retrait) {
           <section class="al__bloc" aria-label="Signer le marché">
             <h4 class="al__h4">Signer le marché</h4>
-            <p class="text-sm text-muted">Ouvert quand le délai d’attente est écoulé, sans recours suspensif, et les deux pièces de l’attributaire reconnues conformes{{ l.piecesAttributaire?.aeOriginalExige ? ', ainsi que l’original signé de son acte d’engagement' : '' }}.</p>
+            @if (multi()) {
+              <p class="text-sm text-muted">Le contrat-cadre est signé par vous et <strong>tous</strong> les titulaires non retirés (art. 15 du décret). Ouvert quand le délai d’attente est écoulé, sans recours suspensif, et les pièces de <strong>chaque</strong> titulaire reconnues conformes (et l’original de son acte d’engagement, s’il est exigé).</p>
+            } @else {
+              <p class="text-sm text-muted">Ouvert quand le délai d’attente est écoulé, sans recours suspensif, et les deux pièces de l’attributaire reconnues conformes{{ l.piecesAttributaire?.aeOriginalExige ? ', ainsi que l’original signé de son acte d’engagement' : '' }}.</p>
+            }
             <div class="al__ligne">
               <label class="form-group"><span class="form-label">Date de signature</span><input class="form-control" type="date" [value]="champ('sdate')" (input)="poser('sdate', $any($event.target).value)" /></label>
               <label class="form-group al__large"><span class="form-label">Le marché signé (PDF, JPEG, PNG)</span><input class="form-control" type="file" accept="application/pdf,image/jpeg,image/png" (change)="choisir('sfichier', $any($event.target))" /></label>
@@ -342,7 +412,11 @@ function aujourdhui(): string {
           @if (l.notification; as nt) {
             <section class="al__bloc al__fait" aria-label="Notification">
               <h4 class="al__h4">Notifié le {{ date(nt.date) }}</h4>
+              @if (multi()) {
+                <p class="text-sm">Notifié à chaque titulaire non retiré : la réception de chacun se lit dans son suivi, ci-dessus.</p>
+              } @else {
               <p class="text-sm">{{ nt.recueLe ? 'Reçu par l’attributaire le ' + dateHeure(nt.recueLe) + (nt.receptionDeclaree ? ' (réception déclarée)' : ' (accusé de lecture de la plateforme)') + ' : le marché prend effet à cette date.' : 'Réception en attente : la première lecture du marché par l’attributaire en fera foi.' }}</p>
+              }
             </section>
           } @else if (prmp()) {
             <section class="al__bloc" aria-label="Notification">
@@ -396,6 +470,8 @@ function aujourdhui(): string {
     .al__bloque { border-left: 3px solid var(--warning-text); padding-left: 0.5rem; }
     .al__piece { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
     .al__motif { max-width: 14rem; }
+    .al__choix { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.25rem; }
+    .al__choix label { display: flex; gap: 0.4rem; align-items: baseline; }
     .al__actions { display: flex; gap: 0.3rem; }
     .al__alerte { margin: 0; color: var(--warning-text); }
     .al__ok { color: var(--success-text); }
@@ -443,6 +519,42 @@ export class AttributionLot {
   private readonly champs = signal<Record<string, string>>({});
   private readonly fichiers = signal<Record<string, File | null>>({});
   readonly etatLot = computed(() => this.lot().etat);
+
+  /** ⚠️ MT-b1 et MT-b2 — un contrat-cadre multi-attributaire, une fois attribué : titulaires retenus et leur suivi. */
+  readonly multi = computed(() => (this.lot().titulaires?.length ?? 0) > 0 || (this.lot().suiviTitulaires?.length ?? 0) > 0);
+  /** Les titulaires proposés que la PRMP décoche (non retenus) ; aucun par défaut : tous sont retenus. */
+  readonly exclus = signal<ReadonlySet<string>>(new Set());
+
+  basculer(idOffre: string): void {
+    this.exclus.update((x) => {
+      const n = new Set(x);
+      if (n.has(idOffre)) n.delete(idOffre); else n.add(idOffre);
+      return n;
+    });
+  }
+
+  retenus(l: LotAttribution): string[] {
+    return (l.proposition?.titulaires ?? []).map((t) => t.idOffre).filter((id) => !this.exclus().has(id));
+  }
+
+  /** Tous retenus : le corps n'en nomme aucun (le serveur les retient tous) ; une partie : leur liste et le motif. */
+  attribuerTitulaires(l: LotAttribution): void {
+    const partiel = this.exclus().size > 0;
+    const n = this.retenus(l).length;
+    this.geste(
+      this.service.attribuer(this.idDmc(), l.lot, partiel ? this.champ('amotif').trim() : null, partiel ? this.retenus(l) : null),
+      `Le contrat-cadre est attribué à ${n} titulaire${n > 1 ? 's' : ''} : informez maintenant les candidats.`,
+    );
+  }
+
+  /** Le suffixe des champs d'un titulaire (MT-b2) ; vide pour l'attributaire unique. */
+  cle(t: { idOffre: string } | null | undefined): string {
+    return t ? '-' + t.idOffre : '';
+  }
+
+  libellePiece(type: string): string {
+    return LIBELLES_PIECE_ATTRIBUTAIRE[type as TypePieceAttributaire] ?? type;
+  }
 
   champ(cle: string): string {
     return this.champs()[cle] ?? '';
@@ -494,13 +606,16 @@ export class AttributionLot {
         this.occupe.set(false);
         this.champs.set({});
         this.fichiers.set({});
+        this.exclus.set(new Set());
         this.toast.success(succes);
         this.maj.emit(relire ? null : (r as Attribution));
       },
       error: (e: ApiError) => {
         this.occupe.set(false);
         if (codeErreur(e) === 'PIECE_TROP_ANCIENNE') { this.erreur.set(messagePieceTropAncienne(e)); return; }
-        this.erreur.set(MESSAGES[codeErreur(e) ?? ''] ?? (e.status === 413 ? 'Le fichier dépasse la taille admise.' : e.message || 'Le geste n’a pas abouti.'));
+        const code = codeErreur(e) ?? '';
+        if (MESSAGES[code] && AVEC_OFFRES.has(code) && offresEnDefaut(e)) { this.erreur.set(MESSAGES[code].replace(/\.$/, '') + offresEnDefaut(e) + '.'); return; }
+        this.erreur.set(MESSAGES[code] ?? (e.status === 413 ? 'Le fichier dépasse la taille admise.' : e.message || 'Le geste n’a pas abouti.'));
       },
     });
   }

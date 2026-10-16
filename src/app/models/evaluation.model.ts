@@ -442,6 +442,24 @@ export interface LotAttribution {
   infructuosite?: InfructuositeLot | null;
   /** ⚠️ 2d-1 (Q3) et 2d-2 (Q8) — les reprises de l'évaluation (après avis défavorable, ou réattribution après retrait), rapport archivé. */
   reprises?: RepriseEvaluation[];
+  /**
+   * ⚠️ MT-b1 (V122, 15/10) — contrat-cadre multi-attributaire : les titulaires **retenus** par la PRMP, dans l'ordre du classement ;
+   * vide hors multi-attributaire et avant l'attribution. Le premier reste l'`attributaire` de tête.
+   */
+  titulaires?: TitulairePropose[];
+  /** ⚠️ MT-b2 (V123, 16/10) — le suivi de chaque titulaire retenu (ses pièces, sa réception de la notification, son retrait). */
+  suiviTitulaires?: SuiviTitulaire[];
+}
+
+/** ⚠️ MT-b2 — un titulaire du contrat-cadre : ses pièces (même forme que celles de l'attributaire), sa notification, son retrait. */
+export interface SuiviTitulaire {
+  idOffre: string;
+  numero: number | null;
+  candidat: string | null;
+  rang: number | null;
+  pieces: PiecesAttributaire | null;
+  notificationRecueLe: string | null;
+  retrait: { le: string; par: string | null; motif: string } | null;
 }
 
 /** La suite déclarée d'une infructuosité (déclarée, pas conduite ici). */

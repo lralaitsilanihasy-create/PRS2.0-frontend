@@ -178,6 +178,8 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     // venait par la page d'un dossier) : l'écran des lignes éligibles et des fiches ouvertes, d'où partent la commission,
     // les dépôts, les retraits, les reçus des frais et la séance.
     { label: 'Appels d’offres', path: '/prmp/dao', icon: 'clip' },
+    // ⚠️ Lot MS-1 (V124, 16/10) — les contrats-cadres et marchés à commandes notifiés (titulaires, échéances, reconductions).
+    { label: 'Contrats en vigueur', path: '/prmp/contrats-en-vigueur', icon: 'history' },
     // « Créer compte UGPM » : déplacé dans le PIED de la barre latérale (à la place de la carte profil,
     // redondante avec la topbar) — cf. main-layout.html (demande user 2026-08-02).
     // « Dossiers à rectifier » / « Dossiers vérifiés » : retirés du menu (demande user 2026-08-02) —
@@ -205,6 +207,8 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     { label: 'Mes brouillons', path: '/prmp/mes-brouillons', icon: 'edit' },
     // ⚠️ 2026-10-06 — comme la PRMP : l'UGPM saisit la fiche, la commission et valide les reçus des frais.
     { label: 'Appels d’offres', path: '/prmp/dao', icon: 'clip' },
+    // ⚠️ Lot MS-1 (16/10) — en lecture : la reconduction se décide par la PRMP.
+    { label: 'Contrats en vigueur', path: '/prmp/contrats-en-vigueur', icon: 'history' },
     // ⚠️ Demande pilote (2026-09-13) — « Dossiers vérifiés » RETIRÉ du menu UGPM : les dossiers vérifiés
     // sont visibles dans « Tous les dossiers » (avec leur badge de statut). Route conservée (le PRMP s'en
     // sert pour « Mettre à jour un PPM », /prmp/dossiers-verifies?maj=1).

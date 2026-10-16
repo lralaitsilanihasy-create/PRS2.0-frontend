@@ -29,7 +29,7 @@ import { TitulairesProposes } from './titulaires-proposes';
         } @else {
           <p><strong>Proposition d'attribution — lot {{ lot().lot }}</strong> : offre n° {{ p.numero }} · {{ p.candidat }}</p>
           <p class="text-sm">Montant {{ ariary(p.montant) }} HT (prix corrigé, rabais déduit) · {{ ariary(p.montantTtc) }} TTC lu · délai d'exécution {{ p.delai ?? '—' }} (acte d'engagement)</p>
-          <app-titulaires-proposes [proposition]="p" [lot]="lot().lot" />
+          <app-titulaires-proposes [titulaires]="p.titulaires" [seul]="p.seulTitulaireQualifie" [lot]="lot().lot" />
         }
       </section>
     }

@@ -389,6 +389,7 @@ export class MainLayout {
     '/prmp/ppm-marches': 'i',
     '/prmp/resultat-examen': 'd',
     '/prmp/retraits': 'd',
+    '/prmp/contrats-en-vigueur': 'w',
     [CHEMIN_A_VERIFIER]: 'i',
   };
   badgeSeverity(path: string): string {
@@ -579,6 +580,9 @@ export class MainLayout {
             c['/prmp/dao'] = ['recusAValider', 'lotsAAttribuer', 'lotsSignables', 'avisAPublier', 'explicationsSansReponse'].reduce((n, k) => n + (compteurs[k] ?? 0), 0);
             // ⚠️ R6c (V108, règle 8) — les avis d'attribution en retard (échéance de 30 jours passée sans publication) : pastille d'alerte.
             this.alerts.update((a) => ({ ...a, '/prmp/dao': compteurs['avisEnRetard'] ?? 0 }));
+            // ⚠️ Lot MS-1 (V124, 16/10) — les reconductions à décider ; en alerte, les contrats dont l'échéance tombe sous 30 jours.
+            c['/prmp/contrats-en-vigueur'] = compteurs['reconductionsADecider'] ?? 0;
+            this.alerts.update((a) => ({ ...a, '/prmp/contrats-en-vigueur': compteurs['contratsAEcheance'] ?? 0 }));
             break;
           case 'UGPM':
             // ⚠️ 06/10 — l'UGPM valide aussi les reçus des frais de dossier des fiches de sa PRMP.

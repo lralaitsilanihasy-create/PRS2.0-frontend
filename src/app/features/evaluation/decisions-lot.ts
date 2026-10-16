@@ -19,7 +19,11 @@ export const LIBELLES_SUITE: Readonly<Record<SuiteInfructuosite, string>> = {
  * ⚠️ MT-a (15/10) — aussi quand un contrat-cadre multi-attributaire ne dégage qu'un titulaire (décret n° 2019-1064, art. 17).
  */
 export function infructuositeDeclarable(l: LotAttribution): boolean {
-  return !l.infructuosite && !l.attributaire
+  if (l.infructuosite) return false;
+  // ⚠️ MT-b2 (V123) — après le retrait de titulaires, s'il n'en reste qu'un avant la signature, l'art. 17 rouvre l'infructuosité.
+  const suivis = l.suiviTitulaires ?? [];
+  if (suivis.length > 1 && suivis.filter((t) => !t.retrait).length === 1 && !l.signature) return true;
+  return !l.attributaire
     && (!!l.proposition?.infructueux || !!l.proposition?.seulTitulaireQualifie || l.dossierMarche?.avis === 'DEF');
 }
 

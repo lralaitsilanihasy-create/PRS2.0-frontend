@@ -123,6 +123,50 @@ Textes lus :
 > **Point à prendre dans MT-b1 (art. 13 et 14) :** les titulaires sont « sélectionnés par la **PRMP** parmi les candidats
 > qualifiés », sur proposition de la CAO. `titulaires[]` de MT-a est donc une **proposition** : à l'attribution, la PRMP retient
 > tout ou partie des qualifiés (dans la limite du point 4), pas l'ensemble d'office.
+>
+> ⚠️ **2026-10-15, livraison backend de MT-b1 (V122) :**
+> - **`POST …/attribution/lots/{lot}/attribuer`** prend `{ titulaires?, motif?, idOffre? }`. La PRMP retient tout ou partie des
+>   titulaires proposés ; absent ou vide, ils sont tous retenus.
+>   - 409 `OFFRE_NON_PROPOSEE` (`details.offres`) pour une offre hors proposition.
+>   - 400 `MOTIF_OBLIGATOIRE` si une partie seulement est retenue.
+>   - 400 `TITULAIRES_TROP_NOMBREUX` au-delà de **`B07-MA-08`**. C'est le nombre maximal facultatif (réponse 4) : un nombre,
+>     posé seulement si `attributaires = MULTI`, imprimé par aucun document. Il est dans le CSV du contrat-cadre recopié dans
+>     `docs/` et dans le script `docs/referentiel/2026-10-15-maximum-titulaires.sql` du backend.
+> - **`lots[].titulaires[]`** donne les titulaires retenus, dans le même format que la proposition. Le premier reste
+>   l'`attributaire` de tête.
+> - **Projet de contrat-cadre** (réponse 3) : il nomme tous les titulaires (les retenus, sinon les proposés), avec l'offre
+>   indicative de chacun et une signature par titulaire.
+> - **Lettres** : la lettre d'attribution du contrat-cadre part à **chaque** titulaire ; celle du non-retenu liste les
+>   titulaires. **Résultat du candidat** : `attributaire` = « A ; B », `montant` = celui du titulaire qui consulte (nul pour un
+>   non-retenu). **Page publique** : les titulaires, sans montant.
+> - **Réponse 2, en partie** : la réattribution d'un contrat-cadre multi-attributaire répond 409
+>   `REATTRIBUTION_EXCLUE_CONTRAT_CADRE` (art. 18). Le retrait d'un titulaire qui laisse le contrat aux autres, et l'art. 17
+>   quand il n'en reste qu'un, viennent avec MT-b2.
+> - **MT-b2, suite** :
+>   - pièces fiscales et sociales de **chaque** titulaire (réponse 1) ;
+>   - signature par la PRMP et tous les titulaires ;
+>   - notification à chacun ;
+>   - avis d'attribution qui les liste ;
+>   - retrait d'un titulaire.
+>
+>   D'ici là, ces gestes suivent le titulaire de tête, et l'avertissement `MULTI_ATTRIBUTAIRE_NON_OUTILLE` le dit.
+>
+> ⚠️ **2026-10-16, livraison backend de MT-b2 (V123) : la tranche MT est complète.**
+> - **Pièces de chaque titulaire** (réponse 1) : chacun dépose les siennes sur `…/pieces-attributaire`, et son `GET` ne rend
+>   que les siennes. La PRMP remet un original d'acte d'engagement **pour un titulaire** : `acte-engagement-original` prend
+>   `idOffre`, obligatoire en multi-attributaire (400 `TITULAIRE_OBLIGATOIRE`, 409 `NON_TITULAIRE`).
+> - **`lots[].suiviTitulaires[]`** : `{ idOffre, numero, candidat, rang, pieces, notificationRecueLe, retrait }`, une entrée
+>   par titulaire retenu. `pieces` a la même forme que `piecesAttributaire` : la vérification se fait pièce par pièce, comme
+>   avant.
+> - **Signature** : 409 `PIECES_NON_CONFORMES` ou `AE_ORIGINAL_MANQUANT` avec `details.offres` (les numéros en défaut) tant
+>   qu'un titulaire non retiré n'est pas en règle.
+> - **Retrait** (réponse 2) : `POST …/retirer` prend `{ motif, idOffre }`, l'`idOffre` étant obligatoire en multi-attributaire.
+>   Le titulaire est retiré seul et le contrat-cadre continue avec les autres (le suivant prend la tête s'il le faut). S'il
+>   n'en reste qu'un avant la signature, `…/infructueux` est de nouveau admis (art. 17). S'il n'en reste aucun, le lot est
+>   `RETIRE`. Le résultat du retiré porte `retire = true`.
+> - **Notification** à chaque titulaire, avec un accusé de réception chacun. **Avis d'attribution** listant les titulaires et
+>   leurs offres indicatives.
+> - **`MULTI_ATTRIBUTAIRE_NON_OUTILLE` est retiré** du bilan, comme annoncé.
 
 ## Lot MS-1 — Le contrat-cadre (ou le marché à commandes) en vigueur
 
@@ -134,6 +178,28 @@ Textes lus :
 - **Pas de minimum** pour le contrat-cadre ni ses marchés subséquents (décret art. 34) ; l'alerte « minimum non atteint » ne vaut que
   pour le **marché à commandes** (loi art. 30-II).
 - Échéances et reconduction signalées (« À faire ») ; plus aucune remise en concurrence ni commande après l'échéance.
+
+> ⚠️ **2026-10-16, livraison backend de MS-1 (V124) :**
+> - **Contrat en vigueur** : il est créé **à la notification** du lot quand la fiche validée est un contrat-cadre ou un marché à
+>   commandes, un par lot, avec les valeurs figées de la fiche.
+>   - Contrat-cadre : `B02-DC-02` période, `B02-DC-01` (à défaut `B07-DU-05` × 12) durée maximale, `B02-DC-03` reconductible,
+>     `B07-DU-04` reconductions, `B07-DU-07` préavis, `B05-MT-01` / `B05-MT-03` montants, `B07-FS-01` forme, `B02-PC-02` /
+>     `B02-PC-03` rythme et calendrier.
+>   - Marché à commandes : `B02-AU-04` période plafonnée à 36 mois, `B05-TP-02` / `B05-TP-03` minimum et maximum.
+> - **Routes** :
+>   - `GET /api/contrats-en-vigueur` : liste de la PRMP ou de l'UGPM ; tous pour la Commission et l'Administrateur ;
+>   - `GET /api/contrats-en-vigueur/{id}` : détail ;
+>   - `POST /api/contrats-en-vigueur/{id}/reconduction` `{ decision: RECONDUIRE | NE_PAS_RECONDUIRE, reference, dateDecision }`.
+> - **Ce que porte le contrat** : `etat` (`EN_VIGUEUR` ou `ECHU`), `dateFin`, `finMaximale`, `dateLimiteDecision`,
+>   `titulaires[]` (la liste fermée, lue sur l'attribution, retirés exclus), `decisions[]` et `alertes[]`
+>   (`RECONDUCTION_A_DECIDER`, `ECHEANCE_PROCHE`, `ECHU`).
+> - **Reconduction** :
+>   - une décision par période (409 `DEJA_DECIDE`) ;
+>   - 409 `RECONDUCTIONS_EPUISEES`, `DUREE_MAX_ATTEINTE`, `NON_RECONDUCTIBLE` ou `CONTRAT_ECHU` selon le cas ;
+>   - une décision prise après la limite du préavis est acceptée et marquée `horsPreavis`.
+> - **« À faire »** : les badges de la PRMP (`GET /api/kpis/badges`) gagnent **`reconductionsADecider`** et
+>   **`contratsAEcheance`**. L'accueil « À faire » du circuit de la Commission, centré sur les dossiers, n'est pas touché.
+> - **Après l'échéance** : un contrôle 409 `CONTRAT_ECHU` est prêt pour MS-2 (remises en concurrence) et MS-3 (commandes).
 
 ## Lot MS-2 — La remise en concurrence et le marché subséquent
 
