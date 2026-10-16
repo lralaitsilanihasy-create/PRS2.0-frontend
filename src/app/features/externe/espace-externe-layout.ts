@@ -39,6 +39,8 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
     navConnecte: [
       { label: 'Mes offres', path: '/candidat/offres' },
       { label: 'Mes invitations', path: '/candidat/invitations' },
+      // ⚠️ Lot MS-2 (16/10) — les marchés subséquents des contrats-cadres dont le candidat est titulaire.
+      { label: 'Remises en concurrence', path: '/candidat/remises' },
       { label: 'Mon entreprise', path: '/candidat/entreprise' },
     ],
     entree: { label: 'Créer un compte', path: '/candidat/inscription' },
@@ -50,7 +52,8 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
     racine: '/cao',
     titre: "Espace commission d'appel d'offres",
     navPublique: [],
-    navConnecte: [{ label: 'Mes procédures', path: '/cao/mes-procedures' }],
+    // ⚠️ Lot MS-2 (16/10) — les remises en concurrence des contrats-cadres, évaluées en collège restreint.
+    navConnecte: [{ label: 'Mes procédures', path: '/cao/mes-procedures' }, { label: 'Remises en concurrence', path: '/cao/remises' }],
     entree: { label: 'Activer mon compte', path: '/cao/activation' },
     piedLien: null,
     apresDeconnexion: '/login',

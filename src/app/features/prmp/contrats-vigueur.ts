@@ -4,11 +4,12 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ApiError, codeErreur, corpsErreur } from '../../core/errors/api-error';
 import { dateFr } from '../../core/interim/interim-libelles';
 import { ToastService } from '../../core/notifications/toast.service';
-import { AlerteContrat, ContratVigueur, DecisionReconduction } from '../../models';
-import { ContratsVigueurService } from '../../services';
+import { AlerteContrat, ContratVigueur, DecisionReconduction, Remise } from '../../models';
+import { ContratsVigueurService, RemisesService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 import { ariary } from '../evaluation/libelles-evaluation';
+import { ProfilRemise, RemiseDetail, refusRemise } from '../remises/remise-detail';
 
 const ALERTES: Readonly<Record<string, { texte: string; classe: string }>> = {
   RECONDUCTION_A_DECIDER: { texte: 'Reconduction à décider', classe: 'badge-warning' },
@@ -52,7 +53,7 @@ function aujourdhui(): string {
  */
 @Component({
   selector: 'app-contrats-vigueur',
-  imports: [EtatErreur],
+  imports: [EtatErreur, RemiseDetail],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="cv">
@@ -127,6 +128,42 @@ function aujourdhui(): string {
                     </ul>
                   }
 
+                  <!-- ⚠️ Lot MS-2 (V125, 16/10) — les remises en concurrence du contrat-cadre et leurs marchés subséquents. -->
+                  @if (c.typeMarche !== 'MARCHE_A_COMMANDES') {
+                    <h2 class="cv__h2">Remises en concurrence <span class="text-muted text-sm">— marchés subséquents (décret n° 2019-1064, art. 20-33)</span></h2>
+                    @if (chargementRemises()) {
+                      <p class="text-sm text-muted" role="status">Chargement des remises…</p>
+                    } @else {
+                      @for (r of remises(); track r.id) {
+                        <app-remise-detail [remise]="r" [profil]="profilRemise()" (maj)="remiseAJour($event)" />
+                      } @empty { <p class="text-sm text-muted">Aucune remise en concurrence pour ce contrat.</p> }
+                      @if (erreurRemises(); as m) { <div class="alert alert-danger" role="alert">{{ m }}</div> }
+                    }
+                    @if ((prmp() || ugpm()) && c.etat === 'EN_VIGUEUR' && !remiseOuverte()) {
+                      <details class="cv__details">
+                        <summary>Lancer une remise en concurrence…</summary>
+                        <div class="cv__form cv__form--remise">
+                          <p class="text-sm text-muted">Tous les titulaires non retirés sont consultés (art. 21) ; s’il n’en reste qu’un, il est invité à compléter son offre initiale. La lettre d’invitation suit l’annexe 1 du document type.</p>
+                          <label class="form-group"><span class="form-label">Objet du marché subséquent</span><input class="form-control" type="text" [value]="lr('objet')" (input)="poserLr('objet', $any($event.target).value)" /></label>
+                          <label class="form-group"><span class="form-label">Spécifications (annexe 2 de la lettre)</span><textarea class="form-control" rows="3" [value]="lr('specifications')" (input)="poserLr('specifications', $any($event.target).value)"></textarea></label>
+                          <label class="form-group"><span class="form-label">Critères d’attribution (facultatif)</span><input class="form-control" type="text" [value]="lr('criteres')" (input)="poserLr('criteres', $any($event.target).value)" /></label>
+                          <div class="cv__champs">
+                            <label class="form-group"><span class="form-label">Délai d’exécution</span><input class="form-control" type="text" [value]="lr('delaiExecution')" (input)="poserLr('delaiExecution', $any($event.target).value)" /></label>
+                            <label class="form-group"><span class="form-label">Lieu de livraison (facultatif)</span><input class="form-control" type="text" [value]="lr('lieuLivraison')" (input)="poserLr('lieuLivraison', $any($event.target).value)" /></label>
+                            <label class="form-group"><span class="form-label">Validité des offres, en jours (facultatif)</span><input class="form-control" type="number" min="1" step="1" [value]="lr('validiteJours')" (input)="poserLr('validiteJours', $any($event.target).value)" /></label>
+                          </div>
+                          <div class="cv__champs">
+                            <label class="form-group"><span class="form-label">Date et heure limites des réponses</span><input class="form-control" type="datetime-local" [value]="lr('echeance')" (input)="poserLr('echeance', $any($event.target).value)" /></label>
+                            <label class="form-group cv__large"><span class="form-label">Visite des lieux (facultatif)</span><input class="form-control" type="text" [value]="lr('visite')" (input)="poserLr('visite', $any($event.target).value)" /></label>
+                          </div>
+                          <p class="text-sm text-muted">Échéance entre maintenant et la fin du contrat ({{ date(c.dateFin) }}) ; vide pour un titulaire unique, elle vaut le délai de complétude du contrat-cadre.</p>
+                          @if (refusLancement(); as m) { <div class="alert alert-danger" role="alert">{{ m }}</div> }
+                          <div><button type="button" class="btn btn-primary btn-sm" [disabled]="!lr('objet').trim() || !lr('specifications').trim() || !lr('delaiExecution').trim() || occupe()" (click)="lancer(c)">Lancer et envoyer les lettres d’invitation</button></div>
+                        </div>
+                      </details>
+                    }
+                  }
+
                   @if (prmp() && reconductionOuverte(c)) {
                     <fieldset class="cv__form">
                       <legend class="form-label">Décider la reconduction de la période en cours</legend>
@@ -183,11 +220,15 @@ function aujourdhui(): string {
     .cv__radios { display: flex; gap: 1.2rem; font-size: var(--text-sm); }
     .cv__champs { display: flex; gap: 0.6rem; flex-wrap: wrap; }
     .cv__alerte { margin: 0; color: var(--warning-text); }
+    .cv__details summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; }
+    .cv__form--remise { border: 0; padding: 0.4rem 0 0; }
+    .cv__large { flex: 1 1 18rem; }
     @media (max-width: 800px) { .cv__ligne { grid-template-columns: 1fr; gap: 0.3rem; } .cv__badges { justify-content: flex-start; } }
   `,
 })
 export class ContratsVigueur implements OnInit {
   private readonly service = inject(ContratsVigueurService);
+  private readonly remisesService = inject(RemisesService);
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
 
@@ -216,6 +257,17 @@ export class ContratsVigueur implements OnInit {
 
   /** La PRMP décide ; l'UGPM, la Commission et l'Administrateur lisent (le serveur reste la garde). */
   readonly prmp = computed(() => this.auth.role() === 'PRMP');
+  readonly ugpm = computed(() => this.auth.role() === 'UGPM');
+  readonly profilRemise = computed<ProfilRemise>(() => (this.prmp() ? 'PRMP' : this.ugpm() ? 'UGPM' : 'LECTURE'));
+
+  // ⚠️ Lot MS-2 — les remises du contrat ouvert, et le formulaire de lancement.
+  readonly remises = signal<Remise[]>([]);
+  readonly chargementRemises = signal(false);
+  readonly erreurRemises = signal<string | null>(null);
+  readonly refusLancement = signal<string | null>(null);
+  private readonly lancement = signal<Record<string, string>>({});
+  /** Une seule remise ouverte à la fois par contrat (409 `REMISE_EN_COURS`). */
+  readonly remiseOuverte = computed(() => this.remises().some((r) => r.etat === 'EN_COURS' || r.etat === 'EVALUEE'));
   /** Les contrats à surveiller d'abord, puis par échéance. */
   readonly visibles = computed(() => {
     const f = this.filtre();
@@ -249,10 +301,70 @@ export class ContratsVigueur implements OnInit {
 
   basculer(id: number): void {
     this.ouvert.set(this.ouvert() === id ? null : id);
+    this.remises.set([]);
+    this.lancement.set({});
+    this.refusLancement.set(null);
+    if (this.ouvert() === id && this.contrats().find((c) => c.id === id)?.typeMarche !== 'MARCHE_A_COMMANDES') this.chargerRemises(id);
     this.decision.set(null);
     this.reference.set('');
     this.dateDecision.set(aujourdhui());
     this.refus.set(null);
+  }
+
+  chargerRemises(id: number): void {
+    this.chargementRemises.set(true);
+    this.erreurRemises.set(null);
+    this.remisesService.duContrat(id).subscribe({
+      next: (l) => {
+        this.chargementRemises.set(false);
+        this.remises.set([...l].sort((a, b) => b.numero - a.numero));
+      },
+      error: (e: ApiError) => {
+        this.chargementRemises.set(false);
+        this.erreurRemises.set(refusRemise(e));
+      },
+    });
+  }
+
+  remiseAJour(r: Remise): void {
+    this.remises.update((l) => l.map((x) => (x.id === r.id ? r : x)));
+  }
+
+  lr(cle: string): string {
+    return this.lancement()[cle] ?? '';
+  }
+
+  poserLr(cle: string, valeur: string): void {
+    this.lancement.update((l) => ({ ...l, [cle]: valeur }));
+  }
+
+  lancer(c: ContratVigueur): void {
+    const v = (k: string): string | null => this.lr(k).trim() || null;
+    const echeance = this.lr('echeance');
+    this.occupe.set(true);
+    this.refusLancement.set(null);
+    this.remisesService.lancer(c.id, {
+      objet: this.lr('objet').trim(),
+      specifications: this.lr('specifications').trim(),
+      criteres: v('criteres'),
+      lieuLivraison: v('lieuLivraison'),
+      delaiExecution: this.lr('delaiExecution').trim(),
+      validiteJours: this.lr('validiteJours') ? Number(this.lr('validiteJours')) : null,
+      visite: v('visite'),
+      // `datetime-local` rend AAAA-MM-JJTHH:MM ; le serveur attend des secondes.
+      echeance: echeance ? (echeance.length === 16 ? echeance + ':00' : echeance) : null,
+    }).subscribe({
+      next: (r) => {
+        this.occupe.set(false);
+        this.lancement.set({});
+        this.remises.update((l) => [r, ...l]);
+        this.toast.success(`La remise n° ${r.numero} est lancée : les titulaires reçoivent leur lettre d’invitation.`);
+      },
+      error: (e: ApiError) => {
+        this.occupe.set(false);
+        this.refusLancement.set(refusRemise(e));
+      },
+    });
   }
 
   type(c: ContratVigueur): string {

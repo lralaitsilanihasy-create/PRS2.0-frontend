@@ -27,3 +27,4 @@ export * from './instantanes.services';
 export * from './controles.services';
 export * from './questions.services';
 export * from './contrats-vigueur.services';
+export * from './remises.services';

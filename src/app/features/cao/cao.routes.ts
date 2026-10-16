@@ -20,6 +20,12 @@ export const CAO_ROUTES: Routes = [
     loadComponent: () => import('./mes-procedures-cao').then((m) => m.MesProceduresCao),
   },
   {
+    // ⚠️ Lot MS-2 (V125, 16/10) — les remises en concurrence des contrats-cadres : le président évalue en collège restreint (H1).
+    path: 'remises',
+    canActivate: [externeConnecteGuard],
+    loadComponent: () => import('./remises-cao').then((m) => m.RemisesCao),
+  },
+  {
     path: 'procedures/:idDmc',
     canActivate: [externeConnecteGuard],
     loadComponent: () => import('./procedure-cao').then((m) => m.ProcedureCao),

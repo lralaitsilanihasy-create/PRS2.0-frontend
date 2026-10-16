@@ -44,6 +44,12 @@ export const CANDIDAT_ROUTES: Routes = [
     loadComponent: () => import('./mes-invitations').then((m) => m.MesInvitations),
   },
   {
+    // ⚠️ Lot MS-2 (V125, 16/10) — les remises en concurrence reçues par le titulaire d'un contrat-cadre.
+    path: 'remises',
+    canActivate: [externeConnecteGuard],
+    loadComponent: () => import('./remises-titulaire').then((m) => m.RemisesTitulaire),
+  },
+  {
     path: 'entreprise',
     canActivate: [externeConnecteGuard],
     loadComponent: () => import('./entreprise-candidat').then((m) => m.EntrepriseCandidat),

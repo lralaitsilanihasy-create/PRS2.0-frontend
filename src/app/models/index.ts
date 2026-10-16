@@ -22,3 +22,4 @@ export * from './instantane.model';
 export * from './controle.model';
 export * from './questions.model';
 export * from './contrat-vigueur.model';
+export * from './remise.model';

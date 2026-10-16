@@ -52,6 +52,7 @@ describe('Contrats en vigueur (MS-1)', () => {
     expect(lignes[0].textContent).toContain('Consommables informatiques');
     expect(lignes[0].textContent).toContain('Reconduction à décider');
     (lignes[0] as HTMLButtonElement).click();
+    http.expectOne('/api/contrats-en-vigueur/7/remises').flush([]);
     fixture.detectChanges();
     expect(texte()).toContain('liste fermée');
     expect(texte()).toContain('Entreprise 4');
@@ -61,6 +62,7 @@ describe('Contrats en vigueur (MS-1)', () => {
   it('la PRMP décide la reconduction (référence et date) ; le contrat revient à jour', () => {
     monter('PRMP', [CONTRAT()]);
     (racine().querySelector('.cv__ligne') as HTMLButtonElement).click();
+    http.expectOne('/api/contrats-en-vigueur/7/remises').flush([]);
     fixture.detectChanges();
     (racine().querySelector('input[type=radio]') as HTMLInputElement).dispatchEvent(new Event('change'));
     const ref = Array.from(racine().querySelectorAll('label')).find((l) => l.textContent?.includes('Référence'))!.querySelector('input') as HTMLInputElement;
@@ -80,6 +82,7 @@ describe('Contrats en vigueur (MS-1)', () => {
   it('l’UGPM lit sans décider', () => {
     monter('UGPM', [CONTRAT()]);
     (racine().querySelector('.cv__ligne') as HTMLButtonElement).click();
+    http.expectOne('/api/contrats-en-vigueur/7/remises').flush([]);
     fixture.detectChanges();
     expect(bouton('Enregistrer la décision')).toBeUndefined();
   });
@@ -87,5 +90,28 @@ describe('Contrats en vigueur (MS-1)', () => {
   it('nomme les refus de la reconduction', () => {
     expect(refusReconduction(api(409, { code: 'DUREE_MAX_ATTEINTE', details: { finMaximale: '2027-12-31' } }))).toContain('31/12/2027');
     expect(refusReconduction(api(409, { code: 'DEJA_DECIDE' }))).toContain('déjà prise');
+  });
+
+  it('MS-2 : la PRMP lance une remise (échéance avec secondes) ; la remise rendue s’affiche', () => {
+    monter('PRMP', [CONTRAT({ alertes: [] })]);
+    (racine().querySelector('.cv__ligne') as HTMLButtonElement).click();
+    http.expectOne('/api/contrats-en-vigueur/7/remises').flush([]);
+    fixture.detectChanges();
+    const champ = (libelle: string): HTMLInputElement | HTMLTextAreaElement =>
+      Array.from(racine().querySelectorAll('label')).find((l) => l.textContent?.includes(libelle))!.querySelector('input, textarea') as HTMLInputElement;
+    const remplir = (libelle: string, v: string): void => { const c = champ(libelle); c.value = v; c.dispatchEvent(new Event('input')); };
+    remplir('Objet du marché subséquent', 'Cartouches du 1er trimestre');
+    remplir('Spécifications', '200 cartouches HP 305');
+    remplir('Délai d’exécution', '15 jours');
+    remplir('Date et heure limites', '2026-10-30T10:00');
+    fixture.detectChanges();
+    bouton('Lancer et envoyer').click();
+    const post = http.expectOne('/api/contrats-en-vigueur/7/remises');
+    expect(post.request.body).toMatchObject({ objet: 'Cartouches du 1er trimestre', specifications: '200 cartouches HP 305', delaiExecution: '15 jours', echeance: '2026-10-30T10:00:00', criteres: null });
+    post.flush({ id: 3, idContrat: 7, idDmc: 50, lot: 1, numero: 1, mode: 'CONCURRENCE', etat: 'EN_COURS', objet: 'Cartouches du 1er trimestre', specifications: '200 cartouches HP 305', criteres: null, lieuLivraison: null, delaiExecution: '15 jours', validiteJours: null, visite: null, echeance: '2026-10-30T10:00:00', echeancePassee: false, lanceeLe: '2026-10-16T10:00:00', lanceePar: 'PRMP001', lettreDisponible: true, consultes: [], reponses: [], prixMoyen: null, idOffreProposee: null, observations: null, evalueeLe: null, evalueePar: null, rapportDisponible: false, idOffreRetenue: null, montantRetenu: null, motifDecision: null, decideeLe: null, decideePar: null, alertes: [] });
+    fixture.detectChanges();
+    expect(texte()).toContain('Remise en concurrence n° 1 — Cartouches du 1er trimestre');
+    // Une seule remise ouverte à la fois : le lancement se referme.
+    expect(bouton('Lancer et envoyer')).toBeUndefined();
   });
 });

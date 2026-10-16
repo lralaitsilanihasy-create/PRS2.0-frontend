@@ -228,6 +228,32 @@ Textes lus :
 - **Mono-attributaire** (un seul opérateur, décret art. 18) : la consultation porte sur lui seul ; complétude de l'offre initiale
   dans le délai `B07-MA-01`, sous le plafond d'augmentation `B05-PM-04`.
 
+> ⚠️ **2026-10-16, livraison backend de MS-2 (V125) :** contrat complet dans `docs/api-endpoints.md` du backend, § *La remise en
+> concurrence et le marché subséquent — lot MS-2*.
+> - **Routes internes** :
+>   - `POST /api/contrats-en-vigueur/{id}/remises` (PRMP ou UGPM) `{ objet, specifications, criteres, lieuLivraison, delaiExecution,
+>     validiteJours, visite, echeance }` ; `GET` sur la même route : les remises du contrat ;
+>   - `GET /api/remises`, `GET /api/remises/{id}`, `…/lettre`, `…/rapport` (`?format=docx`), `…/reponses/{idReponse}/fichier` ;
+>   - `POST /api/remises/{id}/reponses` (réponse papier, multipart), `…/evaluation`, `…/attribution`, `…/infructueuse`.
+> - **Routes du titulaire** : `GET /api/candidat/remises`, `GET /api/candidat/remises/{id}/lettre`,
+>   `POST /api/candidat/remises/{id}/reponse` (multipart `nature`, `montantHt`, `montantTtc`, `delai`, `fichier`).
+> - **Écarts et hypothèses** :
+>   - **Évaluation (H1)** : la CAO « en collège restreint » est la CAO du contrat-cadre ; son **président** arrête l'évaluation et
+>     signe le rapport simplifié. **Aucun quorum propre** n'est contrôlé en attendant le juriste.
+>   - **Prix moyen** : `B07-MA-07` porte les **règles** ; le **montant** du prix moyen est **saisi par la CAO** à l'évaluation
+>     (`prixMoyen`), l'application ne le calcule pas. L'écart de chaque offre (`ecartPrixMoyen`, en %) en découle.
+>   - **Contrat alloti (art. 31)** : chaque contrat en vigueur est un lot ; une remise porte sur **un** lot. Une remise commune à
+>     plusieurs lots n'est pas outillée.
+>   - **Pièces du marché subséquent (art. 33)** : lettre, rapport et réponses se téléchargent ; leur jonction aux pièces de dépense
+>     reste hors de l'application (H4).
+>   - **Une remise à la fois par contrat** (409 `REMISE_EN_COURS`), ajouté pour éviter deux consultations concurrentes du même
+>     besoin.
+>   - **H2 (titulaire sans compte)** : sa réponse s'enregistre depuis le papier par la PRMP **ou** l'UGPM.
+> - **Alertes** (`alertes[]`, jamais bloquantes) : `EXCLUSION_POSSIBLE` (trois absences consécutives), `DELIEMENT_POSSIBLE` (deux
+>   remises consécutives au-delà de 30 % du prix moyen), `PLAFOND_DEPASSE` (complétude au-delà de `B05-PM-04`).
+> - **Notifications** : `REMISE_CONCURRENCE` (chaque titulaire), `REMISE_REPONSE_RECUE` (PRMP), `REMISE_RESULTAT` (PRMP à
+>   l'évaluation, chaque consulté à la décision).
+
 ## Lot MS-3 — Les bons de commande
 
 - **Contrat-cadre** : le **bon de commande réglementaire** est passé avec le titulaire retenu au marché subséquent (décret art. 33),
@@ -261,6 +287,9 @@ Textes lus :
   > ⚠️ **2026-10-15, livré (champ et impression) avec `demande-backend-2026-10-15-formulaire-type-contrat-cadre.md`.**
   > Code `B07-MA-07`. Il s'imprime à l'art. 4 de l'AE-CC, avec les deux clauses de l'art. 23 du décret. L'écart au
   > prix moyen, montré à la remise en concurrence, reste à faire avec MS-2.
+  >
+  > ⚠️ **2026-10-16, MS-2 livré :** l'écart (`ecartPrixMoyen`) est montré pour chaque réponse, à partir du prix moyen **saisi par
+  > la CAO** à l'évaluation. La deuxième remise consécutive au-delà de 30 % lève `DELIEMENT_POSSIBLE`.
 - H1 — La CAO « en collège restreint » est la CAO déjà désignée pour le contrat-cadre, réduite (quorum propre à fixer) ; à
   confirmer par le juriste.
 - H2 — Les titulaires sont les entreprises des offres retenues, avec leurs comptes candidats ; un titulaire sans compte reçoit la
