@@ -130,3 +130,46 @@ celles du plan.
   - « Pièces jointes » (DAO complet, bordereau estimatif, projet d'avis, publication de l'AGPM).
 - Dans la liste des pièces exigées, les trois pièces de B1 s'affichent « fournie par l'application », avec un lien vers leur onglet.
 - Recette sur le dossier 100380 : plus que la publication de l'AGPM à fournir, une fois déposée sur le plan 100379.
+
+## Recette du front, 17/10 (backend be8089c, JAR redémarré)
+
+Dossier **100380** (plan 100379, PV 61 signé), avec le compte PRMP001 :
+- **`GET /api/dossiers/100380`** : `idDossierPlan` 100379 et `idPvPlan` 61.
+- **Pièces exigées** :
+  - `FICHE_PRESENTATION`, `CALENDRIER` et `AGPM_CONTROLE` en `fourniePar: "APPLICATION"`, avec leur lien ;
+  - `PUBLICATION_AGPM` est seule manquante. `AVIS_SPECIFIQUE` et `DAO_COMPLET` sont jointes.
+- **Fiche de présentation** : JSON 200 (cinq sections), PDF 200.
+- **Écran** :
+  - le dossier né d'une fiche s'ouvre sur l'onglet **« Fiche de présentation »** (sections, et « Ouvrir le PDF ») ;
+  - puis **« Fiche DAO »** (les données, celles de l'examen) et **« Plan de passation »** (plan n° 100379, PV 61 signé, « PV de la
+    Commission (PDF) », calendrier annuel, publication de l'AGPM) ;
+  - enfin **« Pièces jointes »**. Les trois pièces y sont cochées « fournies par l'application », avec un bouton « Ouvrir », et
+    une seule reste manquante.
+
+**Trois remarques sur le contenu de la fiche de présentation**, à la main du backend :
+1. **`IMPUTATION`** vaut « 6113 », qui est le **compte** (`B01-AC-17`), et non les lignes d'imputation du plan (`B01-AC-16`,
+   « 00-21-0-B00-00000 ; … », sans montants). C'est l'écart que T1 de la charte des travaux a corrigé sur la garde. Le compte
+   mérite sa propre ligne.
+2. **« Date et heure limites de remise »** est servie deux fois dans `PROCEDURE` : une fois sous la remise, une fois parmi les dates
+   du contrat-cadre (`B04-CP-02`).
+3. **« Dates prévisionnelles du plan »** recopie d'un bloc `B01-AC-18`, soit une trentaine d'étapes. C'est illisible à l'écran comme
+   dans le PDF. Le front propose de n'en garder que les étapes du DAO (établissement, transmission à la CNM, lancement, remise et
+   ouverture des offres), ou de les servir en lignes séparées.
+
+> ⚠️ **2026-10-17, les trois remarques sont corrigées côté backend**, sans autre changement de contrat.
+> 1. **Section `MARCHE`, imputation et compte.** `IMPUTATION` sert les lignes d'imputation du plan (`B01-AC-16`), sans leurs
+>    montants, comme T1 sur la garde. Le compte (`B01-AC-17`) a sa propre ligne, **`COMPTE`**.
+> 2. **Section `PROCEDURE`, date limite.** `B04-CP-02` n'est plus servie parmi les dates du contrat-cadre, puisqu'elle l'est déjà
+>    comme `DATE_LIMITE`. Les dates `B04-CP-01` et `03` à `08` restent.
+> 3. **Les dates prévisionnelles, les deux propositions retenues.** La ligne `DATES_PREVISIONNELLES` est retirée. Une section
+>    nouvelle, **`CALENDRIER_PLAN`** (« Calendrier prévisionnel du plan (étapes du DAO) »), ne garde que les étapes du DAO, une ligne
+>    chacune :
+>    - les codes : `ETABLISSEMENT_DAO`, `TRANSMISSION_DAO`, `LANCEMENT`, `REMISE_OFFRES`, `OUVERTURE_PLIS` ;
+>    - le libellé : celui du plan, coupé à son premier « : » ;
+>    - la période : en jj/mm/aaaa ;
+>    - pour chaque étape, la première du plan qui commence ainsi. « Remise en forme du DAO » n'est pas une remise des offres.
+>
+> Les sections sont désormais `IDENTIFICATION`, `MARCHE`, `PROCEDURE`, `CALENDRIER_PLAN`, `COHERENCE`, `VALIDATION`. Une section
+> sans ligne n'est pas servie : un plan sans calendrier n'a pas de `CALENDRIER_PLAN`.
+
+**Q1 (signature)** : en attente de la réponse du pilote.
