@@ -134,9 +134,22 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
     return this.http.post<FicheMarche>(`${this.baseUrl}/${idDmc}/valider`, null);
   }
 
-  /** `POST /{idDmc}/reviser` — nouvelle version brouillon copiée de la dernière validée. */
-  reviser(idDmc: number): Observable<FicheMarche> {
-    return this.http.post<FicheMarche>(`${this.baseUrl}/${idDmc}/reviser`, null);
+  /**
+   * `POST /{idDmc}/reviser` — nouvelle version brouillon copiée de la dernière validée. ⚠️ 17/10 (demande
+   * « abandonner-revision-repartir-version », B2 ; PRS20 73fbafc) — `depuis` : copiée de la version figée n, au numéro suivant
+   * (404 si n inconnue, 409 `REVISION_OUVERTE`).
+   */
+  reviser(idDmc: number, depuis?: number): Observable<FicheMarche> {
+    const params = depuis == null ? undefined : new HttpParams().set('depuis', depuis);
+    return this.http.post<FicheMarche>(`${this.baseUrl}/${idDmc}/reviser`, null, { params });
+  }
+
+  /**
+   * ⚠️ 17/10 (B1) — `DELETE /{idDmc}/revision` : abandonne le brouillon de révision ; la fiche revient à sa dernière version validée
+   * (rendue). 409 `PAS_DE_REVISION`, `PREMIERE_VERSION`, `MODE_MIGRE`.
+   */
+  abandonnerRevision(idDmc: number): Observable<FicheMarche> {
+    return this.http.delete<FicheMarche>(`${this.baseUrl}/${idDmc}/revision`, { context: skipErrorToast() });
   }
 
   /**

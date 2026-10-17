@@ -733,6 +733,12 @@
                             <button type="button" class="btn btn-sm btn-outline" [attr.aria-expanded]="versionOuverte() === v.version" (click)="ouvrirVersion(v)">
                               {{ versionOuverte() === v.version ? 'Masquer' : 'Documents' }}
                             </button>
+                            <!-- ⚠️ 17/10 (demande « abandonner-revision-repartir-version », B2) — une révision copiée de cette version, au
+                                 numéro suivant : on ne revient jamais en arrière, on crée une version au contenu de l'ancienne. -->
+                            @if (figee() && !enLecture() && v.version !== derniereVersion()) {
+                              <button type="button" class="btn btn-sm btn-outline" [disabled]="saving()" (click)="reviser(undefined, v.version)"
+                                      [attr.aria-label]="'Repartir de la version ' + v.version">Repartir de cette version</button>
+                            }
                           </td>
                         </tr>
                         @if (versionOuverte() === v.version) {
@@ -786,6 +792,10 @@
                      enregistrement : il se corrige par une révision, il ne s'efface pas. -->
                 @if (peutSupprimer()) {
                   <button type="button" class="fm__lien fm__lien--ko" [disabled]="saving()" (click)="confirmSuppression.set(true)">Supprimer cette fiche</button>
+                }
+                <!-- ⚠️ 17/10 (B1) — un brouillon de révision s'abandonne : la fiche revient à sa dernière version validée. -->
+                @if (enRevision() && !enLecture()) {
+                  <button type="button" class="fm__lien fm__lien--ko" [disabled]="saving()" (click)="confirmAbandon.set(true)">Abandonner cette révision</button>
                 }
               </div>
             </section>
@@ -947,6 +957,26 @@
 
 <!-- ⚠️ Suppression d'une fiche sans histoire : la confirmation NOMME ce qu'on s'apprête à perdre — un
      « êtes-vous sûr ? » ne le dit pas. Fermeture par le bouton ou Échap seulement (règle du 13/09). -->
+@if (confirmAbandon()) {
+  <div class="modal-backdrop">
+    <div class="modal confirm-modal" role="alertdialog" aria-modal="true" aria-label="Confirmer l’abandon de la révision" appModale (appModaleFermer)="confirmAbandon.set(false)">
+      <div class="modal-header">
+        <span class="modal-title">Abandonner la révision ?</span>
+        <button type="button" class="btn-close" aria-label="Fermer" [disabled]="saving()" (click)="confirmAbandon.set(false)">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>Le brouillon de la version <b>{{ fiche()?.version }}</b> sera supprimé, avec ce qui y a été modifié.
+          <b>La fiche revient à la version {{ derniereVersion() }}</b>, validée, et à ses documents.</p>
+        <p class="fm__attendus">Aucune version figée n’est touchée : elles restent toutes consultables.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" [disabled]="saving()" (click)="confirmAbandon.set(false)">Annuler</button>
+        <button type="button" class="btn btn-danger" [disabled]="saving()" (click)="abandonnerRevision()">{{ saving() ? 'Abandon…' : 'Abandonner la révision' }}</button>
+      </div>
+    </div>
+  </div>
+}
+
 @if (confirmSuppression()) {
   <div class="modal-backdrop">
     <div class="modal confirm-modal" role="alertdialog" aria-modal="true" aria-label="Confirmer la suppression de la fiche" appModale (appModaleFermer)="confirmSuppression.set(false)">

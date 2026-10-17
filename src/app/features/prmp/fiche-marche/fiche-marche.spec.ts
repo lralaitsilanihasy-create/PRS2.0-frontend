@@ -1307,7 +1307,7 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     ], []);
     fixture.componentInstance.allerA(5);
     rendre();
-    const boutons = Array.from(racine().querySelectorAll('.fm__versions tbody button')) as HTMLButtonElement[];
+    const boutons = Array.from(racine().querySelectorAll('.fm__versions tbody button[aria-expanded]')) as HTMLButtonElement[];
     expect(boutons.length).toBe(2);
 
     boutons[1].click(); // la version 1, précédente
@@ -1319,12 +1319,12 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     expect(texte(bloc)).toContain('Acte d’engagement');
 
     // Un second clic referme, sans relire le serveur.
-    (racine().querySelectorAll('.fm__versions tbody button')[1] as HTMLButtonElement).click();
+    (racine().querySelectorAll('.fm__versions tbody button[aria-expanded]')[1] as HTMLButtonElement).click();
     rendre();
     expect(racine().querySelector('.fm__versions-docs')).toBeNull();
 
     // Une version validée avant le lot 2 n'a pas de documents : on le dit, ce n'est pas une panne.
-    (racine().querySelectorAll('.fm__versions tbody button')[0] as HTMLButtonElement).click();
+    (racine().querySelectorAll('.fm__versions tbody button[aria-expanded]')[0] as HTMLButtonElement).click();
     http.expectOne((r) => r.url === '/api/fiches-marche/42/documents' && r.params.get('version') === '2').flush([]);
     rendre();
     expect(texte(racine().querySelector('.fm__versions-docs'))).toContain('validée avant que la génération n’existe');
@@ -1339,7 +1339,8 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     expect(racine().querySelector('.fm__etape--courante .fm__etape-t')?.textContent).toBe('Validation PRMP');
     // Historique des versions figées (B5), la plus récente en tête, la courante surlignée.
     const lignesV = Array.from(racine().querySelectorAll('.fm__versions tbody tr'));
-    expect(lignesV.map((tr) => cellules(tr))).toEqual(['2 22/09/2026 16:30 PRMP001 130 Documents', '1 10/09/2026 09:00 PRMP001 120 Documents']);
+    // ⚠️ 17/10 (B2) — « Repartir de cette version » sur toute version figée sauf la dernière.
+    expect(lignesV.map((tr) => cellules(tr))).toEqual(['2 22/09/2026 16:30 PRMP001 130 Documents', '1 10/09/2026 09:00 PRMP001 120 Documents Repartir de cette version']);
     expect(lignesV[0].classList.contains('fm__versions--courante')).toBe(true);
     expect(lignesV[1].classList.contains('fm__versions--courante')).toBe(false);
     // Filiation (B2 §1) : la ligne est supprimée dans la version courante du PPM → avertissement, pas de blocage.
@@ -1356,5 +1357,32 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     expect(zone).not.toBeNull(); // redevenu saisissable
     expect(zone.value).toBe(''); // et VIDE : aucune conversion automatique
     expect(texte(racine().querySelector('.fm__aide'))).toBe('Ancienne valeur, non reprise : Mobilier de bureau — à ressaisir.');
+  });
+  it('17/10 — repartir d’une version antérieure (B2) puis abandonner la révision (B1) : la fiche revient à sa dernière version', () => {
+    monter('PRMP', 42);
+    const v = (n: number): VersionFiche => ({ idFiche: n, version: n, statut: 'VALIDEE', typeMarche: 'QUANTITE_FIXE', dateValidation: '2026-10-17T10:00:00', validePar: 'PRMP001', nbValeurs: 79 });
+    ouvrir(REFERENTIEL, fiche({ statut: 'VALIDEE', version: 3 }), [v(1), v(2), v(3)]);
+    const repartir = Array.from(racine().querySelectorAll('button')).filter((b) => texte(b) === 'Repartir de cette version');
+    expect(repartir.map((b) => b.getAttribute('aria-label'))).toEqual(['Repartir de la version 2', 'Repartir de la version 1']);
+    (racine().querySelector('button[aria-label="Repartir de la version 1"]') as HTMLButtonElement).click();
+    const rev = http.expectOne((r) => r.url === '/api/fiches-marche/42/reviser' && r.params.get('depuis') === '1');
+    expect(rev.request.method).toBe('POST');
+    rev.flush(fiche({ statut: 'BROUILLON', version: 4 }));
+    http.expectOne('/api/fiches-marche/42/versions/3').flush(fiche({ statut: 'VALIDEE', version: 3 }));
+    rendre();
+    // Le brouillon de révision s'abandonne depuis l'étape 6, après confirmation.
+    fixture.componentInstance.etape.set(5);
+    rendre();
+    bouton('Abandonner cette révision').click();
+    rendre();
+    expect(texte(racine().querySelector('[role="alertdialog"]'))).toContain('La fiche revient à la version 3');
+    bouton('Abandonner la révision').click();
+    const del = http.expectOne('/api/fiches-marche/42/revision');
+    expect(del.request.method).toBe('DELETE');
+    del.flush(fiche({ statut: 'VALIDEE', version: 3 }));
+    rendre();
+    expect(racine().querySelector('[role="alertdialog"]')).toBeNull();
+    expect(fixture.componentInstance.figee()).toBe(true);
+    expect(Array.from(racine().querySelectorAll('button')).some((b) => texte(b) === 'Abandonner cette révision')).toBe(false);
   });
 });

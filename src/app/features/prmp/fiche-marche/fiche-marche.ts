@@ -1341,11 +1341,39 @@ export class FicheMarcheEcran {
     }
   }
 
-  reviser(apres?: () => void): void {
+  // ── Abandonner une révision, repartir d'une version (17/10, demande « abandonner-revision-repartir-version ») ─────
+  /** Un brouillon de RÉVISION : la fiche a déjà au moins une version validée (le brouillon initial ne s'abandonne pas ainsi). */
+  readonly enRevision = computed(() => !this.figee() && this.versions().length > 0);
+  /** La dernière version figée : « Repartir » d'elle équivaut à la révision ordinaire, il n'est pas proposé. */
+  readonly derniereVersion = computed(() => Math.max(0, ...this.versions().map((v) => v.version)));
+  readonly confirmAbandon = signal(false);
+
+  /** B1 — le brouillon est supprimé ; la fiche revient à sa dernière version validée, que le serveur rend. */
+  abandonnerRevision(): void {
     const id = this.idDmc();
     if (id == null || this.saving()) return;
     this.saving.set(true);
-    this.ficheService.reviser(id).subscribe({
+    this.ficheService.abandonnerRevision(id).subscribe({
+      next: (f) => {
+        this.saving.set(false);
+        this.confirmAbandon.set(false);
+        this.appliquer(f);
+        this.etape.set(5);
+        this.toast.success(`Révision abandonnée : la fiche revient à la version ${f.version}.`);
+      },
+      error: (e: ApiError) => {
+        this.saving.set(false);
+        this.confirmAbandon.set(false);
+        this.toast.error(corpsErreur<{ message?: string }>(e)?.message ?? e.message ?? 'La révision n’a pas pu être abandonnée.');
+      },
+    });
+  }
+
+  reviser(apres?: () => void, depuis?: number): void {
+    const id = this.idDmc();
+    if (id == null || this.saving()) return;
+    this.saving.set(true);
+    this.ficheService.reviser(id, depuis).subscribe({
       next: (f) => {
         this.saving.set(false);
         this.appliquer(f);

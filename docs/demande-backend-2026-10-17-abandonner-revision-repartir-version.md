@@ -94,3 +94,22 @@ Si la version n a un autre mode de remise que la dernière, le mode figé l'empo
   révision ordinaire.
 - Recette sur la fiche 303339 : ouvrir une révision puis l'abandonner (la fiche reste en v5, validée) ; repartir de la v1, qui
   donnera une v6 au contenu de la v1, puis valider.
+
+## Recette du front, 17/10 (backend 73fbafc, JAR redémarré)
+
+Fiche 303339 (DMC 1), au départ en v5 validée, sans changer son état final :
+- `POST …/reviser?depuis=1` : 200, brouillon **v6**, **aucun écart** de valeurs avec la v1. Les prescriptions générales de la v4 et
+  de la v5 sont absentes, comme en v1 ;
+- une seconde révision est refusée (409 `BROUILLON_EN_COURS`) ;
+- `DELETE …/revision` : 200, la fiche revient en **v5 validée**. Les prescriptions générales y sont, et les versions restent 1 à 5 ;
+- un second abandon est refusé (409 `PAS_DE_REVISION`).
+
+**Front** :
+- service `reviser(id, depuis?)` et `abandonnerRevision(id)` ;
+- à l'étape 6, sur la liste des versions figées : « Repartir de cette version » sur chaque ligne sauf la dernière (vérifié à
+  l'écran sur les versions 1 à 4) ;
+- sur un brouillon de révision : « Abandonner cette révision », avec une confirmation qui dit « la fiche revient à la version n » ;
+- un refus du serveur s'affiche avec son message (`MODE_MIGRE`, `PAS_DE_REVISION`).
+
+1 320 tests verts, lint propre. Le front ne tient pas de liste de libellés du journal : rien à ajouter pour
+`FICHE_REVISION_OUVERTE` et `FICHE_REVISION_ABANDONNEE`.
