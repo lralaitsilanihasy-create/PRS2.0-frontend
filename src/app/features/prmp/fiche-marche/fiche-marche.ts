@@ -1369,6 +1369,12 @@ export class FicheMarcheEcran {
     });
   }
 
+  /** ⚠️ 17/10 (pilote) — ouvrir une révision depuis un bloc figé, et y rester (la révision ramène sinon au premier bloc). */
+  modifierIci(): void {
+    const idx = this.blocIdx();
+    this.reviser(() => this.blocIdx.set(idx));
+  }
+
   reviser(apres?: () => void, depuis?: number): void {
     const id = this.idDmc();
     if (id == null || this.saving()) return;

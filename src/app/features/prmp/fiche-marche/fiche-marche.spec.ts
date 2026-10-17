@@ -1385,4 +1385,20 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     expect(fixture.componentInstance.figee()).toBe(true);
     expect(Array.from(racine().querySelectorAll('button')).some((b) => texte(b) === 'Abandonner cette révision')).toBe(false);
   });
+  it('17/10 — sur un bloc d’une fiche figée, « Modifier — ouvrir une nouvelle version » ouvre la révision et reste sur ce bloc', () => {
+    monter('PRMP', 42);
+    const v2: VersionFiche = { idFiche: 2, version: 2, statut: 'VALIDEE', typeMarche: 'QUANTITE_FIXE', dateValidation: '2026-10-17T10:00:00', validePar: 'PRMP001', nbValeurs: 79 };
+    ouvrir(REFERENTIEL, fiche({ statut: 'VALIDEE', version: 2 }), [v2]);
+    fixture.componentInstance.etape.set(2);
+    fixture.componentInstance.blocIdx.set(1);
+    rendre();
+    expect(texte(racine())).toContain('Fiche figée : lecture seule');
+    bouton('Modifier — ouvrir une nouvelle version').click();
+    http.expectOne('/api/fiches-marche/42/reviser').flush(fiche({ statut: 'BROUILLON', version: 3 }));
+    http.expectOne('/api/fiches-marche/42/versions/2').flush(fiche({ statut: 'VALIDEE', version: 2 }));
+    rendre();
+    expect(fixture.componentInstance.figee()).toBe(false);
+    expect(fixture.componentInstance.etape()).toBe(2);
+    expect(fixture.componentInstance.blocIdx()).toBe(1);
+  });
 });

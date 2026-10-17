@@ -601,6 +601,10 @@
                   @if (enLecture() || figee() || ecritureBloquee()) {
                     <button type="button" class="btn btn-primary" (click)="blocSuivant()">{{ blocIdx() < blocs().length - 1 ? 'Bloc suivant ›' : 'Voir les reprises ›' }}</button>
                     <span class="fm__aut">{{ enLecture() ? 'Lecture seule : la fiche appartient à la PRMP qui l’a établie.' : figee() ? 'Fiche figée : lecture seule' : ecritureBloquee() ? 'Rien ne peut être enregistré ici.' : '' }}</span>
+                    <!-- ⚠️ 17/10 (pilote) — la révision s'ouvre là où l'on constate le blocage, et l'on reste sur ce bloc. -->
+                    @if (figee() && !enLecture()) {
+                      <button type="button" class="btn btn-outline" [disabled]="saving()" (click)="modifierIci()">Modifier — ouvrir une nouvelle version</button>
+                    }
                   } @else {
                     <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="enregistrerBloc()">
                       {{ saving() ? 'Enregistrement…' : blocIdx() < blocs().length - 1 ? 'Enregistrer et continuer ›' : 'Enregistrer et voir les reprises ›' }}
@@ -880,7 +884,11 @@
                   <p class="fm__attendus">Le dossier à soumettre se crée depuis une fiche <strong>validée</strong> : terminez l'étape 6 d'abord.</p>
                 } @else if (estPrmp()) {
                   <p>Créer le dossier reprend l'entité contractante, la localité et la PRMP de la ligne du plan de passation : rien à ressaisir. Il naîtra en brouillon, dans « Mes brouillons ».</p>
-                  @if (!enLecture()) { <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="creerDossier()">{{ saving() ? 'Création…' : 'Créer le dossier à soumettre' }}</button> }
+                  @if (!enLecture()) {
+                    <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="creerDossier()">{{ saving() ? 'Création…' : 'Créer le dossier à soumettre' }}</button>
+                    <!-- ⚠️ 17/10 (pilote) — corriger la fiche avant de créer le dossier, sans repasser par l'étape 6. -->
+                    <button type="button" class="btn btn-outline" [disabled]="saving()" (click)="reviser()">Modifier la fiche — ouvrir une nouvelle version</button>
+                  }
                 } @else {
                   <p>La <strong>PRMP</strong> crée le dossier à soumettre depuis cette fiche, puis y joint les pièces restantes.</p>
                 }
