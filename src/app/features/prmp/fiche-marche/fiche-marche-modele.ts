@@ -54,6 +54,7 @@ export const LIBELLES_PIECES: Readonly<Record<PieceProduite, string>> = {
   LETTRE_INVITATION: 'Lettre d’invitation',
   BORDEREAU_ESTIMATIF: 'Bordereau des prix estimatifs (non publié)',
   DQE_ESTIMATIF: 'Devis quantitatif et estimatif (non publié)',
+  DESCRIPTIF_PLANS: 'Descriptif technique et plans des travaux',
 };
 
 /** L'ordre de lecture d'une liste de pièces : le dossier d'abord, ses annexes ensuite. */

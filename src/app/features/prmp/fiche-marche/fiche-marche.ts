@@ -759,6 +759,16 @@ export class FicheMarcheEcran {
     return [...bloc.rubriques].sort((a, b) => a.rang - b.rang).filter((r) => rubriqueOuverte(this.referentiel().champs, bloc.code, r, cadrage));
   }
 
+  /**
+   * ⚠️ 17/10 (demande specifications-donnees-et-plans-pdf, A1) — les rubriques déroulées sous un bloc. Un bloc à rendu déclaré
+   * (le besoin B12) ne déroulait aucune rubrique (recette du 26/09 : sa rubrique sans champ contredisait la grille) ; il déroule
+   * désormais celles qui portent des champs, comme « Prescriptions générales » (`B12-BE-01`).
+   */
+  rubriquesAffichees(bloc: BlocFiche): RubriqueFiche[] {
+    const ouvertes = this.rubriquesOuvertes(bloc);
+    return this.rendu(bloc) ? ouvertes.filter((r) => this.champs(bloc, r).length > 0) : ouvertes;
+  }
+
   champs(bloc: BlocFiche, rubrique: RubriqueFiche): ChampFiche[] {
     return champsDeRubrique(this.referentiel().champs, bloc.code, rubrique.code, this.cadrageEffectif());
   }
@@ -1025,15 +1035,24 @@ export class FicheMarcheEcran {
     if (id == null || !bloc || this.saving()) return;
     // ⚠️ 03/10 — un bloc à liste n'a pas de champs : « Enregistrer et continuer » enregistre SA LISTE, puis avance.
     const liste = bloc.rendu ? this.listeCourante() : null;
+    // ⚠️ 17/10 — un bloc à liste qui porte AUSSI des champs (B12 : le besoin et « Prescriptions générales ») : la liste d'abord,
+    // puis ses champs, par la même écriture que les autres blocs.
+    const aChamps = this.rubriquesAffichees(bloc).length > 0;
     if (liste) {
       void liste.sauver().then((ok) => {
         if (!ok) return;
+        if (aChamps) { this.ecrireChampsDuBloc(id, bloc, vers); return; }
         if (vers != null) this.blocIdx.set(vers);
         else if (this.blocIdx() < this.blocs().length - 1) this.blocIdx.update((i) => i + 1);
         else this.etape.set(3);
       });
       return;
     }
+    this.ecrireChampsDuBloc(id, bloc, vers);
+  }
+
+  /** L'écriture des champs d'un bloc (`PUT …/blocs/{bloc}`), puis le passage au bloc visé, au suivant, ou aux reprises. */
+  private ecrireChampsDuBloc(id: number, bloc: BlocFiche, vers?: number): void {
     const champs = new Map(this.referentiel().champs.filter((c) => c.bloc === bloc.code && c.source === 'SAISIE').map((c) => [c.code, c]));
     const valeurs: Record<string, Valeur> = {};
     // ⚠️ V43 — une clé peut porter le rang du lot (`B05-TP-02#2`) : c'est le code NU qui dit à quel bloc elle appartient.
@@ -1361,7 +1380,7 @@ export class FicheMarcheEcran {
 
   /** Le sigle court d'un document (badge de l'étape Documents) : « BORDEREAU_ESTIMATIF » s'affichait en toutes lettres (17/10). */
   sigleDocument(type: string): string {
-    return ({ DAO_COMPLET: 'DAO', BORDEREAU_ESTIMATIF: 'BE', DQE_ESTIMATIF: 'DQE', LETTRE_INVITATION: 'LI', AVIS_PROJET: 'AVIS', LETTRE_PROJET: 'LI' } as Record<string, string>)[type] ?? type;
+    return ({ DAO_COMPLET: 'DAO', BORDEREAU_ESTIMATIF: 'BE', DQE_ESTIMATIF: 'DQE', DESCRIPTIF_PLANS: 'DP', LETTRE_INVITATION: 'LI', AVIS_PROJET: 'AVIS', LETTRE_PROJET: 'LI' } as Record<string, string>)[type] ?? type;
   }
 
   montant(v: number | null | undefined): string {

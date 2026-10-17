@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
 
 import { ApiError, codeErreur } from '../../../core/errors/api-error';
-import { TYPES_DOCX, telechargerBlob, validerFichier } from '../../../core/securite/fichiers-surs';
+import { TYPES_PDF, ouvrirBlobSur, validerFichier } from '../../../core/securite/fichiers-surs';
 import { SpecificationsTechniques } from '../../../models';
 import { FicheMarcheService } from '../../../services/fiche-marche.services';
 
@@ -10,28 +10,31 @@ function motif(e: unknown): string {
   const api = e as Partial<ApiError> & { status?: number };
   switch (codeErreur(api as ApiError)) {
     case 'FORMAT_INVALIDE':
-      return 'Ce fichier n’est pas un document Word (.docx) sans macros.';
+      return 'Ce fichier n’est pas un PDF lisible (un Word s’exporte en PDF).';
     case 'FICHIER_ABSENT':
-      return 'Choisissez le fichier Word des spécifications.';
+      return 'Choisissez le PDF du devis descriptif et des plans.';
     case 'FICHE_VALIDEE':
-      return 'Cette version de la fiche est validée : ouvrez une révision pour changer les spécifications.';
+      return 'Cette version de la fiche est validée : ouvrez une révision pour changer le devis descriptif et les plans.';
+    case 'SPECIFICATIONS_HORS_PERIMETRE':
+      return 'Seule une fiche de travaux reçoit un devis descriptif et des plans : en fournitures, les spécifications sont les articles du besoin.';
   }
-  if (api.status === 413) return 'Le fichier dépasse 20 Mo.';
+  if (api.status === 413) return 'Le fichier dépasse 50 Mo.';
   return api.message || 'Les spécifications n’ont pas pu être enregistrées.';
 }
 
 /**
- * ⚠️ V73 (06/10) — les **spécifications techniques** de la fiche (devis descriptif, prescriptions techniques, plans) : un **Word**
- * déposé par la PRMP ou l'UGPM, inséré dans le DAO complet entre le CCAP et le CCAG. Figé à la validation, recopié à la révision.
- * Sans fichier, le contrôle avertit (`SPECIFICATIONS_ABSENTES`, non bloquant ; muet en prestations intellectuelles).
+ * ⚠️ V73 (06/10), refondu le 17/10 (demande specifications-donnees-et-plans-pdf, B1-B2 ; PRS20 7a399ee, V129) — le **devis descriptif
+ * et les plans** d'une fiche de **travaux** : un seul **PDF** (50 Mo au plus ; un Word est refusé, il s'exporte en PDF), déposé par la
+ * PRMP ou l'UGPM. À la validation, il devient le document `DESCRIPTIF_PLANS` de la version : à part du DAO complet, qui le cite,
+ * remis aux candidats au retrait et joint d'office au dossier. En fournitures, plus de dépôt : les spécifications sont le besoin (B12).
  */
 @Component({
   selector: 'app-fiche-specifications',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="sp" aria-labelledby="sp-titre">
-      <h3 id="sp-titre" class="sp__titre">Spécifications techniques <span class="sp__clause">DAO complet, entre le CCAP et le CCAG</span></h3>
-      <p class="sp__aide">Le devis descriptif, les prescriptions techniques, les plans : un document Word (.docx, 20 Mo au plus), inséré tel quel dans le dossier d’appel d’offres complet.</p>
+      <h3 id="sp-titre" class="sp__titre">Devis descriptif et plans <span class="sp__clause">document annexé au DAO, en PDF</span></h3>
+      <p class="sp__aide">Le devis descriptif et les plans, assemblés en un seul PDF (50 Mo au plus). Le DAO complet le cite ; les candidats le reçoivent avec lui, et il est joint d’office au dossier comme « Descriptif technique et plans des travaux ».</p>
       @if (chargement()) {
         <p class="sp__aide" role="status">Chargement…</p>
       } @else {
@@ -39,17 +42,17 @@ function motif(e: unknown): string {
           <p class="sp__fichier">
             <strong>{{ s.nomFichier }}</strong>
             <span class="sp__meta">{{ poids(s.taille) }}@if (s.deposeLe) { · déposé le {{ date(s.deposeLe) }} }</span>
-            <button type="button" class="btn btn-sm btn-outline" [disabled]="occupe()" (click)="telecharger(s)">Enregistrer</button>
+            <button type="button" class="btn btn-sm btn-outline" [disabled]="occupe()" (click)="ouvrir()">Ouvrir le PDF</button>
           </p>
         } @else {
-          <p class="sp__absent" role="status">Aucun fichier : le DAO complet n’aura pas de partie « Spécifications techniques ».</p>
+          <p class="sp__absent" role="status">Aucun PDF : la pièce « Descriptif technique et plans des travaux » manquera au dossier.</p>
         }
         @if (erreur(); as e) { <p class="form-error" role="alert">{{ e }}</p> }
         @if (!lecture()) {
           <div class="sp__actions">
             <label class="sp__choix">
-              <span class="cnm-sr-only">Fichier Word des spécifications techniques</span>
-              <input type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" [disabled]="occupe()" (change)="deposer($event)" />
+              <span class="cnm-sr-only">PDF du devis descriptif et des plans</span>
+              <input type="file" accept=".pdf,application/pdf" [disabled]="occupe()" (change)="deposer($event)" />
             </label>
             @if (actuel()) {
               <button type="button" class="btn btn-sm btn-outline sp__retirer" [disabled]="occupe()" (click)="retirer()">Retirer</button>
@@ -104,7 +107,7 @@ export class FicheSpecifications {
     const champ = ev.target as HTMLInputElement;
     const f = champ.files?.[0];
     if (!f) return;
-    const refus = validerFichier(f, TYPES_DOCX, 20);
+    const refus = validerFichier(f, TYPES_PDF, 50);
     if (refus) {
       this.erreur.set(refus);
       champ.value = '';
@@ -141,11 +144,12 @@ export class FicheSpecifications {
     });
   }
 
-  telecharger(s: SpecificationsTechniques): void {
+  /** Le PDF s’ouvre dans un onglet, par le socle des fichiers sûrs (jamais un lien blob brut). */
+  ouvrir(): void {
     this.occupe.set(true);
     this.fiches.specificationsFichier(this.idDmc()).subscribe({
       next: (b) => {
-        telechargerBlob(b, s.nomFichier);
+        ouvrirBlobSur(b);
         this.occupe.set(false);
       },
       error: () => this.occupe.set(false),

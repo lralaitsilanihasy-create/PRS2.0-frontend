@@ -25,7 +25,9 @@ export type DocumentDao = 'DPAO' | 'DPAC' | 'DPIC' | 'AE' | 'CCAP' | 'AUCUN';
 /** ⚠️ V73 (06/10) — `DAO_COMPLET` : le dossier d'appel d'offres en un seul document (Word et PDF), qui remplace les pièces séparées. */
 export type PieceProduite = DocumentDao | 'DAO_COMPLET' | 'LF' | 'BP' | 'TC' | 'A1' | 'A2' | 'A3' | 'A4' | 'C1' | 'C2' | 'AVIS' | 'LETTRE_INVITATION'
   // ⚠️ Q11 (V117, 14/10) — produits à la validation, un PDF par lot, jamais publiés ni servis aux candidats.
-  | 'BORDEREAU_ESTIMATIF' | 'DQE_ESTIMATIF';
+  | 'BORDEREAU_ESTIMATIF' | 'DQE_ESTIMATIF'
+  // ⚠️ 17/10 (V129) — travaux : le devis descriptif et les plans (PDF déposé sur la fiche), annexé au DAO, remis au retrait.
+  | 'DESCRIPTIF_PLANS';
 export type SourceChamp = 'PPM' | 'SAISIE' | 'CADRAGE';
 /**
  * ⚠️ Lot 5 (24/09) — la **catégorie** de dossier d'appel d'offres, second axe du référentiel. Elle se déduit de la

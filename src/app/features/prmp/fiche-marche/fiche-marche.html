@@ -452,7 +452,7 @@
                 <!-- ⚠️ Recette du 26/09 — un bloc à rendu déclaré ne déroule PAS ses rubriques : la rubrique
                      du besoin n'a aucun champ, et son état vide (« référentiel à compléter ») contredisait
                      la grille juste au-dessus. C'est le rendu qui tient le bloc, pas les deux à la fois. -->
-                @for (r of rendu(bloc) ? [] : rubriquesOuvertes(bloc); track r.code) {
+                @for (r of rubriquesAffichees(bloc); track r.code) {
                   <div class="fm__rub">
                     <h3>
                       {{ r.libelle }}
