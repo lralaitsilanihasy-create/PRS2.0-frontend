@@ -42,6 +42,21 @@ Pour un dossier `DMC` qui porte une fiche **validée** (`ID_DMC`), **quel que so
   - la fiche de présentation, avec la route de B2.
 - **Un dossier DAO créé à la main**, sans fiche, garde la règle actuelle : rien ne prouve alors les données.
 
+> ⚠️ **2026-10-17, livré côté backend (B1)**, avec trois précisions.
+> - **La cause** : depuis R8 (13/10), « en ligne » se lit au mode de remise. Le dossier 100380, en papier, se voyait donc redemander
+>   des pièces que R2 et V115 avaient retirées aux dossiers nés d'une fiche.
+> - **Les champs** : `fourniePar: "APPLICATION"`, `lien` (la route qui rend la pièce), `idDossierPlan`, `idPvPlan` :
+>   - `FICHE_PRESENTATION` : toujours, `lien` = `/api/dossiers/{id}/fiche-presentation` ;
+>   - `CALENDRIER` : si le plan de la ligne est dans l'application, `lien` = `/api/dossiers/{id}/calendrier-annuel`, avec
+>     `idDossierPlan` ;
+>   - `AGPM_CONTROLE`, et aussi `PPM_CONTROLE` (même pièce, « AGPM ou PPM ») : si le PV d'examen du plan est **signé**, `lien` =
+>     `/api/pv-examens/{idPv}/document`, avec `idDossierPlan` et `idPvPlan`.
+> - **L'affichage** : la pièce fournie reste listée, `obligatoire` inchangé. Elle apparaît désormais **aussi en remise
+>   électronique**, où la condition `PAPIER` la masquait : l'écran la montre « fournie par l'application » dans les deux modes.
+> - **Les contrôles** : ni la soumission, ni les défauts de la recevabilité, ni la garde de la réception ne la comptent manquante.
+> - **Le cas réel** : le plan 100379 porte le PV 61, signé. Le dossier 100380 n'aura donc plus que la publication de l'AGPM à
+>   fournir.
+
 ## B2 — La fiche de présentation d'un dossier DAO
 
 Le dossier de planification a sa fiche de présentation, produite des données et affichée en onglet (`FichePresentationDoc`).
@@ -56,11 +71,34 @@ Demande : la même chose pour un dossier DAO né d'une fiche, en données (lectu
 
 Le backend ajuste ce contenu au modèle de fiche de présentation du manuel, s'il en existe un pour les DAO.
 
+> ⚠️ **2026-10-17, livré côté backend (B2, Q2)** : `GET /api/dossiers/{id}/fiche-presentation` (JSON) et `…/fiche-presentation/pdf`.
+> - **Garde et refus** : la garde de lecture du dossier ; 409 `FICHE_PRESENTATION_INDISPONIBLE` sans fiche validée.
+> - **La forme** : `{ idDossier, idDmc, versionFiche, sections: [{ code, titre, lignes: [{ code, libelle, valeur }] }] }`, en
+>   sections de lignes « libellé : valeur » aux codes stables. Une ligne sans valeur n'est pas servie.
+> - **Le modèle** : le manuel n'annexe de modèle de fiche que pour le plan. Pour le DAO (pages 18 et 23 à 25), il dit ce que la
+>   Commission y vérifie. Le contenu proposé est donc gardé, et complété de ces points :
+>   - la **garantie de soumission** (exigée, forme, montant, validité) ;
+>   - le **délai de validité des offres** ;
+>   - les **date, heure et lieu de remise** et de l'**ouverture des plis** ;
+>   - une section **`COHERENCE`** : lancement prévu au plan, disponibilité du DAO, et **retard** éventuel, que le manuel demande de
+>     relever.
+> - **Les codes de champs** de la demande n'existent pas sous ces noms : le numéro du DAO est `B02-OB-03`, et `B04-CP-01` à `08`
+>   ne valent qu'au contrat-cadre. Chaque ligne prend le premier champ qui vaut pour la catégorie et la forme de la fiche, car les
+>   codes diffèrent entre fournitures, travaux et prestations intellectuelles.
+> - **Les sections** : `IDENTIFICATION`, `MARCHE`, `PROCEDURE`, `COHERENCE`, `VALIDATION`. Le détail des codes de ligne est dans
+>   `PRS20/docs/api-endpoints.md`.
+
 ## B3 — De quoi faire un onglet « Plan de passation »
 
 Le dossier DAO (`GET /api/dossiers/{id}`) dit **quel plan** porte sa ligne (dossier 100379) et **quel PV** l'a contrôlé. L'écran
 présentera la ligne du plan dans un onglet, avec un lien vers le plan et son PV. Il ne crée aucune nouvelle donnée : il reprend
 celles du plan.
+
+> ⚠️ **2026-10-17, livré côté backend (B3)** : `GET /api/dossiers/{id}` gagne `idDossierPlan` et `idPvPlan`, sur la lecture unitaire
+> d'un dossier né d'une fiche ; ils sont absents sinon.
+> - `idDossierPlan` : le plan qui porte la ligne en vigueur, celle d'une mise à jour s'il y en a une.
+> - `idPvPlan` : le PV **signé** de son examen ; il est absent tant qu'aucun PV n'est signé.
+> - Le PV se lit par `GET /api/pv-examens/{idPv}/document`.
 
 ## Questions
 
@@ -72,6 +110,15 @@ celles du plan.
 - **Q2** : le contenu de la fiche de présentation (B2).
 - **Q3** : faut-il appliquer la même règle aux autres sous-types nés d'une fiche (`DAOOI`, `DAOR`, `DAORI`, `DC`…), qui exigent les
   mêmes pièces ? Le front le propose.
+
+> ⚠️ **2026-10-17, réponses du backend.**
+> - **Q1, livrée comme hypothèse, à confirmer par le pilote.** L'équivalence proposée est appliquée : la validation nominative de
+>   la fiche par la PRMP, et le PV signé dans l'application. C'est le principe déjà arbitré pour la procédure en ligne : la
+>   validation tracée vaut signature (R2, V102, Q2/Q14 du 10/10 ; V115 pour le calendrier). S'il la refuse, la règle se retire
+>   sans migration.
+> - **Q2 :** voir l'encadré de B2.
+> - **Q3, oui.** La règle tient à la fiche validée du dossier, pas au sous-type. Elle vaut pour tout sous-type qui exige ces
+>   pièces : `DAOOI`, `DAOR`, `DAORI`, `DC`, etc.
 
 ## Ce que le front fera, dès la livraison
 
