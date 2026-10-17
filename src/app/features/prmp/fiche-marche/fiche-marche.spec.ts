@@ -1252,15 +1252,17 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     expect(texte(lignes[0])).toContain('Données particulières de l’appel d’offres');
     expect(texte(lignes[1])).toContain('CCAP');
     expect(texte(lignes[0])).toContain('303 ko'); // le PDF
-    expect(texte(lignes[0])).toContain('234 ko'); // le .docx
+    // ⚠️ 17/10 (arbitrage du pilote) — une pièce qui a son PDF ne propose plus son Word.
+    expect(texte(lignes[0])).not.toContain('234 ko');
     // ⚠️ Correctif du 26/09 — un .docx ne s'AFFICHE pas : le socle force un type inerte (`blobSur`), l'onglet
     // ouvert montrerait un PDF illisible. Seul le PDF s'ouvre ; le document modifiable s'enregistre.
-    expect(Array.from(lignes[0].querySelectorAll('button')).map((b) => texte(b)))
-      .toEqual(['Ouvrir le PDF', 'Enregistrer PDF · 303 ko', 'Enregistrer Word · 234 ko']);
+    // ⚠️ 17/10 — « Ouvrir le PDF » seul : ni « Enregistrer PDF » (le lecteur le fait), ni le Word (la fiche est la seule source).
+    expect(Array.from(lignes[0].querySelectorAll('button')).map((b) => texte(b))).toEqual(['Ouvrir le PDF · 303 ko']);
+    // Une pièce SANS PDF garde son enregistrement : sinon elle serait inaccessible.
     expect(Array.from(lignes[1].querySelectorAll('button')).map((b) => texte(b))).toEqual(['Enregistrer Word · 1 ko']);
 
-    bouton('Enregistrer Word · 234 ko').click();
-    const get = http.expectOne('/api/fiches-marche/documents/11/contenu');
+    bouton('Enregistrer Word · 1 ko').click();
+    const get = http.expectOne('/api/fiches-marche/documents/12/contenu');
     expect(get.request.method).toBe('GET');
     expect(get.request.responseType).toBe('blob');
     get.flush(new Blob(['x'], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }));

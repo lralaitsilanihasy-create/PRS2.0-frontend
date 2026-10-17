@@ -165,6 +165,18 @@ export class FicheMarcheEcran {
   ouvrable(piece: DocumentFiche): boolean {
     return pieceOuvrable(piece);
   }
+  /** ⚠️ 17/10 (arbitrage du pilote) — le PDF d'une pièce, s'il existe : c'est le seul fichier proposé (« Ouvrir le PDF »). */
+  pdfDe(fichiers: readonly DocumentFiche[]): DocumentFiche | null {
+    return fichiers.find((f) => pieceOuvrable(f)) ?? null;
+  }
+  /**
+   * ⚠️ 17/10 — la liste d'une version, sans le Word d'une pièce qui a son PDF (même type, même lot) : le Word ne s'offre plus
+   * à la PRMP. Un document sans PDF (classeur d'une version ancienne) reste listé.
+   */
+  documentsVisibles(docs: readonly DocumentFiche[]): DocumentFiche[] {
+    const avecPdf = new Set(docs.filter((d) => pieceOuvrable(d)).map((d) => `${d.type}#${d.lot ?? ''}`));
+    return docs.filter((d) => pieceOuvrable(d) || !avecPdf.has(`${d.type}#${d.lot ?? ''}`));
+  }
   readonly libellesTypes = LIBELLES_TYPES_MARCHE;
   readonly libellesCategories = LIBELLES_CATEGORIES;
 
@@ -543,7 +555,11 @@ export class FicheMarcheEcran {
     return extraitsGabarit(champ, this.valeurAffichee(champ, this.lotsDe(champ)[0]));
   }
   /** « DPAC · AE », « DPAO · AE · CCAP »… pour le rail ; vide si le référentiel n'est pas encore là. */
-  readonly documentsCourt = computed(() => this.documentsDeLaFiche().join(' · '));
+  // ⚠️ 17/10 — une version validée dit ce qu'elle a PRODUIT (« DAO · BE ») ; avant, les documents qui composeront le DAO.
+  readonly documentsCourt = computed(() => {
+    const produits = [...new Set(this.groupesPieces().flatMap((g) => g.pieces.map((p) => this.sigleDocument(p.type))))];
+    return (produits.length ? produits : this.documentsDeLaFiche()).join(' · ');
+  });
   /** « le DPAC et l'acte d'engagement », en toutes lettres. */
   readonly documentsEnToutesLettres = computed(() => {
     const noms = this.documentsDeLaFiche().map((d) => NOMS_DOCUMENTS[d]);

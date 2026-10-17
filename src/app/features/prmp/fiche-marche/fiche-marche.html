@@ -740,18 +740,20 @@
                             <td colspan="5">
                               @if (documentsVersion().length) {
                                 <ul class="fm__docs">
-                                  @for (d of documentsVersion(); track d.idDocument) {
+                                  @for (d of documentsVisibles(documentsVersion()); track d.idDocument) {
                                     <li>
-                                      <span class="fm__doc fm__doc--{{ d.type.toLowerCase() }}">{{ d.type }}</span>
+                                      <span class="fm__doc fm__doc--{{ d.type.toLowerCase() }}">{{ sigleDocument(d.type) }}</span>
                                       <span class="fm__docs-n">
                                         {{ libellePiece(d) }}@if (d.lot) { <span class="fm__docs-l">lot {{ d.lot }}</span> }
                                         <span class="fm__docs-f cnm-mono">{{ d.nomFichier }}</span>
                                       </span>
                                       @if (poids(d.tailleOctets); as p) { <span class="fm__docs-p">{{ p }}</span> }
+                                      <!-- ⚠️ 17/10 — même règle qu'à l'étape 7 : un PDF s'ouvre, seul ce qui n'en a pas s'enregistre. -->
                                       @if (ouvrable(d)) {
-                                      <button type="button" class="btn btn-sm btn-outline" [disabled]="saving()" (click)="obtenirDocument(d, true)">Ouvrir</button>
-                                      }
+                                      <button type="button" class="btn btn-sm btn-outline" [disabled]="saving()" (click)="obtenirDocument(d, true)">Ouvrir le PDF</button>
+                                      } @else {
                                       <button type="button" class="btn btn-sm btn-outline" [disabled]="saving()" (click)="obtenirDocument(d, false)">Enregistrer</button>
+                                      }
                                     </li>
                                   }
                                 </ul>
@@ -811,18 +813,24 @@
                             {{ libellePiece(p) }}
                             <span class="fm__docs-f cnm-mono">{{ p.fichiers[0].nomFichier }}</span>
                           </span>
-                          <!-- ⚠️ Une pièce, DEUX fichiers : le .docx se retouche, le PDF est celui qui est joint au
-                               dossier. Les apparier tient l'étape lisible — 86 fichiers pour 43 pièces au dossier
-                               réel. Un .docx ou un classeur ne s'affiche pas dans un onglet : seul le PDF s'ouvre. -->
-                          @for (f of p.fichiers; track f.idDocument) {
+                          <!-- ⚠️ 17/10 (arbitrage du pilote) — une pièce qui a son PDF ne propose que « Ouvrir le PDF » : ni
+                               « Enregistrer », redondant avec le lecteur PDF, ni le Word, qui inviterait à retoucher le DAO hors de la
+                               fiche (la fiche est la seule source ; les candidats reçoivent le Word au retrait). Une pièce SANS PDF (les
+                               classeurs d'une version ancienne) garde son « Enregistrer » : sinon elle serait inaccessible. -->
+                          @if (pdfDe(p.fichiers); as f) {
                             <span class="fm__docs-fmt">
-                              @if (ouvrable(f)) {
-                                <button type="button" class="btn btn-sm btn-outline" [disabled]="saving()" (click)="obtenirDocument(f, true)">Ouvrir le {{ format(f) }}</button>
-                              }
-                              <button type="button" class="btn btn-sm btn-outline" [disabled]="saving()" (click)="obtenirDocument(f, false)">
-                                Enregistrer <span class="fm__docs-x">{{ format(f) }}</span>@if (poids(f.tailleOctets); as t) { <span class="fm__docs-p">&nbsp;· {{ t }}</span> }
+                              <button type="button" class="btn btn-sm btn-outline" [disabled]="saving()" (click)="obtenirDocument(f, true)">
+                                Ouvrir le PDF@if (poids(f.tailleOctets); as t) { <span class="fm__docs-p">&nbsp;· {{ t }}</span> }
                               </button>
                             </span>
+                          } @else {
+                            @for (f of p.fichiers; track f.idDocument) {
+                              <span class="fm__docs-fmt">
+                                <button type="button" class="btn btn-sm btn-outline" [disabled]="saving()" (click)="obtenirDocument(f, false)">
+                                  Enregistrer <span class="fm__docs-x">{{ format(f) }}</span>@if (poids(f.tailleOctets); as t) { <span class="fm__docs-p">&nbsp;· {{ t }}</span> }
+                                </button>
+                              </span>
+                            }
                           }
                         </li>
                       }
