@@ -26,6 +26,33 @@ const MODELES = path.resolve(ICI, '../modeles-dao/modeles');
 export const norm = (s) => s.normalize('NFKC').replace(/[’ʼ‘`]/g, "'").replace(/[‐‑‒–—]/g, '-').replace(/[«»]/g, '"')
   .replace(/\u00A0|\u202F/g, ' ').replace(/\s+/g, ' ').trim();
 const JETON = /\{\{([^{}]+)}}/g;
+
+/** Règle 10 — la clé de comparaison d'un paragraphe court : normalisé, en minuscules, sans ponctuation finale. */
+const cleCourte = (t) => norm(t).toLowerCase().replace(/[\s.;:,!]+$/u, '');
+
+/**
+ * ⚠️ 17/10 (règle 10, parité de `LectureDao.encadrees`) — les sections attestées par encadrement. `distinctif(u)` : la règle 7 ;
+ * `trouves` : unité → paragraphe du document ; `dejaVues` : les sections déjà attestées.
+ */
+export function encadrees(us, distinctif, trouves, doc, dejaVues) {
+  const parSection = new Map();
+  us.forEach((u, k) => u.sections.forEach((s) => { if (!parSection.has(s)) parSection.set(s, []); parSection.get(s).push(k); }));
+  const out = new Set();
+  for (const [s, ks] of parSection) {
+    if (dejaVues.has(s) || !ks.length) continue;
+    const k1 = ks[0], km = ks.at(-1);
+    const courte = km - k1 + 1 === ks.length
+      && ks.every((k) => !us[k].texte.includes('{{') && !distinctif(us[k]) && cleCourte(us[k].texte) !== '');
+    if (!courte) continue;
+    let avant = -1; for (let k = k1 - 1; k >= 0 && avant < 0; k--) if (trouves.has(k)) avant = k;
+    let apres = -1; for (let k = km + 1; k < us.length && apres < 0; k++) if (trouves.has(k)) apres = k;
+    if (avant < 0 || apres < 0) continue;
+    // Entre les deux, les paragraphes du document ; un reste de ponctuation (« Sans objet » / « . » redécoupés) ne compte pas.
+    const entre = doc.slice(trouves.get(avant) + 1, trouves.get(apres)).map(cleCourte).filter((x) => x !== '');
+    if (entre.length === ks.length && ks.every((k, i) => entre[i] === cleCourte(us[k].texte))) out.add(s);
+  }
+  return out;
+}
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 /** Un texte fixe en motif tolérant : blancs souples, espace facultative autour de la ponctuation. */
 const motif = (fixe) => [...norm(fixe)].map((c) => (c === ' ' ? '\\s*' : /[,;:.!?()[\]"'\-/]/.test(c) ? `\\s*${esc(c)}\\s*` : esc(c)))
@@ -556,6 +583,13 @@ export function lireParagraphes(docLu, sigle, champs = {}, origines = null, conn
     }
     if (trouves.size > avant) manques = 0; else if (distinctif(u)) manques++;
   });
+
+  // ⚠️ 17/10 (demande « champs-deduits-du-dao », §B1 ; parité de LectureDao.encadrees, règle 10) — ATTESTATION PAR ENCADREMENT.
+  // Une section faite seulement de texte court et non distinctif (« Sans objet. » : ASSURANCE-NON, EXECUTION-SANS de l'AE-CC)
+  // n'était jamais attestée (20 lettres propres exigées). Elle l'est quand ses unités sont contiguës, sans jeton ni paragraphe
+  // distinctif, que la dernière unité reconnue avant elle et la première après le sont, et qu'entre les deux le document porte
+  // exactement ses textes, paragraphe pour paragraphe (normalisés, ponctuation finale ignorée, reste de ponctuation écarté).
+  for (const s of encadrees(us, distinctif, trouves, doc, sectionsVues)) sectionsVues.add(s);
 
   // 2. Un paragraphe fait d'un seul jeton (`{{B02-AL-02}}`, `{{B07-DE-02}}`) : ce qui sépare ses voisins reconnus.
   //    - Plusieurs tels paragraphes dans le même intervalle (`B07-DE-02` ou `B07-DE-03`, selon une réponse que rien

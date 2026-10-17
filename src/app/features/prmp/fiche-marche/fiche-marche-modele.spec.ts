@@ -16,6 +16,7 @@ import {
   blocsASaisir,
   cadrageComplet,
   questionsSansReponse,
+  sansObjet,
   cleValeur,
   documentEffectif,
   documentsProduits,
@@ -558,5 +559,16 @@ describe('questionsSansReponse', () => {
     expect(cles).not.toContain('typePrix');
     expect(cles).not.toContain('modeRemise');   // réponse par défaut : papier
     expect(questionsSansReponse({ ...importe, avance: 'OUI', tauxAvance: null }).map((q) => q.cle)).toContain('avance');   // complément manquant
+  });
+});
+
+// ⚠️ 17/10 (Q1, option 2) — miroir de ControlesFicheMarche.sansObjet.
+describe('sansObjet', () => {
+  it('B07-DE-01 est sans objet quand les marchés subséquents ne sont pas uniques non fractionnés ; obligatoire sinon', () => {
+    expect(sansObjet('B07-DE-01', { 'B07-FS-01': 'Marchés fractionnés par bons de commande successifs' })).toBe(true);
+    expect(sansObjet('B07-DE-01', { 'B07-FS-01': 'Marchés uniques non fractionnés' })).toBe(false);
+    expect(sansObjet('B07-DE-01', {})).toBe(false);   // forme non dite : toujours exigé
+    expect(sansObjet('B07-DE-01', { 'B07-FS-01#2': 'Marchés uniques non fractionnés', 'B07-FS-01': 'Marchés fractionnés par bons de commande successifs' }, 2)).toBe(false);
+    expect(sansObjet('B09-AU-01', { 'B07-FS-01': 'Marchés fractionnés par bons de commande successifs' })).toBe(false);
   });
 });

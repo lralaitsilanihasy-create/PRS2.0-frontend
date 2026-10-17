@@ -461,7 +461,7 @@
                     @for (c of champs(bloc, r); track c.code) {
                       <div class="fm__champ" [class.fm__champ--ko]="champEnErreur(c)" [class.fm__champ--observe]="obsDe(c).length > 0" [class.fm__champ--visee]="estVisee(c)">
                         <div class="fm__champ-l">
-                          <label [for]="'c-' + cle(c, lotsDe(c)[0])">{{ c.libelle }}@if (c.obligatoire || exigeEnElectronique(c)) { <span aria-hidden="true"> *</span> }</label>
+                          <label [for]="'c-' + cle(c, lotsDe(c)[0])">{{ c.libelle }}@if (exige(c, lotsDe(c)[0] ?? null)) { <span aria-hidden="true"> *</span> }</label>
                           <span class="fm__champ-aide">{{ c.code }}@if (c.aide) { · {{ c.aide }} }</span>
                           @if (erreurDe(c.code); as msg) { <span class="form-error">{{ msg }}</span> }
                           <!-- ⚠️ Lot C2 — l'observation du PV qui vise cette information, en marge : la PRMP corrige à l'endroit exact. -->
@@ -655,7 +655,8 @@
                   }
                 }
                 @for (c of anomalies(); track c.regle + c.champs.join()) {
-                  <p class="fm__ctrl fm__ctrl--r"><b>{{ c.bloc || '—' }}</b> {{ c.message }} <span class="fm__ou">· {{ c.regle }}</span>
+                  <!-- ⚠️ 17/10 (pilote) — le code de la règle n'est plus affiché (« · SPECIFICATIONS_ABSENTES ») ; il reste en attribut pour le support. -->
+                  <p class="fm__ctrl fm__ctrl--r" [attr.data-regle]="c.regle"><b>{{ c.bloc || '—' }}</b> {{ c.message }}
                     <!-- ⚠️ Remise électronique (27/09, règles 10 et 11) — deux bloquants ne se corrigent PAS dans un bloc :
                          les paramètres internes (écran du responsable) et la désignation du responsable (Administrateur). -->
                     @if (c.regle === 'PARAMETRES_INTERNES_INCOMPLETS') {
@@ -667,7 +668,7 @@
                   </p>
                 }
                 @for (c of bilan().avertissements; track c.regle + c.champs.join()) {
-                  <p class="fm__ctrl fm__ctrl--a"><b>{{ c.bloc || '—' }}</b> {{ c.message }} <span class="fm__ou">· {{ c.regle }}</span></p>
+                  <p class="fm__ctrl fm__ctrl--a" [attr.data-regle]="c.regle"><b>{{ c.bloc || '—' }}</b> {{ c.message }}</p>
                 }
                 <!-- ⚠️ V46 — le référentiel a changé sous cette fiche : une valeur enregistrée peut n'avoir plus
                      aucune cellule (champ désactivé, ou devenu par lot). Elle n'est jamais supprimée côté serveur :

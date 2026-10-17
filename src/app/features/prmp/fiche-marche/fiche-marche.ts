@@ -48,6 +48,7 @@ import {
   blocsASaisir,
   cadrageComplet,
   questionsSansReponse,
+  sansObjet,
   cleValeur,
   documentEffectif,
   documentsProduits,
@@ -838,6 +839,10 @@ export class FicheMarcheEcran {
   /** L'heure limite devient obligatoire en mode électronique (règle 1 du bilan) : l'astérisque le dit d'avance. */
   exigeEnElectronique(champ: ChampFiche): boolean {
     return this.modeElectronique() && champ.code === 'B04-LR-04';
+  }
+  /** L'astérisque d'obligation : obligatoire au référentiel et pas sans objet ici (Q1, 17/10), ou exigé en électronique. */
+  exige(champ: ChampFiche, lot: number | null = null): boolean {
+    return (!!champ.obligatoire && !sansObjet(champ.code, this.valeurs(), lot)) || this.exigeEnElectronique(champ);
   }
   /**
    * ⚠️ Q11 — une valeur **posée par le serveur** à l'enregistrement du bloc (ouverture des plis = date limite +

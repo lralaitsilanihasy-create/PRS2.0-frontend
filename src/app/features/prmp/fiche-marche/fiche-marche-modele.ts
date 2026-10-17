@@ -739,6 +739,17 @@ export function avecDefauts(cadrage: Cadrage): Cadrage {
 }
 
 /** Le cadrage est-il complet (toutes les questions posées ont une réponse, compléments compris) ? */
+/**
+ * ⚠️ 17/10 (demande « champs-deduits-du-dao », Q1, option 2 ; miroir de `ControlesFicheMarche.sansObjet`) — un champ
+ * obligatoire qui ne l'est pas pour cette fiche : `B07-DE-01` (délais des marchés subséquents UNIQUES) quand `B07-FS-01` dit
+ * d'autres marchés. Le serveur ne le compte plus dans le bilan ; l'écran retire l'astérisque.
+ */
+export function sansObjet(code: string, valeurs: Readonly<Record<string, unknown>>, lot: number | null = null): boolean {
+  if (code !== 'B07-DE-01') return false;
+  const forme = String((lot != null ? valeurs[`B07-FS-01#${lot}`] : undefined) ?? valeurs['B07-FS-01'] ?? '').trim();
+  return forme !== '' && forme !== 'Marchés uniques non fractionnés';
+}
+
 export function cadrageComplet(cadrageNu: Cadrage): boolean {
   return questionsSansReponse(cadrageNu).length === 0;
 }

@@ -118,3 +118,24 @@ cela, la PRMP doit répondre à une question sans effet sur son DAO. Le pilote l
 - Si Q1 est accepté, le champ disparaît de la saisie quand les marchés subséquents sont fractionnés. Le front s'appuie sur les
   conditions du référentiel servi, il n'y a rien à coder.
 - Recette sur le DAO de la ligne 303339.
+
+## Recette du front, 17/10 (backend 66e4679, JAR redémarré)
+
+Import en lecture seule du DAO de la ligne 303339 sur la DMC 1 : verdict `CONFORME`, 76 propositions, 22 non trouvées,
+aucun conflit.
+
+| Champ | Proposé | Confiance, source | Extrait |
+|---|---|---|---|
+| `B09-AU-01` | `NON` | moyenne, `modele` | rédaction retenue (section ASSURANCE-NON de AE-CC) |
+| `B09-EA-01` | `NON` | moyenne, `modele` | rédaction retenue (section EXECUTION-SANS de AE-CC) |
+| `B04-CD-01` | `A1,A2,A3,A4` | moyenne, `clause` | « A1 : IDENTIFICATION DU CANDIDAT » |
+| `B07-DE-01` | — | — | non dit, comme attendu (marchés fractionnés) |
+
+- **Front** :
+  - **règle 10** reportée dans `scripts/import-dao/lire.mjs` (`encadrees`, parité de `LectureDao.encadrees`), avec
+    `test_encadrees.mjs` (4 tests : 303339 attesté, 6114 écarté, section à jeton ou déjà vue, voisin manquant) ;
+  - **Q1** : l'astérisque d'obligation de `B07-DE-01` est retiré quand `B07-FS-01` dit d'autres marchés que des marchés uniques
+    non fractionnés. `sansObjet` est le miroir de `ControlesFicheMarche.sansObjet`, avec la valeur par lot d'abord. Le décompte
+    des obligatoires vient déjà du bilan du serveur.
+  - B2 n'est pas reporté dans le prototype : le front ne lit pas `B04-CD-01` hors du serveur.
+- **Bilan de la fiche 303339** : aucun bloquant.
