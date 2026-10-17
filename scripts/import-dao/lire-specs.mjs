@@ -61,7 +61,10 @@ function tableaux(p) {
     for (let i = 0; i + 1 < ys.length; i++) {
       const y0 = ys[i], y1 = ys[i + 1];
       // Les séparateurs de colonnes RÉELS de cette ligne : un filet vertical qui la traverse.
-      const coupes = xs.filter((x) => b.v.some((v) => Math.abs(v.x - x) < 2 && v.y0 <= y0 + 3 && v.y1 >= y1 - 3));
+      // ⚠️ 17/10 (recette de la charte, R3, aligné sur LectureTableaux) : sur une cellule grisée à marge intérieure haute, Word
+      // fait commencer le filet vertical sous le filet du haut ; la tolérance suit la hauteur de la ligne, de 3 à 6 points.
+      const tol = Math.max(3, Math.min(6, 0.2 * (y1 - y0)));
+      const coupes = xs.filter((x) => b.v.some((v) => Math.abs(v.x - x) < 2 && v.y0 <= y0 + tol && v.y1 >= y1 - tol));
       const cellules = [];
       for (let j = 0; j + 1 < coupes.length; j++) {
         const x0 = coupes[j], x1 = coupes[j + 1];

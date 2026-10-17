@@ -43,7 +43,15 @@ export class EnteteProcedure {
   }
 
   reference(f: FicheMarche): string {
-    const numero = f.valeurs?.['B02-OB-03'];
-    return (typeof numero === 'string' && numero.trim()) || f.refeDossier || `procédure ${this.idDmc()}`;
+    return numeroProcedure(f) || f.refeDossier || `procédure ${this.idDmc()}`;
   }
+}
+
+/**
+ * Le numéro de la procédure, comme le serveur l'imprime sur le DAO complet (charte, R1 et R6 du 16-17/10) : `B02-OB-03` ;
+ * pour un contrat-cadre, `B02-OE-01` (« NUMÉRO » du DPAC) d'abord, puis `B02-OB-03`. Vide si aucun n'est saisi.
+ */
+export function numeroProcedure(f: Pick<FicheMarche, 'typeMarche' | 'valeurs'>): string {
+  const texte = (code: string): string => { const v = f.valeurs?.[code]; return typeof v === 'string' ? v.trim() : ''; };
+  return (f.typeMarche === 'CONTRAT_CADRE' && texte('B02-OE-01')) || texte('B02-OB-03');
 }
