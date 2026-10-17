@@ -15,7 +15,24 @@ const manque = (p, q) => { const mq = new Set(motsDe(q)), mp = motsDe(p); return
 // « Ordinateurs portables » / « Ordinateur portable I3 » (297) est une précision, pas une contradiction.
 const ecart = (a, b) => (nombresDe(a) && nombresDe(b) && nombresDe(a) !== nombresDe(b)) || (manque(a, b) && manque(b, a));
 // Désignation de bordereau sans son suffixe de prix : « , l'unité à… », « Le forfait à… », « (insérer le prix…) ».
-const nettoie = (x) => x.replace(/\s*\(?\s*ins[ée]rer le prix.*$/i, '').replace(/\s*,?\s*(?:l['’]\s*|le\s+|la\s+)\p{L}+\s+à(?!\p{L}).*$/iu, '').trim();
+// ⚠️ 17/10 (charte travaux, T3, parité LectureTableaux.LIGNE_PRIX) — et la ligne de prix d'un bordereau de travaux, retirée avant
+// le suffixe : « Le mètre cube à : …………… Ariary ».
+const nettoie = (x) => x.replace(/\s*\(?\s*ins[ée]rer le prix.*$/i, '')
+  .replace(/\s*(?:l['’]\s*|le\s+|la\s+|les\s+)(?:\p{L}+\s+){0,3}à\s*:.*$/isu, '')
+  .replace(/\s*,?\s*(?:l['’]\s*|le\s+|la\s+)\p{L}+\s+à(?!\p{L}).*$/iu, '').trim();
+// ⚠️ 17/10 (charte travaux, T5, parité LectureTableaux.premiere) — la première cellule d'une ligne, sans l'astérisque final qui
+// marque un prix à sous-détailler (« 540* » se lit 540).
+const premiere = (l) => (l.cellules[0]?.texte ?? '').replace(/\s*\*+$/, '');
+// ⚠️ 17/10 (DAO des bâtiments scolaires du MEN) — le numéro d'un article de bordereau : « 12 », ou un numéro à deux niveaux
+// « chapitre.article » (« 2.3 », coupé « 2 .3 » par l'extraction), rangé après le chapitre (n = (chapitre + 1) × 1000 + article) ;
+// un chapitre en chiffres romains (« IV ») n'est qu'une ligne de SECTION — il n'a pas d'unité, il ne crée jamais d'article.
+const ROMAIN = /^[IVXL]{1,7}$/;
+const numeroDe = (x) => {
+  if (/^\d{1,3}$/.test(x)) return { n: +x, code: x };
+  const m = /^(\d{1,2})\s*\.\s*(\d{1,3})$/.exec(x);
+  return m ? { n: (+m[1] + 1) * 1000 + +m[2], code: `${+m[1]}.${+m[2]}` } : null;
+};
+const numerote = (l) => numeroDe(premiere(l)) != null || ROMAIN.test(premiere(l));
 
 // ── Lecture du TSV ──
 const pages = new Map();
@@ -117,9 +134,9 @@ for (const [n, p] of [...pages.entries()].sort((a, b) => a[0] - b[0])) {
   for (const t of tableaux(p)) {
     const lotTitre = lotDe(t.dessus);
     if (lotTitre) lotCourant = lotTitre;
-    if (t.lignes.some((l) => prixDef.test(l.cellules[0]?.texte ?? ''))) {
+    if (t.lignes.some((l) => prixDef.test(premiere(l)))) {
       for (const l of t.lignes) {
-        const c0 = l.cellules[0]?.texte ?? '', c1 = l.cellules.at(-1);
+        const c0 = premiere(l), c1 = l.cellules.at(-1);
         // « Prix N° » et son numéro coupés par un filet (prix 621) : le numéro arrive avec la description.
         if (/^Prix\s*N\s*[°o]?$/i.test(c0)) { attente = c1?.texte; continue; }
         if (attente && /^\d{1,3}$/.test(c0)) {
@@ -141,8 +158,8 @@ for (const [n, p] of [...pages.entries()].sort((a, b) => a[0] - b[0])) {
     }
     // Les colonnes se reconnaissent à leur intitulé (une ou deux lignes d'en-tête, cellules fusionnées comprises) : pour
     // chaque colonne de la grille, le texte d'en-tête qui la surplombe.
-    const iPremier = t.lignes.findIndex((l) => /^\d{1,3}$/.test(l.cellules[0]?.texte ?? ''));
-    const suite = (iPremier === 0 || (iPremier === 1 && !t.lignes[0].cellules[0]?.texte)) && precedent && precedent.page === n - 1 && precedent.colonnes.length === t.colonnes.length
+    const iPremier = t.lignes.findIndex(numerote);
+    const suite = (iPremier === 0 || (iPremier === 1 && !premiere(t.lignes[0]))) && precedent && precedent.page === n - 1 && precedent.colonnes.length === t.colonnes.length
       && precedent.colonnes.every((x, j) => Math.abs(x - t.colonnes[j]) < 3);
     const nEntete = suite ? 0 : iPremier > 0 ? iPremier : 1;
     const cellule = (l, j) => { if (j < 0) return null; const xm = (t.colonnes[j] + t.colonnes[j + 1]) / 2; return l.cellules.find((c) => c.x0 <= xm && c.x1 >= xm) ?? null; };
@@ -162,7 +179,8 @@ for (const [n, p] of [...pages.entries()].sort((a, b) => a[0] - b[0])) {
     if (!suite) serieCourante = null;
     const nombre = (c) => { const v = c?.texte?.replace(/\s/g, ''); return v && /^\d+(?:[,.]\d+)?$/.test(v) ? Number(v.replace(',', '.')) : null; };
     for (const l of t.lignes.slice(nEntete)) {
-      const num = /^\d{1,3}$/.test(l.cellules[0]?.texte ?? '') ? +l.cellules[0].texte : null;
+      const numero = numeroDe(premiere(l)), chapitre = ROMAIN.test(premiere(l));
+      const num = numero?.n ?? (chapitre ? -1 : null);
       // Suite de tableau : la fin de l'article coupé par le saut de page complète le dernier article de la page précédente.
       if (num == null && suite && t.lignes.indexOf(l) < iPremier && precedent.dernier) {
         const d = precedent.dernier;
@@ -173,9 +191,10 @@ for (const [n, p] of [...pages.entries()].sort((a, b) => a[0] - b[0])) {
       // Une ligne sans désignation (tableau MODÈLE laissé vide : BPU de la lettre d'invitation…) ne crée pas d'article.
       if (num == null || !cellule(l, iDesig)?.texte) continue;
       // Une ligne de SECTION de bordereau (000 Installation, 500 Ouvrages…) n'a pas d'unité : ce n'est pas un article.
-      if (bord && !cellule(l, iUnite)?.texte) { serieCourante = { code: l.cellules[0].texte, libelle: cellule(l, iDesig).texte }; continue; }
+      if (bord && !cellule(l, iUnite)?.texte) { serieCourante = { code: premiere(l), libelle: cellule(l, iDesig).texte }; continue; }
+      if (chapitre) continue;
       const a = art(lot, num);
-      a.code ??= l.cellules[0].texte;
+      a.code ??= numero.code;
       precedent.dernier = a;
       if (spec) {
         a.designationSpec = cellule(l, iDesig)?.texte;
