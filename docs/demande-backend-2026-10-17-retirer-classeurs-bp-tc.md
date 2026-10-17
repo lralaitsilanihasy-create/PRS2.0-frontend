@@ -63,3 +63,15 @@ Les classeurs n'apportent rien à la Commission. Ils ne servaient qu'aux candida
 - Retrait de `BP` et `TC` du type `PieceProduite` et de l'ordre d'affichage (`ORDRE_PIECES`). Les libellés restent tant que
   d'anciennes versions les servent.
 - Recette : une révision de la fiche 303339, validée en version 2, ne produit plus que le DAO complet et le BE.
+
+## Recette du front, 17/10 (backend 98314e7, JAR redémarré)
+
+Fiche 303339 (DMC 1), avec l'accord du pilote : `POST …/reviser`, sans bloquant, puis `POST …/valider`, qui a pris 55 s.
+
+| Version | Documents servis (`GET …/documents?version=`) |
+|---|---|
+| v1 | `DAO_COMPLET.docx`, `DAO_COMPLET.pdf`, `BP.xlsx`, `TC.xlsx`, `BORDEREAU_ESTIMATIF.pdf` |
+| v2 | `DAO_COMPLET.docx`, `DAO_COMPLET.pdf`, `BORDEREAU_ESTIMATIF.pdf` |
+
+- **Front** : rien n'a été retiré, contrairement à ce qu'annonçait la section ci-dessus. Les versions déjà validées servent
+  toujours BP et TC, et l'étape 7 doit savoir les afficher. `PieceProduite`, `ORDRE_PIECES` et les libellés restent donc.
