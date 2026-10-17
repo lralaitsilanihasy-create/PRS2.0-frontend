@@ -133,6 +133,12 @@ export interface Dossier {
    * les réponses des gestes ; **absent des listes**, qui ne portent que `idDmc` (le résumé relit le plan).
    */
   ficheMarche?: FicheMarcheResume | null;
+  /**
+   * ⚠️ 17/10 (demande « pieces-dmc-par-les-donnees », B3) — sur la lecture unitaire d'un dossier né d'une fiche : le plan qui porte sa
+   * ligne en vigueur, et le PV signé de son examen (absent tant qu'aucun n'est signé).
+   */
+  idDossierPlan?: number | null;
+  idPvPlan?: number | null;
   /** Verrou optimiste : à renvoyer telle quelle au PUT (périmée → 409 `CONFLIT_VERSION`) ; absente = dernier écrit gagne. */
   version?: number;
 }

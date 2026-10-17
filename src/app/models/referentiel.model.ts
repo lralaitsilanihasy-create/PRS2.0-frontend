@@ -294,6 +294,24 @@ export interface TypePieceJointe {
    * dans la liste résolue) — l'avis spécifique et la lettre d'invitation pendant la transition SIGMP ; nul : comme avant.
    */
   condition?: 'PAPIER' | 'FACULTATIVE_EN_LIGNE' | null;
+  /**
+   * ⚠️ 17/10 (demande « pieces-dmc-par-les-donnees », B1 ; PRS20 be8089c) — pour un dossier né d'une fiche validée, la pièce que
+   * l'application fournit par ses données (fiche de présentation, calendrier annuel, AGPM contrôlé avec le PV) : `APPLICATION`.
+   * Elle ne compte jamais manquante. `lien` : la route qui la rend ; `idDossierPlan` / `idPvPlan` : le plan et son PV signé.
+   */
+  fourniePar?: 'APPLICATION' | null;
+  lien?: string | null;
+  idDossierPlan?: number | null;
+  idPvPlan?: number | null;
+}
+
+/** ⚠️ 17/10 (B2) — `GET /api/dossiers/{id}/fiche-presentation` : la fiche de présentation d'un dossier DAO, produite des données. */
+export interface FichePresentationDao {
+  idDossier: number;
+  idDmc: number;
+  versionFiche: number;
+  /** `IDENTIFICATION`, `MARCHE`, `PROCEDURE`, `COHERENCE`, `VALIDATION` ; une ligne sans valeur n'est pas servie. */
+  sections: { code: string; titre: string; lignes: { code: string; libelle: string; valeur: string }[] }[];
 }
 
 /**

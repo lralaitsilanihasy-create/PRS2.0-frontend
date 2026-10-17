@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } 
 import { ToastService } from '../../../core/notifications/toast.service';
 import { ouvrirBlobSur } from '../../../core/securite/fichiers-surs';
 import { PieceJointeDossier, TypePieceJointe } from '../../../models';
-import { DossierService, PieceJointeDossierService } from '../../../services';
+import { DossierService, PieceJointeDossierService, PvExamenService } from '../../../services';
 import { DossierContenuStore } from './dossier-contenu.store';
 
 /**
@@ -33,11 +33,17 @@ import { DossierContenuStore } from './dossier-contenu.store';
           </div>
           <ul class="pe-liste">
             @for (t of exigees(); track t.idTypePiece) {
-              <li class="pe-ligne" [class.pe-ligne--manque]="t.obligatoire && !deposees().has(t.idTypePiece)">
-                <span class="pe-etat" aria-hidden="true">{{ deposees().has(t.idTypePiece) ? '✓' : t.obligatoire ? '✕' : '–' }}</span>
+              <li class="pe-ligne" [class.pe-ligne--manque]="manquante(t)">
+                <span class="pe-etat" aria-hidden="true">{{ deposees().has(t.idTypePiece) || fournie(t) ? '✓' : t.obligatoire ? '✕' : '–' }}</span>
                 <span class="pe-lib">{{ t.libellePiece }}</span>
                 <!-- ⚠️ R2 (V102) — une pièce « FACULTATIVE_EN_LIGNE » (imprimé du SIGMP pendant la transition) est servie facultative en ligne. -->
-                <span class="pe-tag">{{ deposees().has(t.idTypePiece) ? 'jointe' : t.obligatoire ? 'obligatoire, manquante' : t.condition === 'FACULTATIVE_EN_LIGNE' ? 'facultative en ligne (transition SIGMP)' : 'facultative' }}</span>
+                <!-- ⚠️ 17/10 (demande « pieces-dmc-par-les-donnees », B1) — une pièce que l'application fournit par ses données. -->
+                @if (fournie(t)) {
+                  <span class="pe-tag pe-tag--app">fournie par l’application</span>
+                  <button type="button" class="pe-ouvrir" [disabled]="ouverture() === t.idTypePiece" (click)="ouvrirFournie(t)" [attr.aria-label]="'Ouvrir : ' + t.libellePiece">Ouvrir</button>
+                } @else {
+                  <span class="pe-tag">{{ deposees().has(t.idTypePiece) ? 'jointe' : t.obligatoire ? 'obligatoire, manquante' : t.condition === 'FACULTATIVE_EN_LIGNE' ? 'facultative en ligne (transition SIGMP)' : 'facultative' }}</span>
+                }
               </li>
             }
           </ul>
@@ -142,6 +148,8 @@ import { DossierContenuStore } from './dossier-contenu.store';
     .pe-ligne--manque .pe-etat, .pe-ligne--manque .pe-tag { color: var(--danger-700, #b42318); }
     .pe-lib { flex: 1; }
     .pe-tag { font-size: 0.75rem; color: var(--n-500); }
+    .pe-tag--app { color: var(--success-text, #15803d); font-weight: 600; }
+    .pe-ouvrir { border: 1px solid var(--n-300); background: #fff; border-radius: 6px; padding: 0 0.5rem; font-size: 0.75rem; cursor: pointer; }
     .piece-fiche { flex: none; padding: 0.1rem 0.5rem; border-radius: 8px; background: #ecfdf5; color: #047857; font-size: 0.72rem; font-weight: 600; }
   `,
 })
@@ -157,7 +165,28 @@ export class DossierPieces {
    */
   readonly exigees = signal<TypePieceJointe[]>([]);
   readonly deposees = computed(() => new Set(this.contenu.pieces().map((p) => p.idTypePiece)));
-  readonly nbObligatoiresManquantes = computed(() => this.exigees().filter((t) => t.obligatoire && !this.deposees().has(t.idTypePiece)).length);
+  readonly nbObligatoiresManquantes = computed(() => this.exigees().filter((t) => this.manquante(t)).length);
+  private readonly pvService = inject(PvExamenService);
+  /** La pièce dont le document est en cours d'ouverture (le bouton se grise le temps de la production). */
+  readonly ouverture = signal<number | null>(null);
+
+  /** ⚠️ 17/10 (B1) — fournie par l'application : elle ne compte jamais manquante. */
+  fournie(t: TypePieceJointe): boolean { return t.fourniePar === 'APPLICATION'; }
+  manquante(t: TypePieceJointe): boolean { return t.obligatoire && !this.fournie(t) && !this.deposees().has(t.idTypePiece); }
+
+  /** Le document qui fournit la pièce, en PDF : la fiche de présentation, le calendrier annuel, ou le PV du plan. */
+  ouvrirFournie(t: TypePieceJointe): void {
+    const id = this.contenu.dossier().idDossier;
+    const source = t.code === 'FICHE_PRESENTATION' ? this.dossiers.fichePresentationPdf(id)
+      : t.code === 'CALENDRIER' ? this.dossiers.calendrierAnnuel(id)
+      : t.idPvPlan != null ? this.pvService.document(t.idPvPlan) : null;
+    if (!source) { this.toast.error('Ce document n’est pas disponible.'); return; }
+    this.ouverture.set(t.idTypePiece);
+    source.subscribe({
+      next: (b) => { this.ouverture.set(null); ouvrirBlobSur(b); },
+      error: () => { this.ouverture.set(null); this.toast.error('Le document n’a pas pu être produit.'); },
+    });
+  }
 
   constructor() {
     effect((nettoyer) => {

@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import { skipErrorToast } from '../core/errors/api-error';
 import { CrudService } from './api/crud.service';
 import {
+  FichePresentationDao,
   AFaire,
   ActionDossier,
   Chronometrage,
@@ -56,6 +57,16 @@ export class DossierService extends CrudService<Dossier> {
    */
   calendrierAnnuel(id: number): Observable<Blob> {
     return this.http.get(`${this.baseUrl}/${id}/calendrier-annuel`, { responseType: 'blob', context: skipErrorToast() });
+  }
+
+  /** ⚠️ 17/10 (B2) — la fiche de présentation d'un dossier DAO né d'une fiche, en données (409 `FICHE_PRESENTATION_INDISPONIBLE`). */
+  fichePresentation(id: number): Observable<FichePresentationDao> {
+    return this.http.get<FichePresentationDao>(`${this.baseUrl}/${id}/fiche-presentation`, { context: skipErrorToast() });
+  }
+
+  /** ⚠️ 17/10 (B2) — la même, en PDF. */
+  fichePresentationPdf(id: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${id}/fiche-presentation/pdf`, { responseType: 'blob', context: skipErrorToast() });
   }
 
   /**
