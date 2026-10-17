@@ -150,3 +150,26 @@ des travaux » manquera au dossier. Déposez-les en PDF. »
   - le dépôt PDF des travaux reste au bloc B14 ;
   - plus de dépôt en fournitures ;
   - le sigle du nouveau document à l'étape 7.
+
+## Recette du front, 17/10 (backend 7a399ee, front 7555eaf)
+
+**Volet A, fournitures** : fiche 303339, avec l'accord du pilote.
+- **Passage en v4** : `POST …/reviser`, puis `PUT …/blocs/B12` avec `B12-BE-01` = « Les fournitures sont neuves, d'origine
+  constructeur, livrées dans leur emballage d'origine avec notice en français. », puis `POST …/valider`, sans bloquant.
+- **Le besoin** garde ses 12 articles. La v4 produit `DAO_COMPLET` (docx, pdf) et `BORDEREAU_ESTIMATIF`.
+- **DAO complet v4**, 98 pages. À la page 61, sous « Spécifications techniques » : « Prescriptions générales applicables à tous
+  les articles » en gras, le texte saisi, puis le tableau des 12 articles. Vérifié au texte (PDFBox) et au rendu de la page.
+- **Écran** :
+  - le champ est au B12, sous l'estimation ;
+  - « Enregistrer et continuer » enregistre la liste du besoin, puis les champs du bloc ;
+  - le dépôt Word n'est plus proposé en fournitures, puisque le B14 n'est pas servi.
+
+**Deux remarques sur le référentiel** (à la main du backend) : `B12-BE-01` est rangé sous la rubrique « Articles et
+caractéristiques exigées, par lot » et porte la mention « sans document » (`documentMaitre = AUCUN`). Or le DAO complet
+l'imprime. Une rubrique « Prescriptions générales » et un document maître parlant seraient plus justes.
+
+**Volet B, travaux** : différé, faute de ligne de travaux éligible. L'écran est prêt :
+- dépôt PDF au B14, 50 Mo au plus ;
+- un Word est refusé ;
+- le document s'ouvre par « Ouvrir le PDF » ;
+- le sigle `DP` s'affiche à l'étape 7.
