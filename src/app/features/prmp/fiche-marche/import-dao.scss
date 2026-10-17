@@ -58,8 +58,17 @@
   color: var(--n-500);
 }
 
+// ⚠️ 2026-10-17 (demande pilote) — la revue de l'import se lit mieux en grand : presque tout l'écran (le .modal-xl commun
+// plafonne à 1020 px et le corps à 70 % de la hauteur). Le corps prend toute la hauteur laissée par l'en-tête et le pied.
+.modal.idao__modale {
+  width: 96vw;
+  max-width: 1480px;
+  height: 94vh;
+  max-height: 94vh;
+}
 .idao__modale .modal-body {
-  max-height: 70vh;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -78,19 +87,27 @@
 }
 // Largeurs fixes : une valeur longue (un texte de clause) passe à la ligne au lieu de pousser les colonnes hors de la
 // modale — la confiance et la valeur actuelle doivent rester lisibles sur chaque ligne.
+// ⚠️ 17/10 (demande pilote) — les largeurs se posent par <colgroup>, propres à chaque tableau (cadrage, blocs, articles) :
+// une règle par rang de colonne, commune aux trois, étranglait la dernière colonne des articles. L'en-tête garde le dégradé
+// de l'application, en blanc (la couleur grise d'avant le rendait illisible sur le bleu).
 .idao__table {
   width: 100%;
   table-layout: fixed;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--n-200);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
   font-size: 13px;
-  overflow-wrap: anywhere;
+  line-height: 1.45;
+  overflow-wrap: break-word;
 
   th {
-    text-align: left;
-    font-weight: 600;
-    color: var(--n-500);
-    border-bottom: 1px solid var(--n-200);
-    padding: 6px 8px;
+    padding: 9px 12px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: #fff;
+    vertical-align: bottom;
   }
   // La feuille globale met toute cellule en « white-space: nowrap » : ici, une valeur longue doit passer à la ligne.
   th,
@@ -99,15 +116,59 @@
   }
   td {
     vertical-align: top;
-    padding: 6px 8px;
+    padding: 10px 12px;
+    color: var(--n-700);
     border-bottom: 1px solid var(--n-100);
   }
-  td:first-child,
-  th:first-child {
-    width: 32px;
+  tbody tr:nth-child(even) {
+    background: var(--n-50);
   }
-  th:nth-child(2) { width: 38%; }
-  th:nth-child(5) { width: 96px; }
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+  input[type='checkbox'] {
+    width: 16px;
+    height: 16px;
+    margin: 2px 0 0;
+    cursor: pointer;
+  }
+}
+.idao__c-coche { width: 44px; }
+.idao__c-question { width: 40%; }
+.idao__c-dao { width: 28%; }
+.idao__c-information { width: 30%; }
+.idao__c-actuelle { width: 20%; }
+.idao__c-confiance { width: 112px; }
+.idao__c-numero { width: 64px; }
+.idao__c-designation { width: 30%; }
+.idao__c-unite { width: 110px; }
+.idao__c-quantite { width: 110px; }
+.idao__numero {
+  font-variant-numeric: tabular-nums;
+  color: var(--n-500);
+}
+.idao__nombre {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.idao__caracs {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    padding: 1px 0;
+  }
+  li + li {
+    border-top: 1px dashed var(--n-200);
+    padding-top: 3px;
+    margin-top: 3px;
+  }
+}
+.idao__carac-lib {
+  font-weight: 600;
+  color: var(--n-800);
 }
 .idao__terne td {
   color: var(--n-500);
@@ -124,6 +185,7 @@
   font-family: ui-monospace, monospace;
   font-size: 11px;
   color: var(--n-500);
+  white-space: nowrap;
 }
 .idao__note,
 .idao__motif {

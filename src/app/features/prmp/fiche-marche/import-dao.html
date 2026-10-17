@@ -46,6 +46,7 @@
         @if (r.cadrage.length) {
           <h3 class="idao__titre">Réponses de cadrage</h3>
           <table class="idao__table">
+            <colgroup><col class="idao__c-coche" /><col class="idao__c-question" /><col class="idao__c-dao" /><col /></colgroup>
             <thead><tr><th scope="col"><span class="idao__cache">Retenir</span></th><th scope="col">Question</th><th scope="col">Le DAO dit</th><th scope="col">La fiche porte</th></tr></thead>
             <tbody>
               @for (c of r.cadrage; track c.cle) {
@@ -77,11 +78,12 @@
               </label>
               @for (m of l.motifs; track m) { <span class="idao__motif">{{ m }}</span> }
               <table class="idao__table">
-                <thead><tr><th scope="col">N°</th><th scope="col">Désignation</th><th scope="col">Unité</th><th scope="col">Quantité</th><th scope="col">Caractéristiques</th></tr></thead>
+                <colgroup><col class="idao__c-numero" /><col class="idao__c-designation" /><col class="idao__c-unite" /><col class="idao__c-quantite" /><col /></colgroup>
+                <thead><tr><th scope="col">N°</th><th scope="col">Désignation</th><th scope="col">Unité</th><th scope="col" class="r">Quantité</th><th scope="col">Caractéristiques</th></tr></thead>
                 <tbody>
                   @for (a of l.articles; track $index) {
                     <tr>
-                      <td>{{ a.numero }}</td>
+                      <td class="idao__numero">{{ a.numero }}</td>
                       <td>
                         @if (a.serie) { <span class="idao__code">{{ a.serie }} {{ a.serieLibelle }}</span> }
                         <span class="idao__libelle">{{ a.designation }}</span>
@@ -89,13 +91,12 @@
                         @if (a.confiance.article !== 'haute') { <span class="idao__note">lu seulement aux spécifications — à vérifier</span> }
                       </td>
                       <td>{{ affiche(a.unite) }}</td>
-                      <td>{{ quantites(a) }}</td>
+                      <td class="idao__nombre">{{ quantites(a) }}</td>
+                      <!-- ⚠️ 17/10 (demande pilote) — les caractéristiques se lisent en clair, une par ligne : c'est ce qu'il faut vérifier. -->
                       <td>
                         @if (a.caracteristiques.length) {
-                          <details class="idao__extrait"><summary>{{ a.caracteristiques.length }} caractéristique{{ a.caracteristiques.length > 1 ? 's' : '' }}</summary>
-                            <ul class="idao__liste">@for (c of a.caracteristiques; track $index) { <li><strong>{{ c.libelle }}</strong> : {{ c.exigence }}</li> }</ul>
-                          </details>
-                        } @else { — }
+                          <ul class="idao__caracs">@for (c of a.caracteristiques; track $index) { <li><span class="idao__carac-lib">{{ c.libelle }}</span>@if (c.exigence) { <span> : {{ c.exigence }}</span> }</li> }</ul>
+                        } @else { <span class="idao__note">aucune</span> }
                       </td>
                     </tr>
                   }
@@ -108,6 +109,7 @@
         @for (b of blocs(); track b) {
           <h3 class="idao__titre">Bloc {{ b }}</h3>
           <table class="idao__table">
+            <colgroup><col class="idao__c-coche" /><col class="idao__c-information" /><col /><col class="idao__c-actuelle" /><col class="idao__c-confiance" /></colgroup>
             <thead><tr><th scope="col"><span class="idao__cache">Retenir</span></th><th scope="col">Information</th><th scope="col">Le DAO dit</th><th scope="col">La fiche porte</th><th scope="col">Confiance</th></tr></thead>
             <tbody>
               @for (l of lignesDuBloc(b); track l.code) {
@@ -123,8 +125,8 @@
                     @if (l.source === 'clause') { <span class="idao__note">trouvée par les mots-clés de sa clause — à vérifier</span> }
                     <details class="idao__extrait"><summary>Extrait du document</summary><q>{{ l.extrait }}</q></details>
                   </td>
-                  <td><strong>{{ affiche(l.valeur) }}</strong></td>
-                  <td>{{ affiche(l.actuelle) }}</td>
+                  <td><strong>{{ afficheValeur(l.valeur) }}</strong></td>
+                  <td>{{ afficheValeur(l.actuelle) }}</td>
                   <td><span class="badge" [class.badge-success]="l.confiance === 'haute'" [class.badge-warning]="l.confiance === 'moyenne'" [class.badge-danger]="l.confiance === 'basse'">{{ libelleConfiance(l.confiance) }}</span></td>
                 </tr>
               }

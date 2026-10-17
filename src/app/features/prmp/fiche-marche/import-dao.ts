@@ -161,8 +161,13 @@ export class ImportDao {
   }
   libelleLot(l: { lot: number | null }): string { return l.lot == null ? 'le besoin' : `le lot ${l.lot}`; }
   quantites(a: ArticleImport): string {
-    if (a.quantiteMin != null || a.quantiteMax != null) return `${this.affiche(a.quantiteMin)} à ${this.affiche(a.quantiteMax)}`;
-    return this.affiche(a.quantite);
+    if (a.quantiteMin != null || a.quantiteMax != null) return `${this.nombre(a.quantiteMin)} à ${this.nombre(a.quantiteMax)}`;
+    return this.nombre(a.quantite);
+  }
+
+  /** Une quantité lisible : milliers séparés (« 1 500 »), décimales à la française. */
+  private nombre(n: number | null): string {
+    return n == null ? '—' : n.toLocaleString('fr-FR', { maximumFractionDigits: 3 });
   }
 
   readonly nbRetenues = computed(() => this.cochees().size + this.cadrageCoche().size + this.lotsCoches().size);
@@ -257,6 +262,13 @@ export class ImportDao {
   }
   valeurCadrage(r: ReponseCadrageImport): string { return this.libelleReponse(r.cle, r.valeur); }
   affiche(v: unknown): string { return v == null || v === '' ? '—' : String(v); }
+
+  /** Une valeur lue ou saisie, pour la lecture seule : une date ISO s'écrit « 04/03/2027 à 09 h 00 » (la valeur appliquée ne change pas). */
+  afficheValeur(v: unknown): string {
+    const m = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/.exec(String(v ?? ''));
+    if (!m) return this.affiche(v);
+    return `${m[3]}/${m[2]}/${m[1]}` + (m[4] ? ` à ${m[4]} h ${m[5]}` : '');
+  }
 
   fermer(): void {
     if (this.envoi()) return;
