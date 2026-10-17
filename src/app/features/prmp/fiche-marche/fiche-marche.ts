@@ -82,6 +82,8 @@ import { LIBELLES_ETAT_CAO, LIBELLES_ETAT_CEREMONIE } from '../../cao/libelles-c
 
 /** Les heures saisies en texte (« 10:00 ») à côté desquelles le fuseau de référence s'affiche en mode électronique. */
 const HEURES_SAISIES: readonly string[] = ['B04-LR-04', 'B04-OP-03'];
+/** Les codes de la liste `ok` du bilan qui sont des informations à lire (17/10), pas des contrôles réussis. */
+const CODES_INFORMATION: readonly string[] = ['SPECIFICATIONS_DU_BESOIN'];
 
 type Valeur = string | number | null;
 
@@ -464,6 +466,11 @@ export class FicheMarcheEcran {
     return [...n].sort(([a], [b]) => a.localeCompare(b)).map(([bloc, nb]) => ({ bloc, nb }));
   });
   readonly nbObligatoires = computed(() => this.obligatoiresParBloc().reduce((s, g) => s + g.nb, 0));
+  /**
+   * ⚠️ 17/10 (demande avertissement-specifications, Q1) — les informations que le serveur range dans la liste `ok` du bilan. Seuls les
+   * codes connus se lisent : la liste porte surtout des contrôles réussis (montants positifs, ordre des dates…).
+   */
+  readonly informations = computed(() => (this.bilan().ok ?? []).filter((c) => CODES_INFORMATION.includes(c.regle)));
   readonly blocsRestants = computed(() => this.obligatoiresParBloc().map((g) => g.bloc).join(', '));
   readonly reprisesListe = computed(() => reprises(this.referentiel(), this.cadrageEffectif(), this.valeurs(), this.fiche()?.valeursPpm ?? {}, this.fiche()?.valeursCadrage ?? {}));
   readonly figee = computed(() => this.fiche()?.statut === 'VALIDEE');
@@ -1334,6 +1341,11 @@ export class FicheMarcheEcran {
     if (i === this.etape()) return 'courante';
     if (i < this.etape()) return 'faite';
     return 'a-venir';
+  }
+
+  /** Le sigle court d'un document (badge de l'étape Documents) : « BORDEREAU_ESTIMATIF » s'affichait en toutes lettres (17/10). */
+  sigleDocument(type: string): string {
+    return ({ DAO_COMPLET: 'DAO', BORDEREAU_ESTIMATIF: 'BE', DQE_ESTIMATIF: 'DQE', LETTRE_INVITATION: 'LI', AVIS_PROJET: 'AVIS', LETTRE_PROJET: 'LI' } as Record<string, string>)[type] ?? type;
   }
 
   montant(v: number | null | undefined): string {

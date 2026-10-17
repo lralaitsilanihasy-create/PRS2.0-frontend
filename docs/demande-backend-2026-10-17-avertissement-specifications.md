@@ -52,3 +52,13 @@ ou des plans peuvent être joints en Word (facultatif). »
 ## Recette du front
 
 Sur la fiche 303339 : plus de B14 ; et B2 si le backend le retient.
+
+### Résultat, 17/10 (backend 65e2457, JAR redémarré)
+
+Fiche 303339 :
+- **bilan** : aucun bloquant, aucun avertissement, et `SPECIFICATIONS_DU_BESOIN` (B14) dans la liste `ok` ;
+- **écran** : l'étape Contrôles dit « Aucun contrôle à lever : la fiche peut être validée », suivi de l'information B14 en bleu,
+  aussi au panneau de droite ; « Passer à la validation » est actif.
+
+Le front lit la liste `ok` en n'y prenant que les codes d'information connus (`CODES_INFORMATION`). Les contrôles réussis
+restent muets.

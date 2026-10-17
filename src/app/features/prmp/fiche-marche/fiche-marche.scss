@@ -208,6 +208,9 @@
 .fm__ctrl--a { color: #b45309; }
 .fm__pt--r { background: #b91c1c; }
 .fm__pt--a { background: #b45309; }
+// ⚠️ 17/10 — une information du bilan (SPECIFICATIONS_DU_BESOIN) : bleu, ni bloquante ni à corriger.
+.fm__ctrl--i { color: var(--p-700, #1d4ed8); }
+.fm__pt--i { background: var(--p-600, #2563eb); }
 .fm__ctrls-vide { margin: 0; padding: 0 1rem 0.8rem; }
 .fm__total { padding: 0.6rem 1rem 0.9rem; border-top: 1px solid var(--n-200); }
 .fm__total b { color: var(--n-700); }

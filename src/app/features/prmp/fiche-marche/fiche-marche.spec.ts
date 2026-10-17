@@ -1019,6 +1019,27 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     expect(lien.getAttribute('href')).toBe('/procedure/42/parametres-internes');
   });
 
+  it('17/10 — une information du bilan (SPECIFICATIONS_DU_BESOIN, liste ok) se lit en bleu ; les contrôles réussis restent muets', () => {
+    const bilan = {
+      bloquants: [],
+      avertissements: [],
+      ok: [
+        { regle: 'MONTANT_POSITIF', champs: ['B05-MT-01'], bloc: 'B05', message: '« Montant indicatif » : montant positif.' },
+        { regle: 'SPECIFICATIONS_DU_BESOIN', champs: [], bloc: 'B14', message: 'Le DAO complet portera le tableau des spécifications tiré du besoin.' },
+      ],
+      nbSaisis: 20,
+      nbAttendus: 20,
+    };
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ cadrage: { ...CADRAGE_COMPLET }, bilanControles: bilan }));
+    fixture.componentInstance.etape.set(4);
+    rendre();
+    const infos = Array.from(racine().querySelectorAll('.fm__ctrl--i')).map((p) => texte(p));
+    expect(infos).toEqual(['B14 Le DAO complet portera le tableau des spécifications tiré du besoin.']);
+    expect(texte(racine())).not.toContain('montant positif');
+    expect(texte(racine())).toContain('Aucun contrôle à lever');
+  });
+
   it('bloc refusé (400 nominatifs) : le message sous chaque champ, un toast de comptage, aucun changement d’étape', () => {
     monter('PRMP', 42);
     ouvrir(REFERENTIEL, fiche({ cadrage: { ...CADRAGE_COMPLET, garantieSoumission: 'NON' } }));

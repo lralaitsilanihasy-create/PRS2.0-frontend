@@ -670,6 +670,11 @@
                 @for (c of bilan().avertissements; track c.regle + c.champs.join()) {
                   <p class="fm__ctrl fm__ctrl--a" [attr.data-regle]="c.regle"><b>{{ c.bloc || '—' }}</b> {{ c.message }}</p>
                 }
+                <!-- ⚠️ 17/10 (demande avertissement-specifications, Q1) — les INFORMATIONS du bilan, dans sa liste ok : seulement les
+                     codes connus (la liste ok porte surtout des contrôles réussis, qu'on ne lit pas). -->
+                @for (c of informations(); track c.regle + c.champs.join()) {
+                  <p class="fm__ctrl fm__ctrl--i" [attr.data-regle]="c.regle"><b>{{ c.bloc || '—' }}</b> {{ c.message }}</p>
+                }
                 <!-- ⚠️ V46 — le référentiel a changé sous cette fiche : une valeur enregistrée peut n'avoir plus
                      aucune cellule (champ désactivé, ou devenu par lot). Elle n'est jamais supprimée côté serveur :
                      on la montre ici, sinon elle disparaîtrait de l'écran sans disparaître du dossier. -->
@@ -801,7 +806,7 @@
                       @for (p of g.pieces; track p.cle) {
                         <li>
                           <!-- Le serveur NOMME ses documents (`libelle`) : le sigle ne sert que de repli. -->
-                          <span class="fm__doc fm__doc--{{ p.type.toLowerCase() }}">{{ p.type === 'DAO_COMPLET' ? 'DAO' : p.type }}</span>
+                          <span class="fm__doc fm__doc--{{ p.type.toLowerCase() }}">{{ sigleDocument(p.type) }}</span>
                           <span class="fm__docs-n">
                             {{ libellePiece(p) }}
                             <span class="fm__docs-f cnm-mono">{{ p.fichiers[0].nomFichier }}</span>
@@ -883,10 +888,11 @@
         <h2 id="fm-ctrls">Contrôles</h2>
         <!-- Les anomalies de cohérence se lisent une par une ; les informations obligatoires manquantes se COMPTENT
              par bloc — sur une fiche neuve il y en a des dizaines, elles noyaient les vrais écarts. -->
-        @if (anomalies().length || bilan().avertissements.length) {
+        @if (anomalies().length || bilan().avertissements.length || informations().length) {
           <ul>
             @for (c of anomalies(); track c.regle + c.champs.join()) { <li><i class="fm__pt fm__pt--r"></i><span><b>{{ c.bloc || '—' }}</b> {{ c.message }}</span></li> }
             @for (c of bilan().avertissements; track c.regle + c.champs.join()) { <li><i class="fm__pt fm__pt--a"></i><span><b>{{ c.bloc || '—' }}</b> {{ c.message }}</span></li> }
+            @for (c of informations(); track c.regle + c.champs.join()) { <li><i class="fm__pt fm__pt--i"></i><span><b>{{ c.bloc || '—' }}</b> {{ c.message }}</span></li> }
           </ul>
         } @else if (!nbObligatoires()) {
           <p class="fm__ctrls-vide">Le bilan du serveur apparaît ici à chaque enregistrement.</p>
