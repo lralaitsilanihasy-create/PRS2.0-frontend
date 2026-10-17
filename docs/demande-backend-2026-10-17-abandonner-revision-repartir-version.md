@@ -29,6 +29,19 @@ révision** (numéro > 1, une version validée existe) :
   - **409 `PREMIERE_VERSION`** si la fiche n'a jamais été validée (le brouillon initial ne s'abandonne pas ainsi).
 - **Droits** : ceux de `reviser`, soit la PRMP et l'UGPM de tutelle.
 
+> ⚠️ **2026-10-17, livré côté backend (B1)**, route **`DELETE /{idDmc}/revision`**. Elle rend le `FicheMarcheDto` de la dernière
+> version validée.
+> - **La suppression** : le brouillon part avec tout ce qu'il porte. Toutes les tables rattachées à une version sont en `ON DELETE
+>   CASCADE`, et un brouillon n'a encore aucun document.
+> - **Le journal du plan** : `FICHE_REVISION_ABANDONNEE`, « DAO, révision de la version m abandonnée : la fiche revient à la version
+>   n ».
+> - **Les refus** : 409 `PAS_DE_REVISION` et `PREMIERE_VERSION` comme demandé, plus un refus nouveau :
+>   - **409 `MODE_MIGRE`** : un brouillon qui porte une migration documentée du mode de remise (R8, acte de l'Administrateur) ne
+>     s'abandonne pas, pour ne pas effacer cette trace. Il se valide.
+> - **Les droits** : ceux de la révision (PRMP, UGPM, et l'Administrateur comme pour toute écriture de la fiche).
+> - **À noter** : la règle du 26/09 (« une fiche qui a de l'histoire ne s'abandonne pas ») est inchangée. Elle visait la fiche
+>   entière, pas un brouillon de révision.
+
 ## B2 — Repartir d'une version antérieure
 
 `POST /{idDmc}/reviser?depuis={n}` (sans `depuis`, comportement actuel) ouvre une révision **copiée de la version figée n**, au
@@ -46,10 +59,32 @@ lieu de la dernière :
   - **404** si la version n n'existe pas ou n'est pas validée ;
   - **409 `REVISION_OUVERTE`** si un brouillon de révision existe déjà. Il faut alors l'abandonner (B1) d'abord.
 
+> ⚠️ **2026-10-17, livré côté backend (B2)**, au contrat demandé : **`POST /{idDmc}/reviser?depuis={n}`**.
+> - **La copie** : celle de la révision ordinaire, faite depuis la version n. Ce sont les valeurs que le référentiel admet encore, le
+>   cadrage, le besoin avec ses prix estimés, le matériel, le personnel, les pièces, les sous-critères et le fichier de
+>   spécifications admis par la catégorie.
+> - **Le numéro** : dernière + 1.
+> - **Le journal du plan** : `FICHE_REVISION_OUVERTE`, « DAO, révision ouverte depuis la version n : version m en brouillon ».
+>   Une révision ordinaire, sans `depuis`, ne journalise rien, comme avant.
+> - **Les refus** :
+>   - 404 si n est inconnue ou non validée ;
+>   - 409 `REVISION_OUVERTE` si un brouillon existe déjà ;
+>   - les refus habituels de la révision restent : `DOSSIER_EN_EXAMEN`, mandat, forme outillée.
+> - **Les types de journal** `FICHE_REVISION_OUVERTE` et `FICHE_REVISION_ABANDONNEE` sont nouveaux. Le front leur donne un libellé
+>   s'il en tient une liste.
+
 ## Q1 — Le mode de remise figé (R8)
 
 Si la version n a un autre mode de remise que la dernière, le mode figé l'emporte (règle R8) et la copie prend le mode figé.
 **Le front le suppose. Le backend confirme-t-il ?**
+
+> ⚠️ **2026-10-17, réponse du backend à Q1 : oui, confirmé et appliqué.**
+> - **Le mode figé** : c'est celui de la dernière version qui porte une migration documentée, sinon celui de la dernière version
+>   validée (`modeFige`).
+> - **La copie** : si la version n en a un autre, la copie prend le mode figé. Sans cela, la validation du brouillon serait refusée
+>   (409 `MODE_FIGE`).
+> - **Le test** : `DaoCompletIntegrationTest.abandonnerEtRepartir` (v1, v2 qui diffère, v3 depuis la v1, abandon vers la v2, refus,
+>   journal).
 
 ## Ce que le front fera, dès la livraison
 

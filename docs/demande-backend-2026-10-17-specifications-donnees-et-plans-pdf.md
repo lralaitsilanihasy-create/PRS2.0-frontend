@@ -168,6 +168,17 @@ des travaux » manquera au dossier. Déposez-les en PDF. »
 caractéristiques exigées, par lot » et porte la mention « sans document » (`documentMaitre = AUCUN`). Or le DAO complet
 l'imprime. Une rubrique « Prescriptions générales » et un document maître parlant seraient plus justes.
 
+> ⚠️ **2026-10-17, réponse du backend : les deux restent en l'état** (arbitrage de l'utilisateur au backend, le 17/10).
+> - **La rubrique.** Les rubriques ne se créent que par migration Flyway, et la rubrique d'un champ se lit sur son code. Une
+>   rubrique `B12-PG` imposerait donc de renommer le champ en `B12-PG-01` : dans le CSV, sa copie et la base, et jusque dans les
+>   valeurs de la fiche 303339, dont la **v4 validée**. Le gain est de rangement ; le coût touche une version validée. `B12-BE-01`
+>   reste donc sous « Articles et caractéristiques exigées, par lot ». L'écran peut lui donner un intertitre à lui s'il le souhaite.
+> - **Le document maître.** `AUCUN` veut dire « aucun **document séparé** ne porte ce champ par un jeton ». Les documents DPAO, AE,
+>   CCAP sont produits depuis leurs modèles, et aucun modèle ne contient `{{B12-BE-01}}`. C'est le **DAO complet** qui l'imprime
+>   directement, en tête des spécifications. Mettre `CCAP` ferait attendre le champ dans le modèle du CCAP, où il n'est pas. C'est
+>   la même convention que la localisation des travaux (`B02-OT-03` à `06`, imprimés par la garde seule). L'écran peut afficher
+>   « imprimé au DAO complet » plutôt que « sans document ».
+
 **Volet B, travaux** : différé, faute de ligne de travaux éligible. L'écran est prêt :
 - dépôt PDF au B14, 50 Mo au plus ;
 - un Word est refusé ;
