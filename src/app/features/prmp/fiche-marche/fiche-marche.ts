@@ -715,7 +715,9 @@ export class FicheMarcheEcran {
     // ⚠️ Lot 1c — `this.cadrage()` ne porte QUE les réponses : le type vient du plan et n'est pas renvoyé.
     // ⚠️ R8 (V110) — le mode figé part toujours : sans la clé, le serveur lirait « papier » et refuserait (409 MODE_FIGE).
     const fige = this.fiche()?.modeFige ? this.fiche()?.modeRemiseFige : null;
-    this.ficheService.cadrage(id, fige ? { ...this.cadrage(), modeRemise: fige } : this.cadrage()).subscribe({
+    // ⚠️ 17/10 — le mode affiché part toujours, défaut compris (« électronique ») : le serveur lirait une fiche sans clé comme papier.
+    const mode = fige ?? this.cadrageEffectif()['modeRemise'] ?? null;
+    this.ficheService.cadrage(id, mode ? { ...this.cadrage(), modeRemise: mode } : this.cadrage()).subscribe({
       next: (f) => {
         this.saving.set(false);
         this.appliquer(f);

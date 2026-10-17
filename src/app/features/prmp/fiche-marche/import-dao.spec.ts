@@ -22,7 +22,7 @@ const RESULTAT: ImportDaoResult = {
   cadrage: [
     { cle: 'attributaires', valeur: 'MULTI', section: 'MULTI', actuelle: null },
     { cle: 'avance', valeur: 'OUI', section: 'AVANCE', actuelle: 'NON' },
-    { cle: 'modeRemise', valeur: 'PAPIER', section: 'PAPIER', actuelle: null },   // la fiche vaut « Papier » par défaut
+    { cle: 'modeRemise', valeur: 'PAPIER', section: 'PAPIER', actuelle: null },   // la fiche vaut « Électronique » par défaut (17/10)
     { cle: 'tauxAvance', valeur: 15, section: 'AVANCE', actuelle: null },         // un complément, nommé par son libellé
   ],
   propositions: [
@@ -153,7 +153,8 @@ describe('Import du DAO — la revue avant d’écrire (demande du pilote du 28/
     // Cadrage : la réponse sur une question sans réponse est retenue, celle qui changerait « Non » ne l'est pas.
     const cad = Array.from(racine().querySelectorAll('input[aria-label^="Retenir la réponse"]')) as HTMLInputElement[];
     expect(cad.map((c) => c.checked)).toEqual([true, false, false, true]);
-    expect(cad[2].disabled).toBe(true);   // « Papier » : déjà la réponse (par défaut), rien à écrire
+    // ⚠️ 17/10 — la fiche vaut « électronique » par défaut : le « Papier » du DAO la changerait, la PRMP le décide (non coché).
+    expect(cad[2].disabled).toBe(false);
     expect(texte(racine())).toContain('Taux de l’avance');
     expect(texte(racine())).not.toContain('tauxAvance');
     expect(texte(racine())).toContain('Multi-attributaire');

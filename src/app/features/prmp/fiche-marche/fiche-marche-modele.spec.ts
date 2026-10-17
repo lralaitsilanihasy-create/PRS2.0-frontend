@@ -107,16 +107,16 @@ describe('Fiche DAO — règles pures (esquisse du 22/09)', () => {
     expect(cadrageComplet({ typeMarche: 'CONTRAT_CADRE', categorie: 'FOURNITURES_SERVICES', alloti: 'NON', variantes: 'NON', groupement: 'NON', provenance: 'NATIONAL', typePrix: 'UNITAIRES', prixRevisable: 'NON', garantieSoumission: 'NON', avance: 'NON', attributaires: 'MONO' })).toBe(true);
   });
 
-  it('mode de remise (27/09) : « papier » par défaut tant que la PRMP n’a rien choisi — complet, résumé, conditions ; rien n’est inventé dans le cadrage nu', () => {
+  it('mode de remise (27/09 ; électronique par défaut depuis le 17/10) : réponse par défaut tant que la PRMP n’a rien choisi — complet, résumé, conditions ; rien n’est inventé dans le cadrage nu', () => {
     const nu = { typeMarche: 'QUANTITE_FIXE', categorie: 'FOURNITURES_SERVICES' };
-    expect(avecDefauts(nu)['modeRemise']).toBe('PAPIER');
+    expect(avecDefauts(nu)['modeRemise']).toBe('ELECTRONIQUE');   // ⚠️ 17/10 (pilote)
     expect(nu).not.toHaveProperty('modeRemise'); // le cadrage envoyé au serveur ne porte pas la réponse par défaut
-    expect(avecDefauts({ ...nu, modeRemise: 'ELECTRONIQUE' })['modeRemise']).toBe('ELECTRONIQUE');
-    expect(resumeCadrage({ ...nu, alloti: 'NON' }).map((p) => p.texte)).toContain('Remise papier');
-    expect(resumeCadrage({ ...nu, alloti: 'NON', modeRemise: 'ELECTRONIQUE' }).map((p) => p.texte)).toContain('Remise électronique');
+    expect(avecDefauts({ ...nu, modeRemise: 'PAPIER' })['modeRemise']).toBe('PAPIER');
+    expect(resumeCadrage({ ...nu, alloti: 'NON' }).map((p) => p.texte)).toContain('Remise électronique');
+    expect(resumeCadrage({ ...nu, alloti: 'NON', modeRemise: 'PAPIER' }).map((p) => p.texte)).toContain('Remise papier');
     // les champs du bloc B04-SE s'ouvrent par la même clé que les documents (`SI:B04-SE`)
-    expect(evaluerCondition('modeRemise = ELECTRONIQUE', avecDefauts(nu))).toBe(false);
-    expect(evaluerCondition('modeRemise = ELECTRONIQUE', avecDefauts({ ...nu, modeRemise: 'ELECTRONIQUE' }))).toBe(true);
+    expect(evaluerCondition('modeRemise = ELECTRONIQUE', avecDefauts(nu))).toBe(true);
+    expect(evaluerCondition('modeRemise = ELECTRONIQUE', avecDefauts({ ...nu, modeRemise: 'PAPIER' }))).toBe(false);
   });
 
   it('cadrage complet : toutes les questions posées répondues, compléments compris (nombre de lots, taux d’avance)', () => {
@@ -130,8 +130,8 @@ describe('Fiche DAO — règles pures (esquisse du 22/09)', () => {
     expect(cadrageComplet({ ...complet, avance: 'NON', tauxAvance: null })).toBe(true);
     expect(cadrageComplet({ ...complet, penalites: '' })).toBe(false);
     const puces = resumeCadrage(complet).map((p) => p.texte);
-    // ⚠️ 27/09 : « Remise papier » est la réponse par défaut de la question de remise, jamais absente du résumé.
-    expect(puces).toEqual(['Alloti · 3 lots', 'Variantes non', 'Groupement non', 'Fournitures importées', 'Prix unitaires', 'Prix ferme', 'Garantie de soumission exigée', 'Remise papier', 'Avance 10 %', 'Pénalités selon le CCAG']);
+    // ⚠️ 27/09 : la réponse par défaut de la remise (« électronique » depuis le 17/10) de la question de remise, jamais absente du résumé.
+    expect(puces).toEqual(['Alloti · 3 lots', 'Variantes non', 'Groupement non', 'Fournitures importées', 'Prix unitaires', 'Prix ferme', 'Garantie de soumission exigée', 'Remise électronique', 'Avance 10 %', 'Pénalités selon le CCAG']);
     // ⚠️ Relevé sur la démonstration du 24/09 : la mise en minuscule ne doit pas manger un sigle.
     expect(resumeCadrage({ ...complet, penalites: 'PLAFOND_DIFFERENT' }).at(-1)?.texte).toBe('Pénalités plafond différent, à préciser');
   });

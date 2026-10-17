@@ -798,7 +798,8 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     bouton('Enregistrer le cadrage').click();
     const put = http.expectOne('/api/fiches-marche/42/cadrage');
     expect(put.request.method).toBe('PUT');
-    expect(put.request.body).toEqual({ cadrage: { ...CADRAGE_COMPLET, alloti: 'OUI', nbLots: 3 } });
+    // ⚠️ 17/10 — le mode affiché part toujours, défaut « électronique » compris.
+    expect(put.request.body).toEqual({ cadrage: { ...CADRAGE_COMPLET, alloti: 'OUI', nbLots: 3, modeRemise: 'ELECTRONIQUE' } });
     // Le type n'est jamais renvoyé : le serveur le tient du plan, l'écran ne le lui apprend pas.
     expect((put.request.body as { cadrage: Record<string, unknown> }).cadrage['typeMarche']).toBeUndefined();
     put.flush(fiche({ cadrage: { ...CADRAGE_COMPLET, alloti: 'OUI', nbLots: 3 }, valeurs: {} }));
@@ -866,7 +867,7 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
 
   it('remise électronique (27/09) — mode papier : la rubrique ne montre que le mode, lu « Papier » ; rien d’autre ne s’ouvre', () => {
     monter('PRMP', 42);
-    ouvrir(REF_SE, fiche({ cadrage: CADRAGE_COMPLET, valeurs: {}, valeursCadrage: { 'B04-SE-01': 'PAPIER' } }));
+    ouvrir(REF_SE, fiche({ cadrage: { ...CADRAGE_COMPLET, modeRemise: 'PAPIER' }, valeurs: {}, valeursCadrage: { 'B04-SE-01': 'PAPIER' } }));   // ⚠️ 17/10 — papier choisi
     fixture.componentInstance.allerAuBloc('B04');
     rendre();
     expect(Array.from(racine().querySelectorAll('.fm__rub h3')).map((h) => texte(h))).toEqual(['Lieu, date et heure de remise DPAO', 'Ouverture des plis DPAO', 'Remise électronique DPAO']);
@@ -906,26 +907,28 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     expect(fixture.componentInstance.valeurs()['B04-SE-03']).toBe('2026-10-12T08:00');
   });
 
-  it('remise électronique (27/09) — la question de cadrage se présente cochée « Papier » par défaut et n’est pas envoyée tant qu’elle n’est pas choisie', () => {
+  it('remise électronique (17/10, demande du pilote) — la question se présente cochée « Électronique » par défaut, et ce mode part au serveur', () => {
     monter('PRMP', 42);
     ouvrir(REFERENTIEL, fiche({ cadrage: { ...CADRAGE_COMPLET } }));
     fixture.componentInstance.etape.set(1);
     rendre();
-    const papier = racine().querySelector('input[name="q-modeRemise"][value="PAPIER"]') as HTMLInputElement;
-    expect(papier.checked).toBe(true);
+    const electronique = racine().querySelector('input[name="q-modeRemise"][value="ELECTRONIQUE"]') as HTMLInputElement;
+    expect(electronique.checked).toBe(true);
     expect(fixture.componentInstance.cadrageOk()).toBe(true);
+    expect(fixture.componentInstance.resume().map((p) => p.texte)).toContain('Remise électronique');
+    // Le serveur lit une fiche sans clé comme « papier » : le mode affiché part donc explicitement.
     fixture.componentInstance.enregistrerCadrage();
     const req = http.expectOne((r) => r.url.endsWith('/api/fiches-marche/42/cadrage'));
-    expect(req.request.body).not.toHaveProperty('modeRemise');
-    req.flush(fiche({ cadrage: { ...CADRAGE_COMPLET } }));
+    expect((req.request.body as { cadrage: Record<string, unknown> }).cadrage['modeRemise']).toBe('ELECTRONIQUE');
+    req.flush(fiche({ cadrage: { ...CADRAGE_COMPLET, modeRemise: 'ELECTRONIQUE' } }));
     rendre();
-    // le choix explicite de l'électronique, lui, part au serveur
+    // le papier reste un choix : il part tel quel
     fixture.componentInstance.etape.set(1);
     rendre();
-    (racine().querySelector('input[name="q-modeRemise"][value="ELECTRONIQUE"]') as HTMLInputElement).click();
+    (racine().querySelector('input[name="q-modeRemise"][value="PAPIER"]') as HTMLInputElement).click();
     rendre();
-    expect(fixture.componentInstance.cadrage()['modeRemise']).toBe('ELECTRONIQUE');
-    expect(fixture.componentInstance.resume().map((p) => p.texte)).toContain('Remise électronique');
+    expect(fixture.componentInstance.cadrage()['modeRemise']).toBe('PAPIER');
+    expect(fixture.componentInstance.resume().map((p) => p.texte)).toContain('Remise papier');
   });
 
   it('remise électronique (27/09, Q8) — l’Administrateur désigne puis retire le responsable depuis la fiche, lue sans la modifier', () => {

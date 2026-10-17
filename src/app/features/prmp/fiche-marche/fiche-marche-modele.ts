@@ -301,7 +301,10 @@ export const QUESTIONS_CADRAGE: readonly QuestionCadrage[] = [
       { code: 'PAPIER', libelle: 'Papier' },
       { code: 'ELECTRONIQUE', libelle: 'Électronique' },
     ],
-    defaut: 'PAPIER',
+    // ⚠️ 17/10 (demande du pilote) — la remise électronique devient la réponse par défaut. Le serveur lit toujours une fiche SANS
+    // clé comme « papier » (V50) : l'enregistrement du cadrage envoie donc le mode explicitement (`enregistrerCadrage`), pour que
+    // l'écran et le serveur disent la même chose.
+    defaut: 'ELECTRONIQUE',
   },
   {
     cle: 'avance',
