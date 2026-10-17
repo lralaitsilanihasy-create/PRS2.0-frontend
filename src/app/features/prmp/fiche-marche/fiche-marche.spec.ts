@@ -761,7 +761,9 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     rendre();
     expect(fixture.componentInstance.cadrage()['attributaires']).toBe('MULTI');
     // Une réponse suivante ne l'emporte pas non plus.
-    (racine().querySelector('input[name="q-variantes"][value="NON"]') as HTMLInputElement).click();
+    // ⚠️ 17/10 (B2) — « variantes » n'est plus posée au contrat-cadre : la garantie de soumission l'est toujours.
+    expect(racine().querySelector('input[name="q-variantes"]')).toBeNull();
+    (racine().querySelector('input[name="q-garantieSoumission"][value="NON"]') as HTMLInputElement).click();
     rendre();
     expect(fixture.componentInstance.cadrage()['attributaires']).toBe('MULTI');
   });

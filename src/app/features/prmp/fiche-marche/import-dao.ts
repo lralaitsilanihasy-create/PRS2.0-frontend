@@ -1,10 +1,11 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 
+import { AuthService } from '../../../core/auth/auth.service';
 import { ApiError, corpsErreur, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
 import { TYPES_DOCX, TYPES_PDF, validerFichier } from '../../../core/securite/fichiers-surs';
-import { ArticleFiche, ArticleImport, CategorieDao, ChampFiche, ConfianceImport, FicheMarche, ImportDaoResult, PassageImport, PropositionImport, ReponseCadrageImport, TypeMarche } from '../../../models';
+import { ArticleFiche, ArticleImport, BlocFiche, CategorieDao, ChampFiche, ConfianceImport, CritereIdentite, EtatCritere, FicheMarche, ImportDaoResult, PassageImport, PropositionImport, ReponseCadrageImport, TypeMarche } from '../../../models';
 import { FicheMarcheService } from '../../../services/fiche-marche.services';
 import { ModaleDirective } from '../../../shared/a11y/modale.directive';
 import { Icone } from '../../../shared/ui/icone';
@@ -64,6 +65,35 @@ export interface LotImport {
 
 export function cleLot(lot: number | null): string { return lot == null ? 'unique' : String(lot); }
 
+/** ⚠️ 17/10 — un avertissement « DAO périmé » (`DAO_PERIME : …`) se place sous le verdict d'identité, pas parmi les autres. */
+export const PREFIXE_PERIME = /^DAO_PERIME\s*:\s*/;
+
+export const LIBELLES_CRITERE: Readonly<Record<CritereIdentite, string>> = {
+  OBJET: 'Objet', AUTORITE: 'Autorité contractante', MODE: 'Mode de passation', FORME: 'Forme du marché', LOTS: 'Lots',
+};
+export const LIBELLES_ETAT: Readonly<Record<EtatCritere, string>> = { RETROUVE: 'retrouvé', CONTREDIT: 'contredit', INTROUVABLE: 'introuvable' };
+
+/**
+ * ⚠️ 17/10 (pilote) — un complément retenu sans sa question : le DAO dit le taux de l'avance (`tauxAvance`) sans que la
+ * réponse « avance : oui » soit lue. Le complément n'a de sens que sous cette réponse : on la pose avec lui (la réécrire quand
+ * la fiche la porte déjà est sans effet). Sans cela, le cadrage reste incomplet et l'étape ne se valide pas.
+ */
+export function completerParents(cadrage: Record<string, string | number>): void {
+  for (const q of QUESTIONS_CADRAGE) {
+    if (q.complement && q.complement.cle in cadrage && !(q.cle in cadrage)) cadrage[q.cle] = q.complement.si;
+  }
+}
+
+/**
+ * ⚠️ 17/10 — peut-on appliquer, au vu du verdict d'identité ? Un DAO étranger jamais ; un DAO non prouvé seulement attesté,
+ * et seulement par la PRMP (le serveur refuse l'attestation d'une UGPM). Sans verdict (serveur antérieur) : comme avant.
+ */
+export function identiteAutorise(verdict: string | null | undefined, attestee: boolean, estPrmp: boolean): boolean {
+  if (verdict === 'ETRANGER') return false;
+  if (verdict === 'NON_PROUVE') return attestee && estPrmp;
+  return true;
+}
+
 /** Les articles lus, regroupés par lot dans l'ordre du document, face au besoin déjà saisi. */
 export function lotsImport(lus: readonly ArticleImport[], actuels: readonly ArticleFiche[]): LotImport[] {
   const lots = new Map<string, LotImport>();
@@ -113,9 +143,14 @@ export function versArticleFiche(a: ArticleImport): ArticleFiche {
 export class ImportDao {
   private readonly ficheService = inject(FicheMarcheService);
   private readonly toast = inject(ToastService);
+  private readonly auth = inject(AuthService);
 
   readonly idDmc = input.required<number>();
+  /** ⚠️ 17/10 — la ligne du plan de la fiche, nommée dans l'attestation (« … celui de la ligne 303339 »). */
+  readonly ligne = input<number | null>(null);
   readonly champs = input<ChampFiche[]>([]);
+  /** ⚠️ 17/10 (demande pilote) — les blocs du référentiel, pour titrer chaque tableau par son nom (« Bloc B10 — Modifications… »). */
+  readonly blocsReferentiel = input<BlocFiche[]>([]);
   readonly typeMarche = input<TypeMarche | null>(null);
   readonly categorie = input<CategorieDao | null>(null);
   /** Fiche encore vierge : l'import est proposé en tête du cadrage ; sinon, un simple bouton « Réimporter ». */
@@ -150,6 +185,8 @@ export class ImportDao {
   });
   readonly blocs = computed(() => [...new Set(this.lignes().map((l) => l.bloc))]);
   lignesDuBloc(bloc: string): Ligne[] { return this.lignes().filter((l) => l.bloc === bloc); }
+  /** Le nom du bloc tel que la fiche le montre ; à défaut, son code seul. */
+  nomBloc(bloc: string): string | null { return this.blocsReferentiel().find((b) => b.code === bloc)?.libelle ?? null; }
 
   // ── Articles du besoin (16/10) ────────────────────────────────────────────────────────────
   /** Le besoin déjà saisi, lu à l'arrivée du résultat ; `null` tant qu'il n'est pas connu (rien n'est coché d'office). */
@@ -168,6 +205,63 @@ export class ImportDao {
   /** Une quantité lisible : milliers séparés (« 1 500 »), décimales à la française. */
   private nombre(n: number | null): string {
     return n == null ? '—' : n.toLocaleString('fr-FR', { maximumFractionDigits: 3 });
+  }
+
+  // ── Identité du DAO (17/10) ──────────────────────────────────────────────────────────────
+  readonly identite = computed(() => this.resultat()?.identite ?? null);
+  readonly etranger = computed(() => this.identite()?.verdict === 'ETRANGER');
+  readonly nonProuve = computed(() => this.identite()?.verdict === 'NON_PROUVE');
+  readonly estPrmp = computed(() => this.auth.role() === 'PRMP');
+  readonly attestee = signal(false);
+  readonly autorise = computed(() => identiteAutorise(this.identite()?.verdict, this.attestee(), this.estPrmp()));
+  /** Les avertissements « DAO périmé », sans leur code, placés sous le verdict ; les autres restent où ils étaient. */
+  readonly perimes = computed(() => (this.resultat()?.avertissements ?? []).filter((a) => PREFIXE_PERIME.test(a)).map((a) => a.replace(PREFIXE_PERIME, '')));
+  readonly autresAvertissements = computed(() => (this.resultat()?.avertissements ?? []).filter((a) => !PREFIXE_PERIME.test(a)));
+  libelleCritere(c: CritereIdentite): string { return LIBELLES_CRITERE[c] ?? c; }
+  libelleEtat(e: EtatCritere): string { return LIBELLES_ETAT[e] ?? e; }
+
+  // ── Tout sélectionner (17/10, demande pilote) ───────────────────────────────────────────────
+  // Seules les lignes retenables : jamais une valeur déjà à l'identique, en anomalie, un lot bloqué, ni rien d'un DAO étranger.
+  readonly cadrageRetenable = computed(() => this.etranger() ? [] : (this.resultat()?.cadrage ?? []).filter((c) => !this.cadrageIdentique(c)).map((c) => c.cle));
+  lignesRetenables(bloc?: string): string[] {
+    if (this.etranger()) return [];
+    return this.lignes().filter((l) => !l.bloquee && !l.identique && (bloc == null || l.bloc === bloc)).map((l) => l.code);
+  }
+  // Un lot dont la fiche porte déjà des articles (ou dont le besoin n'est pas encore lu) n'entre pas dans « tout » : le cocher
+  // remplacerait une saisie. Il reste cochable à la main, comme avant.
+  readonly lotsRetenables = computed(() => this.etranger() || this.actuels() === null ? []
+    : this.lotsLus().filter((l) => !l.motifs.length && l.actuels === 0).map((l) => l.cle));
+  readonly nbRetenables = computed(() => this.cadrageRetenable().length + this.lignesRetenables().length + this.lotsRetenables().length);
+  /** Tout le retenable est coché (un lot coché à la main en plus n'y change rien). */
+  readonly toutRetenu = computed(() => this.nbRetenables() > 0
+    && this.cadrageRetenable().every((k) => this.cadrageCoche().has(k))
+    && this.lignesRetenables().every((k) => this.cochees().has(k))
+    && this.lotsRetenables().every((k) => this.lotsCoches().has(k)));
+
+  /** « tout », « partiel » ou « rien » : l'état de la case d'en-tête d'un tableau. */
+  etat(retenables: readonly string[], coches: ReadonlySet<string>): 'tout' | 'partiel' | 'rien' {
+    const n = retenables.filter((k) => coches.has(k)).length;
+    return n === 0 ? 'rien' : n === retenables.length ? 'tout' : 'partiel';
+  }
+  etatCadrage(): 'tout' | 'partiel' | 'rien' { return this.etat(this.cadrageRetenable(), this.cadrageCoche()); }
+  etatBloc(bloc: string): 'tout' | 'partiel' | 'rien' { return this.etat(this.lignesRetenables(bloc), this.cochees()); }
+
+  /** La case d'en-tête : tout coché → tout décoché ; sinon tout coché. */
+  basculerToutCadrage(): void {
+    const tout = this.etatCadrage() === 'tout';
+    this.cadrageCoche.set(tout ? new Set() : new Set(this.cadrageRetenable()));
+  }
+  basculerToutBloc(bloc: string): void {
+    const codes = this.lignesRetenables(bloc);
+    const tout = this.etatBloc(bloc) === 'tout';
+    this.cochees.update((s) => { const n = new Set(s); for (const c of codes) { if (tout) n.delete(c); else n.add(c); } return n; });
+  }
+  /** Le bouton général : tout ce qui est retenable, valeurs, cadrage et lots d'articles ; ou plus rien. */
+  basculerTout(): void {
+    const tout = this.toutRetenu();
+    this.cadrageCoche.set(tout ? new Set() : new Set(this.cadrageRetenable()));
+    this.cochees.set(tout ? new Set() : new Set(this.lignesRetenables()));
+    this.lotsCoches.set(tout ? new Set() : new Set(this.lotsRetenables()));
   }
 
   readonly nbRetenues = computed(() => this.cochees().size + this.cadrageCoche().size + this.lotsCoches().size);
@@ -192,14 +286,18 @@ export class ImportDao {
         this.lecture.set(false);
         this.refus.set(new Map());
         this.refusGeneral.set(null);
-        this.cochees.set(new Set(r.propositions.filter(cocheeDOffice).map((p) => p.code)));
+        this.attestee.set(false);
+        // ⚠️ 17/10 — un DAO étranger : rien n'est coché, rien ne peut l'être (le serveur refuserait de toute façon).
+        const etranger = r.identite?.verdict === 'ETRANGER';
+        this.cochees.set(etranger ? new Set() : new Set(r.propositions.filter(cocheeDOffice).map((p) => p.code)));
         // Une réponse n'est retenue d'office que si la question est vraiment sans réponse (défaut compris).
-        this.cadrageCoche.set(new Set(r.cadrage.filter((c) => { const v = this.actuelleCadrage(c); return v == null || v === ''; }).map((c) => c.cle)));
+        // ⚠️ 17/10 — une réponse lue par clause n'est jamais sûre : jamais cochée d'office (demande cadrage-depuis-dao, B1.1).
+        this.cadrageCoche.set(etranger ? new Set() : new Set(r.cadrage.filter((c) => { const v = this.actuelleCadrage(c); return c.source !== 'clause' && (v == null || v === ''); }).map((c) => c.cle)));
         this.actuels.set(null);
         this.lotsCoches.set(new Set());
         this.resultat.set(r);
         // ⚠️ 16/10 — des articles lus : ce que la fiche porte déjà décide de ce qui est coché d'office (un lot vide).
-        if (r.articles?.length) {
+        if (r.articles?.length && !etranger) {
           this.ficheService.articles(this.idDmc()).subscribe({
             next: (a) => {
               this.actuels.set(a);
@@ -278,11 +376,14 @@ export class ImportDao {
   // ── Application ───────────────────────────────────────────────────────────────────────────
   appliquer(): void {
     const r = this.resultat();
-    if (!r || !this.nbRetenues()) return;
+    if (!r || !this.nbRetenues() || !this.autorise()) return;
+    // ⚠️ 17/10 — l'attestation n'est envoyée que pour un DAO non prouvé, cochée par la PRMP.
+    const attestation = this.nonProuve() && this.attestee() ? true : undefined;
     const valeurs: Record<string, string | number> = {};
     for (const p of r.propositions) if (this.cochees().has(p.code) && p.valeur != null) valeurs[p.code] = p.valeur;
     const cadrage: Record<string, string | number> = {};
     for (const c of r.cadrage) if (this.cadrageCoche().has(c.cle)) cadrage[c.cle] = c.valeur;
+    completerParents(cadrage);
     const lots = this.lotsLus().filter((l) => this.lotsCoches().has(l.cle) && !l.motifs.length);
     const n = Object.keys(valeurs).length, m = Object.keys(cadrage).length;
     this.envoi.set(true);
@@ -290,14 +391,14 @@ export class ImportDao {
     this.refusGeneral.set(null);
     // ⚠️ 16/10 — deux écritures : les champs (atomique, comme avant), puis le besoin lot par lot. Sans champ retenu,
     // seuls les lots s'écrivent.
-    if (!n && !m) { this.ecrireLots(r, lots, 0, false); return; }
-    this.ficheService.appliquerImport(this.idDmc(), { cadrage, valeurs, fichier: r.fichier, empreinte: r.empreinte }).subscribe({
+    if (!n && !m) { this.ecrireLots(r, lots, 0, false, '', attestation); return; }
+    this.ficheService.appliquerImport(this.idDmc(), { cadrage, valeurs, fichier: r.fichier, empreinte: r.empreinte, attestation }).subscribe({
       next: (f) => {
         this.applique.emit(f);
         // Les champs sont écrits : ils ne doivent pas repartir si un lot est refusé et que la PRMP réapplique.
         this.cochees.set(new Set());
         this.cadrageCoche.set(new Set());
-        this.ecrireLots(r, lots, 0, true, `${n} valeur${n > 1 ? 's' : ''}, ${m} réponse${m > 1 ? 's' : ''} de cadrage`);
+        this.ecrireLots(r, lots, 0, true, `${n} valeur${n > 1 ? 's' : ''}, ${m} réponse${m > 1 ? 's' : ''} de cadrage`, attestation);
       },
       error: (e: ApiError | HttpErrorResponse) => {
         this.envoi.set(false);
@@ -315,7 +416,7 @@ export class ImportDao {
    * ⚠️ 16/10 — le besoin des lots cochés, un lot après l'autre (`PUT …/articles?lot=k` remplace le besoin du lot), avec
    * la trace de l'import pour le journal du dossier. Au premier refus, on s'arrête et on dit exactement ce qui est écrit.
    */
-  private ecrireLots(r: ImportDaoResult, lots: LotImport[], i: number, champsEcrits: boolean, bilanChamps = ''): void {
+  private ecrireLots(r: ImportDaoResult, lots: LotImport[], i: number, champsEcrits: boolean, bilanChamps = '', attestation?: boolean): void {
     if (i === lots.length) {
       this.envoi.set(false);
       this.resultat.set(null);
@@ -326,11 +427,11 @@ export class ImportDao {
       return;
     }
     const l = lots[i];
-    this.ficheService.enregistrerBesoin(this.idDmc(), l.lot, l.articles.map(versArticleFiche), { importFichier: r.fichier, importEmpreinte: r.empreinte }).subscribe({
+    this.ficheService.enregistrerBesoin(this.idDmc(), l.lot, l.articles.map(versArticleFiche), { importFichier: r.fichier, importEmpreinte: r.empreinte, attestation }).subscribe({
       next: () => {
         // Repris : il ne doit pas repartir si la suite est refusée et que la PRMP réapplique.
         this.lotsCoches.update((s) => { const x = new Set(s); x.delete(l.cle); return x; });
-        this.ecrireLots(r, lots, i + 1, champsEcrits, bilanChamps);
+        this.ecrireLots(r, lots, i + 1, champsEcrits, bilanChamps, attestation);
       },
       error: (e: ApiError | HttpErrorResponse) => {
         this.envoi.set(false);

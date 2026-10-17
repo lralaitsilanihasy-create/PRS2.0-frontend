@@ -302,7 +302,7 @@
                 <span class="fm__etape-s">
                   @switch (e.cle) {
                     @case ('ligne') { {{ valeursPpm().length }} informations reprises }
-                    @case ('cadrage') { {{ cadrageOk() ? 'complet' : questions().length + ' questions' }} }
+                    @case ('cadrage') { {{ cadrageOk() ? 'complet' : sansReponse().length + ' à répondre' }} }
                     @case ('blocs') { {{ blocs().length }} blocs }
                     @case ('reprises') { automatiques }
                     @case ('controles') { {{ bilan().bloquants.length }} à lever }
@@ -324,7 +324,7 @@
               <!-- ⚠️ 28/09 — un DAO déjà rédigé pré-remplit la fiche : proposé en tête tant qu'elle est vierge,
                    un simple bouton ensuite. Rien n'est écrit sans la PRMP. -->
               @if (!figee() && !enLecture() && !ecritureBloquee() && idDmc(); as id) {
-                <app-import-dao [idDmc]="id" [champs]="referentiel().champs" [typeMarche]="fiche()?.typeMarche ?? null" [categorie]="fiche()?.categorie ?? null" [vierge]="ficheVierge()" (applique)="importApplique($event)" (besoinImporte)="besoinImporte()" />
+                <app-import-dao [idDmc]="id" [ligne]="fiche()?.idDetailCourant ?? fiche()?.idDetail ?? null" [champs]="referentiel().champs" [blocsReferentiel]="referentiel().blocs" [typeMarche]="fiche()?.typeMarche ?? null" [categorie]="fiche()?.categorie ?? null" [vierge]="ficheVierge()" (applique)="importApplique($event)" (besoinImporte)="besoinImporte()" />
               }
               @if (allotiCorrige()) {
                 <div class="alert alert-warning" role="status">
@@ -337,9 +337,10 @@
                 </div>
               }
               @for (q of questions(); track q.cle) {
-                <div class="fm__q" [class.fm__q--plan]="imposee(q.cle)">
+                <div class="fm__q" [id]="'fq-' + q.cle" [class.fm__q--plan]="imposee(q.cle)" [class.fm__q--manque]="sansReponseCles().has(q.cle) && !figee()">
                   <div class="fm__q-tete">
                     <span class="fm__q-l">{{ q.libelle }}</span>
+                    @if (sansReponseCles().has(q.cle) && !figee()) { <span class="fm__q-manque">à répondre</span> }
                     <!-- ⚠️ Demande du pilote (23/09) — l'allotissement vient du nombre de lots du plan : la question
                          reste lisible, la réponse est celle du plan, et elle ne se modifie pas ici. -->
                     @if (imposee(q.cle)) { <span class="fm__q-plan">repris du plan de passation</span> }
@@ -384,7 +385,12 @@
                 @if (ecritureBloquee()) {
                   <span class="fm__aut">{{ contratAbsent() ? 'Le serveur ne sert pas encore le contrat : rien ne peut être enregistré.' : 'Cette forme de marché n’est pas encore prise en charge : rien ne peut être enregistré ici.' }}</span>
                 } @else if (!cadrageOk()) {
-                  <span class="fm__aut">Répondez à toutes les questions pour continuer.</span>
+                  <!-- ⚠️ 17/10 (pilote) — dire lesquelles : après un import, le DAO laisse souvent des questions sans réponse. -->
+                  <span class="fm__aut">Pour continuer, répondez encore à {{ sansReponse().length === 1 ? 'la question' : 'ces ' + sansReponse().length + ' questions' }} :
+                    @for (q of sansReponse(); track q.cle; let dernier = $last) {
+                      <button type="button" class="fm__lien" (click)="allerQuestion(q.cle)">{{ q.libelle }}</button>@if (!dernier) {<span> · </span>}
+                    }
+                  </span>
                 }
               </div>
             </section>

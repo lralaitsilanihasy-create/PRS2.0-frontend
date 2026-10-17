@@ -218,3 +218,24 @@ Un DAO jugé `ETRANGER` sur sa propre ligne est un bloquant, comme une fausse va
   inactif tant qu'elle n'est pas cochée, puis `attestation: true` est envoyé.
 - **`DAO_PERIME`** : avertissement placé sous le verdict.
 - Recette sur les mêmes DAO, résultat reporté dans cette demande.
+
+## Recette du front, 17/10 (backend ffb3bb0, JAR redémarré avec V128)
+
+Le DAO utilisé est `PDF_generes/DAO_CC_303339_consomptibles_informatiques_charte_application.pdf`, avec le compte PRMP001.
+
+| Cas | Fiche | Verdict servi | À l'écran |
+|---|---|---|---|
+| Sur sa ligne | DMC 1 (303339) | `CONFORME` : objet, autorité, mode et forme retrouvés, page 1 | encadré vert « Ce DAO est bien celui de la ligne 303339 » ; 41 lignes cochées d'office ; « Appliquer 41 lignes » actif |
+| Sur une autre ligne | DMC 3 (303338) | `ETRANGER` : `OBJET` contredit, `voisine` = 303339 | encadré rouge « Ce DAO n'est pas celui de cette fiche : rien ne peut en être repris » ; 0 case active ; seul « Fermer » reste |
+
+- **B2 vérifié par l'API sur DMC 3** : `PUT …/import/appliquer` reçoit 409, avec le motif en message, **avec ou sans** `attestation: true`. La
+  fiche n'a aucune valeur après les deux appels.
+- **Non recetté** :
+  - `NON_PROUVE` (6213 sur 303336) : la ligne n'a pas encore de dossier de mise en concurrence ;
+  - le refus d'une attestation envoyée par une UGPM : le jeu de test n'a pas d'UGPM rattachée à la PRMP ;
+  - `IMPORT_EXPIRE` : il faut attendre plus de 4 h ;
+  - `DAO_PERIME` : aucun DAO de recette ne porte une date limite passée.
+
+  L'écran de ces quatre cas est couvert par les tests unitaires (`identiteAutorise`, `PREFIXE_PERIME`).
+- **Front** : `ImportDaoResult.identite`, l'attestation dans `AppliquerImportCorps` et dans la trace de `PUT …/articles`. La case
+  d'attestation n'est proposée qu'à la PRMP.

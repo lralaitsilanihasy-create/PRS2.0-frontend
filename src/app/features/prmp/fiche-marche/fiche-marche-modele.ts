@@ -218,6 +218,9 @@ export const QUESTIONS_CADRAGE: readonly QuestionCadrage[] = [
     libelle: 'Les variantes sont-elles autorisées ?',
     aide: 'Question séparée de l’allotissement.',
     documents: 'DPAO',
+    // ⚠️ 17/10 (demande cadrage-depuis-dao, B2, Q1 du backend : non) — sans usage pour un contrat-cadre : ni section des modèles
+    // DPAC-CC / AE-CC, ni champ, ni contrôle ; le serveur n'exige aucune complétude. Plus posée au contrat-cadre, comme penalites.
+    sauf: { cle: 'typeMarche', valeur: 'CONTRAT_CADRE' },
     options: [{ code: 'OUI', libelle: 'Oui' }, { code: 'NON', libelle: 'Non' }],
   },
   {
@@ -233,6 +236,9 @@ export const QUESTIONS_CADRAGE: readonly QuestionCadrage[] = [
     aide: '',
     documents: 'DPAO, AE',
     si: { cle: 'groupement', valeur: 'OUI' },
+    // ⚠️ 17/10 (demande cadrage-depuis-dao, B2, Q1 du backend : non) — sans usage pour un contrat-cadre : ni section des modèles
+    // DPAC-CC / AE-CC, ni champ, ni contrôle ; le serveur n'exige aucune complétude. Plus posée au contrat-cadre, comme penalites.
+    sauf: { cle: 'typeMarche', valeur: 'CONTRAT_CADRE' },
     options: [
       { code: 'CONJOINT_OU_SOLIDAIRE', libelle: 'Conjoint ou solidaire, au choix des candidats' },
       { code: 'SOLIDAIRE_OBLIGATOIRE', libelle: 'Obligatoirement solidaire' },
@@ -249,6 +255,9 @@ export const QUESTIONS_CADRAGE: readonly QuestionCadrage[] = [
     // Elle était donc posée pour rien dans deux catégories sur trois. Si un fichier de travaux ajoute un jour des
     // matériaux importés, la question revient par ce même interrupteur.
     si: { cle: 'categorie', valeur: 'FOURNITURES_SERVICES' },
+    // ⚠️ 17/10 (demande cadrage-depuis-dao, B2, Q1 du backend : non) — sans usage pour un contrat-cadre : ni section des modèles
+    // DPAC-CC / AE-CC, ni champ, ni contrôle ; le serveur n'exige aucune complétude. Plus posée au contrat-cadre, comme penalites.
+    sauf: { cle: 'typeMarche', valeur: 'CONTRAT_CADRE' },
     options: [{ code: 'NATIONAL', libelle: 'Territoire national' }, { code: 'IMPORTEES', libelle: 'Importées' }],
   },
   {
@@ -268,6 +277,9 @@ export const QUESTIONS_CADRAGE: readonly QuestionCadrage[] = [
     libelle: 'Le prix est-il révisable ?',
     aide: 'Ferme ou révisable, en question séparée.',
     documents: 'DPAO, CCAP',
+    // ⚠️ 17/10 (demande cadrage-depuis-dao, B2, Q1 du backend : non) — sans usage pour un contrat-cadre : ni section des modèles
+    // DPAC-CC / AE-CC, ni champ, ni contrôle ; le serveur n'exige aucune complétude. Plus posée au contrat-cadre, comme penalites.
+    sauf: { cle: 'typeMarche', valeur: 'CONTRAT_CADRE' },
     options: [{ code: 'NON', libelle: 'Ferme' }, { code: 'OUI', libelle: 'Révisable' }],
   },
   {
@@ -725,19 +737,30 @@ export function avecDefauts(cadrage: Cadrage): Cadrage {
 
 /** Le cadrage est-il complet (toutes les questions posées ont une réponse, compléments compris) ? */
 export function cadrageComplet(cadrageNu: Cadrage): boolean {
+  return questionsSansReponse(cadrageNu).length === 0;
+}
+
+/** Une question posée a-t-elle sa réponse (complément compris) dans ce cadrage, déjà complété de ses défauts ? */
+function questionRepondue(q: QuestionCadrage, cadrage: Cadrage): boolean {
+  const v = cadrage[q.cle];
+  if (v == null || v === '') return false;
+  // Une option qui n'est plus proposée (« mixte » restée après un passage des travaux aux fournitures) n'est pas une réponse.
+  const option = q.options.find((o) => o.code === String(v));
+  if (option?.si && String(cadrage[option.si.cle] ?? '') !== option.si.valeur) return false;
+  if (q.complement && String(v) === q.complement.si) {
+    const c = cadrage[q.complement.cle];
+    return c != null && c !== '' && Number(c) > 0;
+  }
+  return true;
+}
+
+/**
+ * ⚠️ 17/10 (pilote) — les questions posées encore sans réponse : après un import, le DAO ne répond souvent qu'à une partie du
+ * cadrage, et l'étape doit dire lesquelles restent (sinon « Répondez à toutes les questions » ne dit pas où).
+ */
+export function questionsSansReponse(cadrageNu: Cadrage): QuestionCadrage[] {
   const cadrage = avecDefauts(cadrageNu);
-  return questionsPosees(cadrage).every((q) => {
-    const v = cadrage[q.cle];
-    if (v == null || v === '') return false;
-    // Une option qui n'est plus proposée (« mixte » restée après un passage des travaux aux fournitures) n'est pas une réponse.
-    const option = q.options.find((o) => o.code === String(v));
-    if (option?.si && String(cadrage[option.si.cle] ?? '') !== option.si.valeur) return false;
-    if (q.complement && String(v) === q.complement.si) {
-      const c = cadrage[q.complement.cle];
-      return c != null && c !== '' && Number(c) > 0;
-    }
-    return true;
-  });
+  return questionsPosees(cadrage).filter((q) => !questionRepondue(q, cadrage));
 }
 
 /** Résumé du cadrage en puces (« Quantité fixe · Alloti (3 lots) · Groupement autorisé · … »). */

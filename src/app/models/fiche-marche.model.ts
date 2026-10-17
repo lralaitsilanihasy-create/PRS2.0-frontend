@@ -824,6 +824,14 @@ export interface ReponseCadrageImport {
   valeur: string | number;
   section: string;
   actuelle: string | number | null;
+  /**
+   * ⚠️ 17/10 (`demande-backend-2026-10-17-cadrage-depuis-dao`, livré PRS20 6c8e2b5) — d'où vient la réponse : une section
+   * reconnue du modèle, le reflet d'un champ lu (`avance` depuis le taux), ou une clause lue par mots-clés (jamais sûre).
+   * Absent d'un serveur antérieur.
+   */
+  source?: 'section' | 'reflet' | 'clause' | null;
+  /** La phrase du DAO qui porte la réponse (clause, reflet). */
+  extrait?: string | null;
 }
 
 export interface ImportDaoResult {
@@ -846,6 +854,26 @@ export interface ImportDaoResult {
    * livré). Lecture seule : les lots retenus s'écrivent par `PUT …/articles?lot=k`, avec la trace de l'import.
    */
   articles?: ArticleImport[] | null;
+  /**
+   * ⚠️ 17/10 — le verdict d'identité : le DAO est-il celui de la ligne du plan ? (`demande-backend-2026-10-17-identite-dao-importe`,
+   * livré, PRS20 ffb3bb0). Absent d'un serveur antérieur. Le serveur le fait respecter à l'application (409).
+   */
+  identite?: IdentiteImport | null;
+}
+
+/** `CONFORME` : tout est retrouvé ; `NON_PROUVE` : rien de contredit, un critère introuvable (attestation de la PRMP) ; `ETRANGER` : un critère contredit (rien ne s'applique). */
+export type VerdictIdentite = 'CONFORME' | 'NON_PROUVE' | 'ETRANGER';
+export type CritereIdentite = 'OBJET' | 'AUTORITE' | 'MODE' | 'FORME' | 'LOTS';
+export type EtatCritere = 'RETROUVE' | 'CONTREDIT' | 'INTROUVABLE';
+
+export interface IdentiteImport {
+  verdict: VerdictIdentite;
+  /** Vide quand le DAO est reconnu à sa marque (DAO produit par l'application, fichier intact). */
+  criteres: { critere: CritereIdentite; plan: string; etat: EtatCritere; extrait: string | null; page: number | null }[];
+  /** La ligne du plan à laquelle le DAO ressemble autant ou plus (test de discrimination), sinon `null`. */
+  voisine: { idDetail: number; objet: string } | null;
+  /** Le verdict en une phrase, prête à afficher. */
+  motif: string;
 }
 
 /**
@@ -883,4 +911,6 @@ export interface AppliquerImportCorps {
   valeurs: Record<string, string | number>;
   fichier: string;
   empreinte: string;
+  /** ⚠️ 17/10 — la PRMP (elle seule) atteste qu'un DAO `NON_PROUVE` est celui de la ligne ; sinon 409 `ATTESTATION_REQUISE`. */
+  attestation?: boolean;
 }

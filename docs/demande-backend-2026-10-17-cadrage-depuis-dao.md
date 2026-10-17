@@ -182,3 +182,24 @@ candidat, à la soumission en ligne, à l'évaluation ou au manuel de contrôle.
 - Si B2 est confirmé, les quatre questions disparaissent du cadrage d'un contrat-cadre.
 - Recette sur le DAO de la ligne 303339 : après application, et B2 livré, il ne reste à répondre à la main que
   `garantieSoumission`, le seul point que ce DAO ne dit pas et qui sert encore.
+
+## Recette du front, 17/10 (backend 6c8e2b5, JAR redémarré)
+
+Le DAO est `PDF_generes/DAO_CC_303339_consomptibles_informatiques_charte_application.pdf`, importé sur la DMC 1 (303339) en
+lecture seule.
+
+- **Serveur** :
+  - le verdict est `CONFORME`, sans conflit ;
+  - cadrage : `attributaires`, `typePrix`, `modeRemise`, `alloti` et `groupement` en `section` ; `tauxAvance` en `reflet` ;
+    **`avance = OUI` en `reflet`**, avec l'extrait « Taux de l'avance lu : 20 % » ;
+  - **aucune réponse `clause`**, donc rien n'est tiré des IC ni du CCAG. C'est conforme à la mesure.
+- **Front (B2 livré)** :
+  - `variantes`, `formeGroupement`, `provenance` et `prixRevisable` portent `sauf: typeMarche = CONTRAT_CADRE`, comme
+    `penalites` ;
+  - à l'étape Cadrage de la fiche 303339, il ne reste que **2 questions à répondre** : `garantieSoumission`, que le DAO ne dit
+    pas, et `avance`, que l'import propose ;
+  - le rail affiche « 2 à répondre ».
+- **Revue de l'import** : « Une avance est-elle prévue ? — Oui », avec « déduite d'une valeur lue » et l'extrait, cochée
+  d'office (la fiche est vide sur cette question). Une réponse `clause` porterait « à vérifier — lue dans une clause » et
+  ne serait jamais cochée d'office.
+- **Tests** : 1 317 tests passent, et le lint ne signale rien.

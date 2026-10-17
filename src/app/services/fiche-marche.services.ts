@@ -155,7 +155,7 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
    * l'écrit au journal du dossier (`FICHE_IMPORTEE`).
    */
   enregistrerBesoin(idDmc: number, lot: number | null, articles: ArticleFiche[],
-                    trace?: { importFichier: string; importEmpreinte: string }): Observable<ArticleFiche[]> {
+                    trace?: { importFichier: string; importEmpreinte: string; attestation?: boolean }): Observable<ArticleFiche[]> {
     const params = lot == null ? undefined : new HttpParams().set('lot', lot);
     return this.http.put<ArticleFiche[]>(`${this.baseUrl}/${idDmc}/articles`, { articles, ...trace }, { params, context: skipErrorToast() });
   }

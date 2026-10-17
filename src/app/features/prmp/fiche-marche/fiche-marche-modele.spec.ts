@@ -15,6 +15,7 @@ import {
   REFERENTIEL_ESQUISSE,
   blocsASaisir,
   cadrageComplet,
+  questionsSansReponse,
   cleValeur,
   documentEffectif,
   documentsProduits,
@@ -540,5 +541,22 @@ describe('Accès direct aux blocs — saisies non enregistrées (03/10)', () => 
     expect(valeursModifiees(codes, { 'B03-QT-07': 5 }, { 'B03-QT-07': '5' })).toBe(false);
     expect(valeursModifiees(new Set(['B04-CD-01']), { 'B04-CD-01': ['A1', 'A3'] }, { 'B04-CD-01': 'A1,A3' })).toBe(false);
     expect(valeursModifiees(codes, { 'B03-QT-07': '6' }, {})).toBe(true);
+  });
+});
+
+// ⚠️ 17/10 (pilote) — après un import, l'étape Cadrage doit nommer les questions restées sans réponse.
+describe('questionsSansReponse', () => {
+  it('nomme les questions posées sans réponse ; un complément manquant compte ; vide quand tout est répondu', () => {
+    const importe = { typeMarche: 'CONTRAT_CADRE', categorie: 'FOURNITURES_SERVICES', attributaires: 'MULTI', typePrix: 'UNITAIRES', alloti: 'NON', groupement: 'OUI', tauxAvance: 20 };
+    const cles = questionsSansReponse(importe).map((q) => q.cle);
+    expect(cles).toContain('garantieSoumission');
+    expect(cles).toContain('avance');
+    // ⚠️ 17/10 (B2) — plus posées au contrat-cadre ; toujours aux autres formes
+    for (const k of ['variantes', 'formeGroupement', 'provenance', 'prixRevisable']) expect(cles).not.toContain(k);
+    const qf = questionsSansReponse({ ...importe, typeMarche: 'QUANTITE_FIXE' }).map((q) => q.cle);
+    for (const k of ['variantes', 'formeGroupement', 'provenance', 'prixRevisable']) expect(qf).toContain(k);
+    expect(cles).not.toContain('typePrix');
+    expect(cles).not.toContain('modeRemise');   // réponse par défaut : papier
+    expect(questionsSansReponse({ ...importe, avance: 'OUI', tauxAvance: null }).map((q) => q.cle)).toContain('avance');   // complément manquant
   });
 });

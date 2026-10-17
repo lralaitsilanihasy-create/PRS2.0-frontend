@@ -38,22 +38,73 @@
         <p class="idao__resume">
           @for (m of r.modeles; track m.sigle) { <span class="badge badge-neutral">{{ m.sigle }} : {{ m.reconnues }}/{{ m.unites }} paragraphes reconnus</span> }
           <span><strong>{{ nbRetenues() }}</strong> retenue{{ nbRetenues() > 1 ? 's' : '' }} · <strong>{{ nbAVerifier() }}</strong> à vérifier · <strong>{{ r.nonTrouves.length }}</strong> non trouvée{{ r.nonTrouves.length > 1 ? 's' : '' }}</span>
+          <!-- ⚠️ 17/10 (demande pilote) — tout sélectionner : seulement ce qui est retenable (jamais l'identique, l'anomalie, l'étranger). -->
+          @if (nbRetenables()) {
+            <button type="button" class="btn btn-outline btn-sm idao__tout" [disabled]="envoi()" (click)="basculerTout()">
+              {{ toutRetenu() ? 'Tout désélectionner' : 'Tout sélectionner (' + nbRetenables() + ')' }}
+            </button>
+          } @else if (!etranger()) {
+            <span class="idao__note">rien de nouveau à retenir : la fiche porte déjà ces valeurs</span>
+          }
         </p>
         <p class="idao__aide">Cochées d’office : les valeurs <span class="badge badge-success">sûres</span> qui remplissent une case vide. Les autres sont à vérifier sur l’extrait, et à cocher vous-même.</p>
-        @for (a of r.avertissements; track a) { <div class="alert alert-warning" role="status"><app-icone nom="alert" [taille]="16" /><span>{{ a }}</span></div> }
+        <!-- ⚠️ 17/10 — le verdict d'identité (demande « identite-dao-importe ») : ce DAO est-il celui de la ligne de la fiche ?
+             Étranger : rien ne peut être retenu ; non prouvé : la PRMP (elle seule) atteste avant d'appliquer. -->
+        @if (identite(); as id) {
+          <section class="idao__identite" [class.idao__identite--conforme]="id.verdict === 'CONFORME'" [class.idao__identite--douteux]="id.verdict === 'NON_PROUVE'" [class.idao__identite--etranger]="id.verdict === 'ETRANGER'" aria-labelledby="idao-identite-titre">
+            <p class="idao__identite-titre" id="idao-identite-titre">
+              <app-icone [nom]="id.verdict === 'CONFORME' ? 'check' : 'alert'" [taille]="16" />
+              <strong>{{ id.verdict === 'CONFORME' ? 'Ce DAO est bien celui de la ligne' + (ligne() ? ' ' + ligne() : '') : id.verdict === 'ETRANGER' ? 'Ce DAO n’est pas celui de cette fiche : rien ne peut en être repris' : 'Rien ne prouve que ce DAO soit celui de la ligne' + (ligne() ? ' ' + ligne() : '') }}</strong>
+            </p>
+            <p class="idao__identite-motif">{{ id.motif }}</p>
+            <!-- La voisine n'est rappelée que si le motif du serveur ne la nomme pas déjà. -->
+            @if (id.voisine && !id.motif.includes('' + id.voisine.idDetail)) { <p class="idao__identite-motif">Il ressemble à la ligne <strong>{{ id.voisine.idDetail }}</strong> : « {{ id.voisine.objet }} ».</p> }
+            @if (id.criteres.length) {
+              <ul class="idao__criteres">
+                @for (c of id.criteres; track c.critere) {
+                  <li class="idao__critere" [class.idao__critere--ok]="c.etat === 'RETROUVE'" [class.idao__critere--ko]="c.etat === 'CONTREDIT'">
+                    <span class="idao__pastille">{{ libelleCritere(c.critere) }} : {{ libelleEtat(c.etat) }}</span>
+                    <span class="idao__critere-plan">plan : « {{ c.plan }} »</span>
+                    @if (c.extrait) { <span class="idao__critere-extrait">document@if (c.page) { (p. {{ c.page }})} : « {{ c.extrait }} »</span> }
+                  </li>
+                }
+              </ul>
+            }
+            @if (id.verdict === 'NON_PROUVE') {
+              @if (estPrmp()) {
+                <label class="idao__attestation">
+                  <input type="checkbox" [checked]="attestee()" [disabled]="envoi()" (change)="attestee.set(!attestee())" />
+                  <span>J’atteste que ce DAO est celui de la ligne {{ ligne() ?? 'de cette fiche' }}. <span class="idao__note">Votre attestation est consignée au journal du dossier.</span></span>
+                </label>
+              } @else {
+                <p class="idao__identite-motif"><strong>Seule la PRMP peut attester que ce DAO est celui de la ligne :</strong> l’application attend son attestation.</p>
+              }
+            }
+            @for (a of perimes(); track a) { <div class="alert alert-warning idao__perime" role="status"><app-icone nom="alert" [taille]="16" /><span><strong>DAO périmé</strong> — {{ a }}</span></div> }
+          </section>
+        } @else {
+          @for (a of perimes(); track a) { <div class="alert alert-warning" role="status"><app-icone nom="alert" [taille]="16" /><span><strong>DAO périmé</strong> — {{ a }}</span></div> }
+        }
+        @for (a of autresAvertissements(); track a) { <div class="alert alert-warning" role="status"><app-icone nom="alert" [taille]="16" /><span>{{ a }}</span></div> }
         @if (refusGeneral(); as g) { <div class="alert alert-danger" role="alert"><app-icone nom="alert" [taille]="16" /><span>{{ g }}</span></div> }
 
         @if (r.cadrage.length) {
           <h3 class="idao__titre">Réponses de cadrage</h3>
           <table class="idao__table">
             <colgroup><col class="idao__c-coche" /><col class="idao__c-question" /><col class="idao__c-dao" /><col /></colgroup>
-            <thead><tr><th scope="col"><span class="idao__cache">Retenir</span></th><th scope="col">Question</th><th scope="col">Le DAO dit</th><th scope="col">La fiche porte</th></tr></thead>
+            <thead><tr><th scope="col"><input type="checkbox" [checked]="etatCadrage() === 'tout'" [indeterminate]="etatCadrage() === 'partiel'" [disabled]="!cadrageRetenable().length || envoi()" (change)="basculerToutCadrage()" aria-label="Retenir toutes les réponses de cadrage" /></th><th scope="col">Question</th><th scope="col">Le DAO dit</th><th scope="col">La fiche porte</th></tr></thead>
             <tbody>
               @for (c of r.cadrage; track c.cle) {
                 <tr [class.idao__refus]="refus().has(c.cle)" [class.idao__terne]="cadrageIdentique(c)">
-                  <td><input type="checkbox" [checked]="cadrageCoche().has(c.cle)" [disabled]="cadrageIdentique(c)" (change)="basculerCadrage(c.cle)" [attr.aria-label]="'Retenir la réponse : ' + libelleQuestion(c.cle)" /></td>
+                  <td><input type="checkbox" [checked]="cadrageCoche().has(c.cle)" [disabled]="cadrageIdentique(c) || etranger()" (change)="basculerCadrage(c.cle)" [attr.aria-label]="'Retenir la réponse : ' + libelleQuestion(c.cle)" /></td>
                   <td>{{ libelleQuestion(c.cle) }}@if (cadrageIdentique(c)) { <span class="idao__note">déjà à l’identique</span> }@if (refus().get(c.cle); as m) { <span class="idao__motif">{{ m }}</span> }</td>
-                  <td><strong>{{ valeurCadrage(c) }}</strong></td>
+                  <td>
+                    <strong>{{ valeurCadrage(c) }}</strong>
+                    <!-- ⚠️ 17/10 — l'origine de la réponse : lue dans une clause (à vérifier), ou déduite d'une valeur lue. -->
+                    @if (c.source === 'clause') { <span class="badge badge-warning idao__origine">à vérifier — lue dans une clause</span> }
+                    @else if (c.source === 'reflet') { <span class="idao__note">déduite d’une valeur lue</span> }
+                    @if (c.extrait) { <details class="idao__extrait"><summary>Extrait du document</summary><q>{{ c.extrait }}</q></details> }
+                  </td>
                   <td>{{ libelleReponse(c.cle, actuelleCadrage(c)) }}</td>
                 </tr>
               }
@@ -70,7 +121,7 @@
           @for (l of lotsLus(); track l.cle) {
             <section class="idao__lot" [class.idao__terne]="l.motifs.length">
               <label class="idao__lot-tete">
-                <input type="checkbox" [checked]="lotsCoches().has(l.cle)" [disabled]="l.motifs.length > 0 || envoi()" (change)="basculerLot(l.cle)" />
+                <input type="checkbox" [checked]="lotsCoches().has(l.cle)" [disabled]="l.motifs.length > 0 || envoi() || etranger()" (change)="basculerLot(l.cle)" />
                 <span><strong>Reprendre les {{ l.articles.length }} article{{ l.articles.length > 1 ? 's' : '' }} {{ l.lot == null ? 'du besoin' : 'du lot ' + l.lot }}</strong></span>
                 @if (actuels() === null) { <span class="idao__note">besoin actuel de la fiche non lu</span> }
                 @else if (l.actuels) { <span class="idao__note">la fiche en porte {{ l.actuels }} : ils seraient remplacés</span> }
@@ -107,15 +158,15 @@
         }
 
         @for (b of blocs(); track b) {
-          <h3 class="idao__titre">Bloc {{ b }}</h3>
+          <h3 class="idao__titre">Bloc {{ b }}@if (nomBloc(b); as nom) { <span class="idao__titre-nom">{{ ' — ' + nom }}</span> }</h3>
           <table class="idao__table">
             <colgroup><col class="idao__c-coche" /><col class="idao__c-information" /><col /><col class="idao__c-actuelle" /><col class="idao__c-confiance" /></colgroup>
-            <thead><tr><th scope="col"><span class="idao__cache">Retenir</span></th><th scope="col">Information</th><th scope="col">Le DAO dit</th><th scope="col">La fiche porte</th><th scope="col">Confiance</th></tr></thead>
+            <thead><tr><th scope="col"><input type="checkbox" [checked]="etatBloc(b) === 'tout'" [indeterminate]="etatBloc(b) === 'partiel'" [disabled]="!lignesRetenables(b).length || envoi()" (change)="basculerToutBloc(b)" [attr.aria-label]="'Retenir toutes les informations du bloc ' + b" /></th><th scope="col">Information</th><th scope="col">Le DAO dit</th><th scope="col">La fiche porte</th><th scope="col">Confiance</th></tr></thead>
             <tbody>
               @for (l of lignesDuBloc(b); track l.code) {
                 <tr [class.idao__refus]="refus().has(l.code)" [class.idao__terne]="l.identique || l.bloquee">
                   <td>
-                    <input type="checkbox" [checked]="cochees().has(l.code)" [disabled]="l.bloquee || l.identique" (change)="basculer(l.code)" [attr.aria-label]="'Retenir : ' + l.libelle" />
+                    <input type="checkbox" [checked]="cochees().has(l.code)" [disabled]="l.bloquee || l.identique || etranger()" (change)="basculer(l.code)" [attr.aria-label]="'Retenir : ' + l.libelle" />
                   </td>
                   <td>
                     <span class="idao__libelle">{{ l.libelle }}</span><span class="idao__code">{{ l.code }}</span>
@@ -170,10 +221,13 @@
         }
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline" [disabled]="envoi()" (click)="fermer()">Fermer sans rien appliquer</button>
-        <button type="button" class="btn btn-primary" [disabled]="envoi() || !nbRetenues()" (click)="appliquer()">
-          {{ envoi() ? 'Application…' : nbRetenues() ? 'Appliquer ' + nbRetenues() + ' ligne' + (nbRetenues() > 1 ? 's' : '') : 'Rien à appliquer' }}
-        </button>
+        <button type="button" class="btn btn-outline" [disabled]="envoi()" (click)="fermer()">{{ etranger() ? 'Fermer' : 'Fermer sans rien appliquer' }}</button>
+        <!-- ⚠️ 17/10 — un DAO étranger n'a pas de bouton « Appliquer » ; un DAO non prouvé l'attend jusqu'à l'attestation. -->
+        @if (!etranger()) {
+          <button type="button" class="btn btn-primary" [disabled]="envoi() || !nbRetenues() || !autorise()" (click)="appliquer()">
+            {{ envoi() ? 'Application…' : !autorise() ? 'Attestation requise' : nbRetenues() ? 'Appliquer ' + nbRetenues() + ' ligne' + (nbRetenues() > 1 ? 's' : '') : 'Rien à appliquer' }}
+          </button>
+        }
       </div>
     </div>
   </div>

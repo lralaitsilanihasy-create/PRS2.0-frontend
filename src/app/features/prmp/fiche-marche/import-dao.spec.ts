@@ -5,7 +5,7 @@ import { vi } from 'vitest';
 
 import { ToastService } from '../../../core/notifications/toast.service';
 import { ArticleFiche, ArticleImport, CategorieDao, ChampFiche, ImportDaoResult, PropositionImport, TypeMarche } from '../../../models';
-import { ImportDao, cocheeDOffice, importPossible, lotCocheDOffice, lotsImport, memeValeur, versArticleFiche } from './import-dao';
+import { ImportDao, PREFIXE_PERIME, cocheeDOffice, completerParents, identiteAutorise, importPossible, lotCocheDOffice, lotsImport, memeValeur, versArticleFiche } from './import-dao';
 
 const champ = (code: string, libelle: string): ChampFiche =>
   ({ code, bloc: code.slice(0, 3), rubrique: code.slice(0, 6), rang: 1, libelle, type: 'TEXTE', source: 'SAISIE', documentMaitre: 'DPAC', reprises: [], typesMarche: ['CONTRAT_CADRE'], condition: null, obligatoire: false }) as unknown as ChampFiche;
@@ -174,7 +174,7 @@ describe('Import du DAO — la revue avant d’écrire (demande du pilote du 28/
     const req = http.expectOne('/api/fiches-marche/27/import/appliquer');
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).toEqual({
-      cadrage: { attributaires: 'MULTI', tauxAvance: 15 },
+      cadrage: { attributaires: 'MULTI', tauxAvance: 15, avance: 'OUI' },   // ⚠️ 17/10 — le complément porte sa question
       valeurs: { 'B04-CP-02': '2026-11-20T10:00', 'B07-FS-01': 'Marchés uniques non fractionnés' },
       fichier: 'DAO-contrat-cadre.docx',
       empreinte: 'a'.repeat(64),
@@ -320,5 +320,55 @@ describe('Import du DAO — la revue avant d’écrire (demande du pilote du 28/
     expect(alerte).toContain('Refusé : le lot 1 — unité obligatoire');
     expect(racine().querySelector('[role="dialog"]')).not.toBeNull();
     expect(fixture.componentInstance.cochees().size + fixture.componentInstance.cadrageCoche().size).toBe(0);   // ne repartent pas
+  });
+  it('17/10 — « Tout sélectionner » coche tout le retenable (jamais l’identique ni l’anomalie), puis « Tout désélectionner » vide', () => {
+    monter();
+    lire();
+    const c = fixture.componentInstance;
+    expect(c.nbRetenables()).toBeGreaterThan(0);
+    bouton('Tout sélectionner').click();
+    fixture.detectChanges();
+    expect(c.nbRetenues()).toBe(c.nbRetenables());
+    expect(c.lignes().filter((l) => l.bloquee || l.identique).every((l) => !c.cochees().has(l.code))).toBe(true);
+    bouton('Tout désélectionner').click();
+    fixture.detectChanges();
+    expect(c.nbRetenues()).toBe(0);
+  });
+});
+
+// ⚠️ 17/10 — le verdict d'identité du DAO importé (demande « identite-dao-importe »).
+describe('identiteAutorise', () => {
+  it('un DAO étranger ne s’applique jamais, même attesté par la PRMP', () => {
+    expect(identiteAutorise('ETRANGER', true, true)).toBe(false);
+  });
+  it('un DAO non prouvé exige l’attestation, et seulement celle de la PRMP', () => {
+    expect(identiteAutorise('NON_PROUVE', false, true)).toBe(false);
+    expect(identiteAutorise('NON_PROUVE', true, false)).toBe(false);   // une UGPM : le serveur refuserait l'attestation
+    expect(identiteAutorise('NON_PROUVE', true, true)).toBe(true);
+  });
+  it('un DAO conforme, ou un serveur sans verdict, s’applique comme avant', () => {
+    expect(identiteAutorise('CONFORME', false, false)).toBe(true);
+    expect(identiteAutorise(undefined, false, false)).toBe(true);
+  });
+  it('reconnaît l’avertissement « DAO périmé » à son code', () => {
+    expect(PREFIXE_PERIME.test('DAO_PERIME : la date limite de remise des offres lue au DAO (26/03/2026 à 13:00) est passée')).toBe(true);
+    expect(PREFIXE_PERIME.test('Contrat-cadre : les quantités du bordereau sont données à titre indicatif.')).toBe(false);
+  });
+});
+
+// ⚠️ 17/10 (pilote) — un complément retenu sans sa question laissait le cadrage incomplet après l'import.
+describe('completerParents', () => {
+  it('pose « avance : oui » avec le taux de l’avance lu seul', () => {
+    const c: Record<string, string | number> = { tauxAvance: 20, groupement: 'OUI' };
+    completerParents(c);
+    expect(c['avance']).toBe('OUI');
+  });
+  it('ne touche ni une réponse déjà retenue, ni un cadrage sans complément', () => {
+    const a: Record<string, string | number> = { tauxAvance: 20, avance: 'OUI' };
+    completerParents(a);
+    expect(a).toEqual({ tauxAvance: 20, avance: 'OUI' });
+    const b: Record<string, string | number> = { groupement: 'OUI' };
+    completerParents(b);
+    expect(b).toEqual({ groupement: 'OUI' });
   });
 });

@@ -252,6 +252,9 @@
 // Demande du 23/09 : une réponse de cadrage reprise du plan de passation, verrouillée.
 .fm__q--plan .fm__q-opts { opacity: 0.75; }
 .fm__q-plan { padding: 0.1rem 0.5rem; border-radius: 8px; background: #ecfdf5; color: #047857; font-size: 0.72rem; font-weight: 600; }
+// ⚠️ 17/10 (pilote) — une question encore sans réponse : liseré et marque, pour la retrouver d'un coup d'œil après un import.
+.fm__q--manque { box-shadow: inset 3px 0 0 var(--warning-text, #b45309); background: var(--warning-bg, #fffbeb); }
+.fm__q-manque { padding: 0.1rem 0.5rem; border-radius: 8px; background: #fef3c7; color: #92400e; font-size: 0.72rem; font-weight: 600; }
 
 .fm__docs-f { display: block; font-size: 0.78rem; color: var(--n-500); }
 

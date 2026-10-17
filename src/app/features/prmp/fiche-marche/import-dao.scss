@@ -72,6 +72,81 @@
   overflow-y: auto;
   overflow-x: hidden;
 }
+// ⚠️ 17/10 — le verdict d'identité, en tête de la revue : vert (conforme), orange (non prouvé), rouge (étranger).
+.idao__identite {
+  margin: 10px 0 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--n-200);
+  border-left-width: 4px;
+  border-radius: var(--radius-lg);
+  background: var(--n-50);
+  font-size: 13px;
+  color: var(--n-700);
+}
+.idao__identite--conforme { border-color: var(--success-border, #86efac); border-left-color: var(--success-text, #15803d); background: var(--success-bg, #f0fdf4); }
+.idao__identite--douteux { border-color: var(--warning-border, #fcd34d); border-left-color: var(--warning-text, #b45309); background: var(--warning-bg, #fffbeb); }
+.idao__identite--etranger { border-color: var(--danger-border, #fca5a5); border-left-color: var(--danger-text, #b91c1c); background: var(--danger-bg, #fef2f2); }
+.idao__identite-titre {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 4px;
+  font-size: 14px;
+  color: var(--n-800);
+}
+.idao__identite-motif { margin: 0 0 4px; }
+.idao__criteres {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 8px;
+  margin: 10px 0 4px;
+  padding: 0;
+  list-style: none;
+}
+.idao__critere {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  border: 1px solid var(--n-200);
+  border-radius: var(--radius-md, 8px);
+  background: #fff;
+}
+.idao__pastille {
+  align-self: flex-start;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--n-100);
+  color: var(--n-700);
+}
+.idao__critere--ok .idao__pastille { background: var(--success-bg, #dcfce7); color: var(--success-text, #15803d); }
+.idao__critere--ko .idao__pastille { background: var(--danger-bg, #fee2e2); color: var(--danger-text, #b91c1c); }
+.idao__critere-plan,
+.idao__critere-extrait {
+  font-size: 12px;
+  color: var(--n-600);
+  overflow-wrap: anywhere;
+}
+.idao__attestation {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: 1px dashed var(--warning-text, #b45309);
+  border-radius: var(--radius-md, 8px);
+  background: #fff;
+  font-weight: 600;
+  cursor: pointer;
+
+  input { width: 16px; height: 16px; margin-top: 2px; }
+}
+.idao__perime { margin: 10px 0 0; }
+.idao__tout { margin-left: auto; }
+.idao__titre-nom { font-weight: 600; color: var(--n-600); }
+.idao__origine { display: inline-block; margin-left: 6px; }
 .idao__resume {
   display: flex;
   flex-wrap: wrap;

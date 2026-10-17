@@ -47,6 +47,7 @@ import {
   basculerOption,
   blocsASaisir,
   cadrageComplet,
+  questionsSansReponse,
   cleValeur,
   documentEffectif,
   documentsProduits,
@@ -369,6 +370,15 @@ export class FicheMarcheEcran {
   /** Les options d'une question pour ce cadrage (« mixte » : travaux seulement). */
   optionsDe(q: QuestionCadrage): QuestionCadrage['options'] { return optionsPosees(q, this.cadrageEffectif()); }
   readonly cadrageOk = computed(() => cadrageComplet(this.cadrageEffectif()));
+  /** ⚠️ 17/10 (pilote) — les questions encore sans réponse, signalées une à une (un import n'en remplit souvent qu'une partie). */
+  readonly sansReponse = computed(() => questionsSansReponse(this.cadrageEffectif()));
+  readonly sansReponseCles = computed(() => new Set(this.sansReponse().map((q) => q.cle)));
+  /** Amène une question sans réponse à l'écran (lien du pied de l'étape). */
+  allerQuestion(cle: string): void {
+    const el = document.getElementById('fq-' + cle);
+    el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    el?.querySelector<HTMLInputElement>('input:not([disabled])')?.focus({ preventScroll: true });
+  }
   readonly resume = computed(() => resumeCadrage(this.cadrageEffectif()));
   /** Le mode de remise des offres, lu sur le cadrage effectif (réponse par défaut comprise). */
   readonly modeElectronique = computed(() => String(this.cadrageEffectif()['modeRemise'] ?? '') === 'ELECTRONIQUE');
