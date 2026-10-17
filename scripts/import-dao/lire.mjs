@@ -222,6 +222,9 @@ function motifParagraphe(texte) {
 function valeurSaisie(brut, type, suffixe) {
   const v = norm(brut);
   if (POINTILLES.test(v)) return null;   // un jeton vide s'imprime en pointillés (R2)
+  // ⚠️ 17/10 (« lecture-valeurs-voisines », parité LectureDao) — un trou du modèle laissé dans le DAO (« <insérer … > ») n'est
+  // pas une valeur (6114, 6213 : B02-SG-04 lu « <insérer les nom et prénom(s) du signataire> »).
+  if (/^<[^<>]+>$/.test(v)) return null;
   // Une unité seule devant ou derrière des pointillés est une case laissée en blanc (01/10, AE du MEN : « Jours …. »).
   // Les caractères d'usage privé (U+E000-U+F8FF) sont des glyphes de police Symbol — ici l'astérisque de renvoi « ….* ».
   if (/[.…_]{2,}/.test(v) && POINTILLES.test(v.replace(/[-]/g, '').replace(/(?<![\p{L}])(?:jours?|mois|ans?|ann[ée]es?|heures?|semaines?|ariary|ar|%)(?![\p{L}])/giu, ''))) return null;
@@ -240,6 +243,65 @@ function valeurSaisie(brut, type, suffixe) {
   // « Tranche conditionnelle 1 : … » rendait « : … », en conflit avec la même valeur lue ailleurs.
   return v.replace(/^(?:[:;,.]\s*)+/, '') || null;
 }
+/** ⚠️ 17/10 — un titre d'article (lettres espacées comprises : « AR TIC L E4.- ») ou une clause numérotée (« 1.1-Lots »). */
+function titreDeClause(ligne) {
+  const l = norm(ligne).trim();
+  return /^ARTICLE(?:\d|PREMIER|1ER)/.test(l.replace(/\s+/g, '').toUpperCase()) || /^\d+\.\d+(?:\.\d+)*\s*-\s*\p{L}/u.test(l);
+}
+
+/**
+ * ⚠️ 17/10 (« lecture-valeurs-voisines », §B1-B2, parité LectureDao.voisines) — les deux valeurs d'un paragraphe fait de deux
+ * jetons et de ponctuation (« {{B02-OB-03}} — {{B02-OB-01}} », « {{B02-LT-06}} ; {{B02-LT-07}} », « {{X}} ({{Y}}) »), en paires
+ * [jeton, valeur], ou null :
+ * - B1 — une valeur déjà connue (reprise du plan, ou lue en confiance haute ailleurs dans le document) se retrouve, normalisée,
+ *   au bord du texte lu (au début pour le premier jeton, à la fin pour le second) : l'autre est le reste, séparateur ôté ;
+ * - B2 — sinon, le séparateur figure une seule fois ; « ( » seulement si le modèle referme la parenthèse.
+ * Chaque part est non vide et se lit selon le type de son champ.
+ */
+function voisines(modele, brut, connues, lues, champs) {
+  const places = [...modele.matchAll(JETON)];
+  if (places.length !== 2) return null;
+  const jetons = places.map((p) => p[1]);
+  const sep = norm(modele.slice(places[0].index + places[0][0].length, places[1].index));
+  const apres = norm(modele.slice(places[1].index + places[1][0].length)).trim();
+  let v = norm(brut).trim();
+  // La fin du modèle (« ). ») que le retrait du texte fixe n'a pas ôtée parce que le point manquait.
+  if (apres.startsWith(')') && v.endsWith(')')) v = v.slice(0, -1).trim();
+  else if (apres.startsWith(')') && v.endsWith(').')) v = v.slice(0, -2).trim();
+  const connue = (jeton) => {
+    const code = jeton.split('.')[0];
+    const k = connues?.[code.split('#')[0]];
+    if (k != null && String(k).trim()) return norm(String(k)).trim();
+    const l = lues.find((x) => x.jeton === jeton && x.confiance === 'haute' && norm(x.brut).trim());
+    return l ? norm(l.brut).trim() : null;
+  };
+  const sansSeparateur = (reste, fin) => {
+    const r = reste.trim(), s = sep.trim();
+    if (!s) return r;
+    if (fin && r.endsWith(s)) return r.slice(0, -s.length).trim();
+    if (!fin && r.startsWith(s)) return r.slice(s.length).trim();
+    return r;
+  };
+  const k1 = connue(jetons[0]), k2 = connue(jetons[1]);
+  let parts = null;
+  if (k2 != null && v.endsWith(k2) && v.length > k2.length) parts = [sansSeparateur(v.slice(0, v.length - k2.length), true), k2];
+  else if (k1 != null && v.startsWith(k1) && v.length > k1.length) parts = [k1, sansSeparateur(v.slice(k1.length), false)];
+  else if (sep) {
+    const s = sep.trim();
+    const i = v.indexOf(s);
+    if (s && i > 0 && i === v.lastIndexOf(s) && (!s.endsWith('(') || apres.startsWith(')'))) parts = [v.slice(0, i), v.slice(i + s.length)];
+  }
+  if (!parts) return null;
+  const out = [];
+  for (let n = 0; n < 2; n++) {
+    const p = parts[n].trim();
+    const [code, suffixe] = jetons[n].split('.');
+    if (!p || valeurSaisie(p, champs[code.split('#')[0]]?.type, suffixe) == null) return null;
+    out.push([jetons[n], p]);
+  }
+  return out;
+}
+
 /** Les types dont la valeur se convertit depuis le texte normalisé : jamais reprojetés sur le texte d'origine. */
 const TYPES_CONVERTIS = ['NOMBRE', 'MONTANT', 'POURCENTAGE', 'DATE', 'DATE_HEURE', 'LISTE', 'LISTE_MULTIPLE', 'OUI_NON'];
 
@@ -254,11 +316,12 @@ function implications(expression) {
 }
 
 // ── La lecture ────────────────────────────────────────────────────────────────────────────────
-export function lire(fichier, sigle, champs = {}) {
-  if (Array.isArray(fichier)) return completerParClause(lireParagraphes(fichier, sigle, champs), fichier, sigle, champs);
+/** `connues` : ⚠️ 17/10 (§B1) — les reprises du plan par code de champ (`valeursPpm` de la fiche), qui découpent un paragraphe de deux jetons. */
+export function lire(fichier, sigle, champs = {}, connues = {}) {
+  if (Array.isArray(fichier)) return completerParClause(lireParagraphes(fichier, sigle, champs, null, connues), fichier, sigle, champs);
   const origines = paragraphesDOrigine(fichier);
   const doc = origines.map(norm);
-  return completerParClause(lireParagraphes(doc, sigle, champs, origines), doc, sigle, champs);
+  return completerParClause(lireParagraphes(doc, sigle, champs, origines, connues), doc, sigle, champs);
 }
 
 /**
@@ -295,9 +358,10 @@ function completerParClause(res, doc, sigle, champs) {
 
 /** Les paragraphes du document, déjà extraits : un DAO en un seul fichier (avis, DPAC, AE à la suite) se lit modèle par modèle. */
 export { paragraphes, paragraphesDOrigine, carteNormalisee, reprojeterLigne };   // les deux dernières : pour test_reprojection.mjs
+export { voisines, titreDeClause, valeurSaisie };   // pour test_voisines.mjs (parité LectureDaoVoisinesTest)
 
 // `origines` : les mêmes paragraphes tels qu'écrits (§B6.3) ; sans eux, les valeurs restent normalisées (banc, texte déjà extrait).
-export function lireParagraphes(docLu, sigle, champs = {}, origines = null) {
+export function lireParagraphes(docLu, sigle, champs = {}, origines = null, connues = {}) {
   const m = JSON.parse(fs.readFileSync(path.join(MODELES, `${sigle}.json`), 'utf8'));
   const us = unites(m);
   // Un paragraphe atteste ses sections s'il a assez de texte fixe (20 lettres) et qu'aucun paragraphe de même texte
@@ -339,6 +403,49 @@ export function lireParagraphes(docLu, sigle, champs = {}, origines = null) {
     return false;
   };
 
+  // ⚠️ 17/10 — l'accroche confirmée (parité LectureDao) : parmi les ACCROCHES premiers paragraphes du modèle qui portent du
+  // texte fixe (8 lettres au moins), une occurrence n'est retenue que si deux au moins des CONFIRMATIONS paragraphes
+  // suivants du modèle se retrouvent dans les 60 paragraphes qui la suivent (un seul s'il n'en reste qu'un). La première
+  // occurrence, confirmée, reste ; sinon la plus précoce des occurrences confirmées qui la suivent ; sans aucune, 0.
+  const motifsReconnaissance = new Map();
+  const reconnait = (k, p) => {
+    if (!motifsReconnaissance.has(k)) {
+      const { re } = motifParagraphe(us[k].texte);
+      const finit = !/\}\}\s*$/.test(us[k].texte) && norm(us[k].texte.replace(JETON, '')).length > 0;
+      motifsReconnaissance.set(k, [re, finit ? new RegExp(re.source.replace(/\$$/, ''), 'i') : null]);
+    }
+    const [re, tete] = motifsReconnaissance.get(k);
+    return re.test(p) || (tete != null && tete.test(p));
+  };
+  function premiereAccroche() {
+    const ACCROCHES = 5, CONFIRMATIONS = 8, FENETRE = 60;
+    const avecTexte = us.map((_, k) => k).filter((k) => !seulJeton(us[k]) && lettresFixes(us[k].texte).length >= 8);
+    const confirmee = (a, j) => {
+      const suivants = avecTexte.slice(a + 1, a + 1 + CONFIRMATIONS);
+      if (!suivants.length) return false;   // rien pour la confirmer : une accroche ne se déplace pas sur le dernier paragraphe
+      const requis = Math.min(2, suivants.length);
+      const fin = Math.min(doc.length, j + 1 + FENETRE);
+      let confirmes = 0;
+      for (const b of suivants) {
+        for (let i = j + 1; i < fin; i++) if (reconnait(b, doc[i])) { confirmes++; break; }
+        if (confirmes >= requis) return true;
+      }
+      return confirmes >= requis;
+    };
+    let aAvant = -1, jAvant = -1;
+    for (let a = 0; a < avecTexte.length && aAvant < 0; a++) {
+      for (let j = 0; j < doc.length; j++) if (reconnait(avecTexte[a], doc[j])) { aAvant = a; jAvant = j; break; }
+    }
+    if (aAvant < 0 || confirmee(aAvant, jAvant)) return 0;
+    let meilleur = -1;
+    for (let a = aAvant; a < Math.min(avecTexte.length, aAvant + ACCROCHES); a++) {
+      for (let j = jAvant + 1; j < doc.length && (meilleur < 0 || j < meilleur); j++) {
+        if (reconnait(avecTexte[a], doc[j]) && confirmee(a, j)) { meilleur = j; break; }
+      }
+    }
+    return Math.max(0, meilleur);
+  }
+
   // Les débuts de paragraphe du modèle (texte fixe avant le premier jeton, au moins 6 caractères) : retrouvés DANS une
   // valeur capturée, ils disent qu'un paragraphe suivant a été collé derrière (fusion), et où couper.
   const debuts = us.map((u) => norm(u.texte.split(/\{\{/)[0]).toLowerCase().slice(0, 40)).map((d) => (d.length >= 6 ? d : null));
@@ -355,7 +462,10 @@ export function lireParagraphes(docLu, sigle, champs = {}, origines = null) {
   };
 
   // 1. Les paragraphes reconnus, dans l'ordre (un curseur empêche un texte répété de se lire deux fois).
-  let curseur = 0;
+  // ⚠️ 17/10 (« lecture-valeurs-voisines », parité LectureDao.premiereAccroche) — la première accroche est CONFIRMÉE : l'AE-CC
+  // commence par le même bloc d'autorité que le DPAC, qui le précède dans le DAO ; accroché au DPAC, il sautait tout son
+  // préambule (B02-SG-01 à 03).
+  let curseur = premiereAccroche();
   // ⚠️ 02/10 (règle 8, DAO routier du MTP) — RÉANCRAGE. La première accroche se cherche dans tout le document : elle
   // peut tomber sur le SOMMAIRE (« 1.2 Données Particulières de l'Appel d'Offres (DPAO) » ressemble au titre du modèle),
   // et la fenêtre de 60 paragraphes ne rejoignait jamais le vrai DPAO, 300 paragraphes plus loin (1 paragraphe reconnu
@@ -479,10 +589,16 @@ export function lireParagraphes(docLu, sigle, champs = {}, origines = null) {
     iv.filtre = presents.length === 1 && tous.length > 1;
     if (iv.filtre) iv.jetons = presents;
   }
+  // ⚠️ 17/10 (« lecture-valeurs-voisines », mesure, parité LectureDao) — les jetons dont un intervalle a été écarté parce qu'il
+  // contient un titre d'article ou de clause numérotée : plus proposés, même lus ailleurs.
+  const douteux = new Set();
   for (const { a, b, jetons, filtre } of intervalles.values()) {
     const entre = doc.slice(trouves.get(a) + 1, trouves.get(b));
     if (!entre.length || entre.length > 6) continue;
     if (jetons.length > 1) { ambigus.push({ candidats: jetons.map((j) => j.jeton), texte: entre.join('\n'), paragraphe: trouves.get(a) + 1 }); continue; }
+    // Un intervalle qui contient un titre d'article (« ARTICLE 4.- GROUPEMENTS ») ou une clause numérotée (« 1.1-Lots ») n'est
+    // pas une valeur : le modèle et le DAO réel n'ont pas le même plan à cet endroit (297 : trois titres lus comme valeurs).
+    if (entre.some(titreDeClause)) { jetons.forEach((x) => douteux.add(x.jeton.split('.')[0])); continue; }
     if (ressembleAuModele(entre[0])) continue;
     const j = jetons[0];
     const atteste = j.sections.every((s) => sectionsVues.has(s));
@@ -498,7 +614,14 @@ export function lireParagraphes(docLu, sigle, champs = {}, origines = null) {
     // Plusieurs jetons séparés de ponctuation seule (« {{B02-OB-03}} — {{B02-OB-01}} ») : rien n'est proposé. Tout donner
     // au premier jeton est une fausse valeur, et le séparateur ne découpe pas sûrement (le tiret du modèle devient « - »
     // à la normalisation, comme les traits d'union des valeurs) — mesure du 29/09.
-    if ([...us[j.k].texte.matchAll(JETON)].length > 1) continue;
+    // ⚠️ 17/10 (« lecture-valeurs-voisines », §B1-B3, parité LectureDao.voisines) — deux jetons se séparent quand la coupe est
+    // SÛRE : une valeur déjà connue au bord du texte lu (B1), ou un séparateur présent une seule fois (B2). Confiance moyenne.
+    const nbJetons = [...us[j.k].texte.matchAll(JETON)].length;
+    if (nbJetons > 1) {
+      const deux = nbJetons === 2 ? voisines(us[j.k].texte, brut, connues, propositions, champs) : null;
+      if (deux) deux.forEach(([jeton, valeur]) => propositions.push({ jeton, brut: valeur, confiance: 'moyenne', source: 'entre-voisins', paragraphe: trouves.get(a) + 1 }));
+      continue;
+    }
     propositions.push({ jeton: j.jeton, brut, confiance, source: 'entre-voisins', paragraphe: trouves.get(a) + 1 });
   }
 
@@ -574,7 +697,7 @@ export function lireParagraphes(docLu, sigle, champs = {}, origines = null) {
     const reprises = lignes.map((l) => reprojeterLigne(l, toutes));
     return reprises.every((r) => r != null) ? reprises.join(' ') : p.valeur;
   };
-  const final = [...parCode.values()].filter((p) => !p.conflit).map(({ lignes, ...p }) => ({ ...p, valeur: reprojeter({ ...p, lignes }) }));
+  const final = [...parCode.values()].filter((p) => !p.conflit && !douteux.has(p.code.split('#')[0])).map(({ lignes, ...p }) => ({ ...p, valeur: reprojeter({ ...p, lignes }) }));
   const attendus = [...new Set(us.flatMap((u) => [...u.texte.matchAll(JETON)].map((x) => x[1].split('.')[0])).filter((c) => /^B\d\d-/.test(c)))];
   return { sigle, paragraphesDocument: doc.length, unitesModele: us.length, reconnues: trouves.size, propositions: final, cadrage, conflits, ambigus,
     nonTrouves: attendus.filter((c) => ![...parCode.keys()].some((k) => k.split('#')[0] === c)) };
