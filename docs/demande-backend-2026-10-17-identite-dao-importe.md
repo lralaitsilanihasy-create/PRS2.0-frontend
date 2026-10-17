@@ -96,6 +96,27 @@ plans de la même autorité**, pour le même exercice et l'exercice précédent 
 
 Un PDF sans texte (un scan) est déjà refusé : il le reste, sans verdict.
 
+> ⚠️ **2026-10-17, livré côté backend (B1)**, au contrat demandé (`ImportDaoResult.identite`). Moteur `IdentiteDao`,
+> ADR-0015. Précisions :
+> - **Retrouvé** : les mots significatifs (ceux de `motsDe`), dans l'ordre, dans un paragraphe et le suivant (l'extraction coupe un
+>   objet sur deux lignes : 6114, Ankily), en priorité dans les trois premières pages (les 80 premiers paragraphes d'un Word).
+>   - Un mot peut manquer si la valeur en compte quatre ou plus ; pour une valeur plus courte, tous ses mots sont exigés.
+>   - Deux mots se valent s'ils sont égaux, si l'un commence l'autre (cinq lettres au moins : « FOURNITUREET »,
+>     « informatiquesrépartis », collés par l'extraction), ou s'ils partagent sept lettres en tête (« administratif »,
+>     « administrative »).
+> - **L'objet lu au DAO** est celui de la garde : « Objet : … », « OBJET DU CONTRAT-CADRE : … », sur la ligne ou la suivante. À
+>   défaut, la tête du document sert pour toutes les lignes à la fois.
+> - **B1.4, les seuils** : la ressemblance est le coefficient de Dice des mots significatifs.
+>   - « **Nettement plus** » : 0,2 de plus que la fiche, et 0,5 au moins.
+>   - « **Autant** » : sous cet écart.
+>   - Les voisines sont les lignes des plans de la même autorité pour l'exercice et le précédent, une par filiation, hors celle de
+>     la fiche.
+> - **B1.3, l'objet sans rapport** : contredit seulement s'il n'est retrouvé nulle part et que les deux objets diffèrent de plus
+>   de moitié dans les deux sens (règle `ecart` de la lecture des tableaux).
+> - **Lots** : sur une ligne allotie, « plus de lots » se lit dans les trois premières pages (« LOT N° k : »). L'appel des articles
+>   (`LOT_HORS_PLAN`) n'entre pas dans le verdict.
+> - **Page** : `page` n'est donnée que pour un PDF ; elle est nulle pour un Word.
+
 ## B2 — Le serveur fait respecter le verdict
 
 Le verdict doit tenir même si on contourne l'écran :
@@ -112,6 +133,17 @@ empreinte. Le serveur doit donc **garder le verdict** de chaque import, au moins
 Le front suppose une conservation courte : le temps de la revue, quelques heures au plus. Au-delà, l'import est à refaire,
 avec le refus 409 `IMPORT_EXPIRE`. Le backend choisit le moyen.
 
+> ⚠️ **2026-10-17, livré côté backend (B2, H1 tenue).**
+> - **Garde** : une table (V128, `t_import_verdict`) garde le verdict de chaque lecture, par fiche, empreinte et utilisateur. Il
+>   vaut **4 heures** et est purgé au bout d'un jour. Un cache en mémoire aurait été perdu au redémarrage du JAR de recette.
+> - **Ordre des refus** : les refus nominatifs (400 : `fichier`, `empreinte`, `importFichier`, `importEmpreinte`) passent d'abord,
+>   puis les 409 `IMPORT_EXPIRE`, `DAO_ETRANGER` (le message est le motif) et `ATTESTATION_REQUISE`.
+> - **Écart : seule la PRMP atteste.** Une `attestation: true` envoyée par une UGPM ne vaut pas : 409 `ATTESTATION_REQUISE`. La
+>   case de l'écran est donc à réserver à la PRMP.
+> - **Journal** : `FICHE_IMPORTEE` se termine par « ; identité : CONFORME » ou « ; identité : NON_PROUVE, attestée par
+>   <login> ».
+> - **À noter** : appliquer exige désormais une lecture préalable du **même** fichier par le **même** utilisateur.
+
 ## B3 — Avertissement : DAO périmé
 
 La date limite de remise des offres lue au DAO (`B04-CP-02`) peut être déjà passée, ou antérieure à l'exercice du plan
@@ -121,11 +153,23 @@ le place en évidence, sur le modèle `DAO_PERIME : …`.
 Ce n'est **pas** un refus : un DAO relancé sur la même ligne, après un premier lancement infructueux, est légitime, et ses
 dates seront corrigées dans la fiche.
 
+> ⚠️ **2026-10-17, livré côté backend (B3).** Le texte est « DAO_PERIME : la date limite de remise des offres lue au DAO
+> (26/03/2026 à 13:00) est passée ; corrigez les dates dans la fiche. », ou « … est antérieure à l'exercice du plan (2027) … ». Il
+> est placé en tête des `avertissements`, et seulement quand `B04-CP-02` est lu.
+
 ## B4 — Facultatif : la marque des DAO produits par l'application
 
 Le DAO complet (Word et PDF) peut porter dans ses propriétés de document la ligne du plan, la fiche et la version. Réimporté,
 il est alors jugé d'emblée : `CONFORME` sur sa ligne, `ETRANGER` ailleurs, sans recherche. Cette marque ne remplace pas
 B1, puisque la plupart des DAO importés viennent d'ailleurs.
+
+> ⚠️ **2026-10-17, livré côté backend (B4)**, avec un écart.
+> - **La marque** : `PRS20-DAO ligne=… fiche=… version=…`, dans les mots-clés du `.docx` (propriétés) et du PDF (informations).
+>   Elle est posée après l'assemblage par Word, sur les DAO complets produits à partir de ce jour.
+> - **Écart : elle ne fait foi que si le fichier est resté tel que l'application l'a produit**, c'est-à-dire si son empreinte est
+>   celle d'un DAO complet en base. La raison : une PRMP qui reprend dans Word le DAO d'une ligne pour rédiger celui d'une ligne
+>   voisine garderait la marque, et son DAO serait jugé `ETRANGER` sans recours. Retouché, le DAO est jugé comme tout autre.
+> - **Verdict à la marque** : `criteres` est vide, `motif` dit « reconnu à sa marque » ; ailleurs, `voisine` est la ligne marquée.
 
 ## Mesure — condition de livraison
 
@@ -142,6 +186,28 @@ Deux résultats sont attendus :
 
 Un DAO jugé `ETRANGER` sur sa propre ligne est un bloquant, comme une fausse valeur en confiance haute pour la lecture
 (critère Q10 du plan de l'import).
+
+> ⚠️ **2026-10-17, mesure du backend** (`IdentiteDaoRecetteTest`) : les deux conditions tiennent.
+> - **Les plans** : les lignes 303336 à 303358 sont celles du plan 200343 de DBPRS20. Pour 2463, 297 et Ankily, la ligne est
+>   reconstituée de la garde (2463 : `docs/export/2463`).
+> - **Le DAO de 303337** est le DAO complet v3 de la fiche 2, tiré de la base.
+> - **Les DAO absents** : le DAO du MEN et le DAO routier ne sont plus sur le poste (`Documents Types/` a disparu du dépôt du
+>   front). Ils n'ont pas été mesurés.
+> - **1. Sur sa propre ligne**, aucun `ETRANGER` :
+>
+>   | DAO | Ligne | Verdict | Critère introuvable |
+>   |---|---|---|---|
+>   | 2463 | reconstituée (5 lots) | CONFORME | — |
+>   | 297 | reconstituée (16 lots) | CONFORME | — |
+>   | Ankily-Mahasoa | reconstituée | CONFORME | — |
+>   | 6114 | 303338 | CONFORME | — |
+>   | 6213 | 303336 | NON_PROUVE | OBJET : la garde dit « Entretien des véhicules administratifs », le plan « Entretien et réparation des véhicules administratifs pour la Direction Administrative et Financière » ; la ligne 303355 (« … véhicule administratif immatriculé 5182 TU … ») lui ressemble autant |
+>   | DAO complet 303337 (v3) | 303337 | CONFORME | — |
+>   | `DAO_CC_303339_…_charte_application.pdf` | 303339 | CONFORME | — |
+>
+> - **2. Sur une autre des lignes 303336 à 303339** : **12 cas sur 12** sont `ETRANGER`. C'est chaque fois le test de
+>   discrimination qui tranche (`OBJET` contredit), avec `voisine` = la propre ligne du DAO.
+> - **Les autres critères** : l'autorité, le mode et la forme sont retrouvés partout.
 
 ## Ce que le front fera, dès la livraison
 
