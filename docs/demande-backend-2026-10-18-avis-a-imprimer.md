@@ -32,6 +32,24 @@ document en détail, au choix du backend).
   nouvelle disponibilité (nouvelle version, réexamen) renotifie.
 - **Texte suggéré** : « L'avis spécifique du dossier {refeDossier} ({designationMarche}) peut être imprimé. »
 
+> ⚠️ **2026-10-18, livré (backend)**
+> - **Un seul type, `AVIS_A_IMPRIMER`**, pour les deux documents. Le document est nommé dans le titre (« Avis spécifique à
+>   imprimer » ou « Lettres d'invitation à imprimer ») et dans le texte (« Les lettres d'invitation du dossier … peuvent être
+>   imprimées. »). `LETTRES_A_IMPRIMER` n'existe pas.
+> - **Destinataires** : la PRMP du plan et **chacune de ses UGPM**. Jusqu'ici, l'UGPM ne recevait aucune notification. Elle a
+>   désormais les siennes (destinataire de type `UGPM`) : `GET /api/notifications/mes`, le compteur et `POST /{id}/lu` les lui
+>   servent, et son flux temps réel est poussé.
+> - **Objet** : `typeObjet = DOSSIER`, `idObjet` = `idDossier` = le dossier soumis de la fiche. Le texte est celui proposé.
+> - **Moment** : chaque écriture qui peut rendre le document imprimable relève la disponibilité avant et après, et ne notifie que
+>   les dossiers qui passent d'indisponible à imprimable. Ce sont la signature d'un PV, les observations levées, la transmission au
+>   SIGMP, l'archivage, le dépôt de la publication de l'AGPM (toutes les fiches de la PRMP sont relevées) et la clôture de la
+>   cérémonie des clés.
+> - **Une seule fois** : une réimpression ou un nouveau dépôt de la publication ne renotifie pas. Un retour à l'indisponibilité
+>   suivi d'une nouvelle disponibilité renotifie. Cela ne demande aucune trace en base.
+> - **Écart** : un statut posé à la main par l'Administrateur (`PUT /api/dossiers/{id}`) ne notifie pas.
+> - **La cérémonie des clés** garde sa notification `CLES_PUBLIEES` à la PRMP. `AVIS_A_IMPRIMER` ne part que si l'avis devient
+>   réellement imprimable (PV signé, publication de l'AGPM déposée).
+
 ## B2 — L'information sur la liste des dossiers
 
 Sur `GET /api/dossiers` (et ses filtres `?statut=`), pour un dossier né d'une fiche (`idDmc` non nul), un champ réduit :
@@ -47,12 +65,29 @@ Sur `GET /api/dossiers` (et ses filtres `?statut=`), pour un dossier né d'une f
 
 Ce champ doit être calculé **en lot** pour la page de la liste, pas dossier par dossier.
 
+> ⚠️ **2026-10-18, livré (backend)** — `impressionAvis` a la forme demandée, sur `GET /api/dossiers` (paginé ou non, avec ses
+> filtres) **et sur la lecture unitaire** `GET /api/dossiers/{id}`.
+> - Il est servi à la PRMP et à l'UGPM seulement. Il est absent pour les autres profils, pour un dossier sans fiche et pour une
+>   fiche qui n'imprime ni avis ni lettre.
+> - `dejaImprime` : un avis ou une lettre a déjà été produit pour la fiche (les projets ne comptent pas).
+> - **Le calcul en lot, avec une limite** : deux requêtes pour toute la page, l'une pour les dossiers dont un PV favorable est
+>   signé (les seuls où le document peut être imprimable), l'autre pour les documents déjà produits. La règle entière n'est évaluée
+>   que pour les dossiers à PV favorable. En revanche, la catégorie et le mode, qui disent lequel des deux documents la fiche
+>   imprime, se lisent fiche par fiche : quelques requêtes par dossier né d'une fiche, et rien pour les autres.
+
 ## Questions
 
 - **Q1 — Les dossiers déjà disponibles.** Faut-il notifier, à la mise en production, les dossiers dont l'avis est déjà disponible
   mais jamais imprimé ? Le front propose que non : le bouton du tableau suffit à les retrouver.
 - **Q2 — L'« À faire ».** L'avis à imprimer doit-il aussi apparaître dans l'accueil « À faire » de la PRMP, comme une tâche
   servie par `GET /api/dossiers/{id}/gestes` ? Le front ne l'invente pas, mais il saurait l'afficher.
+
+> ⚠️ **2026-10-18, réponses (backend)**
+> - **Q1 — d'accord, pas de rattrapage.** Les notifications ne partent qu'au passage de l'indisponible à l'imprimable : un dossier
+>   déjà imprimable à la mise en service n'est pas notifié. Le bouton du tableau le retrouve.
+> - **Q2 — pas retenu pour l'instant, à soumettre au pilote.** L'accueil « À faire » écarte les dossiers clôturés (`CLOTURE`),
+>   alors que l'avis peut y rester à imprimer, et ses règles ne lisent pas encore la fiche. La notification et le bouton du tableau
+>   couvrent le besoin. Si le pilote le demande, ce sera un geste propre, servi aussi sur les dossiers clôturés.
 
 ## Côté front (préparé, sans attendre la livraison)
 
