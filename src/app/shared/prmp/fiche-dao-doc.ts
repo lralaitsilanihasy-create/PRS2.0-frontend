@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, input, output, signal } from '@angular/core';
 import { of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 
@@ -54,16 +54,44 @@ export interface ObservationCelluleFiche {
       <p class="doc-etat">La fiche DAO de ce dossier n'a pas pu être lue.</p>
     } @else {
       <article class="doc doc-dao">
-        <header class="doc-entete">
-          <p class="doc-titre">Fiche DAO — {{ fiche()!.designationMarche }}</p>
-          <p class="doc-sous-titre">
-            {{ fiche()!.refeDossier }} · version {{ fiche()!.version }} · {{ fiche()!.statut === 'VALIDEE' ? 'validée' : 'brouillon' }}
-            @if (fiche()!.nbLots && fiche()!.nbLots! > 1) { · {{ fiche()!.nbLots }} lots }
-          </p>
+        <!-- ⚠️ 18/10 (pilote, lot A) — un en-tête de document : l'objet en titre, les métadonnées en pastilles, l'action de l'hôte
+             (le DAO complet en PDF) projetée à droite. -->
+        <header class="doc-entete fd-tete">
+          <div class="fd-tete__texte">
+            <p class="fd-tete__sur">Fiche DAO</p>
+            <h2 class="doc-titre fd-tete__titre">{{ fiche()!.designationMarche }}</h2>
+            <p class="doc-sous-titre fd-tete__puces">
+              <span class="fd-puce">Version {{ fiche()!.version }}</span>
+              <span class="fd-puce" [class.fd-puce--ok]="fiche()!.statut === 'VALIDEE'">{{ fiche()!.statut === 'VALIDEE' ? 'Validée' : 'Brouillon' }}</span>
+              <!-- C'est la référence du PLAN qui porte la ligne, pas celle du dossier examiné : on le dit. -->
+              <span class="fd-puce">Ligne du plan {{ fiche()!.refeDossier }}</span>
+              @if (fiche()!.nbLots && fiche()!.nbLots! > 1) { <span class="fd-puce">{{ fiche()!.nbLots }} lots</span> }
+              <span class="fd-puce fd-puce--discret">{{ blocs().length }} blocs · {{ nbInformations() }} informations</span>
+            </p>
+          </div>
+          <div class="fd-tete__actions"><ng-content select="[ficheActions]" /></div>
         </header>
+        <!-- ⚠️ 18/10 (pilote, lot B) — le sommaire des blocs, collant : un clic amène au bloc ; une pastille compte ses observations. -->
+        <nav class="fd-sommaire" aria-label="Sommaire des blocs">
+          @for (bloc of blocs(); track bloc.code) {
+            <button type="button" class="fd-chip" (click)="allerBloc(bloc.code)" [attr.title]="bloc.libelle">
+              <b>{{ bloc.code }}</b>{{ court(bloc.libelle) }}
+              @if (bloc.rendu !== 'BESOIN' && obsDuBloc(bloc); as n) { <span class="fd-chip__obs">{{ n }}</span> }
+            </button>
+          }
+        </nav>
         @for (bloc of blocs(); track bloc.code) {
-          <section class="doc-bloc" [attr.aria-labelledby]="'dao-' + bloc.code">
-            <h3 class="doc-bloc-titre" [id]="'dao-' + bloc.code"><span class="doc-bloc-code">{{ bloc.code }}</span> {{ bloc.libelle }}</h3>
+          <section class="doc-bloc fd-carte" [attr.aria-labelledby]="'dao-' + bloc.code" [attr.data-bloc]="bloc.code">
+            <h3 class="doc-bloc-titre fd-carte__tete" [id]="'dao-' + bloc.code">
+              <span class="doc-bloc-code fd-code">{{ bloc.code }}</span>
+              <span class="fd-carte__libelle">{{ bloc.libelle }}</span>
+              @if (bloc.rendu !== 'BESOIN') {
+                <span class="fd-carte__compte">
+                  {{ infosDuBloc(bloc) }} information{{ infosDuBloc(bloc) > 1 ? 's' : '' }}
+                  @if (obsDuBloc(bloc); as n) { · <b class="fd-carte__obs">{{ n }} observation{{ n > 1 ? 's' : '' }}</b> }
+                </span>
+              }
+            </h3>
             @if (bloc.rendu === 'BESOIN') {
               <!-- Le besoin n'est pas fait de champs : il se lit, il ne s'observe pas cellule par cellule (lot B). -->
               <app-fiche-besoin
@@ -77,6 +105,9 @@ export interface ObservationCelluleFiche {
               @for (r of rubriques(bloc); track r.code) {
                 @if (champs(bloc, r).length) {
                   <h4 class="doc-rub">{{ r.libelle }}</h4>
+                  <!-- ⚠️ 18/10 (pilote) — la police de l'application et des filets légers, comme le besoin (B12) : la fiche est une saisie,
+                       pas un document officiel imprimé (le DAO complet en est le rendu officiel). Les rubriques sont des intertitres de la carte. -->
+                  <div class="doc-cadre">
                   <table class="doc-table doc-table--fiche">
                     <tbody>
                       @for (c of champs(bloc, r); track c.code) {
@@ -91,10 +122,12 @@ export interface ObservationCelluleFiche {
                               [class.doc-cellule--observable]="observable()"
                               [class.doc-cellule--observee]="numeros.length > 0"
                               [class.doc-cellule--modifiee]="!!modif"
+                              [class.doc-cellule--citee]="citees().has(c.code)"
+                              [attr.data-champ]="c.code"
                               [attr.title]="observable() ? 'Observer cette information' : null"
                               (click)="cliquer($event, c, lot)"
                             >
-                              <span class="doc-val">{{ valeur(c, lot) || '—' }}</span>
+                              @if (valeur(c, lot); as v) { <span class="doc-val">{{ v }}</span> } @else { <span class="doc-val doc-val--vide">non renseigné</span> }
                               @if (modif && annotations()) {
                                 <span class="doc-modif">modifiée — avant : « {{ modif.avant || '—' }} »</span>
                               }
@@ -110,6 +143,7 @@ export interface ObservationCelluleFiche {
                       }
                     </tbody>
                   </table>
+                  </div>
                 }
               }
             }
@@ -127,7 +161,41 @@ export interface ObservationCelluleFiche {
     .doc-bloc-titre { font-size: 0.92rem; margin: 0 0 0.35rem; }
     .doc-bloc-code { font-family: var(--font-mono, monospace); font-size: 0.78rem; color: var(--n-500); margin-right: 0.4rem; }
     .doc-rub { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-500); margin: 0.6rem 0 0.2rem; }
-    .doc-table--fiche th.doc-lib { width: 38%; font-weight: 500; text-align: left; vertical-align: top; color: var(--n-600); }
+    /* ⚠️ 18/10 — le style « feuille officielle » (Arial, bordures noires) cède ici au style de l'application, comme B12 ; les règles
+       d'observation de _document-officiel (cellule observable, pastilles) restent en vigueur. */
+    .doc-cadre { background: #fff; }
+    /* ⚠️ 18/10 (pilote, lot A) — en-tête de document et blocs en cartes. */
+    .fd-tete { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding-bottom: 0.9rem; border-bottom: 1px solid var(--n-200); }
+    .fd-tete__sur { margin: 0; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: #0369a1; }
+    .fd-tete__titre { text-transform: none; text-align: left; margin: 0.15rem 0 0; font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em; color: #152033; }
+    .fd-tete__puces { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.55rem 0 0; }
+    .fd-puce { padding: 0.1rem 0.55rem; border: 1px solid var(--n-300); border-radius: 999px; background: #fff; font-size: 0.75rem; font-weight: 600; color: #34405a; }
+    .fd-puce--ok { border-color: #86efac; background: #f0fdf4; color: #15803d; }
+    .fd-puce--discret { border-style: dashed; font-weight: 500; color: #5b6784; }
+    .fd-tete__actions { flex: none; display: flex; gap: 0.5rem; }
+    .fd-carte { margin-top: 1rem; border: 1px solid var(--n-200); border-radius: 10px; background: #fff; overflow: hidden; }
+    .fd-carte__tete { display: flex; align-items: center; gap: 0.6rem; margin: 0; padding: 0.6rem 0.9rem; background: #f8fafc; border-bottom: 1px solid var(--n-200); font-size: 0.95rem; color: #152033; }
+    .fd-code { padding: 0.05rem 0.45rem; border-radius: 6px; background: #152033; color: #fff !important; font-size: 0.72rem !important; margin-right: 0 !important; }
+    .fd-carte__libelle { flex: 1; font-weight: 700; }
+    .fd-carte__compte { font-size: 0.75rem; font-weight: 500; color: #5b6784; }
+    .fd-carte__obs { color: #b45309; }
+    .fd-carte .doc-rub { margin: 0; padding: 0.55rem 0.9rem 0.25rem; }
+    .doc-val--vide { color: #5b6784; font-style: italic; }
+    /* ⚠️ 18/10 (pilote, lot B) — sommaire collant, informations citées par le point ouvert, information visée surlignée. */
+    .fd-sommaire { position: sticky; top: 0; z-index: 3; display: flex; gap: 0.3rem; margin: 0.6rem -0.25rem 0; padding: 0.45rem 0.25rem; background: #fff; border-bottom: 1px solid var(--n-200); overflow-x: auto; }
+    .fd-chip { flex: none; display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.55rem; border: 1px solid var(--n-300); border-radius: 999px; background: #fff; font: 600 0.74rem var(--font-base); color: #34405a; cursor: pointer; white-space: nowrap; }
+    .fd-chip b { font-family: var(--font-mono, monospace); font-size: 0.68rem; color: #152033; }
+    .fd-chip:hover { border-color: #0369a1; color: #0369a1; }
+    .fd-chip__obs { min-width: 1.05rem; padding: 0 0.3rem; border-radius: 999px; background: #b45309; color: #fff; font-size: 0.64rem; text-align: center; }
+    .fd-carte { scroll-margin-top: 3rem; }
+    .doc-table--fiche td.doc-cellule--citee { box-shadow: inset 3px 0 0 #0369a1; background: #f4f9fe; }
+    .doc-table--fiche td.doc-flash, .fd-carte.doc-flash { background: #fef3c7 !important; transition: background 0.4s; }
+    .doc-table--fiche { font: 0.84rem/1.45 var(--font-base); color: #152033; }
+    .doc-table--fiche th, .doc-table--fiche td { border: 0; border-top: 1px solid var(--n-100); padding: 0.45rem 0.7rem; font-family: var(--font-base); color: #152033; background: #fff; }
+    .doc-table--fiche tbody tr:last-child > th, .doc-table--fiche tbody tr:last-child > td { border-bottom: 0; }
+    .doc-table--fiche th.doc-lib { padding-left: 0.9rem; }
+    .doc-table--fiche th.doc-lib { width: 38%; font-weight: 500; font-size: 0.8rem; text-align: left; vertical-align: top; color: #5b6784; background: #f8fafc; border-right: 1px solid var(--n-200); }
+    .doc-rub { color: #0369a1; font-weight: 700; }
     .doc-lot { margin-left: 0.4rem; font-size: 0.74rem; color: var(--n-500); border: 1px solid var(--n-300); border-radius: 999px; padding: 0 0.4rem; }
     .doc-val { white-space: pre-wrap; }
     .doc-cellule--modifiee { background: #eff6ff; box-shadow: inset 3px 0 0 var(--p-600); }
@@ -150,8 +218,44 @@ export class FicheDaoDoc {
    */
   readonly modifiees = input<readonly InformationFicheModifiee[]>([]);
   readonly annotations = input(true);
+  /** ⚠️ 18/10 (lot B) — les informations citées par le point ouvert de la grille (code de champ) : liseré bleu. */
+  readonly citees = input<ReadonlySet<string>>(new Set());
+  /** ⚠️ 18/10 (lot B) — l'information (ou le bloc) à montrer : la fiche y défile et la surligne. Le jeton rejoue un même code. */
+  readonly cible = input<{ code: string; jeton: number } | null>(null);
+  private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
+  /** Le premier mot significatif d'un intitulé de bloc, pour le sommaire. */
+  court(libelle: string): string {
+    return (libelle.split(/[ ,&(]/).find((m) => m.length > 2) ?? libelle).replace(/[.:]$/, '');
+  }
+  allerBloc(code: string): void {
+    this.hote.nativeElement.querySelector(`[data-bloc="${code}"]`)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }
+  private readonly annonceCodes = effect(() => {
+    const blocs = this.blocs();
+    if (!blocs.length) return;
+    const codes = new Set<string>(blocs.map((b) => b.code));
+    for (const b of blocs) for (const r of this.rubriques(b)) for (const c of this.champs(b, r)) codes.add(c.code);
+    this.codesRendus.emit(codes);
+  });
+  private readonly suiviCible = effect(() => {
+    const c = this.cible();
+    if (!c) return;
+    // La fiche peut se charger encore (onglet rouvert) : on attend l'information, 2 s au plus.
+    let essais = 0;
+    const chercher = (): void => {
+      const racine = this.hote.nativeElement;
+      const el = racine.querySelector<HTMLElement>(`td[data-champ="${c.code}"]`) ?? racine.querySelector<HTMLElement>(`[data-bloc="${c.code}"]`);
+      if (!el) { if (++essais <= 20) setTimeout(chercher, 100); return; }
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      el.classList.add('doc-flash');
+      setTimeout(() => el.classList.remove('doc-flash'), 1400);
+    };
+    setTimeout(chercher);
+  });
   private readonly parCleModifiee = computed(() => new Map(this.modifiees().map((m) => [m.champFiche.toUpperCase(), m])));
   readonly celluleClick = output<CelluleFicheCliquee>();
+  /** ⚠️ 18/10 (lot B) — les codes rendus par cette fiche (champs et blocs), une fois chargée : l'examen ne propose que ceux-là. */
+  readonly codesRendus = output<ReadonlySet<string>>();
 
   readonly fiche = signal<FicheMarche | null>(null);
   readonly referentiel = signal<ReferentielFiche | null>(null);
@@ -237,6 +341,15 @@ export class FicheDaoDoc {
   modifieeDe(cle: string): InformationFicheModifiee | null {
     return this.parCleModifiee().get(cle.toUpperCase()) ?? null;
   }
+  /** Le nombre d'informations d'un bloc (une par lot quand le champ varie par lot). */
+  infosDuBloc(bloc: BlocFiche): number {
+    return this.rubriques(bloc).reduce((n, r) => n + this.champs(bloc, r).reduce((m, c) => m + this.lotsDe(c).length, 0), 0);
+  }
+  /** Le nombre d'informations du bloc qui portent une observation. */
+  obsDuBloc(bloc: BlocFiche): number {
+    return this.rubriques(bloc).reduce((n, r) => n + this.champs(bloc, r).reduce((m, c) => m + this.lotsDe(c).filter((l) => this.observationsDe(this.cle(c, l)).length > 0).length, 0), 0);
+  }
+  readonly nbInformations = computed(() => this.blocs().filter((b) => b.rendu !== 'BESOIN').reduce((n, b) => n + this.infosDuBloc(b), 0));
   observationsDe(cle: string): readonly number[] {
     if (!this.annotations()) return AUCUN_NUMERO;
     return this.parCle().get(cle.toUpperCase()) ?? AUCUN_NUMERO;

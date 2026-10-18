@@ -353,9 +353,11 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
     expect(Array.from(racine().querySelectorAll('input[name="avis-global"]')).map((i) => (i as HTMLInputElement).value)).toEqual(['FAVR']);
     // Synthèse facultative (2026-09-15) : ni astérisque ni champ requis ; l'avis reste obligatoire.
     const libelles = Array.from(racine().querySelectorAll('.fld__l')).map((l) => (l.textContent ?? '').replace(/\s+/g, ' ').trim());
-    expect(libelles[0]).toBe('Synthèse des observations');
+    // ⚠️ 18/10 (lot A) — la date d'examen ouvre « Votre avis » (elle a quitté l'en-tête).
+    expect(libelles[0]).toBe('Date de l’examen');
+    expect(libelles[1]).toBe('Synthèse des observations');
     expect(racine().querySelector('.avis textarea')?.hasAttribute('aria-required')).toBe(false);
-    expect(libelles[1]).toContain('Avis global');
+    expect(libelles[2]).toContain('Avis global');
 
     // « Modifier » l'observation 1 : retour à la ligne 2.
     (racine().querySelector('.o .lien') as HTMLButtonElement).click();

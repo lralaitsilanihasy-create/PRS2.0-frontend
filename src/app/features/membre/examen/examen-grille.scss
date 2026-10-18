@@ -334,3 +334,37 @@
   text-align: center;
 }
 .languette__alerte { color: #92400e; line-height: 0; }
+
+/* ⚠️ 18/10 (pilote, lot A) — progression, filtre « à renseigner », description repliée. */
+.grille__progres { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.55rem; }
+.progres { flex: 1; display: flex; height: 6px; border-radius: 999px; background: #e5ebf3; overflow: hidden; }
+.progres__ras { background: #16a34a; }
+.progres__obs { background: #d97706; }
+.progres__txt { font-size: 0.75rem; color: #34405a; white-space: nowrap; }
+.filtre { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.05rem 0.45rem; border: 1px solid transparent; border-radius: 999px; background: none; font: inherit; color: inherit; cursor: pointer; }
+.filtre:hover:not(:disabled) { border-color: #93c5fd; }
+.filtre:disabled { cursor: default; }
+.filtre--on { border-color: #0369a1; background: #e0f2fe; color: #0369a1; font-weight: 600; }
+.pt__d--replie { display: -webkit-box; -webkit-line-clamp: 1; line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.pt__plus { margin-top: 0.15rem; padding: 0; border: 0; background: none; font: inherit; font-size: 0.72rem; font-weight: 600; color: #0369a1; cursor: pointer; }
+.pt__plus:hover { text-decoration: underline; }
+
+/* ⚠️ 18/10 (pilote, lot B) — grille compacte : le point en cours déplié, les autres sur une ligne ; références cliquables. */
+.pt--courant { border: 1px solid #0369a1; border-radius: 10px; box-shadow: 0 6px 18px -14px rgba(3, 105, 161, 0.7); }
+.pt-ligne { display: flex; align-items: center; gap: 0.45rem; width: 100%; padding: 0.4rem 0.6rem; border: 0; border-bottom: 1px solid #eef2f7; background: none; font: inherit; text-align: left; cursor: pointer; }
+.pt-ligne:hover { background: #f4f9fe; }
+.pt-ligne__l { flex: 1; min-width: 0; font-size: 0.82rem; font-weight: 600; color: #152033; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.etat { flex: none; padding: 0 0.45rem; border-radius: 999px; font-size: 0.68rem; font-weight: 700; }
+.etat--ras { background: #e8f7ee; color: #15803d; }
+.etat--obs { background: #fff3e0; color: #b45309; }
+.etat--vide { background: #f1f4f8; color: #5b6784; }
+.pt__refs { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.35rem; }
+.pt__ref { padding: 0.02rem 0.45rem; border: 1px solid #0369a1; border-radius: 6px; background: #e0f2fe; color: #0369a1; font: 600 0.68rem var(--font-mono, monospace); cursor: pointer; }
+.pt__ref:hover { background: #0369a1; color: #fff; }
+.pt__nav { display: flex; justify-content: space-between; gap: 0.4rem; margin-top: 0.5rem; }
+.pt__navbtn { display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.2rem 0.55rem; border: 1px solid #dde4ee; border-radius: 7px; background: #fff; font: inherit; font-size: 0.75rem; font-weight: 600; color: #34405a; cursor: pointer; }
+.pt__navbtn:hover:not(:disabled) { border-color: #0369a1; color: #0369a1; }
+.pt__navbtn:disabled { opacity: 0.45; cursor: default; }
+.grille__touches { margin: 0 0 0.35rem; font-size: 0.7rem; color: #5b6784; }
+.grille__touches kbd { padding: 0 0.28rem; border: 1px solid #dde4ee; border-bottom-width: 2px; border-radius: 4px; background: #fff; font: 500 0.64rem var(--font-mono, monospace); color: #34405a; }
+.pt__absentes { align-self: center; font-size: 0.68rem; color: #5b6784; font-style: italic; }

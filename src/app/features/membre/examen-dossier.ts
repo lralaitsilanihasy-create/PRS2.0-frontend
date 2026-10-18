@@ -20,7 +20,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ApiError, estConflitVersion } from '../../core/errors/api-error';
 import { SortieProtegee } from '../../core/navigation/sortie-protegee';
 import { ToastService } from '../../core/notifications/toast.service';
-import { urlBlobSure } from '../../core/securite/fichiers-surs';
+import { urlBlobSure, ouvrirBlobSur } from '../../core/securite/fichiers-surs';
 import { bilanControles, messageControleNonConforme } from '../../shared/circuit/controles-libelles';
 import {
   Avis,
@@ -80,6 +80,12 @@ import { calculerAgpm } from '../../shared/prmp/agpm';
 import { FichePresentationDoc } from '../../shared/prmp/fiche-presentation-doc';
 import { CelluleFicheCliquee, FicheDaoDoc, ObservationCelluleFiche } from '../../shared/prmp/fiche-dao-doc';
 import { AgpmDoc } from '../../shared/prmp/agpm-doc';
+import { AvisSpecifiqueDoc } from '../circuit/dossier/avis-specifique-doc';
+import { BordereauEstimatifDoc } from '../circuit/dossier/bordereau-estimatif-doc';
+import { CanevasRapportDoc } from '../circuit/dossier/canevas-rapport-doc';
+import { FichePresentationDaoDoc } from '../circuit/dossier/fiche-presentation-dao';
+import { PlanDuDossierDao } from '../circuit/dossier/plan-du-dossier-dao';
+import { ongletDuFichier } from '../circuit/dossier/dossier-pieces';
 import {
   COLONNES_PPM_OFFICIEL,
   CelluleCliquee,
@@ -113,6 +119,7 @@ import {
   aDuTexte,
   avisCoherent,
   construireParcours,
+  codesCites,
   delaiExamen,
   empreintePiece,
   empreintePoint,
@@ -130,7 +137,9 @@ import { ExamenSynthese } from './examen/examen-synthese';
 import { PreControlePanneau } from '../../shared/pre-controle';
 import { ControlesDossier } from '../../shared/circuit/controles-dossier';
 
-type OngletDocument = 'ppm' | 'fiche' | 'agpm' | 'dao' | 'pieces';
+type OngletDocument = 'ppm' | 'fiche' | 'agpm' | 'dao' | 'presentation' | 'avis' | 'plan' | 'bordereau' | 'canevas' | 'pieces';
+/** Les onglets qui portent des annotations (état d'examen, versionnement) : les vues de données du dossier DAO n'en ont pas. */
+const ONGLETS_ANNOTES: readonly OngletDocument[] = ['ppm', 'fiche', 'agpm', 'dao'];
 
 /** Proposition « Observer cette cellule » ouverte sur le document. */
 /** Le libellé d'une information de la fiche DAO observée : celui que le serveur relit, la clé à défaut, le lot s'il y en a un. */
@@ -147,6 +156,8 @@ interface PropositionCellule {
   /** Clé du résultat visé : la ligne pour un point LIGNE, `null` pour un point évalué une fois. */
   idDetail: number | null;
   points: PointsCtrl[];
+  /** ⚠️ 18/10 (lot B) — les points qui ne citent pas l'information, proposés derrière « Autre point… ». */
+  autres: PointsCtrl[];
   libelle: string;
   /** La valeur lue dans la cellule, pré-remplie en « Au lieu de ». */
   valeur: string;
@@ -211,6 +222,11 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
     Icone,
     ModaleDirective,
     ExamenParcours,
+    FichePresentationDaoDoc,
+    AvisSpecifiqueDoc,
+    PlanDuDossierDao,
+    BordereauEstimatifDoc,
+    CanevasRapportDoc,
     ExamenGrille,
     ExamenSynthese,
     ConfirmationSortie,
@@ -252,10 +268,7 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
               <app-icone nom="shield" [taille]="15" />
               @if (bilanControles().total) { Contrôles : {{ bilanControles().nonConformes }} non conforme(s) sur {{ bilanControles().total }} } @else { Contrôles }
             </button>
-            <label class="tete__date">
-              <span>Date<span class="cnm-sr-only"> d'examen</span></span>
-              <input type="date" [value]="dateExamen()" [disabled]="mode() === 'locked'" (input)="dateExamen.set(valeurDe($event))" />
-            </label>
+            <!-- ⚠️ 18/10 (pilote, lot A) — la date d'examen se renseigne dans la synthèse, où elle sert (elle part avec le projet de PV). -->
           </div>
         </header>
         @if (consigneDepliee() && consigne()) {
@@ -275,7 +288,7 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
         }
 
         @if (!estEtapeAvis() || !points().length) {
-          <div class="cols" [class.cols--repliee]="!grilleOuverte() || !points().length">
+          <div class="cols" [class.cols--repliee]="!grilleOuverte() || !points().length" [style.--larg-grille]="largeurGrille()">
             <section class="doc" aria-label="Documents du dossier">
               <div class="doc__barre">
                 @if (onglets().length > 1) {
@@ -342,7 +355,7 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
                     }
                   </button>
                 }
-                @if (ongletAffiche() !== 'pieces') {
+                @if (ongletAvecAnnotations()) {
                   <button
                     type="button"
                     class="doc-interrupteur"
@@ -407,15 +420,42 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
                   @case ('dao') {
                     <!-- ⚠️ Lot B (26/09) — la fiche DAO du dossier examiné, lue ici comme un document ; un clic sur
                          une information ouvre la proposition « Observer » avec l'ancrage (idDmc, champFiche). -->
+                    <!-- ⚠️ 18/10 (pilote, examen du DAO) — le DAO complet n'est plus une « pièce » examinée à part : c'est le rendu de cette
+                         fiche dans le modèle type ; son PDF reste à portée pour le texte type (IC, CCAG, modèles). -->
                     <app-document-visionneuse [annotations]="annotationsDoc()">
                       <app-fiche-dao-doc
                         [idDmc]="dossier()!.idDmc!"
                         [observations]="observationsDao()"
                         [modifiees]="perimetre()?.ficheDao?.informations ?? []"
                         [observable]="mode() !== 'locked' && pointsCourants().length > 0"
+                        [citees]="codesCitesOuvert()"
+                        [cible]="ficheCible()"
+                        (codesRendus)="codesFiche.set($event)"
                         (celluleClick)="proposerObservationFiche($event)"
-                      />
+                      >
+                        @if (daoCompletPiece(); as p) {
+                          <button ficheActions type="button" class="btn btn-outline btn-sm" title="Le rendu de cette fiche dans le modèle type (texte type : IC, CCAG, modèles)" (click)="ouvrirDansOnglet(p)">DAO complet (PDF) ↗</button>
+                        }
+                      </app-fiche-dao-doc>
                     </app-document-visionneuse>
+                  }
+                  <!-- ⚠️ 18/10 (pilote, examen du DAO) — les éléments du dossier né d'une fiche se lisent EN DONNÉES, par les mêmes vues que
+                       les modales de sa page : la Commission contrôle la fiche de présentation, l'avis, le plan et le bordereau sous les yeux,
+                       et relève ce qu'elle constate sur les points de la grille du dossier. -->
+                  @case ('presentation') {
+                    <app-document-visionneuse><app-fiche-presentation-dao [idDossier]="dossier()!.idDossier" /></app-document-visionneuse>
+                  }
+                  @case ('avis') {
+                    <app-document-visionneuse><app-avis-specifique-doc [idDossier]="dossier()!.idDossier" /></app-document-visionneuse>
+                  }
+                  @case ('plan') {
+                    <app-plan-du-dossier-dao [idDossierPlan]="dossier()!.idDossierPlan!" [idDetail]="dossier()!.ficheMarche?.idDetail" />
+                  }
+                  @case ('bordereau') {
+                    <app-document-visionneuse><app-bordereau-estimatif-doc [idDmc]="dossier()!.idDmc!" [versionSoumise]="dossier()!.ficheMarche?.versionSoumise" /></app-document-visionneuse>
+                  }
+                  @case ('canevas') {
+                    <app-document-visionneuse><app-canevas-rapport-doc [idDossier]="dossier()!.idDossier" /></app-document-visionneuse>
                   }
                   @case ('agpm') {
                     <app-document-visionneuse [annotations]="annotationsDoc()">
@@ -443,7 +483,9 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
                       } @else {
                         <ul class="pj__liste" aria-label="Pièces jointes du dossier">
                           @for (groupe of groupesPieces(); track groupe.cle) {
-                            <li class="pj__groupe" [class.pj__groupe--lr]="groupe.cle === 'lr'">{{ groupe.libelle }} · {{ groupe.pieces.length }}</li>
+                            @if (groupesPieces().length > 1) {
+                              <li class="pj__groupe" [class.pj__groupe--lr]="groupe.cle === 'lr'">{{ groupe.libelle }} · {{ groupe.pieces.length }}</li>
+                            }
                             @for (p of groupe.pieces; track p.idPiece) {
                               <li>
                                 <!-- <button> : l'ouverture d'une pièce reste atteignable au clavier (AUDIT.md A4). -->
@@ -481,8 +523,13 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
                  pré-contrôle (assistant IA, lot 3) vit désormais en MODALE, ouverte par le bouton de la
                  barre du document (demande pilote 21/09) — il dit où regarder, il ne remplace aucun point. -->
             <div class="cote">
+              <!-- ⚠️ 18/10 (pilote, lot C) — la poignée entre le document et la grille : tirer (ou ← →) règle la largeur, retenue. -->
+              @if (points().length && grilleOuverte()) {
+                <div class="poignee" role="separator" aria-orientation="vertical" aria-label="Largeur de la grille" tabindex="0"
+                  (pointerdown)="tirerPoignee($event)" (keydown)="clavierPoignee($event)"></div>
+              }
               @if (points().length) {
-                <app-examen-grille [vue]="vueGrille()" [ouverte]="grilleOuverte()" [enregistre]="derniereSauvegarde()" (action)="surActionGrille($event)" />
+                <app-examen-grille [vue]="vueGrille()" [ouverte]="grilleOuverte()" [pointOuvert]="pointOuvert()" [codesConnus]="codesFiche()" [enregistre]="derniereSauvegarde()" (action)="surActionGrille($event)" />
               }
             </div>
           </div>
@@ -495,6 +542,9 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
             [estReexamen]="estReexamen()"
             [editable]="syntheseEditable()"
             [synthese]="synthese()"
+            [dateExamen]="dateExamen()"
+            [etapeLibelle]="etapeSynthese()"
+            (dateChange)="dateExamen.set($event)"
             [idDossier]="dossier()?.idDossier ?? null"
             [avis]="avis()"
             [avisLibelle]="avis() ? avisLabel(avis()) : null"
@@ -538,16 +588,33 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
             @if (prop.valeur) {
               <p class="prop__valeur">Au lieu de : « {{ prop.valeur }} »</p>
             }
-            <p class="prop__question">Au titre du point :</p>
+            <!-- ⚠️ 18/10 (pilote, lot B) — d'abord les points qui CITENT cette information ; les autres derrière « Autre point… ». -->
+            <p class="prop__question">{{ prop.autres.length ? 'Points qui citent cette information :' : 'Au titre du point :' }}</p>
             <ul class="prop__points">
-              @for (pt of prop.points; track pt.idPointCtrl; let i = $index) {
+              @for (pt of prop.points; track pt.idPointCtrl) {
                 <li>
                   <button type="button" class="prop__point" (click)="observerCellule(pt.idPointCtrl)">
-                    <span class="prop__rang">{{ i + 1 }}.</span>{{ pt.libelPointCtrl || 'Point #' + pt.idPointCtrl }}
+                    <span class="prop__rang">{{ rangPoint(pt) }}.</span>{{ pt.libelPointCtrl || 'Point #' + pt.idPointCtrl }}
                   </button>
                 </li>
               }
             </ul>
+            @if (prop.autres.length) {
+              <button type="button" class="prop__autres" [attr.aria-expanded]="autresPoints()" (click)="autresPoints.set(!autresPoints())">
+                {{ autresPoints() ? 'Masquer les autres points' : 'Autre point… (' + prop.autres.length + ')' }}
+              </button>
+              @if (autresPoints()) {
+                <ul class="prop__points">
+                  @for (pt of prop.autres; track pt.idPointCtrl) {
+                    <li>
+                      <button type="button" class="prop__point" (click)="observerCellule(pt.idPointCtrl)">
+                        <span class="prop__rang">{{ rangPoint(pt) }}.</span>{{ pt.libelPointCtrl || 'Point #' + pt.idPointCtrl }}
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+            }
           </div>
         }
       }
@@ -823,6 +890,55 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
   // — Workflow séquentiel : une ligne active à la fois, de haut en bas, puis étape dossier, puis avis. —
   /** Étape courante : 0..N-1 = marchés ; N = points DOSSIER (si présents) ; dernière = avis global. */
   readonly etape = signal(0);
+  /** ⚠️ 18/10 (pilote, lot B) — le point ouvert de la grille compacte ; nul : le premier à renseigner (remis à nul à chaque étape). */
+  readonly pointOuvert = signal<number | null>(null);
+  private readonly remiseOuvert = effect(() => { this.etape(); untracked(() => this.pointOuvert.set(null)); });
+  /** Les informations de la fiche citées par le point ouvert (liseré bleu dans la fiche). */
+  readonly codesCitesOuvert = computed<ReadonlySet<string>>(() => {
+    const pts = this.pointsCourants();
+    const o = this.pointOuvert();
+    const p = (o != null ? pts.find((x) => x.idPointCtrl === o) : null)
+      ?? pts.find((x) => this.resultat(this.idDetailCourant(), x.idPointCtrl).statut === null) ?? pts[0];
+    return new Set(codesCites(p?.decriptPointCtrl));
+  });
+  /** L'information à montrer dans la fiche (clic sur une référence d'un point). */
+  readonly ficheCible = signal<{ code: string; jeton: number } | null>(null);
+  /** Les codes que la fiche DAO du dossier rend (selon sa forme et sa catégorie) ; nul tant qu'elle n'a pas été lue. */
+  readonly codesFiche = signal<ReadonlySet<string> | null>(null);
+  readonly autresPoints = signal(false);
+  rangPoint(p: PointsCtrl): number { return this.pointsCourants().findIndex((x) => x.idPointCtrl === p.idPointCtrl) + 1; }
+  /** Clic sur une référence d'un point : la fiche DAO s'affiche, défile jusqu'à l'information et la surligne. */
+  allerInformation(code: string): void {
+    if (this.dossier()?.idDmc == null) return;
+    if (this.ongletAffiche() !== 'dao') this.ongletContenu.set('dao');
+    this.ficheCible.set({ code, jeton: Date.now() });
+  }
+  /** ⚠️ 18/10 (pilote, lot C) — la largeur de la grille, réglée à la poignée et retenue par le navigateur. */
+  readonly largeurGrille = signal<string | null>((() => { try { return localStorage.getItem('cnm.examen.largeur-grille'); } catch { return null; } })());
+  private retenirLargeur(px: number): void {
+    const v = Math.round(Math.max(288, Math.min(672, px))) + 'px';
+    this.largeurGrille.set(v);
+    try { localStorage.setItem('cnm.examen.largeur-grille', v); } catch { /* stockage indisponible : la largeur vaut pour la session */ }
+  }
+  tirerPoignee(e: PointerEvent): void {
+    const poignee = e.currentTarget as HTMLElement;
+    const cols = poignee.closest('.cols') as HTMLElement | null;
+    if (!cols) return;
+    e.preventDefault();
+    poignee.setPointerCapture(e.pointerId);
+    poignee.classList.add('poignee--active');
+    const droite = cols.getBoundingClientRect().right;
+    const bouger = (ev: PointerEvent): void => this.retenirLargeur(droite - ev.clientX - 6);
+    const finir = (): void => { poignee.classList.remove('poignee--active'); poignee.removeEventListener('pointermove', bouger); };
+    poignee.addEventListener('pointermove', bouger);
+    poignee.addEventListener('pointerup', finir, { once: true });
+  }
+  clavierPoignee(e: KeyboardEvent): void {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    const actuelle = parseInt(this.largeurGrille() ?? '352', 10) || 352;
+    this.retenirLargeur(actuelle + (e.key === 'ArrowLeft' ? 24 : -24));
+  }
 
   /** Points de portée LIGNE (évalués par marché) — défaut LIGNE si portée absente. */
   readonly pointsLigne = computed(() => this.points().filter((p) => (p.portee ?? 'LIGNE') === 'LIGNE'));
@@ -888,7 +1004,23 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
   readonly hasEtapeFiche = computed(() => this.pointsFiche().length > 0 && this.ficheDoc().nbMarchesConcernes > 0 && (this.perimetre()?.ficheAExaminer ?? true));
   readonly hasEtapeAgpm = computed(() => this.pointsAgpm().length > 0 && this.agpmDoc().length > 0 && (this.perimetre()?.agpmAExaminer ?? true));
   /** Pièces dans l'ordre des étapes « Pièce N » (initiales puis après renvoi — même ordre que la liste). */
-  readonly piecesOrdonnees = computed(() => [...this.piecesInitiales(), ...this.piecesApresRenvoi()].filter((p) => p.idPiece != null));
+  /**
+   * ⚠️ 18/10 (pilote, examen du DAO) — pour un dossier né d'une fiche, les fichiers que la fiche PRODUIT (DAO complet, projet d'avis,
+   * bordereau estimatif) ne s'examinent plus comme des pièces : ils sont le rendu de données lues dans les onglets, et ce que la
+   * Commission y relève se porte sur les points de la grille du dossier (observation ancrée sur l'information de la fiche). Seules
+   * les pièces réellement jointes (publication de l'AGPM, autres documents) passent par RAS / Observation.
+   */
+  readonly piecesOrdonnees = computed(() => {
+    const neDUneFiche = this.dossier()?.idDmc != null;
+    return [...this.piecesInitiales(), ...this.piecesApresRenvoi()].filter((p) => p.idPiece != null && !(neDUneFiche && p.idDocumentFiche != null));
+  });
+  /** Le DAO complet produit par la fiche (ouvert dans un nouvel onglet depuis l'onglet « Fiche DAO »). */
+  readonly daoCompletPiece = computed(() => this.pieces().find((p) => p.idDocumentFiche != null && ongletDuFichier(p, true) === 'fiche-dao') ?? null);
+  /** Le projet d'avis (ou de lettre d'invitation) produit par la fiche : l'onglet « Avis spécifique » existe s'il est là. */
+  readonly pieceAvis = computed(() => this.pieces().find((p) => ongletDuFichier(p, true) === 'avis') ?? null);
+  /** ⚠️ 18/10 — pour un dossier de procédure (DMC), la grille du dossier PRÉCÈDE les pièces : la Commission contrôle d'abord le DAO
+   *  (ses 33 points, la fiche observable sous les yeux), puis les pièces jointes, puis la synthèse. Le plan garde son ordre. */
+  readonly grilleAvantPieces = computed(() => !this.estPpm());
   readonly nbPieces = computed(() => this.piecesOrdonnees().length);
   /**
    * Fil (⚠️ ORDRE pilote 2026-09-04) : Fiche → lignes du plan → AGPM → pièces → Dossier → Synthèse
@@ -900,11 +1032,17 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
   readonly offsetLignes = computed(() => (this.hasEtapeFiche() ? 1 : 0));
   readonly etapeAgpmIdx = computed(() => this.offsetLignes() + this.nbLignes());
   /** Index de la première étape « pièce » (après l'AGPM éventuelle). */
-  readonly offsetPieces = computed(() => this.etapeAgpmIdx() + (this.hasEtapeAgpm() ? 1 : 0));
+  readonly offsetPieces = computed(() =>
+    this.etapeAgpmIdx() + (this.hasEtapeAgpm() ? 1 : 0) + (this.grilleAvantPieces() && this.hasEtapeDossier() ? 1 : 0),
+  );
   /** Index de l'étape « contrôles dossier » (après fiche, lignes, AGPM et pièces éventuelles). */
-  readonly etapeDossierIdx = computed(() => this.offsetPieces() + this.nbPieces());
+  readonly etapeDossierIdx = computed(() =>
+    this.grilleAvantPieces() ? this.etapeAgpmIdx() + (this.hasEtapeAgpm() ? 1 : 0) : this.offsetPieces() + this.nbPieces(),
+  );
   /** Index de l'étape « avis global » (dernière du fil). */
-  readonly etapeAvis = computed(() => this.etapeDossierIdx() + (this.hasEtapeDossier() ? 1 : 0));
+  readonly etapeAvis = computed(() =>
+    this.grilleAvantPieces() ? this.offsetPieces() + this.nbPieces() : this.etapeDossierIdx() + (this.hasEtapeDossier() ? 1 : 0),
+  );
   readonly estEtapeFiche = computed(() => this.hasEtapeFiche() && this.etape() === this.etapeFicheIdx());
   readonly estEtapeMarche = computed(
     () => this.etape() >= this.offsetLignes() && this.etape() < this.offsetLignes() + this.nbLignes(),
@@ -990,13 +1128,15 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
     if (this.estPpm()) return this.ongletContenu();
     // ⚠️ Lot B (26/09, recette) — un dossier DAO est un dossier DMC, pas DDP : sans cette branche, la zone
     // document retombait toujours sur les pièces et l'onglet « Fiche DAO » n'était jamais atteignable.
-    return this.ongletContenu() === 'dao' && this.dossier()?.idDmc != null ? 'dao' : 'pieces';
+    const o = this.ongletContenu();
+    return this.dossier()?.idDmc != null && this.onglets().some((t) => t.cle === o) ? o : 'pieces';
   });
   /**
    * ⚠️ 2026-09-14 (décision des chefs) — annotations des documents officiels visibles (état d'examen,
    * statut du marché, versionnement…) : un seul interrupteur pour tous les onglets de l'écran.
    */
   readonly annotationsDoc = signal(true);
+  readonly ongletAvecAnnotations = computed(() => ONGLETS_ANNOTES.includes(this.ongletAffiche()));
   /** Les deux documents dérivés — mêmes fonctions pures que le détail PPM et l'aperçu de création. */
   readonly ficheDoc = computed(() =>
     calculerFichePresentation(this.marches(), this.previsions(), this.modesRef(), this.capmsRef()),
@@ -1123,9 +1263,17 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
   // ── Zone document ───────────────────────────────────────────────────────────────────────────
   readonly onglets = computed<{ cle: OngletDocument; libelle: string; nombre: number | null }[]>(() => {
     if (!this.estPpm()) {
+      const d = this.dossier();
+      if (d?.idDmc == null) return [{ cle: 'pieces' as const, libelle: 'Pièces jointes', nombre: this.nbPieces() }];
+      // ⚠️ 18/10 (pilote, examen du DAO) — les éléments du dossier né d'une fiche, dans l'ordre des cartes de sa page.
+      const lettre = (this.pieceAvis()?.nomFichier ?? '').startsWith('LETTRE_PROJET_');
       return [
-        // ⚠️ Lot B — le dossier DAO (famille DMC) porte sa fiche : elle est SON document, avant les pièces.
-        ...(this.dossier()?.idDmc != null ? [{ cle: 'dao' as const, libelle: 'Fiche DAO', nombre: null }] : []),
+        { cle: 'presentation' as const, libelle: 'Fiche de présentation', nombre: null },
+        { cle: 'dao' as const, libelle: 'Fiche DAO', nombre: null },
+        ...(this.pieceAvis() ? [{ cle: 'avis' as const, libelle: lettre ? 'Lettre d’invitation' : 'Avis spécifique', nombre: null }] : []),
+        ...(d.idDossierPlan ? [{ cle: 'plan' as const, libelle: 'Plan de passation', nombre: null }] : []),
+        { cle: 'bordereau' as const, libelle: 'Bordereau estimatif', nombre: null },
+        ...(d.ficheMarche?.typeMarche !== 'CONTRAT_CADRE' ? [{ cle: 'canevas' as const, libelle: 'Canevas de rapport', nombre: null }] : []),
         { cle: 'pieces' as const, libelle: 'Pièces jointes', nombre: this.nbPieces() },
       ];
     }
@@ -1228,6 +1376,12 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
   );
 
   // ── Parcours ────────────────────────────────────────────────────────────────────────────────
+  /** « Étape 3 sur 3 » (dossier de procédure) ou « Étape 6 sur 6 » (plan) : le numéro réel de la synthèse. */
+  readonly etapeSynthese = computed(() => {
+    const p = this.parcours();
+    const s = p.find((e) => e.cle === 'synthese');
+    return s ? `Étape ${s.numero} sur ${p.length}` : '';
+  });
   readonly parcours = computed(() => {
     const v = this.etapesValidees();
     const obs = this.observationsNumerotees();
@@ -1297,7 +1451,10 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
         accessible: this.toutTraite(),
       },
     ];
-    return construireParcours(entrees);
+    const ordre: CleEtapeParcours[] = this.grilleAvantPieces()
+      ? ['fiche', 'lignes', 'agpm', 'dossier', 'pieces', 'synthese']
+      : ['fiche', 'lignes', 'agpm', 'pieces', 'dossier', 'synthese'];
+    return construireParcours(ordre.map((cle) => entrees.find((e) => e.cle === cle)!));
   });
 
   // ── Grille de contrôle ──────────────────────────────────────────────────────────────────────
@@ -1400,9 +1557,9 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
     if (pc) {
       const i = this.indexPieceCourante();
       const r = this.resultatPiece(pc.idPiece);
+      // ⚠️ 18/10 (pilote) — ni le format (visible dans l'aperçu), ni « Pièce initiale » quand rien n'est venu après une lettre de renvoi.
       const puces: VueGrille['puces'] = [];
-      if (pc.format) puces.push({ texte: pc.format });
-      puces.push({ texte: pc.apresLettreRenvoi ? 'Après lettre de renvoi' : 'Pièce initiale' });
+      if (this.piecesApresRenvoi().length) puces.push({ texte: pc.apresLettreRenvoi ? 'Après lettre de renvoi' : 'Pièce initiale' });
       return {
         ...base,
         eyebrow: `Pièce ${i + 1} sur ${this.nbPieces()}`,
@@ -1452,9 +1609,9 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
     return {
       ...base,
       eyebrow: 'Grille du dossier',
-      titre: 'Points inter-lignes : fractionnement, cohérence',
+      titre: this.estPpm() ? 'Points inter-lignes : fractionnement, cohérence' : 'Points de contrôle du dossier',
       raison: raison('la grille du dossier'),
-      libelleValider: 'Valider la grille du dossier',
+      libelleValider: this.grilleAvantPieces() && this.nbPieces() ? 'Valider la grille et passer aux pièces jointes' : 'Valider la grille du dossier',
       libellePrecedent: precedent,
     };
   });
@@ -1532,7 +1689,8 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       : ["Les résultats de l'examen sont mis à jour.", 'Le projet de PV, déjà soumis, suit son circuit dans « Projets de PV ».'];
   });
   readonly libelleRetourSynthese = computed(() => {
-    if (this.hasEtapeDossier()) return 'Revenir aux contrôles du dossier';
+    if (this.grilleAvantPieces() && this.nbPieces()) return 'Revenir à la dernière pièce';
+    if (this.hasEtapeDossier()) return this.estPpm() ? 'Revenir aux contrôles du dossier' : 'Revenir à la grille du dossier';
     if (this.nbPieces()) return 'Revenir à la dernière pièce';
     if (this.hasEtapeAgpm()) return "Revenir à l'AGPM";
     if (this.nbLignes()) return 'Revenir à la dernière ligne';
@@ -1976,6 +2134,15 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
   }
   /** Règle séquentielle (⚠️ ordre pilote 2026-09-04) : fiche d'abord, puis lignes jusqu'à leur frontière, puis AGPM → pièces → dossier → avis. */
   estAtteignable(i: number): boolean {
+    if (this.grilleAvantPieces()) {
+      // ⚠️ 18/10 — dossier de procédure : la grille du dossier ouvre le fil, puis les pièces jusqu'à leur frontière, puis l'avis.
+      const dossierFait = !this.hasEtapeDossier() || this.dossierStatue();
+      return (
+        (this.hasEtapeDossier() && i === this.etapeDossierIdx()) ||
+        (i >= this.offsetPieces() && i < this.offsetPieces() + this.nbPieces() && dossierFait && i - this.offsetPieces() <= this.frontierePiece()) ||
+        (i === this.etapeAvis() && this.toutTraite())
+      );
+    }
     const ficheFaite = !this.hasEtapeFiche() || this.ficheStatuee();
     const lignesFaites = ficheFaite && this.frontiere() === this.nbLignes();
     const agpmFait = lignesFaites && (!this.hasEtapeAgpm() || this.agpmStatuee());
@@ -2043,8 +2210,22 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
    * correspondante quand elle est ATTEIGNABLE (la séquence reste la règle) ; sinon le document
    * s'affiche quand même et un mot explique la séquence.
    */
+  /** ⚠️ 18/10 (pilote, lot A) — la position de lecture de chaque onglet : y revenir ramène au même endroit, pas en haut. */
+  private readonly defilements = new Map<OngletDocument, number>();
   ouvrirOnglet(o: OngletDocument): void {
+    const panneau = document.getElementById('panneau-doc');
+    if (panneau) this.defilements.set(this.ongletAffiche(), panneau.scrollTop);
     this.ongletContenu.set(o);
+    // L'onglet se recharge (ses données arrivent après coup) : on attend qu'il ait la hauteur voulue, 2 s au plus.
+    const cible = this.defilements.get(o) ?? 0;
+    let essais = 0;
+    const replacer = (): void => {
+      const p = document.getElementById('panneau-doc');
+      if (!p) return;
+      if (p.scrollHeight - p.clientHeight >= cible || ++essais > 20) { p.scrollTop = cible; return; }
+      setTimeout(replacer, 100);
+    };
+    setTimeout(replacer);
     const avant = this.etape();
     // ⚠️ Ordre pilote (2026-09-04) : fiche → lignes → AGPM → pièces. La fiche ouvre le fil, elle
     // est toujours atteignable ; les autres onglets expliquent la séquence quand leur tour n'est
@@ -2077,7 +2258,9 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       this.allerEtape(this.offsetPieces() + this.frontierePiece());
       if (this.etape() === avant && avant < this.offsetPieces()) {
         this.toast.info(
-          "Les grilles des pièces s'ouvriront après la fiche, les lignes du plan et l'AGPM — l'examen est séquentiel. Les documents restent consultables ici.",
+          this.grilleAvantPieces()
+            ? "Les grilles des pièces s'ouvriront après la grille du dossier — l'examen est séquentiel. Les documents restent consultables ici."
+            : "Les grilles des pièces s'ouvriront après la fiche, les lignes du plan et l'AGPM — l'examen est séquentiel. Les documents restent consultables ici.",
         );
       }
     }
@@ -2152,6 +2335,12 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       case 'basculer':
         this.grilleOuverte.update((v) => !v);
         break;
+      case 'ouvrir':
+        this.pointOuvert.set(a.idPt);
+        break;
+      case 'ref':
+        this.allerInformation(a.code);
+        break;
     }
   }
 
@@ -2188,6 +2377,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       celluleFiche: null,
       idDetail,
       points,
+      autres: [],
       libelle: libelleChampCible(c.champ),
       valeur: c.valeur,
       left: Math.max(8, Math.min(r.left, window.innerWidth - largeur - 8)),
@@ -2209,11 +2399,17 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
     const r = c.element.getBoundingClientRect();
     const largeur = 300;
     const enBas = r.bottom < window.innerHeight * 0.6;
+    // ⚠️ 18/10 (lot B) — les points qui citent l'information (son code, ou son bloc) d'abord.
+    const code = c.champFiche.split('#')[0];
+    const cite = (p: PointsCtrl): boolean => codesCites(p.decriptPointCtrl).some((x) => x === code || code.startsWith(x + '-'));
+    const citants = points.filter(cite);
+    this.autresPoints.set(false);
     this.proposition.set({
       cellule: null,
       celluleFiche: c,
       idDetail,
-      points,
+      points: citants.length ? citants : points,
+      autres: citants.length ? points.filter((p) => !cite(p)) : [],
       libelle: c.lot == null ? c.libelle : `${c.libelle} — lot ${c.lot}`,
       valeur: c.valeur,
       left: Math.max(8, Math.min(r.left, window.innerWidth - largeur - 8)),
@@ -2248,6 +2444,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
     this.proposition.set(null);
     this.clicCelluleTraite = false;
     this.grilleOuverte.set(true);
+    this.pointOuvert.set(idPt); // ⚠️ 18/10 (lot B) — la grille compacte ouvre le point observé
     this.focaliserApresRendu(`obs-lire-${idPt}-${index}`);
   }
   fermerProposition(): void {
@@ -2270,6 +2467,11 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
     const i = this.piecesOrdonnees().findIndex((x) => x.idPiece === p.idPiece);
     if (this.estEtapePiece() && i >= 0) this.allerEtape(this.offsetPieces() + i);
     if (this.openPiece() !== p.idPiece) this.ouvrirPiece(p);
+  }
+  /** Le DAO complet (PDF) dans un nouvel onglet — par `fichiers-surs`, assainissement et révocation compris. */
+  ouvrirDansOnglet(p: PieceJointeDossier): void {
+    if (p.idPiece == null) return;
+    this.pieceService.telecharger(p.idPiece).subscribe({ next: (b) => ouvrirBlobSur(b), error: () => this.toast.error("Impossible d'ouvrir la pièce.") });
   }
   /** Ouvre l'aperçu d'une pièce (une seule à la fois) — URL blob assainie (`fichiers-surs`). */
   ouvrirPiece(p: PieceJointeDossier): void {
@@ -2678,6 +2880,8 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
     const ligne = this.marchesExamen().findIndex((m) => !v.has('L' + m.idDetail));
     if (ligne >= 0) return this.offsetLignes() + ligne;
     if (this.hasEtapeAgpm() && !v.has('A')) return this.etapeAgpmIdx();
+    // ⚠️ 18/10 (pilote, examen du DAO) — dossier de procédure : la grille du dossier avant les pièces (grilleAvantPieces).
+    if (this.grilleAvantPieces() && this.hasEtapeDossier() && !v.has('D')) return this.etapeDossierIdx();
     const piece = this.piecesOrdonnees().findIndex((p) => !v.has('P' + p.idPiece));
     if (piece >= 0) return this.offsetPieces() + piece;
     if (this.hasEtapeDossier() && !v.has('D')) return this.etapeDossierIdx();

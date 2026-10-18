@@ -177,13 +177,14 @@ export function pluriel(n: number, mot: string): string {
 }
 
 /**
- * Parcours affiché : état, résumé et progression de chaque étape. Les étapes masquées sont retirées
- * mais les numéros restent ceux du parcours complet (la synthèse reste « 6 »), comme la maquette.
+ * Parcours affiché : état, résumé et progression de chaque étape, dans l'ordre des entrées.
+ * ⚠️ 18/10 (pilote) — une étape masquée (absente pour ce type de dossier) ne compte pas : un dossier de procédure lit 1 · 2 · 3,
+ * et non 4 · 5 · 6. Une étape « sans objet » reste affichée et garde son numéro.
  */
 export function construireParcours(entrees: readonly EntreeParcours[]): EtapeParcours[] {
   return entrees
+    .filter((e) => !e.masquee)
     .map((e, i) => ({ e, numero: i + 1 }))
-    .filter(({ e }) => !e.masquee)
     .map(({ e, numero }) => {
       const obs = e.nbObservations ? ` · ${pluriel(e.nbObservations, 'observation')}` : '';
       let etat: EtatEtapeParcours;
@@ -471,7 +472,18 @@ export type ActionGrille =
   | { type: 'observationPiece'; valeur: string }
   | { type: 'precedent' }
   | { type: 'valider' }
-  | { type: 'basculer' };
+  | { type: 'basculer' }
+  // ⚠️ 18/10 (pilote, lot B) — ouvrir un point (grille compacte), aller à une information citée par un point.
+  | { type: 'ouvrir'; idPt: number }
+  | { type: 'ref'; code: string };
+
+/**
+ * ⚠️ 18/10 (pilote, lot B) — les informations de la fiche DAO qu'un point de contrôle cite dans son texte : un champ
+ * (« B05-GS-03 ») ou un bloc entier (« B12 »), dans l'ordre, sans doublon. Un point rédigé sans code n'en cite aucun.
+ */
+export function codesCites(texte: string | null | undefined): string[] {
+  return [...new Set((texte ?? '').match(/\bB\d{2}(?:-[A-Z]{2,3}-\d{2})?\b/g) ?? [])];
+}
 
 /** Groupe du récapitulatif de synthèse. */
 export interface GroupeRecap {

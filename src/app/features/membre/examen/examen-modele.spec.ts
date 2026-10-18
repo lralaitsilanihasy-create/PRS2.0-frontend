@@ -2,6 +2,7 @@ import { Chronometrage, DelaiStandard } from '../../../models';
 import {
   EntreeParcours,
   ajouterHeuresOuvrees,
+  codesCites,
   construireParcours,
   EmpreinteExamen,
   delaiExamen,
@@ -49,7 +50,7 @@ describe('Examen refondu — règles pures (lot 2)', () => {
       expect(synthese).toMatchObject({ numero: 6, etat: 'a-faire', resume: 'Après les contrôles' });
     });
 
-    it('retire une étape masquée sans renuméroter les suivantes (dossier sans plan)', () => {
+    it('retire une étape masquée et renumérote les suivantes (dossier sans plan : 1 · 2 · 3)', () => {
       const etapes = construireParcours([
         entree({ cle: 'fiche', masquee: true, total: 0 }),
         entree({ cle: 'lignes', masquee: true, total: 0 }),
@@ -58,7 +59,7 @@ describe('Examen refondu — règles pures (lot 2)', () => {
         entree({ cle: 'dossier', courante: true }),
         entree({ cle: 'synthese', courante: false, accessible: true }),
       ]);
-      expect(etapes.map((e) => [e.cle, e.numero])).toEqual([['pieces', 4], ['dossier', 5], ['synthese', 6]]);
+      expect(etapes.map((e) => [e.cle, e.numero])).toEqual([['pieces', 1], ['dossier', 2], ['synthese', 3]]);
       expect(etapes[1].resume).toBe('En cours');
       expect(etapes[2].resume).toBe('Prête');
     });
@@ -210,5 +211,15 @@ describe('Examen refondu — règles pures (lot 2)', () => {
       expect(modificationsNonEnregistrees({ ...base, date: '2026-09-14' }, base)).toBe(true);
       expect(modificationsNonEnregistrees({ ...base, synthese: 'Deux réserves.' }, base)).toBe(true);
     });
+  });
+});
+
+describe('codesCites — les informations de la fiche citées par un point (18/10, lot B)', () => {
+  it('relève les champs et les blocs, dans l’ordre, sans doublon', () => {
+    expect(codesCites('Minimum (B05-TP-02, B05-TP-03) cohérent avec les articles (B12) ; voir B05-TP-02.')).toEqual(['B05-TP-02', 'B05-TP-03', 'B12']);
+  });
+  it('un point sans code n’en cite aucun', () => {
+    expect(codesCites('Absence de fractionnement')).toEqual([]);
+    expect(codesCites(null)).toEqual([]);
   });
 });

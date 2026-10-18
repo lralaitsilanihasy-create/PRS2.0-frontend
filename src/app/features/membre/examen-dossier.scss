@@ -447,3 +447,15 @@
 }
 .pc-modal { width: min(900px, 95vw); max-width: 95vw; max-height: 90vh; display: flex; flex-direction: column; }
 .pc-modal .modal-body { min-height: 0; }
+
+
+/* ⚠️ 18/10 (pilote, lot C) — largeur de la grille réglable ; la poignée, au bord gauche de la colonne. */
+.cols:not(.cols--repliee) { grid-template-columns: minmax(0, 1fr) var(--larg-grille, 22rem); }
+.cote { position: relative; }
+.poignee { position: absolute; left: -0.7rem; top: 0; bottom: 0; width: 0.6rem; cursor: col-resize; touch-action: none; display: grid; place-items: center; z-index: 2; }
+.poignee::before { content: ''; width: 4px; height: 3rem; border-radius: 4px; background: #d5deea; transition: background 0.15s; }
+.poignee:hover::before, .poignee:focus-visible::before, .poignee--active::before { background: #0369a1; }
+@media (max-width: 1100px) { .poignee { display: none; } }
+/* ⚠️ 18/10 (lot B) — bulle ciblée : « Autre point… ». */
+.prop__autres { margin: 0.2rem 0 0.3rem; padding: 0; border: 0; background: none; font: inherit; font-size: 0.78rem; font-weight: 600; color: #0369a1; cursor: pointer; }
+.prop__autres:hover { text-decoration: underline; }

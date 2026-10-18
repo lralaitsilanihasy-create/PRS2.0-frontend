@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { Subscription } from 'rxjs';
 
-import { ToastService } from '../../../core/notifications/toast.service';
-import { telechargerBlob } from '../../../core/securite/fichiers-surs';
 import { Instantane } from '../../../models';
 import { InstantaneService } from '../../../services';
 import { horodatage } from '../../../shared/prmp/avis-specifique-modele';
@@ -10,6 +8,7 @@ import { DonneesFigees, RESOLVEUR_FIGES } from '../../../shared/ui/donnees-figee
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { DossierContenuStore } from './dossier-contenu.store';
 import { InstantaneAttributionVue, InstantaneEvaluationVue, InstantaneSeanceVue } from './instantanes-vues';
+import { InstantaneAvisVue, InstantaneCaoVue, InstantanePlanVue } from './instantanes-procedure';
 import { ReferentielsFiges } from './referentiels-figes';
 
 /** L'ordre de lecture des écrans d'une soumission : la procédure, puis ses séances, puis ses suites. */
@@ -31,9 +30,6 @@ export function libelleEcranInstantane(ecran: string): string {
   return LIBELLES_ECRAN[ecran] ?? ecran;
 }
 
-/** Les écrans qui ont une vue dédiée ; les autres passent par le rendu générique. */
-const VUES_DEDIEES: readonly string[] = ['SEANCE', 'EVALUATION', 'ATTRIBUTION'];
-
 /**
  * ⚠️ Manuel révisé, R4 (V104, 13/10) — l'onglet « Écrans figés » d'un dossier de procédure : la liste des instantanés (par soumission,
  * puis par écran), l'écran choisi rendu en **lecture seule** depuis son JSON figé, le bandeau « Figé à la soumission n° … du … » et
@@ -43,21 +39,18 @@ const VUES_DEDIEES: readonly string[] = ['SEANCE', 'EVALUATION', 'ATTRIBUTION'];
 @Component({
   selector: 'app-dossier-instantanes',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [EtatErreur, DonneesFigees, InstantaneSeanceVue, InstantaneEvaluationVue, InstantaneAttributionVue],
+  imports: [EtatErreur, DonneesFigees, InstantaneSeanceVue, InstantaneEvaluationVue, InstantaneAttributionVue, InstantanePlanVue, InstantaneAvisVue, InstantaneCaoVue],
   // ⚠️ 14/10 — les identifiants et codes de référentiel des écrans figés se lisent en clair (nature, mode, statut de marché).
   providers: [ReferentielsFiges, { provide: RESOLVEUR_FIGES, useExisting: ReferentielsFiges }],
   template: `
-    <div class="dc-section-head">
-      <div class="section-block-title">
-        <div class="section-icon">🔒</div>
-        <span class="section-label">Écrans figés à la soumission</span>
-        <span class="section-count">{{ contenu.instantanes().length }} écran(s) · {{ soumissions().length }} soumission(s)</span>
-      </div>
+    <!-- ⚠️ 18/10 (pilote, « améliorer les boutons et les caractères ») — un en-tête court, dans la police de l'application. -->
+    <div class="di__tete">
+      <span class="di__cadenas" aria-hidden="true">🔒</span>
+      <p class="di__intro">
+        Les écrans de la procédure, <strong>tels qu’ils étaient à la soumission</strong> : immuables, en lecture seule.
+        <span class="di__compte">{{ contenu.instantanes().length }} écran{{ contenu.instantanes().length > 1 ? 's' : '' }} · {{ soumissions().length }} soumission{{ soumissions().length > 1 ? 's' : '' }}</span>
+      </p>
     </div>
-    <p class="di__intro">
-      À chaque soumission du dossier, le serveur fige les écrans de la procédure tels qu'ils étaient à cet instant (immuables, empreinte
-      SHA-256). La Commission les lit ici, en lecture seule, à la place des pièces qui ne sont plus jointes au dossier.
-    </p>
 
     @if (soumissions().length > 1) {
       <div class="di__select">
@@ -75,17 +68,10 @@ const VUES_DEDIEES: readonly string[] = ['SEANCE', 'EVALUATION', 'ATTRIBUTION'];
         <button type="button" role="tab" class="di__onglet" [class.di__onglet--on]="courant()?.idInstantane === i.idInstantane"
           [attr.aria-selected]="courant()?.idInstantane === i.idInstantane" (click)="choisirEcran(i.ecran)">{{ libelle(i.ecran) }}</button>
       }
+      <!-- ⚠️ 18/10 (pilote) — ni bande « Figé à la soumission », ni date, ni export à l'écran : la trace est l'instantané serveur. -->
     </div>
 
     @if (courant(); as i) {
-      <div class="di__bandeau">
-        <span class="badge di__badge">Figé</span>
-        <span class="di__quand">
-          Figé à la soumission n° {{ i.numeroSoumission }} du {{ horodatage(i.figeLe) }}@if (i.figePar) { par {{ i.figePar }}}
-          · empreinte <span class="cnm-mono di__empreinte" [title]="i.empreinte">{{ i.empreinte.slice(0, 12) }}…</span>
-        </span>
-        <button type="button" class="btn btn-sm btn-outline" [disabled]="pdfEnCours()" (click)="exporterPdf(i)">{{ pdfEnCours() ? 'Export…' : 'Exporter en PDF' }}</button>
-      </div>
       @if (chargement()) {
         <p class="text-muted" role="status">Chargement de l'écran figé…</p>
       } @else if (erreur()) {
@@ -93,18 +79,17 @@ const VUES_DEDIEES: readonly string[] = ['SEANCE', 'EVALUATION', 'ATTRIBUTION'];
       } @else if (donnees() !== undefined) {
         <div class="di__vue">
           @switch (i.ecran) {
+            @case ('PLAN') { <app-instantane-plan [donnees]="$any(donnees())" /> }
+            @case ('AVIS') { <app-instantane-avis [donnees]="$any(donnees())" /> }
+            @case ('CAO') { <app-instantane-cao [donnees]="$any(donnees())" /> }
             @case ('SEANCE') { <app-instantane-seance [seance]="$any(donnees())" /> }
             @case ('EVALUATION') { <app-instantane-evaluation [evaluation]="$any(donnees())" /> }
             @case ('ATTRIBUTION') { <app-instantane-attribution [attribution]="$any(donnees())" /> }
             @default { <app-donnees-figees [valeur]="donnees()" /> }
           }
         </div>
-        @if (vueDediee(i.ecran)) {
-          <details class="di__complet">
-            <summary>Données complètes de l'instantané</summary>
-            <app-donnees-figees [valeur]="donnees()" />
-          </details>
-        }
+        <!-- ⚠️ 18/10 (pilote) — plus de volet « Données complètes » sous les vues dédiées : la trace complète est l'instantané serveur
+             (empreinte en infobulle) et son export PDF. Les écrans sans vue dédiée gardent le rendu générique, leur seule présentation. -->
       }
     } @else {
       <p class="text-muted">Aucun écran figé pour cette soumission.</p>
@@ -115,23 +100,26 @@ const VUES_DEDIEES: readonly string[] = ['SEANCE', 'EVALUATION', 'ATTRIBUTION'];
     .di__intro { margin: 0 0 0.8rem; font-size: var(--text-sm); color: var(--n-500); }
     .di__select { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.6rem; font-size: var(--text-sm); }
     .di__select .form-control { width: auto; }
-    .di__ecrans { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.7rem; }
-    .di__onglet { border: 1px solid var(--n-300); background: #fff; color: var(--n-700, #334155); border-radius: 999px; padding: 0.25rem 0.75rem; font-size: var(--text-sm); cursor: pointer; }
-    .di__onglet:hover { background: var(--n-50, #f8fafc); }
-    .di__onglet--on { background: var(--n-800, #1e293b); border-color: var(--n-800, #1e293b); color: #fff; }
-    .di__bandeau { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; padding: 0.5rem 0.75rem; margin-bottom: 0.7rem; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 6px; font-size: var(--text-sm); }
-    .di__badge { background: #b45309; color: #fff; }
-    .di__quand { flex: 1; }
-    .di__empreinte { font-size: var(--text-xs); }
+    .di__tete { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.9rem; }
+    .di__cadenas { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 8px; background: #e0f2fe; font-size: 0.95rem; }
+    .di__tete .di__intro { margin: 0; font-size: 0.9rem; color: #34405a; }
+    .di__compte { margin-left: 0.4rem; padding: 0.05rem 0.5rem; border-radius: 999px; background: #e0f2fe; color: #0369a1; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+    /* Les écrans : un sélecteur segmenté, dans la police de l'application (un bouton n'en hérite pas sans « font: inherit »). */
+    .di__ecrans { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; margin-bottom: 1rem; padding-bottom: 0.85rem; border-bottom: 1px solid var(--n-200); }
+    .di__onglet {
+      font: inherit; font-size: 0.9rem; font-weight: 600;
+      padding: 0.45rem 1rem; border: 1.5px solid #152033; border-radius: 999px;
+      background: #fff; color: #152033; cursor: pointer; transition: background 0.15s, color 0.15s;
+    }
+    .di__onglet:hover { background: #eef6fd; }
+    .di__onglet:focus-visible { outline: 3px solid #0369a1; outline-offset: 2px; }
+    .di__onglet--on, .di__onglet--on:hover { background: #152033; color: #fff; }
     .di__vue { padding: 0.25rem 0; }
-    .di__complet { margin-top: 0.9rem; font-size: var(--text-sm); }
-    .di__complet summary { cursor: pointer; color: var(--n-500); }
   `,
 })
 export class DossierInstantanes {
   protected readonly contenu = inject(DossierContenuStore);
   private readonly service = inject(InstantaneService);
-  private readonly toast = inject(ToastService);
 
   readonly horodatage = horodatage;
   readonly libelle = libelleEcranInstantane;
@@ -157,7 +145,6 @@ export class DossierInstantanes {
   readonly chargement = signal(false);
   readonly erreur = signal(false);
   readonly relance = signal(0);
-  readonly pdfEnCours = signal(false);
 
   constructor() {
     effect((nettoyer) => {
@@ -175,10 +162,6 @@ export class DossierInstantanes {
 
   choisirEcran(ecran: string): void {
     this.ecran.set(ecran);
-  }
-
-  vueDediee(ecran: string): boolean {
-    return VUES_DEDIEES.includes(ecran);
   }
 
   dateDe(soumission: number): string | null {
@@ -205,18 +188,4 @@ export class DossierInstantanes {
     });
   }
 
-  exporterPdf(i: Instantane): void {
-    const id = this.contenu.dossier().idDossier;
-    this.pdfEnCours.set(true);
-    this.service.pdf(id, i.ecran, i.numeroSoumission).subscribe({
-      next: (blob) => {
-        this.pdfEnCours.set(false);
-        telechargerBlob(blob, `INSTANTANE_${i.ecran}_${id}_s${i.numeroSoumission}.pdf`);
-      },
-      error: () => {
-        this.pdfEnCours.set(false);
-        this.toast.error("L'export PDF de l'écran figé a échoué.");
-      },
-    });
-  }
 }

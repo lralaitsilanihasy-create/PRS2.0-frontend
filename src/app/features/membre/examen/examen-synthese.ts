@@ -87,10 +87,14 @@ import { GroupeRecap, ObservationNumerotee, pluriel } from './examen-modele';
       <section class="panneau synth__avis" aria-labelledby="avis-titre">
         <header class="panneau__tete">
           <h2 id="avis-titre">Votre avis</h2>
-          <small>Étape 6 sur 6</small>
+          <small>{{ etapeLibelle() }}</small>
         </header>
         <div class="avis">
           @if (editable()) {
+            <label class="fld fld--date">
+              <span class="fld__l">Date de l’examen</span>
+              <input type="date" class="date" [value]="dateExamen()" (input)="dateChange.emit(valeurDe($event))" />
+            </label>
             <label class="fld">
               <span class="fld__l">Synthèse des observations</span>
               <textarea #ta class="ta" rows="4" [value]="synthese()" (input)="syntheseChange.emit(valeurDe($event))"></textarea>
@@ -179,6 +183,11 @@ export class ExamenSynthese {
 
   readonly modifier = output<ObservationNumerotee>();
   readonly syntheseChange = output<string>();
+  /** ⚠️ 18/10 (lot A) — la date d'examen, venue de l'en-tête. */
+  readonly dateExamen = input('');
+  readonly dateChange = output<string>();
+  /** « Étape 3 sur 3 » : le numéro réel de la synthèse dans le parcours. */
+  readonly etapeLibelle = input('Étape 6 sur 6');
   readonly avisChange = output<string>();
   readonly soumettre = output<void>();
   readonly enregistrer = output<void>();

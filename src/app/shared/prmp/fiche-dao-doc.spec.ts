@@ -90,10 +90,16 @@ describe('FicheDaoDoc — la fiche DAO comme document de l’examen (lot B)', ()
   it('charge la fiche puis le référentiel de sa forme et de sa catégorie, et se présente comme un document', () => {
     expect(lire).toHaveBeenCalledWith(14);
     expect(referentiel).toHaveBeenCalledWith('QUANTITE_FIXE', 'FOURNITURES_SERVICES');
-    expect(racine().querySelector('.doc-titre')?.textContent).toContain('Fiche DAO — Fourniture et livraison de matériels informatiques');
-    expect(racine().querySelector('.doc-sous-titre')?.textContent?.replace(/\s+/g, ' ')).toContain('version 1 · validée · 2 lots');
+    expect(racine().querySelector('.fd-tete__sur')?.textContent).toBe('Fiche DAO');
+    expect(racine().querySelector('.doc-titre')?.textContent).toContain('Fourniture et livraison de matériels informatiques');
+    expect(racine().querySelector('.doc-sous-titre')?.textContent?.replace(/\s+/g, ' ')).toContain('Version 1');
+    expect(Array.from(racine().querySelectorAll('.fd-puce')).map((e) => e.textContent?.trim())).toContain('Validée');
+    expect(racine().querySelector('.doc-sous-titre')?.textContent).toContain('2 lots');
     // B01 (repris du plan) ne se saisit pas : il ne se lit pas ici non plus — comme l'écran de saisie.
-    const titres = Array.from(racine().querySelectorAll('.doc-bloc-titre')).map((h) => h.textContent?.replace(/\s+/g, ' ').trim());
+    // ⚠️ 18/10 (lot A) — le titre d'un bloc porte aussi son compte d'informations : on lit le code et le libellé.
+    const titres = Array.from(racine().querySelectorAll('.doc-bloc-titre')).map(
+      (h) => `${h.querySelector('.fd-code')?.textContent?.trim()} ${h.querySelector('.fd-carte__libelle')?.textContent?.trim()}`,
+    );
     expect(titres).toEqual(['B04 Consultation', 'B05 Garanties']);
   });
 

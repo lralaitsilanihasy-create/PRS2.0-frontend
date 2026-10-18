@@ -76,15 +76,19 @@ describe('Écrans figés d’un dossier (manuel révisé, R4)', () => {
     expect(onglets()).toEqual(['Ligne du plan', "Séance d'ouverture", 'Évaluation', 'Attribution']);
     const select = racine().querySelector<HTMLSelectElement>('#di-soumission');
     expect(select?.value).toBe('2');
-    expect(texte()).toContain('6 écran(s) · 2 soumission(s)');
+    expect(texte()).toContain('6 écrans · 2 soumissions');
     const req = http.expectOne((r) => r.url === '/api/dossiers/100371/instantanes/PLAN');
     expect(req.request.params.get('soumission')).toBe('2');
-    req.flush({ idDmc: 40, versionPpm: 3, ligne: { objet: 'Fournitures de bureau' } });
+    req.flush({ idDmc: 40, versionPpm: 3, ligne: { idDetail: 7 }, valeurs: { OBJET: 'Fournitures de bureau', PPM_REFERENCE: '00001/MLF/PPM/2026' } });
     fixture.detectChanges();
-    expect(texte()).toContain('Figé à la soumission n° 2 du 13/10/2026 à 17:00 par ADMIN01');
-    expect(texte()).toContain('empreinte abcdef012345…');
-    expect(texte()).toContain('Version du plan 3');
-    expect(texte()).toContain('Objet Fournitures de bureau');
+    // ⚠️ 18/10 (pilote) — plus de bande : la date et l'export sont sur la rangée des écrans, l'empreinte en infobulle.
+    expect(racine().querySelector('.di__bandeau')).toBeNull();
+    expect(racine().querySelector('.di__quand')).toBeNull();
+    // ⚠️ 18/10 (pilote) — la ligne du plan a sa vue dédiée ; la donnée complète reste dépliable dessous.
+    expect(racine().querySelector('app-instantane-plan')).not.toBeNull();
+    expect(texte()).toContain('Référence 00001/MLF/PPM/2026');
+    expect(texte()).toContain('mise à jour n° 3');
+    expect(racine().querySelector('.iv__objet')?.textContent?.trim()).toBe('Fournitures de bureau');
     expect(racine().querySelector('.di__complet')).toBeNull();
   });
 
@@ -98,7 +102,7 @@ describe('Écrans figés d’un dossier (manuel révisé, R4)', () => {
     fixture.detectChanges();
     expect(racine().querySelector('app-instantane-evaluation')).not.toBeNull();
     expect(texte()).toContain('État En cours');
-    expect(racine().querySelector('.di__complet')).not.toBeNull();
+    expect(racine().querySelector('.di__complet')).toBeNull();
   });
 
   it('changer de soumission relit l’écran courant pour cette soumission ; un écran absent de celle-ci retombe sur le premier', () => {
@@ -117,7 +121,7 @@ describe('Écrans figés d’un dossier (manuel révisé, R4)', () => {
     expect(req.request.params.get('soumission')).toBe('1');
     req.flush({});
     fixture.detectChanges();
-    expect(texte()).toContain('Figé à la soumission n° 1 du 13/10/2026 à 09:00');
+    expect(racine().querySelector('app-instantane-plan')).not.toBeNull();
   });
 
   it('un échec de lecture montre l’état d’erreur avec reprise ; la reprise relit', () => {
@@ -130,34 +134,6 @@ describe('Écrans figés d’un dossier (manuel révisé, R4)', () => {
     http.expectOne((r) => r.url === '/api/dossiers/100371/instantanes/PLAN').flush({});
     fixture.detectChanges();
     expect(racine().querySelector('app-etat-erreur')).toBeNull();
-  });
-
-  it('exporte le PDF de l’écran courant sous son nom serveur, par le téléchargement sûr', () => {
-    monter(LISTE);
-    http.expectOne((r) => r.url === '/api/dossiers/100371/instantanes/PLAN').flush({});
-    fixture.detectChanges();
-    // Même motif que `fichiers-surs.spec` : l'URL de blob est simulée, le clic du lien de téléchargement intercepté.
-    const cree = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test');
-    const liens: HTMLAnchorElement[] = [];
-    const creer = document.createElement.bind(document);
-    vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
-      const el = creer(tag);
-      if (tag === 'a') {
-        vi.spyOn(el, 'click').mockImplementation(() => undefined);
-        liens.push(el as HTMLAnchorElement);
-      }
-      return el;
-    });
-    racine().querySelector<HTMLButtonElement>('.di__bandeau button')!.click();
-    fixture.detectChanges();
-    const req = http.expectOne((r) => r.url === '/api/dossiers/100371/instantanes/PLAN/pdf');
-    expect(req.request.params.get('soumission')).toBe('2');
-    req.flush(new Blob(['%PDF'], { type: 'application/pdf' }));
-    fixture.detectChanges();
-    expect(cree).toHaveBeenCalledTimes(1);
-    expect(liens.map((l) => l.download)).toEqual(['INSTANTANE_PLAN_100371_s2.pdf']);
-    expect(toast.error).not.toHaveBeenCalled();
-    vi.restoreAllMocks();
   });
 
   it('sans instantané, rien n’est lu', () => {

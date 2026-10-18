@@ -1,0 +1,57 @@
+/* ⚠️ 18/10 (pilote) — les vues dédiées des écrans figés de la procédure (ligne du plan, avis et lettres, CAO).
+   Texte #152033 / #34405a / #5b6784 sur fonds clairs : contraste AA. */
+:host { display: block; }
+.iv { display: flex; flex-direction: column; gap: 1rem; }
+
+/* En-tête : ce dont parle l'écran, en grand. */
+.iv__tete {
+  padding: 1rem 1.25rem;
+  border: 1.5px solid #152033;
+  border-radius: 12px;
+  background: #e1f1fd;
+}
+.iv__tete--neutre { background: #eef1f6; }
+.iv__sur { margin: 0 0 0.2rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #0369a1; }
+.iv__objet { margin: 0; font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em; color: #152033; }
+.iv__note { margin: 0.35rem 0 0; font-size: 0.85rem; color: #34405a; }
+.iv__puces { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
+.iv__puce { padding: 0.15rem 0.6rem; border: 1px solid #152033; border-radius: 999px; background: #fff; font-size: 0.78rem; font-weight: 600; color: #152033; }
+.iv__chiffres { display: flex; flex-wrap: wrap; gap: 0.5rem 2rem; margin-top: 0.85rem; }
+.iv__chiffre { display: flex; flex-direction: column; }
+.iv__chiffre-l { font-size: 0.72rem; color: #34405a; }
+.iv__chiffre-v { font-size: 1.05rem; font-weight: 700; color: #152033; font-variant-numeric: tabular-nums; }
+.iv__chiffre-v small { font-size: 0.75rem; font-weight: 600; }
+
+/* Blocs de lecture. */
+.iv__deux { display: grid; grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr)); gap: 1rem; }
+.iv__bloc { padding: 0.85rem 1.1rem; border: 1px solid var(--n-200); border-radius: 12px; background: #fff; }
+.iv__bloc--alerte { border-color: #f3b4ae; background: #fff7f6; }
+.iv__titre {
+  display: flex; align-items: center; gap: 0.4rem;
+  margin: 0 0 0.6rem;
+  font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #0369a1;
+}
+.iv__compte { padding: 0 0.45rem; border-radius: 999px; background: #e0f2fe; font-size: 0.7rem; }
+.iv__lignes { margin: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+.iv__lignes > div { display: grid; grid-template-columns: 7rem 1fr; gap: 0.75rem; }
+.iv__lignes dt { font-size: 0.82rem; color: #5b6784; }
+.iv__lignes dd { margin: 0; font-size: 0.9rem; color: #152033; overflow-wrap: anywhere; }
+
+/* Calendrier : des jalons, dans l'ordre. */
+.iv__frise { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.6rem; }
+.iv__jalon { display: flex; flex-direction: column; gap: 0.15rem; padding: 0.55rem 0.75rem; border-left: 3px solid #0369a1; border-radius: 6px; background: #f6fbff; }
+.iv__jalon-d { font-size: 0.95rem; font-weight: 700; color: #152033; font-variant-numeric: tabular-nums; }
+.iv__jalon-l { font-size: 0.8rem; color: #34405a; }
+
+/* Imputations : compactes, en colonnes. */
+.iv__imputations { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 0.3rem 1.5rem; }
+.iv__imputations li { display: flex; justify-content: space-between; gap: 0.75rem; padding: 0.3rem 0; border-bottom: 1px dashed var(--n-200); font-size: 0.85rem; }
+.iv__code { color: #34405a; font-family: var(--font-mono, monospace); font-size: 0.8rem; }
+.iv__mt { color: #152033; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.iv__supports { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.88rem; color: #152033; }
+.iv__membres { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 0.5rem; }
+.iv__membres li { display: flex; justify-content: space-between; padding: 0.5rem 0.75rem; border: 1px solid var(--n-200); border-radius: 8px; background: #fff; }
+.iv__nom { font-weight: 600; color: #152033; }
+.iv__qualite { font-size: 0.8rem; color: #5b6784; }
+.iv__vide { margin: 0; font-size: 0.88rem; color: #5b6784; }

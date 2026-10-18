@@ -162,16 +162,12 @@ import { FicheMarcheDossier } from '../page-dossier/fiche-marche-dossier';
             <app-fiche-marche-dossier [dossier]="contenu.dossier()" [enModale]="true" (liaisonChangee)="liaisonChangee.emit()" />
           }
           <!-- ⚠️ 18/10 — le DAO complet en est le rendu dans le modèle type : son PDF reste à portée, pour le texte type (IC, CCAG, modèles). -->
-          @if (fichiersOnglet('fiche-dao').length) {
-            <div class="dc-fichiers">
-              <span>Le DAO complet, rendu de cette fiche dans le modèle type :</span>
-              @for (p of fichiersOnglet('fiche-dao'); track p.idPiece) {
-                <button type="button" class="btn btn-outline btn-sm" (click)="ouvrirPiece(p)">{{ p.nomFichier }} ↗</button>
-              }
-            </div>
-          }
           <app-document-visionneuse>
-            <app-fiche-dao-doc [idDmc]="contenu.dossier().idDmc!" />
+            <app-fiche-dao-doc [idDmc]="contenu.dossier().idDmc!">
+              @for (p of fichiersOnglet('fiche-dao'); track p.idPiece) {
+                <button ficheActions type="button" class="btn btn-outline btn-sm" title="Le rendu de cette fiche dans le modèle type (texte type : IC, CCAG, modèles)" (click)="ouvrirPiece(p)">DAO complet (PDF) ↗</button>
+              }
+            </app-fiche-dao-doc>
           </app-document-visionneuse>
         </div>
       }
