@@ -178,6 +178,8 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     // venait par la page d'un dossier) : l'écran des lignes éligibles et des fiches ouvertes, d'où partent la commission,
     // les dépôts, les retraits, les reçus des frais et la séance.
     { label: 'Appels d’offres', path: '/prmp/dao', icon: 'clip' },
+    // ⚠️ 18/10 (pilote) — les reçus des frais de dossier n'étaient atteignables que par la fiche : entrée propre, pastille propre.
+    { label: 'Reçus des frais', path: '/prmp/recus', icon: 'hash' },
     // ⚠️ Lot MS-1 (V124, 16/10) — les contrats-cadres et marchés à commandes notifiés (titulaires, échéances, reconductions).
     { label: 'Contrats en vigueur', path: '/prmp/contrats-en-vigueur', icon: 'history' },
     // « Créer compte UGPM » : déplacé dans le PIED de la barre latérale (à la place de la carte profil,
@@ -207,6 +209,8 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     { label: 'Mes brouillons', path: '/prmp/mes-brouillons', icon: 'edit' },
     // ⚠️ 2026-10-06 — comme la PRMP : l'UGPM saisit la fiche, la commission et valide les reçus des frais.
     { label: 'Appels d’offres', path: '/prmp/dao', icon: 'clip' },
+    // ⚠️ 18/10 (pilote) — les reçus des frais de dossier n'étaient atteignables que par la fiche : entrée propre, pastille propre.
+    { label: 'Reçus des frais', path: '/prmp/recus', icon: 'hash' },
     // ⚠️ Lot MS-1 (16/10) — en lecture : la reconduction se décide par la PRMP.
     { label: 'Contrats en vigueur', path: '/prmp/contrats-en-vigueur', icon: 'history' },
     // ⚠️ Demande pilote (2026-09-13) — « Dossiers vérifiés » RETIRÉ du menu UGPM : les dossiers vérifiés

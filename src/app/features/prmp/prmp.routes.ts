@@ -52,6 +52,8 @@ export const PRMP_ROUTES: Routes = [
   { path: 'dao/:idDmc', loadComponent: () => import('./fiche-marche/fiche-marche').then((m) => m.FicheMarcheEcran), data: { title: 'Fiche DAO', concentration: true } },
   // ⚠️ Soumission en ligne, lot 1 (04/10, §B8) — le registre des retraits du DAO par les candidats, PRMP de la fiche seule.
   { path: 'dao/:idDmc/retraits', loadComponent: () => import('./retraits-dao').then((m) => m.RetraitsDao), data: { title: 'Retraits du DAO', parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }, { label: 'Fiche DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
+  // ⚠️ 18/10 (pilote) — « Reçus des frais » : tous les reçus à valider de la PRMP, depuis le menu ; décision sur place.
+  { path: 'recus', loadComponent: () => import('./recus-hub').then((m) => m.RecusHub), data: { title: 'Reçus des frais de dossier' } },
   // ⚠️ V72 (06/10, retrait après paiement) — les reçus des frais de dossier, validés par la PRMP ou l'UGPM de la fiche.
   { path: 'dao/:idDmc/recus', loadComponent: () => import('./recus-dao').then((m) => m.RecusDao), data: { title: 'Reçus des frais de dossier', parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }, { label: 'Fiche DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
   // ⚠️ Soumission en ligne, lot 3 (04/10, V68) — le registre des dépôts : le nombre seul avant la date limite.

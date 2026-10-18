@@ -577,7 +577,9 @@ export class MainLayout {
             // ⚠️ 06/10 — les reçus des frais de dossier en attente (un candidat attend pour retirer et déposer).
             // ⚠️ 09/10 (attribution 2d-1, V91) — s'y ajoutent les gestes d'attribution qui attendent la PRMP : lots à attribuer,
             // lots signables, avis d'attribution à publier, explications sans réponse (on y arrive par la fiche, puis l'évaluation).
-            c['/prmp/dao'] = ['recusAValider', 'lotsAAttribuer', 'lotsSignables', 'avisAPublier', 'explicationsSansReponse'].reduce((n, k) => n + (compteurs[k] ?? 0), 0);
+            // ⚠️ 18/10 (pilote) — les reçus à valider ont leur entrée « Reçus des frais » : leur pastille y passe.
+            c['/prmp/dao'] = ['lotsAAttribuer', 'lotsSignables', 'avisAPublier', 'explicationsSansReponse'].reduce((n, k) => n + (compteurs[k] ?? 0), 0);
+            c['/prmp/recus'] = compteurs['recusAValider'] ?? 0;
             // ⚠️ R6c (V108, règle 8) — les avis d'attribution en retard (échéance de 30 jours passée sans publication) : pastille d'alerte.
             this.alerts.update((a) => ({ ...a, '/prmp/dao': compteurs['avisEnRetard'] ?? 0 }));
             // ⚠️ Lot MS-1 (V124, 16/10) — les reconductions à décider ; en alerte, les contrats dont l'échéance tombe sous 30 jours.
@@ -585,8 +587,8 @@ export class MainLayout {
             this.alerts.update((a) => ({ ...a, '/prmp/contrats-en-vigueur': compteurs['contratsAEcheance'] ?? 0 }));
             break;
           case 'UGPM':
-            // ⚠️ 06/10 — l'UGPM valide aussi les reçus des frais de dossier des fiches de sa PRMP.
-            c['/prmp/dao'] = compteurs['recusAValider'] ?? 0;
+            // ⚠️ 06/10 — l'UGPM valide aussi les reçus des frais de dossier des fiches de sa PRMP (⚠️ 18/10 : entrée « Reçus des frais »).
+            c['/prmp/recus'] = compteurs['recusAValider'] ?? 0;
             break;
           case 'PRESIDENT':
             // ⚠️ 2026-09-12 — « Mes dossiers » retiré : la pastille « à dispatcher » passe sur

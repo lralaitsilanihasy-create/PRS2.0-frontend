@@ -119,6 +119,7 @@ export const GROUPES_PAR_CHEMIN: Readonly<Record<string, { groupe: CleGroupe; co
   documents: { groupe: 'travail', court: 'Documents' },
   // ⚠️ 2026-10-06 — les fiches DAO et la soumission en ligne (PRMP, UGPM).
   dao: { groupe: 'travail', court: 'Appels' },
+  recus: { groupe: 'travail', court: 'Reçus' },
   // ⚠️ 06/10 — entrée DYNAMIQUE (main-layout) : le responsable d'au moins une procédure en ligne.
   '/procedures-en-ligne': { groupe: 'travail', court: 'Procédures' },
   // ⚠️ Lot MS-1 (V124, 16/10) — les contrats-cadres et marchés à commandes notifiés (PRMP, UGPM).
