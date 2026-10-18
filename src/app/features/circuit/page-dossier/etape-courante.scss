@@ -174,3 +174,19 @@
     border-top: 1px solid #e5ebf3;
   }
 }
+
+// ⚠️ 18/10 (pilote) — la raison d'un geste retenu (pièces obligatoires manquantes).
+.ec__bloque {
+  margin: 0.25rem 0 0;
+  max-width: 40rem;
+  font-size: 0.85rem;
+  color: var(--danger-text);
+}
+
+// ⚠️ 18/10 — la rangée des éléments du dossier, sur toute la largeur du panneau.
+.ec__documents {
+  grid-column: 1 / -1;
+  display: block;
+  min-width: 0;
+}
+.ec__documents:empty { display: none; }

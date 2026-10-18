@@ -80,7 +80,9 @@ type Champ = 'fichier' | 'journal' | 'numero' | 'dateParution' | 'referenceAgpm'
             </label>
             <label class="form-group">
               <span class="form-label">Référence de l’AGPM</span>
-              <input class="form-control" type="text" [value]="saisie().referenceAgpm" (input)="poser('referenceAgpm', $any($event.target).value)" />
+              <input class="form-control" type="text" aria-describedby="pa-ref-aide" [value]="saisie().referenceAgpm" (input)="poser('referenceAgpm', $any($event.target).value)" />
+              <!-- ⚠️ 18/10 (pilote) — pré-remplie avec la référence du plan ; à corriger si le journal l'a imprimée autrement. -->
+              <span class="form-hint" id="pa-ref-aide">Le numéro de l’avis général (AGPM) tel qu’il a paru dans le journal. Pré-rempli avec la référence du plan : corrigez-le si le journal l’a imprimé autrement.</span>
               @if (erreurs().referenceAgpm; as m) { <span class="form-error">{{ m }}</span> }
             </label>
             @if (refus(); as r) { <div class="alert alert-danger" role="alert"><span>{{ r }}</span></div> }
@@ -162,6 +164,15 @@ export class PublicationAgpmPanneau implements OnInit {
   ouvrirDepot(): void {
     const p = this.publication();
     this.saisie.set({ journal: p?.journal ?? '', numero: '', dateParution: '', referenceAgpm: p?.referenceAgpm ?? '' });
+    // ⚠️ 18/10 (pilote) — sans publication précédente, la référence de l'AGPM est celle du plan (son refeDossier), lue à l'ouverture.
+    if (!p?.referenceAgpm) {
+      this.service.getById(this.idDossier()).subscribe({
+        next: (plan) => {
+          if (plan.refeDossier && !this.saisie().referenceAgpm) this.saisie.update((x) => ({ ...x, referenceAgpm: plan.refeDossier ?? '' }));
+        },
+        error: () => {},
+      });
+    }
     this.fichier.set(null);
     this.erreurs.set({});
     this.refus.set(null);

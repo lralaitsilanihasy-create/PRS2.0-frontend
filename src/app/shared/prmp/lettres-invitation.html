@@ -16,7 +16,7 @@
 
     <!-- ⚠️ Manuel révisé, R3b / R3c (13/10) — le projet de lettre dès la validation de la fiche (joint d'office au dossier), et la
          relecture des mentions ; pour un appel d'offres restreint, c'est la lettre AOR (gabarit LETTRE-AOR), candidats saisis. -->
-    @if (!lecture()) {
+    @if (!lecture() && !impressionSeule()) {
       <div class="avs__projet">
         @if (!projetDansOnglet()) {
           <button type="button" class="btn btn-sm btn-outline" [disabled]="occupe()" (click)="projet('pdf')">Projet de lettre (PDF)</button>

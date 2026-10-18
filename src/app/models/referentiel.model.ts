@@ -442,7 +442,8 @@ export interface SousTypeDossier {
  * intellectuelles, sinon selon le mode du plan (`DAOOI`/`DAORI` international, `DAOOPREQUAL`, `DAOR`, `DAOO` — l'ancien `DAO`,
  * gardé pour les dossiers relus d'avant la migration). Un dossier de l'un d'eux porte sa fiche ; la saisie le produit depuis elle.
  */
-export const SOUS_TYPES_FICHE_DAO: ReadonlySet<string> = new Set(['DAOO', 'DAOOI', 'DAOOPREQUAL', 'DAOR', 'DAORI', 'DC', 'DAO']);
+// ⚠️ 18/10 (décision du pilote) — + DAOO-CC, le contrat-cadre, produit par sa fiche (demande backend « sous-type-contrat-cadre »).
+export const SOUS_TYPES_FICHE_DAO: ReadonlySet<string> = new Set(['DAOO', 'DAOO-CC', 'DAOOI', 'DAOOPREQUAL', 'DAOR', 'DAORI', 'DC', 'DAO']);
 
 /**
  * Paramètre système ADMINISTRABLE : seuil de MONTANT au-delà duquel un marché en appel à

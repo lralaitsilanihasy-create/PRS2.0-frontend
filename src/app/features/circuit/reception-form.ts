@@ -13,6 +13,7 @@ import {
   DossierService,
   LocaliteService,
   PieceJointeDossierService,
+  PvExamenService,
   ReceptionService,
   ReferenceLookupService,
   TypePieceJointeService,
@@ -26,6 +27,8 @@ interface LigneControle {
   type: TypePieceJointe;
   piece: PieceJointeDossier | null;
   decision: VerificationPieceDepot | null;
+  /** ⚠️ 18/10 (B1 du 17/10) — fournie par l'application par ses données : ni déposée, ni à déclarer conforme. */
+  fournie: boolean;
 }
 
 /**
@@ -100,11 +103,11 @@ interface LigneControle {
             } @else {
               @for (l of lignes(); track l.type.idTypePiece) {
                 <div class="rf-piece"
-                     [class.rf-piece--ok]="l.decision?.decision === 'CONFORME'"
+                     [class.rf-piece--ok]="l.fournie || l.decision?.decision === 'CONFORME'"
                      [class.rf-piece--ko]="l.decision && l.decision.decision !== 'CONFORME'"
                      [class.rf-piece--absente]="!l.piece && !l.decision && !l.type.obligatoire">
                   <span class="rf-piece__ic" aria-hidden="true">
-                    {{ l.decision?.decision === 'CONFORME' ? '✓' : l.decision ? '✗' : '•' }}
+                    {{ l.fournie || l.decision?.decision === 'CONFORME' ? '✓' : l.decision ? '✗' : '•' }}
                   </span>
                   <div class="rf-piece__corps">
                     <div class="rf-piece__head">
@@ -112,7 +115,9 @@ interface LigneControle {
                       <span class="rf-piece__oblig" [class.rf-piece__oblig--req]="l.type.obligatoire">
                         {{ l.type.obligatoire ? 'obligatoire' : 'facultative' }}
                       </span>
-                      @if (!l.piece) { <span class="badge badge-warning">Non déposée</span> }
+                      @if (l.fournie) {
+                        <span class="rf-piece__etat rf-piece__etat--ok">Fournie par l’application</span>
+                      } @else if (!l.piece) { <span class="badge badge-warning">Non déposée</span> }
                       @if (l.decision; as d) {
                         <span class="rf-piece__etat rf-piece__etat--{{ d.decision === 'CONFORME' ? 'ok' : 'ko' }}">
                           {{ d.decision === 'CONFORME' ? 'Conforme' : d.decision === 'MANQUANTE' ? 'Manquante' : 'Non conforme' }}
@@ -120,6 +125,15 @@ interface LigneControle {
                         </span>
                       }
                     </div>
+                    <!-- ⚠️ 18/10 (pilote, « cohérence du contrôle de complétude ») — la fiche de présentation, le calendrier et l'AGPM contrôlé
+                         sont produits par l'application (B1 du 17/10) : ils s'ouvrent, ne se déposent pas, et la garde serveur de la
+                         réception ne les compte pas. Aucune décision à prendre. -->
+                    @if (l.fournie) {
+                      <div class="rf-piece__actions">
+                        <button type="button" class="btn btn-secondary btn-sm" [disabled]="ouvertureFournie() === l.type.idTypePiece" (click)="ouvrirFournie(l.type)">👁 Ouvrir</button>
+                        <span class="rf-piece__meta">Produite à partir des données du dossier : rien à déposer ni à déclarer.</span>
+                      </div>
+                    } @else {
                     <div class="rf-piece__actions">
                       @if (l.piece) {
                         <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrir(l.piece!)">👁 Ouvrir</button>
@@ -138,6 +152,7 @@ interface LigneControle {
                           [disabled]="decisionEnCours()" (click)="decider(l, 'MANQUANTE')">✗ Manquante</button>
                       }
                     </div>
+                    }
                   </div>
                 </div>
               } @empty {
@@ -248,6 +263,7 @@ export class ReceptionForm implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly receptionService = inject(ReceptionService);
   private readonly dossierService = inject(DossierService);
+  private readonly pvService = inject(PvExamenService);
   private readonly typePieceService = inject(TypePieceJointeService);
   private readonly pieceService = inject(PieceJointeDossierService);
   private readonly verifService = inject(VerificationPieceDepotService);
@@ -282,22 +298,22 @@ export class ReceptionForm implements OnInit {
         type: t,
         piece: parType.get(t.idTypePiece) ?? null,
         decision: this.decisions().get(t.idTypePiece) ?? null,
+        fournie: t.fourniePar === 'APPLICATION',
       }))
       .filter((l) => l.type.obligatoire || l.piece !== null);
   });
-  readonly nbVerifiees = computed(() => this.lignes().filter((l) => l.decision !== null).length);
+  readonly nbVerifiees = computed(() => this.lignes().filter((l) => l.fournie || l.decision !== null).length);
   /** Pièces OBLIGATOIRES non encore déclarées conformes (miroir client de la garde serveur). */
   readonly bloquantes = computed(() =>
     this.lignes()
-      .filter((l) => l.type.obligatoire && l.decision?.decision !== 'CONFORME')
+      .filter((l) => l.type.obligatoire && !l.fournie && l.decision?.decision !== 'CONFORME')
       .map((l) => l.type.libellePiece),
   );
   /** ≥ 1 défaut constaté (non conforme / manquante décidée, ou obligatoire non déposée) → signalement PRMP possible. */
   readonly defauts = computed(() =>
     this.lignes().some(
       (l) =>
-        (l.decision && l.decision.decision !== 'CONFORME') ||
-        (!l.piece && l.type.obligatoire),
+        !l.fournie && ((l.decision && l.decision.decision !== 'CONFORME') || (!l.piece && l.type.obligatoire)),
     ),
   );
 
@@ -363,6 +379,23 @@ export class ReceptionForm implements OnInit {
   }
 
   /** Consulte la pièce déposée avant de se prononcer (blob, nouvel onglet). */
+  /** La pièce fournie dont le PDF est en cours de production. */
+  readonly ouvertureFournie = signal<number | null>(null);
+  /** Le document qui fournit la pièce : fiche de présentation, canevas, calendrier annuel, ou PV du plan (même règle que la liste des pièces). */
+  ouvrirFournie(t: TypePieceJointe): void {
+    const id = this.dossier().idDossier;
+    const source = t.code === 'FICHE_PRESENTATION' ? this.dossierService.fichePresentationPdf(id)
+      : t.code === 'CANEVAS_RAPPORT' ? this.dossierService.canevasRapportPdf(id)
+      : t.code === 'CALENDRIER' ? this.dossierService.calendrierAnnuel(id)
+      : t.idPvPlan != null ? this.pvService.document(t.idPvPlan) : null;
+    if (!source) { this.toast.error('Ce document n’est pas disponible.'); return; }
+    this.ouvertureFournie.set(t.idTypePiece);
+    source.subscribe({
+      next: (b) => { this.ouvertureFournie.set(null); ouvrirBlobSur(b); },
+      error: () => { this.ouvertureFournie.set(null); this.toast.error('Le document n’a pas pu être produit.'); },
+    });
+  }
+
   ouvrir(p: PieceJointeDossier): void {
     if (p.idPiece == null) return;
     this.pieceService.telecharger(p.idPiece).subscribe({

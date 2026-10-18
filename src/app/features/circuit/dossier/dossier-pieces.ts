@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 
 import { ToastService } from '../../../core/notifications/toast.service';
-import { ouvrirBlobSur } from '../../../core/securite/fichiers-surs';
+import { AuthService } from '../../../core/auth/auth.service';
+import { ApiError, codeErreur } from '../../../core/errors/api-error';
+import { ouvrirBlobSur, TYPES_PIECE, validerFichier } from '../../../core/securite/fichiers-surs';
 import { PieceJointeDossier, PublicationAgpm, TypePieceJointe } from '../../../models';
 import { DossierService, PieceJointeDossierService, PvExamenService } from '../../../services';
 import { PublicationAgpmPanneau } from '../../../shared/circuit/publication-agpm';
@@ -17,6 +19,8 @@ import { DossierContenuStore } from './dossier-contenu.store';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [PublicationAgpmPanneau],
   template: `
+    <!-- ⚠️ 18/10 (pilote) — dans la modale « Pièces jointes » de la page, le titre de la modale suffit : pas d'en-tête répété. -->
+    @if (!sansEntete()) {
     <div class="dc-section-head">
       <div class="section-block-title">
         <div class="section-icon">📎</div>
@@ -24,17 +28,22 @@ import { DossierContenuStore } from './dossier-contenu.store';
         <span class="section-count">{{ contenu.pieces().length }} pièce(s)</span>
       </div>
     </div>
+    }
 
     <div class="pieces-card">
       <!-- ⚠️ Manuel de contrôle, M2 (V95) — en brouillon, la liste que la soumission exigera, cochée pièce par pièce. -->
       @if (exigees().length > 0) {
-        <div class="pieces-group" aria-labelledby="pieces-exigees">
+        <div class="pieces-group" [attr.aria-labelledby]="sansEntete() ? null : 'pieces-exigees'" [attr.aria-label]="sansEntete() ? 'Pièces exigées pour soumettre' : null">
+          <!-- ⚠️ 18/10 (pilote) — dans la modale de la page, ni en-tête « Pièces jointes » ni « Pièces exigées pour soumettre » : la liste suit le titre. -->
+          @if (!sansEntete()) {
           <div class="pieces-group-hd">
             <span id="pieces-exigees" class="group-pill gp-blue">Pièces exigées pour soumettre</span>
             <span class="group-count">{{ nbObligatoiresManquantes() ? nbObligatoiresManquantes() + ' obligatoire(s) manquante(s)' : 'toutes les obligatoires sont jointes' }}</span>
           </div>
+          }
           <!-- ⚠️ 18/10 (pilote) — une pièce que montre déjà un onglet du dossier n'est plus listée ici : un renvoi la remplace. -->
-          @if (renvois().length) {
+          <!-- ⚠️ 18/10 (pilote) — dans la modale de la page, les éléments ont leurs boutons dans le panneau d'étape : pas de renvoi. -->
+          @if (renvois().length && !sansEntete()) {
             <p class="pe-renvoi">
               <span class="pe-etat" aria-hidden="true">✓</span>
               Fournies par l’application, dans leurs onglets :
@@ -63,7 +72,18 @@ import { DossierContenuStore } from './dossier-contenu.store';
                 } @else if (!fichiersDe(t).length) {
                   <span class="pe-tag">{{ t.obligatoire ? 'obligatoire, manquante' : t.condition === 'FACULTATIVE_EN_LIGNE' ? 'facultative en ligne (transition SIGMP)' : 'facultative' }}</span>
                 }
+                <!-- ⚠️ 18/10 (pilote, « comment joindre tout autre document utile ») — le dépôt habituel, ici même, en brouillon. -->
+                @if (peutJoindre(t)) {
+                  <label class="btn btn-outline btn-sm pe-joindre">
+                    {{ envoi() === t.idTypePiece ? 'Envoi… ' + restants() : fichiersDe(t).length ? 'Ajouter des fichiers' : 'Joindre' }}
+                    <input type="file" multiple class="visually-hidden" accept=".pdf,.jpeg,.jpg,.png" [attr.aria-label]="'Joindre : ' + t.libellePiece"
+                      [disabled]="envoi() !== null" (change)="joindre(t, $event)" />
+                  </label>
+                }
               </li>
+              @if (t.code === 'AUTRE_DOCUMENT' && peutJoindre(t)) {
+                <li class="pe-note">Autant de fichiers que voulu (PDF, JPEG ou PNG), plusieurs à la fois si besoin. Nommez chaque fichier d’après son contenu : son nom en tient lieu d’intitulé.</li>
+              }
               <!-- ⚠️ 18/10 (pilote, « comment joindre la publication de l'AGPM ») — elle se dépose une fois sur le plan contrôlé (V118) :
                    le dépôt du plan est proposé ici même, et chaque dossier du plan la reprend d'office à sa soumission. -->
               @if (depotAgpmIci(t); as idPlan) {
@@ -78,6 +98,9 @@ import { DossierContenuStore } from './dossier-contenu.store';
                   @if (p.idDocumentFiche) { <span class="piece-fiche" title="Produite par la fiche DAO : elle se corrige dans la fiche, pas ici.">fiche DAO</span> }
                   @if (origine(p); as o) { <span class="piece-fiche" [title]="o.titre">{{ o.libelle }}</span> }
                   <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)" [attr.aria-label]="'Ouvrir ' + (p.nomFichier || t.libellePiece)">Ouvrir <span class="arrow">↗</span></button>
+                  @if (peutJoindre(t) && !p.idDocumentFiche && !origine(p)) {
+                    <button class="btn btn-ghost btn-sm" type="button" (click)="retirer(p)" [attr.aria-label]="'Retirer ' + (p.nomFichier || 'le fichier')">Retirer</button>
+                  }
                 </li>
               }
             }
@@ -182,6 +205,8 @@ import { DossierContenuStore } from './dossier-contenu.store';
     .pe-etat { width: 1rem; font-weight: 700; color: var(--success-700, #047857); }
     .pe-ligne--manque .pe-etat, .pe-ligne--manque .pe-tag { color: var(--danger-700, #b42318); }
     .pe-lib { flex: 1; }
+    .pe-joindre { margin-left: 0.5rem; }
+    .pe-note { padding: 0 0 0.35rem 1.5rem; font-size: 0.78rem; color: var(--n-500); }
     .pe-depot { padding: 0.25rem 0 0.5rem 1.5rem; }
     .pe-renvoi { margin: 0; padding: 9px 14px 0; display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; font-size: 0.85rem; color: var(--n-700); }
     .pe-lien { border: none; background: none; padding: 0; color: var(--primary-700, #1d4ed8); text-decoration: underline; cursor: pointer; font: inherit; }
@@ -195,8 +220,60 @@ import { DossierContenuStore } from './dossier-contenu.store';
 })
 export class DossierPieces {
   protected readonly contenu = inject(DossierContenuStore);
+  /** Sans l'en-tête « Pièces jointes » : l'hôte (la modale de la page) porte déjà ce titre. */
+  readonly sansEntete = input(false);
   private readonly pieceService = inject(PieceJointeDossierService);
   private readonly toast = inject(ToastService);
+  private readonly auth = inject(AuthService);
+
+  /** La pièce dont un fichier est en cours d'envoi. */
+  readonly envoi = signal<number | null>(null);
+  /**
+   * ⚠️ 18/10 (pilote) — joindre depuis la page : PRMP et UGPM, dossier en brouillon, pièce ni fournie par l'application, ni produite
+   * par la fiche, ni déposée sur le plan (la publication de l'AGPM se dépose sur le plan, V118).
+   */
+  peutJoindre(t: TypePieceJointe): boolean {
+    const d = this.contenu.dossier();
+    if (d.statut !== 'BROUILLON' || !['PRMP', 'UGPM'].includes(this.auth.role() ?? '')) return false;
+    if (this.fournie(t) || this.ongletDe(t) || this.depotAgpmIci(t) || this.repriseAgpm(t)) return false;
+    return !this.fichiersDe(t).some((p) => p.idDocumentFiche);
+  }
+
+  /** « 2/5 » pendant un envoi de plusieurs fichiers. */
+  readonly restants = signal('');
+
+  /** ⚠️ 18/10 (pilote, « et si on a plusieurs pièces à joindre ») — plusieurs fichiers d'un coup : chacun contrôlé, puis envoyé à son tour. */
+  joindre(t: TypePieceJointe, ev: Event): void {
+    const champ = ev.target as HTMLInputElement;
+    const fichiers = Array.from(champ.files ?? []);
+    champ.value = '';
+    const refuses = fichiers.map((f) => ({ f, erreur: validerFichier(f, TYPES_PIECE) })).filter((x) => x.erreur);
+    for (const r of refuses) this.toast.error(`« ${r.f.name} » : ${r.erreur}`);
+    const valides = fichiers.filter((f) => !refuses.some((r) => r.f === f));
+    if (!valides.length) return;
+    this.envoi.set(t.idTypePiece);
+    const suivant = (i: number): void => {
+      if (i >= valides.length) { this.envoi.set(null); this.restants.set(''); return; }
+      this.restants.set(valides.length > 1 ? `${i + 1}/${valides.length}` : '');
+      const fd = new FormData();
+      fd.append('data', new Blob([JSON.stringify({ idDossier: this.contenu.dossier().idDossier, idTypePiece: t.idTypePiece })], { type: 'application/json' }));
+      fd.append('fichier', valides[i]);
+      this.pieceService.upload(fd).subscribe({
+        next: (p) => { this.contenu.pieces.update((l) => [...l, p]); suivant(i + 1); },
+        error: () => { this.toast.error(`« ${valides[i].name} » n’a pas pu être joint. Réessayez.`); suivant(i + 1); },
+      });
+    };
+    suivant(0);
+  }
+
+  retirer(p: PieceJointeDossier): void {
+    if (p.idPiece == null) return;
+    this.pieceService.supprimer(p.idPiece).subscribe({
+      next: () => this.contenu.pieces.update((l) => l.filter((x) => x.idPiece !== p.idPiece)),
+      error: (e: ApiError) => this.toast.error(codeErreur(e) === 'PIECE_PRODUITE_PAR_FICHE'
+        ? 'Cette pièce est produite par la fiche DAO : elle se corrige dans la fiche.' : 'Le fichier n’a pas pu être retiré.'),
+    });
+  }
   private readonly dossiers = inject(DossierService);
 
   /**
@@ -212,7 +289,7 @@ export class DossierPieces {
 
   /** ⚠️ 17/10 (B1) — fournie par l'application : elle ne compte jamais manquante. */
   fournie(t: TypePieceJointe): boolean { return t.fourniePar === 'APPLICATION'; }
-  manquante(t: TypePieceJointe): boolean { return t.obligatoire && !this.fournie(t) && !this.repriseAgpm(t) && !this.deposees().has(t.idTypePiece); }
+  manquante(t: TypePieceJointe): boolean { return pieceManquante(t, this.contenu.pieces(), this.publicationPlan()); }
 
   /** ⚠️ 18/10 — la publication en vigueur du plan de la ligne (V118), lue sur ce dossier ; nulle tant qu'aucune n'est déposée. */
   readonly publicationPlan = signal<PublicationAgpm | null>(null);
@@ -325,6 +402,17 @@ export class DossierPieces {
       error: () => this.toast.error("Impossible d'ouvrir la pièce."),
     });
   }
+}
+
+/**
+ * ⚠️ 18/10 (pilote) — une pièce obligatoire manque tant qu'elle n'est ni fournie par l'application (B1 du 17/10), ni déposée sur le
+ * plan quand c'est la publication de l'AGPM (reprise d'office à la soumission, V118), ni jointe au dossier. Partagée par la liste des
+ * pièces et par le bouton « Soumettre le dossier » de la page.
+ */
+export function pieceManquante(t: TypePieceJointe, pieces: readonly PieceJointeDossier[], publicationPlan: PublicationAgpm | null): boolean {
+  if (!t.obligatoire || t.fourniePar === 'APPLICATION') return false;
+  if (t.code === 'PUBLICATION_AGPM' && publicationPlan) return false;
+  return !pieces.some((p) => p.idTypePiece === t.idTypePiece);
 }
 
 /** Les onglets d'un dossier né d'une fiche qui montrent une pièce fournie par l'application. */

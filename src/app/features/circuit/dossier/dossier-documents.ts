@@ -23,6 +23,7 @@ import { CanevasRapportDoc } from './canevas-rapport-doc';
 import { DossierVersions } from './dossier-versions';
 import { FichePresentationDaoDoc } from './fiche-presentation-dao';
 import { PlanDuDossierDao } from './plan-du-dossier-dao';
+import { FicheMarcheDossier } from '../page-dossier/fiche-marche-dossier';
 
 /**
  * Documents d'un dossier : barre d'onglets (fiche, plan, AGPM, pièces, historique) et leur contenu dans
@@ -32,7 +33,7 @@ import { PlanDuDossierDao } from './plan-du-dossier-dao';
 @Component({
   selector: 'app-dossier-documents',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PpmMarchesTable, FichePresentationDoc, AgpmDoc, DocumentVisionneuse, DossierPieces, DossierVersions, DossierInstantanes, ControlesDossier, CalendrierAnnuel, PublicationAgpmPanneau, FicheDaoDoc, FichePresentationDaoDoc, PlanDuDossierDao, CanevasRapportDoc, BordereauEstimatifDoc, AvisSpecifiqueDoc],
+  imports: [PpmMarchesTable, FichePresentationDoc, AgpmDoc, DocumentVisionneuse, DossierPieces, DossierVersions, DossierInstantanes, ControlesDossier, CalendrierAnnuel, PublicationAgpmPanneau, FicheDaoDoc, FichePresentationDaoDoc, PlanDuDossierDao, CanevasRapportDoc, BordereauEstimatifDoc, AvisSpecifiqueDoc, FicheMarcheDossier],
   host: { '[class.dc-documents--borne]': 'panneauBorne()' },
   template: `
     @if (contenu.estPpm()) {
@@ -126,7 +127,7 @@ import { PlanDuDossierDao } from './plan-du-dossier-dao';
     @if (contenu.estPpm()) {
       @if (ongletDossier() === 'pieces') {
         <div class="dc-section">
-          <app-dossier-pieces (voir)="voirOnglet($event)" />
+          <app-dossier-pieces [sansEntete]="!!ongletImpose()" (voir)="voirOnglet($event)" />
         </div>
       }
     } @else {
@@ -156,6 +157,10 @@ import { PlanDuDossierDao } from './plan-du-dossier-dao';
       @if (contenu.dossier().idDmc && ongletProcedure() === 'fiche-dao') {
         <div class="dc-section">
           <!-- La fiche DAO telle que la Commission l'examine : les données, jamais un fichier. -->
+          <!-- ⚠️ 18/10 (pilote) — dans la modale de la page, l'état de la fiche et ses gestes (ouvrir, détacher) remplacent l'ancien encart. -->
+          @if (ongletImpose()) {
+            <app-fiche-marche-dossier [dossier]="contenu.dossier()" [enModale]="true" (liaisonChangee)="liaisonChangee.emit()" />
+          }
           <!-- ⚠️ 18/10 — le DAO complet en est le rendu dans le modèle type : son PDF reste à portée, pour le texte type (IC, CCAG, modèles). -->
           @if (fichiersOnglet('fiche-dao').length) {
             <div class="dc-fichiers">
@@ -228,7 +233,8 @@ import { PlanDuDossierDao } from './plan-du-dossier-dao';
           <app-publication-agpm [idDossier]="contenu.dossier().idDossier" />
         </div>
       }
-      @if (!ongletsProcedure() || ongletProcedure() === 'pieces') {
+      <!-- ⚠️ 18/10 (pilote) — en modale (onglet imposé), les pièces ne s'affichent que dans la modale « Pièces jointes ». -->
+      @if ((!ongletsProcedure() && !ongletImpose()) || ongletProcedure() === 'pieces') {
         <div class="dc-section">
           <!-- ⚠️ Q-pièce (14/10) — un dossier né d'une fiche DAO lit le calendrier annuel du plan de sa ligne. -->
           <!-- ⚠️ 17/10 — pour un dossier né d'une fiche, le calendrier et la publication de l'AGPM vivent à l'onglet « Plan de passation ». -->
@@ -236,7 +242,7 @@ import { PlanDuDossierDao } from './plan-du-dossier-dao';
             <!-- ⚠️ V118 (15/10) — la publication de l'AGPM du plan, reprise d'office (muette sans plan ni publication). -->
             <app-publication-agpm [idDossier]="contenu.dossier().idDossier" />
           }
-          <app-dossier-pieces (voir)="voirOnglet($event)" />
+          <app-dossier-pieces [sansEntete]="!!ongletImpose()" (voir)="voirOnglet($event)" />
         </div>
       }
       @if (contenu.instantanesVisible() && ongletProcedure() === 'figes') {
@@ -288,6 +294,8 @@ export class DossierDocuments {
   readonly ongletImpose = input<OngletDossier | null>(null);
   /** Un renvoi de la liste des pièces, en mode imposé : l'hôte change l'élément de sa modale. */
   readonly ongletDemande = output<OngletDossier>();
+  /** La fiche a été détachée depuis la modale : l'hôte relit le dossier. */
+  readonly liaisonChangee = output<void>();
   readonly documents = computed<DocumentDuDossier[]>(() => documentsDuDossier(this.contenu));
   voirOnglet(o: OngletDossier): void {
     if (this.ongletImpose()) this.ongletDemande.emit(o);

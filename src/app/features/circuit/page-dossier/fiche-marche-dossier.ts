@@ -26,8 +26,8 @@ import { LettresInvitation } from '../../../shared/prmp/lettres-invitation';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, Icone, AvisSpecifique, LettresInvitation],
   template: `
-    <section class="fmd" aria-labelledby="fmd-titre">
-      <h2 class="fmd__titre" id="fmd-titre"><app-icone nom="file" [taille]="16" />Fiche DAO</h2>
+    <section class="fmd" [class.fmd--modale]="enModale()" [attr.aria-labelledby]="enModale() ? null : 'fmd-titre'" [attr.aria-label]="enModale() ? 'État de la fiche DAO' : null">
+      @if (!enModale()) { <h2 class="fmd__titre" id="fmd-titre"><app-icone nom="file" [taille]="16" />Fiche DAO</h2> }
 
       @if (dossier().ficheMarche; as f) {
         <p class="fmd__ligne">
@@ -44,7 +44,7 @@ import { LettresInvitation } from '../../../shared/prmp/lettres-invitation';
         <!-- ⚠️ 30/09 (AV-3, Q5) — l'avis spécifique se lit aussi d'ici, au plus près du PV. PRMP et UGPM seulement :
              le serveur refuse les autres profils (403), inutile de leur faire faire l'appel. -->
         <!-- 01/10 (AV-4) — chacun se tait hors de sa catégorie (CATEGORIE_SANS_AVIS / CATEGORIE_SANS_LETTRE). -->
-        @if (domaine()) { <app-avis-specifique [idDmc]="f.idDmc" [projetDansOnglet]="true" /><app-lettres-invitation [idDmc]="f.idDmc" [projetDansOnglet]="true" /> }
+        @if (domaine() && !enModale()) { <app-avis-specifique [idDmc]="f.idDmc" [projetDansOnglet]="true" /><app-lettres-invitation [idDmc]="f.idDmc" [projetDansOnglet]="true" /> }
       } @else if (peutRattacher()) {
         <p class="fmd__vide">Aucune fiche DAO n'est rattachée à ce dossier. Rattachez celle que vous avez déjà validée, ou préparez-en une depuis la ligne du plan de passation.</p>
         @if (!choix()) {
@@ -79,6 +79,7 @@ import { LettresInvitation } from '../../../shared/prmp/lettres-invitation';
   `,
   styles: `
     .fmd { background: #fff; border: 1px solid var(--n-200); border-radius: 12px; padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.4rem; }
+    .fmd--modale { border: none; padding: 0 0 0.75rem; margin-bottom: 0.75rem; border-bottom: 1px solid var(--n-200); border-radius: 0; }
     .fmd__titre { display: flex; align-items: center; gap: 0.4rem; margin: 0; font-size: 0.95rem; }
     .fmd__ligne { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; margin: 0; font-size: 0.84rem; color: var(--n-600); }
     .fmd__etat { padding: 0.05rem 0.5rem; border-radius: 999px; background: var(--n-100); color: var(--n-600); font-weight: 700; font-size: 0.74rem; }
@@ -98,6 +99,8 @@ export class FicheMarcheDossier {
   readonly dossier = input.required<Dossier>();
   /** Le dossier a changé (rattaché ou détaché) : la page le relit. */
   readonly liaisonChangee = output<void>();
+  /** ⚠️ 18/10 (pilote) — en tête de la modale « Fiche DAO » de la page : état, « Ouvrir la fiche », « Détacher » ; l'avis vit ailleurs. */
+  readonly enModale = input(false);
 
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);

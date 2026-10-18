@@ -59,7 +59,10 @@ describe('V118 — la publication de l’AGPM sur le plan', () => {
     expect(texte()).toContain('pas encore déposée');
     bouton('Déposer la publication')!.click();
     f.detectChanges();
+    // ⚠️ 18/10 — la référence de l'AGPM est pré-remplie avec celle du plan.
+    http.expectOne('/api/dossiers/90').flush({ idDossier: 90, refeDossier: '00001/PPM-AGPM/CNM/2026' });
     const c = f.componentInstance;
+    expect(c.saisie().referenceAgpm).toBe('00001/PPM-AGPM/CNM/2026');
     expect(c.complete()).toBe(false);
     c.fichier.set(new File(['%PDF'], 'jmp.pdf', { type: 'application/pdf' }));
     c.poser('journal', 'JMP');

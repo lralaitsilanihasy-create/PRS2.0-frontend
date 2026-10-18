@@ -28,7 +28,7 @@ import { GesteBouton, VueEtape } from './etape-courante-modele';
         <span class="bc__delai bc__delai--{{ d.genre }}"><app-icone nom="clock" [taille]="14" />{{ d.texte }}</span>
       }
       @if (vue().principal; as p) {
-        <button type="button" class="btn btn-primary btn-sm bc__geste" [attr.data-geste]="p.geste" [disabled]="occupe()" (click)="agir.emit(p)">
+        <button type="button" class="btn btn-primary btn-sm bc__geste" [attr.data-geste]="p.geste" [disabled]="occupe() || !!bloques()[p.geste]" [attr.title]="bloques()[p.geste] ?? null" (click)="agir.emit(p)">
           <app-icone [nom]="p.icone" [taille]="15" />{{ p.libelle }}
         </button>
       }
@@ -42,6 +42,8 @@ export class BarreCollante {
   /** Le panneau de l'étape est sorti de l'écran (par le haut). */
   readonly visible = input(false);
   readonly occupe = input(false);
+  /** ⚠️ 18/10 — les gestes retenus par l'écran (voir le panneau d'étape). */
+  readonly bloques = input<Partial<Record<string, string>>>({});
   readonly agir = output<GesteBouton>();
 
   private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);

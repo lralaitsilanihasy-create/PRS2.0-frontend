@@ -372,10 +372,17 @@ describe('Page dossier — étape en cours et gestes (lot L4-F3)', () => {
       ({ ...DOSSIER, idTypeDossier: 'DMC', idSousType: 'DAO', statut: 'BROUILLON', refeDossier: '100332', ...p });
     const encart = (): HTMLElement | null => racine().querySelector('app-fiche-marche-dossier');
     const bouton = (nom: string): HTMLButtonElement | undefined => Array.from(encart()?.querySelectorAll('button') ?? []).find((b) => texte(b) === nom);
+    /** ⚠️ 18/10 (pilote) — un dossier né d'une fiche n'a plus d'encart sur la page : l'état de la fiche est en tête de la modale « Fiche DAO ». */
+    const ouvrirFiche = (): void => {
+      expect(encart()).toBeNull();
+      Array.from(racine().querySelectorAll<HTMLButtonElement>('.pd-carte')).find((b) => texte(b.querySelector('.pd-carte__nom')) === 'Fiche DAO')?.click();
+      harness.detectChanges();
+    };
 
     it('fiche rattachée : son état, sa version, ses informations et le lien qui l’ouvre', async () => {
       await ouvrir('PRMP', '/prmp/dossier/42');
       repondre(reponse('PRMP', []), DAO({ idDmc: 7, ficheMarche: RESUME }));
+      ouvrirFiche();
       expect(Array.from(encart()?.querySelectorAll('.fmd__ligne span') ?? []).map((s) => texte(s))).toEqual([
         'Validée', 'version 2', '· 104 sur 104 informations', '· ligne du plan 00001/PPM-AGPM/CNM/2026',
       ]);
@@ -411,12 +418,14 @@ describe('Page dossier — étape en cours et gestes (lot L4-F3)', () => {
     it('dossier parti à la Commission, ou profil de contrôle : on lit la fiche, on ne la rattache plus', async () => {
       await ouvrir('PRMP', '/prmp/dossier/42');
       repondre(reponse('PRMP', []), DAO({ statut: 'PRET_DISPATCH', idDmc: 7, ficheMarche: RESUME }));
+      ouvrirFiche();
       expect(bouton('Détacher')).toBeUndefined();
       expect(encart()?.querySelector('a[href="/prmp/dao/7"]')).not.toBeNull();
       TestBed.resetTestingModule();
 
       await ouvrir('MEMBRE', '/membre/dossier/42');
       repondre(reponse('MEMBRE', []), DAO({ idDmc: 7, ficheMarche: RESUME }));
+      ouvrirFiche();
       expect(texte(encart()?.querySelector('.fmd__etat'))).toBe('Validée');
       expect(bouton('Rattacher une fiche DAO')).toBeUndefined();
       // La fiche s'ouvre dans l'espace PRMP : pas de lien pour qui ne peut pas y aller.

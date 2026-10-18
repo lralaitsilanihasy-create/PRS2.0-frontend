@@ -49,6 +49,8 @@ export class AvisSpecifique implements OnInit {
   readonly lecture = input(false);
   /** ⚠️ 18/10 (pilote) — sur la page d'un dossier, le projet se lit dans son onglet : la carte n'en propose plus le PDF. */
   readonly projetDansOnglet = input(false);
+  /** ⚠️ 18/10 (pilote) — sur la page du dossier né d'une fiche : seulement l'impression de l'avis (après le PV favorable) et les avis imprimés. */
+  readonly impressionSeule = input(false);
 
   readonly etat = signal<DisponibiliteAvis | null>(null);
   readonly documents = signal<DocumentFiche[]>([]);
@@ -56,7 +58,8 @@ export class AvisSpecifique implements OnInit {
   /** Muet pour les prestations intellectuelles (lettre, AV-4) et ⚠️ R3c pour l'appel d'offres restreint (`MODE_SANS_AVIS` : lettre AOR). */
   readonly visible = computed(() => {
     const e = this.etat();
-    return !!e && e.raison !== 'CATEGORIE_SANS_AVIS' && e.raison !== 'MODE_SANS_AVIS';
+    return !!e && e.raison !== 'CATEGORIE_SANS_AVIS' && e.raison !== 'MODE_SANS_AVIS'
+      && (!this.impressionSeule() || !!e.disponible || this.imprimes().length > 0);
   });
   readonly attente = computed(() => (this.etat()?.disponible ? null : messageIndisponible(this.etat()?.raison ?? null)));
   /** ⚠️ R3b (V103) — le projet d'avis se lit dès la validation de la fiche, avant tout PV ; le refus du serveur est nommé. */

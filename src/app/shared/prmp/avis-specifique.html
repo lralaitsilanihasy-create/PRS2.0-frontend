@@ -15,7 +15,7 @@
 
     <!-- ⚠️ Manuel révisé, R3b / R3c (13/10) — le projet d'avis dès la validation de la fiche (le manuel l'exige au dépôt du DAO :
          il est joint d'office au dossier), et la relecture des mentions du modèle type. -->
-    @if (!lecture()) {
+    @if (!lecture() && !impressionSeule()) {
       <div class="avs__projet">
         @if (!projetDansOnglet()) {
           <button type="button" class="btn btn-sm btn-outline" [disabled]="occupe()" (click)="projet('pdf')">Projet d’avis (PDF)</button>

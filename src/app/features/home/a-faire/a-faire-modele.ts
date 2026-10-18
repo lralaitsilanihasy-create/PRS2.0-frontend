@@ -139,7 +139,9 @@ export function noteCourte(t: AFaireTache): string {
   const dates = t.dossier.datesEtapes ?? {};
   switch (t.section) {
     case 'A_RECEPTIONNER':
-      return f.nbPieces != null ? pluriel(f.nbPieces, 'pièce jointe', 'pièces jointes') : 'Dépôt à contrôler';
+      // ⚠️ 18/10 (pilote) — le serveur compte TOUS les fichiers du dossier (ceux produits par la fiche compris) : « fichiers au dossier »,
+      // pour ne pas le confondre avec la carte « Pièces jointes » de la page, qui ne compte que ce qu'elle liste.
+      return f.nbPieces != null ? pluriel(f.nbPieces, 'fichier au dossier', 'fichiers au dossier') : 'Dépôt à contrôler';
     case 'A_DISPATCHER':
       return dates.RECEPTION ? `Numéroté le ${jourMois(dates.RECEPTION)}` : 'Numéroté';
     case 'A_EXAMINER':

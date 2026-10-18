@@ -1,4 +1,8 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+
+import { AuthService } from '../../../core/auth/auth.service';
+import { telechargerBlob } from '../../../core/securite/fichiers-surs';
+import { FicheMarcheService } from '../../../services/fiche-marche.services';
 
 import { ApiError, corpsErreur } from '../../../core/errors/api-error';
 import { AvisSpecifiqueDonnees, MentionAvis } from '../../../models';
@@ -23,6 +27,10 @@ import { DossierService } from '../../../services';
           <h3 id="as-titre" class="as__titre">{{ a.lettre ? 'Projet de lettre d’invitation' : 'Projet d’avis spécifique d’appel d’offres' }}</h3>
           <span class="as__version">fiche DAO, version {{ a.versionFiche }}</span>
           @if (!a.documentComplet) { <span class="as__incomplet">mention(s) à compléter</span> }
+          <!-- ⚠️ 18/10 (pilote) — le projet en Word, repris de l'ancien encart de la page (le PDF est la pièce jointe d'office). -->
+          @if (domaine()) {
+            <button type="button" class="btn btn-sm btn-outline as__word" [disabled]="word()" (click)="enregistrerWord(a)">{{ word() ? 'Production…' : (a.lettre ? 'Projet de lettre (Word)' : 'Projet d’avis (Word)') }}</button>
+          }
         </div>
         <dl class="as__lignes">
           <div class="as__ligne"><dt>Autorité contractante</dt><dd>{{ a.autoriteContractante || '—' }}</dd></div>
@@ -48,6 +56,7 @@ import { DossierService } from '../../../services';
     .as { display: flex; flex-direction: column; gap: 0.75rem; }
     .as__tete { display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; }
     .as__titre { margin: 0; font-size: 1.05rem; }
+    .as__word { margin-left: auto; }
     .as__version { font-size: 0.8rem; color: var(--n-500); }
     .as__incomplet { font-size: 0.75rem; font-weight: 600; color: var(--danger-text); }
     .as__lignes { margin: 0; border: 1px solid var(--n-200); border-radius: var(--radius-lg, 10px); overflow: hidden; }
@@ -64,6 +73,11 @@ import { DossierService } from '../../../services';
 })
 export class AvisSpecifiqueDoc {
   private readonly dossiers = inject(DossierService);
+  private readonly fiches = inject(FicheMarcheService);
+  private readonly auth = inject(AuthService);
+  /** Le Word se produit pour la PRMP et son UGPM (403 sinon). */
+  readonly domaine = computed(() => ['PRMP', 'UGPM'].includes(this.auth.role() ?? ''));
+  readonly word = signal(false);
 
   readonly idDossier = input.required<number>();
   readonly avis = signal<AvisSpecifiqueDonnees | null>(null);
@@ -84,6 +98,15 @@ export class AvisSpecifiqueDoc {
         },
       });
       nettoyer(() => abonnement.unsubscribe());
+    });
+  }
+
+  enregistrerWord(a: AvisSpecifiqueDonnees): void {
+    this.word.set(true);
+    const source = a.lettre ? this.fiches.projetLettres(a.idDmc, 'docx') : this.fiches.projetAvis(a.idDmc, 'docx');
+    source.subscribe({
+      next: (b) => { this.word.set(false); telechargerBlob(b, (a.lettre ? 'projet-lettre-' : 'projet-avis-') + a.idDmc + '.docx'); },
+      error: () => { this.word.set(false); this.refus.set('Le projet en Word n’a pas pu être produit.'); },
     });
   }
 

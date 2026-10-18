@@ -68,7 +68,7 @@ import { SuiviRetrait } from './suivi-retrait';
                 <!-- Le geste principal du serveur garde son bouton principal quand un formulaire du panneau le suit. -->
                 <button type="button" class="btn" [class.btn-primary]="s === vue().principal" [class.ec__principal]="s === vue().principal"
                   [class.btn-outline]="s !== vue().principal" [class.ec__second]="s !== vue().principal"
-                  [attr.data-geste]="s.geste" [disabled]="occupe()" (click)="agir.emit(s)">
+                  [attr.data-geste]="s.geste" [disabled]="occupe() || !!bloques()[s.geste]" (click)="agir.emit(s)">
                   <app-icone [nom]="s.icone" [taille]="16" />{{ s.libelle }}
                   @if (s.mode && s.mode !== vue().mode) {
                     <span class="ec-mode ec-mode--bouton">{{ s.mode }}</span>
@@ -79,11 +79,11 @@ import { SuiviRetrait } from './suivi-retrait';
           }
         } @else if (vue().principal; as p) {
           <div class="ec__actions" [attr.aria-busy]="occupe()">
-            <button type="button" class="btn btn-primary ec__principal" [attr.data-geste]="p.geste" [disabled]="occupe()" (click)="agir.emit(p)">
+            <button type="button" class="btn btn-primary ec__principal" [attr.data-geste]="p.geste" [disabled]="occupe() || !!bloques()[p.geste]" (click)="agir.emit(p)">
               <app-icone [nom]="p.icone" [taille]="16" />{{ p.libelle }}
             </button>
             @for (s of vue().secondaires; track s.cle) {
-              <button type="button" class="btn btn-outline ec__second" [attr.data-geste]="s.geste" [disabled]="occupe()" (click)="agir.emit(s)">
+              <button type="button" class="btn btn-outline ec__second" [attr.data-geste]="s.geste" [disabled]="occupe() || !!bloques()[s.geste]" (click)="agir.emit(s)">
                 <app-icone [nom]="s.icone" [taille]="16" />{{ s.libelle }}
                 @if (s.mode && s.mode !== vue().mode) {
                   <span class="ec-mode ec-mode--bouton">{{ s.mode }}</span>
@@ -92,9 +92,9 @@ import { SuiviRetrait } from './suivi-retrait';
             }
           </div>
         }
+        <!-- ⚠️ 18/10 (pilote) — un geste bloqué côté écran (la soumission tant qu'une pièce obligatoire manque) dit pourquoi. -->
+        @for (r of raisonsBlocage(); track r) { <p class="ec__bloque" role="note">{{ r }}</p> }
       </div>
-      <!-- ⚠️ 18/10 (pilote) — les éléments du dossier, en boutons qui ouvrent chacun sa modale (page du dossier né d'une fiche). -->
-      <ng-content select="[ecDocuments]" />
       @if (retraitDevant()) {
         @if (vue().retrait; as r) {
           <!-- Lot F5 : la décision est le geste principal — sous le titre, le volet de la demande à droite. -->
@@ -118,6 +118,9 @@ import { SuiviRetrait } from './suivi-retrait';
           <app-decision-retrait [demande]="r" [suite]="true" [occupe]="occupe()" (changed)="retraitDecide.emit($event)" />
         }
       }
+      <!-- ⚠️ 18/10 (pilote) — les éléments du dossier, en boutons qui ouvrent chacun sa modale : dernière rangée, toute la largeur. -->
+      <!-- Un bloc (pas un élément de la grille) : la rangée se dimensionne sur la largeur réelle des cartes. -->
+      <div class="ec__documents"><ng-content select="[ecDocuments]" /></div>
     </section>
   `,
   styleUrl: './etape-courante.scss',
@@ -139,6 +142,9 @@ export class EtapeCourante {
   readonly suiviRetrait = input<Dossier | null>(null);
   /** Lot F5 — la demande de retrait a été décidée (ou a changé ailleurs). */
   readonly retraitDecide = output<IssueRetrait>();
+  /** ⚠️ 18/10 (pilote) — les gestes que l'écran retient, avec la raison affichée sous les boutons (le serveur refuserait de toute façon). */
+  readonly bloques = input<Partial<Record<string, string>>>({});
+  readonly raisonsBlocage = computed(() => [...new Set(Object.values(this.bloques()).filter((r): r is string => !!r))]);
 
   /** Lot F5 — la décision de retrait est le geste principal servi : son formulaire vient en premier. */
   readonly retraitDevant = computed(() => this.vue().retrait !== null && this.vue().principal?.geste === 'DECIDER_RETRAIT');

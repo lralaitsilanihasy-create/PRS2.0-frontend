@@ -1,0 +1,98 @@
+/* ⚠️ 18/10 (pilote) — les éléments d'un dossier né d'une fiche, en cartes ; chacun s'ouvre en modale. Repris de la page du dossier. */
+:host { display: block; }
+.pd-docs {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--n-200);
+}
+.pd-docs__titre {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--n-500);
+  margin-right: 0.25rem;
+}
+// ⚠️ 18/10 (pilote) — les cartes des éléments du dossier.
+// Un bloc, pas une boîte flexible : la grille des cartes se mesure à la largeur réelle (sinon ses rangées prennent la hauteur des cartes empilées).
+.pd-docs { display: block; }
+.pd-docs .pd-docs__titre { display: block; margin-bottom: 0.5rem; }
+.pd-docs__cartes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+  // ⚠️ 18/10 (pilote) — toutes les cartes à la même hauteur, d'une rangée à l'autre (celle de la plus haute).
+  grid-auto-rows: 1fr;
+  align-items: stretch;
+  gap: 0.85rem;
+}
+// ⚠️ 18/10 (pilote, maquette jointe) — carte pastel, bordure foncée, icône cerclée à gauche ; texte #152033 / #34405a (AA sur ces fonds).
+.pd-carte {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  min-width: 0;
+  padding: 0.95rem 1.1rem;
+  border: 1.5px solid #152033;
+  border-radius: 10px;
+  background: #f8fafc;
+  text-align: left;
+  font: inherit;
+  color: #152033;
+  cursor: pointer;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+.pd-carte:hover { box-shadow: 0 10px 22px -16px rgba(21, 32, 51, 0.6); transform: translateY(-2px); }
+.pd-carte:focus-visible { outline: 3px solid #0369a1; outline-offset: 2px; }
+.pd-carte--presentation { background: #e3fbe9; }
+.pd-carte--fiche-dao { background: #e4e4fb; }
+.pd-carte--avis { background: #fbe4f3; }
+.pd-carte--plan { background: #e1f1fd; }
+.pd-carte--canevas { background: #fdf6d8; }
+.pd-carte--bordereau { background: #effbdf; }
+.pd-carte--pieces { background: #eef1f6; }
+.pd-carte--figes { background: #ece6fb; }
+.pd-carte--controles { background: #ddf7ef; }
+.pd-carte--alerte { background: #fde8e6; border-color: #b42318; }
+.pd-carte--alerte .pd-carte__resume { color: #b42318; font-weight: 600; }
+.pd-carte__icone {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.9rem;
+  height: 2.9rem;
+  border: 1.5px solid #152033;
+  border-radius: 50%;
+  background: #fff;
+}
+.pd-carte__texte { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; flex: 1; }
+.pd-carte__tete { display: flex; align-items: center; gap: 0.5rem; }
+.pd-carte__nom { font-weight: 700; font-size: 0.98rem; letter-spacing: -0.01em; }
+.pd-carte__n {
+  margin-left: auto;
+  padding: 0.05rem 0.5rem;
+  border: 1px solid #152033;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.pd-carte__resume { font-size: 0.82rem; line-height: 1.45; color: #34405a; }
+.pd-docmodal {
+  width: 96vw;
+  max-width: 96vw;
+  height: 94vh;
+  max-height: 94vh;
+  display: flex;
+  flex-direction: column;
+}
+.pd-docmodal__ref { font-weight: 400; color: var(--n-500); font-size: 0.9rem; }
+.pd-docmodal__corps { flex: 1; overflow: auto; padding: 0; }
+
+
+// Hors du panneau d'étape (écran de demande de retrait) : ni filet ni marge au-dessus.
+:host(.sans-filet) .pd-docs { border-top: none; padding-top: 0; margin-top: 0; }

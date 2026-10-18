@@ -58,8 +58,8 @@ export function piecesAJoindre(exigees: TypePieceJointe[], deposees: PieceJointe
                 } @else {
                 <span class="paj__etat">{{ l.fichiers.length ? (l.fichiers.length + ' fichier(s)') : l.type.obligatoire ? 'obligatoire, manquante' : 'facultative' }}</span>
                 <label class="btn btn-outline btn-sm">
-                  {{ envoi() === l.type.idTypePiece ? 'Envoi…' : l.fichiers.length ? 'Ajouter un fichier' : 'Joindre' }}
-                  <input type="file" class="visually-hidden" accept=".pdf,.jpeg,.jpg,.png" [attr.aria-label]="'Joindre : ' + l.type.libellePiece"
+                  {{ envoi() === l.type.idTypePiece ? 'Envoi…' : l.fichiers.length ? 'Ajouter des fichiers' : 'Joindre' }}
+                  <input type="file" multiple class="visually-hidden" accept=".pdf,.jpeg,.jpg,.png" [attr.aria-label]="'Joindre : ' + l.type.libellePiece"
                     [disabled]="envoi() !== null" (change)="joindre(l.type, $event)" />
                 </label>
                 }
@@ -135,31 +135,35 @@ export class PiecesAJoindre implements OnInit {
     });
   }
 
+  /** ⚠️ 18/10 (pilote) — plusieurs fichiers d'un coup : chacun contrôlé, puis envoyé à son tour (un fichier par dépôt). */
   joindre(type: TypePieceJointe, ev: Event): void {
     const champ = ev.target as HTMLInputElement;
-    const fichier = champ.files?.[0];
+    const fichiers = Array.from(champ.files ?? []);
     champ.value = '';
-    if (!fichier) return;
-    const erreur = validerFichier(fichier, TYPES_PIECE);
-    if (erreur) {
-      this.refus.set(erreur);
-      return;
-    }
-    const fd = new FormData();
-    fd.append('data', new Blob([JSON.stringify({ idDossier: this.idDossier(), idTypePiece: type.idTypePiece })], { type: 'application/json' }));
-    fd.append('fichier', fichier);
-    this.envoi.set(type.idTypePiece);
-    this.refus.set(null);
-    this.pieces.upload(fd).subscribe({
-      next: (p) => {
-        this.envoi.set(null);
-        this.deposees.update((d) => [...d, p]);
-      },
-      error: () => {
-        this.envoi.set(null);
-        this.refus.set(`« ${fichier.name} » n’a pas pu être joint. Réessayez.`);
-      },
+    if (!fichiers.length) return;
+    const refus: string[] = [];
+    const valides = fichiers.filter((f) => {
+      const erreur = validerFichier(f, TYPES_PIECE);
+      if (erreur) refus.push(fichiers.length > 1 ? `« ${f.name} » : ${erreur}` : erreur);
+      return !erreur;
     });
+    this.refus.set(refus.length ? refus.join(' ') : null);
+    if (!valides.length) return;
+    this.envoi.set(type.idTypePiece);
+    const suivant = (i: number): void => {
+      if (i >= valides.length) { this.envoi.set(null); return; }
+      const fd = new FormData();
+      fd.append('data', new Blob([JSON.stringify({ idDossier: this.idDossier(), idTypePiece: type.idTypePiece })], { type: 'application/json' }));
+      fd.append('fichier', valides[i]);
+      this.pieces.upload(fd).subscribe({
+        next: (p) => { this.deposees.update((d) => [...d, p]); suivant(i + 1); },
+        error: () => {
+          this.refus.set(((this.refus() ?? '') + ` « ${valides[i].name} » n’a pas pu être joint. Réessayez.`).trim());
+          suivant(i + 1);
+        },
+      });
+    };
+    suivant(0);
   }
 
   retirer(p: PieceJointeDossier): void {

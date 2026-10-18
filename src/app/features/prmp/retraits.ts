@@ -11,6 +11,7 @@ import { DemandeRetrait, Dossier } from '../../models';
 import { DemandeRetraitService, DossierService, LocaliteService, ReferenceLookupService } from '../../services';
 import { StatutBadge, statutDemandeRetraitLabel } from '../../shared/circuit';
 import { DossierConsultation } from '../circuit/dossier-consultation';
+import { ElementsDossierAutonome } from '../circuit/dossier/elements-dossier';
 import { LienDossier } from '../circuit/page-dossier/lien-dossier';
 import { DossiersRefreshStore } from './dossiers-refresh.store';
 
@@ -28,7 +29,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
 @Component({
   selector: 'app-prmp-retraits',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, StatutBadge, DossierConsultation, RouterLink],
+  imports: [DecimalPipe, StatutBadge, DossierConsultation, RouterLink, ElementsDossierAutonome],
   template: `
     <section>
       <header class="page-header">
@@ -75,9 +76,15 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                   <div><dt>Type</dt><dd>{{ d.idSousType || d.idTypeDossier || '—' }}</dd></div>
                   <div><dt>Date de référence</dt><dd>{{ d.dateRef || '—' }}</dd></div>
                 </dl>
-                <button type="button" class="rt-choisi__lien" (click)="ouvrirDetail(d)">
-                  Voir le détail complet du dossier ›
-                </button>
+                <!-- ⚠️ 18/10 (pilote) — un dossier né d'une fiche se présente par ses éléments, en cartes ouvertes en modale ; les autres
+                     gardent le lien vers le détail complet. Recréé à chaque dossier choisi (magasin propre au dossier). -->
+                @if (d.idDmc) {
+                  @for (id of [d.idDossier]; track id) { <app-elements-dossier-autonome class="rt-choisi__elements" [idDossier]="id" /> }
+                } @else {
+                  <button type="button" class="rt-choisi__lien" (click)="ouvrirDetail(d)">
+                    Voir le détail complet du dossier ›
+                  </button>
+                }
               </div>
             }
 
@@ -238,6 +245,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
     .rt-choisi__faits dd { margin: 0; font-weight: 600; color: var(--n-700); }
     .rt-choisi__lien { margin-top: 0.6rem; background: transparent; border: 0; padding: 0; cursor: pointer; color: var(--p-600); font: inherit; font-weight: 700; }
     .rt-choisi__lien:hover { text-decoration: underline; }
+    .rt-choisi__elements { display: block; margin-top: 1rem; }
     .rt-sub { margin: 1.75rem 0 0.75rem; font-size: var(--text-lg); font-weight: 700; color: var(--c-800); }
     .table-card td { white-space: normal; }
   `,

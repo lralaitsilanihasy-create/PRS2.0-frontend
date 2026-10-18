@@ -51,6 +51,8 @@ export class LettresInvitation implements OnInit {
   readonly lecture = input(false);
   /** ⚠️ 18/10 (pilote) — sur la page d'un dossier, le projet se lit dans son onglet : la carte n'en propose plus le PDF. */
   readonly projetDansOnglet = input(false);
+  /** ⚠️ 18/10 (pilote) — sur la page du dossier né d'une fiche : seulement l'impression des lettres et les lettres imprimées. */
+  readonly impressionSeule = input(false);
 
   readonly etat = signal<DisponibiliteAvis | null>(null);
   readonly documents = signal<DocumentFiche[]>([]);
@@ -60,7 +62,8 @@ export class LettresInvitation implements OnInit {
   readonly imprimees = computed(() => lettresImprimees(this.documents()));
   readonly visible = computed(() => {
     const e = this.etat();
-    return !!e && e.raison !== 'CATEGORIE_SANS_LETTRE';
+    return !!e && e.raison !== 'CATEGORIE_SANS_LETTRE'
+      && (!this.impressionSeule() || !!e.disponible || this.imprimees().length > 0);
   });
   readonly attente = computed(() => (this.etat()?.disponible ? null : messageIndisponible(this.etat()?.raison ?? null)));
   /** ⚠️ R3b (V103) — le projet de lettre dès la validation de la fiche ; le refus du serveur est nommé. */

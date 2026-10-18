@@ -6,7 +6,7 @@ import { TestBed } from '@angular/core/testing';
 import { AuthService } from '../../../core/auth/auth.service';
 import { Dossier, PieceJointeDossier, Role, TypePieceJointe } from '../../../models';
 import { DossierContenuStore } from './dossier-contenu.store';
-import { DossierPieces } from './dossier-pieces';
+import { DossierPieces, pieceManquante } from './dossier-pieces';
 
 const EXIGEES: TypePieceJointe[] = [
   { idTypePiece: 7, libellePiece: 'Projet de DAO', obligatoire: true, code: 'DAO_COMPLET', ordre: 2 },
@@ -53,9 +53,9 @@ describe('DossierPieces — pièces exigées par sous-type (manuel de contrôle,
     expect(exigeesDemandees).toBe(true);
     const lignes = Array.from(el.querySelectorAll('.pe-ligne')).map((l) => Array.from(l.children).map(texte).join(' | '));
     expect(lignes).toEqual([
-      '✓ | Fiche de présentation signée',
-      '✕ | Projet de DAO | obligatoire, manquante',
-      '– | Bordereau des prix | facultative',
+      '✓ | Fiche de présentation signée | Ajouter des fichiers',
+      '✕ | Projet de DAO | obligatoire, manquante | Joindre',
+      '– | Bordereau des prix | facultative | Joindre',
     ]);
     expect(texte(el.querySelector('.pieces-group-hd'))).toContain('1 obligatoire(s) manquante(s)');
   });
@@ -75,7 +75,7 @@ describe('DossierPieces — pièces exigées par sous-type (manuel de contrôle,
       { idTypePiece: 29, libellePiece: 'Publication de l’AGPM (journal)', obligatoire: true, code: 'PUBLICATION_AGPM', ordre: 3 },
     ], 1);
     const lignes = Array.from(el.querySelectorAll('.pe-ligne')).map((l) => Array.from(l.children).map(texte).join(' | '));
-    expect(lignes).toEqual(['✕ | Publication de l’AGPM (journal) | obligatoire, manquante']);
+    expect(lignes).toEqual(['✕ | Publication de l’AGPM (journal) | obligatoire, manquante | Joindre']);
     const liens = Array.from(el.querySelectorAll('.pe-lien')) as HTMLButtonElement[];
     expect(liens.map(texte)).toEqual(['Plan de passation']);
     expect(liens[0].title).toBe('Calendrier annuel ; AGPM contrôlé');
@@ -99,12 +99,25 @@ describe('DossierPieces — pièces exigées par sous-type (manuel de contrôle,
     const lignes = Array.from(el.querySelectorAll('.pe-ligne')).map((l) => Array.from(l.children).map(texte).join(' | '));
     expect(lignes).toEqual([
       '✓ | AGPM (ou PPM) signé et contrôlé, avec le PV de la Commission | fournie par l’application | Ouvrir',
-      '✕ | Publication de l’AGPM (journal) | obligatoire, manquante',
+      '✕ | Publication de l’AGPM (journal) | obligatoire, manquante | Joindre',
     ]);
     expect(texte(el.querySelector('.pieces-group-hd'))).toContain('1 obligatoire(s) manquante(s)');
     (el.querySelector('.pe-ouvrir') as HTMLButtonElement).click();
     const http = TestBed.inject(HttpTestingController);
     const pv = http.expectOne('/api/pv-examens/61/document');
     expect(pv.request.responseType).toBe('blob');
+  });
+});
+
+describe('pieceManquante — la règle partagée par la liste des pièces et le bouton « Soumettre » (18/10)', () => {
+  const PUB: TypePieceJointe = { idTypePiece: 4, libellePiece: 'Publication de l’AGPM (journal)', obligatoire: true, code: 'PUBLICATION_AGPM' };
+  it('manque : obligatoire, ni fournie, ni déposée sur le plan, ni jointe', () => {
+    expect(pieceManquante(PUB, [], null)).toBe(true);
+  });
+  it('ne manque pas : jointe, déposée sur le plan, fournie par l’application, ou facultative', () => {
+    expect(pieceManquante(PUB, [{ idPiece: 1, idDossier: 42, idTypePiece: 4 } as PieceJointeDossier], null)).toBe(false);
+    expect(pieceManquante(PUB, [], { idPublication: 1 } as never)).toBe(false);
+    expect(pieceManquante({ ...PUB, code: 'FICHE_PRESENTATION', fourniePar: 'APPLICATION' }, [], null)).toBe(false);
+    expect(pieceManquante({ ...PUB, code: 'AUTRE_DOCUMENT', obligatoire: false }, [], null)).toBe(false);
   });
 });

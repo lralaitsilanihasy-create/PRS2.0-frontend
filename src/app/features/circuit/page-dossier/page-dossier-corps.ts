@@ -4,7 +4,8 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Router, RouterLink, UrlTree } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
-import { Dispatch, Dossier, SOUS_TYPES_FICHE_DAO } from '../../../models';
+import { Dispatch, Dossier, PublicationAgpm, SOUS_TYPES_FICHE_DAO, TypePieceJointe } from '../../../models';
+import { DossierService } from '../../../services';
 import { ModaleDirective } from '../../../shared/a11y/modale.directive';
 import { ChronometrageDossier, ReputeApprouve, StatutBadge } from '../../../shared/circuit';
 import { jourSemaineDate } from '../../../shared/circuit/frise-delai';
@@ -15,7 +16,8 @@ import { DossiersRefreshStore } from '../../prmp/dossiers-refresh.store';
 import { DispatchForm, DispatchItem } from '../dispatch-form';
 import { DossierContenuStore } from '../dossier/dossier-contenu.store';
 import { DossierDocuments } from '../dossier/dossier-documents';
-import { OngletDossier, documentsDuDossier } from '../dossier/documents-du-dossier';
+import { ElementsDossier } from '../dossier/elements-dossier';
+import { pieceManquante } from '../dossier/dossier-pieces';
 import { DossierIdentite } from '../dossier/dossier-identite';
 import { DossierJournal } from '../dossier/dossier-journal';
 import { ModaleGeste, OuvrirGeste } from '../gestes/ouvrir-geste';
@@ -29,6 +31,8 @@ import { FicheMarcheDossier } from './fiche-marche-dossier';
 import { ActesGestionMarche } from './actes-gestion-marche';
 import { ActeGestionDossier } from './acte-gestion-dossier';
 import { SyntheseDossier } from './synthese-dossier';
+import { AvisSpecifique } from '../../../shared/prmp/avis-specifique';
+import { LettresInvitation } from '../../../shared/prmp/lettres-invitation';
 
 /** Hauteur de la barre du haut de l'application (fixe, `.topbar`). */
 const HAUT_TOPBAR = 48;
@@ -54,6 +58,9 @@ const HAUT_TOPBAR = 48;
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     NgTemplateOutlet,
+    ElementsDossier,
+    AvisSpecifique,
+    LettresInvitation,
     RouterLink,
     ActesGestionMarche,
     ActeGestionDossier,
@@ -79,7 +86,7 @@ const HAUT_TOPBAR = 48;
   template: `
     <div class="pd">
       @if (vue(); as v) {
-        <app-barre-collante [reference]="reference()" [vue]="v" [visible]="barreVisible()" [occupe]="occupe()" (agir)="agir($event)" />
+        <app-barre-collante [reference]="reference()" [vue]="v" [visible]="barreVisible()" [occupe]="occupe()" [bloques]="bloques()" (agir)="agir($event)" />
       }
       <div class="pd-fil">
         <nav class="pd-ariane" aria-label="Fil d'Ariane">
@@ -185,10 +192,10 @@ const HAUT_TOPBAR = 48;
         }
         @case ('pret') {
           @if (vue(); as v) {
-            <app-etape-courante #panneau [vue]="v" [occupe]="occupe()" [idLocalite]="dossier().idLocalite ?? null" [lienPv]="lienPv()"
+            <app-etape-courante #panneau [vue]="v" [occupe]="occupe()" [bloques]="bloques()" [idLocalite]="dossier().idLocalite ?? null" [lienPv]="lienPv()"
               [gesteFocus]="focusNavette()" [suiviRetrait]="suiviRetrait()" (agir)="agir($event)" (navetteChangee)="apresGeste()"
               (retraitDecide)="apresGeste($event === 'acceptee' ? 'retrait-accepte' : null)">
-              @if (enModale() && !contenu.loading()) { <ng-container ecDocuments><ng-container *ngTemplateOutlet="boutonsDocuments" /></ng-container> }
+              @if (enModale() && !contenu.loading()) { <ng-container ecDocuments><ng-container *ngTemplateOutlet="elementsDossier" /></ng-container> }
             </app-etape-courante>
           }
         }
@@ -198,7 +205,16 @@ const HAUT_TOPBAR = 48;
            rattachement de secours pour les dossiers créés avant la liaison. Sur un dossier d'appel d'offres
            seulement ; ceux d'avant la liaison n'ont pas de fiche et le disent. -->
       @if (estAppelOffres()) {
-        <app-fiche-marche-dossier class="pd-fiche" [dossier]="dossier()" (liaisonChangee)="apresGeste()" />
+        @if (enModale()) {
+          <!-- ⚠️ 18/10 (pilote) — l'encart de la fiche est passé dans les modales (Fiche DAO, Avis spécifique) ; ne reste ici que
+               l'impression de l'avis ou des lettres, une fois le PV favorable (muette avant). PRMP et UGPM seulement (403 sinon). -->
+          @if (domainePrmp() && dossier().idDmc; as idDmc) {
+            <app-avis-specifique class="pd-fiche" [idDmc]="idDmc" [impressionSeule]="true" />
+            <app-lettres-invitation class="pd-fiche" [idDmc]="idDmc" [impressionSeule]="true" />
+          }
+        } @else {
+          <app-fiche-marche-dossier class="pd-fiche" [dossier]="dossier()" (liaisonChangee)="apresGeste()" />
+        }
       }
       <!-- ⚠️ 09/10 (manuel de contrôle, M5a) — un marché porte ses actes de gestion ; un acte (DGC) se complète et se soumet ici. -->
       @if (dossier().idTypeDossier === 'DDM') {
@@ -215,7 +231,7 @@ const HAUT_TOPBAR = 48;
           </div>
         } @else if (enModale()) {
           <!-- Sans panneau d'étape (lecture seule, échec), les boutons prennent la place des onglets. -->
-          @if (gestes().etat !== 'pret' || !vue()) { <ng-container *ngTemplateOutlet="boutonsDocuments" /> }
+          @if (gestes().etat !== 'pret' || !vue()) { <ng-container *ngTemplateOutlet="elementsDossier" /> }
         } @else {
           <app-dossier-documents [enteteCollante]="true" />
         }
@@ -223,31 +239,11 @@ const HAUT_TOPBAR = 48;
     </div>
 
     <!-- ⚠️ 18/10 (pilote) — dossier né d'une fiche : chaque élément s'ouvre en modale depuis un bouton, au lieu des onglets. -->
-    <ng-template #boutonsDocuments>
-      <div class="pd-docs" role="group" aria-labelledby="pd-docs-titre">
-        <span class="pd-docs__titre" id="pd-docs-titre">Le dossier</span>
-        @for (o of documents(); track o.cle) {
-          <button type="button" class="btn btn-outline btn-sm pd-docs__btn" [class.pd-docs__btn--vert]="o.teinte === 'vert'" [class.pd-docs__btn--bleu]="o.teinte === 'bleu'"
-            (click)="docOuvert.set(o.cle)">
-            {{ o.libelle }} @if (o.n !== undefined) {<span class="pd-docs__n">{{ o.n }}</span> }
-          </button>
-        }
-      </div>
+    <!-- ⚠️ 18/10 (pilote) — les éléments du dossier né d'une fiche, en cartes ouvertes en modale (composant partagé avec l'écran de retrait). -->
+    <ng-template #elementsDossier>
+      <app-elements-dossier [reference]="reference()" [manquantes]="piecesManquantes().length"
+        (liaisonChangee)="apresGeste()" (modaleFermee)="relecturePieces.update((n) => n + 1)" />
     </ng-template>
-    @if (docOuvert(); as cle) {
-      <div class="modal-backdrop">
-        <div class="modal pd-docmodal" role="dialog" aria-modal="true" [attr.aria-label]="libelleDoc(cle) + ' — ' + reference()"
-          appModale (appModaleFermer)="docOuvert.set(null)">
-          <div class="modal-header">
-            <h2 class="modal-title">{{ libelleDoc(cle) }} <span class="pd-docmodal__ref">· {{ reference() }}</span></h2>
-            <button type="button" class="btn-close" aria-label="Fermer" (click)="docOuvert.set(null)">✕</button>
-          </div>
-          <div class="modal-body pd-docmodal__corps">
-            <app-dossier-documents [ongletImpose]="cle" (ongletDemande)="docOuvert.set($event)" />
-          </div>
-        </div>
-      </div>
-    }
 
     <!-- Gestes en modale par-dessus la page (plan L4 §4) : mêmes composants que l'accueil « À faire ». -->
     @if (modale(); as m) {
@@ -322,9 +318,9 @@ export class PageDossierCorps implements OnInit {
 
   /** ⚠️ 18/10 (pilote) — un dossier né d'une fiche s'ouvre par éléments, en modale, depuis le panneau d'étape. */
   readonly enModale = computed(() => !!this.dossier().idDmc);
-  readonly documents = computed(() => documentsDuDossier(this.contenu));
-  readonly docOuvert = signal<OngletDossier | null>(null);
-  libelleDoc(cle: OngletDossier): string { return this.documents().find((o) => o.cle === cle)?.libelle ?? 'Dossier'; }
+  /** Relance la lecture des pièces exigées après la fermeture d'une modale (un dépôt sur le plan a pu s'y faire). */
+  readonly relecturePieces = signal(0);
+  readonly domainePrmp = computed(() => ['PRMP', 'UGPM'].includes(this.auth.role() ?? ''));
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly ouvrirGeste = inject(OuvrirGeste);
@@ -445,6 +441,32 @@ export class PageDossierCorps implements OnInit {
   ngOnInit(): void {
     this.contenu.charger(this.dossier);
   }
+
+  /**
+   * ⚠️ 18/10 (pilote) — « Soumettre le dossier » reste inactif tant qu'une pièce obligatoire manque. Même règle que la liste des pièces
+   * (`pieceManquante`) ; les pièces exigées et la publication du plan sont relues en brouillon, puis à chaque fermeture d'une modale
+   * (un dépôt sur le plan a pu s'y faire). Silencieux : sans liste servie, rien n'est retenu (le serveur reste juge).
+   */
+  private readonly dossierService = inject(DossierService);
+  private readonly exigees = signal<TypePieceJointe[]>([]);
+  private readonly publicationPlan = signal<PublicationAgpm | null>(null);
+  private readonly lecturePieces = effect((nettoyer) => {
+    const d = this.dossier();
+    this.relecturePieces();
+    if (d.statut !== 'BROUILLON') { this.exigees.set([]); return; }
+    const a = this.dossierService.piecesExigees(d.idDossier).subscribe({ next: (l) => this.exigees.set(l), error: () => this.exigees.set([]) });
+    const b = this.dossierService.publicationAgpm(d.idDossier).subscribe({ next: (p) => this.publicationPlan.set(p), error: () => this.publicationPlan.set(null) });
+    nettoyer(() => { a.unsubscribe(); b.unsubscribe(); });
+  });
+  readonly piecesManquantes = computed(() =>
+    this.exigees().filter((t) => pieceManquante(t, this.contenu.pieces(), this.publicationPlan())).map((t) => t.libellePiece));
+  readonly bloques = computed<Partial<Record<string, string>>>(() => {
+    const m = this.piecesManquantes();
+    if (!m.length) return {};
+    return { SOUMETTRE: m.length === 1
+      ? `Pour soumettre, joignez d’abord la pièce obligatoire : ${m[0]}.`
+      : `Pour soumettre, joignez d’abord les ${m.length} pièces obligatoires : ${m.join(' ; ')}.` };
+  });
 
   /** Exécute un geste servi : sa modale par-dessus la page, ou son écran de travail. */
   agir(b: GesteBouton): void {
