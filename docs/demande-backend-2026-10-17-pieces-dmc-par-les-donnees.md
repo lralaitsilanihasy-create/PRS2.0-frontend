@@ -116,6 +116,10 @@ celles du plan.
 >   la fiche par la PRMP, et le PV signé dans l'application. C'est le principe déjà arbitré pour la procédure en ligne : la
 >   validation tracée vaut signature (R2, V102, Q2/Q14 du 10/10 ; V115 pour le calendrier). S'il la refuse, la règle se retire
 >   sans migration.
+>
+> ⚠️ **2026-10-17, arbitrage du pilote sur Q1 : oui.** La validation nominative de la fiche par la PRMP tient lieu de signature de la
+> fiche de présentation. Le PV signé dans l'application tient lieu de signature de l'AGPM (ou du PPM) contrôlé. L'hypothèse
+> devient la règle, et il n'y a rien à retirer.
 > - **Q2 :** voir l'encadré de B2.
 > - **Q3, oui.** La règle tient à la fiche validée du dossier, pas au sous-type. Elle vaut pour tout sous-type qui exige ces
 >   pièces : `DAOOI`, `DAOR`, `DAORI`, `DC`, etc.
@@ -172,4 +176,4 @@ Dossier **100380** (plan 100379, PV 61 signé), avec le compte PRMP001 :
 > Les sections sont désormais `IDENTIFICATION`, `MARCHE`, `PROCEDURE`, `CALENDRIER_PLAN`, `COHERENCE`, `VALIDATION`. Une section
 > sans ligne n'est pas servie : un plan sans calendrier n'a pas de `CALENDRIER_PLAN`.
 
-**Q1 (signature)** : en attente de la réponse du pilote.
+**Q1 (signature)** : **oui**, réponse du pilote du 17/10 (voir l'encadré des réponses du backend).

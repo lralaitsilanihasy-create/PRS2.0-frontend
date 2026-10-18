@@ -12,10 +12,16 @@ export interface PieceAJoindre {
   fichiers: PieceJointeDossier[];
 }
 
+/** ⚠️ 17/10 (« pieces-dmc-par-les-donnees », B1) — une pièce que l'application fournit par ses données ne se joint pas, ni ne manque. */
+export function fournieParApplication(t: TypePieceJointe): boolean { return t.fourniePar === 'APPLICATION'; }
+
+/** Obligatoire, non fournie par l'application, sans fichier. */
+export function manqueA(l: PieceAJoindre): boolean { return l.type.obligatoire && !fournieParApplication(l.type) && !l.fichiers.length; }
+
 /** Les pièces exigées, chacune avec ses fichiers ; les obligatoires manquantes d'abord. */
 export function piecesAJoindre(exigees: TypePieceJointe[], deposees: PieceJointeDossier[]): PieceAJoindre[] {
   const lignes = exigees.map((type) => ({ type, fichiers: deposees.filter((p) => p.idTypePiece === type.idTypePiece) }));
-  const rang = (l: PieceAJoindre) => (l.type.obligatoire && !l.fichiers.length ? 0 : 1);
+  const rang = (l: PieceAJoindre) => (manqueA(l) ? 0 : 1);
   return lignes.sort((a, b) => rang(a) - rang(b));
 }
 
@@ -41,16 +47,24 @@ export function piecesAJoindre(exigees: TypePieceJointe[], deposees: PieceJointe
         }
         <ul class="paj__liste">
           @for (l of lignes(); track l.type.idTypePiece) {
-            <li class="paj__piece" [class.paj__piece--manque]="l.type.obligatoire && !l.fichiers.length">
+            <li class="paj__piece" [class.paj__piece--manque]="manque(l)">
               <div class="paj__tete">
                 <span class="paj__nom">{{ l.type.libellePiece }}</span>
+                @if (fournie(l.type)) {
+                  <span class="paj__etat paj__etat--app">fournie par l’application</span>
+                } @else {
                 <span class="paj__etat">{{ l.fichiers.length ? (l.fichiers.length + ' fichier(s)') : l.type.obligatoire ? 'obligatoire, manquante' : 'facultative' }}</span>
                 <label class="btn btn-outline btn-sm">
                   {{ envoi() === l.type.idTypePiece ? 'Envoi…' : l.fichiers.length ? 'Ajouter un fichier' : 'Joindre' }}
                   <input type="file" class="visually-hidden" accept=".pdf,.jpeg,.jpg,.png" [attr.aria-label]="'Joindre : ' + l.type.libellePiece"
                     [disabled]="envoi() !== null" (change)="joindre(l.type, $event)" />
                 </label>
+                }
               </div>
+              <!-- ⚠️ 17/10 (« canevas-rapport-evaluation », B3 ; V130) — le dépôt n'a pas d'intitulé : le nom du fichier en tient lieu. -->
+              @if (l.type.code === 'AUTRE_DOCUMENT') {
+                <p class="paj__note">Autant de fichiers que voulu. Nommez chaque fichier d’après son contenu : son nom en tient lieu d’intitulé.</p>
+              }
               @for (f of l.fichiers; track f.idPiece) {
                 <div class="paj__fichier">
                   <span>{{ f.nomFichier || ('Pièce #' + f.idPiece) }}</span>
@@ -79,6 +93,8 @@ export function piecesAJoindre(exigees: TypePieceJointe[], deposees: PieceJointe
     .paj__tete { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
     .paj__nom { font-weight: 600; flex: 1 1 auto; }
     .paj__etat, .paj__meta { font-size: var(--text-sm); color: var(--n-500); }
+    .paj__etat--app { color: var(--success-text, #15803d); font-weight: 600; }
+    .paj__note { margin: 0.25rem 0 0; font-size: var(--text-sm); color: var(--n-500); }
     .paj__fichier { display: flex; align-items: center; gap: 0.5rem; font-size: var(--text-sm); margin-top: 0.25rem; padding-left: 0.5rem; }
     .paj__refus { color: var(--danger-text); font-size: var(--text-sm); }
   `,
@@ -93,7 +109,9 @@ export class PiecesAJoindre implements OnInit {
   readonly exigees = signal<TypePieceJointe[]>([]);
   readonly deposees = signal<PieceJointeDossier[]>([]);
   readonly lignes = computed(() => piecesAJoindre(this.exigees(), this.deposees()));
-  readonly manquantes = computed(() => this.lignes().filter((l) => l.type.obligatoire && !l.fichiers.length).length);
+  readonly manquantes = computed(() => this.lignes().filter((l) => manqueA(l)).length);
+  readonly fournie = fournieParApplication;
+  readonly manque = manqueA;
   readonly envoi = signal<number | null>(null);
   readonly refus = signal<string | null>(null);
 

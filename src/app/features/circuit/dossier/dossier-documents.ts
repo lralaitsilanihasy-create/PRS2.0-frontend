@@ -2,7 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, signal } f
 
 import { ToastService } from '../../../core/notifications/toast.service';
 import { ouvrirBlobSur } from '../../../core/securite/fichiers-surs';
-import { PvExamenService } from '../../../services';
+import { PieceJointeDossier } from '../../../models';
+import { PieceJointeDossierService, PvExamenService } from '../../../services';
 
 import { CalendrierAnnuel } from '../../../shared/circuit/calendrier-annuel';
 import { ControlesDossier } from '../../../shared/circuit/controles-dossier';
@@ -15,9 +16,13 @@ import { PpmMarchesTable } from '../../../shared/prmp/ppm-marches-table';
 import { DocumentVisionneuse } from '../../../shared/ui/document-visionneuse';
 import { DossierContenuStore } from './dossier-contenu.store';
 import { DossierInstantanes } from './dossier-instantanes';
-import { DossierPieces } from './dossier-pieces';
+import { DossierPieces, ongletDuFichier } from './dossier-pieces';
+import { AvisSpecifiqueDoc } from './avis-specifique-doc';
+import { BordereauEstimatifDoc } from './bordereau-estimatif-doc';
+import { CanevasRapportDoc } from './canevas-rapport-doc';
 import { DossierVersions } from './dossier-versions';
 import { FichePresentationDaoDoc } from './fiche-presentation-dao';
+import { PlanDuDossierDao } from './plan-du-dossier-dao';
 
 /**
  * Documents d'un dossier : barre d'onglets (fiche, plan, AGPM, pièces, historique) et leur contenu dans
@@ -27,7 +32,7 @@ import { FichePresentationDaoDoc } from './fiche-presentation-dao';
 @Component({
   selector: 'app-dossier-documents',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PpmMarchesTable, FichePresentationDoc, AgpmDoc, DocumentVisionneuse, DossierPieces, DossierVersions, DossierInstantanes, ControlesDossier, CalendrierAnnuel, PublicationAgpmPanneau, FicheDaoDoc, FichePresentationDaoDoc],
+  imports: [PpmMarchesTable, FichePresentationDoc, AgpmDoc, DocumentVisionneuse, DossierPieces, DossierVersions, DossierInstantanes, ControlesDossier, CalendrierAnnuel, PublicationAgpmPanneau, FicheDaoDoc, FichePresentationDaoDoc, PlanDuDossierDao, CanevasRapportDoc, BordereauEstimatifDoc, AvisSpecifiqueDoc],
   host: { '[class.dc-documents--borne]': 'panneauBorne()' },
   template: `
     @if (contenu.estPpm()) {
@@ -121,7 +126,7 @@ import { FichePresentationDaoDoc } from './fiche-presentation-dao';
     @if (contenu.estPpm()) {
       @if (ongletDossier() === 'pieces') {
         <div class="dc-section">
-          <app-dossier-pieces />
+          <app-dossier-pieces (voir)="ongletChoisi.set($event)" />
         </div>
       }
     } @else {
@@ -138,8 +143,21 @@ import { FichePresentationDaoDoc } from './fiche-presentation-dao';
               [attr.aria-selected]="ongletProcedure() === 'presentation'" (click)="ongletChoisi.set('presentation')">Fiche de présentation</button>
             <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletProcedure() === 'fiche-dao'"
               [attr.aria-selected]="ongletProcedure() === 'fiche-dao'" (click)="ongletChoisi.set('fiche-dao')">Fiche DAO</button>
+            <!-- ⚠️ 18/10 (« avis-specifique-en-donnees », B1) — le projet d'avis en données, quand la fiche l'a joint au dossier. -->
+            @if (fichiersOnglet('avis').length) {
+              <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletProcedure() === 'avis'"
+                [attr.aria-selected]="ongletProcedure() === 'avis'" (click)="ongletChoisi.set('avis')">{{ lettreInvitation() ? 'Lettre d’invitation' : 'Avis spécifique' }}</button>
+            }
             <button type="button" class="onglets-dossier__tab onglets-dossier__tab--bleu" role="tab" [class.onglets-dossier__tab--on]="ongletProcedure() === 'plan'"
               [attr.aria-selected]="ongletProcedure() === 'plan'" (click)="ongletChoisi.set('plan')">Plan de passation</button>
+            <!-- ⚠️ 17/10 (« canevas-rapport-evaluation », B1) — produit par l'application, hors contrat-cadre (manuel p. 32). -->
+            @if (avecCanevas()) {
+              <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletProcedure() === 'canevas'"
+                [attr.aria-selected]="ongletProcedure() === 'canevas'" (click)="ongletChoisi.set('canevas')">Canevas de rapport</button>
+            }
+            <!-- ⚠️ 18/10 (pilote) — le bordereau estimatif (DQE en travaux) en données, au lieu du seul PDF joint d'office. -->
+            <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletProcedure() === 'bordereau'"
+              [attr.aria-selected]="ongletProcedure() === 'bordereau'" (click)="ongletChoisi.set('bordereau')">Bordereau estimatif</button>
           }
           <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletProcedure() === 'pieces'"
             [attr.aria-selected]="ongletProcedure() === 'pieces'" (click)="ongletChoisi.set('pieces')">
@@ -170,8 +188,52 @@ import { FichePresentationDaoDoc } from './fiche-presentation-dao';
       @if (contenu.dossier().idDmc && ongletProcedure() === 'fiche-dao') {
         <div class="dc-section">
           <!-- La fiche DAO telle que la Commission l'examine : les données, jamais un fichier. -->
+          <!-- ⚠️ 18/10 — le DAO complet en est le rendu dans le modèle type : son PDF reste à portée, pour le texte type (IC, CCAG, modèles). -->
+          @if (fichiersOnglet('fiche-dao').length) {
+            <div class="dc-fichiers">
+              <span>Le DAO complet, rendu de cette fiche dans le modèle type :</span>
+              @for (p of fichiersOnglet('fiche-dao'); track p.idPiece) {
+                <button type="button" class="btn btn-outline btn-sm" (click)="ouvrirPiece(p)">{{ p.nomFichier }} ↗</button>
+              }
+            </div>
+          }
           <app-document-visionneuse>
             <app-fiche-dao-doc [idDmc]="contenu.dossier().idDmc!" />
+          </app-document-visionneuse>
+        </div>
+      }
+      @if (contenu.dossier().idDmc && ongletProcedure() === 'avis') {
+        <div class="dc-section">
+          <div class="dc-fichiers">
+            <span>La pièce jointe d’office :</span>
+            @for (p of fichiersOnglet('avis'); track p.idPiece) {
+              <button type="button" class="btn btn-outline btn-sm" (click)="ouvrirPiece(p)">{{ p.nomFichier }} ↗</button>
+            }
+          </div>
+          <app-document-visionneuse>
+            <app-avis-specifique-doc [idDossier]="contenu.dossier().idDossier" />
+          </app-document-visionneuse>
+        </div>
+      }
+      @if (contenu.dossier().idDmc && ongletProcedure() === 'bordereau') {
+        <div class="dc-section">
+          @if (fichiersOnglet('bordereau').length) {
+            <div class="dc-fichiers">
+              <span>La pièce jointe d’office :</span>
+              @for (p of fichiersOnglet('bordereau'); track p.idPiece) {
+                <button type="button" class="btn btn-outline btn-sm" (click)="ouvrirPiece(p)">{{ p.nomFichier }} ↗</button>
+              }
+            </div>
+          }
+          <app-document-visionneuse>
+            <app-bordereau-estimatif-doc [idDmc]="contenu.dossier().idDmc!" [versionSoumise]="contenu.dossier().ficheMarche?.versionSoumise" />
+          </app-document-visionneuse>
+        </div>
+      }
+      @if (avecCanevas() && ongletProcedure() === 'canevas') {
+        <div class="dc-section">
+          <app-document-visionneuse>
+            <app-canevas-rapport-doc [idDossier]="contenu.dossier().idDossier" />
           </app-document-visionneuse>
         </div>
       }
@@ -179,14 +241,19 @@ import { FichePresentationDaoDoc } from './fiche-presentation-dao';
         <div class="dc-section dc-plan">
           <!-- Le plan contrôlé qui porte la ligne : il tient lieu de la pièce « AGPM (ou PPM) signé et contrôlé, avec le PV ». -->
           @if (contenu.dossier().idDossierPlan) {
-            <p class="dc-plan__texte">La ligne de ce dossier appartient au plan de passation n° <b>{{ contenu.dossier().idDossierPlan }}</b>, examiné dans l’application.
-              @if (contenu.dossier().idPvPlan) { Son PV d’examen (n° {{ contenu.dossier().idPvPlan }}) est signé. } @else { Son PV d’examen n’est pas encore signé. }</p>
-            <div class="dc-plan__actions">
-              @if (contenu.dossier().idPvPlan) {
-                <button type="button" class="btn btn-outline btn-sm" [disabled]="ouverturePv()" (click)="ouvrirPv(contenu.dossier().idPvPlan!)">{{ ouverturePv() ? 'Production…' : 'PV de la Commission (PDF)' }}</button>
-              }
-              <app-calendrier-annuel [idDossier]="contenu.dossier().idDossier" />
+            <!-- ⚠️ 18/10 (pilote, « supprimer la redondance ») — un seul bandeau : le plan, son PV, et leurs deux PDF. -->
+            <div class="dc-plan__bandeau">
+              <p class="dc-plan__texte">Plan de passation n° <b>{{ contenu.dossier().idDossierPlan }}</b> ·
+                @if (contenu.dossier().idPvPlan) { PV d’examen n° {{ contenu.dossier().idPvPlan }}, signé } @else { PV d’examen non signé }</p>
+              <div class="dc-plan__actions">
+                @if (contenu.dossier().idPvPlan) {
+                  <button type="button" class="btn btn-outline btn-sm" [disabled]="ouverturePv()" (click)="ouvrirPv(contenu.dossier().idPvPlan!)">{{ ouverturePv() ? 'Production…' : 'PV de la Commission (PDF)' }}</button>
+                }
+                <app-calendrier-annuel [idDossier]="contenu.dossier().idDossier" [enLigne]="true" />
+              </div>
             </div>
+            <!-- ⚠️ 17/10 (pilote) — le plan lui-même, présenté comme dans le dossier de planification, la ligne du dossier surlignée. -->
+            <app-plan-du-dossier-dao [idDossierPlan]="contenu.dossier().idDossierPlan!" [idDetail]="contenu.dossier().ficheMarche?.idDetail" />
           } @else {
             <p class="dc-plan__texte">Le plan de la ligne n’est pas dans l’application : la pièce « AGPM (ou PPM) signé et contrôlé » se joint au dossier.</p>
           }
@@ -201,7 +268,7 @@ import { FichePresentationDaoDoc } from './fiche-presentation-dao';
             <!-- ⚠️ V118 (15/10) — la publication de l'AGPM du plan, reprise d'office (muette sans plan ni publication). -->
             <app-publication-agpm [idDossier]="contenu.dossier().idDossier" />
           }
-          <app-dossier-pieces />
+          <app-dossier-pieces (voir)="ongletChoisi.set($event)" />
         </div>
       }
       @if (contenu.instantanesVisible() && ongletProcedure() === 'figes') {
@@ -224,6 +291,9 @@ import { FichePresentationDaoDoc } from './fiche-presentation-dao';
     /* Marges resserrées dans un panneau borné (2026-09-15) : la largeur va au document. */
     :host(.dc-documents--borne) .dc-section { padding: 12px 16px; }
     .dc-plan { display: flex; flex-direction: column; gap: 0.75rem; }
+    .dc-fichiers { display: flex; align-items: center; gap: 0.5rem 0.75rem; flex-wrap: wrap; margin-bottom: 0.75rem; font-size: 0.85rem; color: var(--n-700); }
+    .dc-plan__bandeau { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem 1.5rem; flex-wrap: wrap;
+      padding: 0.6rem 0.9rem; border: 1px solid var(--n-200); border-radius: var(--radius-lg, 10px); background: #fff; }
     .dc-plan__texte { margin: 0; }
     .dc-plan__actions { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
   `,
@@ -245,12 +315,30 @@ export class DossierDocuments {
   /** Onglet actif — ouverture sur le plan, comme le détail PPM. */
   readonly ongletDossier = signal<'ppm' | 'fiche' | 'agpm' | 'pieces' | 'historique'>('ppm');
   /** ⚠️ R4 / R5 (13/10) — dossier de procédure : pièces jointes (ouverture), écrans figés à la soumission, contrôles. */
-  readonly ongletChoisi = signal<'presentation' | 'fiche-dao' | 'plan' | 'pieces' | 'figes' | 'controles' | null>(null);
+  readonly ongletChoisi = signal<'presentation' | 'fiche-dao' | 'avis' | 'plan' | 'canevas' | 'bordereau' | 'pieces' | 'figes' | 'controles' | null>(null);
+  /** Prestations intellectuelles : le projet joint est une lettre d'invitation. */
+  readonly lettreInvitation = computed(() => this.fichiersOnglet('avis').some((p) => (p.nomFichier ?? '').startsWith('LETTRE_PROJET_')));
+  /** ⚠️ 17/10 (« canevas-rapport-evaluation ») — le canevas de rapport d'évaluation : dossier né d'une fiche, hors contrat-cadre. */
+  readonly avecCanevas = computed(() => !!this.contenu.dossier().idDmc && this.contenu.dossier().ficheMarche?.typeMarche !== 'CONTRAT_CADRE');
   /** ⚠️ 17/10 — un dossier né d'une fiche s'ouvre sur sa fiche de présentation, comme le dossier de planification sur son plan. */
   readonly ongletProcedure = computed(() => this.ongletChoisi() ?? (this.contenu.dossier().idDmc ? 'presentation' : 'pieces'));
   readonly ongletsProcedure = computed(() => !!this.contenu.dossier().idDmc || this.contenu.instantanesVisible() || this.contenu.controlesVisible());
   private readonly pvService = inject(PvExamenService);
   private readonly toast = inject(ToastService);
+  private readonly pieceService = inject(PieceJointeDossierService);
+
+  /** ⚠️ 18/10 — les fichiers produits par la fiche que montre un onglet (hors pièces d'après lettre de renvoi). */
+  fichiersOnglet(onglet: 'fiche-dao' | 'avis' | 'bordereau'): PieceJointeDossier[] {
+    return this.contenu.pieces().filter((p) => !p.apresLettreRenvoi && ongletDuFichier(p, true) === onglet);
+  }
+
+  ouvrirPiece(p: PieceJointeDossier): void {
+    if (p.idPiece == null) return;
+    this.pieceService.telecharger(p.idPiece).subscribe({
+      next: (b) => ouvrirBlobSur(b),
+      error: () => this.toast.error('Impossible d’ouvrir la pièce.'),
+    });
+  }
   readonly ouverturePv = signal(false);
   /** Le PV signé de l'examen du plan, en PDF (il tient lieu de l'AGPM contrôlé). */
   ouvrirPv(idPv: number): void {

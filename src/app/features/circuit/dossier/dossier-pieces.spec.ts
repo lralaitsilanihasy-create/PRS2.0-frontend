@@ -16,12 +16,12 @@ const EXIGEES: TypePieceJointe[] = [
 const JOINTE = { idPiece: 1, idDossier: 42, idTypePiece: 3, libellePiece: 'Fiche de présentation signée', nomFichier: 'fiche.pdf' } as PieceJointeDossier;
 
 /** Monte l'onglet sur un dossier ; répond aux pièces déposées et aux pièces exigées. */
-function monter(statut: Dossier['statut'], exigees: TypePieceJointe[] = EXIGEES): { el: HTMLElement; exigeesDemandees: boolean } {
+function monter(statut: Dossier['statut'], exigees: TypePieceJointe[] = EXIGEES, idDmc: number | null = null): { el: HTMLElement; exigeesDemandees: boolean; composant: DossierPieces } {
   TestBed.configureTestingModule({
     providers: [provideHttpClient(), provideHttpClientTesting(), DossierContenuStore, { provide: AuthService, useValue: { role: signal<Role | null>('PRMP') } }],
   });
   const store = TestBed.inject(DossierContenuStore);
-  store.charger(signal({ idDossier: 42, idTypeDossier: 'DMC', idSousType: 'DAOO', statut, idLocalite: 'ANT' } as Dossier));
+  store.charger(signal({ idDossier: 42, idTypeDossier: 'DMC', idSousType: 'DAOO', statut, idLocalite: 'ANT', idDmc } as Dossier));
   const fixture = TestBed.createComponent(DossierPieces);
   const http = TestBed.inject(HttpTestingController);
   let exigeesDemandees = false;
@@ -42,7 +42,7 @@ function monter(statut: Dossier['statut'], exigees: TypePieceJointe[] = EXIGEES)
     }
   }
   fixture.detectChanges();
-  return { el: fixture.nativeElement as HTMLElement, exigeesDemandees };
+  return { el: fixture.nativeElement as HTMLElement, exigeesDemandees, composant: fixture.componentInstance };
 }
 
 const texte = (el: Element | null): string => (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
@@ -53,11 +53,36 @@ describe('DossierPieces — pièces exigées par sous-type (manuel de contrôle,
     expect(exigeesDemandees).toBe(true);
     const lignes = Array.from(el.querySelectorAll('.pe-ligne')).map((l) => Array.from(l.children).map(texte).join(' | '));
     expect(lignes).toEqual([
-      '✓ | Fiche de présentation signée | jointe',
+      '✓ | Fiche de présentation signée',
       '✕ | Projet de DAO | obligatoire, manquante',
       '– | Bordereau des prix | facultative',
     ]);
     expect(texte(el.querySelector('.pieces-group-hd'))).toContain('1 obligatoire(s) manquante(s)');
+  });
+
+  it('18/10 — le fichier déposé s’affiche sous sa pièce, et n’est pas répété dans une seconde liste', () => {
+    const { el } = monter('BROUILLON');
+    const fichiers = Array.from(el.querySelectorAll('.pe-fichier')).map(texte);
+    expect(fichiers.length).toBe(1);
+    expect(fichiers[0]).toContain('fiche.pdf');
+    expect(el.querySelectorAll('.piece-row').length).toBe(0);
+  });
+
+  it('18/10 — dossier né d’une fiche : une pièce que montre un onglet n’est plus listée, un renvoi mène à l’onglet', () => {
+    const { el, composant } = monter('BROUILLON', [
+      { idTypePiece: 28, libellePiece: 'Calendrier annuel', obligatoire: true, code: 'CALENDRIER', ordre: 1, fourniePar: 'APPLICATION' },
+      { idTypePiece: 30, libellePiece: 'AGPM contrôlé', obligatoire: true, code: 'AGPM_CONTROLE', ordre: 2, fourniePar: 'APPLICATION' },
+      { idTypePiece: 29, libellePiece: 'Publication de l’AGPM (journal)', obligatoire: true, code: 'PUBLICATION_AGPM', ordre: 3 },
+    ], 1);
+    const lignes = Array.from(el.querySelectorAll('.pe-ligne')).map((l) => Array.from(l.children).map(texte).join(' | '));
+    expect(lignes).toEqual(['✕ | Publication de l’AGPM (journal) | obligatoire, manquante']);
+    const liens = Array.from(el.querySelectorAll('.pe-lien')) as HTMLButtonElement[];
+    expect(liens.map(texte)).toEqual(['Plan de passation']);
+    expect(liens[0].title).toBe('Calendrier annuel ; AGPM contrôlé');
+    const emis: string[] = [];
+    composant.voir.subscribe((o) => emis.push(o));
+    liens[0].click();
+    expect(emis).toEqual(['plan']);
   });
 
   it('hors brouillon : la liste n’est ni demandée ni montrée', () => {

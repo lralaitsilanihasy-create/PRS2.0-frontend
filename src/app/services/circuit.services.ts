@@ -5,6 +5,8 @@ import { Observable } from 'rxjs';
 import { skipErrorToast } from '../core/errors/api-error';
 import { CrudService } from './api/crud.service';
 import {
+  AvisSpecifiqueDonnees,
+  CanevasRapport,
   FichePresentationDao,
   AFaire,
   ActionDossier,
@@ -67,6 +69,21 @@ export class DossierService extends CrudService<Dossier> {
   /** ⚠️ 17/10 (B2) — la même, en PDF. */
   fichePresentationPdf(id: number): Observable<Blob> {
     return this.http.get(`${this.baseUrl}/${id}/fiche-presentation/pdf`, { responseType: 'blob', context: skipErrorToast() });
+  }
+
+  /** ⚠️ 17/10 (« canevas-rapport-evaluation », B1) — le canevas de rapport d'évaluation, en données ; 409 `CANEVAS_INDISPONIBLE`. */
+  canevasRapport(id: number): Observable<CanevasRapport> {
+    return this.http.get<CanevasRapport>(`${this.baseUrl}/${id}/canevas-rapport`, { context: skipErrorToast() });
+  }
+
+  /** ⚠️ 18/10 (« avis-specifique-en-donnees », B1) — le projet d'avis (ou de lettre d'invitation) en données ; 409 `AVIS_INDISPONIBLE`. */
+  avisSpecifique(id: number): Observable<AvisSpecifiqueDonnees> {
+    return this.http.get<AvisSpecifiqueDonnees>(`${this.baseUrl}/${id}/avis-specifique`, { context: skipErrorToast() });
+  }
+
+  /** Le même, en PDF. */
+  canevasRapportPdf(id: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${id}/canevas-rapport/pdf`, { responseType: 'blob', context: skipErrorToast() });
   }
 
   /**

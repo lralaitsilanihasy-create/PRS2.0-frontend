@@ -315,6 +315,54 @@ export interface FichePresentationDao {
 }
 
 /**
+ * ⚠️ 17/10 (demande « canevas-rapport-evaluation », B1 ; PRS20 17f0f26) — le **canevas de rapport d'évaluation** d'un dossier né d'une
+ * fiche validée hors contrat-cadre (`GET /api/dossiers/{id}/canevas-rapport`, 409 `CANEVAS_INDISPONIBLE` sinon). Produit par
+ * l'application, jamais téléversé. `lignes` : ce que la fiche exige ; `tableau` : ce que la commission remplira (`rangees` déjà
+ * nommées en première colonne, puis `rangeesVides` rangées vierges) ; `partie` : `TECHNIQUE` / `FINALE` en prestations
+ * intellectuelles, nul sinon.
+ */
+/**
+ * ⚠️ 18/10 (demande « avis-specifique-en-donnees », B1 ; PRS20 f1b696c) — `GET /api/dossiers/{id}/avis-specifique` : le projet d'avis
+ * spécifique (ou la lettre d'invitation, `lettre`) en données, sur la version du PDF joint. 409 `AVIS_INDISPONIBLE`. Q2 : une mention
+ * en pointillés a `valeur: null` et `renseignee: false` ; une mention sans objet peut garder la phrase qu'elle imprime.
+ */
+export interface AvisSpecifiqueDonnees {
+  idDossier: number;
+  idDmc: number;
+  versionFiche: number;
+  gabarit: string;
+  lettre: boolean;
+  autoriteContractante: string | null;
+  numero: string | null;
+  documentComplet: boolean;
+  mentions: MentionAvis[];
+}
+export interface MentionAvis {
+  code: string;
+  libelle: string;
+  presenteAuGabarit: boolean;
+  renseignee: boolean | null;
+  sansObjet: boolean;
+  detail: string | null;
+  valeur: string | null;
+}
+
+export interface CanevasRapport {
+  idDossier: number;
+  idDmc: number;
+  versionFiche: number;
+  categorie: string;
+  sections: CanevasSection[];
+}
+export interface CanevasSection {
+  code: string;
+  titre: string;
+  partie: 'TECHNIQUE' | 'FINALE' | null;
+  lignes: { code: string; libelle: string; valeur: string }[];
+  tableau: { colonnes: string[]; rangees: string[]; rangeesVides: number } | null;
+}
+
+/**
  * ⚠️ Manuel révisé, R1 (V101) — la règle du quorum de la CAO, globale (`GET`/`PUT /api/parametres/cao-quorum`, PUT Administrateur) :
  * `MAJORITE` (plus de la moitié des membres désignés), `TOUS`, ou un nombre en chaîne (`"2"`). Surchargeable par procédure
  * (`ParametresInternes.caoQuorum`).

@@ -44,7 +44,7 @@ import { LettresInvitation } from '../../../shared/prmp/lettres-invitation';
         <!-- ⚠️ 30/09 (AV-3, Q5) — l'avis spécifique se lit aussi d'ici, au plus près du PV. PRMP et UGPM seulement :
              le serveur refuse les autres profils (403), inutile de leur faire faire l'appel. -->
         <!-- 01/10 (AV-4) — chacun se tait hors de sa catégorie (CATEGORIE_SANS_AVIS / CATEGORIE_SANS_LETTRE). -->
-        @if (domaine()) { <app-avis-specifique [idDmc]="f.idDmc" /><app-lettres-invitation [idDmc]="f.idDmc" /> }
+        @if (domaine()) { <app-avis-specifique [idDmc]="f.idDmc" [projetDansOnglet]="true" /><app-lettres-invitation [idDmc]="f.idDmc" [projetDansOnglet]="true" /> }
       } @else if (peutRattacher()) {
         <p class="fmd__vide">Aucune fiche DAO n'est rattachée à ce dossier. Rattachez celle que vous avez déjà validée, ou préparez-en une depuis la ligne du plan de passation.</p>
         @if (!choix()) {

@@ -15,7 +15,7 @@ import { DossierService } from '../../services';
   selector: 'app-calendrier-annuel',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="ca">
+    <div class="ca" [class.ca--en-ligne]="enLigne()">
       <button type="button" class="btn btn-outline btn-sm" [disabled]="chargement()" (click)="ouvrir()">
         {{ chargement() ? 'Production…' : 'Calendrier annuel de passation (PDF)' }}
       </button>
@@ -24,6 +24,7 @@ import { DossierService } from '../../services';
   `,
   styles: `
     .ca { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+    .ca--en-ligne { margin-bottom: 0; }
     .ca__refus { color: var(--danger-text); font-size: var(--text-sm); }
   `,
 })
@@ -31,6 +32,8 @@ export class CalendrierAnnuel {
   private readonly service = inject(DossierService);
 
   readonly idDossier = input.required<number>();
+  /** Posé dans une barre d'actions, à côté d'autres boutons : sans marge basse. */
+  readonly enLigne = input(false);
   readonly chargement = signal(false);
   readonly refus = signal<string | null>(null);
 

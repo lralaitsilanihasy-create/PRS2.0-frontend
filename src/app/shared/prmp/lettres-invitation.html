@@ -18,7 +18,9 @@
          relecture des mentions ; pour un appel d'offres restreint, c'est la lettre AOR (gabarit LETTRE-AOR), candidats saisis. -->
     @if (!lecture()) {
       <div class="avs__projet">
-        <button type="button" class="btn btn-sm btn-outline" [disabled]="occupe()" (click)="projet('pdf')">Projet de lettre (PDF)</button>
+        @if (!projetDansOnglet()) {
+          <button type="button" class="btn btn-sm btn-outline" [disabled]="occupe()" (click)="projet('pdf')">Projet de lettre (PDF)</button>
+        }
         <button type="button" class="btn btn-sm btn-ghost" [disabled]="occupe()" (click)="projet('docx')">Projet de lettre (Word)</button>
         <span class="avs__meta">Filigrane « PROJET », destinataire en pointillés : il ne lance rien.</span>
       </div>

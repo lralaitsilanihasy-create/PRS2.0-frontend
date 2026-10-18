@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, output, signal } from '@angular/core';
 
 import { ToastService } from '../../../core/notifications/toast.service';
 import { ouvrirBlobSur } from '../../../core/securite/fichiers-surs';
@@ -31,8 +31,18 @@ import { DossierContenuStore } from './dossier-contenu.store';
             <span id="pieces-exigees" class="group-pill gp-blue">Pièces exigées pour soumettre</span>
             <span class="group-count">{{ nbObligatoiresManquantes() ? nbObligatoiresManquantes() + ' obligatoire(s) manquante(s)' : 'toutes les obligatoires sont jointes' }}</span>
           </div>
+          <!-- ⚠️ 18/10 (pilote) — une pièce que montre déjà un onglet du dossier n'est plus listée ici : un renvoi la remplace. -->
+          @if (renvois().length) {
+            <p class="pe-renvoi">
+              <span class="pe-etat" aria-hidden="true">✓</span>
+              Fournies par l’application, dans leurs onglets :
+              @for (r of renvois(); track r.onglet; let dernier = $last) {
+                <button type="button" class="pe-lien" (click)="voir.emit(r.onglet)" [attr.title]="r.pieces">{{ r.libelle }}</button>{{ dernier ? '' : ' · ' }}
+              }
+            </p>
+          }
           <ul class="pe-liste">
-            @for (t of exigees(); track t.idTypePiece) {
+            @for (t of exigeesListees(); track t.idTypePiece) {
               <li class="pe-ligne" [class.pe-ligne--manque]="manquante(t)">
                 <span class="pe-etat" aria-hidden="true">{{ deposees().has(t.idTypePiece) || fournie(t) ? '✓' : t.obligatoire ? '✕' : '–' }}</span>
                 <span class="pe-lib">{{ t.libellePiece }}</span>
@@ -40,22 +50,36 @@ import { DossierContenuStore } from './dossier-contenu.store';
                 <!-- ⚠️ 17/10 (demande « pieces-dmc-par-les-donnees », B1) — une pièce que l'application fournit par ses données. -->
                 @if (fournie(t)) {
                   <span class="pe-tag pe-tag--app">fournie par l’application</span>
-                  <button type="button" class="pe-ouvrir" [disabled]="ouverture() === t.idTypePiece" (click)="ouvrirFournie(t)" [attr.aria-label]="'Ouvrir : ' + t.libellePiece">Ouvrir</button>
-                } @else {
-                  <span class="pe-tag">{{ deposees().has(t.idTypePiece) ? 'jointe' : t.obligatoire ? 'obligatoire, manquante' : t.condition === 'FACULTATIVE_EN_LIGNE' ? 'facultative en ligne (transition SIGMP)' : 'facultative' }}</span>
+                  <!-- ⚠️ 18/10 (pilote, « supprimer la redondance ») — la pièce fournie a son onglet : on y renvoie, au lieu d'un second accès au PDF. -->
+                  @if (ongletDe(t); as o) {
+                    <button type="button" class="pe-ouvrir" (click)="voir.emit(o)" [attr.aria-label]="'Voir l’onglet : ' + t.libellePiece">Voir l’onglet</button>
+                  } @else {
+                    <button type="button" class="pe-ouvrir" [disabled]="ouverture() === t.idTypePiece" (click)="ouvrirFournie(t)" [attr.aria-label]="'Ouvrir : ' + t.libellePiece">Ouvrir</button>
+                  }
+                } @else if (!fichiersDe(t).length) {
+                  <span class="pe-tag">{{ t.obligatoire ? 'obligatoire, manquante' : t.condition === 'FACULTATIVE_EN_LIGNE' ? 'facultative en ligne (transition SIGMP)' : 'facultative' }}</span>
                 }
               </li>
+              <!-- Les fichiers déposés sous la pièce, à leur place : ils ne sont plus répétés dans une seconde liste. -->
+              @for (p of fichiersDe(t); track p.idPiece) {
+                <li class="pe-fichier">
+                  <span class="piece-file">{{ p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
+                  @if (p.idDocumentFiche) { <span class="piece-fiche" title="Produite par la fiche DAO : elle se corrige dans la fiche, pas ici.">fiche DAO</span> }
+                  @if (origine(p); as o) { <span class="piece-fiche" [title]="o.titre">{{ o.libelle }}</span> }
+                  <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)" [attr.aria-label]="'Ouvrir ' + (p.nomFichier || t.libellePiece)">Ouvrir <span class="arrow">↗</span></button>
+                </li>
+              }
             }
           </ul>
         </div>
       }
-      @if (piecesInitiales().length > 0) {
+      @if (piecesInitialesListees().length > 0) {
         <div class="pieces-group">
           <div class="pieces-group-hd">
-            <span class="group-pill gp-blue">Pièces initiales</span>
-            <span class="group-count">{{ piecesInitiales().length }} fichier(s)</span>
+            <span class="group-pill gp-blue">{{ exigees().length ? 'Autres pièces jointes' : 'Pièces initiales' }}</span>
+            <span class="group-count">{{ piecesInitialesListees().length }} fichier(s)</span>
           </div>
-          @for (p of piecesInitiales(); track p.idPiece; let i = $index) {
+          @for (p of piecesInitialesListees(); track p.idPiece; let i = $index) {
             <div class="piece-row">
               <div class="piece-left">
                 <span class="piece-index pi-blue">{{ i + 1 }}</span>
@@ -147,6 +171,10 @@ import { DossierContenuStore } from './dossier-contenu.store';
     .pe-etat { width: 1rem; font-weight: 700; color: var(--success-700, #047857); }
     .pe-ligne--manque .pe-etat, .pe-ligne--manque .pe-tag { color: var(--danger-700, #b42318); }
     .pe-lib { flex: 1; }
+    .pe-renvoi { margin: 0; padding: 9px 14px 0; display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; font-size: 0.85rem; color: var(--n-700); }
+    .pe-lien { border: none; background: none; padding: 0; color: var(--primary-700, #1d4ed8); text-decoration: underline; cursor: pointer; font: inherit; }
+    .pe-fichier { display: flex; align-items: center; gap: 0.5rem; padding: 0.1rem 0 0.35rem 1.5rem; }
+    .pe-fichier .piece-file { flex: 1; display: inline; }
     .pe-tag { font-size: 0.75rem; color: var(--n-500); }
     .pe-tag--app { color: var(--success-text, #15803d); font-weight: 600; }
     .pe-ouvrir { border: 1px solid var(--n-300); background: #fff; border-radius: 6px; padding: 0 0.5rem; font-size: 0.75rem; cursor: pointer; }
@@ -174,10 +202,11 @@ export class DossierPieces {
   fournie(t: TypePieceJointe): boolean { return t.fourniePar === 'APPLICATION'; }
   manquante(t: TypePieceJointe): boolean { return t.obligatoire && !this.fournie(t) && !this.deposees().has(t.idTypePiece); }
 
-  /** Le document qui fournit la pièce, en PDF : la fiche de présentation, le calendrier annuel, ou le PV du plan. */
+  /** Le document qui fournit la pièce, en PDF : la fiche de présentation, le canevas de rapport, le calendrier annuel, ou le PV du plan. */
   ouvrirFournie(t: TypePieceJointe): void {
     const id = this.contenu.dossier().idDossier;
     const source = t.code === 'FICHE_PRESENTATION' ? this.dossiers.fichePresentationPdf(id)
+      : t.code === 'CANEVAS_RAPPORT' ? this.dossiers.canevasRapportPdf(id)
       : t.code === 'CALENDRIER' ? this.dossiers.calendrierAnnuel(id)
       : t.idPvPlan != null ? this.pvService.document(t.idPvPlan) : null;
     if (!source) { this.toast.error('Ce document n’est pas disponible.'); return; }
@@ -202,6 +231,56 @@ export class DossierPieces {
   }
 
   readonly piecesInitiales = computed(() => this.contenu.pieces().filter((p) => !p.apresLettreRenvoi && !p.versionCorrigee));
+  /** Les types listés en pièces exigées : leurs fichiers s'affichent sous eux. */
+  private readonly typesExiges = computed(() => new Set(this.exigees().map((t) => t.idTypePiece)));
+  /** ⚠️ 18/10 — le groupe des pièces initiales ne garde que celles qu'aucune pièce exigée n'a déjà montrées. */
+  readonly piecesInitialesListees = computed(() => this.piecesInitiales()
+    .filter((p) => !this.typesExiges().has(p.idTypePiece) && !ongletDuFichier(p, !!this.contenu.dossier().idDmc)));
+  fichiersDe(t: TypePieceJointe): PieceJointeDossier[] { return this.piecesInitiales().filter((p) => p.idTypePiece === t.idTypePiece); }
+
+  /** ⚠️ 18/10 (pilote) — les pièces exigées que n'affiche aucun onglet du dossier : les autres sont remplacées par un renvoi. */
+  readonly exigeesListees = computed(() => this.exigees().filter((t) => !this.ongletDe(t)));
+  /** Les onglets qui portent des pièces fournies, dans l'ordre des onglets ; l'infobulle nomme les pièces. */
+  readonly renvois = computed(() => {
+    const parOnglet = new Map<OngletPieceFournie, string[]>();
+    const ajouter = (o: OngletPieceFournie, libelle: string) => {
+      const l = parOnglet.get(o) ?? [];
+      if (!l.includes(libelle)) parOnglet.set(o, [...l, libelle]);
+    };
+    for (const t of this.exigees()) {
+      const o = this.ongletDe(t);
+      if (o) ajouter(o, t.libellePiece);
+    }
+    // Les pièces produites par la fiche hors liste exigée (le bordereau d'un contrat-cadre, Q4 du 17/10).
+    const avecFiche = !!this.contenu.dossier().idDmc;
+    for (const p of this.piecesInitiales()) {
+      const o = this.typesExiges().has(p.idTypePiece) ? null : ongletDuFichier(p, avecFiche);
+      if (o) ajouter(o, p.libellePiece || p.nomFichier || '');
+    }
+    return ORDRE_ONGLETS.filter((o) => parOnglet.has(o))
+      .map((o) => ({ onglet: o, libelle: o === 'avis' && this.lettre() ? 'Lettre d’invitation' : LIBELLES_ONGLET[o], pieces: parOnglet.get(o)!.join(' ; ') }));
+  });
+
+  /** Prestations intellectuelles : le projet joint est une lettre d'invitation. */
+  private readonly lettre = computed(() => this.contenu.pieces().some((p) => (p.nomFichier ?? '').startsWith('LETTRE_PROJET_')));
+
+  /** ⚠️ 18/10 — l'onglet du dossier qui montre une pièce fournie ; l'hôte bascule dessus. */
+  readonly voir = output<OngletPieceFournie>();
+  ongletDe(t: TypePieceJointe): OngletPieceFournie | null {
+    if (!this.contenu.dossier().idDmc) return null;
+    if (this.fournie(t)) {
+      switch (t.code) {
+        case 'FICHE_PRESENTATION': return 'presentation';
+        case 'CANEVAS_RAPPORT': return 'canevas';
+        case 'CALENDRIER': case 'AGPM_CONTROLE': case 'PPM_CONTROLE': return 'plan';
+        default: return null;
+      }
+    }
+    // ⚠️ 18/10 — une pièce dont TOUS les fichiers sont produits par la fiche et montrés par un même onglet.
+    const onglets = new Set(this.fichiersDe(t).map((p) => ongletDuFichier(p, true)));
+    const [seul] = [...onglets];
+    return onglets.size === 1 && seul ? seul : null;
+  }
   readonly piecesApresRenvoi = computed(() => this.contenu.pieces().filter((p) => p.apresLettreRenvoi));
   /** ⚠️ 2026-08-03 — versions CORRIGÉES déposées pendant la rectification (distinctes des originales). */
   readonly piecesCorrigees = computed(() => this.contenu.pieces().filter((p) => !p.apresLettreRenvoi && p.versionCorrigee));
@@ -218,6 +297,32 @@ export class DossierPieces {
       error: () => this.toast.error("Impossible d'ouvrir la pièce."),
     });
   }
+}
+
+/** Les onglets d'un dossier né d'une fiche qui montrent une pièce fournie par l'application. */
+export type OngletPieceFournie = 'presentation' | 'fiche-dao' | 'avis' | 'plan' | 'canevas' | 'bordereau';
+const LIBELLES_ONGLET: Record<OngletPieceFournie, string> = {
+  presentation: 'Fiche de présentation',
+  'fiche-dao': 'Fiche DAO',
+  avis: 'Avis spécifique',
+  plan: 'Plan de passation',
+  canevas: 'Canevas de rapport',
+  bordereau: 'Bordereau estimatif',
+};
+const ORDRE_ONGLETS: readonly OngletPieceFournie[] = ['presentation', 'fiche-dao', 'avis', 'plan', 'canevas', 'bordereau'];
+
+/**
+ * ⚠️ 18/10 (pilote) — l'onglet qui présente en données un fichier produit par la fiche DAO (`idDocumentFiche`), reconnu à son nom :
+ * le DAO complet (la fiche, rendue dans le modèle type), le projet d'avis ou de lettre d'invitation (B1 du 18/10), et le bordereau
+ * ou DQE estimatif. Hors dossier né d'une fiche : aucun.
+ */
+export function ongletDuFichier(p: PieceJointeDossier, avecFiche: boolean): OngletPieceFournie | null {
+  if (!avecFiche || !p.idDocumentFiche) return null;
+  const nom = p.nomFichier ?? '';
+  if (nom.startsWith('DAO_COMPLET_')) return 'fiche-dao';
+  if (nom.startsWith('AVIS_PROJET_') || nom.startsWith('LETTRE_PROJET_')) return 'avis';
+  if (nom.startsWith('BORDEREAU_ESTIMATIF_') || nom.startsWith('DQE_ESTIMATIF_')) return 'bordereau';
+  return null;
 }
 
 /**

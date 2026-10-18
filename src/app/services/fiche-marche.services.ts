@@ -156,8 +156,10 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
    * `GET /{idDmc}/articles` — le besoin de la fiche (bloc `B12`), tous lots confondus, trié par lot puis
    * ordre. Silencieux : le bloc s'affiche vide plutôt que de lever une boîte d'erreur.
    */
-  articles(idDmc: number): Observable<ArticleFiche[]> {
-    return this.http.get<ArticleFiche[]>(`${this.baseUrl}/${idDmc}/articles`, { context: skipErrorToast() });
+  articles(idDmc: number, version?: number | null): Observable<ArticleFiche[]> {
+    // ⚠️ 18/10 (« avis-specifique-en-donnees », B2) — `?version=n` : le besoin d'une version figée (404 si elle n'existe pas).
+    const params = version ? { version } : undefined;
+    return this.http.get<ArticleFiche[]>(`${this.baseUrl}/${idDmc}/articles`, { params, context: skipErrorToast() });
   }
 
   /**

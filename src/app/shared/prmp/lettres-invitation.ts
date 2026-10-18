@@ -49,6 +49,8 @@ export class LettresInvitation implements OnInit {
 
   readonly idDmc = input.required<number>();
   readonly lecture = input(false);
+  /** ⚠️ 18/10 (pilote) — sur la page d'un dossier, le projet se lit dans son onglet : la carte n'en propose plus le PDF. */
+  readonly projetDansOnglet = input(false);
 
   readonly etat = signal<DisponibiliteAvis | null>(null);
   readonly documents = signal<DocumentFiche[]>([]);
