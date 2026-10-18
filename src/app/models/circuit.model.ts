@@ -129,7 +129,7 @@ export interface Dossier {
    */
   idDmc?: number | null;
   /**
-   * ⚠️ 18/10 (demande backend « avis-a-imprimer », §B2, EN ATTENTE) — sur les listes, pour la PRMP et l'UGPM d'un dossier né
+   * ⚠️ 18/10 (demande backend « avis-a-imprimer », §B2, livrée) — sur les listes et la lecture unitaire, pour la PRMP et l'UGPM d'un dossier né
    * d'une fiche : le document que la PRMP imprime après le PV, et s'il est imprimable. Absent tant que le serveur ne le sert pas.
    */
   impressionAvis?: ImpressionAvisDossier | null;

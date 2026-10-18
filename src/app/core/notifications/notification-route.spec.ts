@@ -34,12 +34,10 @@ describe('Routage d’une notification', () => {
     }
   });
 
-  it('18/10 — AVIS_A_IMPRIMER / LETTRES_A_IMPRIMER : la page du dossier, fenêtre d’impression ouverte (PRMP et UGPM)', () => {
-    for (const type of ['AVIS_A_IMPRIMER', 'LETTRES_A_IMPRIMER']) {
-      for (const role of ['PRMP', 'UGPM']) {
-        expect(routePourNotification(n({ typeNotif: type, idDossier: 100380 }), role))
-          .toEqual({ genre: 'page-dossier', commands: ['/prmp', 'dossier', '100380'], queryParams: { imprimer: 'avis' } });
-      }
+  it('18/10 — AVIS_A_IMPRIMER (avis ou lettres) : la page du dossier, fenêtre d’impression ouverte (PRMP et UGPM)', () => {
+    for (const role of ['PRMP', 'UGPM']) {
+      expect(routePourNotification(n({ typeNotif: 'AVIS_A_IMPRIMER', idDossier: 100380 }), role))
+        .toEqual({ genre: 'page-dossier', commands: ['/prmp', 'dossier', '100380'], queryParams: { imprimer: 'avis' } });
     }
   });
 

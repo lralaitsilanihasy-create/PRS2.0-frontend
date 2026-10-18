@@ -124,8 +124,8 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                         <button type="button" class="btn btn-warning btn-sm" (click)="completer.set(d)">Compléter les pièces</button>
                       }
                       <!-- ⚠️ 18/10 (pilote) — l'avis spécifique (ou les lettres d'invitation) est imprimable : la page du dossier,
-                           fenêtre d'impression ouverte d'emblée. Servi par le backend (« impressionAvis », demande du 18/10) :
-                           tant que le champ manque, rien ne s'affiche. PRMP et UGPM : le serveur borne déjà le champ. -->
+                           fenêtre d'impression ouverte d'emblée. Servi par le backend (« impressionAvis », demande du 18/10) aux
+                           seules PRMP et UGPM : l'UGPM, qui partage cet écran, imprime aussi. -->
                       @if (d.impressionAvis?.disponible) {
                         <a class="btn btn-primary btn-sm"
                           [routerLink]="lien.commandes(d.idDossier)"

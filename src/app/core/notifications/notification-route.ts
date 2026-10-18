@@ -151,9 +151,10 @@ export function routePourNotification(n: Notification, role: string | null): Cib
     return { genre: 'route', commands: ['/admin/comptes/controleurs'] };
   }
 
-  // — PRMP / UGPM : ⚠️ 18/10 (demande backend « avis-a-imprimer », §B1, EN ATTENTE) — l'avis spécifique (ou les lettres
-  //   d'invitation) est imprimable : la page du dossier, fenêtre d'impression ouverte d'emblée.
-  if ((type === 'AVIS_A_IMPRIMER' || type === 'LETTRES_A_IMPRIMER') && (role === 'PRMP' || role === 'UGPM') && n.idDossier != null) {
+  // — PRMP / UGPM : ⚠️ 18/10 (demande backend « avis-a-imprimer », §B1, livrée) — l'avis spécifique ou les lettres
+  //   d'invitation sont imprimables (un seul type, le document est nommé dans le texte) : la page du dossier, fenêtre
+  //   d'impression ouverte d'emblée.
+  if (type === 'AVIS_A_IMPRIMER' && (role === 'PRMP' || role === 'UGPM') && n.idDossier != null) {
     return { genre: 'page-dossier', commands: ['/prmp', 'dossier', String(n.idDossier)], queryParams: { imprimer: 'avis' } };
   }
 

@@ -89,9 +89,36 @@ Ce champ doit être calculé **en lot** pour la page de la liste, pas dossier pa
 >   alors que l'avis peut y rester à imprimer, et ses règles ne lisent pas encore la fiche. La notification et le bouton du tableau
 >   couvrent le besoin. Si le pilote le demande, ce sera un geste propre, servi aussi sur les dossiers clôturés.
 
+## B3 — L'avis à imprimer dans l'accueil « À faire » (pilote, 18/10)
+
+Réponse du pilote à Q2, le 18/10 : **oui**, l'avis à imprimer doit apparaître dans l'accueil « À faire » de la PRMP. Le front
+reprend la proposition du backend : un geste propre, servi aussi sur les dossiers clôturés.
+
+Proposition (les noms sont au choix du backend) :
+
+- **Section `AVIS_A_IMPRIMER`**, geste principal **`IMPRIMER_AVIS`**, servie par `GET /api/dossiers/a-faire` et par
+  `GET /api/dossiers/{id}/gestes` (même forme de `Tache`).
+- **Une ligne par dossier** dont `impressionAvis.disponible` est vrai et `dejaImprime` faux, c'est-à-dire la même règle que le
+  bouton du tableau de suivi. Un dossier `CLOTURE` reste éligible. La ligne **disparaît à la première impression** : une
+  réimpression reste possible depuis le tableau de suivi et la page du dossier, mais elle n'est pas « à faire ».
+- **Lettres d'invitation** : même section et même geste. Le front lit `impressionAvis.document` sur la ligne (ou un champ de la
+  tâche, au choix du backend) pour dire « Imprimer les lettres ».
+- **Destinataires** : la PRMP et l'UGPM, comme pour la notification.
+- **Compteur** : la ligne compte dans `compteurs.aFaire` (et donc dans la pastille du menu), sans délai standard (`SANS_DELAI`,
+  `delaiHeures` nul) : l'impression n'est pas chronométrée.
+- **Ordre** : après les sections PRMP existantes (`A_RECTIFIER`, `COMPLEMENTS_A_TRANSMETTRE`…), avant le suivi `EN_COURS_CNM`.
+
+Côté front, à la livraison : le libellé de la section (« Avis à imprimer ») et du geste (« Imprimer l'avis »), et la navigation
+du geste vers la page du dossier, fenêtre d'impression ouverte d'emblée (`?imprimer=avis`, déjà en place).
+
 ## Côté front (préparé, sans attendre la livraison)
 
 - **Tableau de suivi** : dans la colonne Actions, un bouton « Imprimer l'avis » (ou « Imprimer les lettres », ou « Réimprimer »)
   quand `impressionAvis.disponible` est vrai. Il mène à la page du dossier avec `?imprimer=avis`, qui ouvre d'emblée la fenêtre
   d'impression. Tant que le champ n'est pas servi, le bouton ne s'affiche pas.
 - **Notification** : `AVIS_A_IMPRIMER` / `LETTRES_A_IMPRIMER` mènent à la même page, avec la même ouverture d'emblée.
+
+> ⚠️ **2026-10-18, front après livraison** — un seul type, `AVIS_A_IMPRIMER` : `LETTRES_A_IMPRIMER` est retiré du routage.
+> Recette sur le dossier des consomptibles informatiques (ligne 303339, 00001/DAOO-CC/CNM/2026, clôturé) : `impressionAvis`
+> servi (`AVIS_SPECIFIQUE`, disponible, non imprimé), bouton « Imprimer l'avis » au tableau de suivi, fenêtre d'impression
+> ouverte à l'arrivée, aucune écriture. La notification n'est pas observable en recette : le dossier était déjà imprimable.
