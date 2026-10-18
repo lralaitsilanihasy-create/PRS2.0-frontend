@@ -735,6 +735,8 @@ export type RaisonAvisIndisponible =
   | 'MODE_SANS_AVIS'
   /** ⚠️ Lot 2b (V66) — remise électronique : sans clés publiées, aucun candidat ne pourrait sceller. Vaut aussi pour les lettres. */
   | 'CEREMONIE_NON_CLOSE'
+  /** ⚠️ 18/10 (« dao-electronique », Q4) — dossier payant sans compte de l'ARMP réglé : l'avis et la lettre AOR imprimeraient des pointillés. */
+  | 'COMPTE_ARMP_ABSENT'
   | (string & {});
 
 /**

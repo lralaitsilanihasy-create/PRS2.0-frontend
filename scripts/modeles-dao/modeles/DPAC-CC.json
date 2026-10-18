@@ -21,7 +21,17 @@
   "PAPIER": "modeRemise = PAPIER",
   "B04-SE": "modeRemise = ELECTRONIQUE",
   "DEVISE": "B05-UM-01 renseigne",
-  "SANS-DEVISE": "B05-UM-01 vide"
+  "SANS-DEVISE": "B05-UM-01 vide",
+  "SE-OUVERTURE": "B04-SE-03 renseigne",
+  "SE-PRESTATAIRES": "B04-SE-06 renseigne",
+  "SE-REMPLACEMENT": "B04-SE-10 = OUI",
+  "SE-SANS-REMPLACEMENT": "B04-SE-10 = NON",
+  "SE-SAUVEGARDE": "B04-SE-11 renseigne et B04-SE-11 != Non",
+  "SE-ASSISTANCE-LIMITE": "B04-SE-15 renseigne",
+  "OP-DELAI": "B04-OP-12 renseigne",
+  "OP-MODALITE": "B04-OP-10 renseigne",
+  "OP-LIEN": "B04-OP-11 renseigne",
+  "OP-PV": "B04-OP-13 = OUI"
  },
  "blocs": [
   {
@@ -350,6 +360,10 @@
   },
   {
    "type": "para",
+   "texte": "{{SI:PAPIER}}"
+  },
+  {
+   "type": "para",
    "texte": "Le Dossier complet, rédigé en langue française, peut être consulté par tout candidat désirant prendre connaissance ou obtenir des informations à l’adresse ci-après :"
   },
   {
@@ -369,8 +383,28 @@
    "texte": "Localité : {{B04-DS-10}}"
   },
   {
+   "type": "para",
+   "texte": "{{FINSI:PAPIER}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:B04-SE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le Dossier complet, rédigé en langue française, peut être consulté par tout candidat sur la plateforme de dépôt des offres : {{B04-SE-02}}."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:B04-SE}}"
+  },
+  {
    "type": "sous_titre",
    "texte": "3. 3.Modalités d’acquisition du dossier de consultation (1)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PAPIER}}"
   },
   {
    "type": "para",
@@ -397,6 +431,42 @@
    "texte": "{{FINSI:MONTANT-UNIQUE}}"
   },
   {
+   "type": "para",
+   "texte": "{{FINSI:PAPIER}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:B04-SE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MONTANT-LOTS}}"
+  },
+  {
+   "type": "para",
+   "texte": "Pour tout candidat désirant soumissionner, le règlement de la consultation (1) est retiré sur la plateforme de dépôt des offres ({{B04-SE-02}}) moyennant le paiement d’un montant non remboursable de {{B04-DS-05.parLot}} à verser sur le compte bancaire de l’ARMP : {{PARAM.compte-dao}}. Le retrait est ouvert au candidat une fois le reçu de son versement validé."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MONTANT-LOTS}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MONTANT-UNIQUE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Pour tout candidat désirant soumissionner, le règlement de la consultation (1) est retiré sur la plateforme de dépôt des offres ({{B04-SE-02}}) moyennant le paiement d’un montant non remboursable de {{B04-DS-05.lettres}} ({{B04-DS-05}}) à verser sur le compte bancaire de l’ARMP : {{PARAM.compte-dao}}. Le retrait est ouvert au candidat une fois le reçu de son versement validé."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MONTANT-UNIQUE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:B04-SE}}"
+  },
+  {
    "type": "sous_titre",
    "texte": "3.4.Modification du dossier de consultation (1)"
   },
@@ -415,6 +485,18 @@
   {
    "type": "para",
    "texte": "Les soumissionnaires remettent un dossier complet comprenant les pièces mentionnées ci-après. Les documents demandés doivent être signés par le soumissionnaire, le mandataire du groupement momentané d'entreprise ou chacun des membres de ce même groupement."
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:B04-SE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les pièces sont déposées en fichiers sur la plateforme de dépôt des offres ; la soumission par la plateforme vaut signature des documents dans les conditions de l’article 5.2."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:B04-SE}}"
   },
   {
    "type": "sous_titre",
@@ -442,6 +524,10 @@
   },
   {
    "type": "para",
+   "texte": "{{SI:PAPIER}}"
+  },
+  {
+   "type": "para",
    "texte": "{{B04-RQ-01}}"
   },
   {
@@ -465,6 +551,22 @@
    "texte": "Les plis qui seraient remis ou dont l'avis de réception serait délivré après la date et l'heure limites précitées ainsi que remis sous enveloppe non cachetée, ne seront pas retenus."
   },
   {
+   "type": "para",
+   "texte": "{{FINSI:PAPIER}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:B04-SE}}"
+  },
+  {
+   "type": "para",
+   "texte": "La transmission des offres sous support papier n’est pas admise : la remise électronique est le seul mode de remise de la présente consultation (article 5.2)."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:B04-SE}}"
+  },
+  {
    "type": "sous_titre",
    "texte": "5.2 - Transmission électronique"
   },
@@ -486,11 +588,99 @@
   },
   {
    "type": "para",
-   "texte": "La transmission par voie électronique est admise dans les conditions suivantes"
+   "texte": "La remise électronique est le seul mode de remise des offres de la présente consultation : aucun pli sous support papier n’est reçu. Les offres sont déposées sur la plateforme de dépôt : {{B04-SE-02}}."
   },
   {
    "type": "para",
-   "texte": "[[CLAUSE À FOURNIR PAR LE JURISTE : conditions de la transmission électronique — plateforme ({{B04-SE-02}}), heure de référence ({{B04-SE-04}}), signature exigée ({{B04-SE-05}}), formats ({{B04-SE-07}}) et tailles admis ({{B04-SE-08}} Mo par fichier, {{B04-SE-09}} Mo par offre), assistance ({{B04-SE-14}}), indisponibilité et prorogation ({{B04-SE-12}} h, {{B04-SE-13}} jours ouvrables)]]"
+   "texte": "{{SI:SE-OUVERTURE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les dépôts sont ouverts à compter du {{B04-SE-03}}."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SE-OUVERTURE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les dates et heures de la procédure s’entendent selon l’heure de référence suivante : {{B04-SE-04}}. Seule l’heure de la plateforme fait foi : une offre dont le dépôt n’est pas achevé à la date et à l’heure limites n’est pas recevable."
+  },
+  {
+   "type": "para",
+   "texte": "Niveau de signature électronique exigé : {{B04-SE-05}}."
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SE-PRESTATAIRES}}"
+  },
+  {
+   "type": "para",
+   "texte": "Prestataires de certification acceptés : {{B04-SE-06}}."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SE-PRESTATAIRES}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les fichiers sont déposés aux formats suivants : {{B04-SE-07}}, dans la limite de {{B04-SE-08}} Mo par fichier et de {{B04-SE-09}} Mo par offre."
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SE-REMPLACEMENT}}"
+  },
+  {
+   "type": "para",
+   "texte": "Jusqu’à la date et à l’heure limites, le candidat peut remplacer ou retirer son offre sur la plateforme ; seul son dernier dépôt est ouvert."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SE-REMPLACEMENT}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SE-SANS-REMPLACEMENT}}"
+  },
+  {
+   "type": "para",
+   "texte": "Une offre déposée ne peut être ni remplacée ni retirée."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SE-SANS-REMPLACEMENT}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SE-SAUVEGARDE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Une copie de sauvegarde est admise sous la forme suivante : {{B04-SE-11}}."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SE-SAUVEGARDE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Si la plateforme est indisponible pendant plus de {{B04-SE-12}} heures au cours des {{B04-SE-16}} heures qui précèdent la date limite de remise, cette date est prorogée de {{B04-SE-13}} jours ouvrables."
+  },
+  {
+   "type": "para",
+   "texte": "Assistance aux candidats : {{B04-SE-14}}."
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SE-ASSISTANCE-LIMITE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les demandes d’assistance sont reçues jusqu’au {{B04-SE-15}}."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SE-ASSISTANCE-LIMITE}}"
   },
   {
    "type": "para",
@@ -514,11 +704,79 @@
   },
   {
    "type": "para",
+   "texte": "{{SI:PAPIER}}"
+  },
+  {
+   "type": "para",
    "texte": "6.1.1. Les plis seront ouverts par le Représentant de l’Autorité contractante."
   },
   {
    "type": "para",
    "texte": "La séance d'ouverture des plis est publique, les candidats ou leurs représentants sont admis à y assister. Seuls peuvent être ouverts les plis qui ont été reçus dans les conditions prévues ci-dessus au plus tard à la date et à l’heure qui a été fixées pour la réception des offres."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PAPIER}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:B04-SE}}"
+  },
+  {
+   "type": "para",
+   "texte": "6.1.1. Les offres déposées sur la plateforme sont ouvertes en séance par le Représentant de l’Autorité contractante, après l’heure limite de remise des offres. Seules peuvent être ouvertes les offres dont le dépôt est achevé à la date et à l’heure fixées pour la réception des offres."
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:OP-DELAI}}"
+  },
+  {
+   "type": "para",
+   "texte": "La séance d’ouverture se tient {{B04-OP-12}} minutes après l’heure limite de remise des offres."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:OP-DELAI}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:OP-MODALITE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Modalité de la séance : {{B04-OP-10}}."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:OP-MODALITE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:OP-LIEN}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les soumissionnaires peuvent suivre la séance à l’adresse suivante : {{B04-OP-11}}."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:OP-LIEN}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:OP-PV}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le procès-verbal de la séance est publié sur la plateforme."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:OP-PV}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:B04-SE}}"
   },
   {
    "type": "para",
@@ -714,7 +972,27 @@
   },
   {
    "type": "para",
+   "texte": "{{SI:PAPIER}}"
+  },
+  {
+   "type": "para",
    "texte": "Toute demande d’informations complémentaires sur des points techniques ou administratifs du dossier devra être adressée à {{B04-RC-01}} au plus tard {{B04-RC-02}} jours avant la date limite de remise des offres."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PAPIER}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:B04-SE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Toute demande d’informations complémentaires sur des points techniques ou administratifs du dossier est posée sur la plateforme de dépôt des offres ({{B04-SE-02}}) au plus tard {{B04-RC-02}} jours avant la date limite de remise des offres ; la plateforme n’en reçoit plus au-delà."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:B04-SE}}"
   },
   {
    "type": "para",

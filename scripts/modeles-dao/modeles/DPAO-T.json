@@ -56,7 +56,17 @@
   "B04-SE": "modeRemise = ELECTRONIQUE",
   "EVALUATION-PAR-LOT": "alloti = OUI et B06-EV-01 = Par lot",
   "EVALUATION-ENSEMBLE": "alloti = OUI et B06-EV-01 = Sur l'ensemble des lots",
-  "NON-CUMUL": "alloti = OUI et B09-DL-05 = OUI"
+  "NON-CUMUL": "alloti = OUI et B09-DL-05 = OUI",
+  "SE-OUVERTURE": "B04-SE-03 renseigne",
+  "SE-PRESTATAIRES": "B04-SE-06 renseigne",
+  "SE-REMPLACEMENT": "B04-SE-10 = OUI",
+  "SE-SANS-REMPLACEMENT": "B04-SE-10 = NON",
+  "SE-SAUVEGARDE": "B04-SE-11 renseigne et B04-SE-11 != Non",
+  "SE-ASSISTANCE-LIMITE": "B04-SE-15 renseigne",
+  "OP-DELAI": "B04-OP-12 renseigne",
+  "OP-MODALITE": "B04-OP-10 renseigne",
+  "OP-LIEN": "B04-OP-11 renseigne",
+  "OP-PV": "B04-OP-13 = OUI"
  },
  "blocs": [
   {
@@ -109,7 +119,7 @@
   },
   {
    "type": "ligne",
-   "texte": "5.2. Demandes d’éclaircissement\u001fAdresse\u001eAfin d’obtenir des éclaircissements, l’adresse de la Personne Responsable des Marchés Publics est la suivante :\u001eAttention de : {{B01-AC-05}}\u001eRue : {{B01-AC-02}}\u001eAdresse électronique : {{B01-AC-06}}\u001eDélai pour l'envoi des demandes par les Candidats\u001e{{B04-EQ-01}} jours avant la date limite fixée pour la remise des offres figurant à la clause 7.2 ci-dessous.\u001eDélai pour la réponse du représentant de la PRMP\u001e{{B04-EQ-02}} jours avant la date limite fixée pour la remise des offres figurant à la clause 7.2 ci-dessous."
+   "texte": "5.2. Demandes d’éclaircissement\u001f{{SI:PAPIER}}\u001eAdresse\u001eAfin d’obtenir des éclaircissements, l’adresse de la Personne Responsable des Marchés Publics est la suivante :\u001eAttention de : {{B01-AC-05}}\u001eRue : {{B01-AC-02}}\u001eAdresse électronique : {{B01-AC-06}}\u001e{{FINSI:PAPIER}}\u001e{{SI:B04-SE}}\u001eLes demandes d’éclaircissements sont posées sur la plateforme de dépôt : {{B04-SE-02}}. La plateforme n’en reçoit plus au-delà du délai ci-dessous.\u001e{{FINSI:B04-SE}}\u001eDélai pour l'envoi des demandes par les Candidats\u001e{{B04-EQ-01}} jours avant la date limite fixée pour la remise des offres figurant à la clause 7.2 ci-dessous.\u001eDélai pour la réponse du représentant de la PRMP\u001e{{B04-EQ-02}} jours avant la date limite fixée pour la remise des offres figurant à la clause 7.2 ci-dessous."
   },
   {
    "type": "ligne",
@@ -189,19 +199,19 @@
   },
   {
    "type": "ligne",
-   "texte": "7.1. Forme des plis\u001f{{SI:ALLOTI}}\u001eles offres devront être présentées séparément pour chacun des lots\u001e{{FINSI:ALLOTI}}\u001eOutre l’original de l’offre, les plis doivent comprendre:\u001e{{B04-FP-01}} copie(s)\u001eLes enveloppes extérieure et intérieure devront comporter les autres identifications suivantes :\u001e{{B04-FP-02}}\u001eLe nom et l’adresse du Maître de l’ouvrage : {{B01-AC-01}}, {{B01-AC-02}}\u001e- La référence du présent Appel d’Offres\u001e- La mention « NE PAS OUVRIR AVANT LA DATE ET L’HEURE D’OUVERTURE DES PLIS »,\u001e{{SI:ALLOTI}}\u001e- la référence et le numéro du lot auquel se rapporte l’offre\u001e{{FINSI:ALLOTI}}\u001eà l’exclusion de toute mention permettant d’identifier le candidat pour l’enveloppe extérieure"
+   "texte": "7.1. Forme des plis\u001f{{SI:PAPIER}}\u001e{{SI:ALLOTI}}\u001eles offres devront être présentées séparément pour chacun des lots\u001e{{FINSI:ALLOTI}}\u001eOutre l’original de l’offre, les plis doivent comprendre:\u001e{{B04-FP-01}} copie(s)\u001eLes enveloppes extérieure et intérieure devront comporter les autres identifications suivantes :\u001e{{B04-FP-02}}\u001eLe nom et l’adresse du Maître de l’ouvrage : {{B01-AC-01}}, {{B01-AC-02}}\u001e- La référence du présent Appel d’Offres\u001e- La mention « NE PAS OUVRIR AVANT LA DATE ET L’HEURE D’OUVERTURE DES PLIS »,\u001e{{SI:ALLOTI}}\u001e- la référence et le numéro du lot auquel se rapporte l’offre\u001e{{FINSI:ALLOTI}}\u001eà l’exclusion de toute mention permettant d’identifier le candidat pour l’enveloppe extérieure\u001e{{FINSI:PAPIER}}\u001e{{SI:B04-SE}}\u001e{{SI:ALLOTI}}\u001eles offres devront être présentées séparément pour chacun des lots\u001e{{FINSI:ALLOTI}}\u001eL’offre est déposée en fichiers sur la plateforme : ni original ni copie sous support papier n’est demandé.\u001e{{FINSI:B04-SE}}"
   },
   {
    "type": "ligne",
-   "texte": "7.2. Lieu, date et heure, de la remise des offres\u001fAux fins de remise des offres l’adresse du Maître de l'Ouvrage est la suivante :\u001eAttention : {{B01-AC-05}}\u001eLieu :Adresse: {{B01-AC-02}}\u001eLes date et heure limites de remise des offres sont les suivantes :\u001eDate : {{B04-OV-02}}"
+   "texte": "7.2. Lieu, date et heure, de la remise des offres\u001f{{SI:PAPIER}}\u001eAux fins de remise des offres l’adresse du Maître de l'Ouvrage est la suivante :\u001eAttention : {{B01-AC-05}}\u001eLieu :Adresse: {{B01-AC-02}}\u001e{{FINSI:PAPIER}}\u001e{{SI:B04-SE}}\u001eLes offres sont déposées sur la plateforme de dépôt : {{B04-SE-02}}.\u001e{{FINSI:B04-SE}}\u001eLes date et heure limites de remise des offres sont les suivantes :\u001eDate : {{B04-OV-02}}"
   },
   {
    "type": "ligne",
-   "texte": "7.3. Remise des offres par voie électronique\u001f{{SI:PAPIER}}\u001eLe mode de remise des offres par voie électronique n'est pas possible dans le cadre du présent Appel d'Offres.\u001e{{FINSI:PAPIER}}\u001e{{SI:B04-SE}}\u001e[[CLAUSE À FOURNIR PAR LE JURISTE : conditions et modalités de la remise électronique — plateforme ({{B04-SE-02}}), heure de référence ({{B04-SE-04}}), signature exigée ({{B04-SE-05}}), formats ({{B04-SE-07}}) et tailles admis ({{B04-SE-08}} Mo par fichier, {{B04-SE-09}} Mo par offre), ouverture électronique en séance seulement, assistance ({{B04-SE-14}}), indisponibilité et prorogation ({{B04-SE-12}} h, {{B04-SE-13}} jours ouvrables)]]\u001eLa soumission par la plateforme, effectuée depuis le compte authentifié du candidat et scellée par celle-ci, vaut signature de l'offre et de l'acte d'engagement au sens de l'article 31 du Code. L'attributaire remet l'original signé de son acte d'engagement avant la signature du marché.\u001e{{FINSI:B04-SE}}"
+   "texte": "7.3. Remise des offres par voie électronique\u001f{{SI:PAPIER}}\u001eLe mode de remise des offres par voie électronique n'est pas possible dans le cadre du présent Appel d'Offres.\u001e{{FINSI:PAPIER}}\u001e{{SI:B04-SE}}\u001eLa remise électronique est le seul mode de remise des offres de la présente procédure d’appel d’offres : aucun pli sous support papier n’est reçu. Les offres sont déposées sur la plateforme de dépôt : {{B04-SE-02}}.\u001e{{SI:SE-OUVERTURE}}\u001eLes dépôts sont ouverts à compter du {{B04-SE-03}}.\u001e{{FINSI:SE-OUVERTURE}}\u001eLes dates et heures de la procédure s’entendent selon l’heure de référence suivante : {{B04-SE-04}}. Seule l’heure de la plateforme fait foi : une offre dont le dépôt n’est pas achevé à la date et à l’heure limites n’est pas recevable.\u001eNiveau de signature électronique exigé : {{B04-SE-05}}.\u001e{{SI:SE-PRESTATAIRES}}\u001ePrestataires de certification acceptés : {{B04-SE-06}}.\u001e{{FINSI:SE-PRESTATAIRES}}\u001eLes fichiers sont déposés aux formats suivants : {{B04-SE-07}}, dans la limite de {{B04-SE-08}} Mo par fichier et de {{B04-SE-09}} Mo par offre.\u001e{{SI:SE-REMPLACEMENT}}\u001eJusqu’à la date et à l’heure limites, le candidat peut remplacer ou retirer son offre sur la plateforme ; seul son dernier dépôt est ouvert.\u001e{{FINSI:SE-REMPLACEMENT}}\u001e{{SI:SE-SANS-REMPLACEMENT}}\u001eUne offre déposée ne peut être ni remplacée ni retirée.\u001e{{FINSI:SE-SANS-REMPLACEMENT}}\u001e{{SI:SE-SAUVEGARDE}}\u001eUne copie de sauvegarde est admise sous la forme suivante : {{B04-SE-11}}.\u001e{{FINSI:SE-SAUVEGARDE}}\u001eSi la plateforme est indisponible pendant plus de {{B04-SE-12}} heures au cours des {{B04-SE-16}} heures qui précèdent la date limite de remise, cette date est prorogée de {{B04-SE-13}} jours ouvrables.\u001eAssistance aux candidats : {{B04-SE-14}}.\u001e{{SI:SE-ASSISTANCE-LIMITE}}\u001eLes demandes d’assistance sont reçues jusqu’au {{B04-SE-15}}.\u001e{{FINSI:SE-ASSISTANCE-LIMITE}}\u001eLa soumission par la plateforme, effectuée depuis le compte authentifié du candidat et scellée par celle-ci, vaut signature de l'offre et de l'acte d'engagement au sens de l'article 31 du Code. L'attributaire remet l'original signé de son acte d'engagement avant la signature du marché.\u001e{{FINSI:B04-SE}}"
   },
   {
    "type": "ligne",
-   "texte": "8. Ouverture des plis\u001fLieu : {{B04-OV-01}}\u001eDate : Le même jour que la date limite fixée pour la remise des offres.\u001eHeure : {{B04-OV-02.heure}}"
+   "texte": "8. Ouverture des plis\u001f{{SI:PAPIER}}\u001eLieu : {{B04-OV-01}}\u001eDate : Le même jour que la date limite fixée pour la remise des offres.\u001eHeure : {{B04-OV-02.heure}}\u001e{{FINSI:PAPIER}}\u001e{{SI:B04-SE}}\u001eLes offres déposées sur la plateforme sont ouvertes en séance, le jour de la date limite fixée pour la remise des offres, à {{B04-OV-02.heure}}.\u001e{{SI:OP-DELAI}}\u001eLa séance d’ouverture se tient {{B04-OP-12}} minutes après l’heure limite de remise des offres.\u001e{{FINSI:OP-DELAI}}\u001e{{SI:OP-MODALITE}}\u001eModalité de la séance : {{B04-OP-10}}.\u001e{{FINSI:OP-MODALITE}}\u001e{{SI:OP-LIEN}}\u001eLes soumissionnaires peuvent suivre la séance à l’adresse suivante : {{B04-OP-11}}.\u001e{{FINSI:OP-LIEN}}\u001e{{SI:OP-PV}}\u001eLe procès-verbal de la séance est publié sur la plateforme.\u001e{{FINSI:OP-PV}}\u001eLieu de la séance, lorsqu’elle se tient en présentiel : {{B04-OV-01}}\u001e{{FINSI:B04-SE}}"
   },
   {
    "type": "ligne",

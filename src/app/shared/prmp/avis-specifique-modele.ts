@@ -129,6 +129,9 @@ export function messageIndisponible(raison: RaisonAvisIndisponible | null): stri
     // ⚠️ Lot 2b (V66) — remise électronique : publier sans clés publiées annoncerait une procédure impraticable.
     case 'CEREMONIE_NON_CLOSE':
       return 'La cérémonie des clés n’est pas close : sans clés publiées, aucun candidat ne pourrait sceller son offre. Le responsable de la procédure clôt la cérémonie, puis l’avis se publie.';
+    // ⚠️ 18/10 (« dao-electronique », Q4) — un dossier payant cite le compte de l'ARMP : sans compte réglé, l'avis imprimerait des pointillés.
+    case 'COMPTE_ARMP_ABSENT':
+      return 'Le dossier est payant et le compte bancaire de l’ARMP n’est pas réglé : l’avis imprimerait des pointillés à la place du compte. L’Administrateur règle le compte (Paramètres), puis l’avis se publie.';
     default:
       return 'L’avis spécifique n’est pas encore disponible pour ce dossier.';
   }
