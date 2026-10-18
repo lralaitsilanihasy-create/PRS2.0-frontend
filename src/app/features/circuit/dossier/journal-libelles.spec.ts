@@ -26,4 +26,8 @@ describe('actionLabel — libellés du journal des actions', () => {
     expect(actionLabel('GESTE_FUTUR')).toBe('GESTE_FUTUR');
     expect(actionLabel('')).toBe('');
   });
+  it('18/10 — la requalification du sous-type et les gestes des dossiers nés d’une fiche ont leur libellé', () => {
+    expect(actionLabel('SOUS_TYPE_REQUALIFIE')).toBe('Sous-type requalifié');
+    expect(actionLabel('PUBLICATION_AGPM_REPRISE')).toBe('Publication de l’AGPM reprise du plan');
+  });
 });
