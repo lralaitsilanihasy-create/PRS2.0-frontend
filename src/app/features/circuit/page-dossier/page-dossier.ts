@@ -68,9 +68,11 @@ const ECHECS: Record<FinOuverture, { message: string; aide: string; reprise: boo
         [gestes]="gestes()"
         [relecture]="relecture()"
         [gesteDemande]="gesteDemande()"
+        [imprimerDemande]="imprimerDemande()"
         (gesteReussi)="relire($event)"
         (relancerGestes)="relancerGestes()"
         (gesteTraite)="retirerGesteDemande()"
+        (imprimerTraite)="retirerImprimerDemande()"
       />
     } @else {
       <div class="pd">
@@ -122,6 +124,7 @@ export class PageDossier {
   private readonly idDossier = toSignal(this.route.paramMap.pipe(map((p) => lireIdDossier(p.get('idDossier')))), { initialValue: null });
   private readonly returnUrl = toSignal(this.route.queryParamMap.pipe(map((q) => q.get('returnUrl'))), { initialValue: null });
   readonly gesteDemande = toSignal(this.route.queryParamMap.pipe(map((q) => q.get('geste'))), { initialValue: null });
+  readonly imprimerDemande = toSignal(this.route.queryParamMap.pipe(map((q) => q.get('imprimer'))), { initialValue: null });
 
   /** Gestes du dossier ouvert ; relus avec lui après un geste. */
   readonly gestes = signal<EtatGestes>({ etat: 'chargement' });
@@ -222,5 +225,10 @@ export class PageDossier {
   /** `?geste=` lu : retiré de l'URL (sans nouvelle entrée d'historique), il ne rejouera pas au retour. */
   retirerGesteDemande(): void {
     void this.router.navigate([], { relativeTo: this.route, queryParams: { geste: null }, queryParamsHandling: 'merge', replaceUrl: true });
+  }
+
+  retirerImprimerDemande(): void {
+    if (!this.imprimerDemande()) return;
+    void this.router.navigate([], { relativeTo: this.route, queryParams: { imprimer: null }, queryParamsHandling: 'merge', replaceUrl: true });
   }
 }

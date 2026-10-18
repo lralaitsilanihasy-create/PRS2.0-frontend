@@ -129,6 +129,11 @@ export interface Dossier {
    */
   idDmc?: number | null;
   /**
+   * ⚠️ 18/10 (demande backend « avis-a-imprimer », §B2, EN ATTENTE) — sur les listes, pour la PRMP et l'UGPM d'un dossier né
+   * d'une fiche : le document que la PRMP imprime après le PV, et s'il est imprimable. Absent tant que le serveur ne le sert pas.
+   */
+  impressionAvis?: ImpressionAvisDossier | null;
+  /**
    * Résumé de la fiche DAO rattachée — servi sur la **lecture unitaire** (`GET /api/dossiers/{id}`) et
    * les réponses des gestes ; **absent des listes**, qui ne portent que `idDmc` (le résumé relit le plan).
    */
@@ -775,4 +780,11 @@ export interface PublicationAgpm {
   remplaceeLe: string | null;
   enVigueur: boolean;
   heritee: boolean;
+}
+
+/** `impressionAvis` d'un dossier de la liste (demande backend du 18/10, §B2). */
+export interface ImpressionAvisDossier {
+  document: 'AVIS_SPECIFIQUE' | 'LETTRES_INVITATION';
+  disponible: boolean;
+  dejaImprime: boolean;
 }

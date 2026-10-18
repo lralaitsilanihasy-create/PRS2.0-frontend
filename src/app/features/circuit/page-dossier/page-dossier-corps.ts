@@ -209,8 +209,8 @@ const HAUT_TOPBAR = 48;
           <!-- ⚠️ 18/10 (pilote) — l'encart de la fiche est passé dans les modales (Fiche DAO, Avis spécifique) ; ne reste ici que
                l'impression de l'avis ou des lettres, une fois le PV favorable (muette avant). PRMP et UGPM seulement (403 sinon). -->
           @if (domainePrmp() && dossier().idDmc; as idDmc) {
-            <app-avis-specifique class="pd-fiche" [idDmc]="idDmc" [impressionSeule]="true" />
-            <app-lettres-invitation class="pd-fiche" [idDmc]="idDmc" [impressionSeule]="true" />
+            <app-avis-specifique class="pd-fiche" [idDmc]="idDmc" [impressionSeule]="true" [ouvrirDEmblee]="imprimerDemande() === 'avis'" (ouvertureTraitee)="imprimerTraite.emit()" />
+            <app-lettres-invitation class="pd-fiche" [idDmc]="idDmc" [impressionSeule]="true" [ouvrirDEmblee]="imprimerDemande() === 'avis'" (ouvertureTraitee)="imprimerTraite.emit()" />
           }
         } @else {
           <app-fiche-marche-dossier class="pd-fiche" [dossier]="dossier()" (liaisonChangee)="apresGeste()" />
@@ -313,6 +313,10 @@ export class PageDossierCorps implements OnInit {
   readonly relancerGestes = output<void>();
   /** `?geste=` a été lu (servi ou non) : la page le retire de l'URL. */
   readonly gesteTraite = output<void>();
+  /** ⚠️ 18/10 (pilote) — `?imprimer=avis` : la fenêtre d'impression de l'avis (ou des lettres) s'ouvre d'emblée. */
+  readonly imprimerDemande = input<string | null>(null);
+  /** `?imprimer=` a été lu : la page le retire de l'URL. */
+  readonly imprimerTraite = output<void>();
 
   protected readonly contenu = inject(DossierContenuStore);
 

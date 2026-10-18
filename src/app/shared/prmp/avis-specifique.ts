@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input, output, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 
@@ -51,6 +51,13 @@ export class AvisSpecifique implements OnInit {
   readonly projetDansOnglet = input(false);
   /** ⚠️ 18/10 (pilote) — sur la page du dossier né d'une fiche : seulement l'impression de l'avis (après le PV favorable) et les avis imprimés. */
   readonly impressionSeule = input(false);
+  /**
+   * ⚠️ 18/10 (pilote) — `?imprimer=avis` (bouton du tableau de suivi, notification) : la fenêtre d'impression s'ouvre dès la
+   * lecture, si le document est imprimable. La demande est lue une fois, au chargement : la page la retire ensuite de l'URL.
+   */
+  readonly ouvrirDEmblee = input(false);
+  /** La demande d'ouverture a été lue (servie ou non). */
+  readonly ouvertureTraitee = output<void>();
 
   readonly etat = signal<DisponibiliteAvis | null>(null);
   readonly documents = signal<DocumentFiche[]>([]);
@@ -91,6 +98,7 @@ export class AvisSpecifique implements OnInit {
   /** Disponibilité et avis déjà produits, en une seule vague. Un refus de lecture tait l'encart. */
   private charger(): void {
     const id = this.idDmc();
+    const demande = this.ouvrirDEmblee();
     forkJoin({
       etat: this.fiches.disponibiliteAvis(id).pipe(catchError(() => of(null))),
       docs: this.fiches.documents(id).pipe(catchError(() => of([] as DocumentFiche[]))),
@@ -99,6 +107,10 @@ export class AvisSpecifique implements OnInit {
       .subscribe(({ etat, docs }) => {
         this.etat.set(etat);
         this.documents.set(docs);
+        if (demande) {
+          if (etat?.disponible && !this.lecture()) this.ouvrir();
+          this.ouvertureTraitee.emit();
+        }
       });
   }
 

@@ -34,6 +34,15 @@ describe('Routage d’une notification', () => {
     }
   });
 
+  it('18/10 — AVIS_A_IMPRIMER / LETTRES_A_IMPRIMER : la page du dossier, fenêtre d’impression ouverte (PRMP et UGPM)', () => {
+    for (const type of ['AVIS_A_IMPRIMER', 'LETTRES_A_IMPRIMER']) {
+      for (const role of ['PRMP', 'UGPM']) {
+        expect(routePourNotification(n({ typeNotif: type, idDossier: 100380 }), role))
+          .toEqual({ genre: 'page-dossier', commands: ['/prmp', 'dossier', '100380'], queryParams: { imprimer: 'avis' } });
+      }
+    }
+  });
+
   it('sans la page (Administrateur, Chargé de publication) : rien, l’appelant garde sa modale', () => {
     expect(routePourNotification(n({ typeNotif: 'TYPE_INCONNU', idDossier: 1052 }), 'ADMINISTRATEUR')).toBeNull();
     expect(routePourNotification(n({ typeNotif: 'TYPE_INCONNU', idDossier: 1052 }), 'CHARGE_PUBLICATION')).toBeNull();

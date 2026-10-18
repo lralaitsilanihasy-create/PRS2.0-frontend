@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input, output, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, forkJoin, of } from 'rxjs';
 
@@ -53,6 +53,13 @@ export class LettresInvitation implements OnInit {
   readonly projetDansOnglet = input(false);
   /** ⚠️ 18/10 (pilote) — sur la page du dossier né d'une fiche : seulement l'impression des lettres et les lettres imprimées. */
   readonly impressionSeule = input(false);
+  /**
+   * ⚠️ 18/10 (pilote) — `?imprimer=avis` (bouton du tableau de suivi, notification) : la fenêtre d'impression s'ouvre dès la
+   * lecture, si le document est imprimable. La demande est lue une fois, au chargement : la page la retire ensuite de l'URL.
+   */
+  readonly ouvrirDEmblee = input(false);
+  /** La demande d'ouverture a été lue (servie ou non). */
+  readonly ouvertureTraitee = output<void>();
 
   readonly etat = signal<DisponibiliteAvis | null>(null);
   readonly documents = signal<DocumentFiche[]>([]);
@@ -94,6 +101,7 @@ export class LettresInvitation implements OnInit {
 
   private charger(): void {
     const id = this.idDmc();
+    const demande = this.ouvrirDEmblee();
     forkJoin({
       etat: this.fiches.disponibiliteLettres(id).pipe(catchError(() => of(null))),
       docs: this.fiches.documents(id).pipe(catchError(() => of([] as DocumentFiche[]))),
@@ -105,6 +113,10 @@ export class LettresInvitation implements OnInit {
         this.etat.set(etat);
         this.documents.set(docs);
         this.listeAmi.set(preselection?.etat === 'DEFINITIVE' && preselection.liste.length ? preselection.liste : null);
+        if (demande) {
+          if (etat?.disponible && !this.lecture()) this.ouvrir();
+          this.ouvertureTraitee.emit();
+        }
       });
   }
 

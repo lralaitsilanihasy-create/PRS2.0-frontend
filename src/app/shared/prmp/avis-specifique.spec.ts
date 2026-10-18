@@ -80,13 +80,17 @@ describe('Avis spécifique — l’encart et la modale d’impression', () => {
   const dispo = (d: Partial<DisponibiliteAvis>): DisponibiliteAvis =>
     ({ disponible: false, raison: null, idAvis: null, statutPv: null, statutDossier: null, idDossierSoumis: 100, ...d });
 
-  function monter(etat: DisponibiliteAvis | 'refus', docs: DocumentFiche[] = [], lecture = false): void {
+  let traitee = 0;
+  function monter(etat: DisponibiliteAvis | 'refus', docs: DocumentFiche[] = [], lecture = false, emblee = false): void {
+    traitee = 0;
     toast = { success: vi.fn(), error: vi.fn() };
     TestBed.configureTestingModule({ imports: [AvisSpecifique], providers: [provideHttpClient(), provideHttpClientTesting(), { provide: ToastService, useValue: toast }] });
     http = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(AvisSpecifique);
     fixture.componentRef.setInput('idDmc', 38);
     fixture.componentRef.setInput('lecture', lecture);
+    fixture.componentRef.setInput('ouvrirDEmblee', emblee);
+    fixture.componentInstance.ouvertureTraitee.subscribe(() => traitee++);
     rendre();
     const d = http.expectOne('/api/fiches-marche/38/avis-specifique/disponibilite');
     if (etat === 'refus') d.flush({ message: 'Accès refusé' }, { status: 403, statusText: 'Forbidden' });
@@ -97,6 +101,27 @@ describe('Avis spécifique — l’encart et la modale d’impression', () => {
 
   afterEach(() => {
     try { http.verify(); } finally { TestBed.resetTestingModule(); }
+  });
+
+  it('18/10 — ?imprimer=avis : la fenêtre d’impression s’ouvre d’elle-même si l’avis est imprimable, et la demande est rendue', () => {
+    monter(dispo({ disponible: true, idAvis: 'FAV', statutPv: 'SIGNE' }), AVIS_1, false, true);
+    http.expectOne('/api/fiches-marche/38').flush({ idDmc: 38, typeMarche: 'QUANTITE_FIXE', categorie: 'TRAVAUX', cadrage: {}, valeurs: {}, valeursPpm: {}, nbLots: 1, saisieParLot: false });
+    http.expectOne((r) => r.url === '/api/champs-fiche-marche').flush({ blocs: [], champs: [] });
+    http.expectOne('/api/parametres/compte-dao').flush(COMPTE);
+    http.expectOne('/api/dossiers/100/publication-agpm').flush(JOURNAL);
+    rendre();
+    expect(racine().querySelector('[role="dialog"]')).not.toBeNull();
+    expect(traitee).toBe(1);
+  });
+
+  it('18/10 — ?imprimer=avis sur un avis indisponible, ou en lecture seule : pas de fenêtre, la demande est rendue quand même', () => {
+    monter(dispo({ raison: 'RESERVES_NON_LEVEES', idAvis: 'FAVR', statutPv: 'SIGNE' }), [], false, true);
+    expect(racine().querySelector('[role="dialog"]')).toBeNull();
+    expect(traitee).toBe(1);
+    TestBed.resetTestingModule();
+    monter(dispo({ disponible: true, idAvis: 'FAV', statutPv: 'SIGNE' }), [], true, true);
+    expect(racine().querySelector('[role="dialog"]')).toBeNull();
+    expect(traitee).toBe(1);
   });
 
   it('muet quand le serveur refuse la lecture, et pour les prestations intellectuelles', () => {

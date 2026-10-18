@@ -123,6 +123,15 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                       @if (estPrmp() && d.statut === 'EN_ATTENTE_COMPLEMENTS_DEPOT') {
                         <button type="button" class="btn btn-warning btn-sm" (click)="completer.set(d)">Compléter les pièces</button>
                       }
+                      <!-- ⚠️ 18/10 (pilote) — l'avis spécifique (ou les lettres d'invitation) est imprimable : la page du dossier,
+                           fenêtre d'impression ouverte d'emblée. Servi par le backend (« impressionAvis », demande du 18/10) :
+                           tant que le champ manque, rien ne s'affiche. PRMP et UGPM : le serveur borne déjà le champ. -->
+                      @if (d.impressionAvis?.disponible) {
+                        <a class="btn btn-primary btn-sm"
+                          [routerLink]="lien.commandes(d.idDossier)"
+                          [queryParams]="paramsImpression()"
+                        >{{ libelleImpression(d) }}</a>
+                      }
                     </div>
                   </td>
                 </tr>
@@ -161,6 +170,17 @@ export class SuiviDelais {
   private readonly lookups = inject(ReferenceLookupService);
   /** Lot L4-F6 : lien vers la page du dossier, retour vers ce suivi. */
   protected readonly lien = inject(LienDossier);
+
+  /** ⚠️ 18/10 (pilote) — le bouton d'impression : la page du dossier, fenêtre d'impression ouverte d'emblée. */
+  paramsImpression(): Record<string, string> {
+    return { ...this.lien.params(), imprimer: 'avis' };
+  }
+
+  libelleImpression(d: Dossier): string {
+    const lettres = d.impressionAvis?.document === 'LETTRES_INVITATION';
+    if (d.impressionAvis?.dejaImprime) return lettres ? 'Réimprimer les lettres' : 'Réimprimer l’avis';
+    return lettres ? 'Imprimer les lettres' : 'Imprimer l’avis';
+  }
   /** Libellés d'entité contractante / localité (cache partagé) — colonnes du tableau, sans appel par ligne. */
   private readonly entiteMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());

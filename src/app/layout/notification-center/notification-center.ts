@@ -210,7 +210,7 @@ export class NotificationCenter {
         });
       } else if (cible.genre === 'page-dossier') {
         // Lot L4-F6 : la page du dossier, avec retour sur l'écran d'où la cloche a été ouverte.
-        void this.router.navigate(cible.commands, { queryParams: { returnUrl: this.router.url } });
+        void this.router.navigate(cible.commands, { queryParams: { ...cible.queryParams, returnUrl: this.router.url } });
       } else {
         void this.router.navigate(cible.genre === 'route' ? cible.commands : cible.repli);
       }

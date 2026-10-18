@@ -322,7 +322,7 @@ export class NotificationsPage {
           error: () => void this.router.navigate(cible.repli),
         });
       } else if (cible.genre === 'page-dossier') {
-        void this.router.navigate(cible.commands, { queryParams: { returnUrl: this.retour() } });
+        void this.router.navigate(cible.commands, { queryParams: { ...cible.queryParams, returnUrl: this.retour() } });
       } else {
         void this.router.navigate(cible.genre === 'route' ? cible.commands : cible.repli);
       }
