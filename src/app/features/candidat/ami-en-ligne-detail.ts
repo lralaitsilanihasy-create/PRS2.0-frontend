@@ -9,7 +9,9 @@ import { TYPES_PIECE, ouvrirBlobSur, telechargerBlob, validerFichier } from '../
 import { AmiPublic, Expression, ExpressionCorps } from '../../models';
 import { AmisEnLigneService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
+import { Icone } from '../../shared/ui/icone';
 import { dateHeureFr, tailleLisible } from './libelles-candidat';
+import { tempsRestant } from './procedure-en-ligne-modele';
 
 /** Les refus du dépôt (AMI-a, V82). */
 const MESSAGES_DEPOT: Readonly<Record<string, string>> = {
@@ -56,12 +58,12 @@ interface LigneMembre {
 @Component({
   selector: 'app-ami-en-ligne-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur],
+  imports: [RouterLink, EtatErreur, Icone],
   template: `
     <nav class="aed__ariane" aria-label="Fil d'Ariane">
       <a routerLink="/candidat/procedures">Procédures ouvertes</a>
       <span aria-hidden="true">›</span>
-      <span aria-current="page">{{ ami()?.reference || 'Appel à manifestation d’intérêt' }}</span>
+      <span aria-current="page">{{ ami()?.objet || ami()?.reference || 'Appel à manifestation d’intérêt' }}</span>
     </nav>
 
     @if (chargement()) {
@@ -74,14 +76,25 @@ interface LigneMembre {
     } @else if (erreur()) {
       <app-etat-erreur message="L’appel n’a pas pu être chargé." (reessayer)="charger()" />
     } @else if (ami(); as a) {
-      <header class="page-header">
-        <div class="page-subtitle">
-          <span>Appel à manifestation d’intérêt</span>
-          @if (a.reference) { · <span class="cnm-mono">{{ a.reference }}</span> }
-          · <span class="badge" [class.badge-success]="a.ouvert" [class.badge-neutral]="!a.ouvert">{{ a.ouvert ? 'Ouvert' : 'Clos' }}</span>
+      <!-- ⚠️ 18/10 (pilote) — même en-tête que la page d'une procédure : l'objet, la date limite en avant avec le temps qui reste. -->
+      <header class="card aed__tete">
+        <div>
+          <p class="aed__ref">
+            <span>Appel à manifestation d’intérêt</span>
+            @if (a.reference) { <span class="cnm-mono">{{ a.reference }}</span> }
+            <span class="badge" [class.badge-success]="a.ouvert" [class.badge-neutral]="!a.ouvert">{{ a.ouvert ? 'Ouvert' : 'Clos' }}</span>
+          </p>
+          <h1 class="aed__titre">{{ a.objet || 'Objet non renseigné' }}</h1>
+          <p class="aed__sous">
+            @if (a.autoriteContractante) { <span><app-icone nom="board" [taille]="14" />{{ a.autoriteContractante }}</span> }
+            <span><app-icone nom="users" [taille]="14" />{{ a.nombreRetenus ?? '—' }} candidats retenus sur la liste restreinte</span>
+          </p>
         </div>
-        <h1 class="page-title">{{ a.objet || 'Objet non renseigné' }}</h1>
-        @if (a.autoriteContractante) { <p class="aed__sous">{{ a.autoriteContractante }}</p> }
+        <div class="aed__echeance" [class.aed__echeance--close]="!a.ouvert">
+          <span class="aed__echeance-lib">Date limite</span>
+          <strong class="aed__echeance-date">{{ a.dateLimite ? dateHeure(a.dateLimite) : '—' }}</strong>
+          <span class="aed__echeance-reste">{{ a.ouvert ? (reste(a.dateLimite) ?? '') : 'L’appel est clos.' }}</span>
+        </div>
       </header>
 
       <div class="aed__grille">
@@ -198,11 +211,21 @@ interface LigneMembre {
   styles: `
     :host { display: block; }
     .aed__ariane { display: flex; gap: 0.4rem; font-size: var(--text-sm); margin-bottom: 0.75rem; }
-    .aed__sous { margin: 0; color: var(--n-500); }
+    .aed__tete { display: grid; grid-template-columns: 1fr auto; gap: 1.25rem; align-items: center; padding: 1.25rem 1.4rem; margin-bottom: 1rem; border-top: 4px solid var(--p-600); }
+    .aed__ref { margin: 0 0 0.35rem; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; font-size: var(--text-sm); color: var(--n-500); }
+    .aed__titre { margin: 0; font-size: 1.55rem; line-height: 1.25; color: var(--n-800); }
+    .aed__sous { margin: 0.5rem 0 0; display: flex; gap: 0.4rem 1.1rem; flex-wrap: wrap; color: var(--n-500); font-size: var(--text-sm); }
+    .aed__sous span { display: inline-flex; gap: 0.35rem; align-items: center; }
+    .aed__echeance { display: flex; flex-direction: column; align-items: flex-end; gap: 0.15rem; padding: 0.8rem 1.1rem; border-radius: var(--radius-md); background: var(--p-100); color: var(--p-800); text-align: right; min-width: 13rem; }
+    .aed__echeance--close { background: var(--n-100); color: var(--n-600); }
+    .aed__echeance-lib { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }
+    .aed__echeance-date { font-size: 1.2rem; }
+    .aed__echeance-reste { font-size: var(--text-sm); }
+    @media (max-width: 640px) { .aed__tete { grid-template-columns: 1fr; } .aed__echeance { align-items: flex-start; text-align: left; min-width: 0; } }
     .aed__grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: 1rem; }
     .aed__bloc { padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.55rem; }
     .aed__bloc--large { grid-column: 1 / -1; }
-    .aed__h2 { margin: 0; font-size: 1.05rem; }
+    .aed__h2 { margin: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-600); }
     .aed__h3 { margin: 0.6rem 0 0; font-size: 0.95rem; }
     .aed__dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.3rem 1rem; margin: 0; }
     .aed__dl dd { margin: 0; }
@@ -226,6 +249,7 @@ export class AmiEnLigneDetail implements OnInit {
   readonly idDmc = Number(inject(ActivatedRoute).snapshot.paramMap.get('idDmc'));
 
   readonly dateHeure = dateHeureFr;
+  readonly reste = (d: string | null | undefined): string | null => tempsRestant(d);
   readonly taille = tailleLisible;
   readonly connecte = computed(() => this.auth.isAuthenticated() && this.auth.role() === 'CANDIDAT');
 

@@ -95,7 +95,7 @@ function motifDepot(e: unknown, enveloppe: EnveloppeOffre | null = null): string
   template: `
     <nav class="do__ariane" aria-label="Fil d'Ariane">
       <a routerLink="/candidat/procedures">Procédures ouvertes</a><span aria-hidden="true">›</span>
-      <a [routerLink]="['/candidat', 'procedures', idDmc]">{{ procedure()?.reference || 'Procédure' }}</a><span aria-hidden="true">›</span>
+      <a [routerLink]="['/candidat', 'procedures', idDmc]">{{ procedure()?.objet || procedure()?.reference || 'Procédure' }}</a><span aria-hidden="true">›</span>
       <span aria-current="page">{{ titreDepot() }}</span>
     </nav>
 
@@ -114,7 +114,14 @@ function motifDepot(e: unknown, enveloppe: EnveloppeOffre | null = null): string
       </header>
 
       @if (bloquant(); as b) {
-        <div class="alert alert-danger" role="alert"><span>{{ b }}@if (fraisNonRegles()) { <a class="do__lien-frais" [routerLink]="['/candidat', 'procedures', idDmc]">Aller aux frais de dossier</a> }</span></div>
+        <!-- ⚠️ 18/10 (pilote) — une attente (dépôts pas encore ouverts, reçu à valider) n'est pas une erreur : bandeau d'information ;
+             le rouge reste aux vrais refus (exclusion, dépôts clos, remplacement interdit). -->
+        <div class="alert" [class.alert-info]="attente()" [class.alert-danger]="!attente()" [attr.role]="attente() ? 'status' : 'alert'">
+          <span>{{ b }}
+            @if (fraisNonRegles()) { <a class="do__lien-frais" [routerLink]="['/candidat', 'procedures', idDmc]">Aller aux frais de dossier</a> }
+            @else { <a class="do__lien-frais" [routerLink]="['/candidat', 'procedures', idDmc]">Revenir à la procédure</a> }
+          </span>
+        </div>
       } @else if (phase() === 'fait' && accuse(); as a) {
         <!-- L'accusé de réception : ce que le candidat garde. -->
         <section class="card do__accuse" aria-labelledby="do-accuse">
@@ -350,6 +357,8 @@ export class DepotOffre implements OnInit, OnDestroy {
   readonly chargement = signal(true);
   readonly erreurChargement = signal<string | null>(null);
   readonly bloquant = signal<string | null>(null);
+  /** Le motif du blocage est une ATTENTE (dépôts à venir, reçu à valider), pas un refus. */
+  readonly attente = signal(false);
   /** 06/10 (décision A) — dossier payant sans reçu validé : l'écran ne s'ouvre pas, et renvoie aux frais de dossier. */
   readonly fraisNonRegles = signal(false);
   /** Le reçu validé de l'entreprise, pour un retrait payant ; `null` sinon. Ses `lots` (`null` = tout le dossier) gardent le dépôt. */
@@ -565,10 +574,20 @@ export class DepotOffre implements OnInit, OnDestroy {
         this.maintenant.set(Date.now());
         this.document.title = `Dépôt — ${procedure.reference || 'procédure'} — Espace candidat — PRS 2.0`;
         if (entreprise.exclusion) this.bloquant.set(messageExclusion(entreprise.exclusion));
-        else if (!procedure.depotsOuverts) this.bloquant.set(procedure.etat === 'CLOSE' ? 'La date limite est passée : les dépôts sont clos.' : 'Les dépôts ne sont pas encore ouverts pour cette procédure.');
+        else if (!procedure.depotsOuverts) {
+          this.attente.set(procedure.etat !== 'CLOSE');
+          this.bloquant.set(
+            procedure.etat === 'CLOSE'
+              ? 'La date limite est passée : les dépôts sont clos.'
+              : procedure.dateOuvertureDepots
+                ? `Les dépôts ne sont pas encore ouverts : ils ouvrent le ${this.dateHeure(procedure.dateOuvertureDepots)}.`
+                : 'Les dépôts ne sont pas encore ouverts pour cette procédure.',
+          );
+        }
         else if (this.remplaceActif() && procedure.remplacementAutorise === false) this.bloquant.set('Cette procédure n’autorise pas le remplacement d’une offre déposée.');
         else if (procedure.retraitPayant && recu?.etat !== 'VALIDE') {
           this.fraisNonRegles.set(true);
+          this.attente.set(true);
           this.bloquant.set(
             recu?.etat === 'EN_ATTENTE'
               ? 'Votre reçu de paiement des frais de dossier attend la validation de la personne responsable des marchés : le dépôt s’ouvrira dès qu’il sera validé.'

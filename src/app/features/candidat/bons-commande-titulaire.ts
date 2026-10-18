@@ -9,6 +9,7 @@ import { ariary } from '../evaluation/libelles-evaluation';
 import { DECISIONS_RECEPTION, ETATS_RECEPTION_BON, livraisonAttendue, refusReception } from '../receptions/receptions-bon';
 import { dateFr } from '../../core/interim/interim-libelles';
 import { dateHeureFr } from './libelles-candidat';
+import { EtatVideCandidat } from './etat-vide-candidat';
 
 /**
  * ⚠️ Lot MS-3 (V126, 16/10) — **les bons de commande** reçus par le titulaire (contrat-cadre ou marché à commandes). La première
@@ -17,12 +18,16 @@ import { dateHeureFr } from './libelles-candidat';
  */
 @Component({
   selector: 'app-bons-commande-titulaire',
-  imports: [EtatErreur],
+  imports: [EtatErreur, EtatVideCandidat],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="bt">
-      <h1 class="bt__h1">Bons de commande</h1>
-      <p class="text-sm text-muted bt__intro">Les commandes de l’administration au titre de vos contrats-cadres et marchés à commandes. Ouvrir un bon en accuse réception.</p>
+      <!-- ⚠️ 18/10 (pilote) — même en-tête que les autres pages de l'espace. -->
+      <header class="page-header">
+        <div class="page-subtitle">Espace candidat</div>
+        <h1 class="page-title">Bons de commande</h1>
+      </header>
+      <p class="page-role">Les commandes de l’administration au titre de vos contrats-cadres et marchés à commandes. Ouvrir un bon en accuse réception.</p>
       @if (chargement()) {
         <p class="text-muted" role="status">Chargement des bons…</p>
       } @else if (erreur(); as m) {
@@ -71,15 +76,15 @@ import { dateHeureFr } from './libelles-candidat';
               } @else { <p class="text-sm text-muted" role="status">Chargement…</p> }
             }
           </article>
-        } @empty { <p class="text-muted">Aucun bon de commande ne vous est adressé.</p> }
+        } @empty { <app-etat-vide-candidat icone="clip" titre="Aucun bon de commande ne vous est adressé" texte="Les commandes émises au titre de vos contrats-cadres et marchés à commandes paraissent ici ; ouvrir un bon en accuse réception." /> }
         @if (erreurDoc(); as e) { <div class="alert alert-danger" role="alert">{{ e }}</div> }
       }
     </section>
   `,
   styles: `
     .bt { display: flex; flex-direction: column; gap: 0.8rem; }
-    .bt__h1 { margin: 0; font-size: 1.3rem; }
-    .bt__intro { margin: 0; }
+    .bt > .page-header { margin-bottom: 0; }
+    .bt > .page-role { margin-top: -0.4rem; }
     .bt__carte { padding: 0.8rem 1rem; display: flex; flex-direction: column; gap: 0.4rem; }
     .bt__annule { opacity: 0.8; }
     .bt__tete { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }

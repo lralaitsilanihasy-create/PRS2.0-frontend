@@ -6,6 +6,7 @@ import { EtatProcedureEnLigne, InvitationCandidat } from '../../models';
 import { InvitationsCandidatService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr } from './libelles-candidat';
+import { EtatVideCandidat } from './etat-vide-candidat';
 
 const LIBELLES_ETAT: Readonly<Record<EtatProcedureEnLigne, string>> = {
   A_VENIR: 'Dépôts pas encore ouverts',
@@ -21,7 +22,7 @@ const LIBELLES_ETAT: Readonly<Record<EtatProcedureEnLigne, string>> = {
 @Component({
   selector: 'app-mes-invitations',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur],
+  imports: [RouterLink, EtatErreur, EtatVideCandidat],
   template: `
     <header class="page-header">
       <div class="page-subtitle">Espace candidat</div>
@@ -34,12 +35,9 @@ const LIBELLES_ETAT: Readonly<Record<EtatProcedureEnLigne, string>> = {
     } @else if (erreur()) {
       <app-etat-erreur message="Vos invitations n'ont pas pu être chargées." (reessayer)="charger()" />
     } @else if (!invitations().length) {
-      <div class="empty-state">
-        <p class="empty-state-title">Aucune invitation.</p>
-        <p class="empty-state-text">
-          Si une lettre d’invitation vous a été adressée par courriel, créez votre compte avec cette même adresse : l’invitation s’y rattache.
-        </p>
-      </div>
+      <app-etat-vide-candidat icone="mail" titre="Aucune invitation" texte="Les consultations restreintes ne sont pas publiées. Si une lettre d’invitation vous a été adressée par courriel, créez votre compte avec cette même adresse : l’invitation s’y rattache.">
+        <a etatVideAction class="btn btn-outline btn-sm" routerLink="/candidat/procedures">Voir les procédures ouvertes</a>
+      </app-etat-vide-candidat>
     } @else {
       @if (message(); as m) { <div class="alert alert-danger" role="alert">{{ m }}</div> }
       <ul class="mi" aria-label="Mes invitations">

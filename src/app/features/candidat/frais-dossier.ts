@@ -55,6 +55,10 @@ function motifRefus(e: unknown): string {
         <dt>À verser au compte</dt><dd>{{ c.titulaire }}{{ c.banque ? ' · ' + c.banque : '' }} · <span class="cnm-mono">{{ c.numeroCompte }}</span></dd>
       }
     </dl>
+    <!-- ⚠️ 18/10 (pilote) — sans compte publié, le candidat ne savait pas où verser : l'écran le dit et renvoie à l'assistance. -->
+    @if (!p.compteDao && (p.fraisDossier?.length ?? 0) > 0) {
+      <p class="fd__sans-compte" role="status">Le compte de versement n’est pas encore publié. Renseignez-vous auprès de l’assistance aux candidats avant de payer.</p>
+    }
     <p class="text-sm text-muted">Le paiement se fait hors de la plateforme. Déposez ensuite le reçu de votre versement : le dossier se retire dès que la personne responsable des marchés l’a validé.</p>
 
     @if (chargement()) {
@@ -109,6 +113,7 @@ function motifRefus(e: unknown): string {
     .fd__dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 0.3rem 1rem; font-size: var(--text-sm); }
     .fd__dl dt { color: var(--n-500); }
     .fd__dl dd { margin: 0; }
+    .fd__sans-compte { margin: 0; padding: 0.5rem 0.7rem; border-radius: var(--radius-md); background: #fffbeb; border: 1px solid #fde68a; color: #92400e; font-size: var(--text-sm); }
     .fd__etat { display: flex; flex-wrap: wrap; gap: 0.4rem 0.75rem; align-items: center; padding: 0.6rem 0.75rem; border: 1px solid var(--n-200); border-left: 4px solid var(--warning-text); border-radius: var(--radius-md); }
     .fd__etat--ok { border-left-color: var(--success-text); }
     .fd__etat--ko { border-left-color: var(--danger-text); }

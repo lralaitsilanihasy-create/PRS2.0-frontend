@@ -78,6 +78,6 @@ describe('Mes invitations (lot 3 PI, tranche PI-a — V84)', () => {
     monter();
     http.expectOne('/api/candidat/invitations').flush([]);
     fixture.detectChanges();
-    expect(texte(racine().querySelector('.empty-state'))).toContain('créez votre compte avec cette même adresse');
+    expect(texte(racine().querySelector('app-etat-vide-candidat'))).toContain('créez votre compte avec cette même adresse');
   });
 });

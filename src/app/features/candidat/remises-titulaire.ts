@@ -10,6 +10,7 @@ import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { ariary } from '../evaluation/libelles-evaluation';
 import { NATURES_REPONSE, refusRemise } from '../remises/remise-detail';
 import { dateHeureFr } from './libelles-candidat';
+import { EtatVideCandidat } from './etat-vide-candidat';
 
 const RESULTATS: Readonly<Record<string, { texte: string; classe: string }>> = {
   EN_COURS: { texte: 'En cours', classe: 'badge-info' },
@@ -25,12 +26,16 @@ const RESULTATS: Readonly<Record<string, { texte: string; classe: string }>> = {
  */
 @Component({
   selector: 'app-remises-titulaire',
-  imports: [EtatErreur],
+  imports: [EtatErreur, EtatVideCandidat],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="rt">
-      <h1 class="rt__h1">Remises en concurrence</h1>
-      <p class="text-sm text-muted rt__intro">Les marchés subséquents des contrats-cadres dont vous êtes titulaire. Le titulaire est tenu de répondre aux remises en concurrence (décret n° 2019-1064, art. 22) ; votre réponse peut être remplacée jusqu’à l’échéance.</p>
+      <!-- ⚠️ 18/10 (pilote) — même en-tête que les autres pages de l'espace. -->
+      <header class="page-header">
+        <div class="page-subtitle">Espace candidat</div>
+        <h1 class="page-title">Remises en concurrence</h1>
+      </header>
+      <p class="page-role">Les marchés subséquents des contrats-cadres dont vous êtes titulaire. Le titulaire est tenu de répondre aux remises en concurrence (décret n° 2019-1064, art. 22) ; votre réponse peut être remplacée jusqu’à l’échéance.</p>
       @if (chargement()) {
         <p class="text-muted" role="status">Chargement des remises…</p>
       } @else if (erreur(); as m) {
@@ -79,15 +84,15 @@ const RESULTATS: Readonly<Record<string, { texte: string; classe: string }>> = {
               </details>
             }
           </article>
-        } @empty { <p class="text-muted">Aucune remise en concurrence ne vous est adressée.</p> }
+        } @empty { <app-etat-vide-candidat icone="history" titre="Aucune remise en concurrence ne vous est adressée" texte="Quand l’administration remet en concurrence les titulaires d’un contrat-cadre dont vous faites partie, la demande paraît ici avec son échéance." /> }
         @if (erreurDoc(); as e) { <div class="alert alert-danger" role="alert">{{ e }}</div> }
       }
     </section>
   `,
   styles: `
     .rt { display: flex; flex-direction: column; gap: 0.8rem; }
-    .rt__h1 { margin: 0; font-size: 1.3rem; }
-    .rt__intro { margin: 0; }
+    .rt > .page-header { margin-bottom: 0; }
+    .rt > .page-role { margin-top: -0.4rem; }
     .rt__carte { padding: 0.8rem 1rem; display: flex; flex-direction: column; gap: 0.45rem; }
     .rt__tete { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
     .rt__h2 { margin: 0; font-size: 1rem; flex: 1 1 auto; }

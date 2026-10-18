@@ -12,6 +12,7 @@ import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DemandesOffre } from './demandes-offre';
 import { ResultatOffreCandidat } from './resultat-offre';
 import { dateHeureFr, tailleLisible } from './libelles-candidat';
+import { EtatVideCandidat } from './etat-vide-candidat';
 
 const LIBELLES_ETAT: Readonly<Record<EtatOffre, string>> = {
   EN_COURS: 'Dépôt inachevé',
@@ -42,7 +43,7 @@ export function enveloppeManquante(o: Offre, toutes: Offre[]): EnveloppeOffre | 
 @Component({
   selector: 'app-mes-offres',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur, DemandesOffre, ResultatOffreCandidat],
+  imports: [RouterLink, EtatErreur, DemandesOffre, ResultatOffreCandidat, EtatVideCandidat],
   template: `
     <header class="page-header">
       <div class="page-subtitle">Espace candidat</div>
@@ -55,10 +56,9 @@ export function enveloppeManquante(o: Offre, toutes: Offre[]): EnveloppeOffre | 
     } @else if (erreur()) {
       <app-etat-erreur message="Vos offres n'ont pas pu être chargées." (reessayer)="charger()" />
     } @else if (!offres().length) {
-      <div class="empty-state">
-        <p class="empty-state-title">Aucune offre déposée.</p>
-        <p class="empty-state-text"><a routerLink="/candidat/procedures">Voir les procédures ouvertes</a>.</p>
-      </div>
+      <app-etat-vide-candidat icone="send" titre="Aucune offre déposée" texte="Choisissez une procédure ouverte, retirez son dossier, puis déposez votre offre : elle est chiffrée sur votre poste et apparaît ici avec son accusé de réception.">
+        <a etatVideAction class="btn btn-primary btn-sm" routerLink="/candidat/procedures">Voir les procédures ouvertes</a>
+      </app-etat-vide-candidat>
     } @else {
       @if (message(); as m) { <div class="alert alert-danger" role="alert">{{ m }}</div> }
       <ul class="mo" aria-label="Mes offres">
