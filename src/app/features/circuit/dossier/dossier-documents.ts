@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 
 import { ToastService } from '../../../core/notifications/toast.service';
 import { ouvrirBlobSur } from '../../../core/securite/fichiers-surs';
@@ -8,7 +8,6 @@ import { PieceJointeDossierService, PvExamenService } from '../../../services';
 import { CalendrierAnnuel } from '../../../shared/circuit/calendrier-annuel';
 import { ControlesDossier } from '../../../shared/circuit/controles-dossier';
 import { PublicationAgpmPanneau } from '../../../shared/circuit/publication-agpm';
-import { controlesEffectifs } from '../../../shared/circuit/controles-libelles';
 import { AgpmDoc } from '../../../shared/prmp/agpm-doc';
 import { FicheDaoDoc } from '../../../shared/prmp/fiche-dao-doc';
 import { FichePresentationDoc } from '../../../shared/prmp/fiche-presentation-doc';
@@ -16,7 +15,8 @@ import { PpmMarchesTable } from '../../../shared/prmp/ppm-marches-table';
 import { DocumentVisionneuse } from '../../../shared/ui/document-visionneuse';
 import { DossierContenuStore } from './dossier-contenu.store';
 import { DossierInstantanes } from './dossier-instantanes';
-import { DossierPieces, ongletDuFichier } from './dossier-pieces';
+import { DocumentDuDossier, OngletDossier, documentsDuDossier, fichiersDeLOnglet } from './documents-du-dossier';
+import { DossierPieces } from './dossier-pieces';
 import { AvisSpecifiqueDoc } from './avis-specifique-doc';
 import { BordereauEstimatifDoc } from './bordereau-estimatif-doc';
 import { CanevasRapportDoc } from './canevas-rapport-doc';
@@ -126,7 +126,7 @@ import { PlanDuDossierDao } from './plan-du-dossier-dao';
     @if (contenu.estPpm()) {
       @if (ongletDossier() === 'pieces') {
         <div class="dc-section">
-          <app-dossier-pieces (voir)="ongletChoisi.set($event)" />
+          <app-dossier-pieces (voir)="voirOnglet($event)" />
         </div>
       }
     } @else {
@@ -134,46 +134,14 @@ import { PlanDuDossierDao } from './plan-du-dossier-dao';
            prennent place à côté des pièces jointes, en onglets ; sans instantané (dossier soumis avant V104, ou non soumis), la
            section des pièces reste seule, comme avant. -->
       @if (ongletsProcedure()) {
+        <!-- ⚠️ 18/10 — les éléments viennent de la liste commune (documentsDuDossier) : la page du dossier né d'une fiche les sert en
+             boutons de son panneau d'étape, qui ouvrent ce même composant en modale (onglet imposé, sans barre). -->
         <div class="onglets-dossier" role="tablist" aria-label="Éléments du dossier">
-          <!-- ⚠️ 17/10 (demande « pieces-dmc-par-les-donnees », pilote) — un dossier né d'une fiche se présente comme le dossier de
-               planification : ses éléments sont des DONNÉES de l'application (fiche de présentation, fiche DAO, plan contrôlé), en
-               onglets, avant les pièces jointes. -->
-          @if (contenu.dossier().idDmc) {
-            <button type="button" class="onglets-dossier__tab onglets-dossier__tab--vert" role="tab" [class.onglets-dossier__tab--on]="ongletProcedure() === 'presentation'"
-              [attr.aria-selected]="ongletProcedure() === 'presentation'" (click)="ongletChoisi.set('presentation')">Fiche de présentation</button>
-            <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletProcedure() === 'fiche-dao'"
-              [attr.aria-selected]="ongletProcedure() === 'fiche-dao'" (click)="ongletChoisi.set('fiche-dao')">Fiche DAO</button>
-            <!-- ⚠️ 18/10 (« avis-specifique-en-donnees », B1) — le projet d'avis en données, quand la fiche l'a joint au dossier. -->
-            @if (fichiersOnglet('avis').length) {
-              <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletProcedure() === 'avis'"
-                [attr.aria-selected]="ongletProcedure() === 'avis'" (click)="ongletChoisi.set('avis')">{{ lettreInvitation() ? 'Lettre d’invitation' : 'Avis spécifique' }}</button>
-            }
-            <button type="button" class="onglets-dossier__tab onglets-dossier__tab--bleu" role="tab" [class.onglets-dossier__tab--on]="ongletProcedure() === 'plan'"
-              [attr.aria-selected]="ongletProcedure() === 'plan'" (click)="ongletChoisi.set('plan')">Plan de passation</button>
-            <!-- ⚠️ 17/10 (« canevas-rapport-evaluation », B1) — produit par l'application, hors contrat-cadre (manuel p. 32). -->
-            @if (avecCanevas()) {
-              <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletProcedure() === 'canevas'"
-                [attr.aria-selected]="ongletProcedure() === 'canevas'" (click)="ongletChoisi.set('canevas')">Canevas de rapport</button>
-            }
-            <!-- ⚠️ 18/10 (pilote) — le bordereau estimatif (DQE en travaux) en données, au lieu du seul PDF joint d'office. -->
-            <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletProcedure() === 'bordereau'"
-              [attr.aria-selected]="ongletProcedure() === 'bordereau'" (click)="ongletChoisi.set('bordereau')">Bordereau estimatif</button>
-          }
-          <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletProcedure() === 'pieces'"
-            [attr.aria-selected]="ongletProcedure() === 'pieces'" (click)="ongletChoisi.set('pieces')">
-            Pièces jointes <span class="onglets-dossier__n">{{ contenu.pieces().length }}</span>
-          </button>
-          @if (contenu.instantanesVisible()) {
-            <button type="button" class="onglets-dossier__tab onglets-dossier__tab--gris" role="tab" [class.onglets-dossier__tab--on]="ongletProcedure() === 'figes'"
-              [attr.aria-selected]="ongletProcedure() === 'figes'" (click)="ongletChoisi.set('figes')">
-              Écrans figés <span class="onglets-dossier__n">{{ contenu.instantanes().length }}</span>
-            </button>
-          }
-          <!-- ⚠️ R5 (V105, 13/10) — les contrôles du dossier (automatiques à la soumission, B du Membre), en lecture pour tous ceux qui lisent le dossier. -->
-          @if (contenu.controlesVisible()) {
-            <button type="button" class="onglets-dossier__tab onglets-dossier__tab--vert" role="tab" [class.onglets-dossier__tab--on]="ongletProcedure() === 'controles'"
-              [attr.aria-selected]="ongletProcedure() === 'controles'" (click)="ongletChoisi.set('controles')">
-              Contrôles <span class="onglets-dossier__n">{{ nbControles() }}</span>
+          @for (o of documents(); track o.cle) {
+            <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--vert]="o.teinte === 'vert'"
+              [class.onglets-dossier__tab--bleu]="o.teinte === 'bleu'" [class.onglets-dossier__tab--gris]="o.teinte === 'gris'"
+              [class.onglets-dossier__tab--on]="ongletProcedure() === o.cle" [attr.aria-selected]="ongletProcedure() === o.cle" (click)="ongletChoisi.set(o.cle)">
+              {{ o.libelle }} @if (o.n !== undefined) {<span class="onglets-dossier__n">{{ o.n }}</span> }
             </button>
           }
         </div>
@@ -268,7 +236,7 @@ import { PlanDuDossierDao } from './plan-du-dossier-dao';
             <!-- ⚠️ V118 (15/10) — la publication de l'AGPM du plan, reprise d'office (muette sans plan ni publication). -->
             <app-publication-agpm [idDossier]="contenu.dossier().idDossier" />
           }
-          <app-dossier-pieces (voir)="ongletChoisi.set($event)" />
+          <app-dossier-pieces (voir)="voirOnglet($event)" />
         </div>
       }
       @if (contenu.instantanesVisible() && ongletProcedure() === 'figes') {
@@ -315,21 +283,29 @@ export class DossierDocuments {
   /** Onglet actif — ouverture sur le plan, comme le détail PPM. */
   readonly ongletDossier = signal<'ppm' | 'fiche' | 'agpm' | 'pieces' | 'historique'>('ppm');
   /** ⚠️ R4 / R5 (13/10) — dossier de procédure : pièces jointes (ouverture), écrans figés à la soumission, contrôles. */
-  readonly ongletChoisi = signal<'presentation' | 'fiche-dao' | 'avis' | 'plan' | 'canevas' | 'bordereau' | 'pieces' | 'figes' | 'controles' | null>(null);
-  /** Prestations intellectuelles : le projet joint est une lettre d'invitation. */
-  readonly lettreInvitation = computed(() => this.fichiersOnglet('avis').some((p) => (p.nomFichier ?? '').startsWith('LETTRE_PROJET_')));
+  readonly ongletChoisi = signal<OngletDossier | null>(null);
+  /** ⚠️ 18/10 (pilote) — sur la page du dossier né d'une fiche, la modale impose l'élément ouvert : pas de barre d'onglets. */
+  readonly ongletImpose = input<OngletDossier | null>(null);
+  /** Un renvoi de la liste des pièces, en mode imposé : l'hôte change l'élément de sa modale. */
+  readonly ongletDemande = output<OngletDossier>();
+  readonly documents = computed<DocumentDuDossier[]>(() => documentsDuDossier(this.contenu));
+  voirOnglet(o: OngletDossier): void {
+    if (this.ongletImpose()) this.ongletDemande.emit(o);
+    else this.ongletChoisi.set(o);
+  }
   /** ⚠️ 17/10 (« canevas-rapport-evaluation ») — le canevas de rapport d'évaluation : dossier né d'une fiche, hors contrat-cadre. */
   readonly avecCanevas = computed(() => !!this.contenu.dossier().idDmc && this.contenu.dossier().ficheMarche?.typeMarche !== 'CONTRAT_CADRE');
   /** ⚠️ 17/10 — un dossier né d'une fiche s'ouvre sur sa fiche de présentation, comme le dossier de planification sur son plan. */
-  readonly ongletProcedure = computed(() => this.ongletChoisi() ?? (this.contenu.dossier().idDmc ? 'presentation' : 'pieces'));
-  readonly ongletsProcedure = computed(() => !!this.contenu.dossier().idDmc || this.contenu.instantanesVisible() || this.contenu.controlesVisible());
+  readonly ongletProcedure = computed(() => this.ongletImpose() ?? this.ongletChoisi() ?? (this.contenu.dossier().idDmc ? 'presentation' : 'pieces'));
+  readonly ongletsProcedure = computed(() => !this.ongletImpose()
+    && (!!this.contenu.dossier().idDmc || this.contenu.instantanesVisible() || this.contenu.controlesVisible()));
   private readonly pvService = inject(PvExamenService);
   private readonly toast = inject(ToastService);
   private readonly pieceService = inject(PieceJointeDossierService);
 
   /** ⚠️ 18/10 — les fichiers produits par la fiche que montre un onglet (hors pièces d'après lettre de renvoi). */
   fichiersOnglet(onglet: 'fiche-dao' | 'avis' | 'bordereau'): PieceJointeDossier[] {
-    return this.contenu.pieces().filter((p) => !p.apresLettreRenvoi && ongletDuFichier(p, true) === onglet);
+    return fichiersDeLOnglet(this.contenu.pieces(), onglet);
   }
 
   ouvrirPiece(p: PieceJointeDossier): void {
@@ -348,8 +324,6 @@ export class DossierDocuments {
       error: () => { this.ouverturePv.set(false); this.toast.error('Le PV n’a pas pu être ouvert.'); },
     });
   }
-  /** Les contrôles tels qu'ils comptent (par règle, le dernier résultat posé) — l'historique complet reste dans l'onglet. */
-  readonly nbControles = computed(() => controlesEffectifs(this.contenu.controles()).length);
   /**
    * ⚠️ 2026-09-14 (décision des chefs) — annotations des documents officiels visibles (statut du
    * marché, versionnement, état d'examen…) : un seul interrupteur pour tous les onglets de l'écran.

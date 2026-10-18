@@ -93,6 +93,8 @@ import { SuiviRetrait } from './suivi-retrait';
           </div>
         }
       </div>
+      <!-- ⚠️ 18/10 (pilote) — les éléments du dossier, en boutons qui ouvrent chacun sa modale (page du dossier né d'une fiche). -->
+      <ng-content select="[ecDocuments]" />
       @if (retraitDevant()) {
         @if (vue().retrait; as r) {
           <!-- Lot F5 : la décision est le geste principal — sous le titre, le volet de la demande à droite. -->

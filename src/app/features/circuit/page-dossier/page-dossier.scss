@@ -324,3 +324,41 @@
   display: block;
   max-width: 48rem;
 }
+
+// ⚠️ 18/10 (pilote) — dossier né d'une fiche : ses éléments en boutons, dans le panneau d'étape ; chacun s'ouvre en modale.
+.pd-docs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--n-200);
+}
+.pd-docs__titre {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--n-500);
+  margin-right: 0.25rem;
+}
+.pd-docs__btn--vert { border-color: var(--success-300, #86efac); color: var(--success-text, #15803d); }
+.pd-docs__btn--bleu { border-color: var(--primary-300, #93c5fd); color: var(--primary-700, #1d4ed8); }
+.pd-docs__n {
+  margin-left: 0.35rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--n-100);
+  font-size: 0.72rem;
+}
+.pd-docmodal {
+  width: 96vw;
+  max-width: 96vw;
+  height: 94vh;
+  max-height: 94vh;
+  display: flex;
+  flex-direction: column;
+}
+.pd-docmodal__ref { font-weight: 400; color: var(--n-500); font-size: 0.9rem; }
+.pd-docmodal__corps { flex: 1; overflow: auto; padding: 0; }

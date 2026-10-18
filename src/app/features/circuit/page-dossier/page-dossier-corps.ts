@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, OnInit, computed, effect, inject, input, output, signal, untracked, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NgTemplateOutlet } from '@angular/common';
 import { Router, RouterLink, UrlTree } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
@@ -14,6 +15,7 @@ import { DossiersRefreshStore } from '../../prmp/dossiers-refresh.store';
 import { DispatchForm, DispatchItem } from '../dispatch-form';
 import { DossierContenuStore } from '../dossier/dossier-contenu.store';
 import { DossierDocuments } from '../dossier/dossier-documents';
+import { OngletDossier, documentsDuDossier } from '../dossier/documents-du-dossier';
 import { DossierIdentite } from '../dossier/dossier-identite';
 import { DossierJournal } from '../dossier/dossier-journal';
 import { ModaleGeste, OuvrirGeste } from '../gestes/ouvrir-geste';
@@ -51,6 +53,7 @@ const HAUT_TOPBAR = 48;
   selector: 'app-page-dossier-corps',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    NgTemplateOutlet,
     RouterLink,
     ActesGestionMarche,
     ActeGestionDossier,
@@ -184,7 +187,9 @@ const HAUT_TOPBAR = 48;
           @if (vue(); as v) {
             <app-etape-courante #panneau [vue]="v" [occupe]="occupe()" [idLocalite]="dossier().idLocalite ?? null" [lienPv]="lienPv()"
               [gesteFocus]="focusNavette()" [suiviRetrait]="suiviRetrait()" (agir)="agir($event)" (navetteChangee)="apresGeste()"
-              (retraitDecide)="apresGeste($event === 'acceptee' ? 'retrait-accepte' : null)" />
+              (retraitDecide)="apresGeste($event === 'acceptee' ? 'retrait-accepte' : null)">
+              @if (enModale() && !contenu.loading()) { <ng-container ecDocuments><ng-container *ngTemplateOutlet="boutonsDocuments" /></ng-container> }
+            </app-etape-courante>
           }
         }
       }
@@ -208,11 +213,41 @@ const HAUT_TOPBAR = 48;
             <div class="spinner" aria-hidden="true"></div>
             <span class="cnm-sr-only">Chargement des documents du dossier…</span>
           </div>
+        } @else if (enModale()) {
+          <!-- Sans panneau d'étape (lecture seule, échec), les boutons prennent la place des onglets. -->
+          @if (gestes().etat !== 'pret' || !vue()) { <ng-container *ngTemplateOutlet="boutonsDocuments" /> }
         } @else {
           <app-dossier-documents [enteteCollante]="true" />
         }
       </section>
     </div>
+
+    <!-- ⚠️ 18/10 (pilote) — dossier né d'une fiche : chaque élément s'ouvre en modale depuis un bouton, au lieu des onglets. -->
+    <ng-template #boutonsDocuments>
+      <div class="pd-docs" role="group" aria-labelledby="pd-docs-titre">
+        <span class="pd-docs__titre" id="pd-docs-titre">Le dossier</span>
+        @for (o of documents(); track o.cle) {
+          <button type="button" class="btn btn-outline btn-sm pd-docs__btn" [class.pd-docs__btn--vert]="o.teinte === 'vert'" [class.pd-docs__btn--bleu]="o.teinte === 'bleu'"
+            (click)="docOuvert.set(o.cle)">
+            {{ o.libelle }} @if (o.n !== undefined) {<span class="pd-docs__n">{{ o.n }}</span> }
+          </button>
+        }
+      </div>
+    </ng-template>
+    @if (docOuvert(); as cle) {
+      <div class="modal-backdrop">
+        <div class="modal pd-docmodal" role="dialog" aria-modal="true" [attr.aria-label]="libelleDoc(cle) + ' — ' + reference()"
+          appModale (appModaleFermer)="docOuvert.set(null)">
+          <div class="modal-header">
+            <h2 class="modal-title">{{ libelleDoc(cle) }} <span class="pd-docmodal__ref">· {{ reference() }}</span></h2>
+            <button type="button" class="btn-close" aria-label="Fermer" (click)="docOuvert.set(null)">✕</button>
+          </div>
+          <div class="modal-body pd-docmodal__corps">
+            <app-dossier-documents [ongletImpose]="cle" (ongletDemande)="docOuvert.set($event)" />
+          </div>
+        </div>
+      </div>
+    }
 
     <!-- Gestes en modale par-dessus la page (plan L4 §4) : mêmes composants que l'accueil « À faire ». -->
     @if (modale(); as m) {
@@ -284,6 +319,12 @@ export class PageDossierCorps implements OnInit {
   readonly gesteTraite = output<void>();
 
   protected readonly contenu = inject(DossierContenuStore);
+
+  /** ⚠️ 18/10 (pilote) — un dossier né d'une fiche s'ouvre par éléments, en modale, depuis le panneau d'étape. */
+  readonly enModale = computed(() => !!this.dossier().idDmc);
+  readonly documents = computed(() => documentsDuDossier(this.contenu));
+  readonly docOuvert = signal<OngletDossier | null>(null);
+  libelleDoc(cle: OngletDossier): string { return this.documents().find((o) => o.cle === cle)?.libelle ?? 'Dossier'; }
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly ouvrirGeste = inject(OuvrirGeste);

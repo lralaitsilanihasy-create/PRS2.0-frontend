@@ -3,7 +3,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 
 import { ApiError, codeErreur } from '../../core/errors/api-error';
 import { ouvrirBlobSur, TYPES_PIECE, validerFichier } from '../../core/securite/fichiers-surs';
-import { PieceJointeDossier, TypePieceJointe } from '../../models';
+import { PieceJointeDossier, PublicationAgpm, TypePieceJointe } from '../../models';
 import { DossierService, PieceJointeDossierService } from '../../services';
 
 /** Une pièce exigée du dossier, avec les fichiers déjà déposés sous elle. */
@@ -52,6 +52,9 @@ export function piecesAJoindre(exigees: TypePieceJointe[], deposees: PieceJointe
                 <span class="paj__nom">{{ l.type.libellePiece }}</span>
                 @if (fournie(l.type)) {
                   <span class="paj__etat paj__etat--app">fournie par l’application</span>
+                } @else if (reprise(l)) {
+                  <!-- ⚠️ 18/10 — V118 : déposée sur le plan, le serveur la joint d'office à la soumission. -->
+                  <span class="paj__etat paj__etat--app">déposée sur le plan, reprise d’office à la soumission</span>
                 } @else {
                 <span class="paj__etat">{{ l.fichiers.length ? (l.fichiers.length + ' fichier(s)') : l.type.obligatoire ? 'obligatoire, manquante' : 'facultative' }}</span>
                 <label class="btn btn-outline btn-sm">
@@ -109,9 +112,12 @@ export class PiecesAJoindre implements OnInit {
   readonly exigees = signal<TypePieceJointe[]>([]);
   readonly deposees = signal<PieceJointeDossier[]>([]);
   readonly lignes = computed(() => piecesAJoindre(this.exigees(), this.deposees()));
-  readonly manquantes = computed(() => this.lignes().filter((l) => manqueA(l)).length);
+  readonly manquantes = computed(() => this.lignes().filter((l) => this.manque(l)).length);
   readonly fournie = fournieParApplication;
-  readonly manque = manqueA;
+  /** ⚠️ 18/10 — la publication de l'AGPM en vigueur sur le plan de la ligne (V118), nulle sans publication. */
+  readonly publicationPlan = signal<PublicationAgpm | null>(null);
+  reprise(l: PieceAJoindre): boolean { return l.type.code === 'PUBLICATION_AGPM' && !l.fichiers.length && this.publicationPlan() !== null; }
+  manque(l: PieceAJoindre): boolean { return manqueA(l) && !this.reprise(l); }
   readonly envoi = signal<number | null>(null);
   readonly refus = signal<string | null>(null);
 
@@ -119,9 +125,12 @@ export class PiecesAJoindre implements OnInit {
     forkJoin({
       exigees: this.dossiers.piecesExigees(this.idDossier()).pipe(catchError(() => of([] as TypePieceJointe[]))),
       deposees: this.pieces.getByDossier(this.idDossier()).pipe(catchError(() => of([] as PieceJointeDossier[]))),
-    }).subscribe(({ exigees, deposees }) => {
+      // Silencieux : 404 sans publication, 403/409 hors plan.
+      publication: this.dossiers.publicationAgpm(this.idDossier()).pipe(catchError(() => of(null))),
+    }).subscribe(({ exigees, deposees, publication }) => {
       this.exigees.set(exigees);
       this.deposees.set(deposees);
+      this.publicationPlan.set(publication);
       this.chargement.set(false);
     });
   }

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError, codeErreur, erreursParChamp } from '../../core/errors/api-error';
@@ -109,6 +109,8 @@ export class PublicationAgpmPanneau implements OnInit {
   readonly idDossier = input.required<number>();
   /** Sur le plan : le dépôt est proposé à la PRMP et à son UGPM (le serveur juge la propriété et le contrôle du plan). */
   readonly plan = input(false);
+  /** ⚠️ 18/10 — émise après un dépôt réussi (le dossier DAO qui l'héberge cesse de la compter manquante). */
+  readonly deposee = output<PublicationAgpm>();
 
   readonly publication = signal<PublicationAgpm | null>(null);
   readonly lue = signal(false);
@@ -199,6 +201,7 @@ export class PublicationAgpmPanneau implements OnInit {
         this.envoi.set(false);
         this.ouverte.set(false);
         this.publication.set(p);
+        this.deposee.emit(p);
       },
       error: (e: ApiError) => {
         this.envoi.set(false);

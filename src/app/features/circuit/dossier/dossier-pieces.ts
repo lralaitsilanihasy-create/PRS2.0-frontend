@@ -2,8 +2,9 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, output, s
 
 import { ToastService } from '../../../core/notifications/toast.service';
 import { ouvrirBlobSur } from '../../../core/securite/fichiers-surs';
-import { PieceJointeDossier, TypePieceJointe } from '../../../models';
+import { PieceJointeDossier, PublicationAgpm, TypePieceJointe } from '../../../models';
 import { DossierService, PieceJointeDossierService, PvExamenService } from '../../../services';
+import { PublicationAgpmPanneau } from '../../../shared/circuit/publication-agpm';
 import { DossierContenuStore } from './dossier-contenu.store';
 
 /**
@@ -14,6 +15,7 @@ import { DossierContenuStore } from './dossier-contenu.store';
 @Component({
   selector: 'app-dossier-pieces',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [PublicationAgpmPanneau],
   template: `
     <div class="dc-section-head">
       <div class="section-block-title">
@@ -56,10 +58,19 @@ import { DossierContenuStore } from './dossier-contenu.store';
                   } @else {
                     <button type="button" class="pe-ouvrir" [disabled]="ouverture() === t.idTypePiece" (click)="ouvrirFournie(t)" [attr.aria-label]="'Ouvrir : ' + t.libellePiece">Ouvrir</button>
                   }
+                } @else if (repriseAgpm(t)) {
+                  <span class="pe-tag pe-tag--app">déposée sur le plan, reprise d’office à la soumission</span>
                 } @else if (!fichiersDe(t).length) {
                   <span class="pe-tag">{{ t.obligatoire ? 'obligatoire, manquante' : t.condition === 'FACULTATIVE_EN_LIGNE' ? 'facultative en ligne (transition SIGMP)' : 'facultative' }}</span>
                 }
               </li>
+              <!-- ⚠️ 18/10 (pilote, « comment joindre la publication de l'AGPM ») — elle se dépose une fois sur le plan contrôlé (V118) :
+                   le dépôt du plan est proposé ici même, et chaque dossier du plan la reprend d'office à sa soumission. -->
+              @if (depotAgpmIci(t); as idPlan) {
+                <li class="pe-depot">
+                  <app-publication-agpm [idDossier]="idPlan" [plan]="true" (deposee)="publicationPlan.set($event)" />
+                </li>
+              }
               <!-- Les fichiers déposés sous la pièce, à leur place : ils ne sont plus répétés dans une seconde liste. -->
               @for (p of fichiersDe(t); track p.idPiece) {
                 <li class="pe-fichier">
@@ -171,6 +182,7 @@ import { DossierContenuStore } from './dossier-contenu.store';
     .pe-etat { width: 1rem; font-weight: 700; color: var(--success-700, #047857); }
     .pe-ligne--manque .pe-etat, .pe-ligne--manque .pe-tag { color: var(--danger-700, #b42318); }
     .pe-lib { flex: 1; }
+    .pe-depot { padding: 0.25rem 0 0.5rem 1.5rem; }
     .pe-renvoi { margin: 0; padding: 9px 14px 0; display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; font-size: 0.85rem; color: var(--n-700); }
     .pe-lien { border: none; background: none; padding: 0; color: var(--primary-700, #1d4ed8); text-decoration: underline; cursor: pointer; font: inherit; }
     .pe-fichier { display: flex; align-items: center; gap: 0.5rem; padding: 0.1rem 0 0.35rem 1.5rem; }
@@ -200,7 +212,19 @@ export class DossierPieces {
 
   /** ⚠️ 17/10 (B1) — fournie par l'application : elle ne compte jamais manquante. */
   fournie(t: TypePieceJointe): boolean { return t.fourniePar === 'APPLICATION'; }
-  manquante(t: TypePieceJointe): boolean { return t.obligatoire && !this.fournie(t) && !this.deposees().has(t.idTypePiece); }
+  manquante(t: TypePieceJointe): boolean { return t.obligatoire && !this.fournie(t) && !this.repriseAgpm(t) && !this.deposees().has(t.idTypePiece); }
+
+  /** ⚠️ 18/10 — la publication en vigueur du plan de la ligne (V118), lue sur ce dossier ; nulle tant qu'aucune n'est déposée. */
+  readonly publicationPlan = signal<PublicationAgpm | null>(null);
+  /** La publication est sur le plan, pas encore reprise au dossier : elle le sera à la soumission. */
+  repriseAgpm(t: TypePieceJointe): boolean {
+    return t.code === 'PUBLICATION_AGPM' && this.publicationPlan() !== null && !this.deposees().has(t.idTypePiece);
+  }
+  /** Le plan où déposer la publication, depuis le dossier né d'une fiche, tant que ni le plan ni le dossier ne la portent. */
+  depotAgpmIci(t: TypePieceJointe): number | null {
+    const idPlan = this.contenu.dossier().idDossierPlan;
+    return t.code === 'PUBLICATION_AGPM' && idPlan && !this.repriseAgpm(t) && !this.deposees().has(t.idTypePiece) ? idPlan : null;
+  }
 
   /** Le document qui fournit la pièce, en PDF : la fiche de présentation, le canevas de rapport, le calendrier annuel, ou le PV du plan. */
   ouvrirFournie(t: TypePieceJointe): void {
@@ -226,7 +250,11 @@ export class DossierPieces {
         next: (l) => this.exigees.set([...l].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0))),
         error: () => this.exigees.set([]),
       });
-      nettoyer(() => abonnement.unsubscribe());
+      // Silencieux : 404 sans publication, 403/409 hors plan.
+      const publication = d.idDossierPlan
+        ? this.dossiers.publicationAgpm(d.idDossier).subscribe({ next: (p) => this.publicationPlan.set(p), error: () => this.publicationPlan.set(null) })
+        : null;
+      nettoyer(() => { abonnement.unsubscribe(); publication?.unsubscribe(); });
     });
   }
 
