@@ -116,3 +116,43 @@ s'applique**. Le contrôle se fait à l'enregistrement par l'Administrateur (400
 
 Déjà fait le 18/10 : les références absentes de la fiche ne sont plus proposées et sont comptées « sans objet pour cette fiche ».
 Rien d'autre à changer après la livraison : les boutons suivront les codes servis.
+
+## Recette du front — 2026-10-18 (après V133)
+
+Vérifié sur le dossier 00001/DAOO-CC/CNM/2026 (consomptibles informatiques, ligne 303339), compte MEMANT1 :
+
+- **Le bilan** `GET /api/points-ctrls/controle-codes` est vide (23 points citent 110 codes, aucun écart).
+- **À l'écran,** 51 des 61 codes cités par la grille mènent à une information de la fiche. Huit des dix autres sont normaux :
+  - les codes des travaux, donnés entre parenthèses (`B05-GQ-03`, `B07-OM-02`, `B08-AT-01`, `B08-AT-03`, `B08-FT-03`) : la fiche
+    est une fiche de fournitures ;
+  - les champs dont la condition n'est pas remplie sur cette fiche (`B02-AL-02` « alloti = OUI », `B05-GS-03` et `B05-GS-10`
+    « garantie exigée ») : l'écran les compte « sans objet pour cette fiche ».
+
+**Un écart reste, dans le référentiel : la rubrique « Composition du dossier » (`B04-CD`).**
+
+- La rubrique est réservée à `QUANTITE_FIXE, A_COMMANDE` (V41). Ses champs `B04-CD-01` « Modèles de fiches de renseignements
+  joints au dossier » et `B04-CD-02` « Modèle de garantie de soumission joint au dossier » sont, eux, ouverts à `CONTRAT_CADRE`.
+- `GET /api/champs-fiche-marche?typeMarche=CONTRAT_CADRE&categorie=FOURNITURES_SERVICES` sert donc les deux champs, sans leur
+  rubrique dans `blocs[B04].rubriques`. Aucun écran ne les affiche pour un contrat-cadre : ni la saisie de la fiche, ni l'examen.
+- Pourtant, la fiche des consomptibles informatiques porte une valeur pour `B04-CD-01` (« A1,A2,A3,A4 »), et deux variantes de V133
+  citent ces champs (« Garantie de soumission », « Candidats : pièces et capacités »). Le bilan ne le voit pas, car il contrôle les
+  champs et non leur rubrique.
+
+**Demande B3 :** ouvrir la rubrique `B04-CD` au contrat-cadre, comme ses champs. Le bilan de B2 pourrait aussi vérifier que la
+rubrique d'un champ cité est ouverte aux mêmes formes.
+
+> ⚠️ **2026-10-18, livré (backend, V134)**
+> - **L'origine** : le script du 16/10 (`docs/referentiel/2026-10-16-formulaires-contrat-cadre.sql`, recette « charte-dao », R4)
+>   a ouvert `B04-CD-01` et `B04-CD-02` au contrat-cadre, mais pas leur rubrique. C'était le seul cas : aucun autre champ actif
+>   n'est ouvert au-delà de sa rubrique ou de son bloc (vérifié en base).
+> - **C'était plus qu'un affichage** : la fiche évalue ses champs sans regarder leur rubrique, et `B04-CD-01` est obligatoire.
+>   Une fiche de contrat-cadre exigeait donc une information que l'écran ne proposait pas. La fiche des consomptibles la porte
+>   parce que sa valeur a été envoyée directement par l'API.
+> - **V134** ouvre la rubrique `B04-CD` au contrat-cadre. `B04-CD-03`, réservé aux travaux en quantités fixes et à commandes,
+>   reste fermé au contrat-cadre. Les fiches ne sont pas touchées. Le référentiel servi pour un contrat-cadre contient désormais
+>   la rubrique, et ses deux champs apparaissent à la saisie, dans la fiche et à l'examen.
+> - **Le bilan** (B2) tient compte de la rubrique et du bloc. Un champ que sa rubrique ou son bloc n'ouvre pas à la forme ou aux
+>   catégories du point est en écart, avec le motif `HORS_RUBRIQUE` (et `forme`). Cela vaut au bilan comme à l'enregistrement d'un
+>   point.
+> - **Contre la récidive** : `POST` et `PUT /api/champs-fiche-marche` refusent (400 nominatif sur `typesMarche` ou `categories`)
+>   un champ ouvert à une forme ou une catégorie que sa rubrique ou son bloc n'admet pas.
