@@ -188,7 +188,10 @@ export interface ObservationCelluleFiche {
     .fd-chip:hover { border-color: #0369a1; color: #0369a1; }
     .fd-chip__obs { min-width: 1.05rem; padding: 0 0.3rem; border-radius: 999px; background: #b45309; color: #fff; font-size: 0.64rem; text-align: center; }
     .fd-carte { scroll-margin-top: 3rem; }
-    .doc-table--fiche td.doc-cellule--citee { box-shadow: inset 3px 0 0 #0369a1; background: #f4f9fe; }
+    /* ⚠️ 18/10 (pilote) — la ligne citée par le point ouvert, en ORANGE et bien visible : barre épaisse, fond orangé sur toute la
+       ligne (libellé compris), libellé en gras. Distincte de l'observation (pastille ambre numérotée). */
+    .doc-table--fiche td.doc-cellule--citee { box-shadow: inset 5px 0 0 #ea580c; background: #ffedd5; font-weight: 600; }
+    .doc-table--fiche tr:has(> td.doc-cellule--citee) > th.doc-lib { background: #fed7aa; color: #7c2d12; font-weight: 700; }
     .doc-table--fiche td.doc-flash, .fd-carte.doc-flash { background: #fef3c7 !important; transition: background 0.4s; }
     .doc-table--fiche { font: 0.84rem/1.45 var(--font-base); color: #152033; }
     .doc-table--fiche th, .doc-table--fiche td { border: 0; border-top: 1px solid var(--n-100); padding: 0.45rem 0.7rem; font-family: var(--font-base); color: #152033; background: #fff; }

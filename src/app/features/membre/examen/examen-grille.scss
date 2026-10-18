@@ -359,8 +359,9 @@
 .etat--obs { background: #fff3e0; color: #b45309; }
 .etat--vide { background: #f1f4f8; color: #5b6784; }
 .pt__refs { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.35rem; }
-.pt__ref { padding: 0.02rem 0.45rem; border: 1px solid #0369a1; border-radius: 6px; background: #e0f2fe; color: #0369a1; font: 600 0.68rem var(--font-mono, monospace); cursor: pointer; }
-.pt__ref:hover { background: #0369a1; color: #fff; }
+/* ⚠️ 18/10 (pilote) — même orange que les lignes citées dans la fiche : le lien se voit d'un coup d'oeil. */
+.pt__ref { padding: 0.02rem 0.45rem; border: 1px solid #ea580c; border-radius: 6px; background: #ffedd5; color: #9a3412; font: 600 0.68rem var(--font-mono, monospace); cursor: pointer; }
+.pt__ref:hover { background: #ea580c; color: #fff; }
 .pt__nav { display: flex; justify-content: space-between; gap: 0.4rem; margin-top: 0.5rem; }
 .pt__navbtn { display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.2rem 0.55rem; border: 1px solid #dde4ee; border-radius: 7px; background: #fff; font: inherit; font-size: 0.75rem; font-weight: 600; color: #34405a; cursor: pointer; }
 .pt__navbtn:hover:not(:disabled) { border-color: #0369a1; color: #0369a1; }
