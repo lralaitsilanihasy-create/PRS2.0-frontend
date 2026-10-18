@@ -48,9 +48,14 @@ describe('Accueil « À faire » — geste → écran existant', () => {
     expect(cibleGeste('VOIR', t(), 'verificateur')).toEqual({ type: 'modale', modale: 'consultation' });
   });
 
+  it('18/10 (§B3) — IMPRIMER_AVIS : la page du dossier, fenêtre d’impression ouverte d’emblée, retour vers l’accueil', () => {
+    expect(cibleGeste('IMPRIMER_AVIS', t(), 'prmp')).toEqual({ type: 'route', commandes: ['/prmp', 'dossier', 1002], queryParams: { imprimer: 'avis', returnUrl: '/prmp/a-faire' }, ciblee: true });
+    expect(cibleAccueil('IMPRIMER_AVIS', t(), 'prmp', '/prmp/a-faire')).toEqual(cibleGeste('IMPRIMER_AVIS', t(), 'prmp'));
+  });
+
   it('chaque geste du contrat a un libellé, une famille et une cible', () => {
     const gestes = Object.keys(LIBELLES_GESTES) as GesteAFaire[];
-    expect(gestes).toHaveLength(26);
+    expect(gestes).toHaveLength(27);
     for (const g of gestes) {
       expect(FAMILLES_GESTES[g]).toBeTruthy();
       expect(cibleGeste(g, t({ idLettre: 1 }), 'cc')).toBeTruthy();

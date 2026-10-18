@@ -178,6 +178,8 @@ export function noteCourte(t: AFaireTache): string {
       return 'Pièces demandées par la lettre de renvoi';
     case 'A_RECTIFIER':
       return f.nbObservations ? `${pluriel(f.nbObservations, 'observation maintenue', 'observations maintenues')} par la CNM` : 'Observations de la CNM à lever';
+    case 'AVIS_A_IMPRIMER':
+      return t.document === 'LETTRES_INVITATION' ? 'Lettres d’invitation à imprimer et envoyer' : 'Avis spécifique à imprimer et publier';
     case 'EN_COURS_CNM':
       return t.delai.etape ? `Étape : ${LIBELLES_ETAPES_CIRCUIT[t.delai.etape]}` : statutDossierLabel(t.dossier.statut);
   }

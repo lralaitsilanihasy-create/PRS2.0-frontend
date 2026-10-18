@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { AFaireTache, GesteAFaire } from '../../../models';
 import { statutDossierLabel, statutSeverity } from '../../../shared/circuit/circuit-workflow';
 import { Icone } from '../../../shared/ui/icone';
-import { LIBELLES_GESTES } from './a-faire-libelles';
+import { LIBELLES_GESTES, libelleGeste } from './a-faire-libelles';
 import { delaiLigne, echeanceTexte, faitsApercu, friseDossier, referenceLigne } from './a-faire-modele';
 import { cibleDossier } from './a-faire-navigation';
 
@@ -107,7 +107,7 @@ export class AFaireApercu {
   readonly statut = computed(() => statutDossierLabel(this.tache().dossier.statut));
   readonly ton = computed(() => statutSeverity(this.tache().dossier.statut));
   readonly frise = computed(() => friseDossier(this.tache()));
-  readonly geste = computed(() => LIBELLES_GESTES[this.tache().geste]);
+  readonly geste = computed(() => libelleGeste(this.tache().geste, this.tache()));
   /**
    * Gestes secondaires servis — plus, ⚠️ demande pilote (2026-09-21), la **lettre de renvoi** quand la
    * tâche est la décision du P/CC sur un projet de PV soumis (VISER ou RETOURNER servi) : troisième issue
@@ -125,7 +125,7 @@ export class AFaireApercu {
   readonly faits = computed(() => faitsApercu(this.tache()));
 
   libelle(g: GesteAFaire): (typeof LIBELLES_GESTES)[GesteAFaire] {
-    return LIBELLES_GESTES[g];
+    return libelleGeste(g, this.tache());
   }
 
   etatLu(etat: string): string {

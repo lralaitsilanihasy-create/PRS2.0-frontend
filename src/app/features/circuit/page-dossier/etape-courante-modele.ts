@@ -4,7 +4,7 @@ import { AFaireTache, Dossier, ETAPE_CIRCUIT_PORTEURS, GesteAFaire, GestesDossie
 import { CIRCUIT_ETAPES, etapeIndexForDossier, statutDossierLabel } from '../../../shared/circuit/circuit-workflow';
 import { GenreDelai, delaiLigne, jourMois } from '../../../shared/circuit/frise-delai';
 import { NomIcone } from '../../../shared/ui/icone';
-import { LIBELLES_AVIS, LIBELLES_ETAPES_CIRCUIT, LIBELLES_GESTES, LIBELLES_MODES } from '../../home/a-faire/a-faire-libelles';
+import { LIBELLES_AVIS, LIBELLES_ETAPES_CIRCUIT, LIBELLES_GESTES, LIBELLES_MODES, libelleGeste } from '../../home/a-faire/a-faire-libelles';
 import { FaitApercu, echeanceTexte, faitsApercu, noteCourte } from '../../home/a-faire/a-faire-modele';
 import { CibleGeste, cibleGeste } from '../../home/a-faire/a-faire-navigation';
 import { estPartieControlee } from './page-dossier-modele';
@@ -75,7 +75,7 @@ export function gestesBoutons(taches: readonly AFaireTache[]): GesteBouton[] {
     for (const geste of [t.geste, ...t.gestesSecondaires]) {
       if (GESTES_ETAT.includes(geste) || vus.has(geste)) continue;
       vus.add(geste);
-      const l = LIBELLES_GESTES[geste];
+      const l = libelleGeste(geste, t);
       boutons.push({ cle: `${t.section}|${geste}`, geste, tache: t, libelle: l.long, icone: l.icone, mode: t.mode === 'TITULAIRE' ? null : LIBELLES_MODES[t.mode] });
     }
   }
@@ -147,6 +147,7 @@ export const TITRES_SITUATION: Readonly<Record<GesteAFaire, string>> = {
   COMPLETER_PIECES_DEPOT: 'Dépôt incomplet',
   TRANSMETTRE_COMPLEMENTS: 'Lettre de renvoi reçue',
   RECTIFIER: 'Dossier renvoyé par la CNM',
+  IMPRIMER_AVIS: 'PV favorable signé, avis à publier',
   VOIR: '',
   SUIVRE: '',
 };

@@ -58,6 +58,7 @@ export const FAMILLES_GESTES: Readonly<Record<GesteAFaire, FamilleGeste>> = {
   COMPLETER_PIECES_DEPOT: 'prmp',
   TRANSMETTRE_COMPLEMENTS: 'prmp',
   RECTIFIER: 'prmp',
+  IMPRIMER_AVIS: 'prmp',
   VOIR: 'consultation',
   SUIVRE: 'consultation',
 };
@@ -165,6 +166,10 @@ export function cibleGeste(geste: GesteAFaire, t: AFaireTache, espace: string): 
         : route([base, 'resultat-examen', 'lettre-renvois'], false);
     case 'RECTIFIER':
       return route([base, 'rectifier', id], true, { returnUrl: `${base}/a-faire` });
+    // ⚠️ 18/10 (« avis-a-imprimer », §B3) — la page du dossier, fenêtre d'impression ouverte d'emblée (`?imprimer=avis`, en place
+    // depuis le bouton du tableau de suivi et la notification).
+    case 'IMPRIMER_AVIS':
+      return route([base, 'dossier', id], true, { imprimer: 'avis', returnUrl: `${base}/a-faire` });
     case 'VOIR':
     case 'SUIVRE':
       return modale('consultation');

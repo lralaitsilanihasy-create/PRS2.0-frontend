@@ -1,4 +1,4 @@
-import { EtapeCircuit, GesteAFaire, ModeTache, SectionAFaire, UrgenceTache } from '../../../models';
+import { AFaireTache, EtapeCircuit, GesteAFaire, ModeTache, SectionAFaire, UrgenceTache } from '../../../models';
 import { NomIcone } from '../../../shared/ui/icone';
 
 /**
@@ -34,6 +34,8 @@ export const LIBELLES_SECTIONS: Readonly<Record<SectionAFaire, LibelleSection>> 
   PIECES_DEPOT_A_COMPLETER: { titre: 'Pièces du dépôt à compléter', sansStandard: 'Le délai de la CNM est suspendu' },
   COMPLEMENTS_A_TRANSMETTRE: { titre: 'Pièces complémentaires à transmettre', sansStandard: 'Le délai de la CNM est suspendu' },
   A_RECTIFIER: { titre: 'À rectifier', sansStandard: 'Le délai de la CNM est suspendu' },
+  // ⚠️ 18/10 (« avis-a-imprimer », §B3) — l'impression n'est pas chronométrée ; la ligne disparaît à la première impression.
+  AVIS_A_IMPRIMER: { titre: 'Avis à imprimer', sansStandard: 'Sans délai : la publication attend votre impression' },
   EN_COURS_CNM: { titre: 'En cours à la CNM', sansStandard: 'Aucune action attendue' },
 };
 
@@ -80,8 +82,18 @@ export const LIBELLES_GESTES: Readonly<Record<GesteAFaire, LibelleGeste>> = {
   COMPLETER_PIECES_DEPOT: { court: 'Compléter les pièces', long: 'Compléter les pièces du dépôt', icone: 'clip' },
   TRANSMETTRE_COMPLEMENTS: { court: 'Transmettre les pièces', long: 'Transmettre les pièces complémentaires', icone: 'clip' },
   RECTIFIER: { court: 'Rectifier', long: 'Rectifier puis resoumettre le dossier', icone: 'edit' },
+  IMPRIMER_AVIS: { court: 'Imprimer l’avis', long: 'Imprimer l’avis spécifique', icone: 'printer' },
   SUIVRE: { court: 'Suivre', long: "Suivre l'avancement à la CNM", icone: 'eye' },
 };
+
+/**
+ * ⚠️ 18/10 (« avis-a-imprimer », §B3) — le libellé d'un geste POUR une tâche : `IMPRIMER_AVIS` dit « les lettres » quand la tâche
+ * porte `document = LETTRES_INVITATION` (prestations intellectuelles, appel d'offres restreint). Partout ailleurs, la table.
+ */
+const LIBELLE_IMPRIMER_LETTRES: LibelleGeste = { court: 'Imprimer les lettres', long: 'Imprimer les lettres d’invitation', icone: 'printer' };
+export function libelleGeste(geste: GesteAFaire, t?: Pick<AFaireTache, 'document'> | null): LibelleGeste {
+  return geste === 'IMPRIMER_AVIS' && t?.document === 'LETTRES_INVITATION' ? LIBELLE_IMPRIMER_LETTRES : LIBELLES_GESTES[geste];
+}
 
 /** Libellé de compteur par classe d'urgence (côté CNM). */
 export const LIBELLES_URGENCES: Readonly<Record<UrgenceTache, string>> = {

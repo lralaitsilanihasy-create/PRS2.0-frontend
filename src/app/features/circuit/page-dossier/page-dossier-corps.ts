@@ -383,6 +383,9 @@ export class PageDossierCorps implements OnInit {
   private readonly panneau = viewChild('panneau', { read: EtapeCourante });
   private readonly panneauEl = viewChild('panneau', { read: ElementRef });
   private readonly barre = viewChild(BarreCollante);
+  /** ⚠️ 18/10 (« avis-a-imprimer », §B3) — les cartes dont le geste `IMPRIMER_AVIS` ouvre la fenêtre d'impression. */
+  private readonly carteAvis = viewChild(AvisSpecifique);
+  private readonly carteLettres = viewChild(LettresInvitation);
   /** Le panneau est sorti de l'écran par le haut : la barre collante prend le relais. */
   readonly barreVisible = signal(false);
   private gesteDemandeLu = false;
@@ -479,6 +482,11 @@ export class PageDossierCorps implements OnInit {
     // collante y ramène le focus.
     if (['navette', 'retrait'].includes(famillePage(b.geste))) {
       this.panneau()?.bouton(b.geste)?.focus();
+      return;
+    }
+    // ⚠️ 18/10 (« avis-a-imprimer », §B3) — l'impression se fait ici, dans la carte de l'avis ou des lettres : sa fenêtre s'ouvre.
+    if (b.geste === 'IMPRIMER_AVIS') {
+      (b.tache.document === 'LETTRES_INVITATION' ? this.carteLettres() : this.carteAvis())?.ouvrir();
       return;
     }
     const cible = ciblePage(b.geste, b.tache, this.espace, this.urlPage());

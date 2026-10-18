@@ -30,6 +30,8 @@ export type SectionAFaire =
   | 'PIECES_DEPOT_A_COMPLETER'
   | 'COMPLEMENTS_A_TRANSMETTRE'
   | 'A_RECTIFIER'
+  /** ⚠️ 18/10 (« avis-a-imprimer », §B3) — l'avis spécifique (ou les lettres d'invitation) imprimable et jamais imprimé ; dossier clôturé compris. */
+  | 'AVIS_A_IMPRIMER'
   | 'EN_COURS_CNM';
 
 /** Action proposée sur une ligne ; la garde de l'endpoint qui l'exécute fait foi. */
@@ -64,7 +66,9 @@ export type GesteAFaire =
   | 'COMPLETER_PIECES_DEPOT'
   | 'TRANSMETTRE_COMPLEMENTS'
   | 'RECTIFIER'
-  | 'SUIVRE';
+  | 'SUIVRE'
+  /** ⚠️ 18/10 (« avis-a-imprimer », §B3) — imprimer l'avis spécifique ou les lettres d'invitation (section `AVIS_A_IMPRIMER`). */
+  | 'IMPRIMER_AVIS';
 
 /** À quel titre le connecté peut agir : seules les lignes `TITULAIRE` vont dans `taches`. */
 export type ModeTache = 'TITULAIRE' | 'DELEGATION' | 'INTERIM' | 'COLLEGUE' | 'SUPPLEANCE';
@@ -166,6 +170,8 @@ export interface AFaireTache {
   delai: AFaireDelai;
   faits: AFaireFaits;
   refs: AFaireRefs;
+  /** ⚠️ 18/10 (« avis-a-imprimer », §B3) — sur la ligne `AVIS_A_IMPRIMER` seulement : le document que la PRMP imprime. */
+  document?: 'AVIS_SPECIFIQUE' | 'LETTRES_INVITATION' | null;
   /**
    * ⚠️ Intérim désigné (2026-09-21) — ligne servie à l'INTÉRIMAIRE dans `delegations.taches` (`mode = INTERIM`) :
    * matricule du titulaire suppléé et intérim. `mode = INTERIM` avec `idInterim` NUL = visa par intérim ponctuel.
