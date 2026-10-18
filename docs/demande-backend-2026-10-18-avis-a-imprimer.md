@@ -111,6 +111,23 @@ Proposition (les noms sont au choix du backend) :
 Côté front, à la livraison : le libellé de la section (« Avis à imprimer ») et du geste (« Imprimer l'avis »), et la navigation
 du geste vers la page du dossier, fenêtre d'impression ouverte d'emblée (`?imprimer=avis`, déjà en place).
 
+> ⚠️ **2026-10-18, livré (backend)** — la proposition est reprise telle quelle, avec ses noms.
+> - **Section** `AVIS_A_IMPRIMER`, **geste** `IMPRIMER_AVIS`. La section est servie après `A_RECTIFIER` et avant `EN_COURS_CNM`, par
+>   `GET /api/dossiers/a-faire` comme par `GET /api/dossiers/{id}/gestes`.
+> - **Une ligne par dossier** né d'une fiche dont le document est imprimable et n'a jamais été produit. C'est la règle de
+>   `impressionAvis` : `disponible` vrai et `dejaImprime` faux. La ligne vaut **quel que soit le statut du dossier, clôturé
+>   compris**. Seuls les brouillons et les dossiers retirés ou remplacés sont écartés. Elle disparaît à la première impression.
+>   Sur un dossier clôturé, `…/gestes` sert cette ligne et elle seule.
+> - **Le document** est un champ nouveau de la tâche, `document` (`AVIS_SPECIFIQUE` ou `LETTRES_INVITATION`), présent sur cette
+>   ligne et absent de toutes les autres.
+> - **Destinataires** : la PRMP et l'UGPM propriétaires, `mode = TITULAIRE`. Le Président, ni aucun profil de la CNM, ne la voit.
+> - **Délai** : `urgence = SANS_DELAI`, sans standard. Dans `delai`, `entree`, `standardHeures`, `ecouleHeures`, `restantHeures` et
+>   `echeance` sont nuls. La ligne compte dans `compteurs.aFaire`, donc dans la pastille (`GET /api/kpis/badges`).
+> - **Coût** : une requête de plus pour la PRMP (ses dossiers nés d'une fiche). La règle complète ne s'évalue que pour les dossiers
+>   à PV favorable signé dont aucun document n'a encore été produit.
+> - **Recette** : la section est vide aujourd'hui. Les deux dossiers nés d'une fiche (100380 et 100381) ont déjà leur avis imprimé.
+>   Ils sont aussi payants, et le compte de l'ARMP n'est pas réglé (`COMPTE_ARMP_ABSENT`, « dao-electronique », Q4).
+
 ## Côté front (préparé, sans attendre la livraison)
 
 - **Tableau de suivi** : dans la colonne Actions, un bouton « Imprimer l'avis » (ou « Imprimer les lettres », ou « Réimprimer »)
