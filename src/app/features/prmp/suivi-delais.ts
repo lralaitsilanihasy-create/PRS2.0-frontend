@@ -51,7 +51,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
       } @else if (erreur()) {
         <app-etat-erreur message="Impossible de charger le suivi des délais." (reessayer)="charger()" />
       } @else {
-        <div class="table-card">
+        <div class="table-card sdl-table">
           <table>
             <thead>
               <!-- ⚠️ 2026-09-13 (demande pilote) — colonne Statut AJOUTÉE : elle avait été écartée le
@@ -77,7 +77,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                   <td><a class="lien-ligne" [routerLink]="lien.commandes(d.idDossier)" [queryParams]="lien.params()">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</a></td>
                   <!-- Type de dossier en CODE concis (sous-type de la référence, ex. PPM-AGPM ; repli famille). -->
                   <td>{{ typeDossierLabel(d) }}</td>
-                  <td>{{ entiteLabel(d) }}</td>
+                  <td class="sdl-entite">{{ entiteLabel(d) }}</td>
                   <td>{{ localiteLabel(d) }}</td>
                   <!-- ⚠️ Terme métier (pilote 2026-09-06) : la date de SOUMISSION est la date de
                        DÉPÔT du dossier — même donnée (champ demandé au backend, « — » sinon). -->
@@ -88,7 +88,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                        (aujourd'hui + durée standard restante) présente dès la soumission. On la MASQUE tant que
                        le dossier n'est pas ENREGISTRÉ : le traitement CNM n'a pas encore commencé (le compteur
                        démarre à l'enregistrement = debutCompteur), afficher une fin avant serait trompeur. -->
-                  <td class="cnm-mono">
+                  <td class="cnm-mono sdl-fin">
                     @if (enregistrement(d)) {
                       @if (d.datesEtapes?.['CLOTURE']; as clot) {
                         <span class="cnm-fin-cloture">{{ clot | date: 'dd/MM/yyyy HH:mm' }}</span>
@@ -158,6 +158,15 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
     .lien-ligne::after { content: ''; position: absolute; inset: 0; }
     /* Les boutons d'action passent AU-DESSUS de l'overlay → cliquables indépendamment du clic-ligne. */
     .table-card table tr.ligne-clic .btn { position: relative; z-index: 1; }
+    /* ⚠️ 18/10 (pilote) — la colonne Actions sortait de l'écran à 1366 px (tableau de 1270 px pour 1085). Resserré ici
+       seulement : marges des cellules réduites, intitulés sur deux lignes, entité contractante à la ligne, date et heure
+       de clôture superposables. La référence et les dates restent d'un seul tenant. */
+    .sdl-table th, .sdl-table td { padding-left: 0.6rem; padding-right: 0.6rem; }
+    .sdl-table th { white-space: normal; vertical-align: bottom; }
+    .sdl-table td.sdl-entite { white-space: normal; min-width: 9rem; max-width: 15rem; line-height: 1.35; }
+    .sdl-table td.sdl-fin { white-space: normal; min-width: 6.5rem; }
+    .sdl-table td.sdl-fin .cnm-fin-cloture { display: inline-block; }
+    .sdl-table .td-actions { flex-wrap: wrap; gap: 0.35rem; }
   `,
 })
 export class SuiviDelais {
