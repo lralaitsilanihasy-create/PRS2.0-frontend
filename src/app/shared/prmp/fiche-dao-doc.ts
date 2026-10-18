@@ -237,6 +237,35 @@ export class FicheDaoDoc {
     for (const b of blocs) for (const r of this.rubriques(b)) for (const c of this.champs(b, r)) codes.add(c.code);
     this.codesRendus.emit(codes);
   });
+  /**
+   * ⚠️ 18/10 (pilote) — quand le point ouvert de la grille change, les informations qu'il cite viennent à l'écran d'elles-mêmes :
+   * la fiche défile jusqu'à elles si elles n'y sont pas déjà (elles restent marquées du liseré bleu). La fiche peut se charger
+   * encore : on attend les cellules, 2 s au plus.
+   */
+  private readonly suiviCitees = effect(() => {
+    const codes = this.citees();
+    if (!codes.size) return;
+    let essais = 0;
+    const amener = (): void => {
+      const cellules = Array.from(this.hote.nativeElement.querySelectorAll<HTMLElement>('td.doc-cellule--citee'));
+      if (!cellules.length) { if (++essais <= 20) setTimeout(amener, 100); return; }
+      const zone = this.zoneDeDefilement(cellules[0]);
+      const haut = zone ? zone.getBoundingClientRect().top : 0;
+      const bas = zone ? zone.getBoundingClientRect().bottom : window.innerHeight;
+      const visible = (el: HTMLElement): boolean => { const r = el.getBoundingClientRect(); return r.top >= haut + 48 && r.bottom <= bas - 8; };
+      if (cellules.some(visible)) return;
+      cellules[0].scrollIntoView({ block: 'center', behavior: 'smooth' });
+    };
+    setTimeout(amener);
+  });
+  /** Le premier ancêtre qui défile (la zone document de l'hôte). */
+  private zoneDeDefilement(el: HTMLElement): HTMLElement | null {
+    for (let p = el.parentElement; p; p = p.parentElement) {
+      const o = getComputedStyle(p).overflowY;
+      if ((o === 'auto' || o === 'scroll') && p.scrollHeight > p.clientHeight) return p;
+    }
+    return null;
+  }
   private readonly suiviCible = effect(() => {
     const c = this.cible();
     if (!c) return;

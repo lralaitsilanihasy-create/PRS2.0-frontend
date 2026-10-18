@@ -900,7 +900,8 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
     const p = (o != null ? pts.find((x) => x.idPointCtrl === o) : null)
       ?? pts.find((x) => this.resultat(this.idDetailCourant(), x.idPointCtrl).statut === null) ?? pts[0];
     return new Set(codesCites(p?.decriptPointCtrl));
-  });
+    // Même contenu, même ensemble : la fiche ne redéfile que si le point ouvert change (pas à chaque saisie).
+  }, { equal: (x, y) => x.size === y.size && [...x].every((c) => y.has(c)) });
   /** L'information à montrer dans la fiche (clic sur une référence d'un point). */
   readonly ficheCible = signal<{ code: string; jeton: number } | null>(null);
   /** Les codes que la fiche DAO du dossier rend (selon sa forme et sa catégorie) ; nul tant qu'elle n'a pas été lue. */
