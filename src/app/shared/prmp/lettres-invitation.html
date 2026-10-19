@@ -47,7 +47,6 @@
                       @if (format(f) === 'PDF') {
                         <button type="button" class="btn btn-sm btn-outline" [disabled]="occupe()" [attr.aria-label]="'Ouvrir le PDF de la lettre à ' + l.destinataire" (click)="obtenir(f, true)">Ouvrir le PDF</button>
                       }
-                      <button type="button" class="btn btn-sm btn-outline" [disabled]="occupe()" [attr.aria-label]="'Enregistrer le ' + format(f) + ' de la lettre à ' + l.destinataire" (click)="obtenir(f, false)">Enregistrer {{ format(f) }}</button>
                     }
                   </span>
                 </li>
