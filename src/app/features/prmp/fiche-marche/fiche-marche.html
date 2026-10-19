@@ -739,7 +739,7 @@
                             </button>
                             <!-- ⚠️ 17/10 (demande « abandonner-revision-repartir-version », B2) — une révision copiée de cette version, au
                                  numéro suivant : on ne revient jamais en arrière, on crée une version au contenu de l'ancienne. -->
-                            @if (figee() && !enLecture() && v.version !== derniereVersion()) {
+                            @if (figee() && !enLecture() && !ficheVerrouillee() && v.version !== derniereVersion()) {
                               <button type="button" class="btn btn-sm btn-outline" [disabled]="saving()" (click)="reviser(undefined, v.version)"
                                       [attr.aria-label]="'Repartir de la version ' + v.version">Repartir de cette version</button>
                             }
@@ -782,6 +782,8 @@
                 <button type="button" class="btn btn-outline" (click)="etape.set(4)">‹ Contrôles</button>
                 @if (enLecture()) {
                   <button type="button" class="btn btn-primary" (click)="etape.set(6)">Voir les documents ›</button>
+                } @else if (figee() && ficheVerrouillee()) {
+                  <span class="fm__aut">La fiche est figée : le dossier {{ dossierSoumis()?.refeDossier }} est {{ libelleStatutDossier().toLowerCase() }} — aucune nouvelle version tant que la Commission le tient, ni après sa clôture.</span>
                 } @else if (figee()) {
                   <button type="button" class="btn btn-outline" [disabled]="saving()" (click)="reviser()">Ouvrir une nouvelle version</button>
                   <!-- ⚠️ Arbitrage du pilote (26/09, §B2 piste 2) : une version validée est un ACTE — elle ne
@@ -860,12 +862,22 @@
                 <!-- ⚠️ Lot 1b (23/09) : la fiche PRODUIT le dossier soumis à la Commission — entité, localité et PRMP
                      viennent de la ligne du plan, plus de double saisie. Réservé à la PRMP, sur une fiche validée. -->
                 @if (idDossierSoumis(); as idd) {
-                  <p class="fm__ok">Dossier à soumettre créé depuis cette fiche.</p>
-                  <!-- ⚠️ 15/10 — la liste figée (estimation, garantie, CCAG, CCTP) était périmée : l'estimation est produite (Q11), le CCAG est
-                       dans le DAO complet, la garantie n'est plus exigée. La liste exacte est celle du serveur, dans le brouillon. -->
-                  <p>Il reste à y joindre les pièces qui ne sortent pas de la fiche (pour des travaux : le descriptif technique et les plans), puis à le soumettre à la Commission.</p>
-                  <a class="btn btn-primary" routerLink="/prmp/soumettre-dossier" [queryParams]="{ reprendre: idd }">Joindre les pièces et soumettre</a>
-                  <a class="btn btn-outline" [routerLink]="['/prmp/dossier', idd]">Ouvrir le dossier n° {{ idd }}</a>
+                  <!-- ⚠️ 19/10 (pilote) — selon l'état du dossier : « Joindre les pièces et soumettre » n'a de sens qu'en brouillon. -->
+                  @if (dossierSoumis() === null || dossierBrouillon()) {
+                    <p class="fm__ok">Dossier à soumettre créé depuis cette fiche.</p>
+                    <!-- ⚠️ 15/10 — la liste figée (estimation, garantie, CCAG, CCTP) était périmée : l'estimation est produite (Q11), le CCAG est
+                         dans le DAO complet, la garantie n'est plus exigée. La liste exacte est celle du serveur, dans le brouillon. -->
+                    <p>Il reste à y joindre les pièces qui ne sortent pas de la fiche (pour des travaux : le descriptif technique et les plans), puis à le soumettre à la Commission.</p>
+                    @if (!enLecture()) { <a class="btn btn-primary" routerLink="/prmp/soumettre-dossier" [queryParams]="{ reprendre: idd }">Joindre les pièces et soumettre</a> }
+                  } @else {
+                    <p class="fm__ok">Dossier {{ dossierSoumis()?.refeDossier || ('n° ' + idd) }} soumis à la Commission — {{ libelleStatutDossier() }}.</p>
+                    @if (ficheVerrouillee()) {
+                      <p class="fm__attendus">La fiche est figée : elle ne se modifie plus tant que le dossier est chez la Commission, ni après sa clôture. Ses documents et son avis restent consultables ci-dessous.</p>
+                    } @else {
+                      <p class="fm__attendus">Le dossier vous est rendu : corrigez la fiche par une nouvelle version, puis répondez depuis la page du dossier.</p>
+                    }
+                  }
+                  <a class="btn btn-outline" [routerLink]="['/prmp/dossier', idd]">Ouvrir le dossier {{ dossierSoumis()?.refeDossier || ('n° ' + idd) }}</a>
                   <!-- ⚠️ 30/09 (AV-3) — l'avis spécifique, après le PV signé favorable (FAVR : réserves levées). L'application
                        le produit : il a quitté la liste des pièces à joindre à la main. -->
                   <!-- ⚠️ 01/10 (AV-4) — les prestations intellectuelles n'ont pas d'avis : leurs candidats reçoivent une lettre. -->

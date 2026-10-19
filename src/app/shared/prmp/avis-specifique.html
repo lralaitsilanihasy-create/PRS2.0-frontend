@@ -7,7 +7,7 @@
         l’avis à publier peut être imprimé. Il reprend la dernière version validée de la fiche.
       </p>
       @if (!lecture()) {
-        <button type="button" class="btn btn-primary btn-sm" (click)="ouvrir()">Imprimer l’avis spécifique</button>
+        <button type="button" class="btn btn-primary btn-sm" (click)="ouvrir()">{{ imprimes().length ? 'Réimprimer l’avis spécifique' : 'Imprimer l’avis spécifique' }}</button>
       }
     } @else if (attente(); as m) {
       <p class="avs__attente">{{ m }}</p>
@@ -15,7 +15,8 @@
 
     <!-- ⚠️ Manuel révisé, R3b / R3c (13/10) — le projet d'avis dès la validation de la fiche (le manuel l'exige au dépôt du DAO :
          il est joint d'office au dossier), et la relecture des mentions du modèle type. -->
-    @if (!lecture() && !impressionSeule()) {
+    <!-- ⚠️ 19/10 (pilote) — une fois l’avis imprimé, le projet n’a plus d’objet : il disparaît avec la relecture des mentions. -->
+    @if (!lecture() && !impressionSeule() && !imprimes().length) {
       <div class="avs__projet">
         @if (!projetDansOnglet()) {
           <button type="button" class="btn btn-sm btn-outline" [disabled]="occupe()" (click)="projet('pdf')">Projet d’avis (PDF)</button>

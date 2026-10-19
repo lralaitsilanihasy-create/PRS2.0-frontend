@@ -11,7 +11,8 @@ import { ApiError, codeErreur, corpsErreur, erreursParChamp } from '../../../cor
 import { ToastService } from '../../../core/notifications/toast.service';
 import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, CompteDesignable, DocumentDao, DocumentFiche, EtatParametresInternes, TypeChamp, FicheMarche, LigneEligible, ObservationPv, PRESENTATION_SOUS_TYPE_FICHE, ReferentielFiche, RubriqueFiche, TypeMarche, VersionFiche } from '../../../models';
 import { ChampFicheMarcheService, DmcService, FicheMarcheService } from '../../../services/fiche-marche.services';
-import { ObservationPvService } from '../../../services/circuit.services';
+import { DossierService, ObservationPvService } from '../../../services/circuit.services';
+import { statutDossierLabel } from '../../../shared/circuit/circuit-workflow';
 import { decomposerObservation } from '../../../shared/circuit/observation-pv-card';
 import { LienDossier } from '../../circuit/page-dossier/lien-dossier';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
@@ -579,6 +580,29 @@ export class FicheMarcheEcran {
   });
   /** Lot 1b — dossier soumis produit par cette fiche (`null` tant qu'il n'existe pas). */
   readonly idDossierSoumis = computed(() => this.fiche()?.idDossierSoumis ?? null);
+  /**
+   * ⚠️ 19/10 (pilote) — l'état du dossier soumis, lu une fois : la fiche proposait « Joindre les pièces et soumettre » et « Ouvrir une
+   * nouvelle version » sur un dossier clôturé. Le serveur verrouille la fiche tant que la Commission tient le dossier, et après
+   * (V49, B1 : 409 DOSSIER_EN_EXAMEN) ; elle ne se révise que dossier brouillon ou rendu à la PRMP.
+   */
+  private readonly dossiers = inject(DossierService);
+  readonly dossierSoumis = signal<{ statut: string; refeDossier: string | null } | null>(null);
+  private readonly lireDossierSoumis = effect(() => {
+    const id = this.idDossierSoumis();
+    if (id == null) { this.dossierSoumis.set(null); return; }
+    untracked(() => this.dossiers.getById(id).subscribe({
+      next: (d) => this.dossierSoumis.set(d.statut ? { statut: d.statut, refeDossier: d.refeDossier ?? null } : null),
+      error: () => this.dossierSoumis.set(null),
+    }));
+  });
+  /** Le dossier est encore à compléter par la PRMP (brouillon). */
+  readonly dossierBrouillon = computed(() => this.dossierSoumis()?.statut === 'BROUILLON');
+  /** La fiche ne se révise plus : le dossier est chez la Commission, ou clos. Inconnu (lecture en cours ou échouée) : rien n'est masqué. */
+  readonly ficheVerrouillee = computed(() => {
+    const s = this.dossierSoumis()?.statut;
+    return !!s && !['BROUILLON', 'EN_ATTENTE_DECISION_PRMP', 'EN_ATTENTE_PIECES', 'EN_ATTENTE_COMPLEMENTS_DEPOT'].includes(s);
+  });
+  readonly libelleStatutDossier = computed(() => statutDossierLabel(this.dossierSoumis()?.statut));
   /** Les 22 informations de la ligne, pour B01 (clé → valeur) ; libellé via le référentiel quand il est chargé. */
   readonly valeursPpm = computed(() => {
     const v = this.fiche()?.valeursPpm ?? {};

@@ -143,7 +143,10 @@ describe('Avis spécifique — l’encart et la modale d’impression', () => {
   it('disponible : imprimer ouvre la modale, reprend la dernière publication, prévient des champs vides, puis produit l’avis', () => {
     monter(dispo({ disponible: true, idAvis: 'FAV', statutPv: 'SIGNE' }), AVIS_1);
     expect(texte(racine().querySelector('.avs__txt'))).toContain('favorable');
-    bouton('Imprimer l’avis spécifique')!.click();
+    // 19/10 — un avis déjà imprimé : le bouton dit « Réimprimer », et le projet d’avis n’est plus proposé.
+    expect(bouton('Imprimer l’avis spécifique')).toBeUndefined();
+    expect(bouton('Projet d’avis')).toBeUndefined();
+    bouton('Réimprimer l’avis spécifique')!.click();
     rendre();
     http.expectOne('/api/fiches-marche/38').flush({ idDmc: 38, typeMarche: 'QUANTITE_FIXE', categorie: 'TRAVAUX', cadrage: { garantieSoumission: 'OUI' }, valeurs: { 'B04-DS-07': 'M. Rakoto' }, valeursPpm: {}, nbLots: 1, saisieParLot: false });
     http.expectOne((r) => r.url === '/api/champs-fiche-marche').flush({ blocs: [], champs: [champ('B04-DS-05', 'Montant à payer pour le dossier'), champ('B04-DS-07', 'Nom du responsable'), champ('B05-GQ-03', 'Montant de la garantie de soumission')] });
@@ -172,7 +175,7 @@ describe('Avis spécifique — l’encart et la modale d’impression', () => {
 
   it('les erreurs : 400 nominatif sous le champ ; 409 AVIS_INDISPONIBLE nommé, puis l’état relu', () => {
     monter(dispo({ disponible: true, idAvis: 'FAVR', statutPv: 'SIGNE' }), AVIS_1);
-    bouton('Imprimer l’avis spécifique')!.click();
+    bouton('Réimprimer l’avis spécifique')!.click();
     rendre();
     http.expectOne('/api/fiches-marche/38').flush({ idDmc: 38, typeMarche: 'QUANTITE_FIXE', categorie: 'FOURNITURES_SERVICES', cadrage: {}, valeurs: {}, valeursPpm: {}, nbLots: 1 });
     http.expectOne((r) => r.url === '/api/champs-fiche-marche').flush({ blocs: [], champs: [] });

@@ -83,7 +83,7 @@ describe('Lettres d’invitation — l’encart et la modale de la liste restrei
     monter(dispo({ disponible: true, idAvis: 'FAV', statutPv: 'SIGNE' }), LETTRES);
     expect(Array.from(racine().querySelectorAll('.lti__dest')).map(texte)).toEqual(['1. Cabinet Alpha', '2. Bureau Bêta']);
     expect(texte(racine().querySelector('.lti__impression'))).toContain('envoi du 05/10/2026, Antananarivo');
-    bouton('Imprimer les lettres d’invitation')!.click();
+    bouton('Réimprimer les lettres d’invitation')!.click();
     rendre();
     expect(modale().getAttribute('aria-label')).toBe('Imprimer les lettres d’invitation');
     expect(racine().querySelectorAll('.lti__candidat').length).toBe(2);
@@ -112,7 +112,7 @@ describe('Lettres d’invitation — l’encart et la modale de la liste restrei
 
   it('un 400 nominatif par candidat s’affiche sous le bon champ ; un candidat seul ne se retire pas', () => {
     monter(dispo({ disponible: true, idAvis: 'FAV', statutPv: 'SIGNE' }), LETTRES);
-    bouton('Imprimer les lettres d’invitation')!.click();
+    bouton('Réimprimer les lettres d’invitation')!.click();
     rendre();
     bouton('Imprimer 2 lettres', modale())!.click();
     http.expectOne('/api/fiches-marche/40/lettres-invitation').flush(

@@ -8,7 +8,7 @@
         version validée de la fiche.
       </p>
       @if (!lecture()) {
-        <button type="button" class="btn btn-primary btn-sm" (click)="ouvrir()">Imprimer les lettres d’invitation</button>
+        <button type="button" class="btn btn-primary btn-sm" (click)="ouvrir()">{{ imprimees().length ? 'Réimprimer les lettres d’invitation' : 'Imprimer les lettres d’invitation' }}</button>
       }
     } @else if (attente(); as m) {
       <p class="avs__attente">{{ m }}</p>
@@ -16,7 +16,8 @@
 
     <!-- ⚠️ Manuel révisé, R3b / R3c (13/10) — le projet de lettre dès la validation de la fiche (joint d'office au dossier), et la
          relecture des mentions ; pour un appel d'offres restreint, c'est la lettre AOR (gabarit LETTRE-AOR), candidats saisis. -->
-    @if (!lecture() && !impressionSeule()) {
+    <!-- ⚠️ 19/10 (pilote) — une fois les lettres imprimées, le projet n’a plus d’objet : il disparaît avec la relecture des mentions. -->
+    @if (!lecture() && !impressionSeule() && !imprimees().length) {
       <div class="avs__projet">
         @if (!projetDansOnglet()) {
           <button type="button" class="btn btn-sm btn-outline" [disabled]="occupe()" (click)="projet('pdf')">Projet de lettre (PDF)</button>
