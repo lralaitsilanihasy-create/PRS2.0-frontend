@@ -220,7 +220,7 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     expect(texte(lignes[0])).toContain('420 000 000 Ar');
     expect(racine().querySelector('.alert')).toBeNull();
 
-    bouton('Reprendre la fiche').click();
+    bouton('Ouvrir la fiche').click();
     expect(navigate).toHaveBeenCalledWith(['/prmp/dao', 42]);
 
     bouton('Préparer l’appel d’offres').click();
