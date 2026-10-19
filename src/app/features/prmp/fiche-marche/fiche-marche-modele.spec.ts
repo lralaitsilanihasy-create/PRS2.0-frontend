@@ -35,6 +35,7 @@ import {
   reprises,
   resumeCadrage,
   rubriqueOuverte,
+  gesteLigne,
 } from './fiche-marche-modele';
 
 const champ = (p: Partial<ChampFiche> & Pick<ChampFiche, 'code' | 'bloc' | 'rubrique'>): ChampFiche => ({
@@ -570,5 +571,23 @@ describe('sansObjet', () => {
     expect(sansObjet('B07-DE-01', {})).toBe(false);   // forme non dite : toujours exigé
     expect(sansObjet('B07-DE-01', { 'B07-FS-01#2': 'Marchés uniques non fractionnés', 'B07-FS-01': 'Marchés fractionnés par bons de commande successifs' }, 2)).toBe(false);
     expect(sansObjet('B09-AU-01', { 'B07-FS-01': 'Marchés fractionnés par bons de commande successifs' })).toBe(false);
+  });
+});
+
+describe('Ligne de la liste : bouton et repère selon la fiche et son dossier (19/10)', () => {
+  it('sans état servi : « Ouvrir la fiche », sans repère', () => {
+    expect(gesteLigne({ fiche: null, dossier: null })).toEqual({ bouton: 'Ouvrir la fiche', repere: null, genre: null });
+    expect(gesteLigne({})).toEqual({ bouton: 'Ouvrir la fiche', repere: null, genre: null });
+  });
+  it('brouillon, révision, validée sans dossier, dossier en brouillon : on continue', () => {
+    expect(gesteLigne({ fiche: { statut: 'BROUILLON', version: 1 }, dossier: null })).toMatchObject({ bouton: 'Continuer la saisie', repere: 'Brouillon' });
+    expect(gesteLigne({ fiche: { statut: 'BROUILLON', version: 3 }, dossier: null })).toMatchObject({ repere: 'Révision v3 en cours' });
+    expect(gesteLigne({ fiche: { statut: 'VALIDEE', version: 2 }, dossier: null })).toMatchObject({ bouton: 'Continuer', repere: 'Fiche validée v2' });
+    expect(gesteLigne({ fiche: { statut: 'VALIDEE', version: 2 }, dossier: { idDossier: 1, refeDossier: null, statut: 'BROUILLON' } })).toMatchObject({ repere: 'Fiche validée v2 · dossier en brouillon' });
+  });
+  it('rendu à la PRMP : rectifier ; à la Commission ou clôturé : consulter', () => {
+    expect(gesteLigne({ fiche: { statut: 'VALIDEE', version: 1 }, dossier: { idDossier: 1, refeDossier: 'R', statut: 'EN_ATTENTE_DECISION_PRMP' } })).toMatchObject({ bouton: 'Rectifier', genre: 'prmp' });
+    expect(gesteLigne({ fiche: { statut: 'VALIDEE', version: 1 }, dossier: { idDossier: 1, refeDossier: 'R', statut: 'DISPATCHE' } })).toMatchObject({ bouton: 'Consulter', genre: 'cnm' });
+    expect(gesteLigne({ fiche: { statut: 'VALIDEE', version: 1 }, dossier: { idDossier: 1, refeDossier: '00003/DAOO-CC/CNM/2026', statut: 'CLOTURE' } })).toEqual({ bouton: 'Consulter', repere: 'Dossier clôturé', genre: 'clos' });
   });
 });

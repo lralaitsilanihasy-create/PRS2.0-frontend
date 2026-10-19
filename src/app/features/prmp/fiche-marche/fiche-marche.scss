@@ -343,3 +343,9 @@ a.fm__suivi-carte:hover, a.fm__suivi-carte:focus-visible { border-color: var(--p
 .fm__suivi-etat { font-size: 0.8rem; color: var(--n-500); }
 .fm__ctrls-avert { padding: 0 1rem 0.5rem; }
 .fm__ctrls-avert summary { cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--n-600); }
+
+/* ⚠️ 19/10 (« etat-fiche-liste ») — le repère d'état d'une ligne, sous son bouton. */
+.fm__etat-ligne { margin-top: 0.3rem; font-size: 0.72rem; font-weight: 600; color: var(--n-500); white-space: normal; }
+.fm__etat-ligne[data-genre='saisie'] { color: var(--p-700); }
+.fm__etat-ligne[data-genre='prmp'] { color: var(--warning-text, #a16207); }
+.fm__etat-ligne[data-genre='clos'] { color: var(--n-500); }

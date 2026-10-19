@@ -1,4 +1,5 @@
-import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, DocumentDao, DocumentFiche, GabaritChamp, PieceProduite, ReferentielFiche, RubriqueFiche, TypeChamp, TypeMarche } from '../../../models';
+import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, DocumentDao, DocumentFiche, GabaritChamp, LigneEligible, PieceProduite, ReferentielFiche, RubriqueFiche, TypeChamp, TypeMarche } from '../../../models';
+import { statutDossierLabel } from '../../../shared/circuit/circuit-workflow';
 
 /**
  * Règles PURES de la fiche DAO (esquisse « DAO par type de marché », 22/09) : questions de cadrage, conditions
@@ -1036,4 +1037,26 @@ export function valeursModifiees(codes: ReadonlySet<string>, ecran: Record<strin
   const cles = new Set([...Object.keys(ecran), ...Object.keys(servies)].filter((k) => codes.has(k.split('#')[0])));
   for (const k of cles) if (norme(ecran[k]) !== norme(servies[k])) return true;
   return false;
+}
+
+/** Le geste proposé sur une ligne qui a déjà une fiche, et son repère d'état. */
+export interface GesteLigne {
+  bouton: string;
+  repere: string | null;
+  genre: 'saisie' | 'prmp' | 'cnm' | 'clos' | null;
+}
+
+/**
+ * ⚠️ 19/10 (« etat-fiche-liste ») — le bouton et le repère d'une ligne qui a une fiche, selon l'état servi de la fiche et de son
+ * dossier. Sans ces champs (serveur plus ancien), « Ouvrir la fiche », juste dans tous les cas.
+ */
+export function gesteLigne(l: Pick<LigneEligible, 'fiche' | 'dossier'>): GesteLigne {
+  const f = l.fiche;
+  const d = l.dossier;
+  if (!f) return { bouton: 'Ouvrir la fiche', repere: null, genre: null };
+  if (f.statut === 'BROUILLON') return { bouton: 'Continuer la saisie', repere: f.version > 1 ? `Révision v${f.version} en cours` : 'Brouillon', genre: 'saisie' };
+  if (!d || d.statut === 'BROUILLON') return { bouton: 'Continuer', repere: `Fiche validée v${f.version}${d ? ' · dossier en brouillon' : ''}`, genre: 'saisie' };
+  if (['EN_ATTENTE_DECISION_PRMP', 'EN_ATTENTE_PIECES', 'EN_ATTENTE_COMPLEMENTS_DEPOT'].includes(d.statut)) return { bouton: 'Rectifier', repere: `Rendu à la PRMP · ${statutDossierLabel(d.statut)}`, genre: 'prmp' };
+  if (d.statut === 'CLOTURE') return { bouton: 'Consulter', repere: 'Dossier clôturé', genre: 'clos' };
+  return { bouton: 'Consulter', repere: `À la Commission · ${statutDossierLabel(d.statut)}`, genre: 'cnm' };
 }

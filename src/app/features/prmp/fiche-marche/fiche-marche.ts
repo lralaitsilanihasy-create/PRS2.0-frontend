@@ -78,6 +78,7 @@ import {
   rubriqueOuverte,
   typeOutille,
   avecDefauts,
+  gesteLigne,
 } from './fiche-marche-modele';
 import { LIBELLES_ETAT_CAO, LIBELLES_ETAT_CEREMONIE } from '../../cao/libelles-cao';
 
@@ -603,6 +604,9 @@ export class FicheMarcheEcran {
     return !!s && !['BROUILLON', 'EN_ATTENTE_DECISION_PRMP', 'EN_ATTENTE_PIECES', 'EN_ATTENTE_COMPLEMENTS_DEPOT'].includes(s);
   });
   readonly libelleStatutDossier = computed(() => statutDossierLabel(this.dossierSoumis()?.statut));
+  /** ⚠️ 19/10 (« etat-fiche-liste ») — le bouton et le repère d'une ligne qui a une fiche (règle dans le modèle). */
+  readonly geste = gesteLigne;
+
   /** ⚠️ 19/10 — « Suivi de la procédure » : seulement s'il a quelque chose à montrer (un état ou un écran de la procédure). */
   readonly suiviVisible = computed(() => {
     const f = this.fiche();

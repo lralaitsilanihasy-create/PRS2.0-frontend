@@ -574,6 +574,10 @@ export interface LigneEligible {
    * la règle de la validation (mode de la ligne, catégorie). Une fiche qui a déjà produit son dossier : le sous-type de ce dossier fait foi.
    */
   sousType?: string | null;
+  /** ⚠️ 19/10 (« etat-fiche-liste ») — la fiche de la ligne (`null` sans fiche) : brouillon (ou révision ouverte) ou validée, et sa version. */
+  fiche?: { statut: 'BROUILLON' | 'VALIDEE'; version: number } | null;
+  /** ⚠️ 19/10 — le dossier soumis né de la fiche, `null` tant qu'il n'est pas créé. */
+  dossier?: { idDossier: number; refeDossier: string | null; statut: string } | null;
 }
 
 /**
