@@ -1,11 +1,13 @@
-import { ChangeDetectionStrategy, Component, DOCUMENT, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DOCUMENT, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { MaProcedureCao } from '../../models';
 import { CaoEspaceService, KpiService } from '../../services';
+import { BandeauEspace, PuceBandeau } from '../../shared/ui/bandeau-espace';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
+import { Icone } from '../../shared/ui/icone';
 import { dateHeureFr } from '../candidat/libelles-candidat';
-import { LIBELLES_ETAT_CEREMONIE, LIBELLES_ETAT_PART, classeCeremonie, classePart } from './libelles-cao';
+import { LIBELLES_ETAT_CEREMONIE, LIBELLES_ETAT_PART, classeCeremonie, classePart, prochainPasCao } from './libelles-cao';
 
 /**
  * « Mes procédures » (`GET /api/cao/mes-procedures`, lot 2a §B2) : les appels d'offres où le membre connecté siège, avec
@@ -14,15 +16,12 @@ import { LIBELLES_ETAT_CEREMONIE, LIBELLES_ETAT_PART, classeCeremonie, classePar
 @Component({
   selector: 'app-mes-procedures-cao',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur],
+  imports: [RouterLink, EtatErreur, BandeauEspace, Icone],
   template: `
-    <header class="page-header">
-      <div class="page-subtitle">Commission d'appel d'offres</div>
-      <h1 class="page-title">Mes procédures</h1>
-    </header>
-    <p class="page-role">
+    <app-bandeau-espace surtitre="Commission d'appel d'offres" titre="Mes procédures" [puces]="puces()" />
+    <p class="page-role mp__role">
       Les appels d'offres où vous siégez. Pour chacun, vous détenez une part de la clé qui ouvrira les offres : publiez
-      votre clé avant la cérémonie, vérifiez votre part avant la date limite.
+      votre clé avant la cérémonie, vérifiez votre part avant la date limite, puis apportez-la à la séance d'ouverture.
     </p>
 
     <!-- ⚠️ 07/10 — les compteurs de l'évaluation des offres (V78, GET /api/kpis/badges, ouvert au membre de la CAO). -->
@@ -47,20 +46,21 @@ import { LIBELLES_ETAT_CEREMONIE, LIBELLES_ETAT_PART, classeCeremonie, classePar
       </div>
     } @else {
       <ul class="mp" aria-label="Mes procédures">
-        @for (p of procedures(); track p.idDmc) {
+        @for (l of lignes(); track l.p.idDmc) {
           <li>
-            <a class="mp__carte" [routerLink]="['/cao', 'procedures', p.idDmc]">
+            <a class="mp__carte" [class]="'mp__carte mp__carte--' + l.pas.ton" [routerLink]="['/cao', 'procedures', l.p.idDmc]">
               <div class="mp__haut">
-                <span class="cnm-mono mp__ref">{{ p.reference || ('procédure ' + p.idDmc) }}</span>
-                @if (p.president) { <span class="badge badge-primary">Président</span> }
+                <span class="cnm-mono mp__ref">{{ l.p.reference || 'Procédure' }}</span>
+                @if (l.p.president) { <span class="badge badge-primary">Président</span> }
               </div>
-              <h2 class="mp__objet">{{ p.objet || 'Objet non renseigné' }}</h2>
-              @if (p.autoriteContractante) { <p class="mp__meta">{{ p.autoriteContractante }}</p> }
+              <h2 class="mp__objet">{{ l.p.objet || 'Objet non renseigné' }}</h2>
+              @if (l.p.autoriteContractante) { <p class="mp__meta">{{ l.p.autoriteContractante }}</p> }
               <p class="mp__etats">
-                <span class="badge" [class]="'badge ' + classePart(p.etatPart)">{{ parts[p.etatPart] }}</span>
-                @if (p.etatCeremonie; as c) { <span class="badge" [class]="'badge ' + classeCeremonie(c)">Cérémonie {{ ceremonies[c] }}</span> }
+                <span class="badge" [class]="'badge ' + classePart(l.p.etatPart)">{{ parts[l.p.etatPart] }}</span>
+                @if (l.p.etatCeremonie; as c) { <span class="badge" [class]="'badge ' + classeCeremonie(c)">Cérémonie {{ ceremonies[c] }}</span> }
               </p>
-              @if (p.dateLimite) { <p class="mp__limite">Date limite des offres : <strong>{{ dateHeure(p.dateLimite) }}</strong></p> }
+              @if (l.p.dateLimite) { <p class="mp__limite"><app-icone nom="clock" [taille]="14" /> Date limite des offres : <strong>{{ dateHeure(l.p.dateLimite) }}</strong></p> }
+              <span class="mp__pas"><span>{{ l.pas.texte }}</span><app-icone nom="chev" [taille]="16" /></span>
             </a>
           </li>
         }
@@ -68,16 +68,30 @@ import { LIBELLES_ETAT_CEREMONIE, LIBELLES_ETAT_PART, classeCeremonie, classePar
     }
   `,
   styles: `
-    :host { display: block; }
+    :host { display: flex; flex-direction: column; gap: 1rem; }
+    .mp__role { margin: 0; }
+    .mp__compteurs { margin: 0; }
     .mp { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); gap: 0.9rem; }
-    .mp__carte { display: flex; flex-direction: column; gap: 0.35rem; height: 100%; box-sizing: border-box; padding: 0.9rem 1rem; background: #fff; border: 1px solid var(--n-200); border-radius: var(--radius-lg); text-decoration: none; color: inherit; }
-    .mp__carte:hover, .mp__carte:focus-visible { border-color: var(--p-400); box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06); }
+    .mp__carte { display: flex; flex-direction: column; gap: 0.4rem; height: 100%; box-sizing: border-box; padding: 1rem 1.1rem 0; background: #fff;
+      border: 1px solid var(--n-200); border-top: 4px solid var(--n-300); border-radius: var(--radius-lg); text-decoration: none; color: inherit; overflow: hidden;
+      transition: box-shadow 0.15s, transform 0.15s; }
+    .mp__carte:hover, .mp__carte:focus-visible { box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08); transform: translateY(-1px); }
     .mp__haut { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
-    .mp__ref { font-size: var(--text-sm); color: var(--n-500); }
-    .mp__objet { margin: 0; font-size: 1rem; line-height: 1.35; }
+    .mp__ref { font-size: var(--text-sm); color: var(--p-700); font-weight: 700; }
+    .mp__objet { margin: 0; font-size: 1.02rem; line-height: 1.35; }
     .mp__meta { margin: 0; font-size: var(--text-sm); color: var(--n-500); }
     .mp__etats { margin: 0.2rem 0 0; display: flex; gap: 0.4rem; flex-wrap: wrap; }
-    .mp__limite { margin: 0.2rem 0 0; font-size: var(--text-sm); }
+    .mp__limite { margin: 0.1rem 0 0; display: flex; gap: 0.35rem; align-items: center; font-size: var(--text-sm); color: var(--n-600); }
+    .mp__pas { margin: auto -1.1rem 0; padding: 0.6rem 1.1rem; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;
+      font-size: var(--text-sm); font-weight: 700; border-top: 1px solid var(--n-200); background: var(--n-100); color: var(--n-700); }
+    .mp__carte--action { border-top-color: var(--warning-text); }
+    .mp__carte--action .mp__pas { background: var(--warning-bg); color: var(--warning-text); border-top-color: var(--warning-bdr); }
+    .mp__carte--alerte { border-top-color: var(--danger-text); }
+    .mp__carte--alerte .mp__pas { background: var(--danger-bg); color: var(--danger-text); border-top-color: var(--danger-bdr); }
+    .mp__carte--attente { border-top-color: var(--info-text); }
+    .mp__carte--attente .mp__pas { background: var(--info-bg); color: var(--info-text); border-top-color: var(--info-bdr); }
+    .mp__carte--suite { border-top-color: var(--p-600); }
+    .mp__carte--suite .mp__pas { background: var(--p-600); color: #fff; border-top-color: var(--p-600); }
   `,
 })
 export class MesProceduresCao implements OnInit {
@@ -96,6 +110,24 @@ export class MesProceduresCao implements OnInit {
   readonly procedures = signal<MaProcedureCao[]>([]);
   readonly evaluationsEnCours = signal(0);
   readonly rapportsASigner = signal(0);
+  /** ⚠️ 19/10 — chaque procédure avec son prochain pas ; celles qui attendent un geste du membre d'abord. */
+  readonly lignes = computed(() => {
+    const rang = { alerte: 0, action: 1, suite: 2, attente: 3 } as const;
+    return this.procedures()
+      .map((p) => ({ p, pas: prochainPasCao(p) }))
+      .sort((x, y) => rang[x.pas.ton] - rang[y.pas.ton]);
+  });
+  readonly puces = computed<PuceBandeau[]>(() => {
+    const l = this.lignes();
+    if (!l.length) return [];
+    const aFaire = l.filter((x) => x.pas.ton === 'action' || x.pas.ton === 'alerte').length;
+    const presidees = l.filter((x) => x.p.president).length;
+    return [
+      { texte: l.length > 1 ? 'procédures' : 'procédure', fort: l.length },
+      ...(presidees ? [{ texte: 'présidée(s)', fort: presidees }] : []),
+      ...(aFaire ? [{ texte: 'clé(s) à traiter', fort: aFaire, accent: true }] : []),
+    ];
+  });
 
   ngOnInit(): void {
     this.document.title = 'Mes procédures — Commission d’appel d’offres — PRS 2.0';

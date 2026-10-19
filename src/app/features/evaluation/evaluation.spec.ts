@@ -270,6 +270,8 @@ describe('Écran de l’évaluation', () => {
   afterEach(() => {
     // 09/10 (2d) — une évaluation en cours lit aussi l'attribution (une reprise y garde son lot et son rapport archivé) : ici, rien.
     http.match((r) => r.url.endsWith('/attribution')).forEach((r) => r.flush({ message: 'x' }, { status: 404, statusText: 'Not Found' }));
+    // 19/10 — dans l'espace de la commission, le bandeau lit la référence de la procédure (vue du membre).
+    http.match('/api/cao/procedures/40').forEach((r) => r.flush({ procedure: { reference: '13-CC/MEF', objet: 'Objet' }, president: false, cao: { membres: [] } }));
     http.verify();
     TestBed.resetTestingModule();
   });

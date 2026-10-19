@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DOCUMENT, OnInit, inject, input, signal } from '@angular/core';
 
 import { ouvrirBlobSur } from '../../core/securite/fichiers-surs';
 import { DocumentFormulaire, Lecture, OffreLue, TypeAlerteLecture } from '../../models';
 import { SeanceService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
+import { LIBELLES_STATUT_NIF } from '../candidat/libelles-candidat';
 
 const LIBELLES_INTEGRITE: Readonly<Record<string, string>> = {
   INTACTE: 'Intacte',
@@ -30,61 +31,104 @@ const LIBELLES_INTEGRITE: Readonly<Record<string, string>> = {
     } @else if (lecture(); as l) {
       <div class="ls" [class.ls--projection]="projection()">
         @if (!l.offres.length && !l.nonOuvertes.length) { <p class="empty-state-title">Aucune offre n'a été déposée.</p> }
+        @if (l.offres.length) {
+          <!-- ⚠️ 19/10 (pilote) — la synthèse de la lecture, dans l'ordre d'arrivée : aller d'un coup d'œil à l'offre voulue. -->
+          <div class="ls__synthese">
+            <table class="ls__table" aria-label="Synthèse de la lecture des offres">
+              <thead><tr><th scope="col">N°</th><th scope="col">Soumissionnaire</th><th scope="col" class="ls__num">Montant TTC</th><th scope="col">Délai</th><th scope="col">Intégrité</th><th scope="col">Alertes</th></tr></thead>
+              <tbody>
+                @for (o of l.offres; track o.idOffre) {
+                  <tr>
+                    <td><a class="ls__ancre" [href]="'#offre-' + o.idOffre" [attr.aria-label]="'Aller à l’offre n° ' + (o.numero ?? '?')" (click)="aller($event, o.idOffre)">{{ o.numero ?? '—' }}</a></td>
+                    <td>{{ o.entreprise.raisonSociale }}{{ o.lot ? ' — lot ' + o.lot : '' }}</td>
+                    <td class="ls__num"><strong>{{ montant(o.acteEngagement?.montantTtc) }}</strong></td>
+                    <td>{{ o.acteEngagement ? o.acteEngagement.delai + ' ' + (o.acteEngagement.delaiUnite === 'MOIS' ? 'mois' : 'jours') : '—' }}</td>
+                    <td><span class="badge" [class.badge-success]="o.integrite === 'INTACTE'" [class.badge-danger]="o.integrite !== 'INTACTE'">{{ integrites[o.integrite] ?? o.integrite }}</span></td>
+                    <td>
+                      @if (o.alertes.length || o.piecesManquantes.length) {
+                        <span class="badge badge-warning">{{ o.alertes.length + (o.piecesManquantes.length ? 1 : 0) }}</span>
+                      } @else {
+                        <span class="text-muted">—</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
         @for (o of l.offres; track o.idOffre) {
-          <article class="card ls__offre" [attr.aria-label]="'Offre n° ' + (o.numero ?? '?')">
+          <article class="card ls__offre" tabindex="-1" [id]="'offre-' + o.idOffre" [class.ls__offre--ko]="o.integrite !== 'INTACTE'" [attr.aria-label]="'Offre n° ' + (o.numero ?? '?')">
             <header class="ls__tete">
-              <h3 class="ls__titre">Offre n° {{ o.numero ?? '—' }}{{ o.lot ? ' — lot ' + o.lot : '' }} · {{ o.entreprise.raisonSociale }}</h3>
+              <span class="ls__numero" aria-hidden="true">{{ o.numero ?? '?' }}</span>
+              <div class="ls__ident">
+                <h3 class="ls__titre">{{ o.entreprise.raisonSociale }}{{ o.lot ? ' — lot ' + o.lot : '' }}</h3>
+                <span class="text-sm text-muted">Offre n° {{ o.numero ?? '—' }} · NIF <span class="cnm-mono">{{ o.entreprise.nif }}</span>
+                  @if (o.entreprise.verification; as v) {
+                    · <span [class.ls__nif-ok]="v.statut === 'VERIFIE_DGI' || v.statut === 'VERIFIE_SUR_PIECES'" [class.ls__nif-ko]="v.statut === 'INCONNU_DGI' || v.statut === 'REFUSE_SUR_PIECES'">{{ statutsNif[v.statut] ?? v.statut }}</span>
+                  }
+                </span>
+              </div>
               <span class="badge" [class.badge-success]="o.integrite === 'INTACTE'" [class.badge-danger]="o.integrite !== 'INTACTE'">{{ integrites[o.integrite] ?? o.integrite }}</span>
             </header>
             @if (o.motif) { <p class="text-sm ls__motif">{{ o.motif }}</p> }
-            <p class="text-sm">NIF <span class="cnm-mono">{{ o.entreprise.nif }}</span>@if (o.entreprise.verification; as v) { · vérification : {{ v.statut }} }</p>
-            @if (o.groupement?.length) { <p class="text-sm">Groupement : {{ membres(o) }}</p> }
+            @if (o.groupement?.length) { <p class="text-sm ls__ligne">Groupement : {{ membres(o) }}</p> }
             @if (o.acteEngagement; as a) {
+              <div class="ls__montants">
+                <div class="ls__montant"><span>Montant HT</span><strong>{{ montant(a.montantHt) }}</strong></div>
+                <div class="ls__montant ls__montant--ttc"><span>Montant TTC</span><strong>{{ montant(a.montantTtc) }}</strong></div>
+                @if (o.formulaires && o.totaux; as t) {
+                  <!-- Lot 5 : les totaux recalculés par le serveur depuis le bordereau scellé. -->
+                  <div class="ls__montant ls__montant--calc" aria-label="Totaux recalculés depuis le bordereau"><span>Bordereau recalculé</span><strong>{{ montant(t.ttc) }} TTC</strong><small>{{ montant(t.ht) }} HT</small></div>
+                  @if (t.htMin != null) {
+                    <div class="ls__montant ls__montant--calc"><span>Au minimum</span><strong>{{ montant(t.ttcMin) }} TTC</strong><small>{{ montant(t.htMin) }} HT</small></div>
+                  }
+                }
+              </div>
               <dl class="ls__ae">
-                <dt>Montant HT</dt><dd>{{ montant(a.montantHt) }}</dd>
-                <dt>Montant TTC</dt><dd><strong>{{ montant(a.montantTtc) }}</strong></dd>
-                <dt>Délai</dt><dd>{{ a.delai }} {{ a.delaiUnite === 'MOIS' ? 'mois' : 'jours' }}</dd>
-                <dt>Validité</dt><dd>{{ a.validiteJours }} jours</dd>
-                <dt>Rabais</dt><dd>{{ o.rabais?.lecture || (isTexte(a.rabais) ? a.rabais : '') || '—' }}</dd>
-                <dt>Garantie</dt><dd>{{ garantie(o) }}</dd>
+                <div><dt>Délai</dt><dd>{{ a.delai }} {{ a.delaiUnite === 'MOIS' ? 'mois' : 'jours' }}</dd></div>
+                <div><dt>Validité</dt><dd>{{ a.validiteJours }} jours</dd></div>
+                <div><dt>Rabais</dt><dd>{{ o.rabais?.lecture || (isTexte(a.rabais) ? a.rabais : '') || '—' }}</dd></div>
+                <div><dt>Garantie</dt><dd>{{ garantie(o) }}</dd></div>
                 @if (o.fraisDossier; as fr) {
                   <!-- V72 : le reçu des frais de dossier, validé avant le retrait (lu par le serveur, pas dans l'offre). -->
-                  <dt>Frais de dossier</dt><dd>{{ fr.regle ? 'réglés' + (fr.referencePaiement ? ' · réf. ' + fr.referencePaiement : '') + (fr.dateValidation ? ' · reçu validé le ' + dateCourte(fr.dateValidation) : '') : 'aucun reçu validé' }}</dd>
-                }
-              </dl>
-            }
-            @if (o.formulaires && o.totaux; as t) {
-              <!-- Lot 5 : les totaux recalculés par le serveur depuis le bordereau scellé. -->
-              <dl class="ls__ae ls__totaux" aria-label="Totaux recalculés depuis le bordereau">
-                <dt>Bordereau, HT</dt><dd>{{ montant(t.ht) }}</dd>
-                <dt>Bordereau, TTC</dt><dd>{{ montant(t.ttc) }}</dd>
-                @if (t.htMin != null) {
-                  <dt>Au minimum, HT</dt><dd>{{ montant(t.htMin) }}</dd>
-                  <dt>Au minimum, TTC</dt><dd>{{ montant(t.ttcMin) }}</dd>
+                  <div class="ls__large"><dt>Frais de dossier</dt><dd>{{ fr.regle ? 'réglés' + (fr.referencePaiement ? ' · réf. ' + fr.referencePaiement : '') + (fr.dateValidation ? ' · reçu validé le ' + dateCourte(fr.dateValidation) : '') : 'aucun reçu validé' }}</dd></div>
                 }
               </dl>
             }
             @if (o.piecesManquantes.length) { <p class="text-sm ls__manque">Pièces manquantes : {{ o.piecesManquantes.join(' ; ') }}</p> }
             @for (a of o.alertes; track $index) { <p class="alert alert-warning ls__alerte" role="note"><span>{{ alertes[a.type] ?? a.type }} : {{ a.message }}</span></p> }
             @if (erreurPiece()?.idOffre === o.idOffre) { <p class="alert alert-danger" role="alert"><span>{{ erreurPiece()!.message }}</span></p> }
-            @if (piecesOuvrables() && documents(o).length) {
-              <ul class="ls__pieces" aria-label="Formulaires remplis en ligne">
-                @for (d of documents(o); track d.type) {
-                  <li><button type="button" class="btn btn-sm btn-secondary" [disabled]="ouverture() === o.idOffre + d.type" (click)="ouvrirFormulaire(o.idOffre, d.type)">{{ d.libelle }} (rempli)</button></li>
+            @if (piecesOuvrables() && (documents(o).length || o.pieces.length)) {
+              <div class="ls__docs">
+                @if (documents(o).length) {
+                  <div class="ls__groupe">
+                    <span class="ls__groupe-titre">Formulaires remplis en ligne</span>
+                    <ul class="ls__pieces" aria-label="Formulaires remplis en ligne">
+                      @for (d of documents(o); track d.type) {
+                        <li><button type="button" class="btn btn-sm btn-secondary" [disabled]="ouverture() === o.idOffre + d.type" (click)="ouvrirFormulaire(o.idOffre, d.type)">{{ d.libelle }}</button></li>
+                      }
+                    </ul>
+                  </div>
                 }
-              </ul>
-            }
-            @if (piecesOuvrables() && o.pieces.length) {
-              <ul class="ls__pieces">
-                @for (p of o.pieces; track p.code) {
-                  <li>
-                    @if (p.presente && p.nomFichier) {
-                      <button type="button" class="btn btn-sm btn-outline" [disabled]="ouverture() === o.idOffre + p.nomFichier" (click)="ouvrir(o.idOffre, p.nomFichier!)">{{ p.libelle }}</button>
-                      @if (p.empreinteConforme === false) { <span class="badge badge-danger">empreinte non conforme</span> }
-                    } @else { <span class="text-sm text-muted">{{ p.libelle }} — absente</span> }
-                  </li>
+                @if (o.pieces.length) {
+                  <div class="ls__groupe">
+                    <span class="ls__groupe-titre">Pièces jointes</span>
+                    <ul class="ls__pieces" aria-label="Pièces jointes de l'offre">
+                      @for (p of o.pieces; track p.code) {
+                        <li>
+                          @if (p.presente && p.nomFichier) {
+                            <button type="button" class="btn btn-sm btn-outline" [disabled]="ouverture() === o.idOffre + p.nomFichier" (click)="ouvrir(o.idOffre, p.nomFichier!)">{{ p.libelle }}</button>
+                            @if (p.empreinteConforme === false) { <span class="badge badge-danger">empreinte non conforme</span> }
+                          } @else {
+                            <span class="text-sm text-muted">{{ p.libelle }} — absente</span>
+                          }
+                        </li>
+                      }
+                    </ul>
+                  </div>
                 }
-              </ul>
+              </div>
             }
           </article>
         }
@@ -98,23 +142,49 @@ const LIBELLES_INTEGRITE: Readonly<Record<string, string>> = {
     }
   `,
   styles: `
-    .ls { display: flex; flex-direction: column; gap: 0.75rem; }
-    .ls__offre { padding: 0.9rem 1.1rem; display: flex; flex-direction: column; gap: 0.4rem; }
-    .ls__tete { display: flex; justify-content: space-between; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
-    .ls__titre { margin: 0; font-size: 1rem; }
+    .ls { display: flex; flex-direction: column; gap: 0.8rem; }
+    .ls__synthese { overflow-x: auto; border: 1px solid var(--n-200); border-radius: 10px; background: #fff; }
+    .ls__table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+    .ls__table th { text-align: left; padding: 0.5rem 0.75rem; background: var(--p-100); color: var(--p-800); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+    .ls__table td { padding: 0.5rem 0.75rem; border-top: 1px solid var(--n-100); vertical-align: middle; }
+    .ls__table .ls__num { text-align: right; white-space: nowrap; }
+    .ls__ancre { display: inline-grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 50%; background: var(--p-100); color: var(--p-800); font-weight: 700; text-decoration: none; }
+    .ls__ancre:hover, .ls__ancre:focus-visible { background: var(--p-600); color: #fff; }
+    .ls__offre { padding: 1rem 1.15rem; display: flex; flex-direction: column; gap: 0.7rem; border-left: 4px solid var(--success-bdr); scroll-margin-top: 1rem; }
+    .ls__offre:focus { outline: none; box-shadow: 0 0 0 3px var(--p-200); }
+    .ls__offre--ko { border-left-color: var(--danger-bdr); }
+    .ls__tete { display: flex; gap: 0.75rem; align-items: center; }
+    .ls__numero { flex: none; width: 2.4rem; height: 2.4rem; border-radius: 50%; display: grid; place-items: center; background: var(--p-600); color: #fff; font-weight: 700; }
+    .ls__ident { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+    .ls__titre { margin: 0; font-size: 1.05rem; }
+    .ls__nif-ok { color: var(--success-text); font-weight: 600; }
+    .ls__nif-ko { color: var(--danger-text); font-weight: 600; }
     .ls__motif, .ls__manque { margin: 0; color: var(--danger-text); }
-    .ls__ae { margin: 0; display: grid; grid-template-columns: max-content 1fr max-content 1fr; gap: 0.25rem 1rem; font-size: var(--text-sm); }
-    .ls__ae dt { color: var(--n-500); }
-    .ls__ae dd { margin: 0; }
+    .ls__ligne { margin: 0; }
+    .ls__montants { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.6rem; }
+    .ls__montant { display: flex; flex-direction: column; gap: 0.1rem; padding: 0.55rem 0.8rem; border-radius: 8px; background: var(--n-100); }
+    .ls__montant span { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-500); }
+    .ls__montant strong { font-size: 1.05rem; color: var(--n-900); }
+    .ls__montant small { font-size: 0.75rem; color: var(--n-500); }
+    .ls__montant--ttc { background: var(--p-100); }
+    .ls__montant--ttc strong { color: var(--p-800); }
+    .ls__montant--calc { background: var(--info-bg); }
+    .ls__ae { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.5rem 1rem; font-size: var(--text-sm); }
+    .ls__ae > div { display: flex; flex-direction: column; }
+    .ls__ae dt { color: var(--n-500); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .ls__ae dd { margin: 0; color: var(--n-800); }
+    .ls__large { grid-column: 1 / -1; }
     .ls__alerte { margin: 0; }
-    .ls__totaux { padding-top: 0.3rem; border-top: 1px dashed var(--n-200); }
-    .ls__pieces { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .ls__docs { display: flex; flex-wrap: wrap; gap: 0.75rem 1.5rem; padding-top: 0.7rem; border-top: 1px solid var(--n-200); }
+    .ls__groupe { display: flex; flex-direction: column; gap: 0.35rem; }
+    .ls__groupe-titre { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-500); font-weight: 600; }
+    .ls__pieces { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
     .ls__h3 { margin: 0.5rem 0 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-500); }
     .ls__non { margin: 0; padding-left: 1.2rem; font-size: var(--text-sm); }
     .ls--projection { font-size: 1.25rem; }
     .ls--projection .ls__titre { font-size: 1.5rem; }
-    .ls--projection .ls__ae { font-size: 1.2rem; }
-    @media (max-width: 700px) { .ls__ae { grid-template-columns: max-content 1fr; } }
+    .ls--projection .ls__table, .ls--projection .ls__ae { font-size: 1.15rem; }
+    .ls--projection .ls__montant strong { font-size: 1.5rem; }
   `,
 })
 export class LectureSeance implements OnInit {
@@ -123,8 +193,10 @@ export class LectureSeance implements OnInit {
   readonly projection = input(false);
 
   private readonly service = inject(SeanceService);
+  private readonly document = inject(DOCUMENT);
 
   readonly integrites = LIBELLES_INTEGRITE;
+  readonly statutsNif: Readonly<Record<string, string>> = LIBELLES_STATUT_NIF;
   readonly chargement = signal(true);
   readonly erreur = signal(false);
   readonly lecture = signal<Lecture | null>(null);
@@ -178,6 +250,14 @@ export class LectureSeance implements OnInit {
         this.chargement.set(false);
       },
     });
+  }
+
+  /** ⚠️ 19/10 — la synthèse mène à la carte de l'offre sans toucher à l'URL. */
+  aller(e: Event, idOffre: string): void {
+    e.preventDefault();
+    const cible = this.document.getElementById('offre-' + idOffre);
+    cible?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    cible?.focus({ preventScroll: true });
   }
 
   membres(o: OffreLue): string {

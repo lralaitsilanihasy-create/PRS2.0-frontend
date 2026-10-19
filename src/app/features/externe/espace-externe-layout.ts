@@ -28,6 +28,8 @@ interface ConfigEspace {
   piedLien: Lien | null;
   /** Où mène la déconnexion : les procédures publiques pour le candidat ; la connexion pour le membre de CAO, dont rien n'est public. */
   apresDeconnexion: string;
+  /** ⚠️ 19/10 (pilote) — la barre du haut en bleu profond : les espaces des commissions et du dépositaire, pas celui du candidat. */
+  sombre: boolean;
 }
 
 const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
@@ -48,6 +50,7 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
     entree: { label: 'Créer un compte', path: '/candidat/inscription' },
     piedLien: { label: "À propos de l'espace candidat", path: '/accueil/candidat' },
     apresDeconnexion: '/candidat/procedures',
+    sombre: false,
   },
   cao: {
     role: 'MEMBRE_CAO',
@@ -64,6 +67,7 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
     entree: { label: 'Activer mon compte', path: '/cao/activation' },
     piedLien: null,
     apresDeconnexion: '/login',
+    sombre: true,
   },
   depositaire: {
     role: 'DEPOSITAIRE',
@@ -74,6 +78,7 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
     entree: { label: 'Activer mon compte', path: '/depositaire/activation' },
     piedLien: null,
     apresDeconnexion: '/login',
+    sombre: true,
   },
 };
 
@@ -90,7 +95,7 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
   imports: [RouterOutlet, RouterLink, RouterLinkActive, Icone, ChangerMotDePasseModal],
   template: `
     <a class="cnm-sr-only cl-evitement" href="#cl-contenu">Aller au contenu</a>
-    <header class="cl-top">
+    <header class="cl-top" [class.cl-top--sombre]="config.sombre">
       <div class="cl-top__in">
         <a class="cl-marque" [routerLink]="config.racine" [attr.aria-label]="config.titre + ' — accueil'">
           <span class="cl-marque__mef" aria-hidden="true">MEF</span>
@@ -170,6 +175,13 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
     .cl-btn--primaire { background: var(--p-700); border-color: var(--p-700); color: #fff; }
     .cl-btn--primaire:hover { background: var(--p-800); }
     .cl-main { flex: 1; padding-top: 24px; padding-bottom: 32px; }
+    .cl-top--sombre { background: var(--sidebar-bg); border-bottom: 0; }
+    .cl-top--sombre .cl-marque, .cl-top--sombre .cl-user__nom { color: #fff; }
+    .cl-top--sombre .cl-marque__mef { background: #fff; color: var(--p-800); }
+    .cl-top--sombre .cl-marque__s, .cl-top--sombre .cl-user__role { color: rgba(255, 255, 255, 0.78); }
+    .cl-top--sombre .cl-btn { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.35); color: #fff; }
+    .cl-top--sombre .cl-btn:hover { background: rgba(255, 255, 255, 0.2); }
+    .cl-top--sombre .cl-onglets { background: #fff; border-top: 0; border-bottom: 1px solid var(--n-200); }
     .cl-pied { border-top: 1px solid var(--n-200); background: #fff; }
     .cl-pied__in { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding-top: 12px; padding-bottom: 12px; font-size: var(--text-xs); color: var(--n-500); }
     .cl-pied a { color: var(--p-700); font-weight: 600; }

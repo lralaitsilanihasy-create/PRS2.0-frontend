@@ -68,3 +68,22 @@ export function classeCeremonie(etat: EtatCeremonie | null | undefined): string 
 export function classeCao(etat: EtatCao | null | undefined): string {
   return etat === 'COMPLETE' ? 'badge-success' : etat === 'INCOMPLETE' ? 'badge-warning' : 'badge-neutral';
 }
+
+/** Le prochain pas d'un membre sur une de ses procédures, et le ton de la carte. */
+export interface ProchainPasCao {
+  texte: string;
+  ton: 'action' | 'alerte' | 'attente' | 'suite';
+}
+
+/**
+ * ⚠️ 19/10 (pilote) — ce que « Mes procédures » dit au membre, d'un coup d'œil : sa clé d'abord (à publier, perdue, cérémonie
+ * rouverte), puis le temps des dépôts, puis la séance et l'évaluation une fois la date limite passée.
+ */
+export function prochainPasCao(p: { etatPart: EtatPart; etatCeremonie: EtatCeremonie | null; dateLimite: string | null }, maintenant = new Date()): ProchainPasCao {
+  if (p.etatPart === 'PERDUE') return { texte: 'Part perdue : remplacer ma clé', ton: 'alerte' };
+  if (p.etatPart === 'ABSENTE' || p.etatCeremonie === 'A_REFAIRE') return { texte: p.etatCeremonie === 'A_REFAIRE' ? 'Cérémonie rouverte : republier ma clé' : 'Publier ma clé', ton: 'action' };
+  if (p.etatCeremonie !== 'CLOSE') return { texte: 'Clé publiée : attendre la clôture de la cérémonie', ton: 'attente' };
+  const limite = p.dateLimite ? new Date(p.dateLimite) : null;
+  if (limite && !Number.isNaN(limite.getTime()) && limite > maintenant) return { texte: 'Dépôts en cours : la séance suit la date limite', ton: 'attente' };
+  return { texte: 'Séance d’ouverture et évaluation des offres', ton: 'suite' };
+}

@@ -5,7 +5,8 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { DossierSoumis, EntreeJournalEvaluation, ETAPES_EVALUATION, EtapeEvaluation, Evaluation, Financiere, LotEvaluation, Negociations, OffreEvaluee, Technique, libelleEtatOffre } from '../../models';
-import { AttributionService, EvaluationPiService, EvaluationService } from '../../services';
+import { AttributionService, CaoEspaceService, EvaluationPiService, EvaluationService } from '../../services';
+import { BandeauEspace } from '../../shared/ui/bandeau-espace';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 import { DroitsEvaluation, EspaceEvaluation, droitsEvaluation, etapeArretee, etapeAtteinte } from './droits-evaluation';
@@ -36,7 +37,7 @@ import { RapportEvaluationVue } from './rapport-evaluation';
 @Component({
   selector: 'app-evaluation-ecran',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur, AttributionLots, ConformiteOffre, MontantOffre, TableauEvaluation, IndicateursPrixVue, AnormaleOffre, EtapeQualification, EtapeTechnique, SeanceFinanciereVue, EtapeFinanciere, NegociationPi, SansSuiteVue, RapportEvaluationVue, EtapeClose],
+  imports: [RouterLink, EtatErreur, BandeauEspace, AttributionLots, ConformiteOffre, MontantOffre, TableauEvaluation, IndicateursPrixVue, AnormaleOffre, EtapeQualification, EtapeTechnique, SeanceFinanciereVue, EtapeFinanciere, NegociationPi, SansSuiteVue, RapportEvaluationVue, EtapeClose],
   template: `
     <!-- La coquille interne porte son fil d'Ariane (parents déclarés sur la route) ; l'espace CAO n'en a pas : l'écran le pose. -->
     @if (espace === 'cao') {
@@ -47,16 +48,30 @@ import { RapportEvaluationVue } from './rapport-evaluation';
       </nav>
     }
 
-    <header class="page-header page-header--actions">
-      <div>
-        <div class="page-subtitle">Procédure n° {{ idDmc }} · {{ qui() }}</div>
-        <h1 class="page-title">{{ technique() ? 'Évaluation des propositions' : 'Évaluation des offres' }}</h1>
-      </div>
-      <div class="ev__entete-actions">
-        @if (lienFiche()) { <a class="btn btn-outline btn-sm" [routerLink]="lienFiche()!">Fiche DAO</a> }
-        @if (evaluation()) { <button type="button" class="btn btn-outline btn-sm" [disabled]="chargement()" (click)="charger()">Rafraîchir</button> }
-      </div>
-    </header>
+    <!-- ⚠️ 19/10 (pilote) — dans l'espace de la commission, le bandeau des écrans du membre, avec la référence de la procédure
+         (plus le numéro interne). La coquille interne garde son en-tête. -->
+    @if (espace === 'cao') {
+      <app-bandeau-espace [surtitre]="procedureCao()?.reference || 'Procédure'" [mono]="true" [titre]="technique() ? 'Évaluation des propositions' : 'Évaluation des offres'"
+        [puces]="procedureCao()?.objet ? [{ texte: procedureCao()!.objet! }] : []">
+        <span bandeau-badge class="badge badge-primary">{{ qui().charAt(0).toUpperCase() + qui().slice(1) }}</span>
+      </app-bandeau-espace>
+      @if (evaluation()) {
+        <div class="ev__entete-actions ev__entete-actions--cao">
+          <button type="button" class="btn btn-outline btn-sm" [disabled]="chargement()" (click)="charger()">Rafraîchir</button>
+        </div>
+      }
+    } @else {
+      <header class="page-header page-header--actions">
+        <div>
+          <div class="page-subtitle">Procédure n° {{ idDmc }} · {{ qui() }}</div>
+          <h1 class="page-title">{{ technique() ? 'Évaluation des propositions' : 'Évaluation des offres' }}</h1>
+        </div>
+        <div class="ev__entete-actions">
+          @if (lienFiche()) { <a class="btn btn-outline btn-sm" [routerLink]="lienFiche()!">Fiche DAO</a> }
+          @if (evaluation()) { <button type="button" class="btn btn-outline btn-sm" [disabled]="chargement()" (click)="charger()">Rafraîchir</button> }
+        </div>
+      </header>
+    }
 
     @if (chargement() && !evaluation()) {
       <p class="text-muted" role="status">Chargement de l'évaluation…</p>
@@ -251,6 +266,7 @@ import { RapportEvaluationVue } from './rapport-evaluation';
     .ev__ariane { display: flex; gap: 0.4rem; align-items: center; font-size: var(--text-sm); color: var(--n-500); flex-wrap: wrap; }
     .ev__ariane a { color: var(--p-700); font-weight: 600; }
     .ev__entete-actions { display: flex; gap: 0.5rem; }
+    .ev__entete-actions--cao { justify-content: flex-end; margin-top: -0.25rem; }
     .ev__etat { display: flex; gap: 0.7rem; align-items: center; flex-wrap: wrap; }
     .ev__bloc { padding: 0.8rem 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
     .ev__h2 { margin: 0; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-500); }
@@ -343,8 +359,15 @@ export class EvaluationEcran implements OnInit {
   /** Le journal : CAO, responsable, PRMP — pas l'UGPM (403). */
   readonly journalOuvert = computed(() => this.espace === 'cao' || this.auth.role() !== 'UGPM');
 
+  // ⚠️ 19/10 — la référence et l'objet pour le bandeau de l'espace de la commission (vue du membre, déjà servie à la page de la procédure).
+  private readonly caoEspace = inject(CaoEspaceService);
+  readonly procedureCao = signal<{ reference: string | null; objet: string | null } | null>(null);
+
   ngOnInit(): void {
     this.charger();
+    if (this.espace === 'cao') {
+      this.caoEspace.procedure(this.idDmc).subscribe({ next: (v) => this.procedureCao.set(v.procedure), error: () => this.procedureCao.set(null) });
+    }
   }
 
   charger(): void {

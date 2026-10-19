@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import { ApiError } from '../../core/errors/api-error';
 import { Remise } from '../../models';
 import { RemisesService } from '../../services';
+import { BandeauEspace, PuceBandeau } from '../../shared/ui/bandeau-espace';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { RemiseDetail } from '../remises/remise-detail';
 
@@ -14,12 +15,12 @@ import { RemiseDetail } from '../remises/remise-detail';
  */
 @Component({
   selector: 'app-remises-cao',
-  imports: [EtatErreur, RemiseDetail],
+  imports: [EtatErreur, RemiseDetail, BandeauEspace],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="rc">
-      <h1 class="rc__h1">Remises en concurrence</h1>
-      <p class="text-sm text-muted rc__intro">Les marchés subséquents des contrats-cadres dont vous êtes membre de la commission. Après l’échéance, le président de la commission évalue les réponses en collège restreint et produit le rapport simplifié ; la PRMP décide ensuite.</p>
+      <app-bandeau-espace surtitre="Commission d'appel d'offres" titre="Remises en concurrence" [puces]="puces()" />
+      <p class="page-role rc__intro">Les marchés subséquents des contrats-cadres dont vous êtes membre de la commission. Après l’échéance, le président de la commission évalue les réponses en collège restreint et produit le rapport simplifié ; la PRMP décide ensuite.</p>
       @if (chargement()) {
         <p class="text-muted" role="status">Chargement des remises…</p>
       } @else if (erreur(); as m) {
@@ -32,8 +33,7 @@ import { RemiseDetail } from '../remises/remise-detail';
     </section>
   `,
   styles: `
-    .rc { display: flex; flex-direction: column; gap: 0.8rem; }
-    .rc__h1 { margin: 0; font-size: 1.3rem; }
+    .rc { display: flex; flex-direction: column; gap: 1rem; }
     .rc__intro { margin: 0; }
   `,
 })
@@ -67,6 +67,14 @@ export class RemisesCao implements OnInit {
       },
     });
   }
+
+  /** ⚠️ 19/10 — le bandeau compte les remises, et celles qui attendent l'évaluation (échéance passée). */
+  readonly puces = computed<PuceBandeau[]>(() => {
+    const l = this.remises();
+    if (!l.length) return [];
+    const aEvaluer = l.filter((r) => r.etat === 'EN_COURS' && r.echeancePassee).length;
+    return [{ texte: l.length > 1 ? 'remises' : 'remise', fort: l.length }, ...(aEvaluer ? [{ texte: 'à évaluer', fort: aEvaluer, accent: true }] : [])];
+  });
 
   aJour(r: Remise): void {
     this.remises.update((l) => l.map((x) => (x.id === r.id ? r : x)));

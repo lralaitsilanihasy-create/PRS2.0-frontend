@@ -42,7 +42,7 @@ import { LIBELLES_ETAT_CEREMONIE, LIBELLES_ETAT_PART, classeCeremonie, classePar
   imports: [EtatErreur],
   template: `
     <section class="mc" aria-labelledby="mc-titre">
-      <h2 id="mc-titre" class="mc__h2">Ma part de clé</h2>
+      <h2 id="mc-titre" class="mc__h2" [class.cnm-sr-only]="!titreVisible()">Ma part de clé</h2>
 
       @if (chargement()) {
         <p class="text-muted" role="status">Chargement de la cérémonie…</p>
@@ -183,6 +183,8 @@ import { LIBELLES_ETAT_CEREMONIE, LIBELLES_ETAT_PART, classeCeremonie, classePar
 })
 export class MaCle implements OnInit {
   readonly idDmc = input.required<number>();
+  /** ⚠️ 19/10 — repliée dans la page de la procédure, la clé y prend son titre au sommaire : le sien reste pour les lecteurs d’écran. */
+  readonly titreVisible = input(true);
 
   private readonly service = inject(CeremonieService);
   private readonly auth = inject(AuthService);
