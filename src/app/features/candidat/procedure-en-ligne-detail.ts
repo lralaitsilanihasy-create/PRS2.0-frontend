@@ -6,7 +6,7 @@ import { dateFr } from '../../core/interim/interim-libelles';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur, telechargerBlob } from '../../core/securite/fichiers-surs';
 import { DocumentProcedureEnLigne, ProcedureEnLigne, RecuDao } from '../../models';
-import { ProceduresEnLigneService } from '../../services';
+import { OffresCandidatService, ProceduresEnLigneService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { Icone } from '../../shared/ui/icone';
 import { FraisDossier } from './frais-dossier';
@@ -14,7 +14,7 @@ import { ResultatsPublics } from './resultats-publics';
 import { QuestionsProcedureVue } from './questions-procedure';
 import { LIBELLES_CATEGORIES } from '../prmp/fiche-marche/fiche-marche-modele';
 import { LIBELLES_ETAT_PROCEDURE, dateHeureFr, tailleLisible } from './libelles-candidat';
-import { LIBELLES_ETAT_ETAPE, etapesParcours, grouperDocuments, jalons, tempsRestant } from './procedure-en-ligne-modele';
+import { LIBELLES_ETAT_ETAPE, OffreDeposee, etapesParcours, grouperDocuments, jalons, offresDeposees, tempsRestant } from './procedure-en-ligne-modele';
 
 /**
  * Le détail d'une procédure ouverte en ligne (`GET /api/procedures-en-ligne/{idDmc}`, public, §B8) : calendrier, lots,
@@ -185,7 +185,18 @@ import { LIBELLES_ETAT_ETAPE, etapesParcours, grouperDocuments, jalons, tempsRes
               <dt>Par offre</dt><dd>{{ p.tailleMaxOffreMo != null ? p.tailleMaxOffreMo + ' Mo au plus' : '—' }}</dd>
             </dl>
             <!-- ⚠️ Lot 3 (V68) — le dépôt : ouvert entre l'ouverture des dépôts et la date limite, à l'heure du serveur. -->
-            @if (p.depotsOuverts && connecte() && !retraitAutorise()) {
+            <!-- ⚠️ 19/10 (pilote) — une offre déjà déposée : le bouton « Déposer » menait à un formulaire que le serveur refuse à la fin
+                 (409 OFFRE_EXISTANTE). L'écran dit le dépôt et propose de le remplacer. Marché alloti ou proposition PI : inchangé. -->
+            @if (deposeUnique(); as d) {
+              <p class="ped__depose" role="status"><app-icone nom="check" [taille]="15" />Votre offre est déposée le {{ dateHeure(d.dateDepot) }}{{ d.numero ? ', sous le n° ' + d.numero : '' }}.</p>
+              <div class="ped__depose-actions">
+                @if (p.depotsOuverts && p.remplacementAutorise !== false) {
+                  <a class="btn btn-sm btn-primary" [routerLink]="['/candidat', 'procedures', p.idDmc, 'offre']" [queryParams]="{ remplace: d.idOffre }">Remplacer mon offre</a>
+                }
+                <a class="btn btn-sm btn-outline" routerLink="/candidat/offres">Mes offres</a>
+              </div>
+              <span class="text-sm text-muted">{{ p.depotsOuverts && p.remplacementAutorise !== false ? 'Une seule offre par entreprise : la remplacer annule la précédente, qui ne sera pas ouverte.' : 'Une seule offre par entreprise.' }}</span>
+            } @else if (p.depotsOuverts && connecte() && !retraitAutorise()) {
               <!-- 06/10 (décision A) : dossier payant, le dépôt attend le reçu validé. -->
               <button type="button" class="btn btn-primary ped__deposer" disabled>Déposer une offre</button>
               <span class="text-sm text-muted">Le dépôt s’ouvre dès que votre reçu de paiement des frais de dossier est validé.</span>
@@ -285,6 +296,8 @@ import { LIBELLES_ETAT_ETAPE, etapesParcours, grouperDocuments, jalons, tempsRes
     .ped__note { margin: 0; display: flex; gap: 0.4rem; align-items: center; font-size: var(--text-sm); color: var(--n-600); background: var(--n-100);
       padding: 0.5rem 0.65rem; border-radius: var(--radius-md); }
     .ped__deposer { align-self: flex-start; }
+    .ped__depose { margin: 0; display: flex; gap: 0.4rem; align-items: center; padding: 0.5rem 0.65rem; border-radius: var(--radius-md); background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; font-size: var(--text-sm); font-weight: 600; }
+    .ped__depose-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
 
     /* Frise du calendrier */
     .ped__frise { list-style: none; margin: 0 0 0 0.4rem; padding: 0 0 0 1.1rem; display: flex; flex-direction: column; gap: 0.75rem; border-left: 2px solid var(--p-200); }
@@ -360,12 +373,20 @@ export class ProcedureEnLigneDetail implements OnInit {
   /** Retrait libre, ou reçu validé : le serveur garde la même règle (403 `FRAIS_NON_REGLES`). */
   readonly retraitAutorise = computed(() => !this.procedure()?.retraitPayant || this.recu()?.etat === 'VALIDE');
   readonly pvAbsent = signal(false);
+  private readonly offres = inject(OffresCandidatService);
+  /** ⚠️ 19/10 (pilote) — l'offre déposée de l'entreprise sur cette procédure, lue sur « Mes offres » (connecté seulement). */
+  readonly depose = signal<OffreDeposee | null>(null);
+  /** Le dépôt affiché à la place du bouton : marché non alloti, hors proposition PI à deux enveloppes. */
+  readonly deposeUnique = computed(() => {
+    const p = this.procedure();
+    return p && p.lots.length <= 1 && p.categorie !== 'PRESTATIONS_INTELLECTUELLES' ? this.depose() : null;
+  });
 
   // ⚠️ 18/10 (pilote) — la présentation : parcours en étapes, documents regroupés par intitulé, frise, temps restant.
   readonly etatsEtape = LIBELLES_ETAT_ETAPE;
   readonly etapes = computed(() => {
     const p = this.procedure();
-    return p ? etapesParcours(p, this.recu(), this.connecte()) : [];
+    return p ? etapesParcours(p, this.recu(), this.connecte(), this.depose()) : [];
   });
   readonly groupes = computed(() => grouperDocuments(this.documents()));
   readonly frise = computed(() => {
@@ -399,7 +420,10 @@ export class ProcedureEnLigneDetail implements OnInit {
         this.procedure.set(p);
         this.document.title = `${p.reference || 'Procédure'} — Espace candidat — PRS 2.0`;
         this.chargement.set(false);
-        if (this.connecte()) this.chargerDocuments();
+        if (this.connecte()) {
+          this.chargerDocuments();
+          this.offres.liste().subscribe({ next: (l) => this.depose.set(offresDeposees(l, this.idDmc)[0] ?? null), error: () => this.depose.set(null) });
+        }
       },
       error: (e: { status?: number }) => {
         this.chargement.set(false);

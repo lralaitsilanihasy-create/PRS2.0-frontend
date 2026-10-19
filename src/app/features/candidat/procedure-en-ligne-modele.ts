@@ -38,7 +38,23 @@ function dateLisible(iso: string | null | undefined): string {
  * Le parcours du candidat sur cette procédure. `recu` : le reçu de son entreprise (`null` sans reçu, ou visiteur). `connecte` : un
  * visiteur voit les mêmes étapes, toutes « à faire » une fois connecté.
  */
-export function etapesParcours(p: ProcedureEnLigne, recu: RecuDao | null, connecte: boolean): EtapeParcours[] {
+/** ⚠️ 19/10 (pilote) — l'offre déjà déposée par l'entreprise sur cette procédure (la plus récente), lue sur « Mes offres ». */
+export interface OffreDeposee {
+  idOffre: string;
+  dateDepot: string | null;
+  numero: number | null;
+  lot: number | null;
+}
+
+/** Les offres DÉPOSÉES (ni remplacées, ni retirées) de cette procédure, la plus récente d'abord. */
+export function offresDeposees(offres: readonly { idOffre: string; idDmc: number; etat: string; dateDepot: string | null; numero: number | null; lot: number | null }[], idDmc: number): OffreDeposee[] {
+  return offres
+    .filter((o) => o.idDmc === idDmc && o.etat === 'DEPOSEE')
+    .map((o) => ({ idOffre: o.idOffre, dateDepot: o.dateDepot, numero: o.numero, lot: o.lot }))
+    .sort((a, b) => (b.dateDepot ?? '').localeCompare(a.dateDepot ?? ''));
+}
+
+export function etapesParcours(p: ProcedureEnLigne, recu: RecuDao | null, connecte: boolean, depose: OffreDeposee | null = null): EtapeParcours[] {
   const close = p.etat === 'CLOSE';
   const etapes: EtapeParcours[] = [];
   const payant = !!p.retraitPayant;
@@ -78,14 +94,16 @@ export function etapesParcours(p: ProcedureEnLigne, recu: RecuDao | null, connec
   etapes.push({
     cle: 'depot',
     titre: 'Déposer votre offre',
-    detail: close
+    detail: depose
+      ? `Déposée le ${dateLisible(depose.dateDepot) || '—'}${depose.numero ? `, n° ${depose.numero}` : ''}.`
+      : close
       ? `Clos depuis le ${limite || '—'}.`
       : p.depotsOuverts
         ? `Ouvert jusqu’au ${limite || '—'}.`
         : ouverture
           ? `Du ${ouverture} au ${limite || '—'}.`
           : `Jusqu’au ${limite || '—'}.`,
-    etat: close ? 'clos' : p.depotsOuverts ? 'en-cours' : 'a-venir',
+    etat: depose ? 'fait' : close ? 'clos' : p.depotsOuverts ? 'en-cours' : 'a-venir',
     cible: 'ped-remise',
   });
   return etapes;

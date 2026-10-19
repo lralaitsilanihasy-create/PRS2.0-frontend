@@ -1,5 +1,5 @@
 import { DocumentProcedureEnLigne, ProcedureEnLigne, RecuDao } from '../../models';
-import { avancementDepot, compteursProcedures, etapesParcours, filtrerProcedures, formatDuFichier, grouperDocuments, jalons, joursAvant, lignesProcedures, tempsRestant } from './procedure-en-ligne-modele';
+import { avancementDepot, offresDeposees, compteursProcedures, etapesParcours, filtrerProcedures, formatDuFichier, grouperDocuments, jalons, joursAvant, lignesProcedures, tempsRestant } from './procedure-en-ligne-modele';
 
 const procedure = (p: Partial<ProcedureEnLigne> = {}): ProcedureEnLigne => ({
   idDmc: 2, reference: '00001/PPM-AGPM/CNM/2026', objet: 'Fourniture d’articles de bureau', autoriteContractante: 'MEF', categorie: 'FOURNITURES_SERVICES',
@@ -53,6 +53,22 @@ describe('Procédure en ligne — présentation (18/10)', () => {
       ['Ouverture des dépôts', '01/02/2027 à 08:00', true, false],
       ['Date limite de remise', '04/03/2027 à 09:00', false, true],
     ]);
+  });
+});
+
+describe('Offre déjà déposée (19/10)', () => {
+  it('l’étape 4 passe à « Fait » avec la date et le numéro du dépôt', () => {
+    const e = etapesParcours(procedure({ depotsOuverts: true, etat: 'OUVERTE' }), null, true, { idOffre: 'a', dateDepot: '2026-10-19T07:16:00', numero: 1, lot: null });
+    expect(e.at(-1)).toMatchObject({ cle: 'depot', etat: 'fait', detail: 'Déposée le 19/10/2026 à 07:16, n° 1.' });
+  });
+
+  it('seules les offres déposées de cette procédure comptent, la plus récente d’abord', () => {
+    const l = offresDeposees([
+      { idOffre: 'a', idDmc: 3, etat: 'REMPLACEE', dateDepot: '2026-10-19T07:00', numero: 1, lot: null },
+      { idOffre: 'b', idDmc: 3, etat: 'DEPOSEE', dateDepot: '2026-10-19T09:35', numero: 4, lot: null },
+      { idOffre: 'c', idDmc: 2, etat: 'DEPOSEE', dateDepot: '2026-10-19T10:00', numero: 1, lot: null },
+    ], 3);
+    expect(l.map((x) => x.idOffre)).toEqual(['b']);
   });
 });
 
