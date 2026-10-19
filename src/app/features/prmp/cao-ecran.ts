@@ -6,7 +6,7 @@ import { dateFr } from '../../core/interim/interim-libelles';
 import { ToastService } from '../../core/notifications/toast.service';
 import { TYPES_PDF, validerFichier } from '../../core/securite/fichiers-surs';
 import { Cao, CompteMembreCao, MembreCaoCorps, OrigineMembreCao } from '../../models';
-import { CaoService } from '../../services';
+import { CaoService, FicheMarcheService } from '../../services';
 import { EnteteProcedure } from './entete-procedure';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr } from '../candidat/libelles-candidat';
@@ -53,9 +53,9 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
         <h1 class="page-title">Commission d'appel d'offres</h1>
       </header>
       <p class="page-role">
-        Les membres désignés par la décision de la PRMP — saisie par elle ou par l'UGPM — détiennent chacun une part de la clé qui ouvrira les offres : des agents de
-        votre entité, et au plus un expert de l'objet du marché. Chacun reçoit par courriel une invitation à activer son
-        compte, puis publie sa clé à la cérémonie. Une commission par appel d'offres.
+        Les membres désignés par la décision de la PRMP — saisie par elle ou par l'UGPM — détiennent chacun une part de la clé qui ouvrira
+        les offres : des agents de votre entité, et au plus un expert de l'objet du marché. Chacun active son compte par l'invitation reçue
+        par courriel, puis publie sa clé à la cérémonie.
       </p>
 
       @if (chargement()) {
@@ -67,118 +67,195 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
       } @else {
         <div class="cao__etat">
           <span class="badge" [class]="'badge ' + classeCao(cao()?.etat)">Commission {{ etats[cao()?.etat ?? 'ABSENTE'] }}</span>
-          @for (a of cao()?.anomalies ?? []; track a.regle) { <span class="text-sm" [class.text-muted]="a.regle === 'DECISION_SANS_FICHIER'">{{ a.message }}</span> }
+          <span class="text-sm text-muted">{{ lignes().length }} membre{{ lignes().length > 1 ? 's' : '' }}{{ president() ? ' · présidée par ' + president() : '' }}</span>
+          @for (a of cao()?.anomalies ?? []; track a.regle) { <span class="cao__anomalie">{{ a.message }}</span> }
         </div>
+        <!-- ⚠️ 19/10 (pilote) — une cérémonie close fige la composition (409 CEREMONIE_CLOSE) : l'écran passe en lecture et le dit. -->
+        @if (fige()) {
+          <div class="alert alert-info" role="status">
+            <span><strong>La cérémonie des clés est close : la composition de la commission est figée.</strong> Pour la changer, le responsable de la
+            procédure rouvre la cérémonie, et chaque membre republie sa clé. La décision signée peut encore être jointe.</span>
+          </div>
+        }
         @if (erreurGlobale(); as e) { <div class="alert alert-danger" role="alert">{{ e }}</div> }
 
-        <form class="card cnm-form cao__form" (submit)="$event.preventDefault(); enregistrer()" novalidate aria-label="Désignation de la commission">
-          <h2 class="cao__h2">Décision de nomination</h2>
-          <div class="cnm-form-grid">
-            <label class="form-group">
-              <span class="form-label">Référence de la décision</span>
-              <input class="form-control" type="text" [value]="reference()" (input)="reference.set($any($event.target).value)" [class.error]="!!erreurDe('decision.reference')" />
-              @if (erreurDe('decision.reference'); as m) { <span class="form-error">{{ m }}</span> }
-            </label>
-            <label class="form-group">
-              <span class="form-label">Date de la décision</span>
-              <input class="form-control cao__court" type="date" [value]="dateDecision()" (input)="dateDecision.set($any($event.target).value)" [class.error]="!!erreurDe('decision.date')" />
-              @if (erreurDe('decision.date'); as m) { <span class="form-error">{{ m }}</span> }
-            </label>
-          </div>
-
-          <h2 class="cao__h2">Membres</h2>
-          @if (erreurDe('membres'); as m) { <span class="form-error">{{ m }}</span> }
-          <div class="table-card cao__tableau">
-            <table class="cao__table">
-              <caption class="cnm-sr-only">Les membres de la commission</caption>
-              <thead>
-                <tr><th scope="col">Président</th><th scope="col">Origine</th><th scope="col">Nom</th><th scope="col">Prénom</th><th scope="col">Adresse électronique</th><th scope="col">Téléphone</th><th scope="col">Fonction</th><th scope="col">Service, ou organisme et domaine</th><th scope="col">Compte</th><th scope="col"><span class="cnm-sr-only">Retirer</span></th></tr>
-              </thead>
-              <tbody>
-                @for (l of lignes(); track l.cle; let i = $index) {
-                  <tr [class.cao__ligne--ancien]="l.ancienExpertAdjoint">
-                    <td><input type="radio" name="president" [checked]="l.president" (change)="presider(l.cle)" [attr.aria-label]="'Président : ' + (l.nom || 'membre ' + (i + 1))" /></td>
-                    <td>
-                      <select class="form-control cao__select" [attr.aria-label]="'Origine du membre ' + (i + 1)" (change)="poser(l.cle, 'origine', $any($event.target).value)" [class.error]="!!erreurDe('membres[' + i + '].origine')">
-                        <option value="" [selected]="!l.origine">— Choisir —</option>
-                        @for (o of origines; track o) { <option [value]="o" [selected]="l.origine === o">{{ libOrigine[o] }}</option> }
-                      </select>
-                      @if (l.ancienExpertAdjoint) { <span class="form-hint">Ancien expert adjoint : donnez-lui son origine (il détiendra une part), ou retirez-le.</span> }
-                      @if (erreurDe('membres[' + i + '].origine'); as m) { <span class="form-error">{{ m }}</span> }
-                    </td>
-                    <td><input class="form-control" type="text" [value]="l.nom" (input)="poser(l.cle, 'nom', $any($event.target).value)" [attr.aria-label]="'Nom du membre ' + (i + 1)" [class.error]="!!erreurDe('membres[' + i + '].nom')" />@if (erreurDe('membres[' + i + '].nom'); as m) { <span class="form-error">{{ m }}</span> }</td>
-                    <td><input class="form-control" type="text" [value]="l.prenom" (input)="poser(l.cle, 'prenom', $any($event.target).value)" [attr.aria-label]="'Prénom du membre ' + (i + 1)" /></td>
-                    <td><input class="form-control" type="email" [value]="l.email" (input)="poser(l.cle, 'email', $any($event.target).value)" [attr.aria-label]="'Adresse du membre ' + (i + 1)" [class.error]="!!erreurDe('membres[' + i + '].email')" />@if (erreurDe('membres[' + i + '].email'); as m) { <span class="form-error">{{ m }}</span> }</td>
-                    <td><input class="form-control cao__court" type="tel" [value]="l.telephone" (input)="poser(l.cle, 'telephone', $any($event.target).value)" [attr.aria-label]="'Téléphone du membre ' + (i + 1)" /></td>
-                    <td><input class="form-control" type="text" [value]="l.fonction" (input)="poser(l.cle, 'fonction', $any($event.target).value)" [attr.aria-label]="'Fonction du membre ' + (i + 1)" /></td>
-                    <td>
-                      @if (l.origine === 'EXPERT_OBJET') {
-                        <input class="form-control" type="text" placeholder="ex. organisme" [value]="l.organisme" (input)="poser(l.cle, 'organisme', $any($event.target).value)" [attr.aria-label]="'Organisme du membre ' + (i + 1)" />
-                        <input class="form-control" type="text" placeholder="ex. génie civil" [value]="l.domaine" (input)="poser(l.cle, 'domaine', $any($event.target).value)" [attr.aria-label]="'Domaine du membre ' + (i + 1)" [class.error]="!!erreurDe('membres[' + i + '].domaine')" />
-                        @if (erreurDe('membres[' + i + '].domaine'); as m) { <span class="form-error">{{ m }}</span> }
-                      } @else {
-                        <input class="form-control" type="text" placeholder="ex. Direction des affaires financières" [value]="l.service" (input)="poser(l.cle, 'service', $any($event.target).value)" [attr.aria-label]="'Service du membre ' + (i + 1)" [class.error]="!!erreurDe('membres[' + i + '].service')" />
-                        @if (erreurDe('membres[' + i + '].service'); as m) { <span class="form-error">{{ m }}</span> }
-                      }
-                    </td>
-                    <td class="nowrap">
-                      @if (l.compte; as c) {
-                        <span class="badge" [class.badge-success]="c.etat === 'ACTIF'" [class.badge-info]="c.etat === 'INVITE'" [class.badge-neutral]="c.etat === 'A_INVITER' || c.etat === 'ARCHIVE'">{{ libCompte[c.etat] }}</span>
-                        @if (c.etat !== 'ACTIF' && l.id != null) { <button type="button" class="btn btn-sm btn-outline cao__inviter" [disabled]="saving()" (click)="inviter(l)">Renvoyer l'invitation</button> }
-                        @if (c.dateInvitation) { <span class="text-xs text-muted">{{ dateHeure(c.dateInvitation) }}</span> }
-                      } @else { <span class="text-xs text-muted">créé à l'enregistrement</span> }
-                    </td>
-                    <td><button type="button" class="btn btn-sm btn-outline" (click)="retirer(l.cle)" [attr.aria-label]="'Retirer ' + (l.nom || 'le membre ' + (i + 1))">✕</button></td>
-                  </tr>
+        <form class="cao__form" (submit)="$event.preventDefault(); enregistrer()" novalidate aria-label="Désignation de la commission">
+          <section class="card cao__bloc" aria-labelledby="cao-decision">
+            <h2 id="cao-decision" class="cao__h2">Décision de nomination</h2>
+            <div class="cao__decision-grille">
+              @if (fige()) {
+                <div class="cao__lu"><span class="form-label">Référence de la décision</span><strong>{{ reference() || '—' }}</strong></div>
+                <div class="cao__lu"><span class="form-label">Date de la décision</span><strong>{{ dateDecision() ? date(dateDecision()) : '—' }}</strong></div>
+              } @else {
+                <label class="form-group">
+                  <span class="form-label">Référence de la décision</span>
+                  <input class="form-control" type="text" [value]="reference()" (input)="reference.set($any($event.target).value)" [class.error]="!!erreurDe('decision.reference')" />
+                  @if (erreurDe('decision.reference'); as m) { <span class="form-error">{{ m }}</span> }
+                </label>
+                <label class="form-group">
+                  <span class="form-label">Date de la décision</span>
+                  <input class="form-control" type="date" [value]="dateDecision()" (input)="dateDecision.set($any($event.target).value)" [class.error]="!!erreurDe('decision.date')" />
+                  @if (erreurDe('decision.date'); as m) { <span class="form-error">{{ m }}</span> }
+                </label>
+              }
+              <div class="cao__pdf">
+                <span class="form-label">Décision signée (PDF, {{ decisionMaxMo }} Mo au plus)</span>
+                @if (cao()?.decision?.fichier) {
+                  <span class="cao__pdf-ok">Jointe — en joindre une nouvelle la remplace.</span>
+                } @else {
+                  <span class="cao__pdf-ko">Non jointe : facultative, mais attendue.</span>
                 }
-              </tbody>
-            </table>
-          </div>
-          <div class="cao__actions">
-            <button type="button" class="btn btn-secondary btn-sm" (click)="ajouter()">Ajouter un membre</button>
-            <span class="text-sm text-muted">Au moins deux membres, un seul président ; un expert de l'objet au plus{{ nbExperts() ? ' (' + nbExperts() + ' saisi' + (nbExperts() > 1 ? 's' : '') + ')' : '' }}.</span>
-          </div>
-          <div class="cao__pied">
-            <button type="submit" class="btn btn-primary" [disabled]="saving()">{{ saving() ? 'Enregistrement…' : 'Enregistrer la commission' }}</button>
-            <span class="text-sm text-muted">Un membre nouveau reçoit son invitation à l'enregistrement ; un membre omis est retiré.</span>
-          </div>
-        </form>
+                <div class="cao__pdf-choix">
+                  <input class="form-control" type="file" accept="application/pdf" aria-label="Fichier PDF de la décision signée" (change)="choisirDecision($event)" />
+                  <button type="button" class="btn btn-secondary btn-sm" [disabled]="!fichier() || saving()" (click)="joindreDecision()">Joindre</button>
+                </div>
+                @if (fichierErreur(); as m) { <span class="form-error">{{ m }}</span> }
+              </div>
+            </div>
+          </section>
 
-        <section class="card cao__decision" aria-labelledby="cao-pdf">
-          <h2 id="cao-pdf" class="cao__h2">Décision signée (PDF)</h2>
-          @if (cao()?.decision?.fichier) { <p class="text-sm">Une décision signée est jointe{{ cao()?.decision?.date ? ' (' + date(cao()!.decision.date) + ')' : '' }}. En joindre une nouvelle la remplace.</p> }
-          @else { <p class="text-sm text-muted">Facultative, mais attendue : sans elle, la commission porte un avertissement.</p> }
-          <div class="cao__actions">
-            <label class="form-group cao__fichier">
-              <span class="form-label">Fichier PDF ({{ decisionMaxMo }} Mo au plus)</span>
-              <input class="form-control" type="file" accept="application/pdf" (change)="choisirDecision($event)" />
-              @if (fichierErreur(); as m) { <span class="form-error">{{ m }}</span> }
-            </label>
-            <button type="button" class="btn btn-secondary btn-sm" [disabled]="!fichier() || saving()" (click)="joindreDecision()">Joindre</button>
-          </div>
-        </section>
+          <section class="cao__bloc-membres" aria-labelledby="cao-membres">
+            <h2 id="cao-membres" class="cao__h2">Membres</h2>
+            @if (erreurDe('membres'); as m) { <span class="form-error">{{ m }}</span> }
+            <ul class="cao__membres">
+              @for (l of lignes(); track l.cle; let i = $index) {
+                <li class="card cao__membre" [class.cao__membre--president]="l.president" [class.cao__membre--ancien]="l.ancienExpertAdjoint">
+                  <div class="cao__membre-tete">
+                    <span class="cao__avatar" aria-hidden="true">{{ initiales(l) }}</span>
+                    <div class="cao__membre-nom">
+                      <strong>{{ (l.nom + ' ' + l.prenom).trim() || 'Membre ' + (i + 1) }}</strong>
+                      <span class="text-xs text-muted">{{ l.origine ? libOrigine[l.origine] : 'Origine à choisir' }}</span>
+                    </div>
+                    @if (l.president) { <span class="badge badge-info">Président</span> }
+                    @if (l.compte; as c) {
+                      <span class="badge" [class.badge-success]="c.etat === 'ACTIF'" [class.badge-info]="c.etat === 'INVITE'" [class.badge-neutral]="c.etat === 'A_INVITER' || c.etat === 'ARCHIVE'" [attr.title]="c.dateInvitation ? 'Invité le ' + dateHeure(c.dateInvitation) : null">{{ libCompte[c.etat] }}</span>
+                    } @else {
+                      <span class="badge badge-neutral">Compte créé à l’enregistrement</span>
+                    }
+                  </div>
+
+                  @if (fige()) {
+                    <dl class="cao__dl">
+                      <dt>Fonction</dt><dd>{{ l.fonction || '—' }}</dd>
+                      @if (l.origine === 'EXPERT_OBJET') {
+                        <dt>Organisme</dt><dd>{{ l.organisme || '—' }}</dd>
+                        <dt>Domaine</dt><dd>{{ l.domaine || '—' }}</dd>
+                      } @else {
+                        <dt>Service</dt><dd>{{ l.service || '—' }}</dd>
+                      }
+                      <dt>Adresse</dt><dd class="cao__email">{{ l.email || '—' }}</dd>
+                      <dt>Téléphone</dt><dd>{{ l.telephone || '—' }}</dd>
+                    </dl>
+                  } @else {
+                    @if (l.ancienExpertAdjoint) { <p class="form-hint">Ancien expert adjoint : donnez-lui son origine (il détiendra une part), ou retirez-le.</p> }
+                    <div class="cao__champs">
+                      <label class="form-group">
+                        <span class="form-label">Origine</span>
+                        <select class="form-control" (change)="poser(l.cle, 'origine', $any($event.target).value)" [class.error]="!!erreurDe('membres[' + i + '].origine')">
+                          <option value="" [selected]="!l.origine">— Choisir —</option>
+                          @for (o of origines; track o) { <option [value]="o" [selected]="l.origine === o">{{ libOrigine[o] }}</option> }
+                        </select>
+                        @if (erreurDe('membres[' + i + '].origine'); as m) { <span class="form-error">{{ m }}</span> }
+                      </label>
+                      <label class="form-group">
+                        <span class="form-label">Fonction</span>
+                        <input class="form-control" type="text" [value]="l.fonction" (input)="poser(l.cle, 'fonction', $any($event.target).value)" />
+                      </label>
+                      <label class="form-group">
+                        <span class="form-label">Nom</span>
+                        <input class="form-control" type="text" [value]="l.nom" (input)="poser(l.cle, 'nom', $any($event.target).value)" [class.error]="!!erreurDe('membres[' + i + '].nom')" />
+                        @if (erreurDe('membres[' + i + '].nom'); as m) { <span class="form-error">{{ m }}</span> }
+                      </label>
+                      <label class="form-group">
+                        <span class="form-label">Prénom</span>
+                        <input class="form-control" type="text" [value]="l.prenom" (input)="poser(l.cle, 'prenom', $any($event.target).value)" />
+                      </label>
+                      <label class="form-group">
+                        <span class="form-label">Adresse électronique</span>
+                        <input class="form-control" type="email" [value]="l.email" (input)="poser(l.cle, 'email', $any($event.target).value)" [class.error]="!!erreurDe('membres[' + i + '].email')" />
+                        @if (erreurDe('membres[' + i + '].email'); as m) { <span class="form-error">{{ m }}</span> }
+                      </label>
+                      <label class="form-group">
+                        <span class="form-label">Téléphone</span>
+                        <input class="form-control" type="tel" [value]="l.telephone" (input)="poser(l.cle, 'telephone', $any($event.target).value)" />
+                      </label>
+                      @if (l.origine === 'EXPERT_OBJET') {
+                        <label class="form-group">
+                          <span class="form-label">Organisme</span>
+                          <input class="form-control" type="text" placeholder="ex. cabinet, université" [value]="l.organisme" (input)="poser(l.cle, 'organisme', $any($event.target).value)" />
+                        </label>
+                        <label class="form-group">
+                          <span class="form-label">Domaine</span>
+                          <input class="form-control" type="text" placeholder="ex. génie civil" [value]="l.domaine" (input)="poser(l.cle, 'domaine', $any($event.target).value)" [class.error]="!!erreurDe('membres[' + i + '].domaine')" />
+                          @if (erreurDe('membres[' + i + '].domaine'); as m) { <span class="form-error">{{ m }}</span> }
+                        </label>
+                      } @else {
+                        <label class="form-group cao__large">
+                          <span class="form-label">Service</span>
+                          <input class="form-control" type="text" placeholder="ex. Direction des affaires financières" [value]="l.service" (input)="poser(l.cle, 'service', $any($event.target).value)" [class.error]="!!erreurDe('membres[' + i + '].service')" />
+                          @if (erreurDe('membres[' + i + '].service'); as m) { <span class="form-error">{{ m }}</span> }
+                        </label>
+                      }
+                    </div>
+                    <div class="cao__membre-pied">
+                      <label class="cao__case"><input type="radio" name="president" [checked]="l.president" (change)="presider(l.cle)" /> Président de la commission</label>
+                      @if (l.compte && l.compte.etat !== 'ACTIF' && l.id != null) {
+                        <button type="button" class="btn btn-sm btn-outline" [disabled]="saving()" (click)="inviter(l)">Renvoyer l'invitation</button>
+                      }
+                      <button type="button" class="btn btn-sm btn-outline cao__retirer" (click)="retirer(l.cle)">Retirer ce membre</button>
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+          </section>
+
+          @if (!fige()) {
+            <div class="card cao__pied">
+              <button type="button" class="btn btn-secondary btn-sm" (click)="ajouter()">Ajouter un membre</button>
+              <span class="text-sm text-muted">Au moins deux membres, un seul président ; un expert de l'objet au plus{{ nbExperts() ? ' (' + nbExperts() + ' saisi' + (nbExperts() > 1 ? 's' : '') + ')' : '' }}. Un membre nouveau reçoit son invitation à l'enregistrement ; un membre retiré l'est à l'enregistrement.</span>
+              <button type="submit" class="btn btn-primary cao__enregistrer" [disabled]="saving()">{{ saving() ? 'Enregistrement…' : 'Enregistrer la commission' }}</button>
+            </div>
+          }
+        </form>
       }
     </section>
   `,
   styles: `
     .cao { display: flex; flex-direction: column; gap: 1rem; }
     .cao__etat { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
-    .cao__form, .cao__decision { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
-    .cao__h2 { margin: 0; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-500); }
-    .cao__court { max-width: 11rem; }
-    .cao__tableau { overflow-x: auto; }
-    .cao__table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); min-width: 66rem; }
-    .cao__table th, .cao__table td { text-align: left; padding: 0.35rem 0.4rem; border-bottom: 1px solid var(--n-200); vertical-align: top; }
-    /* 06/10 — pas de couleur ici : l’en-tête global est bleu à texte blanc (gris sur bleu < AA). */
-    .cao__table th { font-weight: 600; white-space: nowrap; }
-    .cao__table .form-control { padding: 0.3rem 0.45rem; min-width: 7rem; }
-    .cao__table td .form-control + .form-control { margin-top: 0.25rem; }
-    .cao__ligne--ancien td { background: var(--warning-bg); }
-    .cao__select { min-width: 11rem; }
-    .cao__inviter { margin-left: 0.3rem; }
-    .cao__actions { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
-    .cao__pied { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; padding-top: 0.5rem; border-top: 1px solid var(--n-200); }
-    .cao__fichier { margin: 0; min-width: 18rem; }
+    .cao__anomalie { font-size: var(--text-sm); color: var(--warning-text); }
+    .cao__form { display: flex; flex-direction: column; gap: 1rem; }
+    .cao__bloc { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    .cao__h2 { margin: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-600); }
+    .cao__decision-grille { display: grid; grid-template-columns: minmax(0, 2fr) minmax(10rem, 1fr) minmax(0, 2fr); gap: 0.9rem 1.2rem; align-items: start; }
+    .cao__lu { display: flex; flex-direction: column; gap: 0.25rem; }
+    .cao__pdf { display: flex; flex-direction: column; gap: 0.3rem; }
+    .cao__pdf-ok { font-size: var(--text-sm); color: var(--success-text); font-weight: 600; }
+    .cao__pdf-ko { font-size: var(--text-sm); color: var(--warning-text); }
+    .cao__pdf-choix { display: flex; gap: 0.5rem; align-items: center; }
+    .cao__pdf-choix .form-control { flex: 1; min-width: 0; }
+    .cao__bloc-membres { display: flex; flex-direction: column; gap: 0.6rem; }
+    .cao__membres { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 26rem), 1fr)); gap: 0.8rem; }
+    .cao__membre { padding: 0.9rem 1rem; display: flex; flex-direction: column; gap: 0.7rem; border-top: 3px solid var(--n-300); }
+    .cao__membre--president { border-top-color: var(--p-600); }
+    .cao__membre--ancien { background: var(--warning-bg, #fffbeb); }
+    .cao__membre-tete { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+    .cao__avatar { width: 2.4rem; height: 2.4rem; border-radius: 50%; display: grid; place-items: center; background: var(--p-100); color: var(--p-800); font-weight: 700; font-size: 0.85rem; flex: none; }
+    .cao__membre-nom { display: flex; flex-direction: column; flex: 1 1 10rem; min-width: 0; }
+    .cao__dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 0.3rem 0.9rem; font-size: var(--text-sm); }
+    .cao__dl dt { color: var(--n-500); }
+    .cao__dl dd { margin: 0; color: var(--n-800); }
+    .cao__email { overflow-wrap: anywhere; }
+    .cao__champs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem 0.75rem; }
+    .cao__champs .form-group { margin: 0; }
+    .cao__large { grid-column: 1 / -1; }
+    .cao__membre-pied { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; padding-top: 0.6rem; border-top: 1px solid var(--n-200); }
+    .cao__case { display: inline-flex; gap: 0.4rem; align-items: center; font-size: var(--text-sm); font-weight: 600; margin-right: auto; }
+    .cao__pied { padding: 0.8rem 1rem; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+    .cao__pied .text-sm { flex: 1 1 20rem; }
+    @media (max-width: 900px) { .cao__decision-grille { grid-template-columns: 1fr; } }
+    @media (max-width: 520px) { .cao__champs { grid-template-columns: 1fr; } }
   `,
 })
 export class CaoEcran implements OnInit {
@@ -208,6 +285,13 @@ export class CaoEcran implements OnInit {
   readonly erreurGlobale = signal<string | null>(null);
   readonly fichier = signal<File | null>(null);
   readonly fichierErreur = signal<string | null>(null);
+  // ⚠️ 19/10 (pilote) — une cérémonie close fige la composition (409 CEREMONIE_CLOSE) : l'écran passe en lecture.
+  private readonly fiches = inject(FicheMarcheService);
+  readonly fige = signal(false);
+  readonly president = computed(() => { const p = this.lignes().find((l) => l.president); return p ? (p.nom + ' ' + p.prenom).trim() : null; });
+  initiales(l: { nom: string; prenom: string }): string {
+    return ((l.prenom.trim()[0] ?? '') + (l.nom.trim()[0] ?? '')).toUpperCase() || '?';
+  }
   readonly nbExperts = computed(() => this.lignes().filter((l) => l.origine === 'EXPERT_OBJET').length);
   private prochaineCle = 1;
 
@@ -219,6 +303,7 @@ export class CaoEcran implements OnInit {
     this.chargement.set(true);
     this.refuse.set(false);
     this.erreur.set(false);
+    this.fiches.lire(this.idDmc).subscribe({ next: (f) => this.fige.set(f.ceremonie === 'CLOSE'), error: () => this.fige.set(false) });
     this.service.lire(this.idDmc).subscribe({
       next: (c) => {
         this.poserCao(c);
