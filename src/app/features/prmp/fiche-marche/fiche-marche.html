@@ -71,11 +71,12 @@
               <div class="fm__suivi-carte fm__suivi-carte--lecture" [class.fm__suivi-carte--ko]="etat !== 'CLOSE'"><app-icone nom="key" [taille]="18" /><span class="fm__suivi-nom">Cérémonie des clés</span><span class="fm__suivi-etat">{{ libellesCeremonie[etat] }}</span></div>
             }
           }
-          @if (lienRetraits(); as lien) {
-            <a class="fm__suivi-carte" [routerLink]="lien"><app-icone nom="download" [taille]="18" /><span class="fm__suivi-nom">Retraits du DAO</span><span class="fm__suivi-etat">Registre des entreprises</span></a>
-          }
+          <!-- ⚠️ 19/10 (pilote) — cartes dans l'ordre du processus : le candidat règle les frais (reçu validé) avant de retirer le DAO. -->
           @if (lienRecus(); as lien) {
             <a class="fm__suivi-carte" [routerLink]="lien"><app-icone nom="hash" [taille]="18" /><span class="fm__suivi-nom">Reçus des frais de dossier</span><span class="fm__suivi-etat">À valider par la PRMP</span></a>
+          }
+          @if (lienRetraits(); as lien) {
+            <a class="fm__suivi-carte" [routerLink]="lien"><app-icone nom="download" [taille]="18" /><span class="fm__suivi-nom">Retraits du DAO</span><span class="fm__suivi-etat">Registre des entreprises</span></a>
           }
           @if (lienQuestions(); as lien) {
             <a class="fm__suivi-carte" [routerLink]="lien"><app-icone nom="message" [taille]="18" /><span class="fm__suivi-nom">Questions des candidats</span><span class="fm__suivi-etat">Réponses diffusées</span></a>
