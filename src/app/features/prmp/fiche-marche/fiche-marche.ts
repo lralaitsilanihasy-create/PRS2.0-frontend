@@ -603,6 +603,13 @@ export class FicheMarcheEcran {
     return !!s && !['BROUILLON', 'EN_ATTENTE_DECISION_PRMP', 'EN_ATTENTE_PIECES', 'EN_ATTENTE_COMPLEMENTS_DEPOT'].includes(s);
   });
   readonly libelleStatutDossier = computed(() => statutDossierLabel(this.dossierSoumis()?.statut));
+  /** ⚠️ 19/10 — « Suivi de la procédure » : seulement s'il a quelque chose à montrer (un état ou un écran de la procédure). */
+  readonly suiviVisible = computed(() => {
+    const f = this.fiche();
+    if (!f) return false;
+    const etats = this.modeElectronique() && (!!f.cao || !!f.ceremonie || !!f.depots);
+    return etats || !!(this.lienAmi() || this.lienRetraits() || this.lienRecus() || this.lienQuestions() || this.lienDepots() || this.lienCao());
+  });
   /** Les 22 informations de la ligne, pour B01 (clé → valeur) ; libellé via le référentiel quand il est chargé. */
   readonly valeursPpm = computed(() => {
     const v = this.fiche()?.valeursPpm ?? {};

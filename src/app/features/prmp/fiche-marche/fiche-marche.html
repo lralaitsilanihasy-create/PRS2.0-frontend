@@ -29,48 +29,16 @@
         @if (categorie(); as c) { <span class="fm__rep fm__rep--plan" title="Catégorie de dossier, déduite de la nature de la ligne du plan de passation">{{ libellesCategories[c] }}</span> }
         @if (typeMarche(); as t) { <span class="fm__rep fm__rep--plan" title="Forme du marché, reprise de la ligne du plan de passation">{{ libellesTypes[t] }}</span> }
         <span class="cnm-mono">ligne {{ f.idDetail }} du PPM {{ f.refeDossier || ('#' + f.idDossier) }}</span>
+        <!-- ⚠️ 19/10 (pilote) — l'état du dossier soumis, à côté de la ligne du plan. -->
+        @if (dossierSoumis(); as d) {
+          <span class="fm__rep" [class.fm__rep--non]="d.statut === 'BROUILLON'" title="Le dossier soumis à la Commission depuis cette fiche">Dossier {{ d.refeDossier || ('n° ' + f.idDossierSoumis) }} : {{ libelleStatutDossier() }}</span>
+        }
         <!-- ⚠️ Remise électronique (27/09) — l'ÉTAT des paramètres internes se lit par tous ; leurs valeurs, par le seul titulaire. -->
         @if (modeElectronique() && f.parametresInternes; as etat) {
           <span class="fm__rep" [class.fm__rep--ko]="etat !== 'COMPLETS'" title="Paramètres internes de la procédure (écran séparé du responsable)">Paramètres internes : {{ libelleEtatInternes(etat) }}</span>
         }
         @if (lienParametresInternes(); as lien) {
           <a class="btn btn-outline btn-sm" [routerLink]="lien">Paramètres internes</a>
-        }
-        <!-- ⚠️ Soumission en ligne, lot 2a / 2b (04/10) — la commission d'appel d'offres et la cérémonie des clés : leur ÉTAT
-             se lit par tous ceux qui lisent la fiche ; la CAO se désigne par la PRMP. -->
-        @if (modeElectronique() && f.cao; as etat) {
-          <span class="fm__rep" [class.fm__rep--ko]="etat !== 'COMPLETE'" title="Commission d'appel d'offres, désignée par la PRMP (décision, membres, président)">Commission : {{ libellesCao[etat] }}</span>
-        }
-        @if (modeElectronique() && f.ceremonie; as etat) {
-          <span class="fm__rep" [class.fm__rep--ko]="etat !== 'CLOSE'" title="Cérémonie des clés (section de l'écran du responsable de la procédure)">Cérémonie {{ libellesCeremonie[etat] }}</span>
-        }
-        @if (modeElectronique() && f.depots; as d) {
-          <span class="fm__rep" title="Offres déposées en ligne ; leur détail se lit à la date limite">{{ d.nombre }} {{ d.nombre > 1 ? 'offres déposées' : 'offre déposée' }}{{ d.clos ? ' · dépôts clos' : '' }}</span>
-        }
-        @if (modeElectronique() && f.depots?.clos) {
-          <a class="btn btn-outline btn-sm" [routerLink]="['/procedure', f.idDmc, 'seance']">Séance d'ouverture</a>
-          <!-- ⚠️ 07/10 — l'évaluation des offres (lot 1) : elle s'ouvre après le PV d'ouverture signé ; l'écran le dit avant. -->
-          <a class="btn btn-outline btn-sm" [routerLink]="['/procedure', f.idDmc, 'evaluation']">Évaluation des offres</a>
-        }
-        @if (lienAmi(); as lien) {
-          <a class="btn btn-outline btn-sm" [routerLink]="lien">Appel à manifestation d'intérêt</a>
-        }
-        @if (lienDepots(); as lien) {
-          <a class="btn btn-outline btn-sm" [routerLink]="lien">Dépôts des offres</a>
-        }
-        @if (lienCao(); as lien) {
-          <a class="btn btn-outline btn-sm" [routerLink]="lien">Commission d'appel d'offres</a>
-        }
-        <!-- ⚠️ Soumission en ligne, lot 1 (04/10) — qui a retiré le dossier en ligne ; PRMP seule, remise électronique seule. -->
-        @if (lienRetraits(); as lien) {
-          <a class="btn btn-outline btn-sm" [routerLink]="lien">Retraits du DAO</a>
-        }
-        @if (lienRecus(); as lien) {
-          <a class="btn btn-outline btn-sm" [routerLink]="lien">Reçus des frais de dossier</a>
-        }
-        <!-- ⚠️ R7 (V109) — les questions des candidats et leurs réponses diffusées. -->
-        @if (lienQuestions(); as lien) {
-          <a class="btn btn-outline btn-sm" [routerLink]="lien">Questions des candidats</a>
         }
         <!-- ⚠️ R8 (V110) — la migration documentée du mode figé : Administrateur seul. -->
         @if (estAdmin() && f.modeFige && f.modeRemiseFige) {
@@ -79,6 +47,55 @@
       </div>
     }
   </header>
+  <!-- ⚠️ 19/10 (pilote) — le suivi de la procédure : les états (commission, cérémonie, dépôts) et les écrans (retraits, reçus,
+       questions, séance, évaluation) étaient mêlés en puces et en boutons dans l'en-tête. Une carte par geste, avec son état. -->
+  @if (fiche(); as f) {
+    @if (suiviVisible()) {
+      <section class="fm__suivi" aria-labelledby="fm-suivi">
+        <h2 id="fm-suivi" class="fm__suivi-titre">Suivi de la procédure</h2>
+        <div class="fm__suivi-grille">
+          @if (lienAmi(); as lien) {
+            <a class="fm__suivi-carte" [routerLink]="lien"><app-icone nom="users" [taille]="18" /><span class="fm__suivi-nom">Appel à manifestation d’intérêt</span><span class="fm__suivi-etat">Liste restreinte</span></a>
+          }
+          @if (modeElectronique() && f.cao; as etat) {
+            @if (lienCao(); as lien) {
+              <a class="fm__suivi-carte" [class.fm__suivi-carte--ko]="etat !== 'COMPLETE'" [routerLink]="lien"><app-icone nom="users" [taille]="18" /><span class="fm__suivi-nom">Commission d’appel d’offres</span><span class="fm__suivi-etat">{{ libellesCao[etat] }}</span></a>
+            } @else {
+              <div class="fm__suivi-carte fm__suivi-carte--lecture" [class.fm__suivi-carte--ko]="etat !== 'COMPLETE'"><app-icone nom="users" [taille]="18" /><span class="fm__suivi-nom">Commission d’appel d’offres</span><span class="fm__suivi-etat">{{ libellesCao[etat] }}</span></div>
+            }
+          }
+          @if (modeElectronique() && f.ceremonie; as etat) {
+            @if (lienParametresInternes(); as lien) {
+              <a class="fm__suivi-carte" [class.fm__suivi-carte--ko]="etat !== 'CLOSE'" [routerLink]="lien"><app-icone nom="key" [taille]="18" /><span class="fm__suivi-nom">Cérémonie des clés</span><span class="fm__suivi-etat">{{ libellesCeremonie[etat] }}</span></a>
+            } @else {
+              <div class="fm__suivi-carte fm__suivi-carte--lecture" [class.fm__suivi-carte--ko]="etat !== 'CLOSE'"><app-icone nom="key" [taille]="18" /><span class="fm__suivi-nom">Cérémonie des clés</span><span class="fm__suivi-etat">{{ libellesCeremonie[etat] }}</span></div>
+            }
+          }
+          @if (lienRetraits(); as lien) {
+            <a class="fm__suivi-carte" [routerLink]="lien"><app-icone nom="download" [taille]="18" /><span class="fm__suivi-nom">Retraits du DAO</span><span class="fm__suivi-etat">Registre des entreprises</span></a>
+          }
+          @if (lienRecus(); as lien) {
+            <a class="fm__suivi-carte" [routerLink]="lien"><app-icone nom="hash" [taille]="18" /><span class="fm__suivi-nom">Reçus des frais de dossier</span><span class="fm__suivi-etat">À valider par la PRMP</span></a>
+          }
+          @if (lienQuestions(); as lien) {
+            <a class="fm__suivi-carte" [routerLink]="lien"><app-icone nom="message" [taille]="18" /><span class="fm__suivi-nom">Questions des candidats</span><span class="fm__suivi-etat">Réponses diffusées</span></a>
+          }
+          @if (modeElectronique() && f.depots; as d) {
+            @if (lienDepots(); as lien) {
+              <a class="fm__suivi-carte fm__suivi-carte--fort" [routerLink]="lien"><app-icone nom="send" [taille]="18" /><span class="fm__suivi-nom">Dépôts des offres</span><span class="fm__suivi-etat">{{ d.nombre }} {{ d.nombre > 1 ? 'offres déposées' : 'offre déposée' }}{{ d.clos ? ' · clos' : '' }}</span></a>
+            } @else {
+              <div class="fm__suivi-carte fm__suivi-carte--lecture"><app-icone nom="send" [taille]="18" /><span class="fm__suivi-nom">Dépôts des offres</span><span class="fm__suivi-etat">{{ d.nombre }} {{ d.nombre > 1 ? 'offres déposées' : 'offre déposée' }}{{ d.clos ? ' · clos' : '' }}</span></div>
+            }
+          }
+          @if (modeElectronique() && f.depots?.clos) {
+            <a class="fm__suivi-carte" [routerLink]="['/procedure', f.idDmc, 'seance']"><app-icone nom="eye" [taille]="18" /><span class="fm__suivi-nom">Séance d’ouverture</span><span class="fm__suivi-etat">Lecture des offres, PV</span></a>
+            <!-- ⚠️ 07/10 — l'évaluation des offres (lot 1) : elle s'ouvre après le PV d'ouverture signé ; l'écran le dit avant. -->
+            <a class="fm__suivi-carte" [routerLink]="['/procedure', f.idDmc, 'evaluation']"><app-icone nom="check" [taille]="18" /><span class="fm__suivi-nom">Évaluation des offres</span><span class="fm__suivi-etat">Après le PV d’ouverture</span></a>
+          }
+        </div>
+      </section>
+    }
+  }
   <!-- ⚠️ R8 (V110) — la version qui porte une migration la dit : à ressaisir puis valider par la PRMP. -->
   @if (fiche()?.modeMigreLe; as le) {
     <div class="alert alert-warning" role="status">
@@ -120,6 +137,8 @@
         La fiche marché du dossier examiné, en <strong>lecture</strong> : le cadrage, les informations saisies par la PRMP,
         les reprises d'un document à l'autre, le bilan des contrôles et les documents produits.
       </p>
+    } @else if (ficheVerrouillee()) {
+      <p class="page-role">La fiche validée de la procédure, figée depuis la soumission du dossier : son suivi ci-dessus, ses informations et ses documents en consultation ci-dessous.</p>
     } @else {
       <p class="page-role">
         Une information saisie une fois, dans un formulaire : {{ documentsEnToutesLettres() }} seront générés depuis cette fiche
@@ -713,7 +732,7 @@
               <div class="fm__bloc-tete"><span class="fm__eyebrow">Étape 6</span><h2 id="fm-valider">Validation par la PRMP</h2></div>
               <div class="fm__rub">
                 @if (figee()) {
-                  <p class="fm__ok">Fiche validée — version {{ fiche()?.version }} figée{{ fiche()?.dateValidation ? ' le ' + dateFr(fiche()?.dateValidation) : '' }}. Une modification ouvre une nouvelle version.</p>
+                  <p class="fm__ok">Fiche validée — version {{ fiche()?.version }} figée{{ fiche()?.dateValidation ? ' le ' + dateFr(fiche()?.dateValidation) : '' }}.{{ ficheVerrouillee() ? '' : ' Une modification ouvre une nouvelle version.' }}</p>
                 } @else if (estPrmp()) {
                   <p>La validation <strong>fige</strong> la fiche et lui donne un numéro de version. Elle <strong>produit les documents</strong> — {{ documentsEnToutesLettres() }} — depuis cette version, et les joint au dossier à soumettre.</p>
                   @if (bilan().bloquants.length) { <p class="fm__ctrl fm__ctrl--r">{{ bilan().bloquants.length }} contrôle(s) bloquant(s) à lever avant de valider.</p> }
@@ -923,10 +942,18 @@
       </div>
 
       <aside class="fm__ctrls" aria-labelledby="fm-ctrls">
-        <h2 id="fm-ctrls">Contrôles</h2>
+        <h2 id="fm-ctrls">{{ ficheVerrouillee() ? 'Bilan de la validation' : 'Contrôles' }}</h2>
         <!-- Les anomalies de cohérence se lisent une par une ; les informations obligatoires manquantes se COMPTENT
              par bloc — sur une fiche neuve il y en a des dizaines, elles noyaient les vrais écarts. -->
-        @if (anomalies().length || bilan().avertissements.length || informations().length) {
+        @if (ficheVerrouillee()) {
+          <p class="fm__ctrls-vide">Version {{ fiche()?.version }} validée sans contrôle bloquant.@if (bilan().avertissements.length) { {{ bilan().avertissements.length }} avertissement(s) relevé(s) à la validation : }</p>
+          @if (bilan().avertissements.length) {
+            <details class="fm__ctrls-avert">
+              <summary>Voir les avertissements</summary>
+              <ul>@for (c of bilan().avertissements; track c.regle + c.champs.join()) { <li><i class="fm__pt fm__pt--a"></i><span><b>{{ c.bloc || '—' }}</b> {{ c.message }}</span></li> }</ul>
+            </details>
+          }
+        } @else if (anomalies().length || bilan().avertissements.length || informations().length) {
           <ul>
             @for (c of anomalies(); track c.regle + c.champs.join()) { <li><i class="fm__pt fm__pt--r"></i><span><b>{{ c.bloc || '—' }}</b> {{ c.message }}</span></li> }
             @for (c of bilan().avertissements; track c.regle + c.champs.join()) { <li><i class="fm__pt fm__pt--a"></i><span><b>{{ c.bloc || '—' }}</b> {{ c.message }}</span></li> }
@@ -935,7 +962,7 @@
         } @else if (!nbObligatoires()) {
           <p class="fm__ctrls-vide">Le bilan du serveur apparaît ici à chaque enregistrement.</p>
         }
-        @if (nbObligatoires(); as n) {
+        @if (!ficheVerrouillee() && nbObligatoires(); as n) {
           <p class="fm__ctrls-vide">
             <b>{{ n }} information(s) obligatoire(s)</b> restent à saisir — {{ blocsRestants() }}.
           </p>
