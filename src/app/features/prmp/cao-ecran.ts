@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { ApiError, codeErreur, erreursParChamp } from '../../core/errors/api-error';
 import { dateFr } from '../../core/interim/interim-libelles';
@@ -45,7 +45,7 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
 @Component({
   selector: 'app-cao-ecran',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [EtatErreur, EnteteProcedure],
+  imports: [EtatErreur, EnteteProcedure, RouterLink],
   template: `
     <section class="cao">
       <header class="page-header">
@@ -73,8 +73,15 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
         <!-- ⚠️ 19/10 (pilote) — une cérémonie close fige la composition (409 CEREMONIE_CLOSE) : l'écran passe en lecture et le dit. -->
         @if (fige()) {
           <div class="alert alert-info" role="status">
-            <span><strong>La cérémonie des clés est close : la composition de la commission est figée.</strong> Pour la changer, le responsable de la
-            procédure rouvre la cérémonie, et chaque membre republie sa clé. La décision signée peut encore être jointe.</span>
+            @if (offresScellees()) {
+              <span><strong>Des offres sont scellées avec les clés de cette commission : sa composition ne peut plus changer.</strong>
+              La cérémonie ne se rouvre plus après la première offre déposée. La décision signée peut encore être jointe.</span>
+            } @else {
+              <span><strong>La cérémonie des clés est close : la composition de la commission est figée.</strong> Pour la changer, le responsable
+              de la procédure rouvre la cérémonie{{ lienParametres() ? '' : ' (dans les paramètres internes de la procédure)' }}, puis chaque membre republie sa clé.
+              C'est possible tant qu'aucune offre n'est déposée. La décision signée peut encore être jointe.</span>
+              @if (lienParametres(); as lien) { <a class="btn btn-sm btn-outline cao__lien" [routerLink]="lien">Paramètres internes — rouvrir la cérémonie</a> }
+            }
           </div>
         }
         @if (erreurGlobale(); as e) { <div class="alert alert-danger" role="alert">{{ e }}</div> }
@@ -224,6 +231,7 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
   styles: `
     .cao { display: flex; flex-direction: column; gap: 1rem; }
     .cao__etat { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+    .cao__lien { margin-top: 0.5rem; }
     .cao__anomalie { font-size: var(--text-sm); color: var(--warning-text); }
     .cao__form { display: flex; flex-direction: column; gap: 1rem; }
     .cao__bloc { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
@@ -288,6 +296,9 @@ export class CaoEcran implements OnInit {
   // ⚠️ 19/10 (pilote) — une cérémonie close fige la composition (409 CEREMONIE_CLOSE) : l'écran passe en lecture.
   private readonly fiches = inject(FicheMarcheService);
   readonly fige = signal(false);
+  /** Une offre scellée interdit la réouverture (409 DEPOT_EXISTANT) : lu sur le nombre de dépôts de la fiche (la cérémonie n'est pas servie à la PRMP). */
+  readonly offresScellees = signal(false);
+  readonly lienParametres = signal<(string | number)[] | null>(null);
   readonly president = computed(() => { const p = this.lignes().find((l) => l.president); return p ? (p.nom + ' ' + p.prenom).trim() : null; });
   initiales(l: { nom: string; prenom: string }): string {
     return ((l.prenom.trim()[0] ?? '') + (l.nom.trim()[0] ?? '')).toUpperCase() || '?';
@@ -303,7 +314,14 @@ export class CaoEcran implements OnInit {
     this.chargement.set(true);
     this.refuse.set(false);
     this.erreur.set(false);
-    this.fiches.lire(this.idDmc).subscribe({ next: (f) => this.fige.set(f.ceremonie === 'CLOSE'), error: () => this.fige.set(false) });
+    this.fiches.lire(this.idDmc).subscribe({
+      next: (f) => {
+        this.fige.set(f.ceremonie === 'CLOSE');
+        this.lienParametres.set(f.peutModifierParametresInternes ? ['/procedure', this.idDmc, 'parametres-internes'] : null);
+        this.offresScellees.set((f.depots?.nombre ?? 0) > 0);
+      },
+      error: () => this.fige.set(false),
+    });
     this.service.lire(this.idDmc).subscribe({
       next: (c) => {
         this.poserCao(c);
