@@ -12,13 +12,17 @@ import { LIBELLES_CATEGORIES } from '../prmp/fiche-marche/fiche-marche-modele';
 import { LIBELLES_ETAT_PROCEDURE, dateHeureFr } from './libelles-candidat';
 import { EtatVideCandidat } from './etat-vide-candidat';
 import { Icone } from '../../shared/ui/icone';
-import { tempsRestant } from './procedure-en-ligne-modele';
+import { FiltreProcedures, compteursProcedures, filtrerProcedures, lignesProcedures } from './procedure-en-ligne-modele';
 
 /**
  * Les procédures ouvertes à la remise électronique (`GET /api/procedures-en-ligne`, public, §B8) — la date limite la
  * plus proche d'abord. Une procédure y figure quand sa fiche DAO est validée en mode électronique, lancée par un avis
  * spécifique, non échue, et en signature Simple (la seule que la plateforme sache faire aujourd'hui). Chaque ligne
  * ouvre son détail ; le retrait du dossier demande un compte.
+ *
+ * ⚠️ 19/10 (maquette du pilote) — compteurs (ouvertes, à venir, prochaine échéance), recherche et filtres d'état, lignes pleine
+ * largeur : liseré d'état, jours restants, avancement de la période de dépôt. Appels d'offres et appels à manifestation d'intérêt
+ * sont présentés de la même façon, dans une seule liste.
  */
 @Component({
   selector: 'app-procedures-en-ligne',
@@ -30,7 +34,7 @@ import { tempsRestant } from './procedure-en-ligne-modele';
       <h1 class="page-title">Procédures ouvertes à la remise électronique</h1>
     </header>
     <p class="page-role">
-      Les appels à manifestation d'intérêt et les appels d'offres que vous pouvez retirer en ligne, la date limite la plus proche d'abord.
+      Les appels d'offres et les appels à manifestation d'intérêt que vous pouvez retirer en ligne, la date limite la plus proche d'abord.
       @if (!connecte()) { Pour retirer un dossier, <a routerLink="/candidat/inscription">créez un compte</a> ou <a routerLink="/login" [queryParams]="{ returnUrl: '/candidat/procedures' }">connectez-vous</a>. }
     </p>
 
@@ -38,56 +42,67 @@ import { tempsRestant } from './procedure-en-ligne-modele';
       <p class="text-muted" role="status">Chargement des procédures…</p>
     } @else if (erreur()) {
       <app-etat-erreur message="Les procédures n'ont pas pu être chargées." (reessayer)="charger()" />
-    } @else if (!procedures().length && !amis().length) {
+    } @else if (!lignes().length) {
       <app-etat-vide-candidat icone="globe" titre="Aucune procédure ouverte en ligne pour le moment" texte="Les appels d’offres et les appels à manifestation d’intérêt paraissent ici dès la publication de leur avis." />
     } @else {
-      <!-- ⚠️ AMI-a (07/10, V82) — les appels à manifestation d'intérêt des prestations intellectuelles : liste servie à part
-           (/api/amis-en-ligne), fusionnée ici à l'affichage, en tête : leur date limite précède la consultation. -->
-      @if (amis().length) {
-        <h2 class="pel__h2">Appels à manifestation d’intérêt</h2>
-        <ul class="pel" aria-label="Appels à manifestation d'intérêt ouverts">
-          @for (a of amis(); track a.idDmc) {
-            <li>
-              <a class="pel__carte" [routerLink]="['/candidat', 'amis', a.idDmc]">
-                <div class="pel__haut">
-                  <span class="cnm-mono pel__ref">{{ a.reference || ('appel ' + a.idDmc) }}</span>
-                  <span class="badge badge-success">Ouvert</span>
-                </div>
-                <h3 class="pel__objet">{{ a.objet || 'Objet non renseigné' }}</h3>
-                <p class="pel__meta">
-                  @if (a.autoriteContractante) { <span><app-icone nom="board" [taille]="13" />{{ a.autoriteContractante }}</span> }
-                  <span><app-icone nom="users" [taille]="13" />Prestations intellectuelles · {{ a.nombreRetenus ?? 6 }} candidats retenus</span>
-                </p>
-                <p class="pel__pied">
-                  <span class="pel__limite"><app-icone nom="clock" [taille]="14" />@if (a.dateLimite) { <span>Date limite <strong>{{ dateHeure(a.dateLimite) }}</strong></span>@if (reste(a.dateLimite); as r) { <span class="pel__reste">{{ r }}</span> } } @else { Date limite non renseignée }</span>
-                  <span class="pel__voir">Consulter<app-icone nom="chev" [taille]="14" /></span>
-                </p>
-              </a>
-            </li>
+      @let c = compteurs();
+      <section class="pel__compteurs" aria-label="En bref">
+        <div class="pel__compteur"><span class="pel__compteur-lib">Ouvertes</span><strong class="pel__compteur-val pel__compteur-val--ok">{{ c.ouvertes }}</strong></div>
+        <div class="pel__compteur"><span class="pel__compteur-lib">À venir</span><strong class="pel__compteur-val pel__compteur-val--venir">{{ c.aVenir }}</strong></div>
+        <div class="pel__compteur"><span class="pel__compteur-lib">Prochaine échéance</span><strong class="pel__compteur-val">{{ c.prochaine == null ? '—' : c.prochaine === 0 ? 'Aujourd’hui' : c.prochaine + ' j' }}</strong></div>
+      </section>
+
+      <div class="pel__outils">
+        <label class="pel__recherche">
+          <app-icone nom="search" [taille]="16" />
+          <span class="cnm-sr-only">Rechercher</span>
+          <input type="search" class="form-control" placeholder="Référence, objet, autorité…" [value]="texte()" (input)="texte.set($any($event.target).value)" />
+        </label>
+        <div class="pel__filtres" role="group" aria-label="Filtrer par état">
+          @for (f of filtresDispo; track f.cle) {
+            <button type="button" class="pel__filtre" [class.pel__filtre--actif]="filtre() === f.cle" [attr.aria-pressed]="filtre() === f.cle" (click)="filtre.set(f.cle)">{{ f.libelle }}</button>
           }
-        </ul>
-        @if (procedures().length) { <h2 class="pel__h2">Appels d’offres</h2> }
+        </div>
+      </div>
+
+      @if (!visibles().length) {
+        <p class="pel__aucune" role="status">Aucune procédure ne correspond. <button type="button" class="btn btn-sm btn-outline" (click)="texte.set(''); filtre.set('TOUTES')">Tout afficher</button></p>
       }
-      <ul class="pel" aria-label="Procédures ouvertes">
-        @for (p of procedures(); track p.idDmc) {
-          <li>
-            <a class="pel__carte" [attr.data-etat]="p.etat" [routerLink]="['/candidat', 'procedures', p.idDmc]">
-              <div class="pel__haut">
-                <span class="cnm-mono pel__ref">{{ p.reference || ('procédure ' + p.idDmc) }}</span>
-                <span class="badge" [class.badge-success]="p.etat === 'OUVERTE'" [class.badge-warning]="p.etat === 'A_VENIR'" [class.badge-neutral]="p.etat === 'CLOSE'">{{ etats[p.etat] }}</span>
-              </div>
-              <h2 class="pel__objet">{{ p.objet || 'Objet non renseigné' }}</h2>
+      <ul class="pel" aria-label="Procédures">
+        @for (l of visibles(); track l.cle) {
+          <li class="pel__ligne" [attr.data-etat]="l.etat">
+            <div class="pel__corps">
+              <p class="pel__haut">
+                <span class="cnm-mono pel__ref">{{ l.reference }}</span>
+                <span class="pel__badge" [attr.data-etat]="l.etat">{{ libelleEtat(l.etat, l.genre) }}</span>
+              </p>
+              <h2 class="pel__objet"><a [routerLink]="l.lien">{{ l.objet }}</a></h2>
               <p class="pel__meta">
-                @if (p.autoriteContractante) { <span><app-icone nom="board" [taille]="13" />{{ p.autoriteContractante }}</span> }
-                @if (p.categorie) { <span><app-icone nom="layers" [taille]="13" />{{ categories[p.categorie] }}</span> }
-                <span><app-icone nom="columns" [taille]="13" />{{ p.lots.length > 1 ? p.lots.length + ' lots' : 'Lot unique' }}</span>
+                @if (l.autorite) { <span><app-icone nom="board" [taille]="14" />{{ l.autorite }}</span> }
+                @if (l.categorie) { <span><app-icone nom="layers" [taille]="14" />{{ l.categorie }}</span> }
+                <span><app-icone nom="columns" [taille]="14" />{{ l.lots }}</span>
               </p>
-              <!-- ⚠️ 18/10 (pilote) — la date limite en pied de carte, avec le temps qui reste ; « Consulter » dit que la carte s'ouvre. -->
-              <p class="pel__pied">
-                <span class="pel__limite"><app-icone nom="clock" [taille]="14" />@if (p.dateLimite) { <span>Date limite <strong>{{ dateHeure(p.dateLimite) }}</strong></span>@if (p.etat !== 'CLOSE' && reste(p.dateLimite); as r) { <span class="pel__reste">{{ r }}</span> } } @else { Date limite non renseignée }</span>
-                <span class="pel__voir">Consulter<app-icone nom="chev" [taille]="14" /></span>
-              </p>
-            </a>
+              @if (l.etat === 'OUVERTE') {
+                <div class="pel__echeance">
+                  @if (l.avancement != null) {
+                    <span class="pel__barre" role="progressbar" aria-label="Période de dépôt écoulée" [attr.aria-valuenow]="l.avancement" aria-valuemin="0" aria-valuemax="100"><span [style.width.%]="l.avancement"></span></span>
+                  }
+                  <span class="pel__cloture">Clôture {{ l.dateLimite ? dateHeure(l.dateLimite) : 'non renseignée' }}</span>
+                </div>
+              } @else if (l.etat === 'A_VENIR') {
+                <p class="pel__cloture"><app-icone nom="clock" [taille]="14" />{{ l.dateOuverture ? 'Ouverture le ' + dateHeure(l.dateOuverture) : 'Ouverture à annoncer' }} · clôture {{ l.dateLimite ? dateHeure(l.dateLimite) : '—' }}</p>
+              } @else {
+                <p class="pel__cloture">Close depuis le {{ l.dateLimite ? dateHeure(l.dateLimite) : '—' }}</p>
+              }
+            </div>
+            <div class="pel__droite">
+              @if (l.joursRestants != null) {
+                <p class="pel__jours"><strong>{{ l.joursRestants === 0 ? 'Dernier' : l.joursRestants }}</strong><span>{{ l.joursRestants === 0 ? 'jour' : l.joursRestants > 1 ? 'jours restants' : 'jour restant' }}</span></p>
+              }
+              <a class="btn btn-sm" [class.btn-primary]="l.etat === 'OUVERTE'" [class.btn-outline]="l.etat !== 'OUVERTE'" [routerLink]="l.lien">
+                {{ l.etat === 'OUVERTE' ? 'Consulter' : 'Voir le détail' }}<app-icone nom="chev" [taille]="14" />
+              </a>
+            </div>
           </li>
         }
       </ul>
@@ -95,23 +110,58 @@ import { tempsRestant } from './procedure-en-ligne-modele';
   `,
   styles: `
     :host { display: block; }
-    .pel { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); gap: 0.9rem; }
-    .pel__carte { display: flex; flex-direction: column; gap: 0.45rem; height: 100%; box-sizing: border-box; padding: 1rem 1.1rem 0.85rem; background: #fff; border: 1px solid var(--n-200);
-      border-top: 4px solid var(--success-text); border-radius: var(--radius-lg); text-decoration: none; color: inherit; box-shadow: var(--shadow-sm); transition: border-color .15s, box-shadow .15s; }
-    .pel__carte[data-etat='A_VENIR'] { border-top-color: #f59e0b; }
-    .pel__carte[data-etat='CLOSE'] { border-top-color: var(--n-300); }
-    .pel__carte:hover, .pel__carte:focus-visible { border-color: var(--p-400); box-shadow: var(--shadow-md); }
-    .pel__meta span { display: inline-flex; gap: 0.3rem; align-items: center; }
-    .pel__pied { margin: auto 0 0; padding-top: 0.65rem; border-top: 1px solid var(--n-200); display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
-    .pel__voir { flex: none; }
-    .pel__limite { display: inline-flex; gap: 0.35rem; align-items: center; flex-wrap: wrap; font-size: var(--text-sm); color: var(--n-700); }
-    .pel__reste { font-size: var(--text-xs); font-weight: 700; padding: 0.05rem 0.5rem; border-radius: var(--radius-full); background: var(--p-100); color: var(--p-800); }
-    .pel__voir { display: inline-flex; gap: 0.2rem; align-items: center; font-size: var(--text-sm); font-weight: 700; color: var(--p-700); }
-    .pel__haut { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+    .pel__compteurs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; margin-bottom: 1rem; }
+    .pel__compteur { background: #fff; border: 1px solid var(--n-200); border-radius: var(--radius-lg); padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.15rem; box-shadow: var(--shadow-sm); }
+    .pel__compteur-lib { font-size: var(--text-sm); color: var(--n-500); }
+    .pel__compteur-val { font-size: 1.6rem; line-height: 1.1; color: var(--n-800); }
+    .pel__compteur-val--ok { color: var(--success-text); }
+    .pel__compteur-val--venir { color: var(--warning-text); }
+
+    .pel__outils { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
+    .pel__recherche { flex: 1 1 18rem; position: relative; display: flex; align-items: center; margin: 0; }
+    .pel__recherche app-icone { position: absolute; left: 0.75rem; color: var(--n-400); pointer-events: none; }
+    .pel__recherche input { padding-left: 2.2rem; }
+    .pel__filtres { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .pel__filtre { font: inherit; font-size: var(--text-sm); font-weight: 600; padding: 0.45rem 0.95rem; border-radius: var(--radius-md); border: 1px solid var(--n-300); background: #fff; color: var(--n-700); cursor: pointer; }
+    .pel__filtre:hover { background: var(--n-100); }
+    .pel__filtre--actif { background: var(--p-100); border-color: var(--p-400); color: var(--p-800); }
+    .pel__aucune { display: flex; gap: 0.6rem; align-items: center; color: var(--n-600); font-size: var(--text-sm); }
+
+    .pel { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.75rem; }
+    .pel__ligne { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; align-items: center; padding: 1rem 1.2rem 1rem 1.5rem;
+      background: #fff; border: 1px solid var(--n-200); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); transition: border-color .15s, box-shadow .15s; }
+    .pel__ligne::before { content: ''; position: absolute; left: 0.6rem; top: 0.9rem; bottom: 0.9rem; width: 4px; border-radius: 2px; background: var(--success-text); }
+    .pel__ligne[data-etat='A_VENIR']::before { background: #f59e0b; }
+    .pel__ligne[data-etat='CLOSE']::before { background: var(--n-300); }
+    .pel__ligne:hover, .pel__ligne:focus-within { border-color: var(--p-300); box-shadow: var(--shadow-md); }
+    .pel__corps { display: flex; flex-direction: column; gap: 0.4rem; min-width: 0; }
+    .pel__haut { margin: 0; display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
     .pel__ref { font-size: var(--text-sm); color: var(--n-500); }
-    .pel__objet { margin: 0; font-size: 1rem; line-height: 1.35; }
-    .pel__meta { margin: 0; display: flex; flex-wrap: wrap; gap: 0.25rem 0.75rem; font-size: var(--text-sm); color: var(--n-500); }
-    .pel__h2 { margin: 1rem 0 0.6rem; font-size: 1.05rem; }
+    .pel__badge { font-size: var(--text-xs); font-weight: 700; padding: 0.1rem 0.6rem; border-radius: var(--radius-full); background: #d1fae5; color: #065f46; }
+    .pel__badge[data-etat='A_VENIR'] { background: #fef3c7; color: #92400e; }
+    .pel__badge[data-etat='CLOSE'] { background: var(--n-100); color: var(--n-600); }
+    .pel__objet { margin: 0; font-size: 1.05rem; line-height: 1.35; }
+    .pel__objet a { color: var(--n-800); text-decoration: none; }
+    .pel__objet a:hover { color: var(--p-700); text-decoration: underline; }
+    .pel__meta { margin: 0; display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; font-size: var(--text-sm); color: var(--n-500); }
+    .pel__meta span, .pel__cloture { display: inline-flex; gap: 0.35rem; align-items: center; }
+    .pel__echeance { display: flex; gap: 0.9rem; align-items: center; flex-wrap: wrap; }
+    .pel__barre { flex: 1 1 12rem; max-width: 28rem; height: 6px; border-radius: 3px; background: var(--n-100); overflow: hidden; }
+    .pel__barre > span { display: block; height: 100%; background: var(--success-text); border-radius: 3px; }
+    .pel__cloture { margin: 0; font-size: var(--text-sm); color: var(--n-600); }
+    .pel__droite { display: flex; flex-direction: column; align-items: flex-end; gap: 0.6rem; }
+    .pel__jours { margin: 0; display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; }
+    .pel__jours strong { font-size: 1.7rem; color: var(--n-800); }
+    .pel__jours span { font-size: var(--text-xs); color: var(--n-500); }
+    .pel__droite .btn { display: inline-flex; gap: 0.3rem; align-items: center; }
+
+    @media (max-width: 640px) {
+      .pel__compteurs { grid-template-columns: 1fr 1fr; }
+      .pel__compteur:last-child { grid-column: 1 / -1; }
+      .pel__ligne { grid-template-columns: 1fr; }
+      .pel__droite { flex-direction: row; justify-content: space-between; align-items: center; }
+      .pel__jours { align-items: flex-start; }
+    }
   `,
 })
 export class ProceduresEnLigne implements OnInit {
@@ -121,15 +171,28 @@ export class ProceduresEnLigne implements OnInit {
   private readonly document = inject(DOCUMENT);
 
   readonly etats = LIBELLES_ETAT_PROCEDURE;
-  readonly categories = LIBELLES_CATEGORIES;
   readonly dateHeure = dateHeureFr;
-  readonly reste = (d: string | null | undefined): string | null => tempsRestant(d);
   readonly connecte = computed(() => this.auth.isAuthenticated() && this.auth.role() === 'CANDIDAT');
 
   readonly chargement = signal(true);
   readonly erreur = signal(false);
   readonly procedures = signal<ProcedureEnLigne[]>([]);
   readonly amis = signal<AmiPublic[]>([]);
+
+  readonly texte = signal('');
+  readonly filtre = signal<FiltreProcedures>('TOUTES');
+  readonly filtresDispo: readonly { cle: FiltreProcedures; libelle: string }[] = [
+    { cle: 'TOUTES', libelle: 'Toutes' },
+    { cle: 'OUVERTE', libelle: 'Ouvertes' },
+    { cle: 'A_VENIR', libelle: 'À venir' },
+  ];
+  readonly lignes = computed(() => lignesProcedures(this.procedures(), this.amis(), LIBELLES_CATEGORIES));
+  readonly compteurs = computed(() => compteursProcedures(this.lignes()));
+  readonly visibles = computed(() => filtrerProcedures(this.lignes(), this.texte(), this.filtre()));
+
+  libelleEtat(etat: 'OUVERTE' | 'A_VENIR' | 'CLOSE', genre: 'AO' | 'AMI'): string {
+    return genre === 'AMI' ? (etat === 'OUVERTE' ? 'Manifestation ouverte' : 'Close') : this.etats[etat];
+  }
 
   ngOnInit(): void {
     this.document.title = 'Procédures ouvertes — Espace candidat — PRS 2.0';

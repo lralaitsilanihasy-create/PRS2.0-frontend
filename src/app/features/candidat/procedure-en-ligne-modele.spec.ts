@@ -1,5 +1,5 @@
 import { DocumentProcedureEnLigne, ProcedureEnLigne, RecuDao } from '../../models';
-import { etapesParcours, formatDuFichier, grouperDocuments, jalons, tempsRestant } from './procedure-en-ligne-modele';
+import { avancementDepot, compteursProcedures, etapesParcours, filtrerProcedures, formatDuFichier, grouperDocuments, jalons, joursAvant, lignesProcedures, tempsRestant } from './procedure-en-ligne-modele';
 
 const procedure = (p: Partial<ProcedureEnLigne> = {}): ProcedureEnLigne => ({
   idDmc: 2, reference: '00001/PPM-AGPM/CNM/2026', objet: 'Fourniture d’articles de bureau', autoriteContractante: 'MEF', categorie: 'FOURNITURES_SERVICES',
@@ -53,5 +53,41 @@ describe('Procédure en ligne — présentation (18/10)', () => {
       ['Ouverture des dépôts', '01/02/2027 à 08:00', true, false],
       ['Date limite de remise', '04/03/2027 à 09:00', false, true],
     ]);
+  });
+});
+
+describe('Liste des procédures (19/10, maquette)', () => {
+  const maintenant = new Date(2026, 9, 19, 9, 0);
+  const cats = { FOURNITURES_SERVICES: 'Fournitures et services' };
+  const ouverte = procedure({ idDmc: 3, reference: '13-CC', etat: 'OUVERTE', depotsOuverts: true, dateOuvertureDepots: '2026-10-19T00:00', datePublication: '2026-10-19', dateLimite: '2026-11-20T09:00' });
+  const aVenir = procedure({ idDmc: 2, reference: '12-CC', etat: 'A_VENIR', dateLimite: '2027-03-04T09:00' });
+  const ami = { idDmc: 9, reference: 'AMI-1', objet: 'Étude', autoriteContractante: 'MEN', dateLimite: '2026-10-29T08:00', publieLe: '2026-10-09T10:00', ouvert: true };
+
+  it('appels d’offres et AMI dans une même liste, la date limite la plus proche d’abord', () => {
+    const l = lignesProcedures([aVenir, ouverte], [ami], cats, maintenant);
+    expect(l.map((x) => x.cle)).toEqual(['AMI-9', 'AO-3', 'AO-2']);
+    expect(l[1]).toMatchObject({ etat: 'OUVERTE', joursRestants: 32, categorie: 'Fournitures et services', lots: 'Lot unique', lien: ['/candidat', 'procedures', 3] });
+    expect(l[1].avancement).toBe(1);
+    expect(l[2]).toMatchObject({ etat: 'A_VENIR', avancement: null, joursRestants: 136 });
+    expect(l[0]).toMatchObject({ genre: 'AMI', joursRestants: 10, avancement: 50 });
+  });
+
+  it('les compteurs : ouvertes, à venir, prochaine échéance en jours', () => {
+    expect(compteursProcedures(lignesProcedures([aVenir, ouverte], [], cats, maintenant))).toEqual({ ouvertes: 1, aVenir: 1, prochaine: 32 });
+    expect(compteursProcedures([])).toEqual({ ouvertes: 0, aVenir: 0, prochaine: null });
+  });
+
+  it('le filtre d’état et la recherche sans accents ni casse', () => {
+    const l = lignesProcedures([aVenir, ouverte], [ami], cats, maintenant);
+    expect(filtrerProcedures(l, '', 'A_VENIR').map((x) => x.cle)).toEqual(['AO-2']);
+    expect(filtrerProcedures(l, 'etude', 'TOUTES').map((x) => x.cle)).toEqual(['AMI-9']);
+    expect(filtrerProcedures(l, 'men', 'OUVERTE').map((x) => x.cle)).toEqual(['AMI-9']);
+  });
+
+  it('avancement borné de 0 à 100, nul sans dates ; plus de jours une fois la date passée', () => {
+    expect(avancementDepot('2026-10-20', '2026-11-20', maintenant)).toBe(0);
+    expect(avancementDepot('2026-09-01', '2026-10-01', maintenant)).toBe(100);
+    expect(avancementDepot(null, '2026-11-20', maintenant)).toBeNull();
+    expect(joursAvant('2026-10-19T08:00', maintenant)).toBeNull();
   });
 });

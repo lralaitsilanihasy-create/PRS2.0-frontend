@@ -159,3 +159,115 @@ export function jalons(p: ProcedureEnLigne, maintenant: Date = new Date()): Jalo
   if (p.dateLimite) liste.push({ libelle: 'Date limite de remise', date: dateLisible(p.dateLimite), passe: passe(p.dateLimite), fort: true });
   return liste;
 }
+
+// ── La liste des procédures (19/10, maquette du pilote) ──────────────────────────────────────────────────────
+
+/** Une ligne de la liste : un appel d'offres ou un appel à manifestation d'intérêt, présentés de la même façon. */
+export interface LigneProcedure {
+  cle: string;
+  genre: 'AO' | 'AMI';
+  lien: (string | number)[];
+  reference: string;
+  etat: 'OUVERTE' | 'A_VENIR' | 'CLOSE';
+  objet: string;
+  autorite: string | null;
+  categorie: string | null;
+  lots: string;
+  dateLimite: string | null;
+  dateOuverture: string | null;
+  /** Jours pleins avant la date limite (0 le dernier jour) ; `null` sans date ou passée. */
+  joursRestants: number | null;
+  /** Part écoulée de la période de dépôt, de 0 à 100 ; `null` à venir ou sans dates. */
+  avancement: number | null;
+}
+
+export type FiltreProcedures = 'TOUTES' | 'OUVERTE' | 'A_VENIR';
+
+const dateDe = (iso: string | null | undefined): Date | null => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/.exec(iso ?? '');
+  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4] ?? 0), Number(m[5] ?? 0)) : null;
+};
+
+export function joursAvant(dateLimite: string | null | undefined, maintenant: Date): number | null {
+  const d = dateDe(dateLimite);
+  if (!d || d.getTime() <= maintenant.getTime()) return null;
+  const jourLimite = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const aujourdHui = new Date(maintenant.getFullYear(), maintenant.getMonth(), maintenant.getDate()).getTime();
+  return Math.round((jourLimite - aujourdHui) / 86_400_000);
+}
+
+/** La part écoulée entre le début (ouverture des dépôts, à défaut publication) et la date limite. */
+export function avancementDepot(debut: string | null | undefined, fin: string | null | undefined, maintenant: Date): number | null {
+  const a = dateDe(debut);
+  const b = dateDe(fin);
+  if (!a || !b || b.getTime() <= a.getTime()) return null;
+  const p = ((maintenant.getTime() - a.getTime()) / (b.getTime() - a.getTime())) * 100;
+  return Math.max(0, Math.min(100, Math.round(p)));
+}
+
+export interface AmiLigne {
+  idDmc: number;
+  reference: string | null;
+  objet: string | null;
+  autoriteContractante: string | null;
+  dateLimite: string | null;
+  publieLe: string | null;
+  ouvert: boolean;
+}
+
+export function lignesProcedures(
+  procedures: readonly ProcedureEnLigne[],
+  amis: readonly AmiLigne[],
+  categories: Readonly<Record<string, string>>,
+  maintenant: Date = new Date(),
+): LigneProcedure[] {
+  const lignes: LigneProcedure[] = [
+    ...amis.map((a): LigneProcedure => ({
+      cle: `AMI-${a.idDmc}`,
+      genre: 'AMI',
+      lien: ['/candidat', 'amis', a.idDmc],
+      reference: a.reference || `appel ${a.idDmc}`,
+      etat: a.ouvert ? 'OUVERTE' : 'CLOSE',
+      objet: a.objet || 'Objet non renseigné',
+      autorite: a.autoriteContractante,
+      categorie: 'Manifestation d’intérêt',
+      lots: 'Prestations intellectuelles',
+      dateLimite: a.dateLimite,
+      dateOuverture: a.publieLe,
+      joursRestants: a.ouvert ? joursAvant(a.dateLimite, maintenant) : null,
+      avancement: a.ouvert ? avancementDepot(a.publieLe, a.dateLimite, maintenant) : null,
+    })),
+    ...procedures.map((p): LigneProcedure => ({
+      cle: `AO-${p.idDmc}`,
+      genre: 'AO',
+      lien: ['/candidat', 'procedures', p.idDmc],
+      reference: p.reference || `procédure ${p.idDmc}`,
+      etat: p.etat,
+      objet: p.objet || 'Objet non renseigné',
+      autorite: p.autoriteContractante,
+      categorie: p.categorie ? (categories[p.categorie] ?? null) : null,
+      lots: p.lots.length > 1 ? `${p.lots.length} lots` : 'Lot unique',
+      dateLimite: p.dateLimite,
+      dateOuverture: p.dateOuvertureDepots,
+      joursRestants: p.etat === 'CLOSE' ? null : joursAvant(p.dateLimite, maintenant),
+      avancement: p.etat === 'OUVERTE' ? avancementDepot(p.dateOuvertureDepots ?? p.datePublication, p.dateLimite, maintenant) : null,
+    })),
+  ];
+  // La date limite la plus proche d'abord, les closes à la fin.
+  return lignes.sort(
+    (x, y) => Number(x.etat === 'CLOSE') - Number(y.etat === 'CLOSE') || (dateDe(x.dateLimite)?.getTime() ?? Infinity) - (dateDe(y.dateLimite)?.getTime() ?? Infinity),
+  );
+}
+
+export function compteursProcedures(lignes: readonly LigneProcedure[]): { ouvertes: number; aVenir: number; prochaine: number | null } {
+  const ouvertes = lignes.filter((l) => l.etat === 'OUVERTE');
+  const jours = ouvertes.map((l) => l.joursRestants).filter((j): j is number => j != null);
+  return { ouvertes: ouvertes.length, aVenir: lignes.filter((l) => l.etat === 'A_VENIR').length, prochaine: jours.length ? Math.min(...jours) : null };
+}
+
+/** Le filtre d'état et la recherche (référence, objet, autorité), sans accents ni casse. */
+export function filtrerProcedures(lignes: readonly LigneProcedure[], texte: string, filtre: FiltreProcedures): LigneProcedure[] {
+  const norm = (s: string | null): string => (s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const q = norm(texte.trim());
+  return lignes.filter((l) => (filtre === 'TOUTES' || l.etat === filtre) && (!q || [l.reference, l.objet, l.autorite].some((c) => norm(c).includes(q))));
+}
