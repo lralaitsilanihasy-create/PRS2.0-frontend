@@ -195,7 +195,11 @@ import { LIBELLES_ETAT_ETAPE, OffreDeposee, etapesParcours, grouperDocuments, ja
                 }
                 <a class="btn btn-sm btn-outline" routerLink="/candidat/offres">Mes offres</a>
               </div>
-              <span class="text-sm text-muted">{{ p.depotsOuverts && p.remplacementAutorise !== false ? 'Une seule offre par entreprise : la remplacer annule la précédente, qui ne sera pas ouverte.' : 'Une seule offre par entreprise.' }}</span>
+              @if (p.depotsOuverts && p.remplacementAutorise !== false) {
+                <span class="text-sm text-muted">Vous pouvez la remplacer jusqu’au <strong>{{ p.dateLimite ? dateHeure(p.dateLimite) : '—' }}</strong> (heure du serveur) ; un remplacement inachevé à cette heure n’est pas reçu, et l’offre précédente reste celle qui sera ouverte. Une seule offre par entreprise : la remplacer annule la précédente.</span>
+              } @else {
+                <span class="text-sm text-muted">Une seule offre par entreprise.</span>
+              }
             } @else if (p.depotsOuverts && connecte() && !retraitAutorise()) {
               <!-- 06/10 (décision A) : dossier payant, le dépôt attend le reçu validé. -->
               <button type="button" class="btn btn-primary ped__deposer" disabled>Déposer une offre</button>
