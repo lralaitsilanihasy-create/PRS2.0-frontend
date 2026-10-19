@@ -4,32 +4,7 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { skipErrorToast } from '../core/errors/api-error';
-import {
-  Accuse,
-  BesoinEnLigne,
-  DepotRecuCorps,
-  RecuDao,
-  ConfirmationCandidat,
-  CreationOffreCorps,
-  Horloge,
-  Offre,
-  PieceAttendue,
-  ConfirmationCandidatCorps,
-  DecisionVerificationNif,
-  DocumentProcedureEnLigne,
-  Entreprise,
-  EntrepriseCorps,
-  ExclusionArmp,
-  ExclusionArmpCorps,
-  InscriptionCandidat,
-  InvitationCandidat,
-  InscriptionCandidatCorps,
-  PieceEntreprise,
-  ProcedureEnLigne,
-  StatutVerificationNif,
-  TypePieceEntreprise,
-  VerificationNif,
-} from '../models';
+import { Accuse, BesoinEnLigne, ConfirmationCandidat, ConfirmationCandidatCorps, CopieOffre, CreationOffreCorps, DecisionVerificationNif, DepotRecuCorps, DocumentProcedureEnLigne, Entreprise, EntrepriseCorps, ExclusionArmp, ExclusionArmpCorps, Horloge, InscriptionCandidat, InscriptionCandidatCorps, InvitationCandidat, Offre, OffreLue, PieceAttendue, PieceEntreprise, ProcedureEnLigne, RecuDao, StatutVerificationNif, TypePieceEntreprise, VerificationNif } from '../models';
 
 /**
  * Soumission en ligne, lot 1 (demande du 04/10, §B2 à §B8 ; backend V63 à V65). Services BESPOKE : aucune de ces
@@ -251,6 +226,27 @@ export class OffresCandidatService {
   /** `GET /{id}/accuse` → le PDF de l'accusé (409 `OFFRE_NON_DEPOSEE` pour un dépôt en cours). */
   accuse(idOffre: string): Observable<Blob> {
     return this.http.get(`${this.base}/${idOffre}/accuse`, { responseType: 'blob', context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ 19/10 (V136, « copie-offre-candidat ») — `PUT /{id}/copie` : l'enveloppe chiffrée sur le poste du candidat ; 400
+   * `ENVELOPPE_INVALIDE`, 409 `OFFRE_NON_SCELLEE` / `OFFRE_RETIREE` / `SEANCE_CLOSE`, 413 au-delà de 1 Mo. Le serveur ne la lit pas.
+   */
+  deposerCopie(idOffre: string, copie: CopieOffre): Observable<void> {
+    return this.http.put<void>(`${this.base}/${idOffre}/copie`, copie, { context: skipErrorToast() });
+  }
+
+  /** `GET /{id}/copie` → l'enveloppe ; 404 `COPIE_ABSENTE` / `COPIE_EFFACEE` (après la clôture de la séance d'ouverture). */
+  lireCopie(idOffre: string): Observable<CopieOffre> {
+    return this.http.get<CopieOffre>(`${this.base}/${idOffre}/copie`, { context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ V136 (B3) — `GET /{id}/lecture` : son offre telle que lue en séance, servie dès que la séance est déchiffrée ; 409
+   * `SEANCE_NON_DECHIFFREE` avant, `OFFRE_NON_OUVERTE` (remplacée, retirée, écartée), `ENVELOPPE_FINANCIERE` (PI).
+   */
+  lecture(idOffre: string): Observable<OffreLue> {
+    return this.http.get<OffreLue>(`${this.base}/${idOffre}/lecture`, { context: skipErrorToast() });
   }
 
   /** `DELETE /{id}` → `RETIREE` ; 409 `DELAI_DEPASSE`, `REMPLACEMENT_INTERDIT`, `OFFRE_NON_DEPOSEE`. */

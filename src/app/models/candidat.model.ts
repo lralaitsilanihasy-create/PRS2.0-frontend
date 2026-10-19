@@ -1,3 +1,4 @@
+import { Enveloppe } from './cao.model';
 import { ArticleFiche, CategorieDao, MaterielExige, PersonnelExige } from './fiche-marche.model';
 
 /**
@@ -388,6 +389,10 @@ export interface Offre {
   remplaceePar: string | null;
   /** ⚠️ V86 (PI-b) — `TECHNIQUE` ou `FINANCIERE` pour une proposition PI ; nulle pour une offre ordinaire. */
   enveloppe?: EnveloppeOffre | null;
+  /** ⚠️ 19/10 (V136, « copie-offre-candidat ») — une copie chiffrée par le candidat existe et se relit (faux une fois effacée). */
+  copie?: boolean | null;
+  /** ⚠️ V136 — la date de l'effacement de la copie (clôture de la séance d'ouverture) ; nulle sinon. */
+  copieEffaceeLe?: string | null;
 }
 
 /** Corps de `POST /api/candidat/offres`. `enTete` est le JSON **sérialisé** : ses octets UTF-8 entrent dans l'empreinte. */
@@ -477,4 +482,10 @@ export interface InvitationCandidat {
   /** `AAAA-MM-JJTHH:MM`. */
   dateLimite: string | null;
   lettreDisponible: boolean;
+}
+
+/** ⚠️ 19/10 (V136) — `PUT`/`GET /api/candidat/offres/{idOffre}/copie` : l'enveloppe de la copie chiffrée par le candidat, et sa version. */
+export interface CopieOffre extends Enveloppe {
+  version: number;
+  enregistreeLe?: string | null;
 }

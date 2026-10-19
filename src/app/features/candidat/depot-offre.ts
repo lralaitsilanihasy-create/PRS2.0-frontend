@@ -5,9 +5,10 @@ import { catchError, firstValueFrom, forkJoin, of } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError, codeErreur } from '../../core/errors/api-error';
 import { formaterEmpreinte } from '../../core/securite/cles-detenteur';
+import { chiffrerCopie, empreinteFichier, LONGUEUR_MIN_PHRASE_COPIE, phraseCopieRecevable } from '../../core/securite/copie-offre';
 import { telechargerBlob, validerFichier } from '../../core/securite/fichiers-surs';
 import { ActeEngagementSaisi, MembreGroupement, PieceJointe, RabaisOffre, construireContenu, sceller, typesDesFormats } from '../../core/securite/scellement';
-import { Accuse, BesoinEnLigne, ClesPubliques, EnveloppeOffre, Entreprise, PieceAttendue, ProcedureEnLigne, RecuDao } from '../../models';
+import { Accuse, BesoinEnLigne, ClesPubliques, CopieOffre, EnveloppeOffre, Entreprise, PieceAttendue, ProcedureEnLigne, RecuDao } from '../../models';
 import { CeremonieService, EntrepriseCandidatService, OffresCandidatService, ProceduresEnLigneService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { BrouillonOffre, brouillonVide, cleBrouillon, ecrireBrouillon, effacerBrouillon, lireBrouillon } from './brouillon-offre';
@@ -17,6 +18,7 @@ import { OffreFormulaires } from './offre-formulaires';
 import { OffreTravauxFormulaires } from './offre-travaux-formulaires';
 import { RabaisOffreSaisie, controlerRabais } from './rabais-offre';
 import { avertissementsTravaux, construireTravaux, saisieTravauxVide } from './offre-travaux';
+import { RecapitulatifOffre, construireRecapitulatif, imprimerRecapitulatif } from './recapitulatif-offre';
 
 /** ⚠️ V86 (PI-b) — le nom de l'enveloppe, tel qu'on le dit au candidat. */
 const LIBELLES_ENVELOPPE: Readonly<Record<EnveloppeOffre, string>> = { TECHNIQUE: 'enveloppe technique', FINANCIERE: 'enveloppe financière' };
@@ -130,6 +132,16 @@ function motifDepot(e: unknown, enveloppe: EnveloppeOffre | null = null): string
           <p class="form-label">Empreinte de l’offre (SHA-256)</p>
           <p class="cnm-mono do__emp">{{ formater(a.offre.empreinte) }}</p>
           <p class="text-sm text-muted">Elle sera recalculée à l’ouverture des plis : une différence y serait signalée. Scellée pour {{ a.n }} détenteurs ; {{ a.quorum }} suffisent à l’ouvrir, à l’heure de la séance seulement. {{ taille(a.offre.taille) }}.</p>
+          @if (recapitulatif()) {
+            <div class="do__copie-etat" role="status" [class.do__copie-etat--ko]="copieEtat() === 'echec'">
+              @switch (copieEtat()) {
+                @case ('envoi') { <span>Enregistrement de votre copie chiffrée…</span> }
+                @case ('faite') { <span>Votre copie chiffrée est enregistrée : relisez-la depuis « Mes offres », sur n’importe quel poste, avec votre phrase de relecture.</span> }
+                @case ('echec') { <span>La copie chiffrée n’a pas pu être enregistrée — votre offre, elle, est bien déposée.</span> <button type="button" class="btn btn-sm btn-outline" (click)="reessayerCopie()">Réessayer</button> }
+                @default { <span>Vous n’avez pas gardé de copie chiffrée : enregistrez le récapitulatif ci-dessous, il ne sera pas proposé plus tard.</span> }
+              }
+            </div>
+          }
           @if (a.jumelle; as j) {
             <!-- ⚠️ V86 (PI-b) — la proposition est complète : l'accusé porte les deux empreintes. -->
             <div class="alert alert-success do__jumelle" role="status">
@@ -143,8 +155,10 @@ function motifDepot(e: unknown, enveloppe: EnveloppeOffre | null = null): string
           }
           <div class="do__actions">
             <button type="button" class="btn btn-primary" [disabled]="pdfEnCours()" (click)="telechargerAccuse(a.offre.idOffre)">{{ pdfEnCours() ? '…' : 'Enregistrer l’accusé (PDF)' }}</button>
+            @if (recapitulatif()) { <button type="button" class="btn btn-outline" (click)="imprimerRecap()">Enregistrer mon récapitulatif (PDF)</button> }
             <a class="btn btn-outline" routerLink="/candidat/offres">Mes offres</a>
           </div>
+          @if (recapitulatif()) { <p class="text-xs text-muted">Le récapitulatif est votre saisie, telle que scellée sur ce poste — pas l’original scellé : seule l’empreinte de l’accusé fait foi.</p> }
         </section>
       } @else {
         <form class="do__form" (submit)="$event.preventDefault(); deposer()" novalidate aria-label="Dépôt de l'offre">
@@ -290,6 +304,18 @@ function motifDepot(e: unknown, enveloppe: EnveloppeOffre | null = null): string
           <section class="card do__bloc" aria-labelledby="do-sceller">
             <h2 id="do-sceller" class="do__h2">{{ besoin()?.formulaires && !technique() ? 5 : 4 }}. Sceller et déposer</h2>
             <p class="text-sm">Votre offre sera chiffrée sur ce poste, pour les {{ cles()?.n }} détenteurs de la procédure ; {{ cles()?.quorum }} d’entre eux, ensemble et à l’heure de la séance seulement, pourront l’ouvrir. Personne ne peut la lire avant — ni le serveur, ni l’administration.</p>
+            <!-- ⚠️ 19/10 (pilote, « copie-offre-candidat », V136) — la copie chiffrée par le candidat lui-même : relisible depuis n'importe
+                 quel poste avec sa phrase de relecture, jamais envoyée ; le serveur ne garde qu'un bloc qu'il ne peut pas ouvrir. -->
+            <div class="do__copie-choix">
+              <label class="do__case"><input type="checkbox" [checked]="copieVoulue()" [disabled]="occupe()" (change)="copieVoulue.set($any($event.target).checked)" /> Garder une copie chiffrée de ma saisie, relisible depuis n’importe quel poste avec une phrase de relecture</label>
+              @if (copieVoulue()) {
+                <p class="text-sm text-muted">La phrase ne quitte pas ce poste : sans elle, personne ne peut relire la copie — ni vous, ni l’administration, <strong>sans aucun recours</strong>. Votre offre déposée, elle, reste valable. La copie est effacée à la clôture de la séance d’ouverture ; vous relirez alors votre offre telle que lue par la commission.</p>
+                <div class="do__phrases">
+                  <label class="form-group"><span class="form-label">Phrase de relecture ({{ minPhrase }} caractères au moins)</span><input class="form-control" type="password" autocomplete="new-password" [disabled]="occupe()" [value]="phraseCopie()" (input)="phraseCopie.set($any($event.target).value)" /></label>
+                  <label class="form-group"><span class="form-label">La même phrase, une seconde fois</span><input class="form-control" type="password" autocomplete="new-password" [disabled]="occupe()" [value]="phraseCopie2()" (input)="phraseCopie2.set($any($event.target).value)" /></label>
+                </div>
+              }
+            </div>
             @if (manques().length) {
               <ul class="do__manques">@for (m of manques(); track m) { <li>{{ m }}</li> }</ul>
             }
@@ -313,6 +339,11 @@ function motifDepot(e: unknown, enveloppe: EnveloppeOffre | null = null): string
     .do__sous { margin: 0.25rem 0 0; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; font-size: var(--text-sm); color: var(--n-500); }
     .do__form { display: flex; flex-direction: column; gap: 1rem; }
     .do__bloc, .do__accuse { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.6rem; }
+    .do__copie-choix { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.6rem 0.75rem; border: 1px solid var(--n-200); border-radius: var(--radius-md); background: var(--n-50, #f8fafc); }
+    .do__copie-choix p { margin: 0; }
+    .do__phrases { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: 0.6rem; }
+    .do__copie-etat { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; padding: 0.5rem 0.7rem; border-radius: var(--radius-md); background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; font-size: var(--text-sm); }
+    .do__copie-etat--ko { background: #fffbeb; border-color: #fde68a; color: #92400e; }
     .do__h2 { margin: 0; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-500); }
     .do__court { max-width: 22rem; }
     .do__garantie { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: 0.5rem; }
@@ -451,6 +482,14 @@ export class DepotOffre implements OnInit, OnDestroy {
   readonly erreurDepot = signal<string | null>(null);
   readonly accuse = signal<Accuse | null>(null);
   readonly pdfEnCours = signal(false);
+  // ⚠️ 19/10 (V136) — la copie chiffrée par le candidat : voulue par défaut, sa phrase (jamais envoyée), son état après le dépôt.
+  readonly minPhrase = LONGUEUR_MIN_PHRASE_COPIE;
+  readonly copieVoulue = signal(true);
+  readonly phraseCopie = signal('');
+  readonly phraseCopie2 = signal('');
+  readonly copieEtat = signal<'aucune' | 'envoi' | 'faite' | 'echec'>('aucune');
+  readonly recapitulatif = signal<RecapitulatifOffre | null>(null);
+  private copieAReprendre: { idOffre: string; copie: CopieOffre } | null = null;
 
   // ── Le brouillon local (lot 5, H4 ; 06/10) ──
   private readonly auth = inject(AuthService);
@@ -525,6 +564,11 @@ export class DepotOffre implements OnInit, OnDestroy {
     } else if (!this.technique() && (!(a.montantHt! >= 0) || !(a.montantTtc! >= 0) || !a.montantHt || !a.montantTtc)) m.push('Les montants de l’acte d’engagement.');
     if (!a.delai || a.delai < 1) m.push('Le délai.');
     if (!a.validiteJours || a.validiteJours < 1) m.push('La validité de l’offre.');
+    if (this.copieVoulue()) {
+      const r = phraseCopieRecevable(this.phraseCopie(), this.phraseCopie2());
+      if (r === 'courte') m.push(`La phrase de relecture : ${LONGUEUR_MIN_PHRASE_COPIE} caractères au moins (ou renoncez à la copie).`);
+      else if (r === 'differente') m.push('Les deux phrases de relecture diffèrent.');
+    }
     const rabais = this.technique() ? null : controlerRabais(this.rabaisSaisi(), a.montantHt, this.lotEffectif(), this.numerosLots());
     if (rabais) m.push(`Le rabais : ${rabais.message}`);
     const manquantes = this.piecesEnveloppe().filter((x) => x.obligatoire && !this.fichiers()[x.code]);
@@ -710,6 +754,23 @@ export class DepotOffre implements OnInit, OnDestroy {
       const jointes: PieceJointe[] = Object.entries(this.fichiers()).filter(([code]) => this.piecesEnveloppe().some((x) => x.code === code)).map(([code, fichier]) => ({ code, fichier }));
       const horloge = await firstValueFrom(this.procedures.horloge());
       const lb = this.lotBesoin();
+      // ⚠️ 19/10 (V136) — le récapitulatif de la saisie, construit avant le scellement (empreintes des fichiers comprises).
+      const fichiersRecap = await Promise.all(jointes.map(async (j) => ({ code: j.code, nom: j.fichier.name, taille: j.fichier.size, sha256: await empreinteFichier(j.fichier) })));
+      const recap = construireRecapitulatif({
+        procedure: { idDmc: this.idDmc, reference: p.reference, objet: p.objet, lot: this.lotEffectif() },
+        entreprise: { nif: en.nif, raisonSociale: en.raisonSociale },
+        groupement: membres,
+        enveloppe: this.enveloppeEffective(),
+        acteEngagement: this.aeEffectif(),
+        garantie: this.piecesEnveloppe().some((x) => x.code === 'GARANTIE') ? { code: this.codeGarantie().trim(), montant: this.montantGarantie(), emetteur: this.emetteurGarantie().trim() } : null,
+        lot: lb && !this.technique() ? lb : null,
+        saisie: this.saisieOffre(),
+        tauxTva: this.tauxTva(),
+        travaux: this.travaux(),
+        fichiers: fichiersRecap,
+        piecesAttendues: this.pieces(),
+        maintenant: horloge.maintenant,
+      });
       const { contenu } = await construireContenu(
         { idDmc: this.idDmc, lot: this.lotEffectif(), entreprise: { nif: en.nif, raisonSociale: en.raisonSociale }, groupement: membres, acteEngagement: this.acteScelle() },
         jointes,
@@ -750,10 +811,48 @@ export class DepotOffre implements OnInit, OnDestroy {
       this.phase.set('fait');
       const cle = this.cle();
       if (cle) effacerBrouillon(cle);
+      this.recapitulatif.set(recap);
+      await this.enregistrerCopie(accuse.offre.idOffre, recap);
     } catch (e) {
       this.phase.set('saisie');
       this.erreurDepot.set(motifDepot(e, this.enveloppeEffective()));
     }
+  }
+
+  /**
+   * ⚠️ 19/10 (V136) — la copie chiffrée, après le dépôt réussi : chiffrée ici sous la phrase de relecture, envoyée au serveur. Ne
+   * lève jamais : un échec ne touche pas au dépôt, l'écran le dit et propose de réessayer. La phrase est oubliée aussitôt.
+   */
+  private async enregistrerCopie(idOffre: string, recap: RecapitulatifOffre): Promise<void> {
+    if (!this.copieVoulue()) { this.copieEtat.set('aucune'); return; }
+    const phrase = this.phraseCopie();
+    this.phraseCopie.set('');
+    this.phraseCopie2.set('');
+    this.copieEtat.set('envoi');
+    try {
+      const env = await chiffrerCopie(recap, phrase);
+      this.copieAReprendre = { idOffre, copie: { ...env, version: recap.v } };
+      await firstValueFrom(this.offres.deposerCopie(idOffre, this.copieAReprendre.copie));
+      this.copieEtat.set('faite');
+      this.copieAReprendre = null;
+    } catch {
+      this.copieEtat.set('echec');
+    }
+  }
+
+  reessayerCopie(): void {
+    const r = this.copieAReprendre;
+    if (!r) return;
+    this.copieEtat.set('envoi');
+    this.offres.deposerCopie(r.idOffre, r.copie).subscribe({
+      next: () => { this.copieEtat.set('faite'); this.copieAReprendre = null; },
+      error: () => this.copieEtat.set('echec'),
+    });
+  }
+
+  imprimerRecap(): void {
+    const r = this.recapitulatif();
+    if (r) imprimerRecapitulatif(this.document, r);
   }
 
   /** Reprend le brouillon de ce compte pour cette procédure, puis ouvre l'écriture du brouillon (la clé). */

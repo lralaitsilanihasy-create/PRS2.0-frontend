@@ -6,13 +6,17 @@ import { ApiError, codeErreur } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { empreinteCourte, formaterEmpreinte } from '../../core/securite/cles-detenteur';
 import { telechargerBlob } from '../../core/securite/fichiers-surs';
-import { EnveloppeOffre, EtatOffre, Offre } from '../../models';
+import { EnveloppeOffre, EtatOffre, Offre, OffreLue } from '../../models';
 import { OffresCandidatService, ProceduresEnLigneService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DemandesOffre } from './demandes-offre';
 import { ResultatOffreCandidat } from './resultat-offre';
 import { dateHeureFr, tailleLisible } from './libelles-candidat';
 import { EtatVideCandidat } from './etat-vide-candidat';
+import { PhraseIncorrecte } from '../../core/securite/cles-detenteur';
+import { dechiffrerCopie } from '../../core/securite/copie-offre';
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
+import { RecapitulatifOffre, RecapitulatifOffreVue, imprimerRecapitulatif } from './recapitulatif-offre';
 
 const LIBELLES_ETAT: Readonly<Record<EtatOffre, string>> = {
   EN_COURS: 'Dépôt inachevé',
@@ -43,7 +47,7 @@ export function enveloppeManquante(o: Offre, toutes: Offre[]): EnveloppeOffre | 
 @Component({
   selector: 'app-mes-offres',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur, DemandesOffre, ResultatOffreCandidat, EtatVideCandidat],
+  imports: [RouterLink, EtatErreur, DemandesOffre, ResultatOffreCandidat, EtatVideCandidat, ModaleDirective, RecapitulatifOffreVue],
   template: `
     <header class="page-header">
       <div class="page-subtitle">Espace candidat</div>
@@ -86,9 +90,14 @@ export function enveloppeManquante(o: Offre, toutes: Offre[]): EnveloppeOffre | 
               </div>
             }
             @if (o.empreinte) { <p class="text-xs mo__emp">Empreinte <code class="cnm-mono" [title]="formater(o.empreinte)">{{ courte(o.empreinte) }}</code></p> }
+            <!-- ⚠️ 19/10 (V136, « copie-offre-candidat ») — la copie chiffrée par le candidat se relit avec sa phrase, jusqu'à la clôture de
+                 la séance d'ouverture ; ensuite, l'offre telle que lue en séance, servie par le serveur. -->
+            @if (o.copieEffaceeLe) { <p class="text-xs text-muted mo__emp">Copie chiffrée effacée le {{ dateHeure(o.copieEffaceeLe) }} : la séance d’ouverture est close, relisez votre offre telle que lue en séance.</p> }
             @if (o.etat === 'DEPOSEE') {
               <div class="mo__actions">
                 <button type="button" class="btn btn-sm btn-outline" [disabled]="enCours() === o.idOffre" (click)="accuse(o)">Accusé (PDF)</button>
+                @if (o.copie) { <button type="button" class="btn btn-sm btn-outline" (click)="ouvrirRelecture(o)">Relire mon offre</button> }
+                @if (close(o)) { <button type="button" class="btn btn-sm btn-outline" [disabled]="enCours() === o.idOffre" (click)="lireEnSeance(o)">Mon offre lue en séance</button> }
                 <!-- ⚠️ 14/10 — remplacer et retirer seulement tant que les dépôts sont ouverts (et si le DAO l'autorise). -->
                 @if (modifiable(o)) {
                 <a class="btn btn-sm btn-outline" [routerLink]="['/candidat', 'procedures', o.idDmc, 'offre']" [queryParams]="{ remplace: o.idOffre, lot: o.lot, enveloppe: o.enveloppe }">Remplacer</a>
@@ -113,6 +122,66 @@ export function enveloppeManquante(o: Offre, toutes: Offre[]): EnveloppeOffre | 
         }
       </ul>
     }
+
+    @if (relecture(); as r) {
+      <div class="modal-backdrop">
+        <div class="modal mo__modale" role="dialog" aria-modal="true" aria-label="Relire mon offre" appModale (appModaleFermer)="relecture.set(null)">
+          <div class="modal-header-plain">
+            <span class="modal-title">Relire mon offre — {{ r.offre.objet || r.offre.reference }}</span>
+            <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="relecture.set(null)">✕</button>
+          </div>
+          <div class="modal-body">
+            @if (r.recap; as recap) {
+              <app-recapitulatif-offre [recap]="recap" />
+            } @else {
+              <p class="text-sm">Votre copie est chiffrée : elle ne s’ouvre qu’avec la phrase de relecture choisie au dépôt, sur ce poste — le serveur ne la reçoit pas.</p>
+              <form (submit)="$event.preventDefault(); relire()" novalidate aria-label="Phrase de relecture">
+                <label class="form-group"><span class="form-label">Phrase de relecture</span><input class="form-control" type="password" autocomplete="current-password" [value]="phrase()" (input)="phrase.set($any($event.target).value)" /></label>
+                @if (r.erreur) { <div class="alert alert-danger" role="alert"><span>{{ r.erreur }}</span></div> }
+                <button type="submit" class="btn btn-primary" [disabled]="r.occupe || !phrase()">{{ r.occupe ? 'Lecture…' : 'Relire' }}</button>
+              </form>
+            }
+          </div>
+          <div class="modal-footer">
+            @if (r.recap) { <button type="button" class="btn btn-outline" (click)="imprimerRelecture()">Enregistrer en PDF</button> }
+            <button type="button" class="btn btn-outline" (click)="relecture.set(null)">Fermer</button>
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (lue(); as l) {
+      <div class="modal-backdrop">
+        <div class="modal mo__modale" role="dialog" aria-modal="true" aria-label="Mon offre lue en séance" appModale (appModaleFermer)="lue.set(null)">
+          <div class="modal-header-plain">
+            <span class="modal-title">Mon offre lue en séance — {{ l.offre.objet || l.offre.reference }}</span>
+            <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="lue.set(null)">✕</button>
+          </div>
+          <div class="modal-body">
+            @if (l.erreur) {
+              <div class="alert alert-info" role="status"><span>{{ l.erreur }}</span></div>
+            } @else if (l.lecture; as x) {
+              <dl class="mo__dl">
+                <dt>Numéro d’arrivée</dt><dd>{{ x.numero ?? '—' }}</dd>
+                <dt>État</dt><dd>{{ x.etat }}</dd>
+                @if (x.acteEngagement; as ae) {
+                  <dt>Montant hors taxes</dt><dd>{{ nombre(ae.montantHt) }} Ar</dd>
+                  <dt>Montant toutes taxes</dt><dd>{{ nombre(ae.montantTtc) }} Ar</dd>
+                  <dt>Délai</dt><dd>{{ ae.delai }} {{ ae.delaiUnite === 'MOIS' ? 'mois' : 'jours' }}</dd>
+                  <dt>Validité</dt><dd>{{ ae.validiteJours }} jours</dd>
+                }
+                @if (x.rabais?.lecture) { <dt>Rabais</dt><dd>{{ x.rabais!.lecture }}</dd> }
+                @if (x.totaux; as t) { <dt>Totaux recalculés</dt><dd>HT {{ nombre(t.ht) }} Ar · TVA {{ nombre(t.tva) }} Ar · TTC {{ nombre(t.ttc) }} Ar</dd> }
+                @if (x.garantie) { <dt>Garantie</dt><dd>{{ x.garantie.presente ? 'présente' : 'absente' }}{{ x.garantie.montant ? ' · ' + nombre(x.garantie.montant) + ' Ar' : '' }}</dd> }
+                <dt>Pièces</dt><dd>@for (p of x.pieces; track p.code) { {{ p.libelle }} : {{ p.presente ? 'présente' : 'absente' }}{{ $last ? '' : ' · ' }} }</dd>
+                @if (x.piecesManquantes.length) { <dt>Pièces manquantes</dt><dd>{{ x.piecesManquantes.join(', ') }}</dd> }
+              </dl>
+            }
+          </div>
+          <div class="modal-footer"><button type="button" class="btn btn-outline" (click)="lue.set(null)">Fermer</button></div>
+        </div>
+      </div>
+    }
   `,
   styles: `
     .mo { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
@@ -124,6 +193,10 @@ export function enveloppeManquante(o: Offre, toutes: Offre[]): EnveloppeOffre | 
     .mo__badges { display: inline-flex; gap: 0.4rem; align-items: center; flex: none; }
     .mo__manque { display: flex; gap: 0.75rem; align-items: center; justify-content: space-between; flex-wrap: wrap; margin: 0; }
     .mo__confirm { display: inline-flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; font-size: var(--text-sm); }
+    .mo__modale { width: min(96vw, 60rem); }
+    .mo__dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 0.3rem 0.9rem; font-size: var(--text-sm); }
+    .mo__dl dt { color: var(--n-500); }
+    .mo__dl dd { margin: 0; }
   `,
 })
 export class MesOffres implements OnInit {
@@ -131,6 +204,9 @@ export class MesOffres implements OnInit {
   private readonly procedures = inject(ProceduresEnLigneService);
   /** Par procédure : peut-on encore remplacer ou retirer (dépôts ouverts à l'horloge du serveur, remplacement autorisé par le DAO) ? */
   private readonly ouvertes = signal<ReadonlyMap<number, boolean>>(new Map());
+  /** Par procédure : la date limite est passée (`etat = CLOSE`) — l'offre peut avoir été lue en séance. */
+  private readonly closes = signal<ReadonlySet<number>>(new Set());
+  private readonly document = inject(DOCUMENT);
   private readonly toast = inject(ToastService);
 
   readonly etats = LIBELLES_ETAT;
@@ -146,9 +222,68 @@ export class MesOffres implements OnInit {
   readonly aRetirer = signal<string | null>(null);
   readonly enCours = signal<string | null>(null);
   readonly message = signal<string | null>(null);
+  // ⚠️ 19/10 (V136) — la relecture de la copie chiffrée (phrase saisie ici, déchiffrement sur le poste) et l'offre lue en séance.
+  readonly relecture = signal<{ offre: Offre; recap: RecapitulatifOffre | null; erreur: string | null; occupe: boolean } | null>(null);
+  readonly phrase = signal('');
+  readonly lue = signal<{ offre: Offre; lecture: OffreLue | null; erreur: string | null } | null>(null);
 
   constructor() {
-    inject(DOCUMENT).title = 'Mes offres — Espace candidat — PRS 2.0';
+    this.document.title = 'Mes offres — Espace candidat — PRS 2.0';
+  }
+
+  close(o: Offre): boolean {
+    return this.closes().has(o.idDmc);
+  }
+
+  nombre(v: number | null | undefined): string {
+    return v == null ? '—' : new Intl.NumberFormat('fr-FR').format(v);
+  }
+
+  ouvrirRelecture(o: Offre): void {
+    this.phrase.set('');
+    this.relecture.set({ offre: o, recap: null, erreur: null, occupe: false });
+  }
+
+  relire(): void {
+    const r = this.relecture();
+    const phrase = this.phrase();
+    if (!r || r.occupe || !phrase) return;
+    this.relecture.set({ ...r, occupe: true, erreur: null });
+    this.service.lireCopie(r.offre.idOffre).subscribe({
+      next: async (copie) => {
+        try {
+          const recap = await dechiffrerCopie<RecapitulatifOffre>(copie, phrase);
+          this.phrase.set('');
+          this.relecture.set({ ...r, recap, occupe: false, erreur: null });
+        } catch (e) {
+          this.relecture.set({ ...r, occupe: false, erreur: e instanceof PhraseIncorrecte ? 'Cette phrase ne déverrouille pas la copie. Elle est celle choisie au dépôt ; sans elle, la copie ne se relit pas.' : 'La copie n’a pas pu être lue.' });
+        }
+      },
+      error: (e: ApiError) => {
+        const code = codeErreur(e);
+        this.relecture.set({ ...r, occupe: false, erreur: code === 'COPIE_EFFACEE' ? 'La copie a été effacée à la clôture de la séance d’ouverture : relisez votre offre telle que lue en séance.' : code === 'COPIE_ABSENTE' ? 'Aucune copie n’a été gardée pour cette offre.' : e.message || 'La copie n’a pas pu être lue.' });
+      },
+    });
+  }
+
+  imprimerRelecture(): void {
+    const r = this.relecture()?.recap;
+    if (r) imprimerRecapitulatif(this.document, r);
+  }
+
+  lireEnSeance(o: Offre): void {
+    this.enCours.set(o.idOffre);
+    this.service.lecture(o.idOffre).subscribe({
+      next: (lecture) => {
+        this.enCours.set(null);
+        this.lue.set({ offre: o, lecture, erreur: null });
+      },
+      error: (e: ApiError) => {
+        this.enCours.set(null);
+        const code = codeErreur(e);
+        this.lue.set({ offre: o, lecture: null, erreur: code === 'SEANCE_NON_DECHIFFREE' ? 'La séance d’ouverture n’a pas encore lu les offres : votre offre reste scellée jusque-là.' : code === 'OFFRE_NON_OUVERTE' ? 'Cette offre n’a pas été ouverte en séance (remplacée, retirée ou écartée).' : code === 'ENVELOPPE_FINANCIERE' ? 'L’enveloppe financière n’est pas servie ici.' : e.message || 'La lecture n’a pas pu être faite.' });
+      },
+    });
   }
 
   ngOnInit(): void {
@@ -166,9 +301,13 @@ export class MesOffres implements OnInit {
   private lireProcedures(ids: number[]): void {
     if (!ids.length) return;
     forkJoin(ids.map((id) => this.procedures.detail(id).pipe(
-      map((p) => [id, p.depotsOuverts === true && p.remplacementAutorise !== false] as const),
+      map((p) => [id, p.depotsOuverts === true && p.remplacementAutorise !== false, p.etat === 'CLOSE'] as const),
       catchError(() => of(null)),
-    ))).subscribe((liste) => this.ouvertes.set(new Map(liste.filter((x) => x !== null))));
+    ))).subscribe((liste) => {
+      const lues = liste.filter((x) => x !== null);
+      this.ouvertes.set(new Map(lues.map(([id, ouverte]) => [id, ouverte])));
+      this.closes.set(new Set(lues.filter(([, , close]) => close).map(([id]) => id)));
+    });
   }
 
   charger(): void {
