@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Modèles de PV — maquette</title>
+<style>
+  :root { --p800:#075985; --p700:#0369a1; --p600:#0284c7; --p100:#e0f2fe; --p50:#f0f9ff; --n900:#152033; --n700:#34405a; --n500:#5b6784; --n300:#cbd5e1; --n200:#e2e8f0; --n100:#f1f5f9; --ok:#047857; --okbg:#ecfdf5; --ko:#b91c1c; --kobg:#fef2f2; --at:#b45309; --atbg:#fffbeb; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.45 "Segoe UI", system-ui, sans-serif; color: var(--n900); background: #eef2f7; }
+  .app { display: grid; grid-template-columns: 230px 1fr; min-height: 100vh; }
+  .menu { background: linear-gradient(180deg,#0c4a6e,#082f49); color: #fff; padding: 16px 12px; }
+  .menu b { display:block; font-size: 15px; margin-bottom: 14px; }
+  .menu .rub { margin: 14px 0 6px; padding: 3px 8px; background: rgba(0,0,0,.25); color: #f5c542; font-size: 11px; font-weight: 700; letter-spacing: .06em; }
+  .menu a { display:block; padding: 7px 10px; border-radius: 8px; color: #e2e8f0; text-decoration: none; font-size: 13px; }
+  .menu a.on { background: #fff; color: var(--p800); font-weight: 600; }
+  main { padding: 22px 28px 40px; }
+  .ariane { font-size: 12.5px; color: var(--n500); margin-bottom: 6px; }
+  h1 { margin: 0 0 4px; font-size: 24px; }
+  .role { margin: 0 0 18px; color: var(--n500); max-width: 75ch; }
+  .onglets { display:flex; gap:8px; flex-wrap:wrap; margin: 0 0 18px; padding-bottom: 12px; border-bottom: 1px solid var(--n200); }
+  .onglets button { font: inherit; font-weight: 600; padding: 7px 14px; border: 1.5px solid var(--n900); border-radius: 999px; background:#fff; cursor:pointer; }
+  .onglets button.on { background: var(--n900); color:#fff; }
+  .ecran { display:none; } .ecran.on { display:block; }
+  .carte { background:#fff; border:1px solid var(--n200); border-radius: 12px; padding: 16px 18px; margin-bottom: 14px; }
+  .bandeau { background: linear-gradient(120deg,var(--p800),var(--p600)); color:#fff; border-radius: 14px; padding: 16px 20px; margin-bottom: 14px; }
+  .bandeau small { opacity:.85; font-weight:700; letter-spacing:.06em; }
+  .bandeau h2 { margin: 4px 0 8px; font-size: 20px; color:#fff; }
+  .puce { display:inline-block; padding: 2px 10px; border-radius: 999px; background: rgba(255,255,255,.18); font-size: 12.5px; margin-right: 6px; }
+  .puce.claire { background:#fff; color: var(--p800); font-weight:600; }
+  table { width:100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align:left; background: var(--p100); color: var(--p800); font-size: 11px; text-transform: uppercase; letter-spacing:.04em; padding: 8px 10px; }
+  td { padding: 9px 10px; border-top: 1px solid var(--n100); vertical-align: top; }
+  .badge { display:inline-block; padding: 1px 8px; border-radius:999px; font-size: 11.5px; font-weight: 700; }
+  .b-ok { background: var(--okbg); color: var(--ok); } .b-ko { background: var(--kobg); color: var(--ko); } .b-at { background: var(--atbg); color: var(--at); } .b-n { background: var(--n100); color: var(--n500); }
+  .btn { display:inline-block; font: inherit; font-size: 12.5px; font-weight:600; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--n300); background:#fff; color: var(--n900); cursor:pointer; text-decoration:none; }
+  .btn.p { background: var(--p600); border-color: var(--p600); color:#fff; }
+  .titre { margin: 0 0 10px; font-size: 11.5px; font-weight: 700; letter-spacing:.06em; text-transform: uppercase; color: var(--p700); }
+  .grille { display:grid; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); gap: 14px; }
+  .mono { font-family: Consolas, monospace; font-size: 12.5px; }
+  .rapport li { margin: 4px 0; } .rapport { margin:0; padding-left: 18px; }
+  .note { font-size: 12.5px; color: var(--n500); margin: 6px 0 0; }
+  .frise { display:flex; gap:10px; flex-wrap:wrap; }
+  .etape { flex:1 1 150px; padding: 10px 12px; border-radius:10px; background:#fff; border:1px solid var(--n200); }
+  .etape b { display:block; } .etape span { font-size:12px; color: var(--n500); }
+  .etape.fait { background: var(--okbg); border-color:#a7f3d0; } .etape.cours { border-color: var(--p600); box-shadow: 0 0 0 3px var(--p100); }
+  .apercu { background:#fff; border: 1px solid var(--n300); box-shadow: 0 4px 18px rgba(15,23,42,.08); max-width: 640px; margin: 0 auto; padding: 36px 48px; font-family: "Times New Roman", serif; font-size: 14px; }
+  .apercu .centre { text-align:center; } .var { background:#fff7cc; border-bottom: 1px dashed #b45309; }
+  .champ-ligne { display:grid; grid-template-columns: 1.4fr 1fr .8fr .8fr auto; gap: 10px; align-items:center; padding: 8px 0; border-top: 1px solid var(--n100); }
+  .dl { display:grid; grid-template-columns: 170px 1fr; gap: 6px 14px; margin:0; } .dl dt { color: var(--n500); } .dl dd { margin:0; }
+  .aide { background: var(--p50); border-left: 3px solid var(--p600); padding: 10px 12px; border-radius: 6px; font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="menu" aria-label="Menu de l'Administrateur (extrait)">
+    <b>PRS 2.0</b>
+    <div class="rub">RÉFÉRENTIELS</div>
+    <a href="#">Sous-types de dossier</a>
+    <a href="#">Points de contrôle</a>
+    <a href="#" class="on">Modèles de PV</a>
+    <a href="#">Paramètres</a>
+  </nav>
+  <main>
+    <div class="ariane">Administration › Référentiels › Modèles de PV</div>
+    <h1>Modèles de PV</h1>
+    <p class="role">Chaque sous-type de dossier a son modèle de PV, rédigé dans Word. Déposez une version, l'application la contrôle ; essayez-la sur un dossier réel, puis mettez-la en vigueur : elle servira aux PV à venir, jamais aux PV déjà signés.</p>
+
+    <div class="onglets" role="tablist">
+      <button class="on" data-e="liste">1. Liste des modèles</button>
+      <button data-e="fiche">2. Fiche d'un modèle</button>
+      <button data-e="depot">3. Dépôt et contrôle</button>
+      <button data-e="variables">4. Variables et conditions</button>
+      <button data-e="champs">5. Champs saisis au contrôle</button>
+      <button data-e="apercu">6. Aperçu sur un dossier</button>
+      <button data-e="parcours">Parcours</button>
+    </div>
+
+    <!-- 1 — Liste -->
+    <section class="ecran on" id="liste">
+      <div class="carte" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <input class="btn" style="flex:1;min-width:220px;text-align:left" value="Rechercher un modèle ou un sous-type…" readonly />
+        <span class="btn">Tous les états ▾</span>
+        <a class="btn p" href="#">+ Nouveau modèle</a>
+      </div>
+      <div class="carte" style="padding:0;overflow:hidden">
+        <table>
+          <thead><tr><th>Modèle</th><th>Sous-types servis</th><th>Version en vigueur</th><th>État</th><th>PV produits</th><th></th></tr></thead>
+          <tbody>
+            <tr><td><b>PV d'examen du plan de passation</b><br><span class="note">reprise des 12 fichiers du plan · 3 conditions</span></td><td class="mono">PPM · PPM-AGPM</td><td>v1 · 20/10/2026</td><td><span class="badge b-at">Reprise à comparer</span></td><td>—</td><td><span class="btn">Ouvrir</span></td></tr>
+            <tr><td><b>PV d'examen du dossier de mise en concurrence</b><br><span class="note">avis, réserves, contrat-cadre</span></td><td class="mono">DAOO · DAOO-CC · DAOOI · DAOR</td><td>v2 · 22/10/2026</td><td><span class="badge b-ok">En vigueur</span></td><td>3</td><td><span class="btn">Ouvrir</span></td></tr>
+            <tr><td><b>PV d'examen du dossier de marché</b><br><span class="note">titulaires répétés, écart à l'estimation</span></td><td class="mono">MAOO · MAOO-CC</td><td><span class="badge b-n">brouillon v1</span></td><td><span class="badge b-at">À mettre en vigueur</span></td><td>—</td><td><span class="btn">Ouvrir</span></td></tr>
+            <tr><td><b>Lettre de renvoi</b></td><td class="mono">tous</td><td>v1 · 20/10/2026</td><td><span class="badge b-ok">En vigueur</span></td><td>12</td><td><span class="btn">Ouvrir</span></td></tr>
+            <tr style="color:var(--n500)"><td>Acte de gestion — avenant</td><td class="mono">AVN</td><td>—</td><td><span class="badge b-ko">Aucun modèle</span></td><td>—</td><td><span class="btn">Créer</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">Un sous-type sans modèle en vigueur produit un PV <b>sans document</b> : la ligne rouge l'annonce à l'Administrateur.</p>
+    </section>
+
+    <!-- 2 — Fiche -->
+    <section class="ecran" id="fiche">
+      <div class="bandeau"><small>MODÈLE DE PV</small><h2>PV d'examen du dossier de marché</h2>
+        <span class="puce">MAOO</span><span class="puce">MAOO-CC</span><span class="puce claire">Version en vigueur : aucune</span></div>
+      <div class="grille">
+        <div class="carte">
+          <p class="titre">Versions</p>
+          <table>
+            <thead><tr><th>Version</th><th>État</th><th>Déposée</th><th></th></tr></thead>
+            <tbody>
+              <tr><td><b>v1</b></td><td><span class="badge b-at">Brouillon</span></td><td>20/10/2026 par ADMIN01</td><td><span class="btn">Essayer</span> <span class="btn p">Mettre en vigueur</span></td></tr>
+            </tbody>
+          </table>
+          <p class="note">Une version en vigueur ne se modifie pas : on en dépose une nouvelle, avec un motif. Les PV signés gardent la version qui les a produits.</p>
+          <p style="margin:10px 0 0"><span class="btn">Déposer une nouvelle version (.docx)</span> <span class="btn">Télécharger le .docx</span> <span class="btn">Dupliquer le modèle</span></p>
+        </div>
+        <div class="carte">
+          <p class="titre">Sous-types servis</p>
+          <label><input type="checkbox" checked> MAOO — Marché sur appel d'offres ouvert</label><br>
+          <label><input type="checkbox" checked> MAOO-CC — Marché sur appel d'offres ouvert, contrat-cadre</label><br>
+          <label><input type="checkbox"> MAOOI — Marché sur appel d'offres ouvert international</label><br>
+          <label><input type="checkbox"> MAOR — Marché sur appel d'offres restreint</label>
+          <p class="note">Un sous-type n'a qu'un modèle en vigueur à la fois.</p>
+          <p class="titre" style="margin-top:14px">Historique</p>
+          <ul class="rapport"><li>20/10 10:42 — v1 déposée par ADMIN01, contrôle sans blocage</li><li>20/10 10:40 — modèle créé par ADMIN01</li></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 — Dépôt -->
+    <section class="ecran" id="depot">
+      <div class="carte">
+        <p class="titre">Déposer une version</p>
+        <div class="aide">Rédigez le PV dans Word, avec ses variables (<span class="mono">{{PV.REFERENCE}}</span>), ses blocs conditionnels (<span class="mono">{{SI:AVEC_RESERVES}} … {{FINSI:AVEC_RESERVES}}</span>) et ses lignes répétées (<span class="mono">{{POUR:TITULAIRES}}</span>). Les anciens marqueurs du métier (<span class="mono">&lt;REFERENCE PV&gt;</span>, <span class="mono">&lt;CHEF LIEU&gt;</span>…) restent acceptés.</div>
+        <p style="margin:12px 0"><span class="btn">Choisir le fichier .docx</span> <span class="mono">PV_MARCHE_v1.docx · 184 Ko</span> &nbsp; <input class="btn" style="width:320px;text-align:left" value="Motif : première version du PV de marché" readonly /></p>
+      </div>
+      <div class="carte">
+        <p class="titre">Rapport de contrôle — PV_MARCHE_v1.docx</p>
+        <ul class="rapport">
+          <li><span class="badge b-ok">OK</span> Fichier Word lisible</li>
+          <li><span class="badge b-ok">OK</span> Sections attendues : en-tête, identification, avis, signatures</li>
+          <li><span class="badge b-ok">OK</span> 18 variables reconnues, dont 2 répétées (<span class="mono">TITULAIRES</span>)</li>
+          <li><span class="badge b-ok">OK</span> 3 blocs conditionnels, chacun fermé et déclaré</li>
+          <li><span class="badge b-ko">Bloquant</span> Variable inconnue <span class="mono">{{PV.DATE_EXAMN}}</span>, page 1, paragraphe 9 — vouliez-vous <span class="mono">{{PV.DATE_EXAMEN}}</span> ?</li>
+          <li><span class="badge b-at">Avertissement</span> Ancien marqueur <span class="mono">&lt;CHEF LIEU &gt;</span> lu comme <span class="mono">{{COMMISSION.CHEF_LIEU}}</span></li>
+          <li><span class="badge b-ok">OK</span> Production d'essai sur un dossier fictif jusqu'au PDF</li>
+        </ul>
+        <p class="note">Une version au rapport bloquant reste en brouillon : corrigez le Word et déposez-le de nouveau.</p>
+      </div>
+    </section>
+
+    <!-- 4 — Variables et conditions -->
+    <section class="ecran" id="variables">
+      <div class="grille">
+        <div class="carte">
+          <p class="titre">Catalogue des variables — dossier de marché</p>
+          <table>
+            <thead><tr><th>Variable</th><th>Exemple (dossier 100383)</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">{{DOSSIER.REFERENCE}}</td><td>00001/MAOO-CC/CNM/2026</td></tr>
+              <tr><td class="mono">{{PROCEDURE.NUMERO}}</td><td>13-CC/MEF/SG/PRMP.2026</td></tr>
+              <tr><td class="mono">{{PROCEDURE.OBJET}}</td><td>Fourniture de produits d'entretien…</td></tr>
+              <tr><td class="mono">{{PV.DATE_EXAMEN|lettres}}</td><td>l'an deux mille vingt-six, le vingt-deux octobre</td></tr>
+              <tr><td class="mono">{{PV.AVIS}}</td><td>favorable</td></tr>
+              <tr><td class="mono">{{PV.MEMBRE}}</td><td>Rina RAFIDIMANANA</td></tr>
+              <tr><td class="mono">{{MARCHE.DOSSIER_MEC}}</td><td>00003/DAOO-CC/CNM/2026, avis favorable</td></tr>
+              <tr><td class="mono">{{POUR:TITULAIRES}} {{TIT.CANDIDAT}}</td><td>Hygiène & Services Madagascar SARL…</td></tr>
+              <tr><td class="mono">{{MARCHE.ECART}}</td><td>−22,5 %</td></tr>
+            </tbody>
+          </table>
+          <p class="note">Un clic copie la variable, à coller dans Word.</p>
+        </div>
+        <div class="carte">
+          <p class="titre">Conditions de la version</p>
+          <table>
+            <thead><tr><th>Nom (dans le Word)</th><th>Vraie quand</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">AVEC_RESERVES</td><td>l'avis est <b>favorable avec réserves</b></td></tr>
+              <tr><td class="mono">DEFAVORABLE</td><td>l'avis est <b>défavorable</b></td></tr>
+              <tr><td class="mono">CONTRAT_CADRE</td><td>la forme est <b>contrat-cadre</b> et il y a <b>plus d'un titulaire</b></td></tr>
+              <tr><td class="mono">REGIONALE</td><td>la commission est <b>régionale</b></td></tr>
+            </tbody>
+          </table>
+          <p class="note">Chaque condition se compose à la souris (critère, opérateur, valeur) : l'administrateur n'écrit pas de formule.</p>
+          <p style="margin:8px 0 0"><span class="btn">+ Ajouter une condition</span></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 — Champs saisis -->
+    <section class="ecran" id="champs">
+      <div class="carte">
+        <p class="titre">Champs saisis par le membre à l'examen</p>
+        <div class="champ-ligne" style="font-weight:700;color:var(--n500);font-size:12px"><span>Libellé et variable</span><span>Type</span><span>Obligatoire</span><span>Visible si</span><span></span></div>
+        <div class="champ-ligne"><span><b>Observation générale</b><br><span class="mono">{{SAISI:observation_generale}}</span></span><span>Texte long</span><span>Non</span><span>toujours</span><span class="btn">Modifier</span></div>
+        <div class="champ-ligne"><span><b>Moralité des prix vérifiée</b><br><span class="mono">{{SAISI:moralite_prix}}</span></span><span>Case à cocher</span><span>Oui</span><span>toujours</span><span class="btn">Modifier</span></div>
+        <div class="champ-ligne"><span><b>Motif de l'avis défavorable</b><br><span class="mono">{{SAISI:motif_defavorable}}</span></span><span>Liste (4 choix)</span><span>Oui</span><span class="mono">DEFAVORABLE</span><span class="btn">Modifier</span></div>
+        <div class="champ-ligne"><span><b>Date de la séance de la Commission</b><br><span class="mono">{{SAISI:date_seance}}</span></span><span>Date</span><span>Oui</span><span>toujours</span><span class="btn">Modifier</span></div>
+        <p style="margin:10px 0 0"><span class="btn">+ Ajouter un champ</span></p>
+        <p class="note">Le membre les remplit dans son écran d'examen, avant de soumettre ; un champ obligatoire vide bloque la soumission, nommé.</p>
+      </div>
+    </section>
+
+    <!-- 6 — Aperçu -->
+    <section class="ecran" id="apercu">
+      <div class="carte" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <b>Essayer la v1 sur un dossier réel :</b>
+        <input class="btn" style="width:320px;text-align:left" value="100383 — Fourniture de produits d'entretien…" readonly />
+        <span class="btn">Avis : favorable ▾</span>
+        <span class="btn p">Produire l'aperçu</span>
+        <span class="btn">Word</span> <span class="btn">PDF</span>
+      </div>
+      <p class="note" style="margin:0 0 10px">Rien n'est enregistré au dossier. Les valeurs venues du dossier sont surlignées.</p>
+      <div class="apercu">
+        <p class="centre"><b>RÉPUBLIQUE DE MADAGASCAR</b><br>Fitiavana – Tanindrazana – Fandrosoana<br>MINISTÈRE DE L'ÉCONOMIE ET DES FINANCES<br><b>COMMISSION NATIONALE DES MARCHÉS</b></p>
+        <p class="centre"><b>PROCÈS-VERBAL D'EXAMEN DU DOSSIER DE MARCHÉ</b><br>N° <span class="var">00001/MAOO-CC/CNM/PV/2026</span></p>
+        <p>L'an <span class="var">deux mille vingt-six, le vingt-deux octobre</span>, la Commission Nationale des Marchés a examiné le dossier de marché <span class="var">00001/MAOO-CC/CNM/2026</span> relatif à la <span class="var">Fourniture de produits d'entretien et des petits matériels (Contrat cadre)</span>, procédure <span class="var">13-CC/MEF/SG/PRMP.2026</span>, présenté par <span class="var">MINISTERE DE L'ECONOMIE ET DES FINANCES</span>.</p>
+        <p>Titulaires proposés : <span class="var">1. Hygiène & Services Madagascar SARL — 179 570 562 Ar HT</span> ; <span class="var">2. Entreprise de recette BTP — 193 083 400 Ar HT</span> ; <span class="var">3. Société de démonstration SARL — 204 668 404 Ar HT</span>.</p>
+        <p>La Commission émet un <b>AVIS <span class="var">FAVORABLE</span></b> à l'attribution du contrat-cadre.</p>
+        <p style="display:flex;justify-content:space-between;margin-top:28px"><span>VISA DU SUPÉRIEUR HIÉRARCHIQUE<br>Visé par : <span class="var">Sitraka Tsitohaina RANDRIANARISON</span></span><span>Le membre en charge du dossier<br><span class="var">Rina RAFIDIMANANA</span></span></p>
+      </div>
+    </section>
+
+    <!-- Parcours -->
+    <section class="ecran" id="parcours">
+      <div class="carte">
+        <p class="titre">De la rédaction au PV signé</p>
+        <div class="frise">
+          <div class="etape fait"><b>1. Rédiger</b><span>l'Administrateur écrit le PV dans Word, avec les variables du catalogue</span></div>
+          <div class="etape fait"><b>2. Déposer</b><span>l'application contrôle le fichier et rend son rapport</span></div>
+          <div class="etape fait"><b>3. Paramétrer</b><span>conditions, champs saisis, sous-types servis</span></div>
+          <div class="etape cours"><b>4. Essayer</b><span>aperçu Word et PDF sur un dossier réel</span></div>
+          <div class="etape"><b>5. Mettre en vigueur</b><span>avec un motif ; la version précédente est remplacée pour les PV à venir</span></div>
+          <div class="etape"><b>6. Examiner</b><span>le membre remplit les champs saisis et donne l'avis</span></div>
+          <div class="etape"><b>7. Produire et signer</b><span>le PV est produit avec la version en vigueur, visé, signé, puis figé</span></div>
+        </div>
+      </div>
+      <div class="carte">
+        <p class="titre">Règles</p>
+        <dl class="dl">
+          <dt>Qui</dt><dd>l'Administrateur seul crée, dépose, met en vigueur, archive ; tout est journalisé</dd>
+          <dt>Un PV signé</dt><dd>garde son document et la version qui l'a produit, même si le modèle change</dd>
+          <dt>Un projet de PV</dt><dd>est reproduit avec la version en vigueur, pour que la signature porte sur le texte en vigueur</dd>
+          <dt>Sans modèle</dt><dd>le PV n'a pas de document, et l'écran le dit</dd>
+          <dt>Reprise du plan</dt><dd>les 12 fichiers deviennent un modèle à trois conditions ; retrait des anciens après comparaison sur des dossiers réels</dd>
+        </dl>
+      </div>
+    </section>
+  </main>
+</div>
+<script>
+  document.querySelectorAll('.onglets button').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('.onglets button').forEach((x) => x.classList.toggle('on', x === b));
+    document.querySelectorAll('.ecran').forEach((e) => e.classList.toggle('on', e.id === b.dataset.e));
+  }));
+</script>
+</body>
+</html>
