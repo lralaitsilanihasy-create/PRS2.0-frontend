@@ -23,6 +23,7 @@ import { NegociationPi } from './negociation-pi';
 import { SansSuiteVue } from './sans-suite';
 import { LIBELLES_ETAPE, LIBELLES_ETAT_EVALUATION, NUMERO_ETAPE, ariary, refusEvaluation } from './libelles-evaluation';
 import { RapportEvaluationVue } from './rapport-evaluation';
+import { SelecteurOffres, offreParDefaut } from './selecteur-offres';
 
 /**
  * L'**évaluation des offres** d'une procédure en ligne (lot 1, V76-V78 ; guide d'évaluation du 07/10, étapes 2 à 5 et rapport).
@@ -37,7 +38,7 @@ import { RapportEvaluationVue } from './rapport-evaluation';
 @Component({
   selector: 'app-evaluation-ecran',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur, BandeauEspace, AttributionLots, ConformiteOffre, MontantOffre, TableauEvaluation, IndicateursPrixVue, AnormaleOffre, EtapeQualification, EtapeTechnique, SeanceFinanciereVue, EtapeFinanciere, NegociationPi, SansSuiteVue, RapportEvaluationVue, EtapeClose],
+  imports: [RouterLink, EtatErreur, BandeauEspace, SelecteurOffres, AttributionLots, ConformiteOffre, MontantOffre, TableauEvaluation, IndicateursPrixVue, AnormaleOffre, EtapeQualification, EtapeTechnique, SeanceFinanciereVue, EtapeFinanciere, NegociationPi, SansSuiteVue, RapportEvaluationVue, EtapeClose],
   template: `
     <!-- La coquille interne porte son fil d'Ariane (parents déclarés sur la route) ; l'espace CAO n'en a pas : l'écran le pose. -->
     @if (espace === 'cao') {
@@ -155,8 +156,16 @@ import { RapportEvaluationVue } from './rapport-evaluation';
           @switch (etapeChoisie()) {
             @case ('CONFORMITE') {
               <p class="text-sm text-muted ev__aide">Recevabilité, éligibilité et conformité pour l'essentiel (art. 43, 46) : la grille est pré-remplie depuis la séance ; la CAO décide, offre par offre.</p>
-              @for (o of l.offres; track o.idOffre) {
+              <!-- ⚠️ 19/10 (pilote) — les offres en cartes : un clic affiche l'offre choisie, seule (recréée à chaque choix). -->
+              <app-selecteur-offres [offres]="l.offres" etape="CONFORMITE" [choisie]="choisie(l.offres, 'CONFORMITE')" (choisir)="offreChoisie.set($event)" />
+              @for (o of affichees(l.offres, 'CONFORMITE'); track o.idOffre) {
                 <app-conformite-offre [idDmc]="idDmc" [offre]="o" [droits]="droits()" [figee]="arretee(l, 'CONFORMITE')" (maj)="appliquer($event)" />
+              }
+              @if (l.offres.length > 1) {
+                <div class="ev__voisines">
+                  <button type="button" class="btn btn-outline btn-sm" (click)="voisine(l.offres, 'CONFORMITE', -1)">‹ Offre précédente</button>
+                  <button type="button" class="btn btn-outline btn-sm" (click)="voisine(l.offres, 'CONFORMITE', 1)">Offre suivante ›</button>
+                </div>
               }
             }
             @case ('EVALUATION') {
@@ -165,16 +174,30 @@ import { RapportEvaluationVue } from './rapport-evaluation';
                 <app-etape-technique [idDmc]="idDmc" [technique]="t" [lot]="l.lot" [droits]="droits()" [moi]="moi()" (maj)="technique.set($event)" />
               } @else {
               <p class="text-sm text-muted ev__aide">Corrections arithmétiques, rabais, préférence et critères du DAO ; le serveur calcule le montant évalué hors taxes et classe (art. 47).</p>
-              @for (o of retenues(l); track o.idOffre) {
+              <app-selecteur-offres [offres]="retenues(l)" etape="EVALUATION" [choisie]="choisie(retenues(l), 'EVALUATION')" (choisir)="offreChoisie.set($event)" />
+              @for (o of affichees(retenues(l), 'EVALUATION'); track o.idOffre) {
                 <app-montant-offre [idDmc]="idDmc" [offre]="o" [droits]="droits()" [figee]="arretee(l, 'EVALUATION')" (maj)="appliquer($event)" />
+              }
+              @if (retenues(l).length > 1) {
+                <div class="ev__voisines">
+                  <button type="button" class="btn btn-outline btn-sm" (click)="voisine(retenues(l), 'EVALUATION', -1)">‹ Offre précédente</button>
+                  <button type="button" class="btn btn-outline btn-sm" (click)="voisine(retenues(l), 'EVALUATION', 1)">Offre suivante ›</button>
+                </div>
               }
               <app-tableau-evaluation [idDmc]="idDmc" [lot]="l" [droits]="droitsTableau(l)" (maj)="appliquer($event)" />
               }
             }
             @case ('ANORMALES') {
               <app-indicateurs-prix [idDmc]="idDmc" [lot]="l.lot" />
-              @for (o of classees(l); track o.idOffre) {
+              <app-selecteur-offres [offres]="classees(l)" etape="ANORMALES" [choisie]="choisie(classees(l), 'ANORMALES')" (choisir)="offreChoisie.set($event)" />
+              @for (o of affichees(classees(l), 'ANORMALES'); track o.idOffre) {
                 <app-anormale-offre [idDmc]="idDmc" [offre]="o" [droits]="droits()" [figee]="arretee(l, 'ANORMALES')" (maj)="appliquer($event)" />
+              }
+              @if (classees(l).length > 1) {
+                <div class="ev__voisines">
+                  <button type="button" class="btn btn-outline btn-sm" (click)="voisine(classees(l), 'ANORMALES', -1)">‹ Offre précédente</button>
+                  <button type="button" class="btn btn-outline btn-sm" (click)="voisine(classees(l), 'ANORMALES', 1)">Offre suivante ›</button>
+                </div>
               }
             }
             @case ('QUALIFICATION') {
@@ -266,6 +289,7 @@ import { RapportEvaluationVue } from './rapport-evaluation';
     .ev__ariane { display: flex; gap: 0.4rem; align-items: center; font-size: var(--text-sm); color: var(--n-500); flex-wrap: wrap; }
     .ev__ariane a { color: var(--p-700); font-weight: 600; }
     .ev__entete-actions { display: flex; gap: 0.5rem; }
+    .ev__voisines { display: flex; justify-content: space-between; gap: 0.5rem; }
     .ev__entete-actions--cao { justify-content: flex-end; margin-top: -0.25rem; }
     .ev__etat { display: flex; gap: 0.7rem; align-items: center; flex-wrap: wrap; }
     .ev__bloc { padding: 0.8rem 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
@@ -317,6 +341,24 @@ export class EvaluationEcran implements OnInit {
   readonly evaluation = signal<Evaluation | null>(null);
   readonly lotChoisi = signal(1);
   readonly etapeChoisie = signal<EtapeEvaluation>('CONFORMITE');
+  /** ⚠️ 19/10 — l'offre choisie dans les cartes ; à défaut (ou hors de la liste de l'étape), la première qui attend une décision. */
+  readonly offreChoisie = signal<string | null>(null);
+
+  choisie(offres: readonly OffreEvaluee[], etape: EtapeEvaluation): string | null {
+    const id = this.offreChoisie();
+    return id && offres.some((o) => o.idOffre === id) ? id : offreParDefaut(offres, etape);
+  }
+
+  affichees(offres: readonly OffreEvaluee[], etape: EtapeEvaluation): OffreEvaluee[] {
+    const id = this.choisie(offres, etape);
+    return offres.filter((o) => o.idOffre === id);
+  }
+
+  voisine(offres: readonly OffreEvaluee[], etape: EtapeEvaluation, pas: 1 | -1): void {
+    const i = offres.findIndex((o) => o.idOffre === this.choisie(offres, etape));
+    const n = offres.length;
+    if (n) this.offreChoisie.set(offres[(i + pas + n) % n].idOffre);
+  }
   readonly conflit = signal<boolean | null>(null);
   readonly precision = signal('');
   readonly confidentialite = signal(false);
