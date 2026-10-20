@@ -55,3 +55,33 @@
 .iv__nom { font-weight: 600; color: #152033; }
 .iv__qualite { font-size: 0.8rem; color: #5b6784; }
 .iv__vide { margin: 0; font-size: 0.88rem; color: #5b6784; }
+
+/* ⚠️ 20/10 (pilote) — la séance, l'évaluation et l'attribution figées, dans la même présentation. */
+.iv__ok { color: var(--success-text); font-weight: 600; }
+.iv__ko { color: var(--danger-text); font-weight: 600; }
+.iv__attente { color: var(--warning-text); font-weight: 600; }
+.iv__offres { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.5rem; }
+.iv__offre { display: flex; flex-direction: column; gap: 0.1rem; padding: 0.5rem 0.75rem; border: 1px solid var(--n-200); border-left: 4px solid var(--n-300); border-radius: 8px; background: #fff; }
+.iv__offre--ok { border-left-color: var(--success-text); }
+.iv__offre--ko { border-left-color: var(--danger-text); }
+.iv__offre-n { font-weight: 700; color: #152033; }
+.iv__offre-e { font-size: 0.82rem; color: #34405a; }
+.iv__etapes { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.6rem; }
+.iv__etape { padding: 0.2rem 0.65rem; border-radius: 999px; background: #eef1f6; font-size: 0.8rem; font-weight: 600; color: #5b6784; }
+.iv__etape--fait { background: var(--success-bg); color: var(--success-text); }
+.iv__signatures { list-style: none; margin: 0 0 0.6rem; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.iv__signatures li { display: grid; grid-template-columns: minmax(10rem, 1.2fr) minmax(7rem, 0.8fr) 1.5fr; gap: 0.75rem; padding: 0.45rem 0.75rem; border: 1px solid var(--n-200); border-radius: 8px; background: #fff; font-size: 0.86rem; }
+.iv__sig { color: #152033; }
+.iv__citation { margin: 0 0 0.6rem; padding: 0.5rem 0.75rem; border-left: 3px solid #0369a1; background: #f6fbff; font-size: 0.86rem; color: #34405a; }
+.iv__table { width: 100%; font-size: 0.84rem; }
+.iv__table thead th { background: #e1f1fd; color: #152033; }
+.iv__table td { vertical-align: top; white-space: normal; overflow-wrap: anywhere; }
+.iv__num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.iv__rang { display: inline-grid; place-items: center; min-width: 1.6rem; height: 1.6rem; border-radius: 50%; background: #e1f1fd; font-weight: 700; color: #152033; }
+.iv__ecartee td { color: #5b6784; }
+.iv__prop { margin-top: 0.75rem; padding: 0.6rem 0.8rem; border-left: 3px solid #0369a1; border-radius: 6px; background: #f6fbff; font-size: 0.88rem; }
+.iv__prop-l { color: #34405a; margin-right: 0.3rem; }
+.iv__lignes--larges > div { grid-template-columns: 13rem 1fr; }
+@media (max-width: 640px) { .iv__signatures li { grid-template-columns: 1fr; gap: 0.1rem; } }
+.iv__bloc .iv__frise { margin-bottom: 0.75rem; }
+.iv__membres li { flex-wrap: wrap; gap: 0.2rem 0.75rem; align-items: baseline; }

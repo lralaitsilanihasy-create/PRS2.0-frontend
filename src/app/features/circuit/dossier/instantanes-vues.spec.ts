@@ -54,7 +54,7 @@ describe('Vues dédiées des écrans figés (manuel révisé, R4)', () => {
       ],
       autres: [{ nom: 'Observateur', qualite: 'représentant de la PRMP' }],
       secoursEmploye: false,
-      offres: [{ numero: 1, lot: 1, etat: 'INTEGRE', partsRecues: 2 }],
+      offres: [{ numero: 1, lot: 1, etat: 'INTACTE', partsRecues: 2 }, { numero: 2, lot: 1, etat: 'REMPLACEE', partsRecues: 0 }],
       dechiffreeLe: '2026-10-13T10:30:00',
       pv: { produit: true, publie: true, signe: true, signeLe: '2026-10-13T11:00:00', signatures: [], signaturesAttendues: [], quorum: null },
     };
@@ -62,11 +62,16 @@ describe('Vues dédiées des écrans figés (manuel révisé, R4)', () => {
     fixture.detectChanges();
     const t = texteDe(fixture);
     expect(t).toContain('Close — PV signé');
-    expect(t).toContain('Membres de la commission (2)');
-    expect(t).toContain('Président Président oui oui');
+    expect(t).toContain('Membres de la commission 2');
+    expect(t).toContain('Président Président · présent');
+    expect(t).toContain('Membre A Membre · absent');
+    expect(t).toContain('Offres ouvertes 1 sur 2');
+    expect(t).toContain('n° 1 · lot 1 Ouverte — intacte');
+    expect(t).toContain('n° 2 · lot 1 Remplacée par une offre ultérieure — non ouverte');
+    expect(t).not.toContain('Parts apportées');
     expect(t).toContain('Autres présents : Observateur (représentant de la PRMP)');
-    expect(t).toContain('Offres reçues (1)');
-    expect(t).toContain('oui, le 13/10/2026 à 11:00');
+    expect(t).toContain('Offres reçues 2');
+    expect(t).toContain('✓ Signé le 13/10/2026 à 11:00');
     expect((fixture.nativeElement as HTMLElement).querySelectorAll('button').length).toBe(0);
   });
 
@@ -110,13 +115,15 @@ describe('Vues dédiées des écrans figés (manuel révisé, R4)', () => {
     fixture.detectChanges();
     const t = texteDe(fixture);
     expect(t).toContain('Close — rapport signé');
-    expect(t).toContain('Lot 1 — étape : Rapport');
-    expect(t).toContain('Étapes arrêtées : Examen préliminaire le 13/10/2026 à 13:00 par Président');
-    expect(t).toContain('1 Alpha conforme');
-    expect(t).toContain('qualifiée');
-    expect(t).toContain('2 Beta écartée — garantie absente');
+    expect(t).toContain('Lot 1 — Rapport');
+    expect(t).toContain('13/10/2026 à 13:00 Examen préliminaire arrêtée par Président');
+    expect(t).toContain('1 n° 1 Alpha Conforme');
+    expect(t).toContain('Qualifiée');
+    expect(t).toContain('n° 2 Beta Écartée — garantie absente');
+    expect(t).toContain('Président — président aucun conflit');
     expect(t).toContain(`Proposition d'attribution : Alpha (offre n° 1), ${AR(950000)} HT · délai 30 jours`);
-    expect(t).toContain('Observations RAS');
+    expect(t).toContain('« RAS »');
+    expect(t).toContain('✓ Validé le 13/10/2026 à 15:00');
     expect((fixture.nativeElement as HTMLElement).querySelectorAll('button').length).toBe(0);
   });
 
@@ -138,9 +145,10 @@ describe('Vues dédiées des écrans figés (manuel révisé, R4)', () => {
     fixture.componentRef.setInput('attribution', attribution);
     fixture.detectChanges();
     const t = texteDe(fixture);
-    expect(t).toContain('Lot 1 — Au contrôle de la Commission');
+    expect(t).toContain('L\'attribution — lot 1 Au contrôle de la Commission');
     expect(t).toContain(`Proposition du rapport Alpha (offre n° 1), ${AR(950000)} HT · délai 30 jours`);
-    expect(t).toContain('Dossier de marché n° 100371 · DDM-AOO · SOUMIS · créé le 13/10/2026 à 16:00');
+    expect(t).toMatch(/Dossier de marché n° 100371 · DDM-AOO · [^·]+ · créé le 13\/10\/2026 à 16:00/);
+    expect(t).not.toContain('· SOUMIS ·');
     expect(t).not.toContain('Attributaire');
     expect(t).not.toContain('Retrait');
   });

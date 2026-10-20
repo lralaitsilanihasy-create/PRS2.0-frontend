@@ -101,7 +101,7 @@ describe('Écrans figés d’un dossier (manuel révisé, R4)', () => {
     http.expectOne((r) => r.url === '/api/dossiers/100371/instantanes/EVALUATION' && r.params.get('soumission') === '2').flush(EVALUATION);
     fixture.detectChanges();
     expect(racine().querySelector('app-instantane-evaluation')).not.toBeNull();
-    expect(texte()).toContain('État En cours');
+    expect(texte()).toContain("L'évaluation des offres En cours");
     expect(racine().querySelector('.di__complet')).toBeNull();
   });
 
