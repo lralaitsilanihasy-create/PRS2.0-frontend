@@ -202,7 +202,7 @@ import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marc
           </app-document-visionneuse>
         </div>
       }
-      <!-- ⚠️ 20/10 (pilote) — un dossier de marché né d'une attribution : sa procédure, lue en données (V138 : la Commission la lit). -->
+      <!-- ⚠️ 20/10 (pilote) — un dossier de marché né d'une attribution : sa procédure, lue en données (livré le 20/10, sans migration : la Commission la lit). -->
       @if (contenu.dossier().procedure; as pr) {
         @if (ongletProcedure() === 'pv-cnm') {
           <div class="dc-section"><app-pv-cnm-doc [idDossier]="contenu.dossier().idDossier" [idDossierMec]="pr.idDossierMiseEnConcurrence" [refeMec]="pr.refeDossierMiseEnConcurrence" /></div>

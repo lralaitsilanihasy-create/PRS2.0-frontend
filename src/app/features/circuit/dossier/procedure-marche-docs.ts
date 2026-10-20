@@ -10,7 +10,7 @@ import { LIBELLES_ANORMALE, ariary } from '../../evaluation/libelles-evaluation'
 import { TitulairesProposes } from '../../evaluation/titulaires-proposes';
 
 /**
- * ⚠️ 20/10 (pilote, demande « dossier-marche-donnees », V138) — les pièces d'un dossier de MARCHÉ né d'une attribution, lues **en
+ * ⚠️ 20/10 (pilote, demande « dossier-marche-donnees », livrée le 20/10 sans migration) — les pièces d'un dossier de MARCHÉ né d'une attribution, lues **en
  * données** par la Commission, comme celles d'un dossier de mise en concurrence produites par sa fiche : la séance d'ouverture, le
  * rapport d'évaluation (et son PV de validation, ses signatures), l'attribution proposée, le PV de la Commission sur le DAO. Lecture
  * seule : aucun geste ; les pièces des offres restent à la CAO (`piecesOuvrables = false`).

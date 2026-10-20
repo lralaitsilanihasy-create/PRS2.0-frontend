@@ -7,6 +7,9 @@ import { LigneEligible } from '../../models';
 import { DmcService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { statutDossierLabel } from '../../shared/circuit/circuit-workflow';
+import { LIBELLES_ETAT_ATTRIBUTION } from '../circuit/dossier/instantanes-vues';
+import { dateHeureFr } from '../candidat/libelles-candidat';
+import { LIBELLES_CATEGORIES, LIBELLES_TYPES_MARCHE } from './fiche-marche/fiche-marche-modele';
 import { Icone } from '../../shared/ui/icone';
 
 /**
@@ -22,6 +25,16 @@ export const SOUS_TYPE_MEC_DU_MARCHE: Readonly<Record<string, string>> = {
   MAORI: 'DAORI',
   MPI: 'DC',
 };
+
+/**
+ * ⚠️ 20/10 (B2) — le nombre de lots dont le dossier de marché reste à créer : proposés par le rapport (`PROPOSE`), sans dossier.
+ * Sans état servi (serveur antérieur) : on se replie sur « aucun dossier de marché », et rien si cela non plus n'est pas servi.
+ */
+export function lotsSansDossierMarche(l: Pick<LigneEligible, 'attributions' | 'dossiersMarche'>): number {
+  const dossiers = l.dossiersMarche ?? [];
+  if (l.attributions != null) return l.attributions.filter((a) => a.etat === 'PROPOSE' && !dossiers.some((d) => d.lot === a.lot)).length;
+  return l.dossiersMarche != null && !l.dossiersMarche.length ? 1 : 0;
+}
 
 /**
  * Les procédures qui peuvent produire un dossier de marché : menées dans l'application (des offres déposées en ligne), dont le
@@ -74,27 +87,51 @@ export function proceduresPourMarche(lignes: readonly LigneEligible[], sousTypeM
       <div class="table-card">
         <table class="dm__table">
           <thead>
-            <tr><th scope="col">Objet du marché</th><th scope="col">Dossier de mise en concurrence</th><th scope="col">Mode de passation</th><th scope="col" class="r">Offres</th><th scope="col" class="r">Action</th></tr>
+            <!-- ⚠️ 20/10 (pilote, « revoir les informations nécessaires ») — ce qu'il faut pour choisir : le marché (forme, catégorie, ligne du
+                 plan), son estimation, la mise en concurrence (dossier contrôlé, offres reçues), le dossier de marché et le geste. Le mode
+                 de passation est retiré : la liste ne compte que des appels d'offres, filtrés par le sous-type. -->
+            <tr><th scope="col">Marché</th><th scope="col" class="r">Estimation</th><th scope="col">Mise en concurrence</th><th scope="col">Attribution</th><th scope="col">Dossier de marché</th><th scope="col" class="r">Action</th></tr>
           </thead>
           <tbody>
             @for (l of lignes(); track l.idDetail) {
               <tr>
-                <td>{{ l.designationMarche }}</td>
-                <td class="cnm-mono">{{ l.dossier?.refeDossier || '—' }}</td>
-                <td>{{ l.libelleMode || '—' }}</td>
-                <td class="r">{{ l.nbOffres }}</td>
-                <td class="r">
-                  <!-- ⚠️ 20/10 (B2) — le dossier de marché déjà né du lot : son état et son lien ; sinon, l'attribution. -->
-                  @for (dm of l.dossiersMarche ?? []; track dm.idDossier) {
-                    <a class="dm__dossier" [routerLink]="['/dossier', dm.idDossier]">Lot {{ dm.lot }} : dossier de marché {{ dm.refeDossier || ('n° ' + dm.idDossier) }} — {{ statut(dm.statut) }}</a>
+                <td>
+                  @if (l.numeroProcedure) { <span class="dm__num cnm-mono">{{ l.numeroProcedure }}</span> }
+                  <span class="dm__objet">{{ l.designationMarche }}</span>
+                  <span class="dm__sous">{{ caracteristiques(l) }}</span>
+                </td>
+                <td class="r dm__mt">{{ montant(l.montEstim) }}</td>
+                <td>
+                  @if (l.dossier; as d) { <a class="dm__dossier cnm-mono" [routerLink]="['/dossier', d.idDossier]">{{ d.refeDossier || ('Dossier n° ' + d.idDossier) }}</a> }
+                  <span class="dm__etat">{{ l.dossier ? statutLibelle(l.dossier.statut) + ' · ' : '' }}{{ l.nbOffres }} offre{{ (l.nbOffres ?? 0) > 1 ? 's' : '' }} reçue{{ (l.nbOffres ?? 0) > 1 ? 's' : '' }}</span>
+                </td>
+                <!-- ⚠️ 20/10 (« liste-dossier-marche », B2) — par lot : l'état, le rapport signé, l'offre classée 1re. -->
+                <td>
+                  @for (a of l.attributions ?? []; track a.lot) {
+                    <span class="dm__dossier dm__dossier--texte">{{ (l.attributions?.length ?? 0) > 1 ? 'Lot ' + a.lot + ' · ' : '' }}{{ etatAttribution(a.etat) }}</span>
+                    @if (a.propose; as p) { <span class="dm__etat">{{ p.candidat }} — {{ montant(p.montant) }} HT{{ p.nbTitulaires > 1 ? ' (+ ' + (p.nbTitulaires - 1) + ' titulaire' + (p.nbTitulaires > 2 ? 's' : '') + ')' : '' }}</span> }
+                    @if (a.rapportSigneLe) { <span class="dm__etat">Rapport signé le {{ date(a.rapportSigneLe) }}</span> }
+                  } @empty {
+                    <span class="dm__etat">{{ l.attributions == null ? '—' : 'Évaluation non ouverte' }}</span>
                   }
+                </td>
+                <!-- ⚠️ 20/10 (pilote, « est-ce vraiment le dossier de marché ? ») — le dossier de marché dans sa propre colonne, son état en clair. -->
+                <td>
+                  @for (dm of l.dossiersMarche ?? []; track dm.idDossier) {
+                    <a class="dm__dossier" [routerLink]="['/dossier', dm.idDossier]">{{ dm.refeDossier || ('Dossier n° ' + dm.idDossier) }}{{ (l.dossiersMarche?.length ?? 0) > 1 ? ' · lot ' + dm.lot : '' }}</a>
+                    <span class="dm__etat">{{ etatDossierMarche(dm.statut) }}</span>
+                  } @empty {
+                    <span class="dm__etat">{{ l.dossiersMarche == null ? '—' : 'À créer depuis l’attribution' }}</span>
+                  }
+                </td>
+                <td class="r">
                   <!-- Champ non servi (serveur antérieur) : rien n'est présumé, le geste reste neutre. -->
-                  @let aCreer = l.dossiersMarche != null && !l.dossiersMarche.length;
+                  @let aCreer = lotsACreer(l) > 0;
                   <a class="btn btn-sm" [class.btn-primary]="aCreer" [class.btn-outline]="!aCreer" [routerLink]="['/procedure', l.idDmc, 'evaluation']">{{ aCreer ? 'Créer le dossier de marché' : 'Ouvrir l’attribution' }}</a>
                 </td>
               </tr>
             } @empty {
-              <tr><td colspan="5" class="dm__vide">
+              <tr><td colspan="6" class="dm__vide">
                 Aucune procédure prête : il faut une procédure menée dans l'application, dont le dossier de mise en concurrence est
                 clôturé. Pour une procédure à remise papier, créez le dossier de marché depuis « Créer dossier ».
               </td></tr>
@@ -111,7 +148,22 @@ export function proceduresPourMarche(lignes: readonly LigneEligible[], sousTypeM
     .dm__filtre { margin: 0; font-size: var(--text-sm); display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: baseline; }
     .dm__table { width: 100%; border-collapse: collapse; }
     .dm__table .r { text-align: right; }
-    .dm__dossier { display: block; margin-bottom: 0.35rem; font-size: var(--text-sm); font-weight: 600; color: var(--p-700); }
+    .dm__dossier { display: block; font-size: var(--text-sm); font-weight: 600; color: var(--p-700); }
+    .dm__etat { display: block; font-size: 0.8rem; color: var(--n-500); }
+    .dm__objet { display: block; font-weight: 600; color: var(--n-800); }
+    .dm__sous { display: block; font-size: 0.8rem; color: var(--n-500); }
+    .dm__mt { white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .dm__table td { vertical-align: top; }
+    /* 20/10 — largeurs fixées : l'objet prend la place qui reste, rien ne déborde de la carte. */
+    .dm__table { table-layout: fixed; }
+    .dm__table th:nth-child(2), .dm__table td:nth-child(2) { width: 9rem; }
+    .dm__table th:nth-child(3), .dm__table td:nth-child(3) { width: 12.5rem; }
+    .dm__table th:nth-child(4), .dm__table td:nth-child(4) { width: 15rem; }
+    .dm__table th:nth-child(5), .dm__table td:nth-child(5) { width: 14rem; }
+    .dm__table th:nth-child(6), .dm__table td:nth-child(6) { width: 12rem; }
+    .dm__num { display: block; font-size: 0.78rem; font-weight: 700; color: var(--p-700); }
+    .dm__dossier--texte { color: var(--n-800); }
+    .dm__table td { overflow-wrap: anywhere; white-space: normal; }
     .dm__vide { padding: 1rem; color: var(--n-500); font-size: var(--text-sm); }
   `,
 })
@@ -125,7 +177,23 @@ export class DossierMarcheProcedures implements OnInit {
   private readonly eligibles = signal<LigneEligible[]>([]);
   readonly lignes = computed(() => proceduresPourMarche(this.eligibles(), this.sousType()));
   readonly mec = (st: string): string => SOUS_TYPE_MEC_DU_MARCHE[st] ?? '—';
-  readonly statut = statutDossierLabel;
+  readonly statutLibelle = statutDossierLabel;
+  readonly date = dateHeureFr;
+  readonly etatAttribution = (e: string): string => LIBELLES_ETAT_ATTRIBUTION[e] ?? e;
+  readonly lotsACreer = lotsSansDossierMarche;
+  readonly montant = (v: number | null | undefined): string => (v == null ? '—' : `${new Intl.NumberFormat('fr-FR').format(v)} Ar`);
+  /** Forme, catégorie et ligne du plan, sous l'objet. */
+  caracteristiques(l: LigneEligible): string {
+    return [l.formeMarche ? LIBELLES_TYPES_MARCHE[l.formeMarche] : null, l.categorie ? LIBELLES_CATEGORIES[l.categorie] : l.libelleNature,
+      `ligne ${l.idDetail} du plan ${l.refeDossier || 'n° ' + l.idDossier}`].filter(Boolean).join(' · ');
+  }
+
+  /** L'état du dossier de marché, en clair hors de la frise : « Initial » (12/09) ne se comprend que dans le circuit. */
+  etatDossierMarche(statut: string): string {
+    if (statut === 'BROUILLON') return 'Brouillon — à compléter et soumettre';
+    if (statut === 'SOUMIS') return 'Soumis à la Commission — en attente de réception';
+    return statutDossierLabel(statut);
+  }
 
   ngOnInit(): void {
     this.charger();

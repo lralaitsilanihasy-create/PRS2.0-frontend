@@ -59,7 +59,7 @@ import { DossierService } from '../../../services';
     .fp__lignes { margin: 0; }
     .fp__ligne { display: grid; grid-template-columns: minmax(12rem, 32%) 1fr; gap: 1rem; padding: 0.5rem 0.9rem; border-top: 1px solid var(--n-100); }
     .fp__ligne dt { color: var(--n-500); font-size: 0.85rem; }
-    .fp__ligne dd { margin: 0; color: var(--n-800); font-size: 0.9rem; overflow-wrap: anywhere; }
+    .fp__ligne dd { margin: 0; color: var(--n-800); font-size: 0.9rem; overflow-wrap: anywhere; white-space: pre-line; }
     .fp__aide { margin: 0; font-size: 0.8rem; color: var(--n-500); }
     .fp__refus { margin: 0; color: var(--danger-text); }
   `,

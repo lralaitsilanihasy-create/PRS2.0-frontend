@@ -38,7 +38,7 @@ export function etatOffreSeance(etat: string): { libelle: string; ton: 'ok' | 'k
   return LIBELLES_OFFRE_SEANCE[etat] ?? { libelle: libelleEtatOffre(etat), ton: 'neutre' };
 }
 
-const LIBELLES_ETAT_ATTRIBUTION: Readonly<Record<string, string>> = {
+export const LIBELLES_ETAT_ATTRIBUTION: Readonly<Record<string, string>> = {
   EN_EVALUATION: 'Évaluation en cours',
   PROPOSE: 'Proposition du rapport — dossier de marché à créer',
   AU_CONTROLE: 'Au contrôle de la Commission',

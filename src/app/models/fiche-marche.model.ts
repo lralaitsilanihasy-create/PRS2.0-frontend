@@ -580,6 +580,18 @@ export interface LigneEligible {
   dossier?: { idDossier: number; refeDossier: string | null; statut: string } | null;
   /** ⚠️ 20/10 (« dossier-marche-lecture », B2) — les dossiers de marché nés de l'attribution, par lot ; vide tant qu'aucun n'existe. */
   dossiersMarche?: { lot: number; idDossier: number; refeDossier: string | null; statut: string }[] | null;
+  /** ⚠️ 20/10 (« liste-dossier-marche », B1) — le numéro de la procédure (règle de l'en-tête) ; `null` sans fiche. */
+  numeroProcedure?: string | null;
+  /** B2 — l'état de l'attribution par lot ; vide tant que l'évaluation n'est pas ouverte, `null` sans fiche. */
+  attributions?: AttributionLigne[] | null;
+}
+
+/** ⚠️ 20/10 (B2) — un lot de la ligne : son état d'attribution, le rapport signé, l'offre du rang 1 (et le nombre de titulaires). */
+export interface AttributionLigne {
+  lot: number;
+  etat: string;
+  rapportSigneLe: string | null;
+  propose: { candidat: string; montant: number | null; nbTitulaires: number } | null;
 }
 
 /**
