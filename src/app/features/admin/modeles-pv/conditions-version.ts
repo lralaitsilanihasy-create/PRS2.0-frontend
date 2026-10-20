@@ -63,22 +63,22 @@ const termeVide = (): Terme => ({ lien: 'et', cle: 'avis', op: '=', valeur: '' }
                 @else {
                   <select class="form-control cv__lien" [value]="t.lien" [disabled]="figee()" aria-label="Lien avec le terme précédent"
                           (change)="majTerme(i, j, { lien: $any($event.target).value })">
-                    <option value="et">et</option><option value="ou">ou</option>
+                    <option value="et" [selected]="t.lien === 'et'">et</option><option value="ou" [selected]="t.lien === 'ou'">ou</option>
                   </select>
                 }
                 <select class="form-control" [value]="t.cle" [disabled]="figee()" aria-label="Critère" (change)="majTerme(i, j, { cle: $any($event.target).value, valeur: '' })">
-                  @for (k of cles(); track k.cle) { <option [value]="k.cle">{{ k.libelle }}</option> }
-                  @if (!connue(t.cle)) { <option [value]="t.cle">{{ t.cle }}</option> }
+                  @for (k of cles(); track k.cle) { <option [value]="k.cle" [selected]="k.cle === t.cle">{{ k.libelle }}</option> }
+                  @if (!connue(t.cle)) { <option [value]="t.cle" selected>{{ t.cle }}</option> }
                 </select>
                 <select class="form-control" [value]="t.op" [disabled]="figee()" aria-label="Opérateur" (change)="majTerme(i, j, { op: $any($event.target).value })">
-                  @for (o of operateurs; track o.op) { <option [value]="o.op">{{ o.libelle }}</option> }
+                  @for (o of operateurs; track o.op) { <option [value]="o.op" [selected]="o.op === t.op">{{ o.libelle }}</option> }
                 </select>
                 @if (!sansValeur(t.op)) {
                   @let vals = valeursDe(t.cle);
                   @if (vals.length && t.op !== 'contient') {
                     <select class="form-control" [value]="t.valeur" [disabled]="figee()" aria-label="Valeur" (change)="majTerme(i, j, { valeur: $any($event.target).value })">
                       <option value="">— choisir —</option>
-                      @for (v of vals; track v) { <option [value]="v">{{ v }}</option> }
+                      @for (v of vals; track v) { <option [value]="v" [selected]="v === t.valeur">{{ v }}</option> }
                     </select>
                   } @else {
                     <input class="form-control" [value]="t.valeur" [disabled]="figee()" aria-label="Valeur" (input)="majTerme(i, j, { valeur: $any($event.target).value })" />

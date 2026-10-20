@@ -1,4 +1,4 @@
-import { EtatVersionModelePv, ModelePvResume, NatureModelePv, TypeChampSaisi } from '../../../models';
+import { CouvertureSousType, EtatVersionModelePv, ModelePvResume, NatureModelePv, TypeChampSaisi } from '../../../models';
 
 /**
  * ⚠️ Générateur de modèles de PV, lot G1 (20/10) — libellés et règles pures de l'écran « Modèles de PV ». Les motifs de nom
@@ -55,10 +55,28 @@ export function etatModele(m: ModelePvResume): { libelle: string; ton: Ton } {
   return d.bloquant ? { libelle: 'Brouillon — contrôle bloquant', ton: 'ko' } : { libelle: 'À mettre en vigueur', ton: 'at' };
 }
 
-/** Les sous-types qui n'ont aucun modèle actif de la nature donnée : leurs PV resteront « sans document ». */
-export function sousTypesSansModele(tous: readonly string[], modeles: readonly ModelePvResume[], nature: NatureModelePv = 'PV'): string[] {
-  const servis = new Set(modeles.filter((m) => m.etat === 'ACTIF' && m.nature === nature && m.enVigueur).flatMap((m) => m.sousTypes));
-  return tous.filter((s) => !servis.has(s));
+/**
+ * ⚠️ 20/10 (demande « modeles-pv-integres », B2) — la couverture est servie par `GET /api/modeles-pv/couverture` : le front ne
+ * la calcule plus. Une ligne « Sans document » de la liste est un sous-type que rien ne produit (`AUCUN`) **et** qu'aucun modèle ne
+ * sert encore : rattaché à un modèle en préparation, il figure sur la ligne de ce modèle, qui dit ce qu'il lui manque.
+ */
+export function sansDocument(couverture: readonly CouvertureSousType[], nature: NatureModelePv = 'PV'): CouvertureSousType[] {
+  return couverture.filter((c) => c.nature === nature && c.produitPar === 'AUCUN' && !c.modeleRattache);
+}
+
+/** Les sous-types qu'un modèle sert et que des fichiers intégrés produisent encore : il les reprendra (lot G4). */
+export function reprisParModele(couverture: readonly CouvertureSousType[], idModele: number): string[] {
+  return couverture.filter((c) => c.modeleRattache?.id === idModele && c.produitPar === 'INTEGRE').map((c) => c.sousType);
+}
+
+/** Libellé et code proposés pour le modèle d'une famille qui n'en a pas (ligne « Aucun modèle » de la liste). */
+export function propositionPourFamille(famille: string, libelleFamille: string): { libelle: string; code: string } {
+  const connus: Readonly<Record<string, { libelle: string; code: string }>> = {
+    DDP: { libelle: 'PV d’examen du plan de passation', code: 'PV-PLAN' },
+    DMC: { libelle: 'PV d’examen du dossier de mise en concurrence', code: 'PV-MISE-EN-CONCURRENCE' },
+    DDM: { libelle: 'PV d’examen du dossier de marché', code: 'PV-MARCHE' },
+  };
+  return connus[famille] ?? { libelle: `PV d’examen — ${libelleFamille}`, code: `PV-${famille.replace(/[^A-Za-z0-9_.-]/g, '')}` };
 }
 
 // ——— Compositeur de conditions (grammaire de `ConditionsModele` : termes reliés par « et » puis « ou », sans parenthèses) ———

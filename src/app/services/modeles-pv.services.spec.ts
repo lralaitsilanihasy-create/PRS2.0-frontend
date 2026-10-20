@@ -27,6 +27,11 @@ describe('ModelePvService — chemins du contrat', () => {
     s.mettreEnVigueur(4, 2, 'première version').subscribe();
     expect(http.expectOne({ method: 'POST', url: '/api/modeles-pv/4/versions/2/mettre-en-vigueur' }).request.body).toEqual({ motif: 'première version' });
 
+    s.integres().subscribe();
+    http.expectOne({ method: 'GET', url: '/api/modeles-pv/integres' }).flush([]);
+    s.couverture().subscribe();
+    http.expectOne({ method: 'GET', url: '/api/modeles-pv/couverture' }).flush([]);
+
     s.variables('MAOO-CC').subscribe();
     http.expectOne((r) => r.url === '/api/modeles-pv/variables' && r.params.get('sousType') === 'MAOO-CC').flush({});
   });

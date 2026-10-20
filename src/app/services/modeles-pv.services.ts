@@ -8,7 +8,9 @@ import {
   AvisApercu,
   CatalogueModelePv,
   ChampModelePv,
+  CouvertureSousType,
   ConditionModelePv,
+  ModeleIntegre,
   ModelePvFiche,
   ModelePvResume,
   NatureModelePv,
@@ -90,6 +92,16 @@ export class ModelePvService {
   /** Le `.docx` tel que déposé. */
   fichier(id: number, numero: number): Observable<Blob> {
     return this.http.get(`${this.url}/${id}/versions/${numero}/fichier`, { ...this.ctx, responseType: 'blob' });
+  }
+
+  /** Les modèles intégrés au backend (fichiers livrés avec le serveur), lus là où le choix se fait. */
+  integres(): Observable<ModeleIntegre[]> {
+    return this.http.get<ModeleIntegre[]>(`${this.url}/integres`, this.ctx);
+  }
+
+  /** Pour chaque sous-type et chaque nature, ce qui produit son document (intégré, géré, rien) et le modèle qui le sert. */
+  couverture(): Observable<CouvertureSousType[]> {
+    return this.http.get<CouvertureSousType[]>(`${this.url}/couverture`, this.ctx);
   }
 
   /** Le catalogue des variables, filtré par la famille du sous-type (tout le catalogue sans sous-type). */

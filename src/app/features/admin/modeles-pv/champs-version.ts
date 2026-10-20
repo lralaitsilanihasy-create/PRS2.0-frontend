@@ -42,7 +42,22 @@ const options = (c: ChampSaisie): string[] => c.options.split('\n').map((x) => x
         @if (figee()) { Version figée : ses champs se lisent seulement. }
       </p>
 
+      @if (saisies().length) {
+        <div class="chv__ligne chv__ligne--tete" aria-hidden="true"><span>Libellé et variable</span><span>Type</span><span>Obligatoire</span><span>Visible si</span><span></span></div>
+      }
       @for (c of saisies(); track $index; let i = $index) {
+        <div class="chv__ligne">
+          <span><strong>{{ c.libelle || 'Nouveau champ' }}</strong><code class="chv__var">{{ o }}SAISI:{{ c.code || '…' }}{{ f }}</code></span>
+          <span>{{ libellesType[c.type] }}@if (c.type === 'LISTE') { ({{ nbOptions(c) }} choix) }</span>
+          <span>{{ c.obligatoire ? 'Oui' : 'Non' }}</span>
+          <span>@if (c.visibleSi) { <code>{{ c.visibleSi }}</code> } @else { toujours }</span>
+          @if (!figee()) {
+            <button type="button" class="btn btn-secondary btn-sm" [attr.aria-expanded]="ouvert() === i" (click)="ouvert.set(ouvert() === i ? null : i)">
+              {{ ouvert() === i ? 'Fermer' : 'Modifier' }}
+            </button>
+          } @else { <span></span> }
+        </div>
+        @if (ouvert() === i && !figee()) {
         <div class="chv__champ">
           <label>
             <span class="form-label">Libellé</span>
@@ -56,15 +71,15 @@ const options = (c: ChampSaisie): string[] => c.options.split('\n').map((x) => x
           <label>
             <span class="form-label">Type</span>
             <select class="form-control" [value]="c.type" [disabled]="figee()" (change)="maj(i, { type: $any($event.target).value })">
-              @for (t of types; track t) { <option [value]="t">{{ libellesType[t] }}</option> }
+              @for (t of types; track t) { <option [value]="t" [selected]="t === c.type">{{ libellesType[t] }}</option> }
             </select>
           </label>
           <label>
             <span class="form-label">Visible si</span>
             <select class="form-control" [value]="c.visibleSi" [disabled]="figee()" (change)="maj(i, { visibleSi: $any($event.target).value })">
               <option value="">toujours</option>
-              @for (n of conditions(); track n) { <option [value]="n">{{ n }}</option> }
-              @if (c.visibleSi && !conditions().includes(c.visibleSi)) { <option [value]="c.visibleSi">{{ c.visibleSi }} (non déclarée)</option> }
+              @for (n of conditions(); track n) { <option [value]="n" [selected]="n === c.visibleSi">{{ n }}</option> }
+              @if (c.visibleSi && !conditions().includes(c.visibleSi)) { <option [value]="c.visibleSi" selected>{{ c.visibleSi }} (non déclarée)</option> }
             </select>
           </label>
           <label class="chv__case">
@@ -87,6 +102,7 @@ const options = (c: ChampSaisie): string[] => c.options.split('\n').map((x) => x
             <p class="text-sm chv__alerte chv__large">Le Word de cette version n’utilise pas <code>{{ o }}SAISI:{{ c.code }}{{ f }}</code>.</p>
           }
         </div>
+        }
       } @empty {
         <p class="text-muted">Aucun champ saisi.</p>
       }
@@ -106,6 +122,10 @@ const options = (c: ChampSaisie): string[] => c.options.split('\n').map((x) => x
   `,
   styles: `
     .chv { display: flex; flex-direction: column; gap: 0.75rem; }
+    .chv__ligne { display: grid; grid-template-columns: 1.6fr 1fr 0.7fr 0.8fr 6rem; gap: 0.6rem; align-items: center; padding: 0.5rem 0;
+      border-top: 1px solid var(--n-100); font-size: 0.88rem; color: var(--n-700); }
+    .chv__ligne--tete { font-size: 0.75rem; font-weight: 700; color: var(--n-500); border-top: 0; padding-bottom: 0.2rem; }
+    .chv__var { display: block; color: var(--n-500); }
     .chv__champ { border: 1px solid var(--n-200); border-radius: 10px; padding: 0.75rem 0.9rem;
       display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr auto auto; gap: 0.6rem; align-items: end; }
     .chv__large { grid-column: 1 / -1; }
@@ -114,7 +134,7 @@ const options = (c: ChampSaisie): string[] => c.options.split('\n').map((x) => x
     .chv__alerte { margin: 0; color: var(--warning-text); }
     .chv__actions { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
     .chv__espace { flex: 1; }
-    @media (max-width: 900px) { .chv__champ { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 900px) { .chv__champ { grid-template-columns: 1fr 1fr; } .chv__ligne { grid-template-columns: 1fr 1fr; } .chv__ligne--tete { display: none; } }
   `,
 })
 export class ChampsVersion {
@@ -133,9 +153,14 @@ export class ChampsVersion {
   readonly types = TYPES_CHAMP;
   readonly libellesType = LIBELLES_TYPE_CHAMP;
   readonly saisies = signal<ChampSaisie[]>([]);
+  /** Le champ dont l'éditeur est déplié (un seul à la fois). */
+  readonly ouvert = signal<number | null>(null);
 
   constructor() {
-    effect(() => this.saisies.set(this.champs().map(versSaisie)));
+    effect(() => {
+      this.saisies.set(this.champs().map(versSaisie));
+      this.ouvert.set(null);
+    });
   }
 
   readonly problemeLocal = computed(() => {
@@ -155,12 +180,18 @@ export class ChampsVersion {
     this.saisies.update((l) => l.map((c, k) => (k === i ? { ...c, ...champ } : c)));
   }
 
+  nbOptions(c: ChampSaisie): number {
+    return options(c).length;
+  }
+
   ajouter(): void {
     this.saisies.update((l) => [...l, { code: '', libelle: '', type: 'TEXTE', options: '', obligatoire: false, aide: '', visibleSi: '' }]);
+    this.ouvert.set(this.saisies().length - 1);
   }
 
   retirer(i: number): void {
     this.saisies.update((l) => l.filter((_, k) => k !== i));
+    this.ouvert.set(null);
   }
 
   envoyer(): void {

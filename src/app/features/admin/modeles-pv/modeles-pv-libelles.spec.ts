@@ -1,5 +1,5 @@
-import { ModelePvResume } from '../../../models';
-import { ecrireExpression, etatModele, expressionEnClair, lireExpression, sousTypesSansModele, tailleLisible } from './modeles-pv-libelles';
+import { CouvertureSousType, ModelePvResume } from '../../../models';
+import { ecrireExpression, etatModele, expressionEnClair, lireExpression, propositionPourFamille, reprisParModele, sansDocument, tailleLisible } from './modeles-pv-libelles';
 
 const v = (numero: number, etat: 'BROUILLON' | 'EN_VIGUEUR' | 'REMPLACEE', bloquant = false) => ({ numero, etat, bloquant, deposeeLe: null, enVigueurLe: null });
 const modele = (o: Partial<ModelePvResume>): ModelePvResume => ({
@@ -16,13 +16,40 @@ describe('Modèles de PV — état d’un modèle (G1, 20/10)', () => {
     expect(etatModele(modele({ etat: 'ARCHIVE', enVigueur: v(1, 'EN_VIGUEUR') })).libelle).toBe('Archivé');
   });
 
-  it('un sous-type sans modèle actif en vigueur de la nature reste sans document', () => {
-    const l = [
-      modele({ sousTypes: ['MAOO'], enVigueur: v(1, 'EN_VIGUEUR') }),
-      modele({ sousTypes: ['DAOO'], derniere: v(1, 'BROUILLON') }),
-      modele({ sousTypes: ['PPM'], nature: 'LETTRE_RENVOI', enVigueur: v(1, 'EN_VIGUEUR') }),
+});
+
+const cv = (sousType: string, o: Partial<CouvertureSousType> = {}): CouvertureSousType => ({
+  sousType, libelle: null, famille: 'DDM', nature: 'PV', produitPar: 'AUCUN', integre: null, modeleRattache: null, ...o,
+});
+
+describe('Modèles de PV — couverture servie (B2, 20/10)', () => {
+  it('« Sans document » : rien ne produit et aucun modèle ne sert ; la lettre ne compte pas pour le PV', () => {
+    const c = [
+      cv('MAOO'),
+      cv('MAOO-CC', { modeleRattache: { id: 3, code: 'PV-MARCHE', numeroEnVigueur: null } }),
+      cv('PPM', { famille: 'DDP', produitPar: 'INTEGRE', integre: 'PV-PLAN-INTEGRE' }),
+      cv('MAOO', { nature: 'LETTRE_RENVOI', produitPar: 'INTEGRE', integre: 'LETTRE-RENVOI-INTEGREE' }),
     ];
-    expect(sousTypesSansModele(['MAOO', 'DAOO', 'PPM'], l)).toEqual(['DAOO', 'PPM']);
+    expect(sansDocument(c).map((x) => x.sousType)).toEqual(['MAOO']);
+    expect(sansDocument(c, 'LETTRE_RENVOI')).toEqual([]);
+  });
+
+  it('un modèle reprend les sous-types encore produits par des fichiers intégrés', () => {
+    const r = { id: 2, code: 'PV-PLAN', numeroEnVigueur: null };
+    const c = [
+      cv('PPM', { famille: 'DDP', produitPar: 'INTEGRE', integre: 'PV-PLAN-INTEGRE', modeleRattache: r }),
+      cv('PPM-AGPM', { famille: 'DDP', produitPar: 'INTEGRE', integre: 'PV-PLAN-INTEGRE', modeleRattache: r }),
+      cv('MAOO', { modeleRattache: { ...r, id: 3 } }),
+    ];
+    expect(reprisParModele(c, 2)).toEqual(['PPM', 'PPM-AGPM']);
+    expect(reprisParModele(c, 3)).toEqual([]);
+  });
+});
+
+describe('Modèles de PV — proposition à la création depuis une famille sans modèle', () => {
+  it('les trois familles du contrôle ont leur libellé ; les autres, un libellé dérivé', () => {
+    expect(propositionPourFamille('DDM', 'Dossier de Marché')).toEqual({ libelle: 'PV d’examen du dossier de marché', code: 'PV-MARCHE' });
+    expect(propositionPourFamille('DGC', 'Acte de gestion contractuelle')).toEqual({ libelle: 'PV d’examen — Acte de gestion contractuelle', code: 'PV-DGC' });
   });
 });
 

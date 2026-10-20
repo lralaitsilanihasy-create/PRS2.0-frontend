@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, input, signal } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ApiError, codeErreur } from '../../../core/errors/api-error';
-import { ouvrirBlobSur, telechargerBlob } from '../../../core/securite/fichiers-surs';
+import { ouvrirBlobSur, telechargerBlob, urlBlobSure } from '../../../core/securite/fichiers-surs';
 import { AvisApercu, ChampModelePv, Dossier } from '../../../models';
 import { DossierService, ModelePvService } from '../../../services';
 
@@ -24,19 +25,22 @@ const AVIS: readonly { code: AvisApercu | ''; libelle: string }[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="apv">
-      <p class="text-sm text-muted">Rien n’est enregistré au dossier : l’aperçu se télécharge (Word) ou s’ouvre dans un nouvel onglet (PDF).</p>
-      <div class="apv__ligne">
-        <label class="apv__dossier">
-          <span class="form-label">N° interne du dossier</span>
-          <input class="form-control" type="number" min="1" [value]="idDossier() ?? ''" (change)="choisirDossier($any($event.target).value)" />
-        </label>
-        <label>
-          <span class="form-label">Avis</span>
-          <select class="form-control" [value]="avis()" (change)="avis.set($any($event.target).value)">
-            @for (a of avisPossibles; track a.code) { <option [value]="a.code">{{ a.libelle }}</option> }
-          </select>
-        </label>
+      <div class="apv__barre">
+        <strong class="apv__invite">Essayer la v{{ numero() }} sur un dossier réel :</strong>
+        <input class="form-control apv__dossier" type="number" min="1" placeholder="N° interne du dossier" aria-label="N° interne du dossier"
+               [value]="idDossier() ?? ''" (change)="choisirDossier($any($event.target).value)" />
+        <select class="form-control apv__avis" aria-label="Avis" [value]="avis()" (change)="avis.set($any($event.target).value)">
+          @for (a of avisPossibles; track a.code) { <option [value]="a.code" [selected]="a.code === avis()">Avis : {{ a.libelle }}</option> }
+        </select>
+        <button type="button" class="btn btn-primary btn-sm" [disabled]="!idDossier() || enCours()" (click)="produire('pdf')">
+          {{ enCours() === 'pdf' ? 'Production…' : 'Produire l’aperçu' }}
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" [disabled]="!idDossier() || enCours()" (click)="produire('docx')">
+          {{ enCours() === 'docx' ? 'Production…' : 'Word' }}
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" [disabled]="!pdf()" (click)="ouvrirPdf()">PDF ↗</button>
       </div>
+      <p class="text-sm text-muted apv__rien">Rien n’est enregistré au dossier. « Word » télécharge le document rempli ; « PDF ↗ » ouvre l’aperçu dans un nouvel onglet.</p>
       @if (dossier(); as d) {
         <p class="apv__dossier-lu" role="status">
           <strong>{{ d.refeDossier || 'Dossier sans référence' }}</strong>
@@ -78,32 +82,37 @@ const AVIS: readonly { code: AvisApercu | ''; libelle: string }[] = [
         </fieldset>
       }
 
-      <div class="apv__actions">
-        <button type="button" class="btn btn-primary btn-sm" [disabled]="!idDossier() || enCours()" (click)="produire('pdf')">
-          {{ enCours() === 'pdf' ? 'Production…' : 'Aperçu PDF' }}
-        </button>
-        <button type="button" class="btn btn-secondary btn-sm" [disabled]="!idDossier() || enCours()" (click)="produire('docx')">
-          {{ enCours() === 'docx' ? 'Production…' : 'Aperçu Word' }}
-        </button>
-      </div>
       @if (message(); as m) { <p class="form-error" role="alert">{{ m }}</p> }
+      @if (urlPdf(); as u) {
+        <iframe class="apv__cadre" [src]="u" [title]="'Aperçu de la version ' + numero() + ' sur le dossier ' + idDossier()"></iframe>
+      } @else if (!message()) {
+        <div class="apv__vide">L’aperçu PDF s’affichera ici, tel que le PV sera produit.</div>
+      }
     </div>
   `,
   styles: `
     .apv { display: flex; flex-direction: column; gap: 0.75rem; }
-    .apv__ligne { display: grid; grid-template-columns: minmax(10rem, 14rem) minmax(14rem, 22rem); gap: 0.75rem; }
+    .apv__barre { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    .apv__invite { color: var(--n-900); }
+    .apv__dossier { width: 13rem; }
+    .apv__avis { width: auto; max-width: 20rem; }
+    .apv__rien { margin: 0; }
+    .apv__cadre { width: 100%; height: 75vh; min-height: 32rem; border: 1px solid var(--n-300); border-radius: 8px; background: #fff; }
+    .apv__vide { border: 1px dashed var(--n-300); border-radius: 8px; padding: 2.5rem 1rem; text-align: center; color: var(--n-500); background: #fff; }
     .apv__dossier-lu { margin: 0; color: var(--n-700); }
     .apv__alerte { display: block; color: var(--warning-text); font-size: 0.85rem; }
     .apv__saisis { border: 1px solid var(--n-200); border-radius: 10px; padding: 0.75rem 0.9rem; margin: 0;
       display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 0.6rem; }
-    .apv__actions { display: flex; gap: 0.5rem; }
-    @media (max-width: 640px) { .apv__ligne { grid-template-columns: 1fr; } }
+
   `,
 })
 export class ApercuVersion {
   private readonly service = inject(ModelePvService);
   private readonly dossiers = inject(DossierService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly sanitizer = inject(DomSanitizer);
+  /** L'URL d'objet du PDF affiché, révoquée au remplacement et à la destruction. */
+  private urlCourante: string | null = null;
 
   readonly idModele = input.required<number>();
   readonly numero = input.required<number>();
@@ -119,6 +128,8 @@ export class ApercuVersion {
   readonly saisis = signal<Record<string, string>>({});
   readonly enCours = signal<'pdf' | 'docx' | null>(null);
   readonly message = signal<string | null>(null);
+  readonly pdf = signal<Blob | null>(null);
+  readonly urlPdf = signal<SafeResourceUrl | null>(null);
 
   constructor() {
     // Une autre version choisie : les valeurs saisies pour l'ancienne n'ont plus de sens.
@@ -126,13 +137,34 @@ export class ApercuVersion {
       this.numero();
       this.saisis.set({});
       this.message.set(null);
+      this.afficher(null);
     });
+    this.destroyRef.onDestroy(() => this.afficher(null));
+  }
+
+  /** Affiche un PDF dans le cadre (assaini par `urlBlobSure`), ou vide le cadre. */
+  private afficher(blob: Blob | null): void {
+    if (this.urlCourante) URL.revokeObjectURL(this.urlCourante);
+    this.urlCourante = null;
+    this.pdf.set(blob);
+    if (!blob) {
+      this.urlPdf.set(null);
+      return;
+    }
+    this.urlCourante = urlBlobSure(blob);
+    this.urlPdf.set(this.sanitizer.bypassSecurityTrustResourceUrl(this.urlCourante));
+  }
+
+  ouvrirPdf(): void {
+    const b = this.pdf();
+    if (b) ouvrirBlobSur(b);
   }
 
   choisirDossier(valeur: string): void {
     const id = Number(valeur);
     this.dossier.set(null);
     this.dossierIntrouvable.set(false);
+    this.afficher(null);
     this.message.set(null);
     if (!Number.isInteger(id) || id <= 0) {
       this.idDossier.set(null);
@@ -164,7 +196,7 @@ export class ApercuVersion {
       .subscribe({
         next: (blob) => {
           this.enCours.set(null);
-          if (format === 'pdf') ouvrirBlobSur(blob);
+          if (format === 'pdf') this.afficher(blob);
           else telechargerBlob(blob, `apercu-${this.codeModele()}-v${this.numero()}-dossier-${dossier}.docx`);
         },
         error: (e: ApiError) => {

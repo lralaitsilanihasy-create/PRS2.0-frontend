@@ -134,3 +134,36 @@ export interface CatalogueModelePv {
   formats: string[];
   alias: Record<string, string>;
 }
+
+/**
+ * ⚠️ 20/10 (demande « modeles-pv-integres », B1) — `GET /api/modeles-pv/integres` : les fichiers Word **intégrés** au backend, lus là
+ * où le choix se fait (`PvDocumentGenerator.modeles()`, `LettreRenvoiDocumentGenerator.modeles()`). Seuls ceux présents dans le JAR.
+ */
+export interface ModeleIntegre {
+  code: string;
+  libelle: string;
+  nature: NatureModelePv;
+  /** Les sous-types servis ; `null` : tous. */
+  sousTypes: string[] | null;
+  fichiers: string[];
+  regle: string;
+  /** Vrai tant que la production ne passe pas par le générateur (G2). */
+  enService: boolean;
+}
+
+export type ProducteurDocument = 'INTEGRE' | 'GERE' | 'AUCUN';
+
+/**
+ * ⚠️ 20/10 (B2) — `GET /api/modeles-pv/couverture` : une ligne par sous-type du référentiel et par nature, ce qui produit son
+ * document. Avant G2, `produitPar` ne vaut jamais `GERE` : un modèle rattaché est servi à part (`modeleRattache`).
+ */
+export interface CouvertureSousType {
+  sousType: string;
+  libelle: string | null;
+  famille: string | null;
+  nature: NatureModelePv;
+  produitPar: ProducteurDocument;
+  /** Le `code` du modèle intégré qui produit, s'il y en a un. */
+  integre: string | null;
+  modeleRattache: { id: number; code: string; numeroEnVigueur: number | null } | null;
+}
