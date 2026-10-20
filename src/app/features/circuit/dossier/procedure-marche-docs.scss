@@ -1,0 +1,16 @@
+// ⚠️ 20/10 — les vues en données de la procédure d'un dossier de marché (séance, évaluation, PV de la Commission).
+:host { display: block; }
+.pmd { display: flex; flex-direction: column; gap: 0.7rem; }
+.pmd__titre { margin: 0.4rem 0 0; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-600); }
+.pmd__aide { margin: 0; font-size: var(--text-sm); color: var(--n-500); }
+.pmd__ligne { margin: 0; font-size: var(--text-sm); }
+.pmd__table { font-size: 0.84rem; }
+.pmd__table thead th { background: var(--p-100); color: var(--p-800); }
+.pmd__num { text-align: right; white-space: nowrap; }
+.pmd__ecartee td { color: var(--n-500); text-decoration: line-through; }
+.pmd__signatures { margin: 0; padding-left: 1.2rem; font-size: var(--text-sm); display: flex; flex-direction: column; gap: 0.2rem; }
+.pmd__attendue { color: var(--warning-text); }
+.pmd__faits { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.5rem 1rem; font-size: var(--text-sm); }
+.pmd__faits > div { display: flex; flex-direction: column; }
+.pmd__faits dt { color: var(--n-500); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.pmd__faits dd { margin: 0; }

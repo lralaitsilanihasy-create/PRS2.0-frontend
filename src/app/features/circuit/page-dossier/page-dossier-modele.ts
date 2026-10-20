@@ -48,6 +48,9 @@ export function lireIdDossier(brut: string | null): number | null {
 /** Référence du `h1` : la référence officielle, sinon « Dépôt du 11/09 », sinon « Dossier n° 42 ». */
 export function referenceDossier(d: Dossier): string {
   if (d.refeDossier) return d.refeDossier;
+  // ⚠️ 20/10 (B3) — un dossier de marché né d'une attribution se nomme par son objet (et son lot, s'il y en a plusieurs).
+  const objet = d.procedure?.designationMarche;
+  if (objet) return d.procedure?.intituleLot ? `${objet} — ${d.procedure.intituleLot}` : objet;
   if (d.dateSoumission) return `Dépôt du ${jourMois(d.dateSoumission)}`;
   return `Dossier n° ${d.idDossier}`;
 }

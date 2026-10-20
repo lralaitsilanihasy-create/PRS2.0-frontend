@@ -6,7 +6,7 @@ import { TestBed } from '@angular/core/testing';
 import { AuthService } from '../../../core/auth/auth.service';
 import { Dossier, PieceJointeDossier, Role, TypePieceJointe } from '../../../models';
 import { DossierContenuStore } from './dossier-contenu.store';
-import { DossierPieces, pieceManquante } from './dossier-pieces';
+import { DossierPieces, avecProcedure, ficheDuDossier, ongletDuFichier, pieceManquante } from './dossier-pieces';
 
 const EXIGEES: TypePieceJointe[] = [
   { idTypePiece: 7, libellePiece: 'Projet de DAO', obligatoire: true, code: 'DAO_COMPLET', ordre: 2 },
@@ -126,5 +126,27 @@ describe('pieceManquante — la règle partagée par la liste des pièces et le 
     expect(pieceManquante(PUB, [], { idPublication: 1 } as never)).toBe(false);
     expect(pieceManquante({ ...PUB, code: 'FICHE_PRESENTATION', fourniePar: 'APPLICATION' }, [], null)).toBe(false);
     expect(pieceManquante({ ...PUB, code: 'AUTRE_DOCUMENT', obligatoire: false }, [], null)).toBe(false);
+  });
+});
+
+describe('Dossier de marché né d’une attribution : les fichiers d’office lus dans leur onglet (20/10)', () => {
+  const piece = (nomFichier: string, produitePar: 'ATTRIBUTION' | null = 'ATTRIBUTION') => ({ idDossier: 100383, idTypePiece: 1, nomFichier, produitePar });
+  it('reconnaît chaque fichier de l’attribution à son nom', () => {
+    expect(ongletDuFichier(piece('pv-ouverture_3.pdf'), true)).toBe('seance');
+    expect(ongletDuFichier(piece('rapport-evaluation_3.pdf'), true)).toBe('evaluation');
+    expect(ongletDuFichier(piece('projet-de-marche_3_lot1.pdf'), true)).toBe('attribution');
+    expect(ongletDuFichier(piece('bordereau-offre-4_3_lot1.pdf'), true)).toBe('attribution');
+    expect(ongletDuFichier(piece('DAO_COMPLET_13-CC.pdf'), true)).toBe('fiche-dao');
+    expect(ongletDuFichier(piece('BORDEREAU_ESTIMATIF_00001.pdf'), true)).toBe('bordereau');
+  });
+  it('un fichier déposé à la main reste une pièce jointe', () => {
+    expect(ongletDuFichier(piece('avis-13-CC-premiere-publication.pdf', null), true)).toBeNull();
+    expect(ongletDuFichier(piece('pv-ouverture_3.pdf'), false)).toBeNull();
+  });
+  it('un dossier porte une procédure s’il naît d’une fiche ou d’une attribution', () => {
+    expect(avecProcedure({ idDmc: 3 })).toBe(true);
+    expect(avecProcedure({ procedure: { idDmc: 3 } })).toBe(true);
+    expect(avecProcedure({})).toBe(false);
+    expect(ficheDuDossier({ procedure: { idDmc: 3 } })).toBe(3);
   });
 });

@@ -56,7 +56,8 @@ export interface MarcheActes {
   /** Le dernier PV signé du marché : un acte ne se dépose que sur `FAV` ou `FAVR`. */
   avisMarche: string | null;
   montantInitialHt: number | null;
-  sourceMontantInitial: 'ATTRIBUTION' | 'DECLARE' | null;
+  /** ⚠️ 20/10 (« dossier-marche-lecture », B1) — `PROPOSITION` : l'offre proposée par le rapport, pas encore attribuée. */
+  sourceMontantInitial: 'ATTRIBUTION' | 'PROPOSITION' | 'DECLARE' | null;
   categorie: CategorieMarche | null;
   sourceCategorie: 'FICHE' | 'DECLARE' | null;
   dateReceptionProvisoire: string | null;

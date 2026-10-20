@@ -6,6 +6,7 @@ import { map } from 'rxjs';
 import { LigneEligible } from '../../models';
 import { DmcService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
+import { statutDossierLabel } from '../../shared/circuit/circuit-workflow';
 import { Icone } from '../../shared/ui/icone';
 
 /**
@@ -82,7 +83,15 @@ export function proceduresPourMarche(lignes: readonly LigneEligible[], sousTypeM
                 <td class="cnm-mono">{{ l.dossier?.refeDossier || '—' }}</td>
                 <td>{{ l.libelleMode || '—' }}</td>
                 <td class="r">{{ l.nbOffres }}</td>
-                <td class="r"><a class="btn btn-outline btn-sm" [routerLink]="['/procedure', l.idDmc, 'evaluation']">Ouvrir l’attribution</a></td>
+                <td class="r">
+                  <!-- ⚠️ 20/10 (B2) — le dossier de marché déjà né du lot : son état et son lien ; sinon, l'attribution. -->
+                  @for (dm of l.dossiersMarche ?? []; track dm.idDossier) {
+                    <a class="dm__dossier" [routerLink]="['/dossier', dm.idDossier]">Lot {{ dm.lot }} : dossier de marché {{ dm.refeDossier || ('n° ' + dm.idDossier) }} — {{ statut(dm.statut) }}</a>
+                  }
+                  <!-- Champ non servi (serveur antérieur) : rien n'est présumé, le geste reste neutre. -->
+                  @let aCreer = l.dossiersMarche != null && !l.dossiersMarche.length;
+                  <a class="btn btn-sm" [class.btn-primary]="aCreer" [class.btn-outline]="!aCreer" [routerLink]="['/procedure', l.idDmc, 'evaluation']">{{ aCreer ? 'Créer le dossier de marché' : 'Ouvrir l’attribution' }}</a>
+                </td>
               </tr>
             } @empty {
               <tr><td colspan="5" class="dm__vide">
@@ -102,6 +111,7 @@ export function proceduresPourMarche(lignes: readonly LigneEligible[], sousTypeM
     .dm__filtre { margin: 0; font-size: var(--text-sm); display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: baseline; }
     .dm__table { width: 100%; border-collapse: collapse; }
     .dm__table .r { text-align: right; }
+    .dm__dossier { display: block; margin-bottom: 0.35rem; font-size: var(--text-sm); font-weight: 600; color: var(--p-700); }
     .dm__vide { padding: 1rem; color: var(--n-500); font-size: var(--text-sm); }
   `,
 })
@@ -115,6 +125,7 @@ export class DossierMarcheProcedures implements OnInit {
   private readonly eligibles = signal<LigneEligible[]>([]);
   readonly lignes = computed(() => proceduresPourMarche(this.eligibles(), this.sousType()));
   readonly mec = (st: string): string => SOUS_TYPE_MEC_DU_MARCHE[st] ?? '—';
+  readonly statut = statutDossierLabel;
 
   ngOnInit(): void {
     this.charger();

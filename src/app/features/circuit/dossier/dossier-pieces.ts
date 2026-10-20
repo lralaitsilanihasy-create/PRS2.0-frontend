@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { ToastService } from '../../../core/notifications/toast.service';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -17,7 +18,7 @@ import { DossierContenuStore } from './dossier-contenu.store';
 @Component({
   selector: 'app-dossier-pieces',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PublicationAgpmPanneau],
+  imports: [PublicationAgpmPanneau, RouterLink],
   template: `
     <!-- ⚠️ 18/10 (pilote) — dans la modale « Pièces jointes » de la page, le titre de la modale suffit : pas d'en-tête répété. -->
     @if (!sansEntete()) {
@@ -121,7 +122,12 @@ import { DossierContenuStore } from './dossier-contenu.store';
                 <span class="piece-name">{{ t.libellePiece }}</span>
                 <span class="piece-fiche" title="Produite par l'application à partir des données du dossier : rien à déposer.">application</span>
               </div>
-              <button class="btn-ouvrir" type="button" [disabled]="ouverture() === t.idTypePiece" (click)="ouvrirFournie(t)" [attr.aria-label]="'Ouvrir : ' + t.libellePiece">Ouvrir <span class="arrow">↗</span></button>
+              <!-- ⚠️ 20/10 (Q4) — un PV de la Commission sans document (aucun modèle) : dit tel quel, avec le dossier dont il procède. -->
+              @if (t.code === 'PV_CNM_DMC' && !t.lien) {
+                <span class="text-sm text-muted">PV sans document@if (contenu.dossier().procedure?.idDossierMiseEnConcurrence; as idMec) { · <a [routerLink]="['/dossier', idMec]">voir le dossier de mise en concurrence</a> }</span>
+              } @else {
+                <button class="btn-ouvrir" type="button" [disabled]="ouverture() === t.idTypePiece" (click)="ouvrirFournie(t)" [attr.aria-label]="'Ouvrir : ' + t.libellePiece">Ouvrir <span class="arrow">↗</span></button>
+              }
             </div>
           }
         </div>
@@ -387,7 +393,7 @@ export class DossierPieces {
   private readonly typesExiges = computed(() => new Set(this.exigees().map((t) => t.idTypePiece)));
   /** ⚠️ 18/10 — le groupe des pièces initiales ne garde que celles qu'aucune pièce exigée n'a déjà montrées. */
   readonly piecesInitialesListees = computed(() => this.piecesInitiales()
-    .filter((p) => !this.typesExiges().has(p.idTypePiece) && !ongletDuFichier(p, !!this.contenu.dossier().idDmc)));
+    .filter((p) => !this.typesExiges().has(p.idTypePiece) && !ongletDuFichier(p, avecProcedure(this.contenu.dossier()))));
   fichiersDe(t: TypePieceJointe): PieceJointeDossier[] { return this.piecesInitiales().filter((p) => p.idTypePiece === t.idTypePiece); }
 
   /** ⚠️ 18/10 (pilote) — les pièces exigées que n'affiche aucun onglet du dossier : les autres sont remplacées par un renvoi. */
@@ -404,7 +410,7 @@ export class DossierPieces {
       if (o) ajouter(o, t.libellePiece);
     }
     // Les pièces produites par la fiche hors liste exigée (le bordereau d'un contrat-cadre, Q4 du 17/10).
-    const avecFiche = !!this.contenu.dossier().idDmc;
+    const avecFiche = avecProcedure(this.contenu.dossier());
     for (const p of this.piecesInitiales()) {
       const o = this.typesExiges().has(p.idTypePiece) ? null : ongletDuFichier(p, avecFiche);
       if (o) ajouter(o, p.libellePiece || p.nomFichier || '');
@@ -419,10 +425,12 @@ export class DossierPieces {
   /** ⚠️ 18/10 — l'onglet du dossier qui montre une pièce fournie ; l'hôte bascule dessus. */
   readonly voir = output<OngletPieceFournie>();
   ongletDe(t: TypePieceJointe): OngletPieceFournie | null {
-    if (!this.contenu.dossier().idDmc) return null;
+    if (!avecProcedure(this.contenu.dossier())) return null;
     if (this.fournie(t)) {
       switch (t.code) {
         case 'FICHE_PRESENTATION': return 'presentation';
+        case 'PV_CNM_DMC': return 'pv-cnm';
+        case 'PV_VALIDATION_CAO': return 'evaluation';
         case 'CANEVAS_RAPPORT': return 'canevas';
         case 'CALENDRIER': case 'AGPM_CONTROLE': case 'PPM_CONTROLE': return 'plan';
         default: return null;
@@ -462,8 +470,22 @@ export function pieceManquante(t: TypePieceJointe, pieces: readonly PieceJointeD
   return !pieces.some((p) => p.idTypePiece === t.idTypePiece);
 }
 
+/**
+ * ⚠️ 20/10 — le dossier porte une procédure dont l'application détient les données : né d'une fiche DAO (`idDmc`), ou dossier de
+ * marché né d'une attribution (`procedure`, V137). Ses pièces produites se lisent alors en onglets.
+ */
+export function avecProcedure(d: { idDmc?: number | null; procedure?: { idDmc: number } | null }): boolean {
+  return !!(d.idDmc || d.procedure);
+}
+
+/** La fiche dont procède le dossier : la sienne (dossier de mise en concurrence), ou celle de sa procédure (dossier de marché). */
+export function ficheDuDossier(d: { idDmc?: number | null; procedure?: { idDmc: number } | null }): number | null {
+  return d.idDmc ?? d.procedure?.idDmc ?? null;
+}
+
 /** Les onglets d'un dossier né d'une fiche qui montrent une pièce fournie par l'application. */
-export type OngletPieceFournie = 'presentation' | 'fiche-dao' | 'avis' | 'plan' | 'canevas' | 'bordereau';
+// ⚠️ 20/10 (« dossier-marche-donnees ») — + les éléments d'un dossier de marché né d'une attribution : séance, évaluation, attribution, PV de la Commission.
+export type OngletPieceFournie = 'presentation' | 'fiche-dao' | 'avis' | 'plan' | 'canevas' | 'bordereau' | 'seance' | 'evaluation' | 'attribution' | 'pv-cnm';
 const LIBELLES_ONGLET: Record<OngletPieceFournie, string> = {
   presentation: 'Fiche de présentation',
   'fiche-dao': 'Fiche DAO',
@@ -471,8 +493,12 @@ const LIBELLES_ONGLET: Record<OngletPieceFournie, string> = {
   plan: 'Plan de passation',
   canevas: 'Canevas de rapport',
   bordereau: 'Bordereau estimatif',
+  seance: 'Séance d’ouverture',
+  evaluation: 'Rapport d’évaluation',
+  attribution: 'Attribution',
+  'pv-cnm': 'PV de la Commission sur le DAO',
 };
-const ORDRE_ONGLETS: readonly OngletPieceFournie[] = ['presentation', 'fiche-dao', 'avis', 'plan', 'canevas', 'bordereau'];
+const ORDRE_ONGLETS: readonly OngletPieceFournie[] = ['presentation', 'fiche-dao', 'avis', 'plan', 'canevas', 'bordereau', 'pv-cnm', 'seance', 'evaluation', 'attribution'];
 
 /**
  * ⚠️ 18/10 (pilote) — l'onglet qui présente en données un fichier produit par la fiche DAO (`idDocumentFiche`), reconnu à son nom :
@@ -480,8 +506,15 @@ const ORDRE_ONGLETS: readonly OngletPieceFournie[] = ['presentation', 'fiche-dao
  * ou DQE estimatif. Hors dossier né d'une fiche : aucun.
  */
 export function ongletDuFichier(p: PieceJointeDossier, avecFiche: boolean): OngletPieceFournie | null {
-  if (!avecFiche || !p.idDocumentFiche) return null;
+  if (!avecFiche) return null;
   const nom = p.nomFichier ?? '';
+  // ⚠️ 20/10 (V137) — une pièce jointe d'office par l'attribution (`produitePar`) : reconnue à son nom, comme celles de la fiche.
+  if (p.produitePar === 'ATTRIBUTION') {
+    if (nom.startsWith('pv-ouverture')) return 'seance';
+    if (nom.startsWith('rapport-evaluation')) return 'evaluation';
+    if (nom.startsWith('projet-de-marche') || nom.startsWith('bordereau-offre')) return 'attribution';
+  }
+  if (!p.idDocumentFiche && p.produitePar !== 'ATTRIBUTION') return null;
   if (nom.startsWith('DAO_COMPLET_')) return 'fiche-dao';
   if (nom.startsWith('AVIS_PROJET_') || nom.startsWith('LETTRE_PROJET_')) return 'avis';
   if (nom.startsWith('BORDEREAU_ESTIMATIF_') || nom.startsWith('DQE_ESTIMATIF_')) return 'bordereau';

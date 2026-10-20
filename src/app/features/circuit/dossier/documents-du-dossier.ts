@@ -1,7 +1,7 @@
 import { PieceJointeDossier } from '../../../models';
 import { controlesEffectifs } from '../../../shared/circuit/controles-libelles';
 import { DossierContenuStore } from './dossier-contenu.store';
-import { OngletPieceFournie, ongletDuFichier } from './dossier-pieces';
+import { OngletPieceFournie, avecProcedure, ongletDuFichier } from './dossier-pieces';
 
 /** Les éléments d'un dossier de procédure : les onglets (ou, sur la page du dossier né d'une fiche, les boutons qui ouvrent la modale). */
 export type OngletDossier = OngletPieceFournie | 'pieces' | 'figes' | 'controles';
@@ -48,10 +48,22 @@ export function documentsDuDossier(contenu: DossierContenuStore, manquantes = 0)
     // Produit par l'application hors contrat-cadre (manuel p. 32).
     if (f?.typeMarche !== 'CONTRAT_CADRE') liste.push({ cle: 'canevas', libelle: 'Canevas de rapport', resume: 'Plan du rapport d’évaluation, à remplir par la commission' });
     liste.push({ cle: 'bordereau', libelle: 'Bordereau estimatif', resume: 'Prix unitaires estimés et total face au plan' });
+  } else if (d.procedure) {
+    // ⚠️ 20/10 (pilote, « dossier-marche-donnees ») — le dossier de marché né d'une attribution : sa procédure, lue en données.
+    const p = d.procedure;
+    liste.push(
+      { cle: 'presentation', libelle: 'Fiche de présentation', teinte: 'vert', resume: 'Identification, marché, procédure et attribution' },
+      { cle: 'pv-cnm', libelle: 'PV de la Commission sur le DAO', resume: p.refeDossierMiseEnConcurrence ? 'Dossier ' + p.refeDossierMiseEnConcurrence : 'Le dossier de mise en concurrence' },
+      { cle: 'fiche-dao', libelle: 'Fiche DAO', resume: 'Le dossier d’appel d’offres de la procédure' },
+      { cle: 'seance', libelle: 'Séance d’ouverture', teinte: 'bleu', resume: 'La lecture des offres (PV d’ouverture)' },
+      { cle: 'evaluation', libelle: 'Rapport d’évaluation', teinte: 'bleu', resume: 'Décisions par offre, classement, signatures (PV de validation)' },
+      { cle: 'attribution', libelle: 'Attribution', resume: 'Titulaires proposés, montants, délais ; projet de marché' },
+      { cle: 'bordereau', libelle: 'Bordereau estimatif', resume: 'Prix unitaires estimés de la fiche' },
+    );
   }
   // ⚠️ 18/10 (pilote) — le compteur dit ce que montre « Pièces jointes » : les fichiers produits par la fiche (DAO complet, projet d'avis,
   // bordereau) se lisent dans leur propre élément et n'y comptent pas.
-  const avecFiche = !!d.idDmc;
+  const avecFiche = avecProcedure(d);
   const nPieces = contenu.pieces().filter((p) => !ongletDuFichier(p, avecFiche)).length;
   liste.push({ cle: 'pieces', libelle: 'Pièces jointes', n: nPieces, resume: manquantes
     ? `${manquantes} obligatoire${manquantes > 1 ? 's' : ''} manquante${manquantes > 1 ? 's' : ''}`

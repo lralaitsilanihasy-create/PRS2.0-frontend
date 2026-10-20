@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 
 import { ToastService } from '../../../core/notifications/toast.service';
@@ -24,6 +25,8 @@ import { DossierVersions } from './dossier-versions';
 import { FichePresentationDaoDoc } from './fiche-presentation-dao';
 import { PlanDuDossierDao } from './plan-du-dossier-dao';
 import { FicheMarcheDossier } from '../page-dossier/fiche-marche-dossier';
+import { avecProcedure, ficheDuDossier } from './dossier-pieces';
+import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marche-docs';
 
 /**
  * Documents d'un dossier : barre d'onglets (fiche, plan, AGPM, pièces, historique) et leur contenu dans
@@ -33,7 +36,7 @@ import { FicheMarcheDossier } from '../page-dossier/fiche-marche-dossier';
 @Component({
   selector: 'app-dossier-documents',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PpmMarchesTable, FichePresentationDoc, AgpmDoc, DocumentVisionneuse, DossierPieces, DossierVersions, DossierInstantanes, ControlesDossier, CalendrierAnnuel, PublicationAgpmPanneau, FicheDaoDoc, FichePresentationDaoDoc, PlanDuDossierDao, CanevasRapportDoc, BordereauEstimatifDoc, AvisSpecifiqueDoc, FicheMarcheDossier],
+  imports: [PpmMarchesTable, FichePresentationDoc, AgpmDoc, DocumentVisionneuse, DossierPieces, DossierVersions, DossierInstantanes, ControlesDossier, CalendrierAnnuel, PublicationAgpmPanneau, FicheDaoDoc, FichePresentationDaoDoc, PlanDuDossierDao, CanevasRapportDoc, BordereauEstimatifDoc, AvisSpecifiqueDoc, FicheMarcheDossier, NgTemplateOutlet, SeanceMarcheDoc, EvaluationMarcheDoc, PvCnmDoc],
   host: { '[class.dc-documents--borne]': 'panneauBorne()' },
   template: `
     @if (contenu.estPpm()) {
@@ -147,23 +150,23 @@ import { FicheMarcheDossier } from '../page-dossier/fiche-marche-dossier';
           }
         </div>
       }
-      @if (contenu.dossier().idDmc && ongletProcedure() === 'presentation') {
+      @if (idFiche() && ongletProcedure() === 'presentation') {
         <div class="dc-section">
           <app-document-visionneuse>
             <app-fiche-presentation-dao [idDossier]="contenu.dossier().idDossier" />
           </app-document-visionneuse>
         </div>
       }
-      @if (contenu.dossier().idDmc && ongletProcedure() === 'fiche-dao') {
+      @if (idFiche() && ongletProcedure() === 'fiche-dao') {
         <div class="dc-section">
           <!-- La fiche DAO telle que la Commission l'examine : les données, jamais un fichier. -->
           <!-- ⚠️ 18/10 (pilote) — dans la modale de la page, l'état de la fiche et ses gestes (ouvrir, détacher) remplacent l'ancien encart. -->
-          @if (ongletImpose()) {
+          @if (ongletImpose() && contenu.dossier().idDmc) {
             <app-fiche-marche-dossier [dossier]="contenu.dossier()" [enModale]="true" (liaisonChangee)="liaisonChangee.emit()" />
           }
           <!-- ⚠️ 18/10 — le DAO complet en est le rendu dans le modèle type : son PDF reste à portée, pour le texte type (IC, CCAG, modèles). -->
           <app-document-visionneuse>
-            <app-fiche-dao-doc [idDmc]="contenu.dossier().idDmc!">
+            <app-fiche-dao-doc [idDmc]="idFiche()!">
               @for (p of fichiersOnglet('fiche-dao'); track p.idPiece) {
                 <button ficheActions type="button" class="btn btn-outline btn-sm" title="Le rendu de cette fiche dans le modèle type (texte type : IC, CCAG, modèles)" (click)="ouvrirPiece(p)">DAO complet (PDF) ↗</button>
               }
@@ -184,7 +187,7 @@ import { FicheMarcheDossier } from '../page-dossier/fiche-marche-dossier';
           </app-document-visionneuse>
         </div>
       }
-      @if (contenu.dossier().idDmc && ongletProcedure() === 'bordereau') {
+      @if (idFiche() && ongletProcedure() === 'bordereau') {
         <div class="dc-section">
           @if (fichiersOnglet('bordereau').length) {
             <div class="dc-fichiers">
@@ -195,10 +198,44 @@ import { FicheMarcheDossier } from '../page-dossier/fiche-marche-dossier';
             </div>
           }
           <app-document-visionneuse>
-            <app-bordereau-estimatif-doc [idDmc]="contenu.dossier().idDmc!" [versionSoumise]="contenu.dossier().ficheMarche?.versionSoumise" />
+            <app-bordereau-estimatif-doc [idDmc]="idFiche()!" [versionSoumise]="contenu.dossier().ficheMarche?.versionSoumise" />
           </app-document-visionneuse>
         </div>
       }
+      <!-- ⚠️ 20/10 (pilote) — un dossier de marché né d'une attribution : sa procédure, lue en données (V138 : la Commission la lit). -->
+      @if (contenu.dossier().procedure; as pr) {
+        @if (ongletProcedure() === 'pv-cnm') {
+          <div class="dc-section"><app-pv-cnm-doc [idDossier]="contenu.dossier().idDossier" [idDossierMec]="pr.idDossierMiseEnConcurrence" [refeMec]="pr.refeDossierMiseEnConcurrence" /></div>
+        }
+        @if (ongletProcedure() === 'seance') {
+          <div class="dc-section">
+            <ng-container *ngTemplateOutlet="fichiersAttribution; context: { $implicit: 'seance' }" />
+            <app-seance-marche-doc [idDmc]="pr.idDmc" />
+          </div>
+        }
+        @if (ongletProcedure() === 'evaluation') {
+          <div class="dc-section">
+            <ng-container *ngTemplateOutlet="fichiersAttribution; context: { $implicit: 'evaluation' }" />
+            <app-evaluation-marche-doc [idDmc]="pr.idDmc" [lot]="pr.lot" />
+          </div>
+        }
+        @if (ongletProcedure() === 'attribution') {
+          <div class="dc-section">
+            <ng-container *ngTemplateOutlet="fichiersAttribution; context: { $implicit: 'attribution' }" />
+            <app-evaluation-marche-doc [idDmc]="pr.idDmc" [lot]="pr.lot" [vue]="'attribution'" />
+          </div>
+        }
+      }
+      <ng-template #fichiersAttribution let-onglet>
+        @if (fichiersOnglet(onglet).length) {
+          <div class="dc-fichiers">
+            <span>Joint d’office par l’attribution :</span>
+            @for (p of fichiersOnglet(onglet); track p.idPiece) {
+              <button type="button" class="btn btn-outline btn-sm" (click)="ouvrirPiece(p)">{{ p.nomFichier }} ↗</button>
+            }
+          </div>
+        }
+      </ng-template>
       @if (avecCanevas() && ongletProcedure() === 'canevas') {
         <div class="dc-section">
           <app-document-visionneuse>
@@ -234,7 +271,7 @@ import { FicheMarcheDossier } from '../page-dossier/fiche-marche-dossier';
         <div class="dc-section">
           <!-- ⚠️ Q-pièce (14/10) — un dossier né d'une fiche DAO lit le calendrier annuel du plan de sa ligne. -->
           <!-- ⚠️ 17/10 — pour un dossier né d'une fiche, le calendrier et la publication de l'AGPM vivent à l'onglet « Plan de passation ». -->
-          @if (!contenu.dossier().idDmc) {
+          @if (!avecProc()) {
             <!-- ⚠️ V118 (15/10) — la publication de l'AGPM du plan, reprise d'office (muette sans plan ni publication). -->
             <app-publication-agpm [idDossier]="contenu.dossier().idDossier" />
           }
@@ -300,15 +337,18 @@ export class DossierDocuments {
   /** ⚠️ 17/10 (« canevas-rapport-evaluation ») — le canevas de rapport d'évaluation : dossier né d'une fiche, hors contrat-cadre. */
   readonly avecCanevas = computed(() => !!this.contenu.dossier().idDmc && this.contenu.dossier().ficheMarche?.typeMarche !== 'CONTRAT_CADRE');
   /** ⚠️ 17/10 — un dossier né d'une fiche s'ouvre sur sa fiche de présentation, comme le dossier de planification sur son plan. */
-  readonly ongletProcedure = computed(() => this.ongletImpose() ?? this.ongletChoisi() ?? (this.contenu.dossier().idDmc ? 'presentation' : 'pieces'));
+  /** ⚠️ 20/10 — la fiche de la procédure : celle du dossier, ou celle dont procède le dossier de marché. */
+  readonly idFiche = computed(() => ficheDuDossier(this.contenu.dossier()));
+  readonly avecProc = computed(() => avecProcedure(this.contenu.dossier()));
+  readonly ongletProcedure = computed(() => this.ongletImpose() ?? this.ongletChoisi() ?? (this.avecProc() ? 'presentation' : 'pieces'));
   readonly ongletsProcedure = computed(() => !this.ongletImpose()
-    && (!!this.contenu.dossier().idDmc || this.contenu.instantanesVisible() || this.contenu.controlesVisible()));
+    && (this.avecProc() || this.contenu.instantanesVisible() || this.contenu.controlesVisible()));
   private readonly pvService = inject(PvExamenService);
   private readonly toast = inject(ToastService);
   private readonly pieceService = inject(PieceJointeDossierService);
 
   /** ⚠️ 18/10 — les fichiers produits par la fiche que montre un onglet (hors pièces d'après lettre de renvoi). */
-  fichiersOnglet(onglet: 'fiche-dao' | 'avis' | 'bordereau'): PieceJointeDossier[] {
+  fichiersOnglet(onglet: 'fiche-dao' | 'avis' | 'bordereau' | 'seance' | 'evaluation' | 'attribution'): PieceJointeDossier[] {
     return fichiersDeLOnglet(this.contenu.pieces(), onglet);
   }
 

@@ -301,6 +301,8 @@ export interface TypePieceJointe {
    */
   fourniePar?: 'APPLICATION' | null;
   lien?: string | null;
+  /** ⚠️ 20/10 (« dossier-marche-lecture », Q4) — le PV que la pièce désigne (`PV_CNM_DMC`) ; `lien` nul tant qu'il n'a pas de document. */
+  idPv?: number | null;
   idDossierPlan?: number | null;
   idPvPlan?: number | null;
 }

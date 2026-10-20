@@ -69,6 +69,11 @@ describe('Page dossier — règles pures', () => {
   it('référence du titre : officielle, sinon date de dépôt, sinon numéro', () => {
     expect(referenceDossier({ idDossier: 7, refeDossier: '00001/PPM-AGPM/CNM/2027' })).toBe('00001/PPM-AGPM/CNM/2027');
     expect(referenceDossier({ idDossier: 7, dateSoumission: '2026-09-11T09:30:00' })).toBe('Dépôt du 11/09');
+    // 20/10 (B3) — un dossier de marché né d'une attribution, sans référence encore : son objet, et son lot s'il y en a plusieurs.
+    const procedure = { idDmc: 3, lot: 1, idDossierMiseEnConcurrence: 100382, refeDossierMiseEnConcurrence: null, designationMarche: 'Produits d’entretien' };
+    expect(referenceDossier({ idDossier: 100383, dateSoumission: '2026-10-19T18:19:00', procedure })).toBe('Produits d’entretien');
+    expect(referenceDossier({ idDossier: 100383, procedure: { ...procedure, intituleLot: 'Lot n°02 : savons' } })).toBe('Produits d’entretien — Lot n°02 : savons');
+    expect(referenceDossier({ idDossier: 100383, refeDossier: '00001/MAOO-CC/CNM/2026', procedure })).toBe('00001/MAOO-CC/CNM/2026');
     expect(referenceDossier({ idDossier: 7 })).toBe('Dossier n° 7');
   });
 

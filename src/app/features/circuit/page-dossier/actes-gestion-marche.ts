@@ -29,7 +29,11 @@ import { LienDossier } from './lien-dossier';
         <section class="agm" aria-labelledby="agm-titre">
           <h2 class="agm__titre" id="agm-titre">Actes de gestion du marché</h2>
           <p class="agm__faits">
-            <span>Montant initial : <strong>{{ ariary(m.montantInitialHt) }}</strong> HT{{ m.sourceMontantInitial === 'DECLARE' ? ' (déclaré)' : '' }}</span>
+            @if (m.montantInitialHt == null && m.sousTypeMarche === 'MAOO-CC') {
+              <span>Contrat-cadre : montants par titulaire</span>
+            } @else {
+              <span>Montant initial : <strong>{{ ariary(m.montantInitialHt) }}</strong> HT{{ m.sourceMontantInitial === 'DECLARE' ? ' (déclaré)' : m.sourceMontantInitial === 'PROPOSITION' ? ' (offre proposée, pas encore attribuée)' : '' }}</span>
+            }
             @if (m.categorie) { <span>· {{ libellesCategorie[m.categorie] }}{{ m.sourceCategorie === 'DECLARE' ? ' (déclarée)' : '' }}</span> }
             @if (m.dateReceptionProvisoire) { <span>· réception provisoire le {{ jj(m.dateReceptionProvisoire) }}</span> }
             @if (m.dateReceptionDefinitive) { <span>· réception définitive le {{ jj(m.dateReceptionDefinitive) }}</span> }

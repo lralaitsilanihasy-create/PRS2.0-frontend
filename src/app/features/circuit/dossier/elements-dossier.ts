@@ -10,6 +10,7 @@ import { OngletDossier, documentsDuDossier } from './documents-du-dossier';
 
 const ICONES: Record<OngletDossier, NomIcone> = {
   presentation: 'file', 'fiche-dao': 'edit', avis: 'send', plan: 'calendar', canevas: 'columns', bordereau: 'table',
+  seance: 'eye', evaluation: 'check', attribution: 'users', 'pv-cnm': 'shield',
   pieces: 'clip', figes: 'layers', controles: 'shield',
 };
 

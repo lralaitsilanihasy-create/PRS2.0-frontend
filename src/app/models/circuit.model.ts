@@ -33,6 +33,10 @@ export interface ProcedureDossierMarche {
   lot: number;
   idDossierMiseEnConcurrence: number | null;
   refeDossierMiseEnConcurrence: string | null;
+  /** ⚠️ 20/10 (« dossier-marche-lecture », B3) — l'objet du marché (fiche validée, à défaut la ligne du plan). */
+  designationMarche?: string | null;
+  /** B3 — « Lot n°01 : désignation » ; nul si la ligne n'a pas plusieurs lots. */
+  intituleLot?: string | null;
 }
 
 export interface Dossier {

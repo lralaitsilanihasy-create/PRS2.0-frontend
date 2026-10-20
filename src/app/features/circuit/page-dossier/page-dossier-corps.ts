@@ -341,7 +341,8 @@ export class PageDossierCorps implements OnInit {
   protected readonly contenu = inject(DossierContenuStore);
 
   /** ⚠️ 18/10 (pilote) — un dossier né d'une fiche s'ouvre par éléments, en modale, depuis le panneau d'étape. */
-  readonly enModale = computed(() => !!this.dossier().idDmc);
+  // ⚠️ 20/10 — un dossier de marché né d'une attribution présente aussi ses éléments en cartes ouvertes en modale.
+  readonly enModale = computed(() => !!this.dossier().idDmc || !!this.dossier().procedure);
   /** Relance la lecture des pièces exigées après la fermeture d'une modale (un dépôt sur le plan a pu s'y faire). */
   readonly relecturePieces = signal(0);
   readonly domainePrmp = computed(() => ['PRMP', 'UGPM'].includes(this.auth.role() ?? ''));

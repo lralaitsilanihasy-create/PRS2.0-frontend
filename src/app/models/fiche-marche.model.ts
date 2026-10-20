@@ -578,6 +578,8 @@ export interface LigneEligible {
   fiche?: { statut: 'BROUILLON' | 'VALIDEE'; version: number } | null;
   /** ⚠️ 19/10 — le dossier soumis né de la fiche, `null` tant qu'il n'est pas créé. */
   dossier?: { idDossier: number; refeDossier: string | null; statut: string } | null;
+  /** ⚠️ 20/10 (« dossier-marche-lecture », B2) — les dossiers de marché nés de l'attribution, par lot ; vide tant qu'aucun n'existe. */
+  dossiersMarche?: { lot: number; idDossier: number; refeDossier: string | null; statut: string }[] | null;
 }
 
 /**
