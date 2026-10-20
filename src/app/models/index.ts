@@ -25,3 +25,4 @@ export * from './contrat-vigueur.model';
 export * from './remise.model';
 export * from './bon-commande.model';
 export * from './reception-commande.model';
+export * from './modele-pv.model';

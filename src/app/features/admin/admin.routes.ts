@@ -44,6 +44,9 @@ const refLinks = [
   { label: 'Transition SIGMP — documents générés par l’application', path: '/admin/referentiels/sigmp-transition' },
   // ⚠️ Manuel révisé lot 2 (14/10, R9a) — les recours qui suspendent la signature (titre VIII).
   { label: 'Recours suspensifs', path: '/admin/referentiels/recours-suspensifs' },
+  // ⚠️ Générateur de modèles de PV, lot G1 (V138, 20/10) — SANS entrée de menu, même raison que les candidats ci-dessous :
+  // un modèle Word par sous-type, contrôlé, essayé sur un dossier réel, puis mis en vigueur.
+  { label: 'Modèles de PV (Word)', path: '/admin/referentiels/modeles-pv' },
   // ⚠️ Soumission en ligne, lot 1 (04/10) — SANS entrée de menu : le menu de l'Administrateur sature (39 px de marge à
   // 1229×691, `hauteur-menu.mjs`). Les deux réglages de l'espace candidat vivent dans ce sommaire ; la file des
   // entreprises à vérifier se rejoint depuis l'accueil (« À surveiller ») et depuis l'annuaire (`ECRANS_COMPTES`).
@@ -76,6 +79,8 @@ export const ADMIN_ROUTES: Routes = [
   { path: 'referentiels/cao-quorum', loadComponent: () => import('./cao-quorum-admin').then((m) => m.CaoQuorumAdmin), data: { title: 'Quorum de la CAO' } },
   { path: 'referentiels/sigmp-transition', loadComponent: () => import('./sigmp-transition-admin').then((m) => m.SigmpTransitionAdmin), data: { title: 'Transition SIGMP' } },
   { path: 'referentiels/recours-suspensifs', loadComponent: () => import('./recours-suspensifs-admin').then((m) => m.RecoursSuspensifsAdmin), data: { title: 'Recours suspensifs' } },
+  { path: 'referentiels/modeles-pv', loadComponent: () => import('./modeles-pv/modeles-pv-liste').then((m) => m.ModelesPvListe), data: { title: 'Modèles de PV' } },
+  { path: 'referentiels/modeles-pv/:id', loadComponent: () => import('./modeles-pv/modele-pv-fiche').then((m) => m.ModelePvFicheEcran), data: { title: 'Modèle de PV' } },
   { path: 'referentiels/remise-electronique', loadComponent: () => import('./remise-electronique-admin').then((m) => m.RemiseElectroniqueAdmin), data: { title: 'Remise électronique — défauts et bornes' } },
   // ⚠️ Soumission en ligne, lot 1 (04/10, §B4, §B5, §B7) — l'espace candidat côté Administrateur.
   { path: 'referentiels/candidats', loadComponent: () => import('./parametres-candidats-admin').then((m) => m.ParametresCandidatsAdmin), data: { title: 'Candidats — paramètres' } },

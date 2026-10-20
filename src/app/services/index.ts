@@ -30,3 +30,4 @@ export * from './contrats-vigueur.services';
 export * from './remises.services';
 export * from './bons-commande.services';
 export * from './receptions-commandes.services';
+export * from './modeles-pv.services';
