@@ -24,7 +24,8 @@ import { LienDossier } from './lien-dossier';
   imports: [RouterLink, ModaleDirective, ActeFormulaire],
   template: `
     @if (marche(); as m) {
-      @if (m.actes.length || redacteur()) {
+      <!-- ⚠️ 19/10 (pilote) — rien avant le contrôle : un acte ne se dépose que sur un marché au PV favorable (FAV, FAVR). -->
+      @if (m.actes.length || (redacteur() && (m.avisMarche === 'FAV' || m.avisMarche === 'FAVR'))) {
         <section class="agm" aria-labelledby="agm-titre">
           <h2 class="agm__titre" id="agm-titre">Actes de gestion du marché</h2>
           <p class="agm__faits">

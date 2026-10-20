@@ -20,7 +20,7 @@ import { LignePpmOfficielle } from '../../shared/prmp/document-officiel';
 import { DocumentVisionneuse } from '../../shared/ui/document-visionneuse';
 import { FichePresentation, calculerFichePresentation } from '../../shared/prmp/fiche-presentation';
 import { LigneAgpm, calculerAgpm } from '../../shared/prmp/agpm';
-import { AnomalieTranscription, Capm, Compte, Dossier, EntiteContract, FormeMarche, Marche, MarchePrevision, Ministere, ModePassation, Nature, Organigramme, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, SOUS_TYPES_FICHE_DAO, PRESENTATION_SOUS_TYPE_FICHE, SousTypeDossier, StatutMarche, TypePieceJointe } from '../../models';
+import { AnomalieTranscription, Capm, Compte, Dossier, EntiteContract, FormeMarche, Marche, MarchePrevision, Ministere, ModePassation, Nature, Organigramme, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, SOUS_TYPES_FICHE_DAO, SOUS_TYPES_MARCHE_PAR_ATTRIBUTION, PRESENTATION_SOUS_TYPE_FICHE, SousTypeDossier, StatutMarche, TypePieceJointe } from '../../models';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import {
   CapmService,
@@ -537,6 +537,20 @@ interface ApercuDossier {
                 <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
               </footer>
             } @else {
+            <!-- ⚠️ 19/10 (pilote) — l'analogue de la fiche DAO pour le dossier de marché : une procédure menée dans l'application le
+                 produit à l'attribution du lot, pièces comprises. Le formulaire reste, nommé, pour la procédure à remise papier. -->
+            @if (marcheParAttribution()) {
+              <section class="sd__fiche" data-testid="sd-marche-attribution" aria-labelledby="sd-attrib-t">
+                <h2 class="sd__sub" id="sd-attrib-t">Le dossier de marché naît de l'attribution du lot</h2>
+                <p class="sd__fiche-p">
+                  Pour une procédure menée dans l'application (remise électronique), ouvrez sa fiche DAO : à l'attribution du lot,
+                  « Créer le dossier de marché » le produit pour vous, avec le projet de marché, le PV d'ouverture et le rapport
+                  d'évaluation signé, <strong>sans rien ressaisir ici</strong>.
+                </p>
+                <a class="btn btn-primary" routerLink="/prmp/dossier-marche" [queryParams]="{ sousType: sousTypeChoisi() }">Choisir la procédure</a>
+              </section>
+              <p class="form-hint">Procédure à remise papier, évaluée hors de l'application : créez le dossier de marché ci-dessous et joignez ses pièces.</p>
+            }
             <div class="sd__reste">
             <div class="cnm-form-grid">
               <label class="form-group">
@@ -1187,6 +1201,8 @@ export class SoumettreDossier {
    */
   readonly sousTypeChoisi = toSignal(this.dossierForm.controls.idSousType.valueChanges, { initialValue: null as string | null });
   readonly appelOffres = computed(() => SOUS_TYPES_FICHE_DAO.has(this.sousTypeChoisi() ?? ''));
+  /** ⚠️ 19/10 — un sous-type de marché qu'une procédure menée dans l'application produit à l'attribution du lot. */
+  readonly marcheParAttribution = computed(() => this.familleChoisie() === 'DDM' && SOUS_TYPES_MARCHE_PAR_ATTRIBUTION.has(this.sousTypeChoisi() ?? ''));
   /** Ce que l'encadré dit du sous-type choisi : le mode que doit porter la ligne, les documents que la fiche remplit. */
   readonly presentation = computed(() => PRESENTATION_SOUS_TYPE_FICHE[this.sousTypeChoisi() ?? ''] ?? null);
 

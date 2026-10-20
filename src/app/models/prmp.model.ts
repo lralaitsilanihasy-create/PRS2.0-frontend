@@ -338,6 +338,11 @@ export interface PieceJointeDossier {
    * ne se remplace à la main (409 `PIECE_PRODUITE_PAR_FICHE`) : on corrige la fiche, pas son produit.
    */
   idDocumentFiche?: number | null;
+  /**
+   * ⚠️ 19/10 (demande « dossier-marche-contrat-cadre », B3, V137) — pièce jointe d'office par la création du dossier de marché
+   * (`"ATTRIBUTION"`), `null` pour une pièce téléversée. Ne se retire ni ne se remplace (409 `PIECE_PRODUITE_PAR_APPLICATION`).
+   */
+  produitePar?: 'ATTRIBUTION' | null;
 }
 
 /** Lot d'un marché. */
@@ -591,4 +596,26 @@ export interface SaisiePpmImportResult {
   avertissements?: string[];
   /** Nombre de marchés portant ≥1 anomalie de transcription (résumé de `marches[].anomalies`). */
   nbAVerifier?: number;
+}
+
+/**
+ * ⚠️ 19/10 (V137) — une pièce que l'application a produite, par la fiche DAO (`idDocumentFiche`) ou par l'attribution
+ * (`produitePar`) : elle ne se retire ni ne se remplace à la main. `null` pour une pièce téléversée.
+ */
+export function origineProduite(p: Pick<PieceJointeDossier, 'idDocumentFiche' | 'produitePar'>): 'FICHE' | 'ATTRIBUTION' | null {
+  if (p.idDocumentFiche != null) return 'FICHE';
+  return p.produitePar === 'ATTRIBUTION' ? 'ATTRIBUTION' : null;
+}
+
+/** Le repère court d'une pièce produite, et son infobulle. */
+export const REPERES_PIECE_PRODUITE: Readonly<Record<'FICHE' | 'ATTRIBUTION', { court: string; aide: string }>> = {
+  FICHE: { court: 'fiche DAO', aide: 'Produite par la fiche DAO : elle se corrige dans la fiche, pas ici.' },
+  ATTRIBUTION: { court: 'attribution', aide: 'Jointe d’office à la création du dossier de marché (séance, évaluation, attribution) : elle ne se retire ni ne se remplace.' },
+};
+
+/** Les refus d'un retrait ou d'un remplacement de pièce produite, nommés. */
+export function messagePieceProduite(code: string | null | undefined): string | null {
+  if (code === 'PIECE_PRODUITE_PAR_FICHE') return 'Cette pièce est produite par la fiche DAO : elle se corrige dans la fiche.';
+  if (code === 'PIECE_PRODUITE_PAR_APPLICATION') return 'Cette pièce est jointe d’office par l’application à la création du dossier de marché : elle ne se retire ni ne se remplace.';
+  return null;
 }

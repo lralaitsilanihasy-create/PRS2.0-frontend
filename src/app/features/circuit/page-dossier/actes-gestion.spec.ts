@@ -116,9 +116,9 @@ describe('Actes de gestion (manuel de contrôle, M5a — V98)', () => {
       expect(texte((fixture.nativeElement as HTMLElement).querySelector('[role="alert"]'))).toContain('Un tel changement relève d’un nouveau marché');
     });
 
-    it('marché non contrôlé : la PRMP lit pourquoi elle ne peut pas déposer ; un autre profil sans acte ne voit rien', () => {
+    it('marché non contrôlé et sans acte : l’encart ne s’affiche pas, pas même à la PRMP (19/10) ; un autre profil sans acte ne voit rien', () => {
       monter('PRMP', { ...MARCHE, avisMarche: null, actes: [] });
-      expect(texte((fixture.nativeElement as HTMLElement).querySelector('.agm'))).toContain('une fois le marché contrôlé favorablement');
+      expect((fixture.nativeElement as HTMLElement).querySelector('.agm')).toBeNull();
       TestBed.resetTestingModule();
       monter('MEMBRE', { ...MARCHE, actes: [] });
       expect((fixture.nativeElement as HTMLElement).querySelector('.agm')).toBeNull();

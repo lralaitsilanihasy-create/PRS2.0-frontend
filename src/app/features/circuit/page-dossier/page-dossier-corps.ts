@@ -217,6 +217,26 @@ const HAUT_TOPBAR = 48;
         }
       }
       <!-- ⚠️ 09/10 (manuel de contrôle, M5a) — un marché porte ses actes de gestion ; un acte (DGC) se complète et se soumet ici. -->
+      <!-- ⚠️ 19/10 (V137, demande « dossier-marche-contrat-cadre », B2) — l'analogue de l'encart de la fiche pour un dossier de
+           MARCHÉ né d'une attribution : sa procédure (fiche, lot) et son dossier de mise en concurrence, servis dans « procedure ». -->
+      @if (dossier().procedure; as pr) {
+        <section class="pd-procedure" aria-labelledby="pd-procedure-t">
+          <h2 id="pd-procedure-t" class="pd-procedure__titre">Procédure du marché</h2>
+          <p class="pd-procedure__texte">
+            Dossier de marché du <strong>lot n° {{ pr.lot }}</strong>, produit par l'attribution : les pièces marquées « attribution »
+            sont jointes d'office et ne se retirent pas.
+          </p>
+          <div class="pd-procedure__liens">
+            @if (pr.idDossierMiseEnConcurrence != null) {
+              <a class="btn btn-outline btn-sm" [routerLink]="['/dossier', pr.idDossierMiseEnConcurrence]">Dossier de mise en concurrence{{ pr.refeDossierMiseEnConcurrence ? ' ' + pr.refeDossierMiseEnConcurrence : '' }}</a>
+            }
+            @if (domainePrmp()) {
+              <a class="btn btn-outline btn-sm" [routerLink]="['/prmp/dao', pr.idDmc]">Fiche DAO</a>
+              <a class="btn btn-outline btn-sm" [routerLink]="['/procedure', pr.idDmc, 'evaluation']">Évaluation et attribution</a>
+            }
+          </div>
+        </section>
+      }
       @if (dossier().idTypeDossier === 'DDM') {
         <app-actes-gestion-marche class="pd-fiche" [dossier]="dossier()" />
       } @else if (dossier().idTypeDossier === 'DGC') {

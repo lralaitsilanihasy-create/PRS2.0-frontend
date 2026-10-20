@@ -85,10 +85,17 @@ describe('DossierPieces — pièces exigées par sous-type (manuel de contrôle,
     expect(emis).toEqual(['plan']);
   });
 
-  it('hors brouillon : la liste n’est ni demandée ni montrée', () => {
-    const { el, exigeesDemandees } = monter('SOUMIS');
-    expect(exigeesDemandees).toBe(false);
+  it('hors brouillon : la liste exigée n’est pas montrée ; seules les pièces fournies par l’application restent, et s’ouvrent (19/10)', () => {
+    const { el } = monter('SOUMIS', [
+      { idTypePiece: 70, libellePiece: 'Fiche de présentation', obligatoire: true, code: 'FICHE_PRESENTATION', ordre: 1, fourniePar: 'APPLICATION', lien: '/api/dossiers/42/fiche-presentation' },
+      { idTypePiece: 71, libellePiece: 'PV de la Commission sur le dossier de mise en concurrence', obligatoire: true, code: 'PV_CNM_DMC', ordre: 2, fourniePar: 'APPLICATION', lien: '/api/pv-examens/64/document' },
+      { idTypePiece: 17, libellePiece: 'PV d’ouverture', obligatoire: true, code: 'PV_OUVERTURE', ordre: 3 },
+    ]);
     expect(el.querySelector('.pe-ligne')).toBeNull();
+    const groupe = el.querySelector('[data-testid="pieces-fournies"]');
+    expect(Array.from(groupe?.querySelectorAll('.piece-name') ?? []).map(texte)).toEqual(['Fiche de présentation', 'PV de la Commission sur le dossier de mise en concurrence']);
+    (groupe!.querySelectorAll('.btn-ouvrir')[1] as HTMLButtonElement).click();
+    expect(TestBed.inject(HttpTestingController).expectOne('/api/pv-examens/64/document').request.responseType).toBe('blob');
   });
 
   it('17/10 — une pièce fournie par l’application est cochée, ne compte pas manquante, et s’ouvre', () => {

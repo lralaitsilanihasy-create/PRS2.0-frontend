@@ -27,6 +27,14 @@ export interface RechercheDossier {
 }
 
 /** Dossier soumis au contrôle. Lecture filtrée par localité. */
+/** ⚠️ 19/10 (V137) — la procédure d'un dossier de marché né d'une attribution : la fiche, le lot, le dossier de mise en concurrence. */
+export interface ProcedureDossierMarche {
+  idDmc: number;
+  lot: number;
+  idDossierMiseEnConcurrence: number | null;
+  refeDossierMiseEnConcurrence: string | null;
+}
+
 export interface Dossier {
   idDossier: number;
   /** Famille de dossier (`tr_type_dossier` : DDP / DMC / DDM). */
@@ -128,6 +136,12 @@ export interface Dossier {
    * (famille DMC, sous-type `DAO`) ; `null` partout ailleurs et sur les dossiers antérieurs.
    */
   idDmc?: number | null;
+  /**
+   * ⚠️ 19/10 (demande « dossier-marche-contrat-cadre », B2, V137) — sur la lecture unitaire d'un dossier de MARCHÉ né d'une
+   * attribution : sa procédure (la fiche, le lot) et son dossier de mise en concurrence. Lu sur l'attribution, absent ailleurs.
+   * (`idDmc` reste celui du dossier de mise en concurrence : la colonne est unique par fiche.)
+   */
+  procedure?: ProcedureDossierMarche | null;
   /**
    * ⚠️ 18/10 (demande backend « avis-a-imprimer », §B2, livrée) — sur les listes et la lecture unitaire, pour la PRMP et l'UGPM d'un dossier né
    * d'une fiche : le document que la PRMP imprime après le PV, et s'il est imprimable. Absent tant que le serveur ne le sert pas.

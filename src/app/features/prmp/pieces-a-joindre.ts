@@ -3,7 +3,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 
 import { ApiError, codeErreur } from '../../core/errors/api-error';
 import { ouvrirBlobSur, TYPES_PIECE, validerFichier } from '../../core/securite/fichiers-surs';
-import { PieceJointeDossier, PublicationAgpm, TypePieceJointe } from '../../models';
+import { PieceJointeDossier, PublicationAgpm, REPERES_PIECE_PRODUITE, TypePieceJointe, messagePieceProduite, origineProduite } from '../../models';
 import { DossierService, PieceJointeDossierService } from '../../services';
 
 /** Une pièce exigée du dossier, avec les fichiers déjà déposés sous elle. */
@@ -71,9 +71,9 @@ export function piecesAJoindre(exigees: TypePieceJointe[], deposees: PieceJointe
               @for (f of l.fichiers; track f.idPiece) {
                 <div class="paj__fichier">
                   <span>{{ f.nomFichier || ('Pièce #' + f.idPiece) }}</span>
-                  @if (f.idDocumentFiche) { <span class="paj__meta">produite par la fiche DAO</span> }
+                  @if (produite(f); as o) { <span class="paj__meta" [title]="reperes[o].aide">{{ o === 'FICHE' ? 'produite par la fiche DAO' : 'jointe d’office à l’attribution' }}</span> }
                   <button type="button" class="btn btn-ghost btn-sm" (click)="ouvrir(f)">Ouvrir</button>
-                  @if (!f.idDocumentFiche) {
+                  @if (!produite(f)) {
                     <button type="button" class="btn btn-ghost btn-sm" [attr.aria-label]="'Retirer ' + (f.nomFichier || 'le fichier')" (click)="retirer(f)">Retirer</button>
                   }
                 </div>
@@ -114,6 +114,9 @@ export class PiecesAJoindre implements OnInit {
   readonly lignes = computed(() => piecesAJoindre(this.exigees(), this.deposees()));
   readonly manquantes = computed(() => this.lignes().filter((l) => this.manque(l)).length);
   readonly fournie = fournieParApplication;
+  /** ⚠️ 19/10 (V137) — produite par la fiche DAO ou jointe d'office par l'attribution. */
+  readonly produite = origineProduite;
+  readonly reperes = REPERES_PIECE_PRODUITE;
   /** ⚠️ 18/10 — la publication de l'AGPM en vigueur sur le plan de la ligne (V118), nulle sans publication. */
   readonly publicationPlan = signal<PublicationAgpm | null>(null);
   reprise(l: PieceAJoindre): boolean { return l.type.code === 'PUBLICATION_AGPM' && !l.fichiers.length && this.publicationPlan() !== null; }
@@ -172,7 +175,7 @@ export class PiecesAJoindre implements OnInit {
     this.pieces.supprimer(p.idPiece).subscribe({
       next: () => this.deposees.update((d) => d.filter((x) => x.idPiece !== p.idPiece)),
       error: (e: ApiError) =>
-        this.refus.set(codeErreur(e) === 'PIECE_PRODUITE_PAR_FICHE' ? 'Cette pièce est produite par la fiche DAO : elle se corrige dans la fiche.' : 'Le fichier n’a pas pu être retiré.'),
+        this.refus.set(messagePieceProduite(codeErreur(e)) ?? 'Le fichier n’a pas pu être retiré.'),
     });
   }
 

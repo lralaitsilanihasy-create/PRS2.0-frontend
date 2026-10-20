@@ -4,7 +4,7 @@ import { ToastService } from '../../../core/notifications/toast.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ApiError, codeErreur } from '../../../core/errors/api-error';
 import { ouvrirBlobSur, TYPES_PIECE, validerFichier } from '../../../core/securite/fichiers-surs';
-import { PieceJointeDossier, PublicationAgpm, TypePieceJointe } from '../../../models';
+import { PieceJointeDossier, PublicationAgpm, REPERES_PIECE_PRODUITE, TypePieceJointe, messagePieceProduite, origineProduite } from '../../../models';
 import { DossierService, PieceJointeDossierService, PvExamenService } from '../../../services';
 import { PublicationAgpmPanneau } from '../../../shared/circuit/publication-agpm';
 import { DossierContenuStore } from './dossier-contenu.store';
@@ -95,16 +95,35 @@ import { DossierContenuStore } from './dossier-contenu.store';
               @for (p of fichiersDe(t); track p.idPiece) {
                 <li class="pe-fichier">
                   <span class="piece-file">{{ p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
-                  @if (p.idDocumentFiche) { <span class="piece-fiche" title="Produite par la fiche DAO : elle se corrige dans la fiche, pas ici.">fiche DAO</span> }
+                  @if (produite(p); as o) { <span class="piece-fiche" [title]="reperes[o].aide">{{ reperes[o].court }}</span> }
                   @if (origine(p); as o) { <span class="piece-fiche" [title]="o.titre">{{ o.libelle }}</span> }
                   <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)" [attr.aria-label]="'Ouvrir ' + (p.nomFichier || t.libellePiece)">Ouvrir <span class="arrow">↗</span></button>
-                  @if (peutJoindre(t) && !p.idDocumentFiche && !origine(p)) {
+                  @if (peutJoindre(t) && !produite(p) && !origine(p)) {
                     <button class="btn btn-ghost btn-sm" type="button" (click)="retirer(p)" [attr.aria-label]="'Retirer ' + (p.nomFichier || 'le fichier')">Retirer</button>
                   }
                 </li>
               }
             }
           </ul>
+        </div>
+      }
+      <!-- ⚠️ 19/10 (pilote) — après la soumission, les pièces que l'application fournit restent visibles et s'ouvrent. -->
+      @if (fourniesSoumis().length) {
+        <div class="pieces-group" data-testid="pieces-fournies">
+          <div class="pieces-group-hd">
+            <span class="group-pill gp-blue">Fournies par l'application</span>
+            <span class="group-count">{{ fourniesSoumis().length }} pièce(s)</span>
+          </div>
+          @for (t of fourniesSoumis(); track t.idTypePiece; let i = $index) {
+            <div class="piece-row">
+              <div class="piece-left">
+                <span class="piece-index pi-blue">{{ i + 1 }}</span>
+                <span class="piece-name">{{ t.libellePiece }}</span>
+                <span class="piece-fiche" title="Produite par l'application à partir des données du dossier : rien à déposer.">application</span>
+              </div>
+              <button class="btn-ouvrir" type="button" [disabled]="ouverture() === t.idTypePiece" (click)="ouvrirFournie(t)" [attr.aria-label]="'Ouvrir : ' + t.libellePiece">Ouvrir <span class="arrow">↗</span></button>
+            </div>
+          }
         </div>
       }
       @if (piecesInitialesListees().length > 0) {
@@ -123,7 +142,7 @@ import { DossierContenuStore } from './dossier-contenu.store';
                        d'appel d'offres complet en compte quatre) : seul le nom du fichier les distingue. -->
                   @if (p.libellePiece && p.nomFichier) { <span class="piece-file">{{ p.nomFichier }}</span> }
                 </span>
-                @if (p.idDocumentFiche) { <span class="piece-fiche" title="Produite par la fiche DAO : elle se corrige dans la fiche, pas ici.">fiche DAO</span> }
+                @if (produite(p); as o) { <span class="piece-fiche" [title]="reperes[o].aide">{{ reperes[o].court }}</span> }
                 @if (origine(p); as o) { <span class="piece-fiche" [title]="o.titre">{{ o.libelle }}</span> }
               </div>
               <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)">Ouvrir <span class="arrow">↗</span></button>
@@ -150,7 +169,7 @@ import { DossierContenuStore } from './dossier-contenu.store';
                        d'appel d'offres complet en compte quatre) : seul le nom du fichier les distingue. -->
                   @if (p.libellePiece && p.nomFichier) { <span class="piece-file">{{ p.nomFichier }}</span> }
                 </span>
-                @if (p.idDocumentFiche) { <span class="piece-fiche" title="Produite par la fiche DAO : elle se corrige dans la fiche, pas ici.">fiche DAO</span> }
+                @if (produite(p); as o) { <span class="piece-fiche" [title]="reperes[o].aide">{{ reperes[o].court }}</span> }
                 @if (origine(p); as o) { <span class="piece-fiche" [title]="o.titre">{{ o.libelle }}</span> }
                 <span class="vc-tag">Corrigée</span>
               </div>
@@ -176,7 +195,7 @@ import { DossierContenuStore } from './dossier-contenu.store';
                        d'appel d'offres complet en compte quatre) : seul le nom du fichier les distingue. -->
                   @if (p.libellePiece && p.nomFichier) { <span class="piece-file">{{ p.nomFichier }}</span> }
                 </span>
-                @if (p.idDocumentFiche) { <span class="piece-fiche" title="Produite par la fiche DAO : elle se corrige dans la fiche, pas ici.">fiche DAO</span> }
+                @if (produite(p); as o) { <span class="piece-fiche" [title]="reperes[o].aide">{{ reperes[o].court }}</span> }
                 @if (origine(p); as o) { <span class="piece-fiche" [title]="o.titre">{{ o.libelle }}</span> }
                 <span class="lr-tag">LR</span>
               </div>
@@ -236,7 +255,7 @@ export class DossierPieces {
     const d = this.contenu.dossier();
     if (d.statut !== 'BROUILLON' || !['PRMP', 'UGPM'].includes(this.auth.role() ?? '')) return false;
     if (this.fournie(t) || this.ongletDe(t) || this.depotAgpmIci(t) || this.repriseAgpm(t)) return false;
-    return !this.fichiersDe(t).some((p) => p.idDocumentFiche);
+    return !this.fichiersDe(t).some((p) => this.produite(p));
   }
 
   /** « 2/5 » pendant un envoi de plusieurs fichiers. */
@@ -266,12 +285,15 @@ export class DossierPieces {
     suivant(0);
   }
 
+  /** ⚠️ 19/10 (V137) — produite par la fiche DAO ou jointe d'office par l'attribution : ni retrait, ni remplacement. */
+  readonly produite = origineProduite;
+  readonly reperes = REPERES_PIECE_PRODUITE;
+
   retirer(p: PieceJointeDossier): void {
     if (p.idPiece == null) return;
     this.pieceService.supprimer(p.idPiece).subscribe({
       next: () => this.contenu.pieces.update((l) => l.filter((x) => x.idPiece !== p.idPiece)),
-      error: (e: ApiError) => this.toast.error(codeErreur(e) === 'PIECE_PRODUITE_PAR_FICHE'
-        ? 'Cette pièce est produite par la fiche DAO : elle se corrige dans la fiche.' : 'Le fichier n’a pas pu être retiré.'),
+      error: (e: ApiError) => this.toast.error(messagePieceProduite(codeErreur(e)) ?? 'Le fichier n’a pas pu être retiré.'),
     });
   }
   private readonly dossiers = inject(DossierService);
@@ -281,6 +303,8 @@ export class DossierPieces {
    * seulement : c'est la liste que la soumission refuse incomplète. Silencieux en cas d'échec (le groupe ne s'affiche pas).
    */
   readonly exigees = signal<TypePieceJointe[]>([]);
+  /** ⚠️ 19/10 — hors brouillon : les pièces fournies par l'application (fiche de présentation, PV produits), montrées à tous. */
+  readonly fourniesSoumis = signal<TypePieceJointe[]>([]);
   readonly deposees = computed(() => new Set(this.contenu.pieces().map((p) => p.idTypePiece)));
   readonly nbObligatoiresManquantes = computed(() => this.exigees().filter((t) => this.manquante(t)).length);
   private readonly pvService = inject(PvExamenService);
@@ -303,18 +327,31 @@ export class DossierPieces {
     return t.code === 'PUBLICATION_AGPM' && idPlan && !this.repriseAgpm(t) && !this.deposees().has(t.idTypePiece) ? idPlan : null;
   }
 
+  /** ⚠️ 19/10 (V137) — le document désigné par le lien servi : un PV de la Commission, ou une pièce du dossier (le rapport signé). */
+  private sourceDuLien(lien: string | null | undefined) {
+    const pv = /\/pv-examens\/(\d+)\/document$/.exec(lien ?? '');
+    if (pv) return this.pvService.document(Number(pv[1]));
+    const piece = /\/piece-jointe-dossiers\/(\d+)\/contenu$/.exec(lien ?? '');
+    return piece ? this.pieceService.telecharger(Number(piece[1])) : null;
+  }
+
   /** Le document qui fournit la pièce, en PDF : la fiche de présentation, le canevas de rapport, le calendrier annuel, ou le PV du plan. */
   ouvrirFournie(t: TypePieceJointe): void {
     const id = this.contenu.dossier().idDossier;
     const source = t.code === 'FICHE_PRESENTATION' ? this.dossiers.fichePresentationPdf(id)
       : t.code === 'CANEVAS_RAPPORT' ? this.dossiers.canevasRapportPdf(id)
       : t.code === 'CALENDRIER' ? this.dossiers.calendrierAnnuel(id)
-      : t.idPvPlan != null ? this.pvService.document(t.idPvPlan) : null;
+      : t.idPvPlan != null ? this.pvService.document(t.idPvPlan)
+      : this.sourceDuLien(t.lien);
     if (!source) { this.toast.error('Ce document n’est pas disponible.'); return; }
     this.ouverture.set(t.idTypePiece);
     source.subscribe({
       next: (b) => { this.ouverture.set(null); ouvrirBlobSur(b); },
-      error: () => { this.ouverture.set(null); this.toast.error('Le document n’a pas pu être produit.'); },
+      error: (e: { status?: number }) => {
+        this.ouverture.set(null);
+        // ⚠️ 19/10 — un refus se nomme : document pas encore produit (404), ou fermé à ce profil (403).
+        this.toast.error(e.status === 404 ? 'Ce document n’existe pas encore.' : e.status === 403 ? 'Ce document n’est pas ouvert à votre profil.' : 'Le document n’a pas pu être produit.');
+      },
     });
   }
 
@@ -322,7 +359,17 @@ export class DossierPieces {
     effect((nettoyer) => {
       const d = this.contenu.dossier();
       this.exigees.set([]);
-      if (d.statut !== 'BROUILLON') return;
+      this.fourniesSoumis.set([]);
+      // ⚠️ 19/10 (pilote) — hors brouillon, la liste est lue aussi, pour les seules pièces que l'application fournit : sans elle, la
+      // fiche de présentation et les PV qu'elle produit disparaissaient de la page à la soumission (403 ou 404 : rien ne s'affiche).
+      if (d.statut !== 'BROUILLON') {
+        const lecture = this.dossiers.piecesExigees(d.idDossier).subscribe({
+          next: (l) => this.fourniesSoumis.set([...l].filter((t) => this.fournie(t) && !this.ongletDe(t)).sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0))),
+          error: () => this.fourniesSoumis.set([]),
+        });
+        nettoyer(() => lecture.unsubscribe());
+        return;
+      }
       const abonnement = this.dossiers.piecesExigees(d.idDossier).subscribe({
         next: (l) => this.exigees.set([...l].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0))),
         error: () => this.exigees.set([]),

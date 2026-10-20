@@ -324,3 +324,32 @@
   display: block;
   max-width: 48rem;
 }
+
+/* ⚠️ 19/10 (V137) — la procédure d'un dossier de marché né d'une attribution. */
+.pd-procedure {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid var(--n-200);
+  border-left: 4px solid var(--p-600);
+  border-radius: 10px;
+  background: #fff;
+}
+.pd-procedure__titre {
+  margin: 0;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--n-600);
+}
+.pd-procedure__texte {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--n-700);
+}
+.pd-procedure__liens {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
