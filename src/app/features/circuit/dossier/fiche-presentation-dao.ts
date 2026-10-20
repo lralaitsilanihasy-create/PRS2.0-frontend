@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 
 import { ApiError, corpsErreur } from '../../../core/errors/api-error';
 import { ouvrirBlobSur } from '../../../core/securite/fichiers-surs';
@@ -16,8 +16,11 @@ import { DossierService } from '../../../services';
   template: `
     <section class="fp" aria-labelledby="fp-titre">
       <div class="fp__tete">
-        <h3 id="fp-titre" class="fp__titre">Fiche de présentation du dossier d’appel d’offres</h3>
-        @if (fiche(); as f) { <span class="fp__version">fiche DAO, version {{ f.versionFiche }}</span> }
+        <!-- ⚠️ 20/10 (pilote) — la fiche d'un dossier de marché (section « Attribution », V137) se nomme comme telle. -->
+        <h3 id="fp-titre" class="fp__titre">Fiche de présentation du {{ duMarche() ? 'dossier de marché' : 'dossier d’appel d’offres' }}</h3>
+        @if (fiche(); as f) {
+          <span class="fp__version">{{ duMarche() ? (lot() ? 'lot n° ' + lot() + ' · ' : '') + 'issue de l’attribution' : 'fiche DAO, version ' + f.versionFiche }}</span>
+        }
         <button type="button" class="btn btn-sm btn-outline fp__pdf" [disabled]="production()" (click)="ouvrirPdf()">
           {{ production() ? 'Production…' : 'Ouvrir le PDF' }}
         </button>
@@ -37,7 +40,11 @@ import { DossierService } from '../../../services';
             </dl>
           </div>
         }
-        <p class="fp__aide">Produite par l’application à partir de la ligne du plan et de la fiche DAO validée par la PRMP : elle tient lieu de la fiche de présentation datée et signée.</p>
+        @if (duMarche()) {
+          <p class="fp__aide">Produite par l’application à partir de la ligne du plan, de la fiche DAO, de la séance d’ouverture et du rapport d’évaluation signé. La création nominative du dossier de marché par la PRMP en tient lieu de signature (à confirmer).</p>
+        } @else {
+          <p class="fp__aide">Produite par l’application à partir de la ligne du plan et de la fiche DAO validée par la PRMP : elle tient lieu de la fiche de présentation datée et signée.</p>
+        }
       }
     </section>
   `,
@@ -65,6 +72,9 @@ export class FichePresentationDaoDoc {
   readonly chargement = signal(true);
   readonly refus = signal<string | null>(null);
   readonly production = signal(false);
+  /** ⚠️ 20/10 — la fiche d'un dossier de marché porte la section « Attribution » (V137). */
+  readonly duMarche = computed(() => !!this.fiche()?.sections.some((x) => x.code === 'ATTRIBUTION'));
+  readonly lot = computed(() => this.fiche()?.sections.find((x) => x.code === 'ATTRIBUTION')?.lignes.find((l) => l.code === 'LOT')?.valeur ?? null);
 
   constructor() {
     effect((nettoyer) => {
