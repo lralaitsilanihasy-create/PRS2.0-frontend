@@ -1,41 +1,47 @@
 /*
- * ⚠️ 21/10 (demande du pilote) — palette « Institutionnel » de la page « Modèles de procès-verbaux »
- * (features/admin/modeles-pv). Toutes ses couleurs sont ici, aucune n'est écrite en dur dans les composants.
- * Trois familles d'état : « À créer » → --miss-*, « À déposer » → --prep-*, « En service » → --ok-*.
+ * ⚠️ 21/10 (demande du pilote) — palette de la page « Modèles de procès-verbaux » (features/admin/modeles-pv). Toutes ses couleurs
+ * sont ici, aucune n'est écrite en dur dans les composants. Trois familles d'état : « À créer » → --miss-*, « À déposer » → --prep-*,
+ * « En service » → --ok-*.
  *
- * Contrastes (WCAG AA, vérifiés le 21/10) : tous les textes passent 4,5:1 sur leur fond, toutes les icônes 3:1.
- * Les bordures --border et --{état}-border sont décoratives (1,2 à 1,3:1) : elles ne portent aucun sens seules, le texte et
- * l'icône le portent. Les champs de saisie, dont la bordure DÉSIGNE le contrôle (WCAG 1.4.11), prennent --border-control (3,65:1).
+ * ⚠️ 21/10, second temps (« des couleurs adéquates ») — la page reprend les couleurs de l'APPLICATION (design system :
+ * --p-*, --n-*, --danger-*, --warning-*, --success-*) au lieu d'une palette à part : même bleu d'action, mêmes rouges, ambres et
+ * verts que les autres écrans. Trois couleurs du design system n'atteignent pas 4,5:1 en TEXTE sur leur fond pâle (--success-text
+ * 3,58:1 ; --warning-text 4,58:1 de justesse) : les textes d'état prennent la nuance plus foncée de la même teinte (Tailwind 800).
+ *
+ * Contrastes (WCAG AA, 21/10) : textes ≥ 4,5:1 (le plus juste : --text-muted sur --page-bg, 5,52:1), icônes et barres ≥ 3:1.
+ * --border et --{état}-border sont décoratives (le texte et l'icône portent l'état) ; la bordure des champs, qui désigne le
+ * contrôle (WCAG 1.4.11), prend --border-control (4,74:1).
  */
 :root {
-  --page-bg: #F4F6FA;
+  --page-bg: var(--n-50);
   --card-bg: #FFFFFF;
-  --border: #E3E8EF;
-  --border-control: #7B8798;
-  --text: #101828;
-  --text-muted: #5B6576;
+  --border: var(--n-200);
+  --border-control: var(--n-400);
+  --text: var(--n-800);
+  --text-muted: var(--n-500);
 
-  --primary: #1D4E89;
-  --primary-hover: #163E6E;
+  /* Le bleu d'action de l'application, en sa nuance AA pour un texte blanc (--p-600 : 4,10:1 ; --p-700 : 5,93:1). */
+  --primary: var(--p-700);
+  --primary-hover: var(--p-800);
   --primary-text: #FFFFFF;
 
-  --reco-bg: #EEF4FB;
-  --reco-border: #C7DAF0;
-  --reco-text: #123A66;
-  --reco-accent: #1D4E89;
+  --reco-bg: var(--p-50);
+  --reco-border: var(--p-200);
+  --reco-text: var(--p-800);
+  --reco-accent: var(--p-700);
 
-  --miss-bg: #FEF3F2;
-  --miss-border: #FECDCA;
-  --miss-text: #912018;
-  --miss-accent: #B42318;
+  --miss-bg: var(--danger-bg);
+  --miss-border: var(--danger-bdr);
+  --miss-text: #991B1B;
+  --miss-accent: var(--danger-text);
 
-  --prep-bg: #FFF8EB;
-  --prep-border: #FEDF89;
-  --prep-text: #7A2E0E;
-  --prep-accent: #B54708;
+  --prep-bg: var(--warning-bg);
+  --prep-border: var(--warning-bdr);
+  --prep-text: #854D0E;
+  --prep-accent: var(--warning-text);
 
-  --ok-bg: #ECFDF3;
-  --ok-border: #ABEFC6;
-  --ok-text: #085D3A;
-  --ok-accent: #067647;
+  --ok-bg: var(--success-bg);
+  --ok-border: var(--success-bdr);
+  --ok-text: #065F46;
+  --ok-accent: var(--success-text);
 }
