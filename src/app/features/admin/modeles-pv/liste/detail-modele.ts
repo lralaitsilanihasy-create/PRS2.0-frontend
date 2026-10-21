@@ -111,6 +111,6 @@ export class DetailModele {
 /** Le libellé du bouton d'action d'une ligne, selon son état (et le pas qui reste pour un modèle à déposer). */
 export function libelleAction(l: LigneModele): string {
   if (l.etat === 'miss') return 'Créer';
-  if (l.etat === 'prep') return l.etape >= 2 ? 'Valider' : 'Déposer';
+  if (l.etat === 'prep') return l.etape >= 2 ? 'Valider' : 'Rédiger';
   return 'Voir';
 }

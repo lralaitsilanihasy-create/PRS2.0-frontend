@@ -10,14 +10,15 @@ describe('ModelePvService — chemins du contrat', () => {
   beforeEach(() => TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] }));
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
-  it('dépôt multipart, conditions et champs en bloc, mise en vigueur avec motif', () => {
+  it('page en JSON (création, brouillon), conditions et champs en bloc, mise en vigueur avec motif', () => {
     const s = TestBed.inject(ModelePvService);
     const http = TestBed.inject(HttpTestingController);
 
-    s.deposer(4, new File(['x'], 'PV.docx')).subscribe();
-    const depot = http.expectOne({ method: 'POST', url: '/api/modeles-pv/4/versions' });
-    expect((depot.request.body as FormData).get('fichier')).toBeInstanceOf(File);
-    depot.flush({});
+    s.enregistrerPage(4, { corps: { type: 'doc', content: [{ type: 'paragraph' }] } }).subscribe();
+    expect(http.expectOne({ method: 'POST', url: '/api/modeles-pv/4/versions' }).request.body).toEqual({ document: { corps: { type: 'doc', content: [{ type: 'paragraph' }] } }, motif: null });
+    s.modifierDocument(4, 2, { corps: { type: 'doc' } }).subscribe();
+    // Même enveloppe que la création (`DocumentRequest`) : un document nu serait refusé (« document : obligatoire »).
+    expect(http.expectOne({ method: 'PUT', url: '/api/modeles-pv/4/versions/2/document' }).request.body).toEqual({ document: { corps: { type: 'doc' } } });
 
     s.definirConditions(4, 2, [{ nom: 'AVEC_RESERVES', expression: 'avis = FAVR', libelle: null }]).subscribe();
     expect(http.expectOne({ method: 'PUT', url: '/api/modeles-pv/4/versions/2/conditions' }).request.body).toEqual([

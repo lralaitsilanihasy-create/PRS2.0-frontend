@@ -33,7 +33,7 @@ const termeVide = (): Terme => ({ lien: 'et', cle: 'avis', op: '=', valeur: '' }
       @if (figee()) {
         <p class="text-sm text-muted">Version figée : ses conditions se lisent seulement. Déposez une nouvelle version pour les changer.</p>
       } @else {
-        <p class="text-sm text-muted">Le nom est celui qu’on écrit dans Word : <code>{{ o }}SI:NOM{{ f }}</code> … <code>{{ o }}FINSI:NOM{{ f }}</code>. Le passage n’apparaît que si la condition est vraie.</p>
+        <p class="text-sm text-muted">Chaque passage encadré dans la page porte le nom d’une règle ; il ne s’imprime que si elle est vraie.</p>
       }
 
       @for (c of saisies(); track $index; let i = $index) {
@@ -53,7 +53,7 @@ const termeVide = (): Terme => ({ lien: 'et', cle: 'avis', op: '=', valeur: '' }
             }
           </div>
           @if (utilisees().length && c.nom && !utilisees().includes(c.nom)) {
-            <p class="text-sm cv__alerte">Aucun bloc <code>{{ o }}SI:{{ c.nom }}{{ f }}</code> dans le Word de cette version.</p>
+            <p class="text-sm cv__alerte">Aucun passage n’est encadré avec la règle « {{ c.nom }} » dans le modèle.</p>
           }
 
           @if (c.termes; as termes) {

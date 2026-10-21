@@ -40,13 +40,12 @@ import { LIBELLES_NATURE, MOTIF_CODE_MODELE, propositionPourFamille } from './mo
         <app-barre-outils-modeles [recherche]="recherche()" [filtre]="filtre()" [tri]="tri()"
                                   (rechercheChange)="recherche.set($event)" (filtreChange)="filtre.set($event)" (triChange)="tri.set($event)" />
         <app-liste-modeles [groupes]="groupes()" [ouverte]="ouverte()" (basculer)="basculer($event)" (action)="agir($event)" (fichiers)="voirFichiers($event)" />
-        <p class="mpv__aide">Cliquez sur une ligne pour afficher son cycle de vie et tous ses sous-types.</p>
 
         @if (archives().length) {
           <details class="mpv__archives">
             <summary>Modèles archivés ({{ archives().length }})</summary>
             <ul>
-              @for (a of archives(); track a.id) { <li><a [routerLink]="[a.id]">{{ a.libelle }}</a> <span>{{ a.code }}</span></li> }
+              @for (a of archives(); track a.id) { <li><a [routerLink]="[a.id]">{{ a.libelle }}</a><span class="mpv__code"> · {{ a.code }}</span></li> }
             </ul>
           </details>
         }
@@ -101,7 +100,9 @@ import { LIBELLES_NATURE, MOTIF_CODE_MODELE, propositionPourFamille } from './mo
     .mpv__archives { font-size: 13px; color: var(--text-muted); }
     .mpv__archives summary { cursor: pointer; }
     .mpv__archives summary:focus-visible, .mpv__archives a:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-    .mpv__archives ul { margin: 6px 0 0; padding-left: 18px; }
+    .mpv__archives ul { margin: 6px 0 0; padding-left: 18px; columns: 2 22rem; column-gap: 2rem; }
+    .mpv__archives li { break-inside: avoid; margin: 2px 0; }
+    .mpv__code { font-family: Consolas, monospace; font-size: 12px; color: var(--text-muted); }
     .mpv__archives a { color: var(--primary); }
     .mpv__form { display: flex; flex-direction: column; gap: 0.75rem; }
     .mpv__nature { border: 0; padding: 0; margin: 0; display: flex; gap: 1.25rem; flex-wrap: wrap; }

@@ -37,8 +37,7 @@ const options = (c: ChampSaisie): string[] => c.options.split('\n').map((x) => x
   template: `
     <div class="chv">
       <p class="text-sm text-muted">
-        Dans le Word : <code>{{ o }}SAISI:code{{ f }}</code>. Le membre remplira ces champs dans son écran d’examen, avant de soumettre
-        (lot à venir) ; un champ obligatoire vide bloquera la soumission.
+        Le membre remplira ces champs dans son écran d’examen, avant de soumettre ; un champ obligatoire vide bloquera la soumission.
         @if (figee()) { Version figée : ses champs se lisent seulement. }
       </p>
 
@@ -99,7 +98,7 @@ const options = (c: ChampSaisie): string[] => c.options.split('\n').map((x) => x
             <input class="form-control" [value]="c.aide" [disabled]="figee()" (input)="maj(i, { aide: $any($event.target).value })" />
           </label>
           @if (utilises().length && c.code && !utilises().includes(c.code)) {
-            <p class="text-sm chv__alerte chv__large">Le Word de cette version n’utilise pas <code>{{ o }}SAISI:{{ c.code }}{{ f }}</code>.</p>
+            <p class="text-sm chv__alerte chv__large">Le modèle n’utilise pas ce champ : insérez-le dans la page (onglet 1).</p>
           }
         </div>
         }

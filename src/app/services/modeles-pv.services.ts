@@ -10,11 +10,14 @@ import {
   ChampModelePv,
   CouvertureSousType,
   ConditionModelePv,
+  DocumentPage,
+  ImageModelePv,
   ModeleIntegre,
   ModelePvFiche,
   ModelePvResume,
   NatureModelePv,
   PorteeDepart,
+  SchemaModelePv,
   VersionModelePv,
 } from '../models';
 
@@ -44,12 +47,6 @@ export class ModelePvService {
     return this.http.post<ModelePvFiche>(`${this.url}/${id}/dupliquer`, corps, this.ctx);
   }
 
-  /** Multipart, partie `fichier` (`.docx`, 10 Mo) → la version en brouillon et son rapport de contrôle. */
-  deposer(id: number, fichier: File): Observable<VersionModelePv> {
-    const corps = new FormData();
-    corps.append('fichier', fichier);
-    return this.http.post<VersionModelePv>(`${this.url}/${id}/versions`, corps, this.ctx);
-  }
 
   version(id: number, numero: number): Observable<VersionModelePv> {
     return this.http.get<VersionModelePv>(`${this.url}/${id}/versions/${numero}`, this.ctx);
@@ -62,6 +59,38 @@ export class ModelePvService {
    */
   genererDepart(id: number, portee: PorteeDepart = 'les-deux'): Observable<VersionModelePv> {
     return this.http.post<VersionModelePv>(`${this.url}/${id}/versions/depart`, { portee }, this.ctx);
+  }
+
+  /** ⚠️ 21/10 (option C') — une nouvelle version page, en brouillon, avec son rapport. 400 `DOCUMENT_INVALIDE` (`details` par chemin). */
+  enregistrerPage(id: number, document: DocumentPage, motif?: string | null): Observable<VersionModelePv> {
+    return this.http.post<VersionModelePv>(`${this.url}/${id}/versions`, { document, motif: motif ?? null }, this.ctx);
+  }
+
+  /** Remplace le document d'un brouillon page (409 `VERSION_FIGEE` hors brouillon, `SUPPORT_ABANDONNE` sur un Word). */
+  modifierDocument(id: number, numero: number, document: DocumentPage): Observable<VersionModelePv> {
+    return this.http.put<VersionModelePv>(`${this.url}/${id}/versions/${numero}/document`, { document }, this.ctx);
+  }
+
+  /** Le schéma des pages : polices, couleurs, fonds, formats, limites. */
+  schema(): Observable<SchemaModelePv> {
+    return this.http.get<SchemaModelePv>(`${this.url}/schema`, this.ctx);
+  }
+
+  /** L'emblème des PV officiels, servi par le serveur (créé au premier appel, identifiant stable ensuite). */
+  embleme(): Observable<ImageModelePv> {
+    return this.http.get<ImageModelePv>(`${this.url}/images/embleme`, this.ctx);
+  }
+
+  /** Dépose une image (PNG ou JPEG, 2 Mo, contrôlée par son contenu). */
+  deposerImage(fichier: File): Observable<ImageModelePv> {
+    const corps = new FormData();
+    corps.append('fichier', fichier);
+    return this.http.post<ImageModelePv>(`${this.url}/images`, corps, this.ctx);
+  }
+
+  /** L'adresse d'une image, à poser dans la page (même origine : la session suit). */
+  urlImage(idImage: number): string {
+    return `${this.url}/images/${idImage}`;
   }
 
   /** Remplace l'ensemble des conditions d'une version en brouillon ; le rapport est recalculé. */

@@ -38,12 +38,14 @@ const AVIS: readonly { code: AvisApercu | ''; libelle: string }[] = [
         <button type="button" class="btn btn-primary btn-sm" [disabled]="!idDossier() || enCours()" (click)="produire('pdf')">
           {{ enCours() === 'pdf' ? 'Production…' : 'Produire l’aperçu' }}
         </button>
-        <button type="button" class="btn btn-secondary btn-sm" [disabled]="!idDossier() || enCours()" (click)="produire('docx')">
+        @if (avecWord()) {
+          <button type="button" class="btn btn-secondary btn-sm" [disabled]="!idDossier() || enCours()" (click)="produire('docx')">
           {{ enCours() === 'docx' ? 'Production…' : 'Word' }}
         </button>
+        }
         <button type="button" class="btn btn-secondary btn-sm" [disabled]="!pdf()" (click)="ouvrirPdf()">PDF ↗</button>
       </div>
-      <p class="text-sm text-muted apv__rien">Rien n’est enregistré au dossier. « Word » télécharge le document rempli ; « PDF ↗ » ouvre l’aperçu dans un nouvel onglet.</p>
+      <p class="text-sm text-muted apv__rien">Rien n’est enregistré au dossier. @if (avecWord()) { « Word » télécharge le document rempli ; } « PDF ↗ » ouvre l’aperçu dans un nouvel onglet.</p>
       @if (dossier(); as d) {
         <p class="apv__dossier-lu" role="status">
           <strong>{{ d.refeDossier || 'Dossier sans référence' }}</strong>
@@ -125,6 +127,8 @@ export class ApercuVersion {
   readonly numero = input<number | null>(null);
   /** … ou un modèle intégré au backend (`code` de `/integres`), dont le serveur choisit le fichier. */
   readonly codeIntegre = input<string | null>(null);
+  /** Une page ne se produit qu'en PDF (`FORMAT_INDISPONIBLE` pour le Word). */
+  readonly avecWord = input(true);
   /** L'avis ne choisit rien pour une lettre de renvoi. */
   readonly avecAvis = input(true);
   readonly champs = input<ChampModelePv[]>([]);

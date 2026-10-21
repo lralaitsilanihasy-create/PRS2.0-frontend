@@ -8,16 +8,16 @@ import { LIBELLES_NATURE, propositionPourFamille, reprisParModele, sansDocument 
  *
  * Trois états, dans l'ordre d'urgence :
  * - `miss` « À créer » : une famille dont des sous-types n'ont aucun modèle — leur PV est signé sans document ;
- * - `prep` « À déposer » : un modèle géré sans version en vigueur (aucun Word, ou un brouillon à valider) ;
+ * - `prep` « À rédiger » : un modèle géré sans version en vigueur (pas encore de page, ou un brouillon à valider) ;
  * - `ok` « En service » : un modèle intégré qui produit, ou un modèle géré mis en vigueur.
  */
 export type EtatLigne = 'miss' | 'prep' | 'ok';
 
 export const ORDRE_ETATS: readonly EtatLigne[] = ['miss', 'prep', 'ok'];
-export const LIBELLES_ETAT: Readonly<Record<EtatLigne, string>> = { miss: 'À créer', prep: 'À déposer', ok: 'En service' };
+export const LIBELLES_ETAT: Readonly<Record<EtatLigne, string>> = { miss: 'À créer', prep: 'À rédiger', ok: 'En service' };
 
 /** Les étapes du cycle de vie d'un modèle ; `etape` d'une ligne = l'indice de l'étape en cours (4 : toutes faites). */
-export const ETAPES_CYCLE: readonly string[] = ['Modèle créé', 'Version Word déposée', 'Validation', 'En service'];
+export const ETAPES_CYCLE: readonly string[] = ['Modèle créé', 'Page rédigée', 'Validation', 'En service'];
 
 /** D'où vient une ligne : ce que font ses boutons en dépend. */
 export type SourceLigne =
@@ -111,12 +111,12 @@ export function construireLignes(
     const d = m.derniere;
     const v = m.enVigueur;
     const etat: EtatLigne = v ? 'ok' : 'prep';
-    const badge = v ? 'En vigueur' : !d ? 'À déposer' : d.bloquant ? 'Contrôle bloquant' : 'À valider';
+    const badge = v ? 'En vigueur' : !d ? 'À rédiger' : d.bloquant ? 'Contrôle bloquant' : 'À valider';
     const etape = v ? 4 : !d ? 1 : 2;
     lignes.push({
       id: `gere-${m.id}`,
       nom: m.libelle,
-      sousTitre: `${m.code} · ${LIBELLES_NATURE[m.nature]}`,
+      sousTitre: m.nature === 'PV' ? m.code : `${m.code} · ${LIBELLES_NATURE[m.nature]}`,
       etat,
       sousTypes: [...m.sousTypes],
       libellesSousTypes: libelles,

@@ -35,6 +35,8 @@ export const LIBELLES_ACTION: Readonly<Record<string, string>> = {
   DUPLIQUE: 'Modèle dupliqué',
   ARCHIVE: 'Modèle archivé',
   DEPART_GENERE: 'Modèle de départ généré par l’application',
+  ENREGISTREE: 'Page enregistrée comme nouvelle version',
+  DOCUMENT_MODIFIE: 'Page modifiée',
 };
 
 export const MOTIF_CODE_MODELE = /^[A-Za-z0-9_.-]{1,50}$/;

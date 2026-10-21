@@ -49,6 +49,8 @@ export interface PointRapportModelePv {
   message: string;
   ou: string | null;
   suggestion: string | null;
+  /** ⚠️ 21/10 (page) — les rangs du nœud depuis sa zone (`corps/1/1`), pour y amener le curseur. */
+  chemin?: string | null;
 }
 
 export interface RapportModelePv {
@@ -95,6 +97,10 @@ export interface VersionModelePv {
   remplaceeLe: string | null;
   conditions: ConditionModelePv[];
   champs: ChampModelePv[];
+  /** ⚠️ 21/10 (option C', V139) — `PAGE` : une page éditée dans l'application ; `WORD` : ancien dépôt, en consultation seulement. */
+  support?: SupportVersion;
+  /** Le document d'une page — servi par `GET …/versions/{n}` et les gestes qui la produisent ; nul dans la fiche. */
+  document?: DocumentPage | null;
 }
 
 export interface EvenementModelePv {
@@ -171,4 +177,54 @@ export interface CouvertureSousType {
   /** Le `code` du modèle intégré qui produit, s'il y en a un. */
   integre: string | null;
   modeleRattache: { id: number; code: string; numeroEnVigueur: number | null } | null;
+}
+
+// ——— ⚠️ 21/10 (demande « modele-pv-page », option C') — la page éditée dans l'application ———
+
+export type SupportVersion = 'WORD' | 'PAGE';
+
+/** Un nœud au format natif de Tiptap / ProseMirror, tel que le serveur le valide (schéma : `GET /api/modeles-pv/schema`). */
+export interface NoeudPage {
+  type: string;
+  attrs?: Record<string, unknown>;
+  content?: NoeudPage[];
+  marks?: { type: string; attrs?: Record<string, unknown> }[];
+  text?: string;
+}
+
+export interface ReglagesPage {
+  format?: 'A4';
+  orientation?: 'portrait' | 'paysage';
+  /** Police et taille (points) par défaut. */
+  police?: string;
+  taille?: number;
+  /** En millimètres, 0 à 60. */
+  marges?: { haut?: number; bas?: number; gauche?: number; droite?: number };
+}
+
+/** L'enveloppe d'une version page : trois zones, chacune un `doc` Tiptap. */
+export interface DocumentPage {
+  page?: ReglagesPage;
+  entete?: NoeudPage | null;
+  enteteSurPremiereSeulement?: boolean | null;
+  corps: NoeudPage;
+  piedDePage?: NoeudPage | null;
+}
+
+/** `GET /api/modeles-pv/schema` — les nœuds, polices, couleurs et fonds admis. */
+export interface SchemaModelePv {
+  polices: string[];
+  couleurs: Record<string, string>;
+  fonds: Record<string, string>;
+  formats: string[];
+  limites: { tailleOctets: number; profondeur: number; noeuds: number; texte: number };
+}
+
+/** Une image de la bibliothèque des modèles (`POST /api/modeles-pv/images`, `GET …/images/embleme`). */
+export interface ImageModelePv {
+  idImage: number;
+  largeur: number;
+  hauteur: number;
+  type: string;
+  code: string | null;
 }

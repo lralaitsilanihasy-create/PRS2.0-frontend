@@ -1,20 +1,22 @@
 import { DatePipe, LowerCasePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin, of, switchMap } from 'rxjs';
 
 import { ApiError, codeErreur, corpsErreur } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
-import { TYPES_DOCX, telechargerBlob, validerFichier } from '../../../core/securite/fichiers-surs';
+import { telechargerBlob } from '../../../core/securite/fichiers-surs';
 import {
   CatalogueModelePv,
   ChampModelePv,
   CouvertureSousType,
   ConditionModelePv,
+  DocumentPage,
   MOTIF_VERSION_DEPART,
   ModelePvFiche,
   PorteeDepart,
+  SchemaModelePv,
   SousTypeDossier,
   VersionModelePv,
 } from '../../../models';
@@ -26,6 +28,7 @@ import { CatalogueVariables } from './catalogue-variables';
 import { ChampsVersion } from './champs-version';
 import { ConditionsVersion } from './conditions-version';
 import { FormulaireApercu } from './formulaire-apercu';
+import { EditeurPage } from './page/editeur-page';
 import {
   LIBELLES_ACTION,
   LIBELLES_ETAT_VERSION,
@@ -48,7 +51,6 @@ const FAMILLES: Readonly<Record<string, string>> = {
   DDM: 'Dossier de marché',
 };
 const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning', EN_VIGUEUR: 'badge-success', REMPLACEE: 'badge-neutral' };
-const TAILLE_MAX_MO = 10;
 
 /**
  * ⚠️ Générateur de modèles de PV, lot G1 (V138, 20/10 ; maquette, écrans 2 à 6) — la fiche d'un modèle : ses versions (déposer
@@ -58,7 +60,7 @@ const TAILLE_MAX_MO = 10;
 @Component({
   selector: 'app-modele-pv-fiche',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, LowerCasePipe, RouterLink, EtatErreur, ModaleDirective, RapportControlePv, ConditionsVersion, ChampsVersion, ApercuVersion, CatalogueVariables, FormulaireApercu],
+  imports: [DatePipe, LowerCasePipe, RouterLink, EtatErreur, ModaleDirective, RapportControlePv, ConditionsVersion, ChampsVersion, ApercuVersion, CatalogueVariables, FormulaireApercu, EditeurPage],
   template: `
     <section class="mpf">
       <a class="mpf__retour" routerLink="/admin/referentiels/modeles-pv">← Tous les modèles de PV</a>
@@ -72,10 +74,9 @@ const TAILLE_MAX_MO = 10;
           <small>{{ f.nature === 'PV' ? 'MODÈLE DE PV' : 'MODÈLE DE LETTRE DE RENVOI' }} · {{ f.code }}</small>
           <h1>{{ f.libelle }}</h1>
           <div class="mpf__puces">
-            @for (s of f.sousTypes; track s.id) { <span class="mpf__puce">{{ s.id }}</span> }
-            @if (!f.sousTypes.length) { <span class="mpf__puce">aucun sous-type servi</span> }
-            <span class="mpf__puce mpf__puce--claire">Version en vigueur : {{ enVigueur() ? 'v' + enVigueur()!.numero : 'aucune' }}</span>
+            <span class="mpf__puce">{{ f.sousTypes.length ? f.sousTypes.length + ' sous-type(s) · ' + libelleFamille(famille()) : 'aucun sous-type servi' }}</span>
             @if (f.etat === 'ARCHIVE') { <span class="mpf__puce mpf__puce--claire">Archivé le {{ f.archiveLe | date: 'dd/MM/yyyy' }}</span> }
+            @else { <span class="mpf__puce mpf__puce--claire">{{ enVigueur() ? 'En vigueur : version ' + enVigueur()!.numero : 'Aucune version en vigueur' }}</span> }
           </div>
           @if (f.etat === 'ACTIF') {
             <button type="button" class="btn btn-secondary btn-sm mpf__archiver" (click)="ouvrirModale('archiver')">Archiver</button>
@@ -105,15 +106,17 @@ const TAILLE_MAX_MO = 10;
                       <td>
                         <span [class]="'badge ' + badgeEtat[v.etat]">{{ etats[v.etat] }}</span>
                         @if (v.bloquant) { <span class="badge badge-danger">bloquant</span> }
+                        @if (v.support === 'WORD') { <span class="badge badge-neutral" title="Ancien dépôt Word : consultation seulement">Word</span> }
                       </td>
                       <td>{{ v.deposeeLe | date: 'dd/MM/yyyy' }} par {{ v.deposeePar }}</td>
                       <td class="mpf__actions-ligne">
-                        <button type="button" class="btn btn-secondary btn-sm" (click)="essayer(v.numero)">Essayer</button>
-                        @if (v.etat === 'BROUILLON' && f.etat === 'ACTIF') {
+                        @if (v.numero !== version()?.numero) {
+                          <button type="button" class="btn btn-ghost btn-sm" (click)="choisir(v.numero)">Ouvrir</button>
+                        } @else if (v.etat === 'BROUILLON' && v.support === 'PAGE' && f.etat === 'ACTIF') {
                           <button type="button" class="btn btn-primary btn-sm" [disabled]="v.bloquant" (click)="mettreEnVigueurVersion(v.numero)"
                                   [attr.title]="v.bloquant ? 'Le rapport de contrôle est bloquant' : null">Mettre en vigueur</button>
-                        } @else if (v.numero !== version()?.numero) {
-                          <button type="button" class="btn btn-ghost btn-sm" (click)="choisir(v.numero)">Voir</button>
+                        } @else {
+                          <span class="mpf__ouverte">ouverte</span>
                         }
                       </td>
                     </tr>
@@ -121,13 +124,15 @@ const TAILLE_MAX_MO = 10;
                 </tbody>
               </table>
             } @else {
-              <p class="text-muted">Aucune version : rédigez le PV dans Word avec les variables du catalogue, puis déposez-le — ou laissez l’application préparer un modèle de départ.</p>
+              <p class="text-muted">Aucune version : partez d’une page vierge, ou laissez l’application préparer un modèle de départ.</p>
+            }
+            @if (!aUnePage()) {
               @if (f.etat === 'ACTIF' && f.nature === 'PV') {
                 <div class="mpf__depart">
                   <p class="mpf__depart-titre">Modèle de départ</p>
                   <p class="mpf__note">
                     L’application assemble le PV officiel et les phrases de la famille servie, avec ses règles et ses champs déjà déclarés.
-                    Il arrive en brouillon : faites-en valider le texte par la CNM, corrigez-le dans Word, puis redéposez-le.
+                    Il arrive en brouillon : faites-en valider le texte par la CNM, puis corrigez-le dans l’onglet « Texte et mise en page ».
                   </p>
                   @if (!f.sousTypes.length) {
                     <p class="mpf__note"><strong>Cochez d’abord les sous-types servis</strong> : ils disent quelle famille assembler.</p>
@@ -148,17 +153,14 @@ const TAILLE_MAX_MO = 10;
                 </div>
               }
             }
-            <p class="mpf__note">Une version en vigueur ne se modifie pas : on en dépose une nouvelle, avec un motif. Les PV signés gardent la version qui les a produits.</p>
             @if (messageDepot(); as m) { <p class="form-error" role="alert">{{ m }}</p> }
             <div class="mpf__boutons">
               @if (f.etat === 'ACTIF') {
-                <label class="btn btn-secondary btn-sm mpf__depot" [class.mpf__depot--off]="depot()">
-                  {{ depot() ? 'Dépôt et contrôle…' : f.versions.length ? 'Déposer une nouvelle version (.docx)' : 'Déposer la première version (.docx)' }}
-                  <input type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="cnm-sr-only"
-                         [disabled]="depot()" (change)="deposer($event)" />
-                </label>
+                <button type="button" class="btn btn-secondary btn-sm" [disabled]="ecriture()" (click)="pageVierge()">Nouvelle page vierge</button>
               }
-              @if (version(); as v) { <button type="button" class="btn btn-secondary btn-sm" (click)="telecharger(v)">Télécharger le .docx</button> }
+              @if (version(); as v) {
+                @if (v.support === 'WORD') { <button type="button" class="btn btn-secondary btn-sm" (click)="telecharger(v)">Télécharger le .docx</button> }
+              }
               @if (f.etat === 'ACTIF' && f.versions.length) { <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirModale('dupliquer')">Dupliquer le modèle</button> }
             </div>
           </div>
@@ -166,12 +168,18 @@ const TAILLE_MAX_MO = 10;
           <div class="card mpf__carte">
             <div class="mpf__titre-ligne">
               <h2 class="mpf__titre">Sous-types servis</h2>
-              @if (famillesSousTypes().length > 1) {
+              @if (f.etat === 'ACTIF' && !editionSousTypes()) {
+                <button type="button" class="btn btn-ghost btn-sm" (click)="editionSousTypes.set(true)">Modifier</button>
+              }
+              @if (editionSousTypes() && famillesSousTypes().length > 1) {
                 <select class="form-control mpf__famille-choix" aria-label="Famille de dossiers" [value]="famille()" (change)="famille.set($any($event.target).value)">
                   @for (g of famillesSousTypes(); track g.famille) { <option [value]="g.famille" [selected]="g.famille === famille()">{{ g.libelle }}</option> }
                 </select>
               }
             </div>
+            @if (!editionSousTypes()) {
+              <p class="mpf__resume">{{ f.sousTypes.length ? codesSousTypes().join(' · ') : 'Aucun : cochez les sous-types que ce modèle sert.' }}</p>
+            } @else {
             <div class="mpf__sts">
               @for (s of sousTypesDeLaFamille(); track s.idSousType) {
                 <label class="mpf__st">
@@ -184,25 +192,32 @@ const TAILLE_MAX_MO = 10;
             @if (autresRattaches().length) { <p class="mpf__note">Aussi servis, dans une autre famille : {{ autresRattaches().join(' · ') }}.</p> }
             <p class="mpf__note">Un sous-type n’a qu’un modèle en vigueur à la fois.</p>
             @if (messageRattachement(); as m) { <p class="form-error" role="alert">{{ m }}</p> }
-            @if (f.etat === 'ACTIF' && rattachementsModifies()) {
-              <button type="button" class="btn btn-primary btn-sm mpf__enreg" [disabled]="ecriture()" (click)="enregistrerRattachements()">Enregistrer les sous-types</button>
+            <div class="mpf__boutons">
+              <button type="button" class="btn btn-primary btn-sm" [disabled]="ecriture() || !rattachementsModifies()" (click)="enregistrerRattachements()">Enregistrer les sous-types</button>
+              <button type="button" class="btn btn-secondary btn-sm" (click)="annulerSousTypes()">Fermer</button>
+            </div>
             }
 
             <h2 class="mpf__titre mpf__titre--histo">Historique</h2>
             <ul class="mpf__histo">
-              @for (h of f.historique; track $index) {
+              @for (h of historiqueAffiche(); track $index) {
                 <li>
-                  {{ h.le | date: 'dd/MM HH:mm' }} — {{ actions[h.action] ?? h.action }}@if (h.numeroVersion) { v{{ h.numeroVersion }}} par {{ h.par }}@if (h.detail) {, {{ h.detail }}}
+                  {{ h.le | date: 'dd/MM HH:mm' }} — {{ actions[h.action] ?? h.action }}@if (h.numeroVersion) { v{{ h.numeroVersion }}} par {{ h.par }}@if (detailLisible(h.detail); as d) {, {{ d }}}
                 </li>
               } @empty { <li class="text-muted">Rien encore.</li> }
             </ul>
+            @if (f.historique.length > 3) {
+              <button type="button" class="mpf__lien" (click)="toutHistorique.set(!toutHistorique())">
+                {{ toutHistorique() ? 'Les 3 derniers seulement' : 'Tout l’historique (' + f.historique.length + ')' }}
+              </button>
+            }
           </div>
         </div>
 
         @if (version(); as v) {
           <div class="card mpf__carte">
             <div class="mpf__titre-ligne">
-              <h2 class="mpf__titre">Version {{ v.numero }} — {{ etats[v.etat] | lowercase }} · {{ v.nomFichier }} ({{ taille(v.taille) }})</h2>
+              <h2 class="mpf__titre">Version {{ v.numero }} — {{ etats[v.etat] | lowercase }} · {{ v.support === 'PAGE' ? 'page' : v.nomFichier + ' (' + taille(v.taille) + ')' }}</h2>
               @if (v.etat !== 'BROUILLON') {
                 <span class="mpf__note">Figée@if (v.enVigueurLe) {, en vigueur le {{ v.enVigueurLe | date: 'dd/MM/yyyy' }} par {{ v.enVigueurPar }}}@if (v.remplaceeLe) {, remplacée le {{ v.remplaceeLe | date: 'dd/MM/yyyy' }}}@if (v.motif) { — « {{ v.motif }} »}</span>
               }
@@ -212,73 +227,83 @@ const TAILLE_MAX_MO = 10;
                 <button type="button" role="tab" class="mpf__onglet" [class.mpf__onglet--on]="onglet() === o.cle" [attr.aria-selected]="onglet() === o.cle"
                         (click)="onglet.set(o.cle)">
                   {{ i + 1 }}. {{ o.libelle }}
-                  @if (o.cle === 'depot' && v.rapport?.nbBloquants) { <span class="badge badge-danger">{{ v.rapport!.nbBloquants }}</span> }
+                  @if (o.cle === 'depot' && onglet() !== 'depot' && v.rapport?.nbBloquants) { <span class="badge badge-danger">{{ v.rapport!.nbBloquants }}</span> }
                 </button>
               }
             </div>
             <div role="tabpanel" class="mpf__panneau">
               @switch (onglet()) {
                 @case ('depot') {
-                  <div class="mpf__aide">
-                    Rédigez le PV dans Word, avec ses variables (<code>{{ o }}PV.REFERENCE{{ f2 }}</code>), ses blocs conditionnels
-                    (<code>{{ o }}SI:AVEC_RESERVES{{ f2 }} … {{ o }}FINSI:AVEC_RESERVES{{ f2 }}</code>) et ses lignes répétées
-                    (<code>{{ o }}POUR:TITULAIRES{{ f2 }}</code>). Les anciens marqueurs du métier (<code>&lt;REFERENCE PV&gt;</code>,
-                    <code>&lt;CHEF LIEU&gt;</code>…) restent acceptés. L’emblème et les images s’insèrent directement dans le Word.
-                  </div>
-                  @if (estDepart(v)) {
-                    <p class="alert alert-warning mpf__a-valider" role="note">
-                      <span><strong>Texte proposé par l’application — à faire valider par la CNM avant mise en vigueur.</strong>
-                        Téléchargez le .docx, faites-le relire, corrigez-le dans Word et déposez la version corrigée.
-                        À compléter au besoin : la qualité du viseur et la mention « par intérim », et les lignes des présents sans nom.</span>
-                    </p>
-                    <div class="mpf__boutons">
-                      <button type="button" class="btn btn-secondary btn-sm" (click)="telecharger(v)">Lire le texte proposé (.docx)</button>
-                      <button type="button" class="btn btn-secondary btn-sm" (click)="onglet.set('apercu')">Le voir rempli sur un dossier</button>
-                    </div>
+                  @if (v.support === 'PAGE') {
+                    @if (estDepart(v)) {
+                      <p class="alert alert-warning mpf__a-valider" role="note">
+                        <span><strong>Texte proposé par l’application — à faire valider par la CNM avant mise en vigueur.</strong>
+                          Corrigez-le ci-dessous. À compléter au besoin : la qualité du viseur et la mention « par intérim », et les lignes des présents sans nom.</span>
+                      </p>
+                    }
+                    @if (detail(); as d) {
+                      <app-editeur-page [documentInitial]="d.document ?? null" [catalogue]="catalogue()" [schema]="schema()" [conditions]="v.conditions"
+                                        [champs]="v.champs" [figee]="figee()" [enregistrement]="ecriture()" [nbBloquants]="v.rapport?.nbBloquants ?? 0" (voirRapport)="voirRapport()"
+                                        (enregistrer)="enregistrerBrouillon($event)" (nouvelleVersion)="enregistrerNouvelleVersion($event)" />
+                    } @else {
+                      <p class="text-muted" role="status">Chargement de la page…</p>
+                    }
+                    @if (messagePage(); as m) { <p class="form-error" role="alert">{{ m }}</p> }
+                  } @else {
+                    <p class="alert alert-info"><span><strong>Version Word, en consultation.</strong> Les modèles se rédigent désormais dans l’application :
+                      générez un modèle de départ en page, ou partez d’une page vierge. Cette version ne peut plus être mise en vigueur.</span></p>
+                    <div class="mpf__boutons"><button type="button" class="btn btn-secondary btn-sm" (click)="telecharger(v)">Télécharger le .docx</button></div>
                   }
                   @let nd = aDeclarer();
                   @if (!figee() && (nd.conditions.length || nd.champs.length)) {
                     <div class="mpf__declarer" role="note">
-                      <p class="mpf__declarer-titre">Le Word utilise des éléments pas encore déclarés</p>
+                      <p class="mpf__declarer-titre">La page utilise des éléments pas encore déclarés</p>
                       <ul class="mpf__declarer-liste">
                         @for (c of nd.conditions; track c) {
-                          <li>Bloc <code>{{ o }}SI:{{ c }}{{ f2 }}</code> —
-                            @if (proposition(c); as e) { condition proposée : <code>{{ e }}</code> } @else { <em>condition à écrire dans « Variables et conditions »</em> }
+                          <li>Passage « {{ c }} » —
+                            @if (proposition(c); as e) { règle proposée : <code>{{ e }}</code> } @else { <em>règle à écrire dans « Variables et conditions »</em> }
                           </li>
                         }
-                        @for (c of nd.champs; track c) { <li>Champ <code>{{ o }}SAISI:{{ c }}{{ f2 }}</code> — « {{ libelleDe(c) }} », texte long, facultatif (à préciser dans « Champs saisis »)</li> }
+                        @for (c of nd.champs; track c) { <li>Champ « {{ libelleDe(c) }} » (<code>{{ c }}</code>) — texte long, facultatif (à préciser dans « Champs saisis »)</li> }
                       </ul>
                       <button type="button" class="btn btn-primary btn-sm" [disabled]="ecriture()" (click)="declarerCeQueLeWordUtilise()">
-                        {{ ecriture() ? 'Déclaration…' : 'Déclarer ce que le Word utilise' }}
+                        {{ ecriture() ? 'Déclaration…' : 'Déclarer ce que la page utilise' }}
                       </button>
                       @if (messageDeclaration(); as m) { <p class="form-error" role="alert">{{ m }}</p> }
                     </div>
                   }
-                  <h3 class="mpf__titre">Rapport de contrôle — {{ v.nomFichier }}</h3>
-                  <app-rapport-controle-pv [rapport]="v.rapport" />
+                  <h3 class="mpf__titre" id="rapport-controle" tabindex="-1">Rapport de contrôle</h3>
+                  <app-rapport-controle-pv [rapport]="v.rapport" [page]="v.support === 'PAGE'" (aller)="allerA($event)" (inserer)="insererManquante($event)" />
                 }
                 @case ('variables') {
-                  <div class="mpf__deux">
-                    <div>
-                      <h3 class="mpf__titre">Catalogue des variables@if (catalogue()?.famille; as fam) { — {{ libelleFamille(fam) }}}</h3>
-                      <app-catalogue-variables [catalogue]="catalogue()" />
+                  @if (v.support === 'PAGE') {
+                    <h3 class="mpf__titre">Les règles des passages conditionnels</h3>
+                    <app-conditions-version [conditions]="v.conditions" [catalogue]="catalogue()" [champs]="codesChamps()"
+                                            [utilisees]="v.rapport?.conditionsUtilisees ?? []" [figee]="figee()"
+                                            [enregistrement]="ecriture()" [erreurs]="messageConditions()" (enregistrer)="enregistrerConditions($event)" />
+                  } @else {
+                    <div class="mpf__deux">
+                      <div>
+                        <h3 class="mpf__titre">Catalogue des variables@if (catalogue()?.famille; as fam) { — {{ libelleFamille(fam) }}}</h3>
+                        <app-catalogue-variables [catalogue]="catalogue()" />
+                      </div>
+                      <div>
+                        <h3 class="mpf__titre">Les règles des passages conditionnels</h3>
+                        <app-conditions-version [conditions]="v.conditions" [catalogue]="catalogue()" [champs]="codesChamps()"
+                                                [utilisees]="v.rapport?.conditionsUtilisees ?? []" [figee]="figee()"
+                                                [enregistrement]="ecriture()" [erreurs]="messageConditions()" (enregistrer)="enregistrerConditions($event)" />
+                      </div>
                     </div>
-                    <div>
-                      <h3 class="mpf__titre">Conditions de la version</h3>
-                      <app-conditions-version [conditions]="v.conditions" [catalogue]="catalogue()" [champs]="codesChamps()"
-                                              [utilisees]="v.rapport?.conditionsUtilisees ?? []" [figee]="figee()"
-                                              [enregistrement]="ecriture()" [erreurs]="messageConditions()" (enregistrer)="enregistrerConditions($event)" />
-                    </div>
-                  </div>
+                  }
                 }
                 @case ('champs') {
-                  <h3 class="mpf__titre">Champs saisis par le membre à l’examen</h3>
+                  <h3 class="mpf__titre">Les champs que le membre remplit à l’examen</h3>
                   <app-champs-version [champs]="v.champs" [conditions]="nomsConditions()" [utilises]="v.rapport?.champsUtilises ?? []"
                                       [figee]="figee()" [enregistrement]="ecriture()" [erreurs]="messageChamps()" (enregistrer)="enregistrerChamps($event)" />
                   <app-formulaire-apercu [champs]="v.champs" [conditions]="v.conditions" />
                 }
                 @case ('apercu') {
-                  <app-apercu-version [idModele]="f.id" [numero]="v.numero" [champs]="v.champs" [codeModele]="f.code"
+                  <app-apercu-version [idModele]="f.id" [numero]="v.numero" [champs]="v.champs" [codeModele]="f.code" [avecWord]="v.support !== 'PAGE'"
                                       [sousTypesServis]="codesSousTypes()" />
                 }
               }
@@ -353,7 +378,8 @@ const TAILLE_MAX_MO = 10;
     .mpf__puce--claire { background: #fff; color: var(--p-700); font-weight: 600; }
     .mpf__archiver { position: absolute; top: 1rem; right: 1.25rem; }
     .mpf__grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr)); gap: 1rem; align-items: start; }
-    .mpf__carte { padding: 1rem 1.15rem; display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
+    /* « overflow: visible » : la carte de l'application coupe ce qui déborde, ce qui empêcherait la barre de l'éditeur de rester visible. */
+    .mpf__carte { overflow: visible; padding: 1rem 1.15rem; display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
     .mpf__titre-ligne { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
     .mpf__titre { margin: 0; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--p-700); }
     .mpf__titre--histo { margin-top: 0.6rem; }
@@ -361,13 +387,13 @@ const TAILLE_MAX_MO = 10;
     .mpf__table th { text-align: left; background: var(--p-50); color: var(--p-700); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.5rem 0.6rem; }
     .mpf__table td { padding: 0.55rem 0.6rem; border-top: 1px solid var(--n-100); vertical-align: middle; }
     .mpf__choisie td { background: var(--p-50); }
-    .mpf__actions-ligne { text-align: right; white-space: nowrap; }
+    .mpf__actions-ligne { text-align: right; white-space: nowrap; width: 1%; }
+    .mpf__ouverte { font-size: 0.78rem; color: var(--n-500); }
+    .mpf__resume { margin: 0; font-family: Consolas, monospace; font-size: 0.85rem; color: var(--n-700); line-height: 1.6; }
+    .mpf__lien { align-self: flex-start; border: 0; background: none; padding: 0; color: var(--p-700); text-decoration: underline; cursor: pointer; font: inherit; font-size: 0.85rem; }
     .mpf__actions-ligne .btn + .btn { margin-left: 0.3rem; }
     .mpf__note { margin: 0; font-size: 0.8rem; color: var(--n-500); }
     .mpf__boutons { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-    .mpf__depot { cursor: pointer; }
-    .mpf__depot--off { opacity: 0.6; pointer-events: none; }
-    .mpf__depot:focus-within { outline: 2px solid var(--p-600); outline-offset: 2px; }
     .mpf__famille-choix { width: auto; max-width: 16rem; font-size: 0.85rem; }
     .mpf__sts { display: flex; flex-direction: column; gap: 0.3rem; }
     .mpf__st { display: flex; gap: 0.45rem; align-items: flex-start; font-size: 0.88rem; color: var(--n-700); }
@@ -417,10 +443,10 @@ export class ModelePvFicheEcran implements OnInit {
   readonly badgeEtat = BADGE_ETAT;
   readonly taille = tailleLisible;
   readonly onglets: readonly { cle: Onglet; libelle: string }[] = [
-    { cle: 'depot', libelle: 'Dépôt et contrôle' },
-    { cle: 'variables', libelle: 'Variables et conditions' },
-    { cle: 'champs', libelle: 'Champs saisis au contrôle' },
-    { cle: 'apercu', libelle: 'Aperçu sur un dossier' },
+    { cle: 'depot', libelle: 'Texte et mise en page' },
+    { cle: 'variables', libelle: 'Règles' },
+    { cle: 'champs', libelle: 'Champs du formulaire' },
+    { cle: 'apercu', libelle: 'Aperçu' },
   ];
   readonly o = '{{';
   readonly f2 = '}}';
@@ -435,7 +461,6 @@ export class ModelePvFicheEcran implements OnInit {
   /** La famille dont la carte « Sous-types servis » montre les sous-types (par défaut, celle des sous-types servis). */
   readonly famille = signal<string>('');
 
-  readonly depot = signal(false);
   readonly messageDepot = signal<string | null>(null);
   readonly ecriture = signal(false);
   readonly messageConditions = signal<string | null>(null);
@@ -465,6 +490,22 @@ export class ModelePvFicheEcran implements OnInit {
     return v ? nonDeclares(v.rapport, v.conditions, v.champs) : { conditions: [], champs: [] };
   });
   readonly messageDeclaration = signal<string | null>(null);
+  /** La liste à cocher des sous-types n'est dépliée que pour les modifier. */
+  readonly editionSousTypes = signal(false);
+  readonly toutHistorique = signal(false);
+  readonly historiqueAffiche = computed(() => {
+    const h = this.fiche()?.historique ?? [];
+    return this.toutHistorique() ? h : h.slice(0, 3);
+  });
+
+  // ——— ⚠️ 21/10 (option C') — la page éditée ———
+  private readonly editeur = viewChild(EditeurPage);
+  /** La version affichée, avec son document (la fiche ne sert pas les documents). */
+  readonly detail = signal<VersionModelePv | null>(null);
+  readonly schema = signal<SchemaModelePv | null>(null);
+  readonly messagePage = signal<string | null>(null);
+  /** Le modèle a-t-il déjà une version en page ? Sinon, le modèle de départ reste proposé. */
+  readonly aUnePage = computed(() => (this.fiche()?.versions ?? []).some((v) => v.support === 'PAGE'));
 
   readonly portees: readonly { cle: PorteeDepart; libelle: string }[] = [
     { cle: 'les-deux', libelle: 'Centrale et régionale (un bloc chacune)' },
@@ -519,7 +560,25 @@ export class ModelePvFicheEcran implements OnInit {
     }
   });
 
+  constructor() {
+    // La version affichée change : on lit son document (une page) ; une version Word n'en a pas.
+    effect(() => {
+      const v = this.version();
+      this.detail.set(null);
+      this.messagePage.set(null);
+      if (!v || v.support !== 'PAGE') return;
+      this.service
+        .version(this.idModele, v.numero)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({ next: (d) => this.detail.set(d), error: (e: ApiError) => this.messagePage.set(e.message || 'La page n’a pas pu être lue.') });
+    });
+  }
+
   ngOnInit(): void {
+    this.service
+      .schema()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: (s) => this.schema.set(s), error: () => this.schema.set(null) });
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((pm) => {
       this.idCourant.set(Number(pm.get('id')));
       this.numeroChoisi.set(null);
@@ -633,35 +692,68 @@ export class ModelePvFicheEcran implements OnInit {
     });
   }
 
-  deposer(ev: Event): void {
-    const champ = ev.target as HTMLInputElement;
-    const fichier = champ.files?.[0];
-    champ.value = '';
-    if (!fichier) return;
-    const refus = validerFichier(fichier, TYPES_DOCX, TAILLE_MAX_MO);
-    if (refus) {
-      this.messageDepot.set(refus);
-      return;
-    }
-    this.depot.set(true);
+
+  /** Une page vierge : une nouvelle version en brouillon, à remplir dans l'éditeur. */
+  pageVierge(): void {
+    this.enregistrerNouvelleVersion({ page: { format: 'A4' }, corps: { type: 'doc', content: [{ type: 'paragraph' }] } });
+  }
+
+  /** Enregistre le brouillon affiché (`PUT …/document`) : le rapport est recalculé. */
+  enregistrerBrouillon(document: DocumentPage): void {
+    const v = this.version();
+    if (!v || this.ecriture()) return;
+    this.ecriture.set(true);
+    this.messagePage.set(null);
+    this.service.modifierDocument(this.idModele, v.numero, document).subscribe({
+      next: (d) => {
+        this.ecriture.set(false);
+        this.editeur()?.marquerEnregistre();
+        this.detail.set(d);
+        this.recharger(v.numero);
+      },
+      error: (e: ApiError) => {
+        this.ecriture.set(false);
+        this.messagePage.set(this.messageAvecDetails(e, 'La page n’a pas été enregistrée.'));
+      },
+    });
+  }
+
+  /** Enregistre comme nouvelle version (`POST …/versions`), en brouillon. */
+  enregistrerNouvelleVersion(document: DocumentPage): void {
+    if (this.ecriture()) return;
+    this.ecriture.set(true);
+    this.messagePage.set(null);
     this.messageDepot.set(null);
-    this.service.deposer(this.idModele, fichier).subscribe({
+    this.service.enregistrerPage(this.idModele, document).subscribe({
       next: (v) => {
-        this.depot.set(false);
-        // Pas de boîte de confirmation : elle masquerait le rapport de contrôle, qui dit déjà le résultat du dépôt.
+        this.ecriture.set(false);
         this.onglet.set('depot');
         this.recharger(v.numero);
       },
       error: (e: ApiError) => {
-        this.depot.set(false);
-        const code = codeErreur(e);
-        this.messageDepot.set(
-          code === 'FICHIER_INVALIDE' ? e.message || 'Le fichier n’est pas un document Word (.docx) lisible.'
-          : code === 'MODELE_ARCHIVE' ? 'Ce modèle est archivé : il ne reçoit plus de version.'
-          : e.message || 'Le dépôt a échoué.',
-        );
+        this.ecriture.set(false);
+        const m = this.messageAvecDetails(e, 'La version n’a pas été enregistrée.');
+        this.messagePage.set(m);
+        this.messageDepot.set(m);
       },
     });
+  }
+
+  /** Depuis le rapport : amène le curseur de l'éditeur sur le nœud fautif. */
+  /** Depuis la barre de l'éditeur : descend au rapport de contrôle. */
+  voirRapport(): void {
+    const t = document.getElementById('rapport-controle');
+    t?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    t?.focus({ preventScroll: true });
+  }
+
+  /** Depuis le rapport : insère, au curseur de l'éditeur, la variable d'une section absente — à enregistrer ensuite. */
+  insererManquante(code: string): void {
+    this.editeur()?.insererVariable(code);
+  }
+
+  allerA(chemin: string): void {
+    this.editeur()?.allerA(chemin);
   }
 
   telecharger(v: VersionModelePv): void {
@@ -745,6 +837,22 @@ export class ModelePvFicheEcran implements OnInit {
           this.recharger(v.numero);
         },
       });
+  }
+
+  /** Le détail d'un événement, sans ses mentions techniques (taille en octets, fichiers de base). */
+  detailLisible(detail: string | null): string {
+    return (detail ?? '')
+      .replace(/,?\s*page de \d+ octets/g, '')
+      .replace(/,?\s*(page reconstruite d’après|page reconstruite d'après|base) [^,]*\.docx( \+ [^,]*\.docx)?/g, '')
+      .replace(/^,\s*/, '')
+      .trim();
+  }
+
+  /** Referme la liste des sous-types sans rien enregistrer. */
+  annulerSousTypes(): void {
+    this.rattaches.set(this.codesSousTypes());
+    this.messageRattachement.set(null);
+    this.editionSousTypes.set(false);
   }
 
   basculerSousType(id: string, coche: boolean): void {

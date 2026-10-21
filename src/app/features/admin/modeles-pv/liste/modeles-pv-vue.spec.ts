@@ -34,7 +34,7 @@ describe('Modèles de procès-verbaux — modèle de vue (21/10)', () => {
     expect(lignes.filter((l) => l.etat === 'miss').map((l) => [l.nom, l.sousTypes.length, l.badge])).toEqual([
       ['Dossier de marché', 8, '8 manquants'], ['Acte de gestion contractuelle', 5, '5 manquants'], ['Déclaration sans suite', 1, '1 manquant'],
     ]);
-    expect(lignes.filter((l) => l.etat === 'prep').map((l) => [l.id, l.badge, l.etape])).toEqual([['gere-2', 'À déposer', 1], ['gere-3', 'À valider', 2]]);
+    expect(lignes.filter((l) => l.etat === 'prep').map((l) => [l.id, l.badge, l.etape])).toEqual([['gere-2', 'À rédiger', 1], ['gere-3', 'À valider', 2]]);
     expect(lignes.filter((l) => l.etat === 'ok').map((l) => l.id)).toEqual(['integre-PV-PLAN-INTEGRE', 'integre-LETTRE-RENVOI-INTEGREE']);
     expect(lignes.some((l) => l.id === 'gere-1')).toBe(false);
     expect(lignes.find((l) => l.id === 'gere-2')!.remplace).toEqual(['PPM', 'PPM-AGPM']);

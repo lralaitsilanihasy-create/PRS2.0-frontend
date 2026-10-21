@@ -35,7 +35,7 @@ const PUCES_VISIBLES = 3;
         @for (s of visibles(); track s) { <span class="lgm__code" [title]="l.libellesSousTypes[s] ?? ''">{{ s }}</span> }
         @if (reste() > 0) { <span class="lgm__code lgm__code--plus" [title]="caches()">+{{ reste() }}</span> }
       </div>
-      <span [class]="'lgm__badge lgm__badge--' + l.etat">{{ l.badge }}</span>
+      @if (l.badge !== libellesEtat[l.etat]) { <span [class]="'lgm__badge lgm__badge--' + l.etat">{{ l.badge }}</span> } @else { <span></span> }
       <button type="button" [class]="'lgm__action lgm__action--' + l.etat" [attr.aria-label]="libelleAction() + ' : ' + l.nom" (click)="action.emit(l)">
         {{ libelleAction() }}
       </button>

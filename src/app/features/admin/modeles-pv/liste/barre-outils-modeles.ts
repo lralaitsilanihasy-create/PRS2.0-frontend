@@ -15,12 +15,11 @@ import { FiltreEtat, LIBELLES_ETAT, Tri } from './modeles-pv-vue';
         <input type="search" placeholder="Modèle ou code (ex. DAOR)" aria-label="Rechercher un modèle ou un code de sous-type"
                [value]="recherche()" (input)="rechercheChange.emit($any($event.target).value)" />
       </label>
-      <div class="bom__segments" role="group" aria-label="Filtrer par état">
-        @for (f of filtres; track f.cle) {
-          <button type="button" class="bom__segment" [class.bom__segment--actif]="filtre() === f.cle" [attr.aria-pressed]="filtre() === f.cle"
-                  (click)="filtreChange.emit(f.cle)">{{ f.libelle }}</button>
-        }
-      </div>
+      @if (filtre() !== 'tous') {
+        <button type="button" class="bom__filtre" (click)="filtreChange.emit('tous')" [attr.aria-label]="'Retirer le filtre ' + libelles[filtre()]">
+          {{ libelles[filtre()] }} <span aria-hidden="true">✕</span>
+        </button>
+      }
       <select class="bom__tri" aria-label="Trier" [value]="tri()" (change)="triChange.emit($any($event.target).value)">
         <option value="priorite" [selected]="tri() === 'priorite'">Tri : priorité</option>
         <option value="nom" [selected]="tri() === 'nom'">Tri : nom</option>
@@ -35,6 +34,9 @@ import { FiltreEtat, LIBELLES_ETAT, Tri } from './modeles-pv-vue';
     .bom__recherche input { border: 0; outline: 0; flex: 1; min-width: 0; font: inherit; font-size: 14px; color: var(--text); background: transparent; }
     .bom__recherche input::placeholder { color: var(--text-muted); }
     .bom__loupe { display: inline-flex; }
+    .bom__filtre { height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--primary); background: var(--reco-bg); color: var(--primary);
+      font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+    .bom__filtre:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .bom__segments { display: inline-flex; border: 1px solid var(--border-control); border-radius: 8px; overflow: hidden; background: var(--card-bg); }
     .bom__segment { border: 0; background: transparent; font: inherit; font-size: 13px; font-weight: 400; padding: 0 12px; height: 34px; cursor: pointer; color: var(--text-muted); }
     .bom__segment + .bom__segment { border-left: 1px solid var(--border); }
@@ -54,10 +56,6 @@ export class BarreOutilsModeles {
   readonly filtreChange = output<FiltreEtat>();
   readonly triChange = output<Tri>();
 
-  readonly filtres: readonly { cle: FiltreEtat; libelle: string }[] = [
-    { cle: 'tous', libelle: 'Tous' },
-    { cle: 'miss', libelle: LIBELLES_ETAT.miss },
-    { cle: 'prep', libelle: LIBELLES_ETAT.prep },
-    { cle: 'ok', libelle: LIBELLES_ETAT.ok },
-  ];
+  /** Le filtre se choisit sur les compteurs de la couverture ; la barre ne fait que le rappeler, pour l'enlever. */
+  readonly libelles: Readonly<Record<string, string>> = LIBELLES_ETAT;
 }
