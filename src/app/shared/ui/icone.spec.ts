@@ -18,7 +18,7 @@ describe('Icone', () => {
   });
 
   it('reprend le jeu complet des icônes des maquettes, plus celles du menu (2026-09-15)', () => {
-    expect(NOMS_ICONES.length).toBe(46);
+    expect(NOMS_ICONES.length).toBe(49);
     for (const nom of ['link', 'globe', 'key']) expect(NOMS_ICONES).toContain(nom);
     // Lot 5 (2026-09-16) : le bouton de tiroir de la coquille, qui portait encore un « ☰ ».
     expect(NOMS_ICONES).toContain('menu');

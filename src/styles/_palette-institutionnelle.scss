@@ -1,0 +1,41 @@
+/*
+ * ⚠️ 21/10 (demande du pilote) — palette « Institutionnel » de la page « Modèles de procès-verbaux »
+ * (features/admin/modeles-pv). Toutes ses couleurs sont ici, aucune n'est écrite en dur dans les composants.
+ * Trois familles d'état : « À créer » → --miss-*, « À déposer » → --prep-*, « En service » → --ok-*.
+ *
+ * Contrastes (WCAG AA, vérifiés le 21/10) : tous les textes passent 4,5:1 sur leur fond, toutes les icônes 3:1.
+ * Les bordures --border et --{état}-border sont décoratives (1,2 à 1,3:1) : elles ne portent aucun sens seules, le texte et
+ * l'icône le portent. Les champs de saisie, dont la bordure DÉSIGNE le contrôle (WCAG 1.4.11), prennent --border-control (3,65:1).
+ */
+:root {
+  --page-bg: #F4F6FA;
+  --card-bg: #FFFFFF;
+  --border: #E3E8EF;
+  --border-control: #7B8798;
+  --text: #101828;
+  --text-muted: #5B6576;
+
+  --primary: #1D4E89;
+  --primary-hover: #163E6E;
+  --primary-text: #FFFFFF;
+
+  --reco-bg: #EEF4FB;
+  --reco-border: #C7DAF0;
+  --reco-text: #123A66;
+  --reco-accent: #1D4E89;
+
+  --miss-bg: #FEF3F2;
+  --miss-border: #FECDCA;
+  --miss-text: #912018;
+  --miss-accent: #B42318;
+
+  --prep-bg: #FFF8EB;
+  --prep-border: #FEDF89;
+  --prep-text: #7A2E0E;
+  --prep-accent: #B54708;
+
+  --ok-bg: #ECFDF3;
+  --ok-border: #ABEFC6;
+  --ok-text: #085D3A;
+  --ok-accent: #067647;
+}

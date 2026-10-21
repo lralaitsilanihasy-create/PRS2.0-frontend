@@ -1,5 +1,5 @@
 import { CouvertureSousType, ModelePvResume } from '../../../models';
-import { ecrireExpression, etatModele, expressionEnClair, lireExpression, propositionPourFamille, reprisParModele, sansDocument, tailleLisible } from './modeles-pv-libelles';
+import { ecrireExpression, etatModele, grilleFichiers, phrasesRegle, expressionEnClair, lireExpression, propositionPourFamille, reprisParModele, sansDocument, tailleLisible } from './modeles-pv-libelles';
 
 const v = (numero: number, etat: 'BROUILLON' | 'EN_VIGUEUR' | 'REMPLACEE', bloquant = false) => ({ numero, etat, bloquant, deposeeLe: null, enVigueurLe: null });
 const modele = (o: Partial<ModelePvResume>): ModelePvResume => ({
@@ -82,5 +82,33 @@ describe('Modèles de PV — compositeur de conditions', () => {
   it('taille lisible', () => {
     expect(tailleLisible(188_416)).toBe('184 Ko');
     expect(tailleLisible(null)).toBe('—');
+  });
+});
+
+describe('Modèles de PV — fichiers intégrés en grille (21/10)', () => {
+  const pv = ['AF', 'AFSR', 'ANF'].flatMap((a) => ['PPM', 'PPMAGPM'].flatMap((t) => ['CENTRALE', 'REGIONALE'].map((c) => `PV_${a}_${t}_${c}.docx`)));
+
+  it('PV du plan : l’avis en ligne, AGPM × commission en colonne', () => {
+    const g = grilleFichiers(pv)!;
+    expect(g.colonnes).toEqual(['PPM · centrale', 'PPM · régionale', 'PPM-AGPM · centrale', 'PPM-AGPM · régionale']);
+    expect(g.lignes.map((l) => l.libelle)).toEqual(['Favorable', 'Favorable avec réserves', 'Non favorable']);
+    expect(g.lignes[1].cellules[2]).toBe('PV_AFSR_PPMAGPM_CENTRALE.docx');
+  });
+
+  it('un fichier absent du JAR laisse sa case vide ; la lettre a une ligne ; un nom inconnu rend null', () => {
+    expect(grilleFichiers(pv.filter((f) => f !== 'PV_ANF_PPM_REGIONALE.docx'))!.lignes[2].cellules[1]).toBeNull();
+    expect(grilleFichiers(['LR_CENTRALE.docx', 'LR_REGIONALE.docx'])).toEqual({
+      colonnes: ['Commission centrale', 'Commission régionale'],
+      lignes: [{ libelle: 'Lettre', cellules: ['LR_CENTRALE.docx', 'LR_REGIONALE.docx'] }],
+    });
+    expect(grilleFichiers(['AUTRE.docx'])).toBeNull();
+  });
+
+  it('la règle servie se lit en phrases', () => {
+    expect(phrasesRegle('Un fichier par avis (FAV ; FAVR). Seul un dossier dont le PPM garde une ligne reçoit un document ; l’avis NSP n’en a pas.')).toEqual([
+      'Un fichier par avis (FAV ; FAVR)',
+      'Seul un dossier dont le PPM garde une ligne reçoit un document',
+      'L’avis NSP n’en a pas',
+    ]);
   });
 });

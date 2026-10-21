@@ -69,6 +69,67 @@ export function reprisParModele(couverture: readonly CouvertureSousType[], idMod
   return couverture.filter((c) => c.modeleRattache?.id === idModele && c.produitPar === 'INTEGRE').map((c) => c.sousType);
 }
 
+/** Une grille des fichiers d'un modèle intégré : un fichier par croisement, `null` quand le JAR ne le porte pas. */
+export interface GrilleFichiers {
+  colonnes: string[];
+  lignes: { libelle: string; cellules: (string | null)[] }[];
+}
+
+const SENS_AVIS: Readonly<Record<string, string>> = { AF: 'Favorable', AFSR: 'Favorable avec réserves', ANF: 'Non favorable' };
+const ORDRE_SENS = ['AF', 'AFSR', 'ANF'];
+const PORTEES: readonly [string, string][] = [['CENTRALE', 'centrale'], ['REGIONALE', 'régionale']];
+
+/**
+ * Range les fichiers intégrés en grille, d'après leur nom (\`PvDocumentGenerator.modele()\`, \`LettreRenvoiDocumentGenerator\`) :
+ * - PV du plan \`PV_{AF|AFSR|ANF}_{PPM|PPMAGPM}_{CENTRALE|REGIONALE}.docx\` : l'avis en ligne, AGPM × commission en colonne ;
+ * - lettre \`LR_{CENTRALE|REGIONALE}.docx\` : une ligne, la commission en colonne.
+ * Un nom qui ne suit aucun des deux motifs rend \`null\` : l'écran les liste alors simplement.
+ */
+export function grilleFichiers(fichiers: readonly string[]): GrilleFichiers | null {
+  const pv = fichiers.map((f) => /^PV_(AF|AFSR|ANF)_(PPM|PPMAGPM)_(CENTRALE|REGIONALE)\.docx$/.exec(f));
+  if (fichiers.length && pv.every(Boolean)) {
+    const cols: [string, string, string][] = [];
+    for (const [t, lt] of [['PPM', 'PPM'], ['PPMAGPM', 'PPM-AGPM']]) for (const [p, lp] of PORTEES) cols.push([t, p, `${lt} · ${lp}`]);
+    const sens = ORDRE_SENS.filter((s) => pv.some((m) => m![1] === s));
+    return {
+      colonnes: cols.map((c) => c[2]),
+      lignes: sens.map((s) => ({
+        libelle: SENS_AVIS[s],
+        cellules: cols.map(([t, p]) => fichiers.find((f) => f === `PV_${s}_${t}_${p}.docx`) ?? null),
+      })),
+    };
+  }
+  const lr = fichiers.map((f) => /^LR_(CENTRALE|REGIONALE)\.docx$/.exec(f));
+  if (fichiers.length && lr.every(Boolean)) {
+    return {
+      colonnes: PORTEES.map(([, l]) => `Commission ${l}`),
+      lignes: [{ libelle: 'Lettre', cellules: PORTEES.map(([p]) => fichiers.find((f) => f === `LR_${p}.docx`) ?? null) }],
+    };
+  }
+  return null;
+}
+
+/** La règle servie, coupée en phrases pour une liste lisible. */
+export function phrasesRegle(regle: string): string[] {
+  // Coupe aux « ; » et « . » suivis d'un blanc, jamais entre parenthèses (« (FAV ; FAVR avec l'annexe…) » reste entier).
+  const phrases: string[] = [];
+  let profondeur = 0;
+  let courant = '';
+  for (let i = 0; i < regle.length; i++) {
+    const c = regle[i];
+    if (c === '(') profondeur++;
+    if (c === ')') profondeur = Math.max(0, profondeur - 1);
+    if ((c === ';' || c === '.') && profondeur === 0 && (i === regle.length - 1 || /\s/.test(regle[i + 1]))) {
+      phrases.push(courant);
+      courant = '';
+      continue;
+    }
+    courant += c;
+  }
+  phrases.push(courant);
+  return phrases.map((p) => p.trim()).filter(Boolean).map((p) => p.charAt(0).toUpperCase() + p.slice(1));
+}
+
 /** Libellé et code proposés pour le modèle d'une famille qui n'en a pas (ligne « Aucun modèle » de la liste). */
 export function propositionPourFamille(famille: string, libelleFamille: string): { libelle: string; code: string } {
   const connus: Readonly<Record<string, { libelle: string; code: string }>> = {

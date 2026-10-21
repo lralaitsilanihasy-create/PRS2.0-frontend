@@ -6,6 +6,7 @@
 @use 'styles/ppm-table';
 /* Documents officiels (PPM, fiche de présentation, AGPM) au format du PDF + annotations (2026-09-14). */
 @use 'styles/document-officiel';
+@use 'styles/palette-institutionnelle';
 
 /* =============================================================================
    COUCHE DE COMPATIBILITÉ — Le design system actif est « C » (violet, Plus Jakarta

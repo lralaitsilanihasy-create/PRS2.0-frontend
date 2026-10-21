@@ -56,6 +56,10 @@ const ICONES = {
   // sa barre latérale, et le sens du mouvement. Un chevron seul ne disait pas de QUOI il parlait.
   replier: 'M4 5h16v14H4z M9.5 5v14 M16 10l-2 2 2 2',
   deplier: 'M4 5h16v14H4z M9.5 5v14 M14 10l2 2-2 2',
+  // Ajouts du 2026-10-21 (page « Modèles de procès-verbaux ») — recommandation, dépôt d'un Word, remplacement d'un modèle.
+  ampoule: 'M9 18h6 M10 21h4 M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z',
+  upload: 'M12 20V9 M7 14l5-5 5 5 M5 4h14',
+  remplacer: 'M4 10a8 8 0 0 1 14.3-4.3 M19 3v4h-4 M20 14a8 8 0 0 1-14.3 4.3 M5 21v-4h4',
 } as const;
 
 export type NomIcone = keyof typeof ICONES;
