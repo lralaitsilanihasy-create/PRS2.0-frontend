@@ -1,5 +1,5 @@
 import { CouvertureSousType, ModeleIntegre, ModelePvResume } from '../../../../models';
-import { construireLignes, couvertureSousTypes, filtrer, grouper, recommandation } from './modeles-pv-vue';
+import { construireLignes, couvertureLettres, couvertureSousTypes, filtrer, grouper, recommandation } from './modeles-pv-vue';
 
 const cv = (sousType: string, famille: string, o: Partial<CouvertureSousType> = {}): CouvertureSousType => ({
   sousType, libelle: null, famille, nature: 'PV', produitPar: 'AUCUN', integre: null, modeleRattache: null, ...o,
@@ -61,5 +61,11 @@ describe('Modèles de procès-verbaux — modèle de vue (21/10)', () => {
     expect(grouper(lignes, 'priorite')[2].lignes[0].nom).toBe('Lettre de renvoi');
     expect(grouper(lignes, 'nom')[0].lignes.map((l) => l.nom)).toEqual(['Acte de gestion contractuelle', 'Déclaration sans suite', 'Dossier de marché']);
     expect(grouper(filtrer(lignes, 'zzz', 'tous'), 'nom')).toEqual([]);
+  });
+
+  it('lettres de renvoi (21/10) : comptées à part, par producteur', () => {
+    expect(couvertureLettres(COUVERTURE)).toEqual({ total: 1, integre: 1, modele: 0, aucun: 0, codeIntegre: 'LETTRE-RENVOI-INTEGREE' });
+    const mixte = [...COUVERTURE, cv('DSS', 'DSS', { nature: 'LETTRE_RENVOI' }), cv('AVN', 'DGC', { nature: 'LETTRE_RENVOI', produitPar: 'GERE' })];
+    expect(couvertureLettres(mixte)).toEqual({ total: 3, integre: 1, modele: 1, aucun: 1, codeIntegre: 'LETTRE-RENVOI-INTEGREE' });
   });
 });

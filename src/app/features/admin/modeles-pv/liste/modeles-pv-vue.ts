@@ -173,6 +173,26 @@ export function couvertureSousTypes(couverture: readonly CouvertureSousType[]): 
   return { total: pv.length, parEtat };
 }
 
+/** ⚠️ 21/10 — la couverture des lettres de renvoi, comptée à part de celle des PV (la barre ne compte que les PV). */
+export interface CouvertureLettres {
+  total: number;
+  /** Produites par le modèle intégré (fichiers Word livrés avec le serveur). */
+  integre: number;
+  /** Produites par un modèle de l'application en vigueur. */
+  modele: number;
+  /** Sans document. */
+  aucun: number;
+  /** Le code du modèle intégré qui les produit, pour « Voir ». */
+  codeIntegre: string | null;
+}
+
+export function couvertureLettres(couverture: readonly CouvertureSousType[]): CouvertureLettres {
+  const lr = couverture.filter((c) => c.nature === 'LETTRE_RENVOI');
+  const modele = lr.filter((c) => c.produitPar === 'GERE').length;
+  const integre = lr.filter((c) => c.produitPar === 'INTEGRE').length;
+  return { total: lr.length, integre, modele, aucun: lr.length - integre - modele, codeIntegre: lr.find((c) => c.integre)?.integre ?? null };
+}
+
 /** Le modèle à créer qui couvrirait le plus de sous-types d'un coup ; `null` s'il n'y a rien à créer. */
 export function recommandation(lignes: readonly LigneModele[]): Recommandation | null {
   const aCreer = lignes.filter((l) => l.etat === 'miss');

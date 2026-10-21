@@ -13,7 +13,7 @@ import { BarreOutilsModeles } from './liste/barre-outils-modeles';
 import { CarteCouverture } from './liste/carte-couverture';
 import { EnTeteModeles } from './liste/en-tete-modeles';
 import { ListeModeles } from './liste/liste-modeles';
-import { FiltreEtat, LigneModele, Tri, construireLignes, couvertureSousTypes, filtrer, grouper, recommandation } from './liste/modeles-pv-vue';
+import { FiltreEtat, LigneModele, Tri, construireLignes, couvertureLettres, couvertureSousTypes, filtrer, grouper, recommandation } from './liste/modeles-pv-vue';
 import { LIBELLES_NATURE, MOTIF_CODE_MODELE, propositionPourFamille } from './modeles-pv-libelles';
 
 /**
@@ -36,7 +36,8 @@ import { LIBELLES_NATURE, MOTIF_CODE_MODELE, propositionPourFamille } from './mo
         <app-etat-erreur message="Impossible de charger les modèles de PV." (reessayer)="charger()" />
       } @else {
         @if (reco(); as r) { <app-bandeau-recommandation [reco]="r" (commencer)="commencer()" /> }
-        <app-carte-couverture [couverture]="couvertureCalculee()" [filtre]="filtre()" (choisir)="filtre.set($event)" />
+        <app-carte-couverture [couverture]="couvertureCalculee()" [filtre]="filtre()" (choisir)="filtre.set($event)"
+                             [lettres]="lettresCalculees()" (voirLettre)="voirIntegre($event)" />
         <app-barre-outils-modeles [recherche]="recherche()" [filtre]="filtre()" [tri]="tri()"
                                   (rechercheChange)="recherche.set($event)" (filtreChange)="filtre.set($event)" (triChange)="tri.set($event)" />
         <app-liste-modeles [groupes]="groupes()" [ouverte]="ouverte()" (basculer)="basculer($event)" (action)="agir($event)" (fichiers)="voirFichiers($event)" />
@@ -135,6 +136,7 @@ export class ModelesPvListe implements OnInit {
 
   readonly lignes = computed(() => construireLignes(this.modeles(), this.integres(), this.couverture(), this.libellesFamilles()));
   readonly couvertureCalculee = computed(() => couvertureSousTypes(this.couverture()));
+  readonly lettresCalculees = computed(() => couvertureLettres(this.couverture()));
   readonly reco = computed(() => recommandation(this.lignes()));
   readonly groupes = computed(() => grouper(filtrer(this.lignes(), this.recherche(), this.filtre()), this.tri()));
   readonly archives = computed(() => this.modeles().filter((m) => m.etat === 'ARCHIVE'));
@@ -199,6 +201,11 @@ export class ModelesPvListe implements OnInit {
     const s = l.source;
     if (s.type === 'gere') void this.router.navigate(['/admin/referentiels/modeles-pv', s.id]);
     else if (s.type === 'integre') this.integreConsulte.set(this.integres().find((i) => i.code === s.code) ?? null);
+  }
+
+  /** « Voir le modèle » de la ligne des lettres de renvoi : la consultation du modèle intégré. */
+  voirIntegre(code: string): void {
+    this.integreConsulte.set(this.integres().find((i) => i.code === code) ?? null);
   }
 
   /** Depuis une famille sans modèle : libellé et code proposés, ses sous-types rattachés à la création. */

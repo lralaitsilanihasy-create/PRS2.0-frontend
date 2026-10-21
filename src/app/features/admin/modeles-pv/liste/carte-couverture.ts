@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 
 import { Icone } from '../../../../shared/ui/icone';
 import { ICONE_ETAT } from './etats-visuels';
-import { Couverture, EtatLigne, FiltreEtat, LIBELLES_ETAT, ORDRE_ETATS } from './modeles-pv-vue';
+import { Couverture, CouvertureLettres, EtatLigne, FiltreEtat, LIBELLES_ETAT, ORDRE_ETATS } from './modeles-pv-vue';
 
 /**
  * Carte « Couverture des sous-types » (CoverageCard du cahier) : une barre empilée proportionnelle aux trois états, puis trois
@@ -16,7 +16,7 @@ import { Couverture, EtatLigne, FiltreEtat, LIBELLES_ETAT, ORDRE_ETATS } from '.
     @let c = couverture();
     <section class="ccv" aria-labelledby="ccv-titre">
       <div class="ccv__tete">
-        <h2 id="ccv-titre" class="ccv__titre">Couverture des sous-types</h2>
+        <h2 id="ccv-titre" class="ccv__titre">Couverture des sous-types — procès-verbaux</h2>
         <span class="ccv__total">{{ c.total }} sous-types au total</span>
       </div>
       <div class="ccv__barre" role="img" [attr.aria-label]="resume()">
@@ -34,6 +34,22 @@ import { Couverture, EtatLigne, FiltreEtat, LIBELLES_ETAT, ORDRE_ETATS } from '.
           </button>
         }
       </div>
+      @if (lettres(); as l) {
+        @if (l.total) {
+          <div class="ccv__lettres" [class.ccv__lettres--manque]="l.aucun">
+            <span class="ccv__lettres-titre"><app-icone [nom]="l.aucun ? icones.miss : icones.ok" [taille]="16" /> Lettres de renvoi</span>
+            <span class="ccv__lettres-texte">
+              {{ l.total - l.aucun }} / {{ l.total }} sous-types couverts
+              @if (l.integre) { · {{ l.integre }} par le modèle intégré }
+              @if (l.modele) { · {{ l.modele }} par un modèle de l’application }
+              @if (l.aucun) { · <strong>{{ l.aucun }} sans lettre</strong> }
+            </span>
+            @if (l.codeIntegre && l.integre) {
+              <button type="button" class="ccv__lettres-voir" (click)="voirLettre.emit(l.codeIntegre)">Voir le modèle</button>
+            }
+          </div>
+        }
+      }
     </section>
   `,
   styles: `
@@ -70,6 +86,16 @@ import { Couverture, EtatLigne, FiltreEtat, LIBELLES_ETAT, ORDRE_ETATS } from '.
     .ccv__compteur--miss.ccv__compteur--actif { background: var(--miss-bg); border-color: var(--miss-accent); }
     .ccv__compteur--prep.ccv__compteur--actif { background: var(--prep-bg); border-color: var(--prep-accent); }
     .ccv__compteur--ok.ccv__compteur--actif { background: var(--ok-bg); border-color: var(--ok-accent); }
+    .ccv__lettres { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; border-top: 1px solid var(--border); padding-top: 10px; font-size: 13px; }
+    .ccv__lettres-titre { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; color: var(--ok-text); }
+    .ccv__lettres-titre app-icone { color: var(--ok-accent); }
+    .ccv__lettres--manque .ccv__lettres-titre { color: var(--miss-text); }
+    .ccv__lettres--manque .ccv__lettres-titre app-icone { color: var(--miss-accent); }
+    .ccv__lettres-texte { color: var(--text-muted); flex: 1; }
+    .ccv__lettres-voir { border: 1px solid var(--border); background: var(--card-bg); color: var(--primary); border-radius: 6px; padding: 3px 10px;
+      font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .ccv__lettres-voir:hover { background: var(--reco-bg); }
+    .ccv__lettres-voir:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     @media (max-width: 640px) { .ccv__compteurs { grid-template-columns: 1fr; } }
   `,
 })
@@ -77,6 +103,9 @@ export class CarteCouverture {
   readonly couverture = input.required<Couverture>();
   readonly filtre = input<FiltreEtat>('tous');
   readonly choisir = output<FiltreEtat>();
+  /** ⚠️ 21/10 — la couverture des lettres de renvoi, comptée à part ; « Voir le modèle » ouvre le modèle intégré. */
+  readonly lettres = input<CouvertureLettres | null>(null);
+  readonly voirLettre = output<string>();
 
   readonly etats = ORDRE_ETATS;
   /** La barre se lit comme une progression : ce qui est en service d'abord, ce qui reste à créer en dernier. */
