@@ -40,6 +40,9 @@ const LIBELLE: Readonly<Record<NiveauPointRapport, string>> = { BLOQUANT: 'Bloqu
                 @if (page() && p.code === 'SECTION_ABSENTE' && manquante(p.message); as code) {
                   <button type="button" class="rcp__aller" (click)="inserer.emit(code)">Insérer dans la page</button>
                 }
+                @if (declarable() && (p.code === 'CONDITION_NON_DECLAREE' || p.code === 'CHAMP_NON_DECLARE')) {
+                  <button type="button" class="rcp__aller" (click)="declarer.emit()">Déclarer</button>
+                }
                 @if (p.suggestion && !p.message.includes(p.suggestion)) { <span class="rcp__sugg">Vouliez-vous <code>{{ p.suggestion }}</code> ?</span> }
               </span>
             </li>
@@ -80,6 +83,9 @@ export class RapportControlePv {
   readonly page = input(false);
   /** Le code de la variable à insérer pour combler une section absente (`PV.REFERENCE`, `PV.MEMBRE`, `PV.AVIS`). */
   readonly inserer = output<string>();
+  /** Une version modifiable : une condition ou un champ non déclaré se déclare d'un clic (règle usuelle, champ en texte long). */
+  readonly declarable = input(false);
+  readonly declarer = output<void>();
 
   /** La variable que nomme un point « section absente » (« … : {{PV.REFERENCE}} n'apparaît pas ») ; nul s'il n'en nomme pas. */
   manquante(message: string): string | null {

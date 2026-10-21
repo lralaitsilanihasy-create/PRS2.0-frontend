@@ -36,6 +36,7 @@ import {
   MOTIF_CODE_MODELE,
   expressionProposee,
   libelleDeCode,
+  champsLusPar,
   modeleSupprimable,
   nonDeclares,
   reprisParModele,
@@ -283,7 +284,8 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
                     </div>
                   }
                   <h3 class="mpf__titre" id="rapport-controle" tabindex="-1">Rapport de contrôle</h3>
-                  <app-rapport-controle-pv [rapport]="v.rapport" [page]="v.support === 'PAGE'" (aller)="allerA($event)" (inserer)="insererManquante($event)" />
+                  <app-rapport-controle-pv [rapport]="v.rapport" [page]="v.support === 'PAGE'" (aller)="allerA($event)" (inserer)="insererManquante($event)"
+                                           [declarable]="!figee() && !ecriture()" (declarer)="declarerCeQueLeWordUtilise()" />
                 }
                 @case ('variables') {
                   @if (v.support === 'PAGE') {
@@ -874,16 +876,19 @@ export class ModelePvFicheEcran implements OnInit {
       ...v.conditions,
       ...nd.conditions.filter((n) => expressionProposee(n)).map((n) => ({ nom: n, expression: expressionProposee(n), libelle: null })),
     ];
+    // Les champs d'abord : ceux de la page, et ceux que lisent les règles proposées (`saisi.observation_generale`).
+    const aAjouter = new Set([...nd.champs, ...conditions.slice(v.conditions.length).flatMap((c) => champsLusPar(c.expression))]);
+    for (const c of v.champs) aAjouter.delete(c.code);
     const champs: ChampModelePv[] = [
       ...v.champs,
-      ...nd.champs.map((c) => ({ code: c, libelle: libelleDeCode(c), type: 'TEXTE_LONG' as const, options: [], obligatoire: false, aide: null, visibleSi: null })),
+      ...[...aAjouter].map((c) => ({ code: c, libelle: libelleDeCode(c), type: 'TEXTE_LONG' as const, options: [], obligatoire: false, aide: null, visibleSi: null })),
     ];
     const restent = nd.conditions.filter((n) => !expressionProposee(n));
     this.ecriture.set(true);
     this.messageDeclaration.set(null);
-    const conditions$ = conditions.length > v.conditions.length ? this.service.definirConditions(this.idModele, v.numero, conditions) : of(v);
-    conditions$
-      .pipe(switchMap(() => (champs.length > v.champs.length ? this.service.definirChamps(this.idModele, v.numero, champs) : of(v))))
+    const champs$ = champs.length > v.champs.length ? this.service.definirChamps(this.idModele, v.numero, champs) : of(v);
+    champs$
+      .pipe(switchMap(() => (conditions.length > v.conditions.length ? this.service.definirConditions(this.idModele, v.numero, conditions) : of(v))))
       .subscribe({
         next: () => {
           this.ecriture.set(false);

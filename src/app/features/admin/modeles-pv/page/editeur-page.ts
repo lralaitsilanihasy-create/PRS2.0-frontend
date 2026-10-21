@@ -445,7 +445,6 @@ export class EditeurPage implements AfterViewInit, OnDestroy {
   readonly reglesProposees = computed(() => {
     const r = this.conditions().map((c) => ({ nom: c.nom, libelle: c.libelle || REGLES_USUELLES[c.nom] || `Si ${c.nom}` }));
     for (const [nom, libelle] of Object.entries(REGLES_USUELLES)) if (!r.some((x) => x.nom === nom) && expressionProposee(nom)) r.push({ nom, libelle });
-    if (!r.some((x) => x.nom === 'OBS_GENERALE')) r.push({ nom: 'OBS_GENERALE', libelle: REGLES_USUELLES['OBS_GENERALE'] });
     return r;
   });
 

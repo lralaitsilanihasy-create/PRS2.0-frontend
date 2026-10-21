@@ -1,5 +1,5 @@
 import { CouvertureSousType, ModelePvResume } from '../../../models';
-import { ecrireExpression, etatModele, evaluerCondition, expressionProposee, grilleFichiers, libelleDeCode, modeleSupprimable, nonDeclares, phrasesRegle, expressionEnClair, lireExpression, propositionPourFamille, reprisParModele, sansDocument, tailleLisible } from './modeles-pv-libelles';
+import { ecrireExpression, etatModele, evaluerCondition, expressionProposee, grilleFichiers, champsLusPar, libelleDeCode, modeleSupprimable, nonDeclares, phrasesRegle, expressionEnClair, lireExpression, propositionPourFamille, reprisParModele, sansDocument, tailleLisible } from './modeles-pv-libelles';
 
 const v = (numero: number, etat: 'BROUILLON' | 'EN_VIGUEUR' | 'REMPLACEE', bloquant = false) => ({ numero, etat, bloquant, deposeeLe: null, enVigueurLe: null });
 const modele = (o: Partial<ModelePvResume>): ModelePvResume => ({
@@ -123,7 +123,7 @@ describe('Modèles de PV — ce que le Word utilise sans déclaration, et l’ap
   it('propose l’expression des noms usuels, et un libellé tiré du code', () => {
     expect(expressionProposee('AVEC_RESERVES')).toBe('avis = FAVR');
     expect(expressionProposee('regionale')).toBe('portee = regionale');
-    expect(expressionProposee('OBS_GENERALE')).toBe('');
+    expect(expressionProposee('OBS_INCONNUE')).toBe('');
     expect(libelleDeCode('motif_defavorable')).toBe('Motif defavorable');
   });
 
@@ -146,5 +146,13 @@ describe('modeleSupprimable (21/10) — la règle de DELETE /api/modeles-pv/{id}
     expect(modeleSupprimable({ versions: [ver('REMPLACEE')], historique: [], sousTypes: [] })).toBe(false);
     expect(modeleSupprimable({ versions: [], historique: [ev('MISE_EN_VIGUEUR')], sousTypes: [] })).toBe(false);
     expect(modeleSupprimable({ versions: [], historique: [], sousTypes: [{ id: 'DAOO' } as never] })).toBe(false);
+  });
+});
+
+describe('OBS_GENERALE (21/10) — règle du départ du serveur, et le champ qu’elle lit', () => {
+  it('proposée, et son champ relevé pour être déclaré avant elle', () => {
+    expect(expressionProposee('OBS_GENERALE')).toBe('saisi.observation_generale renseigne');
+    expect(champsLusPar('saisi.observation_generale renseigne ou avis = DEF')).toEqual(['observation_generale']);
+    expect(champsLusPar('avis = FAV')).toEqual([]);
   });
 });

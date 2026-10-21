@@ -228,7 +228,14 @@ const CONDITIONS_USUELLES: Readonly<Record<string, string>> = {
   AVEC_AGPM: 'agpm = oui',
   SANS_AGPM: 'agpm = non',
   CONTRAT_CADRE: 'forme = CONTRAT_CADRE',
+  // La règle du modèle de départ du serveur (ModelePvDepart) ; elle lit le champ saisi `observation_generale`.
+  OBS_GENERALE: 'saisi.observation_generale renseigne',
 };
+
+/** Les champs saisis qu'une expression lit (`saisi.<code>`) : à déclarer avant elle. */
+export function champsLusPar(expression: string): string[] {
+  return [...expression.matchAll(/saisi\.([A-Za-z0-9_]+)/g)].map((m) => m[1]);
+}
 
 /** Les blocs `{{SI:…}}` et champs `{{SAISI:…}}` relevés dans le Word mais pas encore déclarés sur la version. */
 export function nonDeclares(
