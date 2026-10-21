@@ -36,6 +36,7 @@ import {
   MOTIF_CODE_MODELE,
   expressionProposee,
   libelleDeCode,
+  modeleSupprimable,
   nonDeclares,
   reprisParModele,
   tailleLisible,
@@ -43,7 +44,7 @@ import {
 import { RapportControlePv } from './rapport-controle-pv';
 
 type Onglet = 'depot' | 'variables' | 'champs' | 'apercu';
-type Modale = 'vigueur' | 'dupliquer' | 'archiver' | null;
+type Modale = 'vigueur' | 'dupliquer' | 'archiver' | 'supprimerVersion' | 'supprimer' | null;
 
 const FAMILLES: Readonly<Record<string, string>> = {
   DDP: 'Plan de passation',
@@ -78,9 +79,14 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
             @if (f.etat === 'ARCHIVE') { <span class="mpf__puce mpf__puce--claire">Archivé le {{ f.archiveLe | date: 'dd/MM/yyyy' }}</span> }
             @else { <span class="mpf__puce mpf__puce--claire">{{ enVigueur() ? 'En vigueur : version ' + enVigueur()!.numero : 'Aucune version en vigueur' }}</span> }
           </div>
-          @if (f.etat === 'ACTIF') {
-            <button type="button" class="btn btn-secondary btn-sm mpf__archiver" (click)="ouvrirModale('archiver')">Archiver</button>
-          }
+          <div class="mpf__archiver">
+            @if (supprimable()) {
+              <button type="button" class="btn btn-danger btn-sm" (click)="ouvrirModale('supprimer')">Supprimer définitivement</button>
+            }
+            @if (f.etat === 'ACTIF') {
+              <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirModale('archiver')">Archiver</button>
+            }
+          </div>
         </header>
         @if (repris().length) {
           <p class="alert alert-info">
@@ -117,6 +123,10 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
                                   [attr.title]="v.bloquant ? 'Le rapport de contrôle est bloquant' : null">Mettre en vigueur</button>
                         } @else {
                           <span class="mpf__ouverte">ouverte</span>
+                        }
+                        @if (v.etat === 'BROUILLON' && f.etat === 'ACTIF') {
+                          <button type="button" class="btn btn-ghost btn-sm mpf__supprimer" [attr.aria-label]="'Supprimer la version ' + v.numero"
+                                  (click)="supprimerVersion(v.numero)">Supprimer</button>
                         }
                       </td>
                     </tr>
@@ -352,14 +362,30 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
                   <textarea class="form-control" rows="3" [value]="motif()" (input)="motif.set($any($event.target).value)"></textarea>
                 </label>
               }
+              @case ('supprimerVersion') {
+                @if (versionASupprimer(); as v) {
+                  <p>
+                    La version {{ v.numero }} ({{ v.support === 'WORD' ? 'Word' : 'page' }}, du {{ v.deposeeLe | date: 'dd/MM/yyyy' }}) sera supprimée,
+                    avec ses règles et ses champs. Elle n’a jamais été en vigueur : aucun PV n’en dépend.
+                  </p>
+                  <p class="text-muted">Son numéro ne sera pas repris : la prochaine version portera le numéro suivant. Le journal du modèle garde la trace.</p>
+                }
+              }
+              @case ('supprimer') {
+                <p>
+                  Le modèle <strong>{{ fiche()?.libelle }}</strong> ({{ fiche()?.code }}) et ses {{ fiche()?.versions?.length }} version(s) seront supprimés.
+                  Il n’a jamais été en vigueur : aucun PV n’en dépend.
+                </p>
+                <p class="text-muted">La suppression est définitive. Elle reste tracée au journal de l’application.</p>
+              }
             }
             @if (messageModale(); as e) { <p class="form-error" role="alert">{{ e }}</p> }
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" (click)="fermerModale()">Annuler</button>
-            <button type="button" class="btn" [class.btn-primary]="m !== 'archiver'" [class.btn-danger]="m === 'archiver'"
+            <button type="button" class="btn" [class.btn-primary]="m === 'vigueur' || m === 'dupliquer'" [class.btn-danger]="m !== 'vigueur' && m !== 'dupliquer'"
                     [disabled]="ecriture() || !modaleValide()" (click)="validerModale()">
-              {{ ecriture() ? 'Enregistrement…' : m === 'vigueur' ? 'Mettre en vigueur' : m === 'dupliquer' ? 'Dupliquer' : 'Archiver' }}
+              {{ ecriture() ? 'Enregistrement…' : boutonModale[m] }}
             </button>
           </div>
         </div>
@@ -376,7 +402,8 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
     .mpf__puces { display: flex; gap: 0.4rem; flex-wrap: wrap; }
     .mpf__puce { padding: 0.1rem 0.6rem; border-radius: 999px; background: rgba(255, 255, 255, 0.18); font-size: 0.8rem; }
     .mpf__puce--claire { background: #fff; color: var(--p-700); font-weight: 600; }
-    .mpf__archiver { position: absolute; top: 1rem; right: 1.25rem; }
+    .mpf__archiver { position: absolute; top: 1rem; right: 1.25rem; display: flex; gap: 0.4rem; }
+    .mpf__supprimer { color: var(--danger-text, #991b1b); }
     .mpf__grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr)); gap: 1rem; align-items: start; }
     /* « overflow: visible » : la carte de l'application coupe ce qui déborde, ce qui empêcherait la barre de l'éditeur de rester visible. */
     .mpf__carte { overflow: visible; padding: 1rem 1.15rem; display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
@@ -544,9 +571,36 @@ export class ModelePvFicheEcran implements OnInit {
 
   readonly rattachementsModifies = computed(() => [...this.rattaches()].sort().join() !== [...this.codesSousTypes()].sort().join());
 
-  readonly titreModale = computed(() =>
-    this.modale() === 'vigueur' ? `Mettre en vigueur la version ${this.version()?.numero}` : this.modale() === 'dupliquer' ? 'Dupliquer le modèle' : 'Archiver le modèle',
-  );
+  // ——— ⚠️ 21/10 — supprimer un brouillon, ou un modèle qui n'a jamais servi ———
+  readonly supprimable = computed(() => {
+    const f = this.fiche();
+    return !!f && modeleSupprimable(f);
+  });
+  private readonly numeroASupprimer = signal<number | null>(null);
+  readonly versionASupprimer = computed(() => this.fiche()?.versions.find((v) => v.numero === this.numeroASupprimer()) ?? null);
+
+  readonly boutonModale: Readonly<Record<Exclude<Modale, null>, string>> = {
+    vigueur: 'Mettre en vigueur',
+    dupliquer: 'Dupliquer',
+    archiver: 'Archiver',
+    supprimerVersion: 'Supprimer la version',
+    supprimer: 'Supprimer définitivement',
+  };
+
+  readonly titreModale = computed(() => {
+    switch (this.modale()) {
+      case 'vigueur':
+        return `Mettre en vigueur la version ${this.version()?.numero}`;
+      case 'dupliquer':
+        return 'Dupliquer le modèle';
+      case 'supprimerVersion':
+        return `Supprimer la version ${this.numeroASupprimer()}`;
+      case 'supprimer':
+        return 'Supprimer le modèle';
+      default:
+        return 'Archiver le modèle';
+    }
+  });
   readonly modaleValide = computed(() => {
     switch (this.modale()) {
       case 'vigueur':
@@ -555,6 +609,10 @@ export class ModelePvFicheEcran implements OnInit {
         return MOTIF_CODE_MODELE.test(this.codeCopie().trim()) && !!this.libelleCopie().trim();
       case 'archiver':
         return !this.enService() || !!this.motif().trim();
+      case 'supprimerVersion':
+        return !!this.versionASupprimer();
+      case 'supprimer':
+        return this.supprimable();
       default:
         return false;
     }
@@ -653,6 +711,11 @@ export class ModelePvFicheEcran implements OnInit {
   essayer(numero: number): void {
     this.choisir(numero);
     this.onglet.set('apercu');
+  }
+
+  supprimerVersion(numero: number): void {
+    this.numeroASupprimer.set(numero);
+    this.ouvrirModale('supprimerVersion');
   }
 
   mettreEnVigueurVersion(numero: number): void {
@@ -924,6 +987,41 @@ export class ModelePvFicheEcran implements OnInit {
           void this.router.navigate(['/admin/referentiels/modeles-pv', copie.id]);
         },
         error: (e: ApiError) => echec(e, codeErreur(e) === 'CODE_DEJA_PRIS' ? 'Ce code est déjà pris.' : 'La duplication a échoué.'),
+      });
+    } else if (m === 'supprimerVersion') {
+      const numero = this.numeroASupprimer()!;
+      const etaitOuverte = this.version()?.numero === numero;
+      this.service.supprimerVersion(this.idModele, numero).subscribe({
+        next: (f) => {
+          fin();
+          this.modale.set(null);
+          this.toast.success(`Version ${numero} supprimée.`);
+          // La version ouverte disparaît : la fiche se rouvre sur la plus récente.
+          if (etaitOuverte) this.numeroChoisi.set(f.versions[0]?.numero ?? null);
+          this.appliquer(f);
+        },
+        error: (e: ApiError) =>
+          echec(e, codeErreur(e) === 'VERSION_NON_SUPPRIMABLE' ? 'Une version qui a été en vigueur ne se supprime pas.'
+            : codeErreur(e) === 'MODELE_ARCHIVE' ? 'Ce modèle est archivé : ses versions ne se suppriment plus.' : 'La suppression a échoué.'),
+      });
+    } else if (m === 'supprimer') {
+      const code = this.fiche()?.code;
+      this.service.supprimer(this.idModele).subscribe({
+        next: () => {
+          fin();
+          this.modale.set(null);
+          this.toast.success(`Modèle ${code} supprimé.`);
+          void this.router.navigate(['/admin/referentiels/modeles-pv']);
+        },
+        error: (e: ApiError) => {
+          fin();
+          const d = corpsErreur<{ details?: { raison?: string; sousTypes?: string[] } | null }>(e)?.details;
+          this.messageModale.set(
+            d?.raison === 'A_ETE_EN_VIGUEUR' ? 'Ce modèle a été en vigueur : il se garde, pour la traçabilité.'
+            : d?.raison === 'SERT_DES_SOUS_TYPES' ? `Ce modèle sert encore ${(d.sousTypes ?? []).join(' · ') || 'des sous-types'} : détachez-les ou archivez le modèle.`
+            : e.message || 'La suppression a échoué.',
+          );
+        },
       });
     } else {
       this.service.archiver(this.idModele, this.motif().trim() || null).subscribe({

@@ -1,4 +1,4 @@
-import { CouvertureSousType, EtatVersionModelePv, ModelePvResume, NatureModelePv, TypeChampSaisi } from '../../../models';
+import { CouvertureSousType, EtatVersionModelePv, ModelePvFiche, ModelePvResume, NatureModelePv, TypeChampSaisi } from '../../../models';
 
 /**
  * ⚠️ Générateur de modèles de PV, lot G1 (20/10) — libellés et règles pures de l'écran « Modèles de PV ». Les motifs de nom
@@ -37,7 +37,20 @@ export const LIBELLES_ACTION: Readonly<Record<string, string>> = {
   DEPART_GENERE: 'Modèle de départ généré par l’application',
   ENREGISTREE: 'Page enregistrée comme nouvelle version',
   DOCUMENT_MODIFIE: 'Page modifiée',
+  VERSION_SUPPRIMEE: 'Version supprimée',
 };
+
+/**
+ * ⚠️ 21/10 — la règle du serveur (`DELETE /api/modeles-pv/{id}`) : jamais en vigueur (aucune version `EN_VIGUEUR` ni `REMPLACEE`,
+ * aucune `MISE_EN_VIGUEUR` au journal) et aucun sous-type servi. Le bouton ne se montre qu'à ces conditions ; le serveur tranche.
+ */
+export function modeleSupprimable(f: Pick<ModelePvFiche, 'versions' | 'historique' | 'sousTypes'>): boolean {
+  return (
+    !f.sousTypes.length &&
+    !f.versions.some((v) => v.etat === 'EN_VIGUEUR' || v.etat === 'REMPLACEE') &&
+    !f.historique.some((h) => h.action === 'MISE_EN_VIGUEUR')
+  );
+}
 
 export const MOTIF_CODE_MODELE = /^[A-Za-z0-9_.-]{1,50}$/;
 export const MOTIF_NOM_CONDITION = /^[A-Za-z0-9_-]{1,60}$/;

@@ -1,5 +1,5 @@
 import { CouvertureSousType, ModelePvResume } from '../../../models';
-import { ecrireExpression, etatModele, evaluerCondition, expressionProposee, grilleFichiers, libelleDeCode, nonDeclares, phrasesRegle, expressionEnClair, lireExpression, propositionPourFamille, reprisParModele, sansDocument, tailleLisible } from './modeles-pv-libelles';
+import { ecrireExpression, etatModele, evaluerCondition, expressionProposee, grilleFichiers, libelleDeCode, modeleSupprimable, nonDeclares, phrasesRegle, expressionEnClair, lireExpression, propositionPourFamille, reprisParModele, sansDocument, tailleLisible } from './modeles-pv-libelles';
 
 const v = (numero: number, etat: 'BROUILLON' | 'EN_VIGUEUR' | 'REMPLACEE', bloquant = false) => ({ numero, etat, bloquant, deposeeLe: null, enVigueurLe: null });
 const modele = (o: Partial<ModelePvResume>): ModelePvResume => ({
@@ -135,5 +135,16 @@ describe('Modèles de PV — ce que le Word utilise sans déclaration, et l’ap
     expect(evaluerCondition('avis = FAV et saisi.obs renseigne ou avis = DEF', { avis: 'DEF' })).toBe(true);
     expect(evaluerCondition('avis = FAV et saisi.obs renseigne ou avis = DEF', { avis: 'FAV' })).toBe(false);
     expect(evaluerCondition('illisible', {})).toBeNull();
+  });
+});
+
+describe('modeleSupprimable (21/10) — la règle de DELETE /api/modeles-pv/{id}', () => {
+  const ev = (action: string) => ({ le: '2026-10-21', action, numeroVersion: 1, detail: null, par: 'ADMIN01' });
+  const ver = (etat: 'BROUILLON' | 'EN_VIGUEUR' | 'REMPLACEE') => ({ etat }) as never;
+  it('jamais en vigueur et sans sous-type : oui ; sinon non', () => {
+    expect(modeleSupprimable({ versions: [ver('BROUILLON')], historique: [ev('CREE')], sousTypes: [] })).toBe(true);
+    expect(modeleSupprimable({ versions: [ver('REMPLACEE')], historique: [], sousTypes: [] })).toBe(false);
+    expect(modeleSupprimable({ versions: [], historique: [ev('MISE_EN_VIGUEUR')], sousTypes: [] })).toBe(false);
+    expect(modeleSupprimable({ versions: [], historique: [], sousTypes: [{ id: 'DAOO' } as never] })).toBe(false);
   });
 });

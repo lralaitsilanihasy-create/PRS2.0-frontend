@@ -128,6 +128,16 @@ export class ModelePvService {
     return this.http.post<ModelePvFiche>(`${this.url}/${id}/archiver`, motif ? { motif } : {}, this.ctx);
   }
 
+  /** ⚠️ 21/10 — un brouillon seulement (409 `VERSION_NON_SUPPRIMABLE` sinon) ; rend la fiche sans la version. Son numéro n'est jamais repris. */
+  supprimerVersion(id: number, numero: number): Observable<ModelePvFiche> {
+    return this.http.delete<ModelePvFiche>(`${this.url}/${id}/versions/${numero}`, this.ctx);
+  }
+
+  /** ⚠️ 21/10 — un modèle jamais en vigueur et sans sous-type (409 `MODELE_NON_SUPPRIMABLE` sinon) ; 204. Trace au journal général. */
+  supprimer(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.url}/${id}`, this.ctx);
+  }
+
   /** Le `.docx` tel que déposé. */
   fichier(id: number, numero: number): Observable<Blob> {
     return this.http.get(`${this.url}/${id}/versions/${numero}/fichier`, { ...this.ctx, responseType: 'blob' });

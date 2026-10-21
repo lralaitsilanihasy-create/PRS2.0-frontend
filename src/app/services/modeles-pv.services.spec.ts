@@ -83,4 +83,14 @@ describe('ModelePvService — chemins du contrat', () => {
     expect(e.code).toBe('LETTRE_ABSENTE');
     expect(e.message).toContain('pas de lettre de renvoi');
   });
+
+  it('suppressions (21/10) : un brouillon, un modèle', () => {
+    const s = TestBed.inject(ModelePvService);
+    const http = TestBed.inject(HttpTestingController);
+    s.supprimerVersion(3, 2).subscribe();
+    http.expectOne({ method: 'DELETE', url: '/api/modeles-pv/3/versions/2' }).flush({});
+    s.supprimer(7).subscribe();
+    http.expectOne({ method: 'DELETE', url: '/api/modeles-pv/7' }).flush(null, { status: 204, statusText: 'No Content' });
+    http.verify();
+  });
 });
