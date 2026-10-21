@@ -7,7 +7,10 @@ import { ApiError, codeErreur } from '../../../core/errors/api-error';
 import { CouvertureSousType, ModeleIntegre, ModelePvResume, NatureModelePv, TypeDossier } from '../../../models';
 import { ModelePvService, TypeDossierService } from '../../../services';
 import { ModaleDirective } from '../../../shared/a11y/modale.directive';
+import { ToastService } from '../../../core/notifications/toast.service';
+import { telechargerBlob } from '../../../core/securite/fichiers-surs';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
+import { ApercuVersion } from './apercu-version';
 import {
   LIBELLES_NATURE,
   MOTIF_CODE_MODELE,
@@ -44,7 +47,7 @@ interface FamilleSansModele {
 @Component({
   selector: 'app-modeles-pv-liste',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, RouterLink, EtatErreur, ModaleDirective],
+  imports: [DatePipe, RouterLink, EtatErreur, ModaleDirective, ApercuVersion],
   template: `
     <section class="mpl">
       <header>
@@ -120,7 +123,12 @@ interface FamilleSansModele {
                       <td colspan="5">
                         <p class="mpl__detail">{{ i.regle }} Ces fichiers sont livrés avec le serveur : ils ne se déposent ni ne se modifient ici, et servent tant qu’aucun
                           modèle de cet écran ne produit les PV (lot suivant).</p>
-                        <p class="mpl__mono">{{ i.fichiers.join(' · ') }}</p>
+                        <p class="mpl__fichiers">
+                          @for (n of i.fichiers; track n) {
+                            <button type="button" class="mpl__fichier" [attr.aria-label]="'Télécharger ' + n" (click)="telecharger(i.code, n)">{{ n }}</button>
+                          }
+                        </p>
+                        <app-apercu-version [codeIntegre]="i.code" [codeModele]="i.code" [avecAvis]="i.nature === 'PV'" [sousTypesServis]="i.sousTypes ?? []" />
                       </td>
                     </tr>
                   }
@@ -208,6 +216,10 @@ interface FamilleSansModele {
     .mpl__ligne--integre td { background: #f6fbf8; color: var(--n-700); }
     .mpl__reprise { color: var(--p-700); }
     .mpl__detail { margin: 0 0 0.3rem; font-size: 0.85rem; }
+    .mpl__fichiers { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.3rem 0 0.9rem; }
+    .mpl__fichier { background: #fff; color: var(--p-700); border: 1px solid var(--p-200, #bae6fd); border-radius: 6px; padding: 0.1rem 0.45rem;
+      font-family: Consolas, monospace; font-size: 0.78rem; cursor: pointer; }
+    .mpl__fichier:hover, .mpl__fichier:focus-visible { background: var(--p-50); text-decoration: underline; }
     /* Le style global des tableaux interdit le retour à la ligne : ici, les sous-types d'une famille sont nombreux. */
     .mpl td { white-space: normal; }
     .mpl table { table-layout: fixed; width: 100%; }
@@ -224,6 +236,7 @@ export class ModelesPvListe implements OnInit {
   private readonly service = inject(ModelePvService);
   private readonly typesService = inject(TypeDossierService);
   private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
 
   readonly natures = LIBELLES_NATURE;
   readonly listeNatures: readonly NatureModelePv[] = ['PV', 'LETTRE_RENVOI'];
@@ -313,6 +326,14 @@ export class ModelesPvListe implements OnInit {
         this.loading.set(false);
         this.erreur.set(true);
       },
+    });
+  }
+
+  /** Télécharge un fichier intégré, tel que livré avec le serveur. */
+  telecharger(code: string, nom: string): void {
+    this.service.fichierIntegre(code, nom).subscribe({
+      next: (blob) => telechargerBlob(blob, nom),
+      error: (e: ApiError) => this.toast.error(e.message || 'Le fichier n’a pas pu être téléchargé.'),
     });
   }
 

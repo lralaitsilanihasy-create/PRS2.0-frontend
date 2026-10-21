@@ -56,4 +56,27 @@ describe('ModelePvService — chemins du contrat', () => {
     expect(e.code).toBe('CONVERSION_INDISPONIBLE');
     expect(e.message).toBe('Word absent du serveur.');
   });
+
+  it('modèles intégrés : fichier par son nom, aperçu qui nomme le fichier ayant servi', async () => {
+    const s = TestBed.inject(ModelePvService);
+    const http = TestBed.inject(HttpTestingController);
+
+    s.fichierIntegre('PV-PLAN-INTEGRE', 'PV_AF_PPM_CENTRALE.docx').subscribe();
+    http.expectOne({ method: 'GET', url: '/api/modeles-pv/integres/PV-PLAN-INTEGRE/fichiers/PV_AF_PPM_CENTRALE.docx' }).flush(new Blob(['x']));
+
+    const ok = new Promise<{ blob: Blob; fichier: string | null }>((r) => s.apercuIntegre('PV-PLAN-INTEGRE', { dossier: 100379, avis: 'FAVR', format: 'pdf' }).subscribe(r));
+    const req = http.expectOne((r) => r.url === '/api/modeles-pv/integres/PV-PLAN-INTEGRE/apercu');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.params.get('dossier')).toBe('100379');
+    expect(req.request.params.get('avis')).toBe('FAVR');
+    req.flush(new Blob(['%PDF']), { headers: { 'X-Fichier-Modele': 'PV_AFSR_PPMAGPM_CENTRALE.docx' } });
+    expect((await ok).fichier).toBe('PV_AFSR_PPMAGPM_CENTRALE.docx');
+
+    const refus = new Promise<ApiError>((r) => s.apercuIntegre('LETTRE-RENVOI-INTEGREE', { dossier: 100379, format: 'pdf' }).subscribe({ error: r }));
+    const corps = new Blob([JSON.stringify({ message: 'Le dossier 100379 n’a pas de lettre de renvoi.', code: 'LETTRE_ABSENTE' })]);
+    http.expectOne((r) => r.url === '/api/modeles-pv/integres/LETTRE-RENVOI-INTEGREE/apercu').flush(corps, { status: 409, statusText: 'Conflict' });
+    const e = await refus;
+    expect(e.code).toBe('LETTRE_ABSENTE');
+    expect(e.message).toContain('pas de lettre de renvoi');
+  });
 });

@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, from, switchMap, throwError } from 'rxjs';
+import { Observable, catchError, from, map, switchMap, throwError } from 'rxjs';
 
 import { ApiError, isApiError, skipErrorToast } from '../core/errors/api-error';
 import { environment } from '../../environments/environment';
@@ -102,6 +102,27 @@ export class ModelePvService {
   /** Pour chaque sous-type et chaque nature, ce qui produit son document (intégré, géré, rien) et le modèle qui le sert. */
   couverture(): Observable<CouvertureSousType[]> {
     return this.http.get<CouvertureSousType[]>(`${this.url}/couverture`, this.ctx);
+  }
+
+  /** Un fichier intégré tel que livré dans le JAR — seuls les noms de la liste servie (404 sinon). */
+  fichierIntegre(code: string, nom: string): Observable<Blob> {
+    return this.http.get(`${this.url}/integres/${encodeURIComponent(code)}/fichiers/${encodeURIComponent(nom)}`, { ...this.ctx, responseType: 'blob' });
+  }
+
+  /**
+   * L'aperçu d'un modèle intégré sur un dossier réel — rien n'est enregistré. Le fichier est choisi par la règle de la production
+   * (`PvDocumentService.choisirModele`) et nommé par l'en-tête `X-Fichier-Modele`. 409 `PV_ABSENT`, `AUCUN_DOCUMENT` (raison en
+   * clair), `LETTRE_ABSENTE`, `CONVERSION_INDISPONIBLE`.
+   */
+  apercuIntegre(code: string, p: { dossier: number; avis?: AvisApercu | null; format: 'pdf' | 'docx' }): Observable<{ blob: Blob; fichier: string | null }> {
+    const params: Record<string, string> = { dossier: String(p.dossier), format: p.format };
+    if (p.avis) params['avis'] = p.avis;
+    return this.http
+      .post(`${this.url}/integres/${encodeURIComponent(code)}/apercu`, {}, { ...this.ctx, params, responseType: 'blob', observe: 'response' })
+      .pipe(
+        map((r) => ({ blob: r.body ?? new Blob(), fichier: r.headers.get('X-Fichier-Modele') })),
+        catchError((e: unknown) => relireErreurBinaire(e)),
+      );
   }
 
   /** Le catalogue des variables, filtré par la famille du sous-type (tout le catalogue sans sous-type). */

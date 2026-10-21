@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, input, signal } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 
 import { ApiError, codeErreur } from '../../../core/errors/api-error';
 import { ouvrirBlobSur, telechargerBlob, urlBlobSure } from '../../../core/securite/fichiers-surs';
@@ -26,12 +27,14 @@ const AVIS: readonly { code: AvisApercu | ''; libelle: string }[] = [
   template: `
     <div class="apv">
       <div class="apv__barre">
-        <strong class="apv__invite">Essayer la v{{ numero() }} sur un dossier réel :</strong>
+        <strong class="apv__invite">{{ codeIntegre() ? 'Essayer sur un dossier réel :' : 'Essayer la v' + numero() + ' sur un dossier réel :' }}</strong>
         <input class="form-control apv__dossier" type="number" min="1" placeholder="N° interne du dossier" aria-label="N° interne du dossier"
                [value]="idDossier() ?? ''" (change)="choisirDossier($any($event.target).value)" />
-        <select class="form-control apv__avis" aria-label="Avis" [value]="avis()" (change)="avis.set($any($event.target).value)">
-          @for (a of avisPossibles; track a.code) { <option [value]="a.code" [selected]="a.code === avis()">Avis : {{ a.libelle }}</option> }
-        </select>
+        @if (avecAvis()) {
+          <select class="form-control apv__avis" aria-label="Avis" [value]="avis()" (change)="avis.set($any($event.target).value)">
+            @for (a of avisPossibles; track a.code) { <option [value]="a.code" [selected]="a.code === avis()">Avis : {{ a.libelle }}</option> }
+          </select>
+        }
         <button type="button" class="btn btn-primary btn-sm" [disabled]="!idDossier() || enCours()" (click)="produire('pdf')">
           {{ enCours() === 'pdf' ? 'Production…' : 'Produire l’aperçu' }}
         </button>
@@ -83,8 +86,9 @@ const AVIS: readonly { code: AvisApercu | ''; libelle: string }[] = [
       }
 
       @if (message(); as m) { <p class="form-error" role="alert">{{ m }}</p> }
+      @if (fichierUtilise(); as fu) { <p class="apv__fichier" role="status">Fichier qui a servi : <code>{{ fu }}</code></p> }
       @if (urlPdf(); as u) {
-        <iframe class="apv__cadre" [src]="u" [title]="'Aperçu de la version ' + numero() + ' sur le dossier ' + idDossier()"></iframe>
+        <iframe class="apv__cadre" [src]="u" [title]="'Aperçu sur le dossier ' + idDossier()"></iframe>
       } @else if (!message()) {
         <div class="apv__vide">L’aperçu PDF s’affichera ici, tel que le PV sera produit.</div>
       }
@@ -100,6 +104,8 @@ const AVIS: readonly { code: AvisApercu | ''; libelle: string }[] = [
     .apv__cadre { width: 100%; height: 75vh; min-height: 32rem; border: 1px solid var(--n-300); border-radius: 8px; background: #fff; }
     .apv__vide { border: 1px dashed var(--n-300); border-radius: 8px; padding: 2.5rem 1rem; text-align: center; color: var(--n-500); background: #fff; }
     .apv__dossier-lu { margin: 0; color: var(--n-700); }
+    .apv__fichier { margin: 0; font-size: 0.85rem; color: var(--n-700); }
+    .apv__fichier code { font-family: Consolas, monospace; }
     .apv__alerte { display: block; color: var(--warning-text); font-size: 0.85rem; }
     .apv__saisis { border: 1px solid var(--n-200); border-radius: 10px; padding: 0.75rem 0.9rem; margin: 0;
       display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 0.6rem; }
@@ -114,8 +120,13 @@ export class ApercuVersion {
   /** L'URL d'objet du PDF affiché, révoquée au remplacement et à la destruction. */
   private urlCourante: string | null = null;
 
-  readonly idModele = input.required<number>();
-  readonly numero = input.required<number>();
+  /** Une version d'un modèle de l'écran… */
+  readonly idModele = input<number | null>(null);
+  readonly numero = input<number | null>(null);
+  /** … ou un modèle intégré au backend (`code` de `/integres`), dont le serveur choisit le fichier. */
+  readonly codeIntegre = input<string | null>(null);
+  /** L'avis ne choisit rien pour une lettre de renvoi. */
+  readonly avecAvis = input(true);
   readonly champs = input<ChampModelePv[]>([]);
   readonly sousTypesServis = input<string[]>([]);
   readonly codeModele = input('modele');
@@ -130,6 +141,7 @@ export class ApercuVersion {
   readonly message = signal<string | null>(null);
   readonly pdf = signal<Blob | null>(null);
   readonly urlPdf = signal<SafeResourceUrl | null>(null);
+  readonly fichierUtilise = signal<string | null>(null);
 
   constructor() {
     // Une autre version choisie : les valeurs saisies pour l'ancienne n'ont plus de sens.
@@ -166,6 +178,7 @@ export class ApercuVersion {
     this.dossierIntrouvable.set(false);
     this.afficher(null);
     this.message.set(null);
+    this.fichierUtilise.set(null);
     if (!Number.isInteger(id) || id <= 0) {
       this.idDossier.set(null);
       return;
@@ -189,15 +202,21 @@ export class ApercuVersion {
     if (!dossier || this.enCours()) return;
     this.enCours.set(format);
     this.message.set(null);
+    this.fichierUtilise.set(null);
     const saisis = Object.fromEntries(Object.entries(this.saisis()).filter(([, v]) => v !== ''));
-    this.service
-      .apercu(this.idModele(), this.numero(), { dossier, avis: this.avis() || null, format, saisis })
+    const avis = this.avecAvis() ? this.avis() || null : null;
+    const code = this.codeIntegre();
+    const source = code
+      ? this.service.apercuIntegre(code, { dossier, avis, format })
+      : this.service.apercu(this.idModele() ?? 0, this.numero() ?? 0, { dossier, avis, format, saisis }).pipe(map((blob) => ({ blob, fichier: null as string | null })));
+    source
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (blob) => {
+        next: ({ blob, fichier }) => {
           this.enCours.set(null);
+          this.fichierUtilise.set(fichier);
           if (format === 'pdf') this.afficher(blob);
-          else telechargerBlob(blob, `apercu-${this.codeModele()}-v${this.numero()}-dossier-${dossier}.docx`);
+          else telechargerBlob(blob, `apercu-${this.codeModele()}${code ? '' : '-v' + this.numero()}-dossier-${dossier}.docx`);
         },
         error: (e: ApiError) => {
           this.enCours.set(null);
