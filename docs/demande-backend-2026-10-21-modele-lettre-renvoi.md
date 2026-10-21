@@ -37,6 +37,18 @@ Ajouter au catalogue (`GET /api/modeles-pv/variables`), pour la nature `LETTRE_R
 - **Variables requises** de la nature `LETTRE_RENVOI` : proposer `DOSSIER.REFERENCE`, `LETTRE.CORPS`, `LETTRE.SIGNATAIRE`.
 - La condition `portee` (`centrale` / `regionale`) existe déjà : une seule page avec deux passages suffit, comme le départ des PV.
 
+> ⚠️ **2026-10-21, livré (backend), avec trois précisions**
+> - **Le catalogue se filtre par nature** : `GET /api/modeles-pv/variables?nature=LETTRE_RENVOI`. La réponse porte `nature` et le
+>   groupe « Lettre de renvoi ». Elle ne contient ni les variables du PV (`PV.*`, `OBS.*`, `TIT.*`, `MARCHE.*`) ni les listes
+>   répétées. Sans `nature`, le catalogue sert tout, comme avant.
+> - **Une variable hors de sa nature est bloquante** au contrôle : `VARIABLE_HORS_NATURE` (un `PV.MEMBRE` dans une lettre, un
+>   `LETTRE.CORPS` dans un PV). Les variables requises sont celles proposées.
+> - **`LETTRE.LOCALITE` rend le libellé tel quel.** Les majuscules du Word s'écrivent `{{LETTRE.LOCALITE|majuscules}}`, comme
+>   dans le départ.
+> - L'entité : `DOSSIER.ENTITE`, confirmé (le même libellé que `<NOM_ENTITE_CONTRACT>`).
+> - **L'aperçu d'une version de lettre** prend `lettre=`, à défaut la dernière lettre du dossier, même non signée (comme l'aperçu de
+>   l'intégré). Codes : 409 `LETTRE_ABSENTE`, 404 pour une lettre d'un autre dossier. La portée est celle de la lettre.
+
 ## B2 — Le modèle de départ d'une lettre
 
 `POST /api/modeles-pv/{id}/versions/depart` sur un modèle de nature `LETTRE_RENVOI` :
@@ -46,6 +58,22 @@ Ajouter au catalogue (`GET /api/modeles-pv/variables`), pour la nature `LETTRE_R
 - le motif posé est le même que pour un PV (`MOTIF_VERSION_DEPART`), pour que l'écran affiche l'encadré « texte à faire valider ».
 
 `NATURE_SANS_DEPART` ne reste vrai que s'il apparaît plus tard une nature sans départ.
+
+> ⚠️ **2026-10-21, livré (backend) — deux écarts de rendu, signalés.**
+> - **Le départ ne demande pas de rattachement** : une seule lettre pour tous les sous-types (Q1), il n'y a pas de famille à lire.
+> - **L'emblème** : la lettre Word porte une petite image (199 × 88 pixels) qui contient déjà « REPOBLIKAN'I MADAGASIKARA » et la
+>   devise, et elle les réécrit en texte en dessous. Le départ reprend l'emblème des PV (`EMBLEME`, la même image en haute
+>   définition), à 45 mm, sans répéter ces deux lignes.
+> - **Les marges** : celles du Word (7,5 mm à gauche, aucune à droite, puis des retraits de paragraphe) deviennent des marges de page
+>   de 25 et 23 mm, avec les mêmes positions.
+> - Rendu vérifié en image, en centrale et en régionale : **une page**, proche du Word.
+>
+> **Texte repris tel quel, à faire valider par la CNM.** La lettre régionale écrit, comme le fichier intégré :
+> - « **Antananarivo**, le … », alors que `COMMISSION.CHEF_LIEU` existe ;
+> - « la **Commission Nationale des Marchés** renvoie l'examen… ».
+>
+> Le départ les garde pour que la comparaison avec l'intégré (L2) reste honnête. Une correction se fera dans la page, puis à la mise
+> en vigueur.
 
 ## B3 — La relève de la lettre intégrée (part de P4)
 
@@ -58,6 +86,11 @@ Quand un modèle de lettre de renvoi a une version **en vigueur**, rattachée à
 Comme pour le plan (demande `modele-pv-page`, §B6) : la relève ne se fait qu'après comparaison des rendus sur des dossiers réels. Le
 front propose de la garder sous la même condition : la mise en vigueur ne change rien tant que la comparaison n'est pas faite.
 
+> ⚠️ **2026-10-21, non livré (backend) : L2 attend la comparaison**, comme le propose le front.
+> - La production (`genererEtStockerDocument`) lit toujours les fichiers intégrés.
+> - La couverture des lettres reste `INTEGRE`.
+> - La relève se fera avec P4 (la relève du plan).
+
 ## Questions
 
 - **Q1 — Un modèle pour toutes les lettres ?** Le front propose **un seul modèle** de lettre, rattaché aux 26 sous-types. Faut-il
@@ -66,6 +99,13 @@ front propose de la garder sous la même condition : la mise en vigueur ne chang
   par saut de ligne) ? Le front le propose.
 - **Q3 — Rattachement.** Un modèle de lettre peut-il être rattaché dès maintenant aux sous-types, alors que l'intégré les sert
   encore ? Le front le propose, comme pour PV-PLAN (« Remplacera le modèle intégré »).
+
+> ⚠️ **2026-10-21, réponses (backend)**
+> - **Q1 — Un seul modèle**, rattaché aux 26 sous-types : les deux fichiers ne distinguent que la portée.
+> - **Q2 — Oui, déjà le cas** : un saut de ligne dans une valeur devient un retour à la ligne de la page, comme le Word intégré.
+>   Pour toutes les variables, pas seulement le corps. Le corps reste dans son paragraphe : il suit « demandant au service de : »,
+>   après un retour à la ligne posé par le départ.
+> - **Q3 — Oui**, c'est déjà permis. La couverture reste `INTEGRE` jusqu'à la relève.
 
 ## Lots
 
