@@ -231,6 +231,10 @@ const TAILLE_MAX_MO = 10;
                         Téléchargez le .docx, faites-le relire, corrigez-le dans Word et déposez la version corrigée.
                         À compléter au besoin : la qualité du viseur et la mention « par intérim », et les lignes des présents sans nom.</span>
                     </p>
+                    <div class="mpf__boutons">
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="telecharger(v)">Lire le texte proposé (.docx)</button>
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="onglet.set('apercu')">Le voir rempli sur un dossier</button>
+                    </div>
                   }
                   @let nd = aDeclarer();
                   @if (!figee() && (nd.conditions.length || nd.champs.length)) {
