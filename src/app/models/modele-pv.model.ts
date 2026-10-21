@@ -10,6 +10,11 @@ export type EtatVersionModelePv = 'BROUILLON' | 'EN_VIGUEUR' | 'REMPLACEE';
 export type NiveauPointRapport = 'OK' | 'AVERTISSEMENT' | 'BLOQUANT';
 export type TypeChampSaisi = 'TEXTE' | 'TEXTE_LONG' | 'LISTE' | 'CASE' | 'DATE' | 'NOMBRE' | 'PIECE';
 export type AvisApercu = 'FAV' | 'FAVR' | 'DEF' | 'NSP';
+/** Portée du modèle de départ : un seul fichier, ou les deux variantes en blocs CENTRALE / REGIONALE (défaut). */
+export type PorteeDepart = 'centrale' | 'regionale' | 'les-deux';
+
+/** Le motif que le serveur pose sur une version de départ (`ModelePvDepart.MOTIF`) : la version vient de l'application. */
+export const MOTIF_VERSION_DEPART = "Modèle de départ généré par l'application";
 
 export interface VersionCourteModelePv {
   numero: number;

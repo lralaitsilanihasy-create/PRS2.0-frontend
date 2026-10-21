@@ -14,6 +14,7 @@ import {
   ModelePvFiche,
   ModelePvResume,
   NatureModelePv,
+  PorteeDepart,
   VersionModelePv,
 } from '../models';
 
@@ -52,6 +53,15 @@ export class ModelePvService {
 
   version(id: number, numero: number): Observable<VersionModelePv> {
     return this.http.get<VersionModelePv>(`${this.url}/${id}/versions/${numero}`, this.ctx);
+  }
+
+  /**
+   * ⚠️ 21/10 (demande « modele-pv-depart ») — le modèle de départ assemblé par le serveur : une version en brouillon, tirée du PV
+   * officiel et des phrases de la famille des sous-types servis, conditions et champs déjà déclarés. Rien n'est mis en vigueur.
+   * 400 `SANS_SOUS_TYPE`, `NATURE_SANS_DEPART`, `PORTEE_INCONNUE` ; 409 `FAMILLES_MULTIPLES` (`details`), `FAMILLE_SANS_DEPART`, `MODELE_ARCHIVE`.
+   */
+  genererDepart(id: number, portee: PorteeDepart = 'les-deux'): Observable<VersionModelePv> {
+    return this.http.post<VersionModelePv>(`${this.url}/${id}/versions/depart`, { portee }, this.ctx);
   }
 
   /** Remplace l'ensemble des conditions d'une version en brouillon ; le rapport est recalculé. */

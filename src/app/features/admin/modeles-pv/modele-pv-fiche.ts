@@ -2,12 +2,22 @@ import { DatePipe, LowerCasePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of, switchMap } from 'rxjs';
 
 import { ApiError, codeErreur, corpsErreur } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
 import { TYPES_DOCX, telechargerBlob, validerFichier } from '../../../core/securite/fichiers-surs';
-import { CatalogueModelePv, ChampModelePv, CouvertureSousType, ConditionModelePv, ModelePvFiche, SousTypeDossier, VersionModelePv } from '../../../models';
+import {
+  CatalogueModelePv,
+  ChampModelePv,
+  CouvertureSousType,
+  ConditionModelePv,
+  MOTIF_VERSION_DEPART,
+  ModelePvFiche,
+  PorteeDepart,
+  SousTypeDossier,
+  VersionModelePv,
+} from '../../../models';
 import { ModelePvService, SousTypeDossierService, TypeDossierService } from '../../../services';
 import { ModaleDirective } from '../../../shared/a11y/modale.directive';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
@@ -15,7 +25,18 @@ import { ApercuVersion } from './apercu-version';
 import { CatalogueVariables } from './catalogue-variables';
 import { ChampsVersion } from './champs-version';
 import { ConditionsVersion } from './conditions-version';
-import { LIBELLES_ACTION, LIBELLES_ETAT_VERSION, LIBELLES_NATURE, MOTIF_CODE_MODELE, reprisParModele, tailleLisible } from './modeles-pv-libelles';
+import { FormulaireApercu } from './formulaire-apercu';
+import {
+  LIBELLES_ACTION,
+  LIBELLES_ETAT_VERSION,
+  LIBELLES_NATURE,
+  MOTIF_CODE_MODELE,
+  expressionProposee,
+  libelleDeCode,
+  nonDeclares,
+  reprisParModele,
+  tailleLisible,
+} from './modeles-pv-libelles';
 import { RapportControlePv } from './rapport-controle-pv';
 
 type Onglet = 'depot' | 'variables' | 'champs' | 'apercu';
@@ -37,7 +58,7 @@ const TAILLE_MAX_MO = 10;
 @Component({
   selector: 'app-modele-pv-fiche',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, LowerCasePipe, RouterLink, EtatErreur, ModaleDirective, RapportControlePv, ConditionsVersion, ChampsVersion, ApercuVersion, CatalogueVariables],
+  imports: [DatePipe, LowerCasePipe, RouterLink, EtatErreur, ModaleDirective, RapportControlePv, ConditionsVersion, ChampsVersion, ApercuVersion, CatalogueVariables, FormulaireApercu],
   template: `
     <section class="mpf">
       <a class="mpf__retour" routerLink="/admin/referentiels/modeles-pv">← Tous les modèles de PV</a>
@@ -100,7 +121,32 @@ const TAILLE_MAX_MO = 10;
                 </tbody>
               </table>
             } @else {
-              <p class="text-muted">Aucune version : rédigez le PV dans Word avec les variables du catalogue, puis déposez-le.</p>
+              <p class="text-muted">Aucune version : rédigez le PV dans Word avec les variables du catalogue, puis déposez-le — ou laissez l’application préparer un modèle de départ.</p>
+              @if (f.etat === 'ACTIF' && f.nature === 'PV') {
+                <div class="mpf__depart">
+                  <p class="mpf__depart-titre">Modèle de départ</p>
+                  <p class="mpf__note">
+                    L’application assemble le PV officiel et les phrases de la famille servie, avec ses règles et ses champs déjà déclarés.
+                    Il arrive en brouillon : faites-en valider le texte par la CNM, corrigez-le dans Word, puis redéposez-le.
+                  </p>
+                  @if (!f.sousTypes.length) {
+                    <p class="mpf__note"><strong>Cochez d’abord les sous-types servis</strong> : ils disent quelle famille assembler.</p>
+                  } @else {
+                    <div class="mpf__depart-ligne">
+                      <label class="mpf__depart-portee">
+                        <span>Commissions</span>
+                        <select class="form-control" aria-label="Commissions couvertes par le modèle de départ" [value]="portee()" (change)="portee.set($any($event.target).value)">
+                          @for (o of portees; track o.cle) { <option [value]="o.cle" [selected]="o.cle === portee()">{{ o.libelle }}</option> }
+                        </select>
+                      </label>
+                      <button type="button" class="btn btn-primary btn-sm" [disabled]="generation()" (click)="genererDepart()">
+                        {{ generation() ? 'Assemblage…' : 'Générer un modèle de départ' }}
+                      </button>
+                    </div>
+                  }
+                  @if (messageDepart(); as m) { <p class="form-error" role="alert">{{ m }}</p> }
+                </div>
+              }
             }
             <p class="mpf__note">Une version en vigueur ne se modifie pas : on en dépose une nouvelle, avec un motif. Les PV signés gardent la version qui les a produits.</p>
             @if (messageDepot(); as m) { <p class="form-error" role="alert">{{ m }}</p> }
@@ -179,6 +225,31 @@ const TAILLE_MAX_MO = 10;
                     (<code>{{ o }}POUR:TITULAIRES{{ f2 }}</code>). Les anciens marqueurs du métier (<code>&lt;REFERENCE PV&gt;</code>,
                     <code>&lt;CHEF LIEU&gt;</code>…) restent acceptés. L’emblème et les images s’insèrent directement dans le Word.
                   </div>
+                  @if (estDepart(v)) {
+                    <p class="alert alert-warning mpf__a-valider" role="note">
+                      <span><strong>Texte proposé par l’application — à faire valider par la CNM avant mise en vigueur.</strong>
+                        Téléchargez le .docx, faites-le relire, corrigez-le dans Word et déposez la version corrigée.
+                        À compléter au besoin : la qualité du viseur et la mention « par intérim », et les lignes des présents sans nom.</span>
+                    </p>
+                  }
+                  @let nd = aDeclarer();
+                  @if (!figee() && (nd.conditions.length || nd.champs.length)) {
+                    <div class="mpf__declarer" role="note">
+                      <p class="mpf__declarer-titre">Le Word utilise des éléments pas encore déclarés</p>
+                      <ul class="mpf__declarer-liste">
+                        @for (c of nd.conditions; track c) {
+                          <li>Bloc <code>{{ o }}SI:{{ c }}{{ f2 }}</code> —
+                            @if (proposition(c); as e) { condition proposée : <code>{{ e }}</code> } @else { <em>condition à écrire dans « Variables et conditions »</em> }
+                          </li>
+                        }
+                        @for (c of nd.champs; track c) { <li>Champ <code>{{ o }}SAISI:{{ c }}{{ f2 }}</code> — « {{ libelleDe(c) }} », texte long, facultatif (à préciser dans « Champs saisis »)</li> }
+                      </ul>
+                      <button type="button" class="btn btn-primary btn-sm" [disabled]="ecriture()" (click)="declarerCeQueLeWordUtilise()">
+                        {{ ecriture() ? 'Déclaration…' : 'Déclarer ce que le Word utilise' }}
+                      </button>
+                      @if (messageDeclaration(); as m) { <p class="form-error" role="alert">{{ m }}</p> }
+                    </div>
+                  }
                   <h3 class="mpf__titre">Rapport de contrôle — {{ v.nomFichier }}</h3>
                   <app-rapport-controle-pv [rapport]="v.rapport" />
                 }
@@ -200,6 +271,7 @@ const TAILLE_MAX_MO = 10;
                   <h3 class="mpf__titre">Champs saisis par le membre à l’examen</h3>
                   <app-champs-version [champs]="v.champs" [conditions]="nomsConditions()" [utilises]="v.rapport?.champsUtilises ?? []"
                                       [figee]="figee()" [enregistrement]="ecriture()" [erreurs]="messageChamps()" (enregistrer)="enregistrerChamps($event)" />
+                  <app-formulaire-apercu [champs]="v.champs" [conditions]="v.conditions" />
                 }
                 @case ('apercu') {
                   <app-apercu-version [idModele]="f.id" [numero]="v.numero" [champs]="v.champs" [codeModele]="f.code"
@@ -303,6 +375,17 @@ const TAILLE_MAX_MO = 10;
       background: #fff; color: #152033; cursor: pointer; display: inline-flex; gap: 0.35rem; align-items: center; }
     .mpf__onglet--on { background: #152033; color: #fff; }
     .mpf__panneau { padding-top: 0.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    .mpf__depart { border: 1px dashed var(--p-300, #7dd3fc); background: var(--p-50); border-radius: 10px; padding: 0.7rem 0.9rem;
+      display: flex; flex-direction: column; gap: 0.4rem; }
+    .mpf__depart-titre { margin: 0; font-weight: 600; color: var(--p-700); font-size: 0.9rem; }
+    .mpf__depart-ligne { display: flex; gap: 0.6rem; align-items: flex-end; flex-wrap: wrap; }
+    .mpf__depart-portee { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.8rem; color: var(--n-700); }
+    .mpf__depart-portee select { width: auto; min-width: 16rem; }
+    .mpf__a-valider { margin: 0; }
+    .mpf__declarer { border: 1px solid var(--warning-bdr); background: var(--warning-bg); border-radius: 10px; padding: 0.7rem 0.9rem;
+      display: flex; flex-direction: column; gap: 0.45rem; align-items: flex-start; }
+    .mpf__declarer-titre { margin: 0; font-weight: 600; color: #854D0E; font-size: 0.9rem; }
+    .mpf__declarer-liste { margin: 0; padding-left: 1.1rem; font-size: 0.85rem; color: var(--n-800); display: flex; flex-direction: column; gap: 0.2rem; }
     .mpf__aide { background: var(--p-50); border-left: 3px solid var(--p-600); padding: 0.6rem 0.75rem; border-radius: 6px; font-size: 0.85rem; color: var(--n-700); }
     .mpf__deux { display: grid; grid-template-columns: repeat(auto-fit, minmax(24rem, 1fr)); gap: 1.25rem; align-items: start; }
     .mpf__deux > div { display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
@@ -372,6 +455,29 @@ export class ModelePvFicheEcran implements OnInit {
   readonly nomsConditions = computed(() => (this.version()?.conditions ?? []).map((c) => c.nom));
   readonly codesSousTypes = computed(() => (this.fiche()?.sousTypes ?? []).map((s) => s.id));
   /** Les sous-types servis encore produits par des fichiers intégrés (le plan, la lettre de renvoi). */
+  /** Les blocs et champs que le Word de la version utilise sans les avoir déclarés. */
+  readonly aDeclarer = computed(() => {
+    const v = this.version();
+    return v ? nonDeclares(v.rapport, v.conditions, v.champs) : { conditions: [], champs: [] };
+  });
+  readonly messageDeclaration = signal<string | null>(null);
+
+  readonly portees: readonly { cle: PorteeDepart; libelle: string }[] = [
+    { cle: 'les-deux', libelle: 'Centrale et régionale (un bloc chacune)' },
+    { cle: 'centrale', libelle: 'Commission centrale seule' },
+    { cle: 'regionale', libelle: 'Commission régionale seule' },
+  ];
+  readonly portee = signal<PorteeDepart>('les-deux');
+  readonly generation = signal(false);
+  readonly messageDepart = signal<string | null>(null);
+
+  /** Une version assemblée par l'application (motif posé par le serveur) : son texte reste à faire valider par la CNM. */
+  estDepart(v: VersionModelePv): boolean {
+    return (v.motif ?? '').startsWith(MOTIF_VERSION_DEPART);
+  }
+  readonly proposition = expressionProposee;
+  readonly libelleDe = libelleDeCode;
+
   readonly repris = computed(() => (this.fiche()?.etat === 'ACTIF' ? reprisParModele(this.couverture(), this.idModele) : []));
   /** La couverture servie (`/couverture`), relue à chaque application de la fiche (les rattachements la changent). */
   private readonly couverture = signal<CouvertureSousType[]>([]);
@@ -497,6 +603,32 @@ export class ModelePvFicheEcran implements OnInit {
     this.messageChamps.set(null);
   }
 
+  /** Le modèle de départ : une version en brouillon, assemblée par le serveur, ouverte sur son rapport. */
+  genererDepart(): void {
+    if (this.generation()) return;
+    this.generation.set(true);
+    this.messageDepart.set(null);
+    this.service.genererDepart(this.idModele, this.portee()).subscribe({
+      next: (v) => {
+        this.generation.set(false);
+        this.onglet.set('depot');
+        this.recharger(v.numero);
+      },
+      error: (e: ApiError) => {
+        this.generation.set(false);
+        const code = codeErreur(e);
+        this.messageDepart.set(
+          code === 'SANS_SOUS_TYPE' ? 'Cochez d’abord les sous-types servis : ils disent quelle famille assembler.'
+          : code === 'FAMILLES_MULTIPLES' ? `Les sous-types servis relèvent de plusieurs familles (${this.detailsEnClair(e, (fam, sts) => `${fam} : ${sts}`)}) : gardez ceux d’une seule famille.`
+          : code === 'FAMILLE_SANS_DEPART' ? 'Le plan de passation n’a pas de modèle de départ : il garde ses fichiers intégrés, repris plus tard.'
+          : code === 'NATURE_SANS_DEPART' ? 'Le modèle de départ n’existe que pour un procès-verbal.'
+          : code === 'MODELE_ARCHIVE' ? 'Ce modèle est archivé.'
+          : e.message || 'Le modèle de départ n’a pas pu être généré.',
+        );
+      },
+    });
+  }
+
   deposer(ev: Event): void {
     const champ = ev.target as HTMLInputElement;
     const fichier = champ.files?.[0];
@@ -569,6 +701,46 @@ export class ModelePvFicheEcran implements OnInit {
         this.messageChamps.set(this.messageAvecDetails(e, 'Les champs n’ont pas été enregistrés.'));
       },
     });
+  }
+
+  /**
+   * Déclare d'un clic ce que le Word utilise : les conditions aux noms usuels (avis, portée, AGPM, forme) avec leur expression, puis
+   * les champs saisis (texte long, facultatifs, à préciser ensuite). Les conditions sans expression proposée restent à écrire.
+   */
+  declarerCeQueLeWordUtilise(): void {
+    const v = this.version();
+    if (!v || this.ecriture()) return;
+    const nd = this.aDeclarer();
+    const conditions = [
+      ...v.conditions,
+      ...nd.conditions.filter((n) => expressionProposee(n)).map((n) => ({ nom: n, expression: expressionProposee(n), libelle: null })),
+    ];
+    const champs: ChampModelePv[] = [
+      ...v.champs,
+      ...nd.champs.map((c) => ({ code: c, libelle: libelleDeCode(c), type: 'TEXTE_LONG' as const, options: [], obligatoire: false, aide: null, visibleSi: null })),
+    ];
+    const restent = nd.conditions.filter((n) => !expressionProposee(n));
+    this.ecriture.set(true);
+    this.messageDeclaration.set(null);
+    const conditions$ = conditions.length > v.conditions.length ? this.service.definirConditions(this.idModele, v.numero, conditions) : of(v);
+    conditions$
+      .pipe(switchMap(() => (champs.length > v.champs.length ? this.service.definirChamps(this.idModele, v.numero, champs) : of(v))))
+      .subscribe({
+        next: () => {
+          this.ecriture.set(false);
+          this.toast.success(
+            restent.length
+              ? `Déclaré. Reste à écrire la condition de : ${restent.join(', ')} (onglet « Variables et conditions »).`
+              : 'Déclaré ; vérifiez les libellés et types des champs (onglet « Champs saisis »).',
+          );
+          this.recharger(v.numero);
+        },
+        error: (e: ApiError) => {
+          this.ecriture.set(false);
+          this.messageDeclaration.set(this.messageAvecDetails(e, 'La déclaration a échoué.'));
+          this.recharger(v.numero);
+        },
+      });
   }
 
   basculerSousType(id: string, coche: boolean): void {

@@ -1,5 +1,5 @@
 import { CouvertureSousType, ModelePvResume } from '../../../models';
-import { ecrireExpression, etatModele, grilleFichiers, phrasesRegle, expressionEnClair, lireExpression, propositionPourFamille, reprisParModele, sansDocument, tailleLisible } from './modeles-pv-libelles';
+import { ecrireExpression, etatModele, evaluerCondition, expressionProposee, grilleFichiers, libelleDeCode, nonDeclares, phrasesRegle, expressionEnClair, lireExpression, propositionPourFamille, reprisParModele, sansDocument, tailleLisible } from './modeles-pv-libelles';
 
 const v = (numero: number, etat: 'BROUILLON' | 'EN_VIGUEUR' | 'REMPLACEE', bloquant = false) => ({ numero, etat, bloquant, deposeeLe: null, enVigueurLe: null });
 const modele = (o: Partial<ModelePvResume>): ModelePvResume => ({
@@ -110,5 +110,30 @@ describe('Modèles de PV — fichiers intégrés en grille (21/10)', () => {
       'Seul un dossier dont le PPM garde une ligne reçoit un document',
       'L’avis NSP n’en a pas',
     ]);
+  });
+});
+
+describe('Modèles de PV — ce que le Word utilise sans déclaration, et l’aperçu du formulaire (21/10)', () => {
+  it('relève les blocs et champs du Word non encore déclarés', () => {
+    const r = { conditionsUtilisees: ['FAVORABLE', 'OBS_GENERALE'], champsUtilises: ['motif_defavorable', 'observation_generale'] };
+    expect(nonDeclares(r, [{ nom: 'FAVORABLE' }], [{ code: 'observation_generale' }])).toEqual({ conditions: ['OBS_GENERALE'], champs: ['motif_defavorable'] });
+    expect(nonDeclares(null, [], [])).toEqual({ conditions: [], champs: [] });
+  });
+
+  it('propose l’expression des noms usuels, et un libellé tiré du code', () => {
+    expect(expressionProposee('AVEC_RESERVES')).toBe('avis = FAVR');
+    expect(expressionProposee('regionale')).toBe('portee = regionale');
+    expect(expressionProposee('OBS_GENERALE')).toBe('');
+    expect(libelleDeCode('motif_defavorable')).toBe('Motif defavorable');
+  });
+
+  it('évalue une condition comme le serveur : « et » avant « ou », valeur absente', () => {
+    expect(evaluerCondition('avis = FAVR', { avis: 'favr' })).toBe(true);
+    expect(evaluerCondition('avis = DEF', {})).toBe(false);
+    expect(evaluerCondition('avis != DEF', {})).toBe(true);
+    expect(evaluerCondition('saisi.obs renseigne', { 'saisi.obs': ' ' })).toBe(false);
+    expect(evaluerCondition('avis = FAV et saisi.obs renseigne ou avis = DEF', { avis: 'DEF' })).toBe(true);
+    expect(evaluerCondition('avis = FAV et saisi.obs renseigne ou avis = DEF', { avis: 'FAV' })).toBe(false);
+    expect(evaluerCondition('illisible', {})).toBeNull();
   });
 });

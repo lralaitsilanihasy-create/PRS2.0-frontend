@@ -34,6 +34,7 @@ export const LIBELLES_ACTION: Readonly<Record<string, string>> = {
   RATTACHEMENTS: 'Sous-types servis modifiés',
   DUPLIQUE: 'Modèle dupliqué',
   ARCHIVE: 'Modèle archivé',
+  DEPART_GENERE: 'Modèle de départ généré par l’application',
 };
 
 export const MOTIF_CODE_MODELE = /^[A-Za-z0-9_.-]{1,50}$/;
@@ -195,6 +196,72 @@ export function lireExpression(expression: string): Terme[] | null {
     else return null;
   }
   return termes;
+}
+
+// ——— Ce que le Word utilise sans l'avoir déclaré (21/10) ———
+
+/** Expressions proposées pour les noms de condition usuels ; un autre nom reste à écrire par l'Administrateur. */
+const CONDITIONS_USUELLES: Readonly<Record<string, string>> = {
+  FAVORABLE: 'avis = FAV',
+  AVEC_RESERVES: 'avis = FAVR',
+  FAVORABLE_AVEC_RESERVES: 'avis = FAVR',
+  DEFAVORABLE: 'avis = DEF',
+  NON_FAVORABLE: 'avis = DEF',
+  SANS_AVIS: 'avis = NSP',
+  REGIONALE: 'portee = regionale',
+  CENTRALE: 'portee = centrale',
+  AVEC_AGPM: 'agpm = oui',
+  SANS_AGPM: 'agpm = non',
+  CONTRAT_CADRE: 'forme = CONTRAT_CADRE',
+};
+
+/** Les blocs `{{SI:…}}` et champs `{{SAISI:…}}` relevés dans le Word mais pas encore déclarés sur la version. */
+export function nonDeclares(
+  rapport: { conditionsUtilisees: string[]; champsUtilises: string[] } | null,
+  conditions: readonly { nom: string }[],
+  champs: readonly { code: string }[],
+): { conditions: string[]; champs: string[] } {
+  if (!rapport) return { conditions: [], champs: [] };
+  const noms = new Set(conditions.map((c) => c.nom));
+  const codes = new Set(champs.map((c) => c.code));
+  return { conditions: rapport.conditionsUtilisees.filter((n) => !noms.has(n)), champs: rapport.champsUtilises.filter((c) => !codes.has(c)) };
+}
+
+/** L'expression proposée pour un nom de condition (vide : à écrire). */
+export function expressionProposee(nom: string): string {
+  return CONDITIONS_USUELLES[nom.toUpperCase().replace(/-/g, '_')] ?? '';
+}
+
+/** Un libellé lisible tiré du code d'un champ : `motif_defavorable` → « Motif defavorable ». */
+export function libelleDeCode(code: string): string {
+  const t = code.replace(/_/g, ' ').trim();
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+/**
+ * Évalue une condition comme le fera le serveur (`ConditionsModele`) sur les valeurs connues de l'aperçu du formulaire : « et »
+ * avant « ou », `=` faux sur une valeur absente, `!=` vrai. Comparaison sans casse. `null` : l'expression ne se lit pas.
+ */
+export function evaluerCondition(expression: string, valeurs: Readonly<Record<string, string | null | undefined>>): boolean | null {
+  const termes = lireExpression(expression);
+  if (!termes || !termes.length) return null;
+  const vrai = (t: Terme): boolean => {
+    const v = valeurs[t.cle];
+    const s = (v ?? '').toString().trim().toLowerCase();
+    switch (t.op) {
+      case '=': return v != null && s === t.valeur.trim().toLowerCase();
+      case '!=': return v == null || s !== t.valeur.trim().toLowerCase();
+      case 'contient': return s.includes(t.valeur.trim().toLowerCase());
+      case 'renseigne': return s !== '';
+      case 'vide': return s === '';
+    }
+  };
+  const alternatives: Terme[][] = [[]];
+  for (const t of termes) {
+    if (t.lien === 'ou' && alternatives[alternatives.length - 1].length) alternatives.push([]);
+    alternatives[alternatives.length - 1].push(t);
+  }
+  return alternatives.some((a) => a.every(vrai));
 }
 
 /** L'expression dite en clair, avec les libellés des clés connues (« l'avis vaut FAVR »). */
