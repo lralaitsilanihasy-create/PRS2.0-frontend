@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, input, output, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { EcartArmp } from '../../../models';
 import { ModelePvService } from '../../../services';
+import { SegmentEcart, diffMots, nettoyer, passagesARechercher, resserrer } from './ecarts-diff';
 
 const LIBELLE: Readonly<Record<EcartArmp['type'], string>> = { MODIFIE: 'Modifié', AJOUTE: 'Ajouté', RETIRE: 'Retiré' };
 
@@ -30,9 +31,27 @@ const LIBELLE: Readonly<Record<EcartArmp['type'], string>> = { MODIFIE: 'Modifi�
           <ul class="ear__liste">
             @for (e of l; track $index) {
               <li [class]="'ear__ecart ear__ecart--' + e.type">
-                <span class="ear__type">{{ libelle[e.type] }} <small>· ligne {{ e.rang }}</small></span>
-                @if (e.avant) { <del>{{ e.avant }}</del> }
-                @if (e.apres) { <ins>{{ e.apres }}</ins> }
+                <span class="ear__type">{{ libelle[e.type] }} <small>· ligne {{ e.rang }}</small>
+                  @if (e.type !== 'RETIRE') {
+                    <button type="button" class="ear__aller" (click)="aller.emit(passages(e))">Aller à l’endroit</button>
+                  }
+                </span>
+                @if (e.type === 'MODIFIE') {
+                  <p class="ear__texte">
+                    @for (s of segments(e); track $index) {
+                      @switch (s.type) {
+                        @case ('retire') { <del>{{ s.texte }}</del> }
+                        @case ('ajoute') { <ins>{{ s.texte }}</ins> }
+                        @case ('coupure') { <span class="ear__coupure">{{ s.texte }}</span> }
+                        @default { <span>{{ s.texte }}</span> }
+                      }
+                    }
+                  </p>
+                } @else if (e.type === 'AJOUTE') {
+                  <p class="ear__texte"><ins>{{ propre(e.apres) }}</ins></p>
+                } @else {
+                  <p class="ear__texte"><del>{{ propre(e.avant) }}</del></p>
+                }
               </li>
             }
           </ul>
@@ -53,8 +72,12 @@ const LIBELLE: Readonly<Record<EcartArmp['type'], string>> = { MODIFIE: 'Modifi�
     .ear__ecart--RETIRE { border-left-color: var(--miss-accent, #dc2626); background: var(--miss-bg, #fee2e2); }
     .ear__type { font-weight: 700; color: var(--n-800); }
     .ear__type small { font-weight: 400; color: var(--n-500); }
-    del { color: var(--miss-text, #991b1b); }
-    ins { color: var(--ok-text, #065f46); text-decoration: none; font-weight: 600; }
+    .ear__texte { margin: 0; color: var(--n-700); line-height: 1.5; white-space: pre-wrap; }
+    del { color: var(--miss-text, #991b1b); background: #fee2e2; border-radius: 3px; padding: 0 2px; }
+    ins { color: var(--ok-text, #065f46); background: #d1fae5; text-decoration: none; font-weight: 600; border-radius: 3px; padding: 0 2px; }
+    .ear__coupure { color: var(--n-500); }
+    .ear__aller { margin-left: 0.5rem; border: 0; background: none; padding: 0; color: var(--p-700); text-decoration: underline; cursor: pointer; font: inherit; font-size: 0.85em; font-weight: 400; }
+    .ear__aller:focus-visible { outline: 2px solid var(--p-700); outline-offset: 2px; }
   `,
 })
 export class EcartsArmp {
@@ -67,6 +90,20 @@ export class EcartsArmp {
   readonly empreinte = input<string | null>(null);
 
   readonly libelle = LIBELLE;
+  /** « Aller à l'endroit » : les passages à chercher dans la page, du plus précis au plus large. */
+  readonly aller = output<string[]>();
+
+  segments(e: EcartArmp): SegmentEcart[] {
+    return resserrer(diffMots(nettoyer(e.avant), nettoyer(e.apres)));
+  }
+
+  propre(s: string | null): string {
+    return nettoyer(s);
+  }
+
+  passages(e: EcartArmp): string[] {
+    return e.type === 'AJOUTE' ? [nettoyer(e.apres).slice(0, 60)] : passagesARechercher(e.avant ?? '', e.apres ?? '');
+  }
   readonly ecarts = signal<EcartArmp[] | null>(null);
   readonly erreur = signal<string | null>(null);
 

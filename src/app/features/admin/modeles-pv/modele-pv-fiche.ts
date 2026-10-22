@@ -364,7 +364,7 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
                   <app-rapport-controle-pv [rapport]="v.rapport" [page]="v.support === 'PAGE'" (aller)="allerA($event)" (inserer)="insererManquante($event)"
                                            [declarable]="!figee() && !ecriture()" (declarer)="declarerCeQueLeWordUtilise()" />
                   @if (f.nature === 'DOCUMENT_DAO' && v.support === 'PAGE') {
-                    <app-ecarts-armp [idModele]="f.id" [numero]="v.numero" [empreinte]="v.empreinte" />
+                    <app-ecarts-armp [idModele]="f.id" [numero]="v.numero" [empreinte]="v.empreinte" (aller)="allerAuPassage($event)" />
                   }
                 }
                 @case ('variables') {
@@ -980,6 +980,11 @@ export class ModelePvFicheEcran implements OnInit {
 
   allerA(chemin: string): void {
     this.editeur()?.allerA(chemin);
+  }
+
+  /** Depuis le panneau des écarts : le passage modifié, sélectionné dans l'éditeur. */
+  allerAuPassage(passages: string[]): void {
+    if (!this.editeur()?.chercher(passages)) this.toast.info('Ce passage n’a pas été trouvé tel quel dans la page : il est peut-être coupé par une donnée de la fiche.');
   }
 
   telecharger(v: VersionModelePv): void {

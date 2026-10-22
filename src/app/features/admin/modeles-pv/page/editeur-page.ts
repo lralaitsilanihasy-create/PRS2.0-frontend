@@ -679,6 +679,34 @@ export class EditeurPage implements AfterViewInit, OnDestroy {
   }
 
   /** Amène le curseur sur le nœud désigné par le chemin d'un point du rapport (`corps/1/1`). */
+  /**
+   * ⚠️ 22/10 (panneau des écarts) — amène le curseur sur le premier passage trouvé, dans l'ordre des propositions (de la plus précise à
+   * la plus large), et le sélectionne. Faux si aucun n'est dans la page.
+   */
+  chercher(passages: readonly string[]): boolean {
+    for (const texte of passages) {
+      for (const zone of ZONES) {
+        const e = this.editeurs[zone];
+        if (!e) continue;
+        let trouve: number | null = null;
+        e.state.doc.descendants((n, pos) => {
+          if (trouve !== null) return false;
+          if (n.isText && n.text) {
+            const i = n.text.indexOf(texte);
+            if (i >= 0) trouve = pos + i;
+          }
+          return true;
+        });
+        if (trouve !== null) {
+          this.zoneActive.set(zone);
+          e.chain().focus().setTextSelection({ from: trouve, to: trouve + texte.length }).scrollIntoView().run();
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   allerA(chemin: string | null | undefined): void {
     const c = cheminVersZone(chemin);
     const e = c ? this.editeurs[c.zone] : undefined;
