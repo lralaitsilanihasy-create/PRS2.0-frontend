@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, effect, inject, input, signal } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
@@ -28,28 +28,37 @@ const AVIS: readonly { code: AvisApercu | ''; libelle: string }[] = [
   template: `
     <div class="apv">
       <div class="apv__barre">
-        <strong class="apv__invite">{{ codeIntegre() ? 'Essayer sur un dossier réel :' : 'Essayer la v' + numero() + ' sur un dossier réel :' }}</strong>
-        <input class="form-control apv__dossier" type="number" min="1" placeholder="N° interne du dossier" aria-label="N° interne du dossier"
+        @if (codeIntegre()) {
+          <strong class="apv__invite">Essayer sur un dossier réel :</strong>
+        } @else {
+          <strong class="apv__invite">Essayer la v{{ numero() }} sur :</strong>
+          <button type="button" class="apv__exemple" [class.apv__exemple--on]="surExemple()" [attr.aria-pressed]="surExemple()" [disabled]="!!enCours()"
+                  title="Valeurs d’exemple du catalogue ; le PDF porte « EXEMPLE — valeurs fictives »" (click)="prendreExemple()">
+            Dossier d’exemple <span>· valeurs fictives</span>
+          </button>
+          <span class="apv__ou">ou</span>
+        }
+        <input class="form-control apv__dossier" type="number" min="1" placeholder="N° d’un dossier réel" aria-label="N° interne d’un dossier réel"
                [value]="idDossier() ?? ''" (change)="choisirDossier($any($event.target).value)" />
         @if (avecAvis()) {
           <select class="form-control apv__avis" aria-label="Avis" [value]="avis()" (change)="avis.set($any($event.target).value)">
-            @for (a of avisPossibles; track a.code) { <option [value]="a.code" [selected]="a.code === avis()">Avis : {{ a.libelle }}</option> }
+            @for (a of avisPossibles; track a.code) { <option [value]="a.code" [selected]="a.code === avis()">Avis : {{ a.code === '' && surExemple() ? 'celui de l’exemple' : a.libelle }}</option> }
           </select>
         }
-        <button type="button" class="btn btn-primary btn-sm" [disabled]="!idDossier() || enCours()" (click)="produire('pdf')">
+        <button type="button" class="btn btn-primary btn-sm" [disabled]="!pret() || !!enCours()" (click)="produire('pdf')">
           {{ enCours() === 'pdf' ? 'Production…' : 'Produire l’aperçu' }}
         </button>
         @if (avecWord()) {
-          <button type="button" class="btn btn-secondary btn-sm" [disabled]="!idDossier() || enCours()" (click)="produire('docx')">
+          <button type="button" class="btn btn-secondary btn-sm" [disabled]="!pret() || !!enCours()" (click)="produire('docx')">
           {{ enCours() === 'docx' ? 'Production…' : 'Word' }}
         </button>
         }
         <button type="button" class="btn btn-secondary btn-sm" [disabled]="!pdf()" (click)="ouvrirPdf()">PDF ↗</button>
       </div>
       <p class="text-sm text-muted apv__rien">Rien n’est enregistré au dossier. @if (avecWord()) { « Word » télécharge le document rempli ; } « PDF ↗ » ouvre l’aperçu dans un nouvel onglet.</p>
-      @if (exemples().length) {
-        <div class="apv__exemples" role="group" aria-label="Dossier d’exemple">
-          <span class="apv__exemples-titre">Dossier d’exemple :</span>
+      @if (codeIntegre() && exemples().length) {
+        <div class="apv__exemples" role="group" aria-label="Dossier proposé">
+          <span class="apv__exemples-titre">Dossier proposé :</span>
           @for (e of exemples(); track e.idDossier) {
             <button type="button" class="apv__exemple" [class.apv__exemple--on]="e.idDossier === idDossier()" [disabled]="!!enCours()"
                     [attr.aria-pressed]="e.idDossier === idDossier()" [title]="'Produire l’aperçu sur le dossier ' + e.idDossier"
@@ -58,7 +67,7 @@ const AVIS: readonly { code: AvisApercu | ''; libelle: string }[] = [
             </button>
           }
         </div>
-      } @else if (exemplesCharges() && sousTypesServis().length) {
+      } @else if (codeIntegre() && exemplesCharges() && sousTypesServis().length) {
         <p class="text-sm text-muted apv__rien">Aucun dossier examiné des sous-types de ce modèle : saisissez un numéro de dossier.</p>
       }
       @if (dossier(); as d) {
@@ -121,6 +130,7 @@ const AVIS: readonly { code: AvisApercu | ''; libelle: string }[] = [
     .apv__cadre { width: 100%; height: 75vh; min-height: 32rem; border: 1px solid var(--n-300); border-radius: 8px; background: #fff; }
     .apv__vide { border: 1px dashed var(--n-300); border-radius: 8px; padding: 2.5rem 1rem; text-align: center; color: var(--n-500); background: #fff; }
     .apv__dossier-lu { margin: 0; color: var(--n-700); }
+    .apv__ou { font-size: 0.8rem; color: var(--text-muted); }
     .apv__exemples { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
     .apv__exemples-titre { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
     .apv__exemple { border: 1px solid var(--border); background: var(--card-bg); color: var(--primary); border-radius: 999px; padding: 0.15rem 0.7rem;
@@ -172,8 +182,18 @@ export class ApercuVersion implements OnInit {
   /** ⚠️ 22/10 — un dossier examiné des sous-types servis, proposé et prérempli pour l'aperçu (un seul suffit, demande du pilote). */
   readonly exemples = signal<Dossier[]>([]);
   readonly exemplesCharges = signal(false);
+  /**
+   * ⚠️ 22/10 (« apercu-exemple », back 140872e) — une version de l'écran s'essaie d'abord sur le dossier d'exemple fictif du serveur
+   * (valeurs d'exemple du catalogue, pied « EXEMPLE — valeurs fictives ») ; un modèle intégré, qui ne le connaît pas, sur un dossier réel.
+   */
+  readonly surExemple = signal(false);
+  readonly pret = computed(() => !!this.idDossier() || (this.surExemple() && !this.codeIntegre()));
 
   ngOnInit(): void {
+    if (!this.codeIntegre()) {
+      this.prendreExemple();
+      return;
+    }
     const sousTypes = this.sousTypesServis();
     if (!sousTypes.length) return;
     this.dossiers
@@ -190,7 +210,16 @@ export class ApercuVersion implements OnInit {
       });
   }
 
-  /** Un dossier d'exemple : choisi, et son aperçu produit d'un coup. */
+  /** Le dossier d'exemple fictif : l'aperçu est produit d'un coup. */
+  prendreExemple(): void {
+    this.idDossier.set(null);
+    this.dossier.set(null);
+    this.dossierIntrouvable.set(false);
+    this.surExemple.set(true);
+    this.produire('pdf');
+  }
+
+  /** Un dossier réel proposé : choisi, et son aperçu produit d'un coup. */
   essayerExemple(id: number): void {
     this.choisirDossier(String(id));
     this.produire('pdf');
@@ -236,6 +265,7 @@ export class ApercuVersion implements OnInit {
       this.idDossier.set(null);
       return;
     }
+    this.surExemple.set(false);
     this.idDossier.set(id);
     this.dossiers
       .getById(id)
@@ -252,7 +282,8 @@ export class ApercuVersion implements OnInit {
 
   produire(format: 'pdf' | 'docx'): void {
     const dossier = this.idDossier();
-    if (!dossier || this.enCours()) return;
+    const exemple = this.surExemple() && !this.codeIntegre();
+    if ((!dossier && !exemple) || this.enCours()) return;
     this.enCours.set(format);
     this.message.set(null);
     this.fichierUtilise.set(null);
@@ -260,8 +291,8 @@ export class ApercuVersion implements OnInit {
     const avis = this.avecAvis() ? this.avis() || null : null;
     const code = this.codeIntegre();
     const source = code
-      ? this.service.apercuIntegre(code, { dossier, avis, format })
-      : this.service.apercu(this.idModele() ?? 0, this.numero() ?? 0, { dossier, avis, format, saisis }).pipe(map((blob) => ({ blob, fichier: null as string | null })));
+      ? this.service.apercuIntegre(code, { dossier: dossier ?? 0, avis, format })
+      : this.service.apercu(this.idModele() ?? 0, this.numero() ?? 0, { dossier, exemple, avis, format, saisis }).pipe(map((blob) => ({ blob, fichier: null as string | null })));
     source
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -269,7 +300,7 @@ export class ApercuVersion implements OnInit {
           this.enCours.set(null);
           this.fichierUtilise.set(fichier);
           if (format === 'pdf') this.afficher(blob);
-          else telechargerBlob(blob, `apercu-${this.codeModele()}${code ? '' : '-v' + this.numero()}-dossier-${dossier}.docx`);
+          else telechargerBlob(blob, `apercu-${this.codeModele()}${code ? '' : '-v' + this.numero()}-${exemple ? 'exemple' : 'dossier-' + dossier}.docx`);
         },
         error: (e: ApiError) => {
           this.enCours.set(null);

@@ -103,13 +103,16 @@ export class ModelePvService {
     return this.http.put<VersionModelePv>(`${this.url}/${id}/versions/${numero}/champs`, champs, this.ctx);
   }
 
-  /** Le document rempli sur un dossier réel — rien n'est enregistré. Le corps d'erreur (binaire) est relu en JSON. */
+  /**
+   * Le document rempli sur un dossier réel — ou, ⚠️ 22/10 (« apercu-exemple »), sur le dossier d'exemple fictif du catalogue
+   * (`exemple=true`, sans `dossier` ; pied « EXEMPLE — valeurs fictives »). Rien n'est enregistré. Le corps d'erreur (binaire) est relu.
+   */
   apercu(
     id: number,
     numero: number,
-    p: { dossier: number; avis?: AvisApercu | null; format: 'pdf' | 'docx'; saisis?: Record<string, string> },
+    p: { dossier?: number | null; exemple?: boolean; avis?: AvisApercu | null; format: 'pdf' | 'docx'; saisis?: Record<string, string> },
   ): Observable<Blob> {
-    const params: Record<string, string> = { dossier: String(p.dossier), format: p.format };
+    const params: Record<string, string> = p.exemple ? { exemple: 'true', format: p.format } : { dossier: String(p.dossier), format: p.format };
     if (p.avis) params['avis'] = p.avis;
     return this.http
       .post(`${this.url}/${id}/versions/${numero}/apercu`, { saisis: p.saisis ?? {} }, { ...this.ctx, params, responseType: 'blob' })

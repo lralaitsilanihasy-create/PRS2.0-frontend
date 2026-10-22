@@ -95,4 +95,14 @@ describe('ModelePvService — chemins du contrat', () => {
     http.expectOne({ method: 'DELETE', url: '/api/modeles-pv/7' }).flush(null, { status: 204, statusText: 'No Content' });
     http.verify();
   });
+
+  it('aperçu sur le dossier d’exemple (22/10) : exemple=true, sans dossier', () => {
+    const s = TestBed.inject(ModelePvService);
+    const http = TestBed.inject(HttpTestingController);
+    s.apercu(29, 1, { exemple: true, format: 'pdf' }).subscribe();
+    const req = http.expectOne((r) => r.url === '/api/modeles-pv/29/versions/1/apercu');
+    expect(req.request.params.get('exemple')).toBe('true');
+    expect(req.request.params.has('dossier')).toBe(false);
+    req.flush(new Blob(['%PDF']));
+  });
 });
