@@ -31,10 +31,25 @@ n'importe quelle famille, et lettre de renvoi.
 
 `exemple=true` avec `dossier=` : 400 (l'un ou l'autre).
 
+> ⚠️ **2026-10-22, livré (backend), avec des précisions**
+> - Toutes les variables du catalogue ont un exemple : le repli « [libellé] » ne sert pas. Seule exception, `PV.INTERIM`, vide par
+>   construction (« par intérim » seulement sur un visa par intérim).
+> - Une ligne d'exemple pour les observations, **deux pour les titulaires** (le catalogue a déjà un second titulaire distinct, utile
+>   pour voir la ligne répétée).
+> - `DOSSIER.SOUS_TYPE` prend le libellé du premier sous-type rattaché, pour que le texte reste cohérent ; sans rattachement,
+>   `MAOO-CC`. Les autres valeurs gardent leur exemple (une référence de PV `00001/MAOO-CC/CNM/PV/2026` même pour le plan).
+> - `dossier` devient facultatif ; ni l'un ni l'autre : 400 `DOSSIER_OU_EXEMPLE` aussi. `lettre=` est ignoré avec l'exemple.
+> - Pour une lettre, l'exemple remplace la lettre en base : plus de `LETTRE_ABSENTE`.
+
 ## Question
 
 - **Q1 — Mention « EXEMPLE ».** Le front propose un pied « EXEMPLE — valeurs fictives » sur chaque page, pour que le PDF ne circule
   pas comme un vrai PV. Ou rien ?
+
+> ⚠️ **2026-10-22, réponse (backend)**
+> - **Q1 — Oui** : « EXEMPLE — valeurs fictives » en bas à droite de chaque page, Arial 8 gris, sans toucher l'en-tête ni le pied du
+>   modèle (vérifié en image sur le PV du plan, deux pages, et la lettre). Jamais sur un dossier réel. Le fichier se nomme
+>   `apercu-{id}-v{n}-exemple.pdf`.
 
 ## Côté front
 
