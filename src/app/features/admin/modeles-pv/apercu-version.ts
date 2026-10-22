@@ -227,6 +227,7 @@ export class ApercuVersion {
           const code = codeErreur(e);
           this.message.set(
             code === 'CONVERSION_INDISPONIBLE' ? 'Le serveur ne peut pas produire de PDF (Word absent) : demandez l’aperçu Word.'
+            : code === 'LETTRE_ABSENTE' ? 'Ce dossier n’a pas de lettre de renvoi : essayez un dossier renvoyé.'
             : e.status === 404 ? 'Ce dossier est introuvable.'
             : e.message || 'L’aperçu n’a pas pu être produit.',
           );

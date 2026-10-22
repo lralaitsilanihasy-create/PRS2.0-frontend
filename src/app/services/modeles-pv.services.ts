@@ -175,8 +175,12 @@ export class ModelePvService {
   }
 
   /** Le catalogue des variables, filtré par la famille du sous-type (tout le catalogue sans sous-type). */
-  variables(sousType?: string | null): Observable<CatalogueModelePv> {
-    return this.http.get<CatalogueModelePv>(`${this.url}/variables`, { ...this.ctx, params: sousType ? { sousType } : {} });
+  /** ⚠️ 22/10 (L1 « modele-lettre-renvoi ») — `nature` filtre le catalogue : une lettre n'a ni `PV.*` ni listes répétées. */
+  variables(sousType?: string | null, nature?: NatureModelePv | null): Observable<CatalogueModelePv> {
+    const params: Record<string, string> = {};
+    if (sousType) params['sousType'] = sousType;
+    if (nature) params['nature'] = nature;
+    return this.http.get<CatalogueModelePv>(`${this.url}/variables`, { ...this.ctx, params });
   }
 }
 

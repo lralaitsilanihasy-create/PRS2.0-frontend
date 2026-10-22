@@ -138,14 +138,19 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
               <p class="text-muted">Aucune version : partez d’une page vierge, ou laissez l’application préparer un modèle de départ.</p>
             }
             @if (!aUnePage()) {
-              @if (f.etat === 'ACTIF' && f.nature === 'PV') {
+              @if (f.etat === 'ACTIF') {
                 <div class="mpf__depart">
                   <p class="mpf__depart-titre">Modèle de départ</p>
                   <p class="mpf__note">
-                    L’application assemble le PV officiel et les phrases de la famille servie, avec ses règles et ses champs déjà déclarés.
+                    @if (f.nature === 'PV') {
+                      L’application assemble le PV officiel et les phrases de la famille servie, avec ses règles et ses champs déjà déclarés.
+                    } @else {
+                      L’application reprend la lettre de renvoi actuelle (centrale et régionale), avec ses variables et ses règles déjà déclarées.
+                      Une seule lettre sert tous les sous-types.
+                    }
                     Il arrive en brouillon : faites-en valider le texte par la CNM, puis corrigez-le dans l’onglet « Texte et mise en page ».
                   </p>
-                  @if (!f.sousTypes.length) {
+                  @if (f.nature === 'PV' && !f.sousTypes.length) {
                     <p class="mpf__note"><strong>Cochez d’abord les sous-types servis</strong> : ils disent quelle famille assembler.</p>
                   } @else {
                     <div class="mpf__depart-ligne">
@@ -315,7 +320,7 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
                   <app-formulaire-apercu [champs]="v.champs" [conditions]="v.conditions" />
                 }
                 @case ('apercu') {
-                  <app-apercu-version [idModele]="f.id" [numero]="v.numero" [champs]="v.champs" [codeModele]="f.code" [avecWord]="v.support !== 'PAGE'"
+                  <app-apercu-version [idModele]="f.id" [numero]="v.numero" [champs]="v.champs" [codeModele]="f.code" [avecWord]="v.support !== 'PAGE'" [avecAvis]="f.nature === 'PV'"
                                       [sousTypesServis]="codesSousTypes()" />
                 }
               }
@@ -696,10 +701,12 @@ export class ModelePvFicheEcran implements OnInit {
     const familleServie = f.sousTypes.find((s) => s.famille)?.famille;
     if (familleServie) this.famille.set(familleServie);
     else if (!this.famille()) this.famille.set(this.sousTypes()[0]?.idTypeDossier ?? '');
-    // Le catalogue suit la famille du premier sous-type servi ; sans sous-type, tout le catalogue.
+    // Le catalogue suit la famille du premier sous-type servi ; sans sous-type, tout le catalogue. Une lettre : celui de sa nature
+    // (⚠️ 22/10, L1) — une variable hors de sa nature serait bloquante au contrôle.
     if (this.catalogue() === null || avant !== f.sousTypes.map((s) => s.id).join()) {
+      const lettre = f.nature === 'LETTRE_RENVOI';
       this.service
-        .variables(f.sousTypes[0]?.id ?? null)
+        .variables(lettre ? null : (f.sousTypes[0]?.id ?? null), lettre ? f.nature : null)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({ next: (c) => this.catalogue.set(c), error: () => this.catalogue.set(null) });
     }

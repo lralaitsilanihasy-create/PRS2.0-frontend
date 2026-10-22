@@ -38,6 +38,8 @@ describe('ModelePvService — chemins du contrat', () => {
 
     s.variables('MAOO-CC').subscribe();
     http.expectOne((r) => r.url === '/api/modeles-pv/variables' && r.params.get('sousType') === 'MAOO-CC').flush({});
+    s.variables(null, 'LETTRE_RENVOI').subscribe();
+    http.expectOne((r) => r.url === '/api/modeles-pv/variables' && r.params.get('nature') === 'LETTRE_RENVOI' && !r.params.has('sousType')).flush({});
   });
 
   it('aperçu : paramètres en requête, saisis dans le corps, erreur binaire relue (code et message)', async () => {
