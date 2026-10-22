@@ -38,8 +38,15 @@ const AVIS: readonly { code: AvisApercu | ''; libelle: string }[] = [
           </button>
           <span class="apv__ou">ou</span>
         }
-        <input class="form-control apv__dossier" type="number" min="1" placeholder="N° d’un dossier réel" aria-label="N° interne d’un dossier réel"
-               [value]="idDossier() ?? ''" (change)="choisirDossier($any($event.target).value)" />
+        @if (surProcedure()) {
+          <input class="form-control apv__procedure" type="number" min="1" placeholder="N° de procédure" aria-label="N° de la procédure (fiche DAO)"
+                 [value]="procedure()?.idDmc ?? ''" (change)="choisirProcedure($any($event.target).value, lot())" />
+          <input class="form-control apv__lot" type="number" min="1" aria-label="N° du lot" title="N° du lot" [value]="lot()"
+                 (change)="choisirProcedure(procedure()?.idDmc ?? '', $any($event.target).value)" />
+        } @else {
+          <input class="form-control apv__dossier" type="number" min="1" placeholder="N° d’un dossier réel" aria-label="N° interne d’un dossier réel"
+                 [value]="idDossier() ?? ''" (change)="choisirDossier($any($event.target).value)" />
+        }
         @if (avecAvis()) {
           <select class="form-control apv__avis" aria-label="Avis" [value]="avis()" (change)="avis.set($any($event.target).value)">
             @for (a of avisPossibles; track a.code) { <option [value]="a.code" [selected]="a.code === avis()">Avis : {{ a.code === '' && surExemple() ? 'celui de l’exemple' : a.libelle }}</option> }
@@ -130,6 +137,8 @@ const AVIS: readonly { code: AvisApercu | ''; libelle: string }[] = [
     .apv__cadre { width: 100%; height: 75vh; min-height: 32rem; border: 1px solid var(--n-300); border-radius: 8px; background: #fff; }
     .apv__vide { border: 1px dashed var(--n-300); border-radius: 8px; padding: 2.5rem 1rem; text-align: center; color: var(--n-500); background: #fff; }
     .apv__dossier-lu { margin: 0; color: var(--n-700); }
+    .apv__procedure { width: 10rem; }
+    .apv__lot { width: 5rem; }
     .apv__ou { font-size: 0.8rem; color: var(--text-muted); }
     .apv__exemples { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
     .apv__exemples-titre { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
@@ -187,7 +196,25 @@ export class ApercuVersion implements OnInit {
    * (valeurs d'exemple du catalogue, pied « EXEMPLE — valeurs fictives ») ; un modèle intégré, qui ne le connaît pas, sur un dossier réel.
    */
   readonly surExemple = signal(false);
-  readonly pret = computed(() => !!this.idDossier() || (this.surExemple() && !this.codeIntegre()));
+  /** ⚠️ 22/10 (M1) — un projet de marché s'essaie sur une procédure (`idDmc` de la fiche DAO) et un lot, pas sur un dossier. */
+  readonly surProcedure = input(false);
+  readonly procedure = signal<{ idDmc: number; lot: number } | null>(null);
+  readonly lot = signal(1);
+
+  choisirProcedure(idDmc: string | number, lot: string | number): void {
+    const id = Number(idDmc);
+    const l = Math.max(1, Number(lot) || 1);
+    this.lot.set(l);
+    this.afficher(null);
+    this.message.set(null);
+    if (!Number.isInteger(id) || id <= 0) {
+      this.procedure.set(null);
+      return;
+    }
+    this.surExemple.set(false);
+    this.procedure.set({ idDmc: id, lot: l });
+  }
+  readonly pret = computed(() => !!this.idDossier() || !!this.procedure() || (this.surExemple() && !this.codeIntegre()));
 
   ngOnInit(): void {
     if (!this.codeIntegre()) {
@@ -213,6 +240,7 @@ export class ApercuVersion implements OnInit {
   /** Le dossier d'exemple fictif : l'aperçu est produit d'un coup. */
   prendreExemple(): void {
     this.idDossier.set(null);
+    this.procedure.set(null);
     this.dossier.set(null);
     this.dossierIntrouvable.set(false);
     this.surExemple.set(true);
@@ -283,7 +311,8 @@ export class ApercuVersion implements OnInit {
   produire(format: 'pdf' | 'docx'): void {
     const dossier = this.idDossier();
     const exemple = this.surExemple() && !this.codeIntegre();
-    if ((!dossier && !exemple) || this.enCours()) return;
+    const procedure = this.surProcedure() && !exemple ? this.procedure() : null;
+    if ((!dossier && !exemple && !procedure) || this.enCours()) return;
     this.enCours.set(format);
     this.message.set(null);
     this.fichierUtilise.set(null);
@@ -292,7 +321,7 @@ export class ApercuVersion implements OnInit {
     const code = this.codeIntegre();
     const source = code
       ? this.service.apercuIntegre(code, { dossier: dossier ?? 0, avis, format })
-      : this.service.apercu(this.idModele() ?? 0, this.numero() ?? 0, { dossier, exemple, avis, format, saisis }).pipe(map((blob) => ({ blob, fichier: null as string | null })));
+      : this.service.apercu(this.idModele() ?? 0, this.numero() ?? 0, { dossier, procedure, exemple, avis, format, saisis }).pipe(map((blob) => ({ blob, fichier: null as string | null })));
     source
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -300,7 +329,7 @@ export class ApercuVersion implements OnInit {
           this.enCours.set(null);
           this.fichierUtilise.set(fichier);
           if (format === 'pdf') this.afficher(blob);
-          else telechargerBlob(blob, `apercu-${this.codeModele()}${code ? '' : '-v' + this.numero()}-${exemple ? 'exemple' : 'dossier-' + dossier}.docx`);
+          else telechargerBlob(blob, `apercu-${this.codeModele()}${code ? '' : '-v' + this.numero()}-${exemple ? 'exemple' : procedure ? 'procedure-' + procedure.idDmc + '-lot-' + procedure.lot : 'dossier-' + dossier}.docx`);
         },
         error: (e: ApiError) => {
           this.enCours.set(null);
@@ -308,7 +337,7 @@ export class ApercuVersion implements OnInit {
           this.message.set(
             code === 'CONVERSION_INDISPONIBLE' ? 'Le serveur ne peut pas produire de PDF (Word absent) : demandez l’aperçu Word.'
             : code === 'LETTRE_ABSENTE' ? 'Ce dossier n’a pas de lettre de renvoi : essayez un dossier renvoyé.'
-            : e.status === 404 ? 'Ce dossier est introuvable.'
+            : e.status === 404 ? (procedure ? e.message || 'Cette procédure ou ce lot est introuvable.' : 'Ce dossier est introuvable.')
             : e.message || 'L’aperçu n’a pas pu être produit.',
           );
         },

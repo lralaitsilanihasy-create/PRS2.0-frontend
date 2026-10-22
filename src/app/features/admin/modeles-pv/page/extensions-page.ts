@@ -12,6 +12,12 @@ import { TextSelection } from '@tiptap/pm/state';
  * - `bloc` (autour de paragraphes ou de tableaux) et `blocEnLigne` (dans une phrase) : le passage conditionnel, encadré à l'écran ;
  * - la ligne de tableau répétée : l'attribut `liste` de `tableRow` ;
  * - `pageBreak`, `numeroPage`, `nombrePages`, et `image` (une image de la bibliothèque des modèles, par son `idImage`).
+ *
+ * ⚠️ 22/10 (W2 et M1 « modeles-documents-marche ») :
+ * - le **titre numéroté** : `numerotation` (gabarit avec `{n}`, ex. « Article {n} — ») et `id` sur `heading` ; le numéro est calculé
+ *   au rendu, après les règles — l'écran en montre un numéro **indicatif** (compteurs CSS) ;
+ * - `repetition` { liste } : des paragraphes répétés pour chaque élément d'une liste (un par titulaire d'un contrat-cadre) ;
+ * - `renvoi` { cible } : le numéro d'un titre numéroté, cité par son `id`.
  */
 
 /** Ce que l'éditeur demande à l'écran : les libellés à afficher et l'adresse des images. */
@@ -37,6 +43,10 @@ declare module '@tiptap/core' {
       insererImagePage: (idImage: number, largeur?: number | null) => ReturnType;
       /** Marque (ou démarque) la ligne de tableau du curseur comme répétée pour une liste. */
       repeterLigne: (liste: string | null) => ReturnType;
+      /** Répète les paragraphes sélectionnés pour chaque élément d'une liste (`repetition`). */
+      repeterParagraphes: (liste: string) => ReturnType;
+      /** Numérote (gabarit avec `{n}`) ou dénumérote (`null`) le titre du curseur ; un titre numéroté reçoit un `id`. */
+      numeroterTitre: (gabarit: string | null) => ReturnType;
     };
   }
 }
@@ -70,6 +80,22 @@ const AttributsPage = Extension.create({
         espaceAvant: { default: null, renderHTML: (a) => (a['espaceAvant'] != null ? { style: `margin-top:${a['espaceAvant']}pt` } : {}) },
         espaceApres: { default: null, renderHTML: (a) => (a['espaceApres'] != null ? { style: `margin-bottom:${a['espaceApres']}pt` } : {}) },
         interligne: { default: null, renderHTML: (a) => (a['interligne'] ? { style: `line-height:${a['interligne']}` } : {}) },
+      },
+    },
+    {
+      types: ['heading'],
+      attributes: {
+        numerotation: {
+          default: null,
+          parseHTML: (el) => el.getAttribute('data-numerotation'),
+          renderHTML: (a) => {
+            const g = a['numerotation'] as string | null;
+            if (!g) return {};
+            const [avant, apres = ''] = g.split('{n}');
+            return { 'data-numerotation': g, 'data-num-avant': avant, 'data-num-apres': apres };
+          },
+        },
+        id: { default: null, parseHTML: (el) => el.getAttribute('data-id'), renderHTML: (a) => (a['id'] ? { 'data-id': a['id'] } : {}) },
       },
     },
     {
@@ -122,6 +148,24 @@ export function extensionsPage(ctx: ContexteEditeur): Extensions {
     parseHTML: () => [{ tag: 'span[data-bloc-ligne]', getAttrs: (el) => ({ condition: (el as HTMLElement).getAttribute('data-bloc-ligne') }) }],
     renderHTML: ({ node }) => ['span', { class: 'pg-bloc-ligne', 'data-bloc-ligne': node.attrs['condition'], title: ctx.libelleCondition(String(node.attrs['condition'])) }, 0],
   });
+  const Repetition = Node.create({
+    name: 'repetition',
+    group: 'block',
+    content: 'block+',
+    defining: true,
+    addAttributes: () => ({ liste: { default: null } }),
+    parseHTML: () => [{ tag: 'div[data-repetition]', getAttrs: (el) => ({ liste: (el as HTMLElement).getAttribute('data-repetition') }) }],
+    renderHTML: ({ node }) => ['div', { class: 'pg-repetition', 'data-repetition': node.attrs['liste'] }, 0],
+  });
+  const Renvoi = Node.create({
+    name: 'renvoi',
+    group: 'inline',
+    inline: true,
+    atom: true,
+    addAttributes: () => ({ cible: { default: null } }),
+    parseHTML: () => [{ tag: 'span[data-renvoi]', getAttrs: (el) => ({ cible: (el as HTMLElement).getAttribute('data-renvoi') }) }],
+    renderHTML: ({ node }) => ['span', { class: 'pg-var', 'data-renvoi': node.attrs['cible'], contenteditable: 'false' }, `n° de l’article « ${node.attrs['cible']} »`],
+  });
   const SautDePage = Node.create({
     name: 'pageBreak',
     group: 'block',
@@ -173,17 +217,26 @@ export function extensionsPage(ctx: ContexteEditeur): Extensions {
             return true;
           }
           if (n.type.name === 'bloc') return commands.lift('bloc');
+          if (n.type.name === 'repetition') return commands.lift('repetition');
         }
         return false;
       },
       insererSautDePage: () => ({ chain }) => chain().focus().insertContent({ type: 'pageBreak' }).run(),
       insererImagePage: (idImage, largeur = 25) => ({ chain }) => chain().focus().insertContent({ type: 'image', attrs: { idImage, largeur, alignement: 'center' } }).run(),
       repeterLigne: (liste) => ({ commands }) => commands.updateAttributes('tableRow', { liste }),
+      repeterParagraphes: (liste) => ({ commands }) => commands.wrapIn('repetition', { liste }),
+      numeroterTitre: (gabarit) => ({ state, commands }) => {
+        const titre = state.selection.$from.parent;
+        if (titre.type.name !== 'heading') return false;
+        const id = gabarit ? ((titre.attrs['id'] as string | null) ?? `art-${Date.now().toString(36)}`) : titre.attrs['id'];
+        return commands.updateAttributes('heading', { numerotation: gabarit, id });
+      },
     }),
   });
 
   return [
-    StarterKit.configure({ blockquote: false, code: false, codeBlock: false, horizontalRule: false, strike: false, link: false }),
+    // ⚠️ 22/10 — sans `trailingNode` : il ajoutait un paragraphe vide après un passage final, et changeait la page à chaque enregistrement.
+    StarterKit.configure({ blockquote: false, code: false, codeBlock: false, horizontalRule: false, strike: false, link: false, trailingNode: false }),
     TextAlign.configure({ types: ['heading', 'paragraph'], alignments: ['left', 'center', 'right', 'justify'] }),
     TextStyle,
     FontFamily,
@@ -198,6 +251,8 @@ export function extensionsPage(ctx: ContexteEditeur): Extensions {
     Champ,
     Bloc,
     BlocEnLigne,
+    Repetition,
+    Renvoi,
     SautDePage,
     marqueur('numeroPage', 'n° de page'),
     marqueur('nombrePages', 'nombre de pages'),

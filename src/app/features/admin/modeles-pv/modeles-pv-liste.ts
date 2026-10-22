@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin, of, switchMap } from 'rxjs';
 
 import { ApiError, codeErreur } from '../../../core/errors/api-error';
@@ -13,7 +13,8 @@ import { BarreOutilsModeles } from './liste/barre-outils-modeles';
 import { CarteCouverture } from './liste/carte-couverture';
 import { EnTeteModeles } from './liste/en-tete-modeles';
 import { ListeModeles } from './liste/liste-modeles';
-import { FiltreEtat, LigneModele, Tri, construireLignes, couvertureLettres, couvertureSousTypes, filtrer, grouper, recommandation } from './liste/modeles-pv-vue';
+import { ModelesMarche } from './liste/modeles-marche';
+import { FiltreEtat, LigneModele, Tri, LigneMarche, construireLignes, couvertureLettres, lignesMarche, couvertureSousTypes, filtrer, grouper, recommandation } from './liste/modeles-pv-vue';
 import { LIBELLES_NATURE, MOTIF_CODE_MODELE, propositionPourFamille } from './modeles-pv-libelles';
 
 /**
@@ -25,16 +26,39 @@ import { LIBELLES_NATURE, MOTIF_CODE_MODELE, propositionPourFamille } from './mo
 @Component({
   selector: 'app-modeles-pv-liste',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur, ModaleDirective, IntegreDetail, EnTeteModeles, BandeauRecommandation, CarteCouverture, BarreOutilsModeles, ListeModeles],
+  imports: [RouterLink, EtatErreur, ModaleDirective, IntegreDetail, EnTeteModeles, BandeauRecommandation, CarteCouverture, BarreOutilsModeles, ListeModeles, ModelesMarche],
   template: `
     <div class="mpv">
-      <app-en-tete-modeles (nouveau)="ouvrirCreation(null)" />
+      <app-en-tete-modeles [avecNouveau]="onglet() === 'pv'" (nouveau)="ouvrirCreation(null)" />
 
       @if (loading()) {
         <p class="mpv__etat" role="status">Chargement…</p>
       } @else if (erreur()) {
         <app-etat-erreur message="Impossible de charger les modèles de PV." (reessayer)="charger()" />
       } @else {
+        <div class="mpv__onglets" role="tablist" aria-label="Familles de documents">
+          @for (o of onglets; track o.cle) {
+            <button type="button" role="tab" class="mpv__onglet" [attr.aria-selected]="onglet() === o.cle" (click)="onglet.set(o.cle)">
+              {{ o.libelle }} <span>{{ o.detail }}</span>
+            </button>
+          }
+        </div>
+        @if (onglet() === 'marche') {
+          <app-modeles-marche [lignes]="lignesMarcheCalculees()" [occupe]="creationMarche()" (agir)="agirMarche($event)" />
+          @if (messageMarche(); as m) { <p class="form-error" role="alert">{{ m }}</p> }
+        } @else if (onglet() === 'dao') {
+          <section class="mpv__dao">
+            <h2>Documents du dossier de mise en concurrence</h2>
+            <p>
+              Les 15 documents du DAO (DPAO, DPAC, DPIC, actes d’engagement, CCAP, CPS, avis et lettres d’invitation, pour les fournitures, les
+              travaux et les prestations intellectuelles) sont produits par les documents types de l’ARMP intégrés à l’application.
+            </p>
+            <p>
+              Ils deviendront modifiables ici, avec les écarts au document type montrés et la validation du juriste à la mise en vigueur :
+              d’abord les avis et lettres d’invitation, puis les actes d’engagement, puis les DPAO, DPAC, DPIC, CCAP et CPS.
+            </p>
+          </section>
+        } @else {
         @if (reco(); as r) { <app-bandeau-recommandation [reco]="r" (commencer)="commencer()" /> }
         <app-carte-couverture [couverture]="couvertureCalculee()" [filtre]="filtre()" (choisir)="filtre.set($event)"
                              [lettres]="lettresCalculees()" (voirLettre)="voirIntegre($event)" />
@@ -59,6 +83,7 @@ import { LIBELLES_NATURE, MOTIF_CODE_MODELE, propositionPourFamille } from './mo
               }
             </ul>
           </details>
+        }
         }
       }
     </div>
@@ -108,6 +133,15 @@ import { LIBELLES_NATURE, MOTIF_CODE_MODELE, propositionPourFamille } from './mo
     .mpv { display: flex; flex-direction: column; gap: 16px; color: var(--text); }
     .mpv__etat { margin: 0; color: var(--text-muted); }
     .mpv__aide { margin: -6px 0 0; font-size: 12px; color: var(--text-muted); }
+    .mpv__onglets { display: flex; gap: 6px; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
+    .mpv__onglet { border: 1px solid var(--border); border-bottom: 0; background: var(--page-bg); color: var(--text-muted); padding: 8px 14px;
+      border-radius: 8px 8px 0 0; font: inherit; font-weight: 600; cursor: pointer; }
+    .mpv__onglet span { font-weight: 400; font-size: 12px; }
+    .mpv__onglet[aria-selected='true'] { background: var(--card-bg); color: var(--primary); position: relative; top: 1px; }
+    .mpv__onglet:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .mpv__dao { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+    .mpv__dao h2 { margin: 0 0 6px; font-size: 15px; font-weight: 600; }
+    .mpv__dao p { margin: 6px 0 0; font-size: 14px; color: var(--text-muted); max-width: 62rem; }
     .mpv__archives { font-size: 13px; color: var(--text-muted); }
     .mpv__archives summary { cursor: pointer; }
     .mpv__archives summary:focus-visible, .mpv__archives a:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
@@ -127,6 +161,7 @@ export class ModelesPvListe implements OnInit {
   private readonly service = inject(ModelePvService);
   private readonly typesService = inject(TypeDossierService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   readonly natures = LIBELLES_NATURE;
   readonly listeNatures: readonly NatureModelePv[] = ['PV', 'LETTRE_RENVOI'];
@@ -152,6 +187,42 @@ export class ModelesPvListe implements OnInit {
   readonly reco = computed(() => recommandation(this.lignes()));
   readonly groupes = computed(() => grouper(filtrer(this.lignes(), this.recherche(), this.filtre()), this.tri()));
   readonly archives = computed(() => this.modeles().filter((m) => m.etat === 'ARCHIVE'));
+
+  // ——— ⚠️ 22/10 (M1 « modeles-documents-marche ») — trois onglets : PV d'examen, dossier de mise en concurrence, dossier de marché ———
+  readonly onglets: readonly { cle: 'pv' | 'dao' | 'marche'; libelle: string; detail: string }[] = [
+    { cle: 'pv', libelle: 'PV d’examen', detail: '· et lettres de renvoi' },
+    { cle: 'dao', libelle: 'Dossier de mise en concurrence', detail: '· 15 documents' },
+    { cle: 'marche', libelle: 'Dossier de marché', detail: '· projet de marché' },
+  ];
+  readonly onglet = signal<'pv' | 'dao' | 'marche'>('pv');
+  readonly lignesMarcheCalculees = computed(() => lignesMarche(this.modeles()));
+  readonly creationMarche = signal<string | null>(null);
+  readonly messageMarche = signal<string | null>(null);
+
+  /** « Créer » : le modèle de la catégorie, rattaché, puis sa fiche ; sinon la fiche du modèle existant. */
+  agirMarche(l: LigneMarche): void {
+    if (l.modele) {
+      void this.router.navigate(['/admin/referentiels/modeles-pv', l.modele.id]);
+      return;
+    }
+    if (this.creationMarche()) return;
+    this.creationMarche.set(l.categorie);
+    this.messageMarche.set(null);
+    this.service
+      .creer({ code: l.codeModele, libelle: `Projet de marché — ${l.libelle.toLowerCase()}`, nature: 'PROJET_MARCHE' })
+      .pipe(switchMap((f) => this.service.rattacherCategories(f.id, [l.categorie])))
+      .subscribe({
+        next: (f) => {
+          this.creationMarche.set(null);
+          void this.router.navigate(['/admin/referentiels/modeles-pv', f.id]);
+        },
+        error: (e: ApiError) => {
+          this.creationMarche.set(null);
+          this.messageMarche.set(e.message || 'Le modèle n’a pas pu être créé.');
+          this.charger();
+        },
+      });
+  }
   /** ⚠️ 22/10 — les intégrés relevés par un modèle de l'application : ils ne produisent plus, ils se consultent encore. */
   readonly remplaces = computed(() => this.integres().filter((i) => !i.enService));
 
@@ -165,6 +236,9 @@ export class ModelesPvListe implements OnInit {
   readonly creable = computed(() => !!this.libelle().trim() && MOTIF_CODE_MODELE.test(this.code().trim()));
 
   ngOnInit(): void {
+    // Le retour d'une fiche de projet de marché rouvre son onglet (`?onglet=marche`).
+    const o = this.route.snapshot.queryParamMap.get('onglet');
+    if (o === 'marche' || o === 'dao') this.onglet.set(o);
     this.charger();
   }
 

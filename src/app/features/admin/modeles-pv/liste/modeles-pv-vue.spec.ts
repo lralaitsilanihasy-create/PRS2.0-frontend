@@ -1,5 +1,5 @@
 import { CouvertureSousType, ModeleIntegre, ModelePvResume } from '../../../../models';
-import { construireLignes, couvertureLettres, couvertureSousTypes, filtrer, grouper, recommandation } from './modeles-pv-vue';
+import { construireLignes, couvertureLettres, lignesMarche, couvertureSousTypes, filtrer, grouper, recommandation } from './modeles-pv-vue';
 
 const cv = (sousType: string, famille: string, o: Partial<CouvertureSousType> = {}): CouvertureSousType => ({
   sousType, libelle: null, famille, nature: 'PV', produitPar: 'AUCUN', integre: null, modeleRattache: null, ...o,
@@ -74,5 +74,18 @@ describe('Modèles de procès-verbaux — modèle de vue (21/10)', () => {
     const ids = construireLignes(MODELES, releve, COUVERTURE, FAMILLES).map((l) => l.id);
     expect(ids).not.toContain('integre-PV-PLAN-INTEGRE');
     expect(ids).toContain('integre-LETTRE-RENVOI-INTEGREE');
+  });
+
+  it('dossier de marché (22/10) : une ligne par catégorie, et les projets de marché hors de la liste des PV', () => {
+    const pm = (id: number, categories: ('FOURNITURES_SERVICES' | 'TRAVAUX')[], enVigueur: boolean): ModelePvResume => ({
+      id, code: 'PM' + id, libelle: 'Projet', nature: 'PROJET_MARCHE', etat: 'ACTIF', sousTypes: [], categories,
+      enVigueur: enVigueur ? { numero: 1, etat: 'EN_VIGUEUR', bloquant: false, deposeeLe: null, enVigueurLe: null } : null,
+      derniere: { numero: 1, etat: enVigueur ? 'EN_VIGUEUR' : 'BROUILLON', bloquant: false, deposeeLe: null, enVigueurLe: null },
+    });
+    const l = lignesMarche([pm(10, ['FOURNITURES_SERVICES'], true), pm(11, ['TRAVAUX'], false)]);
+    expect(l.map((x) => [x.categorie, x.etat, x.action])).toEqual([
+      ['FOURNITURES_SERVICES', 'ok', 'Voir'], ['TRAVAUX', 'prep', 'Valider'], ['PRESTATIONS_INTELLECTUELLES', 'code', 'Créer'],
+    ]);
+    expect(construireLignes([...MODELES, pm(10, ['FOURNITURES_SERVICES'], true)], INTEGRES, COUVERTURE, FAMILLES).some((x) => x.id === 'gere-10')).toBe(false);
   });
 });

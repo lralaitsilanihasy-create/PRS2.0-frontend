@@ -6,6 +6,7 @@ import { ApiError, isApiError, skipErrorToast } from '../core/errors/api-error';
 import { environment } from '../../environments/environment';
 import {
   AvisApercu,
+  CategorieMarche,
   CatalogueModelePv,
   ChampModelePv,
   CouvertureSousType,
@@ -57,8 +58,9 @@ export class ModelePvService {
    * officiel et des phrases de la famille des sous-types servis, conditions et champs déjà déclarés. Rien n'est mis en vigueur.
    * 400 `SANS_SOUS_TYPE`, `NATURE_SANS_DEPART`, `PORTEE_INCONNUE` ; 409 `FAMILLES_MULTIPLES` (`details`), `FAMILLE_SANS_DEPART`, `MODELE_ARCHIVE`.
    */
-  genererDepart(id: number, portee: PorteeDepart = 'les-deux'): Observable<VersionModelePv> {
-    return this.http.post<VersionModelePv>(`${this.url}/${id}/versions/depart`, { portee }, this.ctx);
+  /** Un PV ou une lettre : la portée ; ⚠️ 22/10 (M1) un projet de marché : la catégorie (à défaut la seule rattachée). */
+  genererDepart(id: number, portee: PorteeDepart = 'les-deux', categorie?: CategorieMarche | null): Observable<VersionModelePv> {
+    return this.http.post<VersionModelePv>(`${this.url}/${id}/versions/depart`, categorie ? { categorie } : { portee }, this.ctx);
   }
 
   /** ⚠️ 21/10 (option C') — une nouvelle version page, en brouillon, avec son rapport. 400 `DOCUMENT_INVALIDE` (`details` par chemin). */
@@ -110,9 +112,21 @@ export class ModelePvService {
   apercu(
     id: number,
     numero: number,
-    p: { dossier?: number | null; exemple?: boolean; avis?: AvisApercu | null; format: 'pdf' | 'docx'; saisis?: Record<string, string> },
+    p: {
+      dossier?: number | null;
+      /** ⚠️ 22/10 (M1) — un projet de marché s'essaie sur une procédure et un lot, pas sur un dossier. */
+      procedure?: { idDmc: number; lot: number } | null;
+      exemple?: boolean;
+      avis?: AvisApercu | null;
+      format: 'pdf' | 'docx';
+      saisis?: Record<string, string>;
+    },
   ): Observable<Blob> {
-    const params: Record<string, string> = p.exemple ? { exemple: 'true', format: p.format } : { dossier: String(p.dossier), format: p.format };
+    const params: Record<string, string> = p.exemple
+      ? { exemple: 'true', format: p.format }
+      : p.procedure
+        ? { procedure: String(p.procedure.idDmc), lot: String(p.procedure.lot), format: p.format }
+        : { dossier: String(p.dossier), format: p.format };
     if (p.avis) params['avis'] = p.avis;
     return this.http
       .post(`${this.url}/${id}/versions/${numero}/apercu`, { saisis: p.saisis ?? {} }, { ...this.ctx, params, responseType: 'blob' })
@@ -121,6 +135,11 @@ export class ModelePvService {
 
   mettreEnVigueur(id: number, numero: number, motif: string): Observable<VersionModelePv> {
     return this.http.post<VersionModelePv>(`${this.url}/${id}/versions/${numero}/mettre-en-vigueur`, { motif }, this.ctx);
+  }
+
+  /** ⚠️ 22/10 (M1) — un projet de marché se rattache à des catégories (409 `CATEGORIE_DEJA_SERVIE`). */
+  rattacherCategories(id: number, categories: CategorieMarche[]): Observable<ModelePvFiche> {
+    return this.http.put<ModelePvFiche>(`${this.url}/${id}/rattachements`, { categories }, this.ctx);
   }
 
   rattacher(id: number, sousTypes: string[]): Observable<ModelePvFiche> {

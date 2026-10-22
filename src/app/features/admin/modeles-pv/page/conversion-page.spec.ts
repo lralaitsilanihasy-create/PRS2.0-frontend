@@ -46,4 +46,16 @@ describe('Page éditée — conversion serveur ↔ éditeur (21/10)', () => {
     expect(cheminVersZone('ailleurs/1')).toBeNull();
     expect(cheminVersZone(null)).toBeNull();
   });
+
+  it('projet de marché (22/10) : titre numéroté, répétition et renvoi passent tels quels', () => {
+    const corps: NoeudPage = {
+      type: 'doc',
+      content: [
+        { type: 'heading', attrs: { level: 3, numerotation: 'Article {n} — ', id: 'objet' }, content: [{ type: 'text', text: 'Objet' }] },
+        { type: 'repetition', attrs: { liste: 'TITULAIRES' }, content: [{ type: 'paragraph', content: [{ type: 'variable', attrs: { code: 'TIT.CANDIDAT' } }] }] },
+        { type: 'paragraph', content: [{ type: 'text', text: 'voir l’article ' }, { type: 'renvoi', attrs: { cible: 'objet' } }] },
+      ],
+    };
+    expect(versServeur(depuisServeur(corps))).toEqual(corps);
+  });
 });

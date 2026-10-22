@@ -1,11 +1,20 @@
-import { CouvertureSousType, EtatVersionModelePv, ModelePvFiche, ModelePvResume, NatureModelePv, TypeChampSaisi } from '../../../models';
+import { CategorieMarche, CouvertureSousType, EtatVersionModelePv, ModelePvFiche, ModelePvResume, NatureModelePv, TypeChampSaisi } from '../../../models';
 
 /**
  * ⚠️ Générateur de modèles de PV, lot G1 (20/10) — libellés et règles pures de l'écran « Modèles de PV ». Les motifs de nom
  * reprennent ceux du serveur (`ModelePvService`) : l'écran refuse avant l'envoi ce que le serveur refuserait.
  */
 
-export const LIBELLES_NATURE: Readonly<Record<NatureModelePv, string>> = { PV: 'Procès-verbal', LETTRE_RENVOI: 'Lettre de renvoi' };
+export const LIBELLES_NATURE: Readonly<Record<NatureModelePv, string>> = { PV: 'Procès-verbal', LETTRE_RENVOI: 'Lettre de renvoi', PROJET_MARCHE: 'Projet de marché' };
+
+/** ⚠️ 22/10 (M1) — les catégories d'un projet de marché, dans l'ordre de l'écran, avec le code proposé à la création du modèle. */
+export const CATEGORIES_MARCHE: readonly { code: CategorieMarche; libelle: string; codeModele: string }[] = [
+  { code: 'FOURNITURES_SERVICES', libelle: 'Fournitures et services', codeModele: 'PROJET-MARCHE-F' },
+  { code: 'TRAVAUX', libelle: 'Travaux', codeModele: 'PROJET-MARCHE-T' },
+  { code: 'PRESTATIONS_INTELLECTUELLES', libelle: 'Prestations intellectuelles', codeModele: 'PROJET-MARCHE-PI' },
+];
+
+export const libelleCategorie = (code: string): string => CATEGORIES_MARCHE.find((c) => c.code === code)?.libelle ?? code;
 
 export const LIBELLES_ETAT_VERSION: Readonly<Record<EtatVersionModelePv, string>> = {
   BROUILLON: 'Brouillon',
@@ -31,7 +40,7 @@ export const LIBELLES_ACTION: Readonly<Record<string, string>> = {
   CONDITIONS: 'Conditions déclarées',
   CHAMPS: 'Champs saisis déclarés',
   MISE_EN_VIGUEUR: 'Mise en vigueur',
-  RATTACHEMENTS: 'Sous-types servis modifiés',
+  RATTACHEMENTS: 'Rattachements modifiés',
   DUPLIQUE: 'Modèle dupliqué',
   ARCHIVE: 'Modèle archivé',
   DEPART_GENERE: 'Modèle de départ généré par l’application',
@@ -44,9 +53,10 @@ export const LIBELLES_ACTION: Readonly<Record<string, string>> = {
  * ⚠️ 21/10 — la règle du serveur (`DELETE /api/modeles-pv/{id}`) : jamais en vigueur (aucune version `EN_VIGUEUR` ni `REMPLACEE`,
  * aucune `MISE_EN_VIGUEUR` au journal) et aucun sous-type servi. Le bouton ne se montre qu'à ces conditions ; le serveur tranche.
  */
-export function modeleSupprimable(f: Pick<ModelePvFiche, 'versions' | 'historique' | 'sousTypes'>): boolean {
+export function modeleSupprimable(f: Pick<ModelePvFiche, 'versions' | 'historique' | 'sousTypes' | 'categories'>): boolean {
   return (
     !f.sousTypes.length &&
+    !(f.categories ?? []).length &&
     !f.versions.some((v) => v.etat === 'EN_VIGUEUR' || v.etat === 'REMPLACEE') &&
     !f.historique.some((h) => h.action === 'MISE_EN_VIGUEUR')
   );

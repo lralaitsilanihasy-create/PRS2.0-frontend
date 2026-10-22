@@ -1,10 +1,13 @@
+import { CategorieMarche } from './acte-gestion.model';
+
 /**
  * ⚠️ Générateur de modèles de PV, lot G1 (demande `docs/demande-backend-2026-10-20-generateur-modeles-pv.md`, V138) — les
  * échanges de `/api/modeles-pv` (`ModelePvDto` du backend). Réservé à l'Administrateur. Rien n'est encore produit par ces
  * modèles : la production est le lot G2.
  */
 
-export type NatureModelePv = 'PV' | 'LETTRE_RENVOI';
+/** ⚠️ 22/10 (M1 « modeles-documents-marche ») — `PROJET_MARCHE` : le projet de marché, un modèle par catégorie, en Word et en PDF. */
+export type NatureModelePv = 'PV' | 'LETTRE_RENVOI' | 'PROJET_MARCHE';
 export type EtatModelePv = 'ACTIF' | 'ARCHIVE';
 export type EtatVersionModelePv = 'BROUILLON' | 'EN_VIGUEUR' | 'REMPLACEE';
 export type NiveauPointRapport = 'OK' | 'AVERTISSEMENT' | 'BLOQUANT';
@@ -32,6 +35,8 @@ export interface ModelePvResume {
   nature: NatureModelePv;
   etat: EtatModelePv;
   sousTypes: string[];
+  /** ⚠️ 22/10 — les catégories servies par un modèle de projet de marché (vide sinon). */
+  categories?: CategorieMarche[];
   enVigueur: VersionCourteModelePv | null;
   derniere: VersionCourteModelePv | null;
 }
@@ -123,6 +128,7 @@ export interface ModelePvFiche {
   archiveLe: string | null;
   motifArchivage: string | null;
   sousTypes: SousTypeModelePv[];
+  categories?: CategorieMarche[];
   versions: VersionModelePv[];
   historique: EvenementModelePv[];
 }

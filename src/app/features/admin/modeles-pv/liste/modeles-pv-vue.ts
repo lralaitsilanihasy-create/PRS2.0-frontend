@@ -1,5 +1,5 @@
-import { CouvertureSousType, ModeleIntegre, ModelePvResume } from '../../../../models';
-import { LIBELLES_NATURE, propositionPourFamille, reprisParModele, sansDocument } from '../modeles-pv-libelles';
+import { CategorieMarche, CouvertureSousType, ModeleIntegre, ModelePvResume } from '../../../../models';
+import { CATEGORIES_MARCHE, LIBELLES_NATURE, propositionPourFamille, reprisParModele, sansDocument } from '../modeles-pv-libelles';
 
 /**
  * ⚠️ 21/10 (page « Modèles de procès-verbaux », cahier du pilote) — le modèle de vue de la liste, calculé des seules données servies :
@@ -106,7 +106,8 @@ export function construireLignes(
 
   // Modèles gérés : à déposer (ou à valider) tant qu'aucune version n'est en vigueur ; en service ensuite.
   for (const m of modeles) {
-    if (m.etat !== 'ACTIF') continue;
+    // ⚠️ 22/10 (M1) — les projets de marché ont leur onglet (`lignesMarche`).
+    if (m.etat !== 'ACTIF' || m.nature === 'PROJET_MARCHE') continue;
     const remplace = reprisParModele(couverture, m.id);
     const d = m.derniere;
     const v = m.enVigueur;
@@ -225,4 +226,29 @@ export function grouper(lignes: readonly LigneModele[], tri: Tri): { etat: EtatL
   const poids = (l: LigneModele): number => (l.tous ? Number.MAX_SAFE_INTEGER : l.sousTypes.length);
   const cmp = tri === 'nom' ? (a: LigneModele, b: LigneModele) => a.nom.localeCompare(b.nom) : (a: LigneModele, b: LigneModele) => poids(b) - poids(a) || a.nom.localeCompare(b.nom);
   return ORDRE_ETATS.map((etat) => ({ etat, lignes: lignes.filter((l) => l.etat === etat).sort(cmp) })).filter((g) => g.lignes.length);
+}
+
+/**
+ * ⚠️ 22/10 (M1 « modeles-documents-marche ») — l'onglet « Dossier de marché » : une ligne par catégorie (un modèle par catégorie,
+ * arbitrage du pilote). Sans modèle actif rattaché, le projet est produit par le texte de l'application ; un modèle sans version en
+ * vigueur est à rédiger ou à valider ; en vigueur, il produit.
+ */
+export interface LigneMarche {
+  categorie: CategorieMarche;
+  libelle: string;
+  codeModele: string;
+  modele: ModelePvResume | null;
+  etat: 'code' | EtatLigne;
+  badge: string;
+  action: 'Créer' | 'Rédiger' | 'Valider' | 'Voir';
+}
+
+export function lignesMarche(modeles: readonly ModelePvResume[]): LigneMarche[] {
+  return CATEGORIES_MARCHE.map((c) => {
+    const m = modeles.find((x) => x.nature === 'PROJET_MARCHE' && x.etat === 'ACTIF' && (x.categories ?? []).includes(c.code)) ?? null;
+    if (!m) return { categorie: c.code, libelle: c.libelle, codeModele: c.codeModele, modele: null, etat: 'code', badge: 'Texte de l’application', action: 'Créer' };
+    if (m.enVigueur) return { categorie: c.code, libelle: c.libelle, codeModele: c.codeModele, modele: m, etat: 'ok', badge: `v${m.enVigueur.numero} en vigueur`, action: 'Voir' };
+    const aValider = !!m.derniere;
+    return { categorie: c.code, libelle: c.libelle, codeModele: c.codeModele, modele: m, etat: 'prep', badge: aValider ? 'À valider' : 'À rédiger', action: aValider ? 'Valider' : 'Rédiger' };
+  });
 }

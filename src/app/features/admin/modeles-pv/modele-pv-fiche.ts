@@ -10,6 +10,7 @@ import { telechargerBlob } from '../../../core/securite/fichiers-surs';
 import {
   CatalogueModelePv,
   ChampModelePv,
+  CategorieMarche,
   CouvertureSousType,
   ConditionModelePv,
   DocumentPage,
@@ -32,11 +33,13 @@ import { EditeurPage } from './page/editeur-page';
 import {
   LIBELLES_ACTION,
   LIBELLES_ETAT_VERSION,
+  CATEGORIES_MARCHE,
   LIBELLES_NATURE,
   MOTIF_CODE_MODELE,
   expressionProposee,
   libelleDeCode,
   champsLusPar,
+  libelleCategorie,
   modeleSupprimable,
   nonDeclares,
   reprisParModele,
@@ -65,7 +68,7 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
   imports: [DatePipe, LowerCasePipe, RouterLink, EtatErreur, ModaleDirective, RapportControlePv, ConditionsVersion, ChampsVersion, ApercuVersion, CatalogueVariables, FormulaireApercu, EditeurPage],
   template: `
     <section class="mpf">
-      <a class="mpf__retour" routerLink="/admin/referentiels/modeles-pv">← Tous les modèles de PV</a>
+      <a class="mpf__retour" routerLink="/admin/referentiels/modeles-pv" [queryParams]="fiche()?.nature === 'PROJET_MARCHE' ? { onglet: 'marche' } : {}">← Tous les modèles de documents</a>
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
@@ -73,10 +76,14 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
         <app-etat-erreur message="Impossible de charger ce modèle de PV." (reessayer)="charger()" />
       } @else if (fiche(); as f) {
         <header class="mpf__bandeau">
-          <small>{{ f.nature === 'PV' ? 'MODÈLE DE PV' : 'MODÈLE DE LETTRE DE RENVOI' }} · {{ f.code }}</small>
+          <small>{{ typesModele[f.nature] }} · {{ f.code }}</small>
           <h1>{{ f.libelle }}</h1>
           <div class="mpf__puces">
-            <span class="mpf__puce">{{ f.sousTypes.length ? f.sousTypes.length + ' sous-type(s) · ' + libelleFamille(famille()) : 'aucun sous-type servi' }}</span>
+            @if (f.nature === 'PROJET_MARCHE') {
+              <span class="mpf__puce">{{ (f.categories ?? []).length ? categoriesLisibles(f.categories) : 'aucune catégorie servie' }} · Word et PDF</span>
+            } @else {
+              <span class="mpf__puce">{{ f.sousTypes.length ? f.sousTypes.length + ' sous-type(s) · ' + libelleFamille(famille()) : 'aucun sous-type servi' }}</span>
+            }
             @if (f.etat === 'ARCHIVE') { <span class="mpf__puce mpf__puce--claire">Archivé le {{ f.archiveLe | date: 'dd/MM/yyyy' }}</span> }
             @else { <span class="mpf__puce mpf__puce--claire">{{ enVigueur() ? 'En vigueur : version ' + enVigueur()!.numero : 'Aucune version en vigueur' }}</span> }
           </div>
@@ -144,13 +151,28 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
                   <p class="mpf__note">
                     @if (f.nature === 'PV') {
                       L’application assemble le PV officiel et les phrases de la famille servie, avec ses règles et ses champs déjà déclarés.
+                    } @else if (f.nature === 'PROJET_MARCHE') {
+                      L’application recopie mot pour mot le projet de marché qu’elle produit aujourd’hui pour la catégorie choisie (marché simple et
+                      contrat-cadre), avec ses variables, ses règles et ses articles numérotés.
                     } @else {
                       L’application reprend la lettre de renvoi actuelle (centrale et régionale), avec ses variables et ses règles déjà déclarées.
                       Une seule lettre sert tous les sous-types.
                     }
                     Il arrive en brouillon : faites-en valider le texte par la CNM, puis corrigez-le dans l’onglet « Texte et mise en page ».
                   </p>
-                  @if (f.nature === 'PV' && !f.sousTypes.length) {
+                  @if (f.nature === 'PROJET_MARCHE') {
+                    <div class="mpf__depart-ligne">
+                      <label class="mpf__depart-portee">
+                        <span>Catégorie</span>
+                        <select class="form-control" aria-label="Catégorie du modèle de départ" (change)="categorieDepart.set($any($event.target).value)">
+                          @for (c of categoriesMarche; track c.code) { <option [value]="c.code" [selected]="c.code === categorieDepartEffective()">{{ c.libelle }}</option> }
+                        </select>
+                      </label>
+                      <button type="button" class="btn btn-primary btn-sm" [disabled]="generation()" (click)="genererDepart()">
+                        {{ generation() ? 'Assemblage…' : 'Générer un modèle de départ' }}
+                      </button>
+                    </div>
+                  } @else if (f.nature === 'PV' && !f.sousTypes.length) {
                     <p class="mpf__note"><strong>Cochez d’abord les sous-types servis</strong> : ils disent quelle famille assembler.</p>
                   } @else {
                     <div class="mpf__depart-ligne">
@@ -182,6 +204,26 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
           </div>
 
           <div class="card mpf__carte">
+            @if (f.nature === 'PROJET_MARCHE') {
+            <h2 class="mpf__titre">Catégories servies</h2>
+            <div class="mpf__sts">
+              @for (c of categoriesMarche; track c.code) {
+                <label class="mpf__st">
+                  <input type="checkbox" [checked]="categoriesCochees().includes(c.code)" [disabled]="f.etat === 'ARCHIVE'"
+                         (change)="basculerCategorie(c.code, $any($event.target).checked)" />
+                  <span>{{ c.libelle }}</span>
+                </label>
+              }
+            </div>
+            <p class="mpf__note">Une catégorie n’a qu’un modèle. Sans modèle en vigueur, le projet de marché de la catégorie reste produit par le texte de l’application.</p>
+            @if (messageRattachement(); as m) { <p class="form-error" role="alert">{{ m }}</p> }
+            @if (f.etat === 'ACTIF' && categoriesModifiees()) {
+              <div class="mpf__boutons">
+                <button type="button" class="btn btn-primary btn-sm" [disabled]="ecriture()" (click)="enregistrerCategories()">Enregistrer les catégories</button>
+                <button type="button" class="btn btn-secondary btn-sm" (click)="categoriesCochees.set(f.categories ?? [])">Annuler</button>
+              </div>
+            }
+            } @else {
             <div class="mpf__titre-ligne">
               <h2 class="mpf__titre">Sous-types servis</h2>
               @if (f.etat === 'ACTIF' && !editionSousTypes()) {
@@ -212,6 +254,7 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
               <button type="button" class="btn btn-primary btn-sm" [disabled]="ecriture() || !rattachementsModifies()" (click)="enregistrerRattachements()">Enregistrer les sous-types</button>
               <button type="button" class="btn btn-secondary btn-sm" (click)="annulerSousTypes()">Fermer</button>
             </div>
+            }
             }
 
             <h2 class="mpf__titre mpf__titre--histo">Historique</h2>
@@ -254,7 +297,12 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
                     @if (estDepart(v)) {
                       <p class="alert alert-warning mpf__a-valider" role="note">
                         <span><strong>Texte proposé par l’application — à faire valider par la CNM avant mise en vigueur.</strong>
-                          Corrigez-le ci-dessous. À compléter au besoin : la qualité du viseur et la mention « par intérim », et les lignes des présents sans nom.</span>
+                          Corrigez-le ci-dessous.
+                          @if (fiche()?.nature === 'PROJET_MARCHE') {
+                            Les « …… » restent dans le Word produit, pour que la PRMP les complète avant la signature.
+                          } @else {
+                            À compléter au besoin : la qualité du viseur et la mention « par intérim », et les lignes des présents sans nom.
+                          }</span>
                       </p>
                     }
                     @if (detail(); as d) {
@@ -320,7 +368,8 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
                   <app-formulaire-apercu [champs]="v.champs" [conditions]="v.conditions" />
                 }
                 @case ('apercu') {
-                  <app-apercu-version [idModele]="f.id" [numero]="v.numero" [champs]="v.champs" [codeModele]="f.code" [avecWord]="v.support !== 'PAGE'" [avecAvis]="f.nature === 'PV'"
+                  <app-apercu-version [idModele]="f.id" [numero]="v.numero" [champs]="v.champs" [codeModele]="f.code" [avecWord]="v.support !== 'PAGE' || f.nature === 'PROJET_MARCHE'" [avecAvis]="f.nature === 'PV'"
+                                      [surProcedure]="f.nature === 'PROJET_MARCHE'"
                                       [sousTypesServis]="codesSousTypes()" />
                 }
               }
@@ -547,6 +596,44 @@ export class ModelePvFicheEcran implements OnInit {
     { cle: 'regionale', libelle: 'Commission régionale seule' },
   ];
   readonly portee = signal<PorteeDepart>('les-deux');
+
+  // ——— ⚠️ 22/10 (M1 « modeles-documents-marche ») — le projet de marché : un modèle par catégorie, en Word et en PDF ———
+  readonly typesModele: Readonly<Record<string, string>> = { PV: 'MODÈLE DE PV', LETTRE_RENVOI: 'MODÈLE DE LETTRE DE RENVOI', PROJET_MARCHE: 'MODÈLE DE PROJET DE MARCHÉ' };
+  readonly categoriesMarche = CATEGORIES_MARCHE;
+  readonly categoriesCochees = signal<CategorieMarche[]>([]);
+  readonly categoriesModifiees = computed(() => [...this.categoriesCochees()].sort().join() !== [...(this.fiche()?.categories ?? [])].sort().join());
+  /** La catégorie du départ : celle choisie, à défaut la première servie, à défaut la première de la liste. */
+  readonly categorieDepart = signal<CategorieMarche | null>(null);
+  readonly categorieDepartEffective = computed(() => this.categorieDepart() ?? this.fiche()?.categories?.[0] ?? CATEGORIES_MARCHE[0].code);
+
+  categoriesLisibles(c: readonly string[] | undefined): string {
+    return (c ?? []).map(libelleCategorie).join(' · ');
+  }
+
+  basculerCategorie(code: CategorieMarche, coche: boolean): void {
+    this.messageRattachement.set(null);
+    this.categoriesCochees.update((l) => (coche ? [...new Set([...l, code])] : l.filter((x) => x !== code)));
+  }
+
+  enregistrerCategories(): void {
+    if (this.ecriture()) return;
+    this.ecriture.set(true);
+    this.messageRattachement.set(null);
+    this.service.rattacherCategories(this.idModele, this.categoriesCochees()).subscribe({
+      next: (f) => {
+        this.ecriture.set(false);
+        this.toast.success('Catégories servies enregistrées.');
+        this.appliquer(f);
+      },
+      error: (e: ApiError) => {
+        this.ecriture.set(false);
+        this.messageRattachement.set(
+          codeErreur(e) === 'CATEGORIE_DEJA_SERVIE' ? e.message || 'Cette catégorie est déjà servie par un autre modèle : retirez-la de celui-ci d’abord.'
+          : this.messageAvecDetails(e, 'Les catégories n’ont pas été enregistrées.'),
+        );
+      },
+    });
+  }
   readonly generation = signal(false);
   readonly messageDepart = signal<string | null>(null);
 
@@ -698,13 +785,14 @@ export class ModelePvFicheEcran implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({ next: (c) => this.couverture.set(c), error: () => this.couverture.set([]) });
     this.rattaches.set(f.sousTypes.map((s) => s.id));
+    this.categoriesCochees.set([...(f.categories ?? [])]);
     const familleServie = f.sousTypes.find((s) => s.famille)?.famille;
     if (familleServie) this.famille.set(familleServie);
     else if (!this.famille()) this.famille.set(this.sousTypes()[0]?.idTypeDossier ?? '');
     // Le catalogue suit la famille du premier sous-type servi ; sans sous-type, tout le catalogue. Une lettre : celui de sa nature
     // (⚠️ 22/10, L1) — une variable hors de sa nature serait bloquante au contrôle.
     if (this.catalogue() === null || avant !== f.sousTypes.map((s) => s.id).join()) {
-      const lettre = f.nature === 'LETTRE_RENVOI';
+      const lettre = f.nature !== 'PV';
       this.service
         .variables(lettre ? null : (f.sousTypes[0]?.id ?? null), lettre ? f.nature : null)
         .pipe(takeUntilDestroyed(this.destroyRef))
@@ -743,7 +831,8 @@ export class ModelePvFicheEcran implements OnInit {
     if (this.generation()) return;
     this.generation.set(true);
     this.messageDepart.set(null);
-    this.service.genererDepart(this.idModele, this.portee()).subscribe({
+    const categorie = this.fiche()?.nature === 'PROJET_MARCHE' ? this.categorieDepartEffective() : null;
+    this.service.genererDepart(this.idModele, this.portee(), categorie).subscribe({
       next: (v) => {
         this.generation.set(false);
         this.onglet.set('depot');
@@ -757,6 +846,7 @@ export class ModelePvFicheEcran implements OnInit {
           : code === 'FAMILLES_MULTIPLES' ? `Les sous-types servis relèvent de plusieurs familles (${this.detailsEnClair(e, (fam, sts) => `${fam} : ${sts}`)}) : gardez ceux d’une seule famille.`
           : code === 'FAMILLE_SANS_DEPART' ? 'Le plan de passation n’a pas de modèle de départ : il garde ses fichiers intégrés, repris plus tard.'
           : code === 'NATURE_SANS_DEPART' ? 'Le modèle de départ n’existe que pour un procès-verbal.'
+          : code === 'CATEGORIE_REQUISE' ? 'Choisissez la catégorie du projet de marché.'
           : code === 'MODELE_ARCHIVE' ? 'Ce modèle est archivé.'
           : e.message || 'Le modèle de départ n’a pas pu être généré.',
         );

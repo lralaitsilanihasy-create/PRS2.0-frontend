@@ -100,6 +100,19 @@ const REGLES_USUELLES: Readonly<Record<string, string>> = {
             <select aria-label="Espacement des paragraphes" class="edp__moyen" (change)="espacement($any($event.target).value)">
               @for (e of espacements; track e.cle) { <option [value]="e.cle" [selected]="etat().espacement === e.cle">{{ e.libelle }}</option> }
             </select>
+            @if (etat().style !== 'p') {
+              <select aria-label="Numérotation du titre" class="edp__moyen" title="Le numéro est calculé à la production, après les règles"
+                      (change)="cmd((c) => c.numeroterTitre($any($event.target).value || null))">
+                @for (n of numerotations; track n.gabarit) { <option [value]="n.gabarit" [selected]="etat().numerotation === n.gabarit">{{ n.libelle }}</option> }
+              </select>
+            }
+            @if (listes().length) {
+              <select aria-label="Répéter les paragraphes" class="edp__moyen" title="Répète les paragraphes sélectionnés pour chaque élément d’une liste"
+                      (change)="repeterParagraphes($any($event.target))">
+                <option value="">Répéter…</option>
+                @for (l of listes(); track l.nom) { <option [value]="l.nom">pour chaque {{ libelleCourt(l.libelle) }}</option> }
+              </select>
+            }
           </span>
           <span class="edp__grp" role="group" aria-label="Tableau">
             <span class="edp__grp-t" aria-hidden="true">Tableau</span>
@@ -305,6 +318,18 @@ const REGLES_USUELLES: Readonly<Record<string, string>> = {
     .edp .pg-bloc-ligne { border-bottom: 2px dashed #0369a1; background: #f0f9ff; }
     .edp .pg-saut { margin: 8px 0; border-top: 2px dashed #94a3b8; text-align: center; font: 600 10.5px 'Segoe UI', sans-serif; color: #586586; padding-top: 2px; }
     .edp tr.pg-repetee { outline: 1.5px dashed #0369a1; outline-offset: -2px; }
+    /* ⚠️ 22/10 (W2) — numéro indicatif d'un titre numéroté : compteur par niveau, remis à zéro par un titre de niveau supérieur et par
+       chaque passage de premier rang (deux variantes d'un même document se numérotent chacune). Le vrai numéro est calculé à la production. */
+    .edp .ProseMirror, .edp .ProseMirror > .pg-bloc { counter-reset: n1 n2 n3; }
+    .edp h1[data-numerotation] { counter-increment: n1; counter-reset: n2 n3; }
+    .edp h2[data-numerotation] { counter-increment: n2; counter-reset: n3; }
+    .edp h3[data-numerotation] { counter-increment: n3; }
+    .edp h1[data-numerotation]::before { content: attr(data-num-avant) counter(n1) attr(data-num-apres); }
+    .edp h2[data-numerotation]::before { content: attr(data-num-avant) counter(n2) attr(data-num-apres); }
+    .edp h3[data-numerotation]::before { content: attr(data-num-avant) counter(n3) attr(data-num-apres); }
+    .edp h1[data-numerotation]::before, .edp h2[data-numerotation]::before, .edp h3[data-numerotation]::before { color: #0369a1; white-space: pre; }
+    .edp .pg-repetition { position: relative; border: 1.5px dashed #a78bfa; border-radius: 5px; padding: 14px 6px 2px; margin: 8px 0 6px; }
+    .edp .pg-repetition::before { content: '↻ répété pour chaque élément de ' attr(data-repetition); position: absolute; top: -9px; left: 8px; background: #fff; padding: 0 5px; font: 600 10.5px 'Segoe UI', sans-serif; color: #6d28d9; }
     .edp tr.pg-repetee > :first-child::before { content: '↻ une ligne par élément de ' attr(data-liste); display: block; font: 600 10px 'Segoe UI', sans-serif; color: #0369a1; }
     .edp .pg-image img { max-width: 100%; }
     /* Le panneau reste à côté de la feuille pendant qu'on la parcourt (sous la barre d'outils). */
@@ -395,8 +420,15 @@ export class EditeurPage implements AfterViewInit, OnDestroy {
   readonly message = signal<string | null>(null);
   readonly etat = signal({
     gras: false, italique: false, souligne: false, alignement: '', tableau: false, cadre: false,
-    style: 'p', police: '', taille: 0, couleur: '', interligne: 0, premiereLigne: 0, espacement: '',
+    style: 'p', police: '', taille: 0, couleur: '', interligne: 0, premiereLigne: 0, espacement: '', numerotation: '',
   });
+  /** ⚠️ 22/10 (W2) — les gabarits proposés pour un titre numéroté ; `{n}` est remplacé à la production. */
+  readonly numerotations = [
+    { gabarit: '', libelle: 'Titre non numéroté' },
+    { gabarit: 'Article {n} — ', libelle: 'Article n —' },
+    { gabarit: 'ARTICLE {n} : ', libelle: 'ARTICLE n :' },
+    { gabarit: '{n}. ', libelle: 'n.' },
+  ];
   readonly styles = [
     { cle: 'p', libelle: 'Normal' },
     { cle: 'h1', libelle: 'Titre 1' },
@@ -575,6 +607,13 @@ export class EditeurPage implements AfterViewInit, OnDestroy {
     if (f) this.cmd((c) => c.setCellAttribute('fond', f === '-' ? null : f));
   }
 
+  /** ⚠️ 22/10 (M1) — répète les paragraphes sélectionnés pour chaque élément de la liste choisie, puis remet la liste à « Répéter… ». */
+  repeterParagraphes(select: HTMLSelectElement): void {
+    const liste = select.value;
+    select.value = '';
+    if (liste) this.cmd((c) => c.repeterParagraphes(liste));
+  }
+
   repeter(liste: string): void {
     if (liste) this.cmd((c) => c.repeterLigne(liste === '-' ? null : liste));
   }
@@ -654,7 +693,7 @@ export class EditeurPage implements AfterViewInit, OnDestroy {
     if (!e) return;
     const $f = e.state.selection.$from;
     let cadre = false;
-    for (let d = $f.depth; d > 0; d--) if (['bloc', 'blocEnLigne'].includes($f.node(d).type.name)) cadre = true;
+    for (let d = $f.depth; d > 0; d--) if (['bloc', 'blocEnLigne', 'repetition'].includes($f.node(d).type.name)) cadre = true;
     const align = ['left', 'center', 'right', 'justify'].find((a) => e.isActive({ textAlign: a })) ?? '';
     const ts = e.getAttributes('textStyle');
     const para = e.isActive('heading') ? e.getAttributes('heading') : e.getAttributes('paragraph');
@@ -670,6 +709,7 @@ export class EditeurPage implements AfterViewInit, OnDestroy {
       interligne: Number(para['interligne'] ?? 0) || 0,
       premiereLigne: Number(para['retraitPremiereLigne'] ?? 0) || 0,
       espacement: avant == null && apres == null ? '' : `${avant ?? 0}-${apres ?? 0}`,
+      numerotation: niveau ? ((para['numerotation'] as string | null) ?? '') : '',
     });
   }
 }

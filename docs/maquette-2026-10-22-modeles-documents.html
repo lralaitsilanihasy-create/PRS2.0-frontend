@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Modèles de documents — maquette</title>
+<style>
+  :root {
+    --primary: #0369a1; --primary-text: #075985; --text: #1f2937; --text-muted: #4b5563; --border: #d1d9e6; --card-bg: #fff; --page-bg: #f3f6fa;
+    --miss-accent: #dc2626; --miss-bg: #fee2e2; --miss-text: #991b1b; --miss-border: #fca5a5;
+    --prep-accent: #ca8a04; --prep-bg: #fef9c3; --prep-text: #854d0e; --prep-border: #fde047;
+    --ok-accent: #059669; --ok-bg: #d1fae5; --ok-text: #065f46; --ok-border: #6ee7b7;
+    --reco-bg: #e0f2fe; --reco-border: #7dd3fc;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page-bg); color: var(--text); font: 14px/1.45 "Segoe UI", system-ui, sans-serif; }
+  main { max-width: 1180px; margin: 0 auto; padding: 20px 16px 48px; display: flex; flex-direction: column; gap: 14px; }
+  .note { background: #fff7ed; border: 1px dashed #fdba74; color: #7c2d12; border-radius: 8px; padding: 8px 12px; font-size: 13px; }
+  h1 { margin: 0; font-size: 22px; font-weight: 600; }
+  .role { margin: 2px 0 0; color: var(--text-muted); }
+  .onglets { display: flex; gap: 6px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .onglet { border: 1px solid var(--border); border-bottom: 0; background: #eef2f7; color: var(--text-muted); padding: 8px 14px; border-radius: 8px 8px 0 0;
+    font: inherit; font-weight: 600; cursor: pointer; }
+  .onglet[aria-selected="true"] { background: var(--card-bg); color: var(--primary-text); position: relative; top: 1px; }
+  .onglet small { font-weight: 400; color: var(--text-muted); }
+  .panneau { display: none; flex-direction: column; gap: 12px; }
+  .panneau.actif { display: flex; }
+  .carte { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .groupe { font-weight: 600; padding: 6px 12px; border-radius: 8px 8px 0 0; display: flex; gap: 8px; align-items: center; }
+  .groupe--prep { background: var(--prep-bg); color: var(--prep-text); border-left: 3px solid var(--prep-accent); }
+  .groupe--ok { background: var(--ok-bg); color: var(--ok-text); border-left: 3px solid var(--ok-accent); }
+  .liste { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .ligne { display: grid; grid-template-columns: 1fr auto auto auto; gap: 14px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--border); }
+  .ligne:first-child { border-top: 0; }
+  .nom { font-weight: 500; }
+  .sous { color: var(--text-muted); font-size: 13px; }
+  .pastille { font-size: 12px; font-weight: 600; border-radius: 999px; padding: 2px 10px; border: 1px solid; white-space: nowrap; }
+  .p-prep { color: var(--prep-text); background: var(--prep-bg); border-color: var(--prep-border); }
+  .p-ok { color: var(--ok-text); background: var(--ok-bg); border-color: var(--ok-border); }
+  .p-miss { color: var(--miss-text); background: var(--miss-bg); border-color: var(--miss-border); }
+  .p-info { color: var(--primary-text); background: var(--reco-bg); border-color: var(--reco-border); }
+  .btn { border: 1px solid var(--primary); background: var(--card-bg); color: var(--primary); border-radius: 8px; padding: 5px 14px; font: inherit; font-weight: 600; cursor: pointer; }
+  .btn--plein { background: var(--primary); color: #fff; }
+  .format { display: inline-flex; gap: 4px; }
+  .format span { font-size: 11px; font-weight: 700; border-radius: 4px; padding: 1px 6px; background: #eef2f7; color: var(--text-muted); }
+  .format span.w { background: #dbeafe; color: #1e40af; }
+  .cat { font-size: 12px; font-weight: 700; letter-spacing: .04em; color: var(--text-muted); text-transform: uppercase; padding: 10px 16px 0; }
+  .fiche { display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; }
+  .ecart { border-left: 3px solid var(--prep-accent); background: var(--prep-bg); border-radius: 0 8px 8px 0; padding: 8px 10px; margin: 6px 0; font-size: 13px; }
+  .ecart del { color: var(--miss-text); }
+  .ecart ins { color: var(--ok-text); text-decoration: none; font-weight: 600; }
+  .modale { border: 1px solid var(--border); border-radius: 12px; background: var(--card-bg); box-shadow: 0 8px 30px rgba(15,23,42,.15); padding: 16px; max-width: 520px; }
+  .modale h3 { margin: 0 0 8px; font-size: 16px; }
+  label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-top: 8px; }
+  input, textarea { font: inherit; font-size: 14px; border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; color: var(--text); }
+  .pied { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+  @media (max-width: 760px) { .ligne { grid-template-columns: 1fr auto; } .fiche { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <p class="note">Maquette du 22/10 — principe des modèles de PV appliqué aux dossiers de mise en concurrence et de marché. Rien n'est codé.
+    Demande au backend : <code>docs/demande-backend-2026-10-22-modeles-documents-marche.md</code>.</p>
+
+  <header>
+    <h1>Modèles de documents</h1>
+    <p class="role">Les modèles qui produisent les PV d'examen, les documents du DAO et les projets de marché.</p>
+  </header>
+
+  <div class="onglets" role="tablist">
+    <button class="onglet" role="tab" aria-selected="false" data-cible="pv">PV d’examen <small>· et lettres de renvoi</small></button>
+    <button class="onglet" role="tab" aria-selected="false" data-cible="dao">Dossier de mise en concurrence <small>· 15 documents</small></button>
+    <button class="onglet" role="tab" aria-selected="true" data-cible="marche">Dossier de marché <small>· 3 modèles</small></button>
+  </div>
+
+  <!-- PV d'examen : l'écran actuel, inchangé -->
+  <section class="panneau" id="pv" role="tabpanel">
+    <div class="carte">L'écran actuel « Modèles de procès-verbaux », sans changement : couverture, groupes « À créer / À rédiger / En service »,
+      lettres de renvoi, modèles intégrés remplacés.</div>
+  </section>
+
+  <!-- Dossier de marché (M1) -->
+  <section class="panneau actif" id="marche" role="tabpanel">
+    <div class="liste">
+      <div class="groupe groupe--prep">↥ À rédiger 3</div>
+      <div class="ligne">
+        <div><div class="nom">Projet de marché — fournitures et services</div>
+          <div class="sous">PROJET-MARCHE-F · produit aujourd'hui par le code de l'application (art. 60)</div></div>
+        <span class="format"><span class="w">WORD</span><span>PDF</span></span>
+        <span class="pastille p-prep">Départ prêt</span>
+        <button class="btn">Rédiger</button>
+      </div>
+      <div class="ligne">
+        <div><div class="nom">Projet de marché — travaux</div>
+          <div class="sous">PROJET-MARCHE-T · produit aujourd'hui par le code de l'application (art. 60)</div></div>
+        <span class="format"><span class="w">WORD</span><span>PDF</span></span>
+        <span class="pastille p-prep">Départ prêt</span>
+        <button class="btn">Rédiger</button>
+      </div>
+      <div class="ligne">
+        <div><div class="nom">Projet de marché — prestations intellectuelles</div>
+          <div class="sous">PROJET-MARCHE-PI · « la proposition » au lieu de « l'offre »</div></div>
+        <span class="format"><span class="w">WORD</span><span>PDF</span></span>
+        <span class="pastille p-prep">Départ prêt</span>
+        <button class="btn">Rédiger</button>
+      </div>
+    </div>
+    <div class="carte">
+      <strong>Rédiger</strong> ouvre la fiche du modèle : « Générer un modèle de départ » recopie le texte actuel (articles 1 à 10, marché simple et
+      contrat-cadre séparés par la règle <code>CONTRAT_CADRE</code>), un modèle par catégorie. Les articles se numérotent d’eux-mêmes (« Article n — »). Les données inconnues restent « …… » dans le Word, pour que la PRMP les
+      complète avant la signature. Mis en vigueur, le modèle remplace le texte du code ; archivé, le code reprend.
+    </div>
+  </section>
+
+  <!-- Dossier de mise en concurrence (D1-D3) -->
+  <section class="panneau" id="dao" role="tabpanel">
+    <div class="liste">
+      <div class="groupe groupe--ok">✓ Produits par les modèles de l'ARMP intégrés 15</div>
+      <div class="cat">Fournitures</div>
+      <div class="ligne"><div><div class="nom">Données particulières de l'appel d'offres</div><div class="sous">DPAO-F · document type ARMP</div></div>
+        <span class="format"><span class="w">WORD</span><span>PDF</span></span><span class="pastille p-ok">Conforme ARMP</span><button class="btn">Voir</button></div>
+      <div class="ligne"><div><div class="nom">Acte d'engagement</div><div class="sous">AE-F · document type ARMP</div></div>
+        <span class="format"><span class="w">WORD</span><span>PDF</span></span><span class="pastille p-ok">Conforme ARMP</span><button class="btn">Voir</button></div>
+      <div class="ligne"><div><div class="nom">Avis d'appel d'offres</div><div class="sous">AVIS-F · modèle de l'application, v2 en vigueur</div></div>
+        <span class="format"><span class="w">WORD</span><span>PDF</span></span><span class="pastille p-prep">2 écarts · validés</span><button class="btn">Voir</button></div>
+      <div class="cat">Les autres (fournitures, travaux, prestations intellectuelles, contrat-cadre)</div>
+      <div class="ligne"><div><div class="nom">… 12 autres documents</div><div class="sous">DPAO-T, AE-T, CCAP-T, AVIS-T, DPIC-PI, AE-PI, CPS-PI, LETTRE-PI, LETTRE-AOR, DPAC-CC, AE-CC, CCAP-F</div></div>
+        <span></span><span class="pastille p-info">par lots D1 → D3</span><span></span></div>
+    </div>
+
+    <div class="fiche">
+      <div class="carte">
+        <strong>Fiche AVIS-F — onglet « Contrôle » : écarts avec le document type de l'ARMP</strong>
+        <div class="ecart">§ 4 — <del>« Les dossiers peuvent être consultés gratuitement »</del> → <ins>« Le dossier peut être consulté gratuitement, et retiré contre … »</ins></div>
+        <div class="ecart">§ 7 — paragraphe <ins>ajouté</ins> : « Les offres reçues après le délai fixé seront rejetées. »</div>
+        <p class="sous">Les écarts ne bloquent pas l'enregistrement ; ils sont montrés ici, à l'aperçu, et exigent une validation du juriste à la mise en vigueur.</p>
+      </div>
+      <div class="modale" role="dialog" aria-label="Mettre en vigueur la version 2">
+        <h3>Mettre en vigueur la version 2</h3>
+        <p class="sous">Cette version s'écarte du document type de l'ARMP (2 écarts). Sa mise en vigueur exige la validation du juriste.</p>
+        <label>Juriste qui a validé<input placeholder="Nom et qualité du juriste"></label>
+        <label>Date de la validation<input value="22/10/2026"></label>
+        <label>Motif<textarea rows="2">Rédaction de l'avis alignée sur la pratique de la CNM (retrait payant).</textarea></label>
+        <div class="pied"><button class="btn">Annuler</button><button class="btn btn--plein">Mettre en vigueur</button></div>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+  document.querySelectorAll('.onglet').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('.onglet').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
+    document.querySelectorAll('.panneau').forEach((p) => p.classList.toggle('actif', p.id === b.dataset.cible));
+  }));
+</script>
+</body>
+</html>

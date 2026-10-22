@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import { Icone } from '../../../../shared/ui/icone';
 
@@ -14,11 +14,13 @@ import { Icone } from '../../../../shared/ui/icone';
     <header class="etm">
       <span class="etm__icone" aria-hidden="true"><app-icone nom="file" [taille]="22" /></span>
       <div class="etm__titres">
-        <h1 class="etm__titre">Modèles de procès-verbaux</h1>
-        <p class="etm__role">Les modèles qui produisent les PV et les lettres de renvoi, sous-type par sous-type.</p>
+        <h1 class="etm__titre">Modèles de documents</h1>
+        <p class="etm__role">Les modèles qui produisent les PV d’examen, les lettres de renvoi et les projets de marché.</p>
       </div>
       <div class="etm__actions">
-        <button type="button" class="etm__btn etm__btn--principal" (click)="nouveau.emit()"><app-icone nom="plus" [taille]="16" /> Nouveau modèle</button>
+        @if (avecNouveau()) {
+          <button type="button" class="etm__btn etm__btn--principal" (click)="nouveau.emit()"><app-icone nom="plus" [taille]="16" /> Nouveau modèle</button>
+        }
       </div>
     </header>
   `,
@@ -39,5 +41,7 @@ import { Icone } from '../../../../shared/ui/icone';
   `,
 })
 export class EnTeteModeles {
+  /** ⚠️ 22/10 — « Nouveau modèle » crée un PV ou une lettre : seulement dans l’onglet « PV d’examen ». */
+  readonly avecNouveau = input(true);
   readonly nouveau = output<void>();
 }
