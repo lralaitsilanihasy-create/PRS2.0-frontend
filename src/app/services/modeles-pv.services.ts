@@ -10,6 +10,9 @@ import {
   CatalogueModelePv,
   ChampModelePv,
   CouvertureSousType,
+  DocumentDaoIntegre,
+  EcartArmp,
+  JuristeValidation,
   ConditionModelePv,
   DocumentPage,
   ImageModelePv,
@@ -58,9 +61,34 @@ export class ModelePvService {
    * officiel et des phrases de la famille des sous-types servis, conditions et champs déjà déclarés. Rien n'est mis en vigueur.
    * 400 `SANS_SOUS_TYPE`, `NATURE_SANS_DEPART`, `PORTEE_INCONNUE` ; 409 `FAMILLES_MULTIPLES` (`details`), `FAMILLE_SANS_DEPART`, `MODELE_ARCHIVE`.
    */
-  /** Un PV ou une lettre : la portée ; ⚠️ 22/10 (M1) un projet de marché : la catégorie (à défaut la seule rattachée). */
-  genererDepart(id: number, portee: PorteeDepart = 'les-deux', categorie?: CategorieMarche | null): Observable<VersionModelePv> {
-    return this.http.post<VersionModelePv>(`${this.url}/${id}/versions/depart`, categorie ? { categorie } : { portee }, this.ctx);
+  /**
+   * Un PV ou une lettre : la portée ; ⚠️ 22/10 (M1) un projet de marché : la catégorie (à défaut la seule rattachée) ; (D1-D3) un
+   * document du DAO : son sigle rattaché, rien à envoyer.
+   */
+  genererDepart(id: number, portee: PorteeDepart = 'les-deux', categorie?: CategorieMarche | null, dao = false): Observable<VersionModelePv> {
+    return this.http.post<VersionModelePv>(`${this.url}/${id}/versions/depart`, dao ? {} : categorie ? { categorie } : { portee }, this.ctx);
+  }
+
+  /** ⚠️ 22/10 (D0) — les 15 documents intégrés du DAO. */
+  integresDao(): Observable<DocumentDaoIntegre[]> {
+    return this.http.get<DocumentDaoIntegre[]>(`${this.url}/integres/dao`, this.ctx);
+  }
+
+  /** ⚠️ 22/10 (D0) — le rendu brut d'un document intégré du DAO (jetons visibles), en PDF ou en Word. */
+  fichierIntegreDao(sigle: string, format: 'pdf' | 'docx'): Observable<Blob> {
+    return this.http
+      .get(`${this.url}/integres/dao/${encodeURIComponent(sigle)}/fichier`, { ...this.ctx, params: { format }, responseType: 'blob' })
+      .pipe(catchError((e: unknown) => relireErreurBinaire(e)));
+  }
+
+  /** ⚠️ 22/10 (D1-D3) — un document du DAO se rattache à son sigle (un seul : `UN_SEUL_SIGLE`). */
+  rattacherSigles(id: number, sigles: string[]): Observable<ModelePvFiche> {
+    return this.http.put<ModelePvFiche>(`${this.url}/${id}/rattachements`, { sigles }, this.ctx);
+  }
+
+  /** ⚠️ 22/10 (D-ARMP) — les écarts d'une version avec le document type de l'ARMP. */
+  ecarts(id: number, numero: number): Observable<EcartArmp[]> {
+    return this.http.get<EcartArmp[]>(`${this.url}/${id}/versions/${numero}/ecarts`, this.ctx);
   }
 
   /** ⚠️ 21/10 (option C') — une nouvelle version page, en brouillon, avec son rapport. 400 `DOCUMENT_INVALIDE` (`details` par chemin). */
@@ -133,8 +161,9 @@ export class ModelePvService {
       .pipe(catchError((e: unknown) => relireErreurBinaire(e)));
   }
 
-  mettreEnVigueur(id: number, numero: number, motif: string): Observable<VersionModelePv> {
-    return this.http.post<VersionModelePv>(`${this.url}/${id}/versions/${numero}/mettre-en-vigueur`, { motif }, this.ctx);
+  /** ⚠️ 22/10 (D-ARMP) — `juriste` exigé dès qu'un document du DAO s'écarte du document type (400 `VALIDATION_JURISTE_REQUISE`). */
+  mettreEnVigueur(id: number, numero: number, motif: string, juriste?: JuristeValidation | null): Observable<VersionModelePv> {
+    return this.http.post<VersionModelePv>(`${this.url}/${id}/versions/${numero}/mettre-en-vigueur`, juriste ? { motif, juriste } : { motif }, this.ctx);
   }
 
   /** ⚠️ 22/10 (M1) — un projet de marché se rattache à des catégories (409 `CATEGORIE_DEJA_SERVIE`). */
@@ -198,10 +227,11 @@ export class ModelePvService {
 
   /** Le catalogue des variables, filtré par la famille du sous-type (tout le catalogue sans sous-type). */
   /** ⚠️ 22/10 (L1 « modele-lettre-renvoi ») — `nature` filtre le catalogue : une lettre n'a ni `PV.*` ni listes répétées. */
-  variables(sousType?: string | null, nature?: NatureModelePv | null): Observable<CatalogueModelePv> {
+  variables(sousType?: string | null, nature?: NatureModelePv | null, sigle?: string | null): Observable<CatalogueModelePv> {
     const params: Record<string, string> = {};
     if (sousType) params['sousType'] = sousType;
     if (nature) params['nature'] = nature;
+    if (sigle) params['sigle'] = sigle;
     return this.http.get<CatalogueModelePv>(`${this.url}/variables`, { ...this.ctx, params });
   }
 }

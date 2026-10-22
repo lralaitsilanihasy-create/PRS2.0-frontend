@@ -105,4 +105,21 @@ describe('ModelePvService — chemins du contrat', () => {
     expect(req.request.params.has('dossier')).toBe(false);
     req.flush(new Blob(['%PDF']));
   });
+
+  it('documents du DAO (22/10) : intégrés, rattachement par sigle, écarts, mise en vigueur avec le juriste', () => {
+    const s = TestBed.inject(ModelePvService);
+    const http = TestBed.inject(HttpTestingController);
+    s.integresDao().subscribe();
+    http.expectOne({ method: 'GET', url: '/api/modeles-pv/integres/dao' }).flush([]);
+    s.rattacherSigles(7, ['AVIS-F']).subscribe();
+    expect(http.expectOne({ method: 'PUT', url: '/api/modeles-pv/7/rattachements' }).request.body).toEqual({ sigles: ['AVIS-F'] });
+    s.genererDepart(7, 'les-deux', null, true).subscribe();
+    expect(http.expectOne({ method: 'POST', url: '/api/modeles-pv/7/versions/depart' }).request.body).toEqual({});
+    s.ecarts(7, 1).subscribe();
+    http.expectOne({ method: 'GET', url: '/api/modeles-pv/7/versions/1/ecarts' }).flush([]);
+    s.mettreEnVigueur(7, 1, 'motif', { nom: 'N', qualite: 'Q', date: '2026-10-22' }).subscribe();
+    expect(http.expectOne({ method: 'POST', url: '/api/modeles-pv/7/versions/1/mettre-en-vigueur' }).request.body).toEqual({ motif: 'motif', juriste: { nom: 'N', qualite: 'Q', date: '2026-10-22' } });
+    s.variables(null, 'DOCUMENT_DAO', 'AVIS-F').subscribe();
+    http.expectOne((r) => r.url === '/api/modeles-pv/variables' && r.params.get('sigle') === 'AVIS-F' && r.params.get('nature') === 'DOCUMENT_DAO').flush({});
+  });
 });

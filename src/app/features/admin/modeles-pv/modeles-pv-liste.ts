@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { forkJoin, of, switchMap } from 'rxjs';
+import { catchError, forkJoin, of, switchMap } from 'rxjs';
 
 import { ApiError, codeErreur } from '../../../core/errors/api-error';
-import { CouvertureSousType, ModeleIntegre, ModelePvResume, NatureModelePv } from '../../../models';
+import { CouvertureSousType, DocumentDaoIntegre, ModeleIntegre, ModelePvResume, NatureModelePv } from '../../../models';
 import { ModelePvService, TypeDossierService } from '../../../services';
 import { ModaleDirective } from '../../../shared/a11y/modale.directive';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
@@ -14,7 +14,9 @@ import { CarteCouverture } from './liste/carte-couverture';
 import { EnTeteModeles } from './liste/en-tete-modeles';
 import { ListeModeles } from './liste/liste-modeles';
 import { ModelesMarche } from './liste/modeles-marche';
-import { FiltreEtat, LigneModele, Tri, LigneMarche, construireLignes, couvertureLettres, lignesMarche, couvertureSousTypes, filtrer, grouper, recommandation } from './liste/modeles-pv-vue';
+import { ModelesDao } from './liste/modeles-dao';
+import { ouvrirBlobSur } from '../../../core/securite/fichiers-surs';
+import { FiltreEtat, LigneModele, Tri, LigneDao, LigneMarche, construireLignes, groupesDao, couvertureLettres, lignesMarche, couvertureSousTypes, filtrer, grouper, recommandation } from './liste/modeles-pv-vue';
 import { LIBELLES_NATURE, MOTIF_CODE_MODELE, propositionPourFamille } from './modeles-pv-libelles';
 
 /**
@@ -26,7 +28,7 @@ import { LIBELLES_NATURE, MOTIF_CODE_MODELE, propositionPourFamille } from './mo
 @Component({
   selector: 'app-modeles-pv-liste',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur, ModaleDirective, IntegreDetail, EnTeteModeles, BandeauRecommandation, CarteCouverture, BarreOutilsModeles, ListeModeles, ModelesMarche],
+  imports: [RouterLink, EtatErreur, ModaleDirective, IntegreDetail, EnTeteModeles, BandeauRecommandation, CarteCouverture, BarreOutilsModeles, ListeModeles, ModelesMarche, ModelesDao],
   template: `
     <div class="mpv">
       <app-en-tete-modeles [avecNouveau]="onglet() === 'pv'" (nouveau)="ouvrirCreation(null)" />
@@ -47,17 +49,8 @@ import { LIBELLES_NATURE, MOTIF_CODE_MODELE, propositionPourFamille } from './mo
           <app-modeles-marche [lignes]="lignesMarcheCalculees()" [occupe]="creationMarche()" (agir)="agirMarche($event)" />
           @if (messageMarche(); as m) { <p class="form-error" role="alert">{{ m }}</p> }
         } @else if (onglet() === 'dao') {
-          <section class="mpv__dao">
-            <h2>Documents du dossier de mise en concurrence</h2>
-            <p>
-              Les 15 documents du DAO (DPAO, DPAC, DPIC, actes d’engagement, CCAP, CPS, avis et lettres d’invitation, pour les fournitures, les
-              travaux et les prestations intellectuelles) sont produits par les documents types de l’ARMP intégrés à l’application.
-            </p>
-            <p>
-              Ils deviendront modifiables ici, avec les écarts au document type montrés et la validation du juriste à la mise en vigueur :
-              d’abord les avis et lettres d’invitation, puis les actes d’engagement, puis les DPAO, DPAC, DPIC, CCAP et CPS.
-            </p>
-          </section>
+          <app-modeles-dao [groupes]="groupesDaoCalcules()" [occupe]="occupeDao()" (agir)="agirDao($event)" (texte)="texteIntegreDao($event)" />
+          @if (messageDao(); as m) { <p class="form-error" role="alert">{{ m }}</p> }
         } @else {
         @if (reco(); as r) { <app-bandeau-recommandation [reco]="r" (commencer)="commencer()" /> }
         <app-carte-couverture [couverture]="couvertureCalculee()" [filtre]="filtre()" (choisir)="filtre.set($event)"
@@ -139,9 +132,6 @@ import { LIBELLES_NATURE, MOTIF_CODE_MODELE, propositionPourFamille } from './mo
     .mpv__onglet span { font-weight: 400; font-size: 12px; }
     .mpv__onglet[aria-selected='true'] { background: var(--card-bg); color: var(--primary); position: relative; top: 1px; }
     .mpv__onglet:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-    .mpv__dao { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
-    .mpv__dao h2 { margin: 0 0 6px; font-size: 15px; font-weight: 600; }
-    .mpv__dao p { margin: 6px 0 0; font-size: 14px; color: var(--text-muted); max-width: 62rem; }
     .mpv__archives { font-size: 13px; color: var(--text-muted); }
     .mpv__archives summary { cursor: pointer; }
     .mpv__archives summary:focus-visible, .mpv__archives a:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
@@ -191,12 +181,59 @@ export class ModelesPvListe implements OnInit {
   // ——— ⚠️ 22/10 (M1 « modeles-documents-marche ») — trois onglets : PV d'examen, dossier de mise en concurrence, dossier de marché ———
   readonly onglets: readonly { cle: 'pv' | 'dao' | 'marche'; libelle: string; detail: string }[] = [
     { cle: 'pv', libelle: 'PV d’examen', detail: '· et lettres de renvoi' },
-    { cle: 'dao', libelle: 'Dossier de mise en concurrence', detail: '· 15 documents' },
+    { cle: 'dao', libelle: 'Dossier de mise en concurrence', detail: '· documents du DAO' },
     { cle: 'marche', libelle: 'Dossier de marché', detail: '· projet de marché' },
   ];
   readonly onglet = signal<'pv' | 'dao' | 'marche'>('pv');
   readonly lignesMarcheCalculees = computed(() => lignesMarche(this.modeles()));
   readonly creationMarche = signal<string | null>(null);
+
+  // ——— ⚠️ 22/10 (D0-D3 « modeles-dao ») — l'onglet « Dossier de mise en concurrence » ———
+  private readonly integresDao = signal<DocumentDaoIntegre[]>([]);
+  readonly groupesDaoCalcules = computed(() => groupesDao(this.integresDao(), this.modeles()));
+  readonly occupeDao = signal<string | null>(null);
+  readonly messageDao = signal<string | null>(null);
+
+  /** « Créer » : le modèle du sigle, rattaché, puis sa fiche ; sinon la fiche du modèle existant. */
+  agirDao(l: LigneDao): void {
+    if (l.modele) {
+      void this.router.navigate(['/admin/referentiels/modeles-pv', l.modele.id]);
+      return;
+    }
+    if (this.occupeDao()) return;
+    this.occupeDao.set(l.sigle);
+    this.messageDao.set(null);
+    this.service
+      .creer({ code: `DAO-${l.sigle}`, libelle: l.libelle, nature: 'DOCUMENT_DAO' })
+      .pipe(switchMap((f) => this.service.rattacherSigles(f.id, [l.sigle])))
+      .subscribe({
+        next: (f) => {
+          this.occupeDao.set(null);
+          void this.router.navigate(['/admin/referentiels/modeles-pv', f.id]);
+        },
+        error: (e: ApiError) => {
+          this.occupeDao.set(null);
+          this.messageDao.set(e.message || 'Le modèle n’a pas pu être créé.');
+          this.charger();
+        },
+      });
+  }
+
+  /** Le rendu brut du document type intégré (jetons visibles), dans un nouvel onglet. */
+  texteIntegreDao(sigle: string): void {
+    if (this.occupeDao()) return;
+    this.occupeDao.set('texte-' + sigle);
+    this.service.fichierIntegreDao(sigle, 'pdf').subscribe({
+      next: (b) => {
+        this.occupeDao.set(null);
+        ouvrirBlobSur(b);
+      },
+      error: (e: ApiError) => {
+        this.occupeDao.set(null);
+        this.messageDao.set(e.message || 'Le texte intégré n’a pas pu être ouvert.');
+      },
+    });
+  }
   readonly messageMarche = signal<string | null>(null);
 
   /** « Créer » : le modèle de la catégorie, rattaché, puis sa fiche ; sinon la fiche du modèle existant. */
@@ -249,12 +286,16 @@ export class ModelesPvListe implements OnInit {
       modeles: this.service.lister(),
       couverture: this.service.couverture(),
       integres: this.service.integres(),
+      // ⚠️ 22/10 (D0) — les documents du DAO ; un échec ne vide pas la page (l'onglet le dira).
+      integresDao: this.service.integresDao().pipe(catchError(() => of(null))),
       familles: this.typesService.listeSilencieuse(),
     }).subscribe({
-      next: ({ modeles, couverture, integres, familles }) => {
+      next: ({ modeles, couverture, integres, integresDao, familles }) => {
         this.modeles.set(modeles);
         this.couverture.set(couverture);
         this.integres.set(integres);
+        this.integresDao.set(integresDao ?? []);
+        this.messageDao.set(integresDao ? null : 'Les documents du DAO n’ont pas pu être lus.');
         this.libellesFamilles.set(Object.fromEntries(familles.map((f) => [f.idTypeDossier, f.libelleType ?? f.idTypeDossier])));
         this.loading.set(false);
       },

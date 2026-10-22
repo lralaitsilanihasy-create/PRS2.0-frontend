@@ -3,9 +3,9 @@ import { ChangeDetectionStrategy, Component, computed, input, output, signal } f
 
 import { NiveauPointRapport, RapportModelePv } from '../../../models';
 
-const ORDRE: Readonly<Record<NiveauPointRapport, number>> = { BLOQUANT: 0, AVERTISSEMENT: 1, OK: 2 };
-const BADGE: Readonly<Record<NiveauPointRapport, string>> = { BLOQUANT: 'badge-danger', AVERTISSEMENT: 'badge-warning', OK: 'badge-success' };
-const LIBELLE: Readonly<Record<NiveauPointRapport, string>> = { BLOQUANT: 'Bloquant', AVERTISSEMENT: 'Avertissement', OK: 'OK' };
+const ORDRE: Readonly<Record<NiveauPointRapport, number>> = { BLOQUANT: 0, AVERTISSEMENT: 1, INFO: 2, OK: 3 };
+const BADGE: Readonly<Record<NiveauPointRapport, string>> = { BLOQUANT: 'badge-danger', AVERTISSEMENT: 'badge-warning', INFO: 'badge-info', OK: 'badge-success' };
+const LIBELLE: Readonly<Record<NiveauPointRapport, string>> = { BLOQUANT: 'Bloquant', AVERTISSEMENT: 'Avertissement', INFO: 'Information', OK: 'OK' };
 
 /**
  * ⚠️ Générateur de modèles de PV, G1 (20/10, §B5) — le rapport de contrôle d'une version, les points bloquants d'abord. `ou`
@@ -96,7 +96,10 @@ export class RapportControlePv {
   readonly libelle = LIBELLE;
   readonly voirReussis = signal(false);
   readonly reussis = computed(() => (this.rapport()?.points ?? []).filter((p) => p.niveau === 'OK'));
-  /** Les points à traiter d'abord ; les contrôles réussis seulement sur demande. */
-  readonly affiches = computed(() => this.points().filter((p) => p.niveau !== 'OK' || this.voirReussis()));
+  /**
+   * Les points à traiter d'abord ; les contrôles réussis seulement sur demande. Les écarts au document type, un par un, sont dans le
+   * panneau « Écarts avec le document type » : le rapport n'en garde que le décompte.
+   */
+  readonly affiches = computed(() => this.points().filter((p) => p.code !== 'ECART_ARMP' && (p.niveau !== 'OK' || this.voirReussis())));
   readonly points = computed(() => [...(this.rapport()?.points ?? [])].sort((a, b) => ORDRE[a.niveau] - ORDRE[b.niveau]));
 }

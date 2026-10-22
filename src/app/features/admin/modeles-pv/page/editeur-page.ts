@@ -529,6 +529,8 @@ export class EditeurPage implements AfterViewInit, OnDestroy {
 
   private charger(d: DocumentPage | null): void {
     this.reglages.set({ format: 'A4', ...(d?.page ?? {}) });
+    this.pageInitiale = d?.page;
+    this.reglagesTouches = false;
     this.surPremiere.set(!!d?.enteteSurPremiereSeulement);
     this.editeurs.entete?.commands.setContent(depuisServeur(d?.entete), { emitUpdate: false });
     this.editeurs.corps?.commands.setContent(depuisServeur(d?.corps), { emitUpdate: false });
@@ -540,8 +542,13 @@ export class EditeurPage implements AfterViewInit, OnDestroy {
   /** Le document à enregistrer, depuis les trois zones. */
   document(): DocumentPage {
     const json = (z: Zone) => (this.editeurs[z]?.getJSON() as NoeudPage | undefined) ?? docVide();
-    return enveloppe(this.reglages(), json('entete'), json('corps'), json('piedDePage'), this.surPremiere());
+    // ⚠️ 22/10 — les réglages de page ne partent que si on les a changés : sinon le document garde les siens (un document du DAO n'en a
+    // pas, et des réglages ajoutés d'office y seraient signalés comme « non rendus par le moteur du DAO »).
+    return enveloppe(this.reglagesTouches ? this.reglages() : this.pageInitiale, json('entete'), json('corps'), json('piedDePage'), this.surPremiere());
   }
+
+  private pageInitiale: ReglagesPage | undefined;
+  private reglagesTouches = false;
 
   /** Marque le document comme enregistré (appelé par la fiche après un enregistrement réussi). */
   marquerEnregistre(): void {
@@ -618,8 +625,10 @@ export class EditeurPage implements AfterViewInit, OnDestroy {
     if (liste) this.cmd((c) => c.repeterLigne(liste === '-' ? null : liste));
   }
 
+  /** ⚠️ 22/10 (D1-D3) — un format du moteur du DAO (« .lettres », « .parLot »…) s'écrit dans le code de la variable, pas en attribut. */
   insererVariable(code: string): void {
-    this.cmd((c) => c.insererVariable(code, this.format() || null));
+    const f = this.format();
+    this.cmd((c) => (f.startsWith('.') ? c.insererVariable(code + f, null) : c.insererVariable(code, f || null)));
   }
 
   encadrer(condition: string): void {
@@ -635,12 +644,14 @@ export class EditeurPage implements AfterViewInit, OnDestroy {
 
   regler(r: Partial<ReglagesPage>): void {
     this.reglages.update((x) => ({ ...x, ...r }));
+    this.reglagesTouches = true;
     this.modifie.set(true);
   }
 
   marge(cle: 'haut' | 'bas' | 'gauche' | 'droite', valeur: number): void {
     if (!Number.isFinite(valeur) || valeur < 0 || valeur > 60) return;
     this.reglages.update((x) => ({ ...x, marges: { haut: 25, bas: 20, gauche: 25, droite: 25, ...(x.marges ?? {}), [cle]: valeur } }));
+    this.reglagesTouches = true;
     this.modifie.set(true);
   }
 

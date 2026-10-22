@@ -30,6 +30,7 @@ import { ChampsVersion } from './champs-version';
 import { ConditionsVersion } from './conditions-version';
 import { FormulaireApercu } from './formulaire-apercu';
 import { EditeurPage } from './page/editeur-page';
+import { EcartsArmp } from './ecarts-armp';
 import {
   LIBELLES_ACTION,
   LIBELLES_ETAT_VERSION,
@@ -65,10 +66,10 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
 @Component({
   selector: 'app-modele-pv-fiche',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, LowerCasePipe, RouterLink, EtatErreur, ModaleDirective, RapportControlePv, ConditionsVersion, ChampsVersion, ApercuVersion, CatalogueVariables, FormulaireApercu, EditeurPage],
+  imports: [DatePipe, LowerCasePipe, RouterLink, EtatErreur, ModaleDirective, RapportControlePv, ConditionsVersion, ChampsVersion, ApercuVersion, CatalogueVariables, FormulaireApercu, EditeurPage, EcartsArmp],
   template: `
     <section class="mpf">
-      <a class="mpf__retour" routerLink="/admin/referentiels/modeles-pv" [queryParams]="fiche()?.nature === 'PROJET_MARCHE' ? { onglet: 'marche' } : {}">← Tous les modèles de documents</a>
+      <a class="mpf__retour" routerLink="/admin/referentiels/modeles-pv" [queryParams]="ongletRetour()">← Tous les modèles de documents</a>
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
@@ -81,6 +82,8 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
           <div class="mpf__puces">
             @if (f.nature === 'PROJET_MARCHE') {
               <span class="mpf__puce">{{ (f.categories ?? []).length ? categoriesLisibles(f.categories) : 'aucune catégorie servie' }} · Word et PDF</span>
+            } @else if (f.nature === 'DOCUMENT_DAO') {
+              <span class="mpf__puce">{{ (f.sigles ?? []).length ? 'Document ' + f.sigles![0] : 'aucun document servi' }} · Word et PDF</span>
             } @else {
               <span class="mpf__puce">{{ f.sousTypes.length ? f.sousTypes.length + ' sous-type(s) · ' + libelleFamille(famille()) : 'aucun sous-type servi' }}</span>
             }
@@ -119,6 +122,7 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
                       <td><strong>v{{ v.numero }}</strong></td>
                       <td>
                         <span [class]="'badge ' + badgeEtat[v.etat]">{{ etats[v.etat] }}</span>
+                        @if (v.juriste; as j) { <span class="badge badge-info" [title]="'Écarts au document type validés par ' + j.nom + ', ' + j.qualite + ', le ' + j.date">écarts validés</span> }
                         @if (v.bloquant) { <span class="badge badge-danger">bloquant</span> }
                         @if (v.support === 'WORD') { <span class="badge badge-neutral" title="Ancien dépôt Word : consultation seulement">Word</span> }
                       </td>
@@ -151,6 +155,9 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
                   <p class="mpf__note">
                     @if (f.nature === 'PV') {
                       L’application assemble le PV officiel et les phrases de la famille servie, avec ses règles et ses champs déjà déclarés.
+                    } @else if (f.nature === 'DOCUMENT_DAO') {
+                      L’application convertit le document type de l’ARMP intégré pour ce document ({{ f.sigles?.[0] ?? '—' }}) en page modifiable,
+                      avec ses règles, ses passages et les données de la fiche DAO. Le départ est la référence des écarts au document type.
                     } @else if (f.nature === 'PROJET_MARCHE') {
                       L’application recopie mot pour mot le projet de marché qu’elle produit aujourd’hui pour la catégorie choisie (marché simple et
                       contrat-cadre), avec ses variables, ses règles et ses articles numérotés.
@@ -160,7 +167,17 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
                     }
                     Il arrive en brouillon : faites-en valider le texte par la CNM, puis corrigez-le dans l’onglet « Texte et mise en page ».
                   </p>
-                  @if (f.nature === 'PROJET_MARCHE') {
+                  @if (f.nature === 'DOCUMENT_DAO') {
+                    @if ((f.sigles ?? []).length) {
+                      <div class="mpf__depart-ligne">
+                        <button type="button" class="btn btn-primary btn-sm" [disabled]="generation()" (click)="genererDepart()">
+                          {{ generation() ? 'Conversion…' : 'Générer un modèle de départ' }}
+                        </button>
+                      </div>
+                    } @else {
+                      <p class="mpf__note"><strong>Ce modèle ne sert aucun document du DAO</strong> : créez-le depuis l’onglet « Dossier de mise en concurrence ».</p>
+                    }
+                  } @else if (f.nature === 'PROJET_MARCHE') {
                     <div class="mpf__depart-ligne">
                       <label class="mpf__depart-portee">
                         <span>Catégorie</span>
@@ -204,7 +221,14 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
           </div>
 
           <div class="card mpf__carte">
-            @if (f.nature === 'PROJET_MARCHE') {
+            @if (f.nature === 'DOCUMENT_DAO') {
+            <h2 class="mpf__titre">Document du DAO servi</h2>
+            <p class="mpf__resume">{{ (f.sigles ?? []).length ? f.sigles!.join(' · ') : 'Aucun.' }}</p>
+            <p class="mpf__note">
+              Un modèle sert un seul document, pour toutes les formes de marché qui le choisissent. Sans version en vigueur, le document reste produit
+              par son document type intégré.
+            </p>
+            } @else if (f.nature === 'PROJET_MARCHE') {
             <h2 class="mpf__titre">Catégories servies</h2>
             <div class="mpf__sts">
               @for (c of categoriesMarche; track c.code) {
@@ -339,6 +363,9 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
                   <h3 class="mpf__titre" id="rapport-controle" tabindex="-1">Rapport de contrôle</h3>
                   <app-rapport-controle-pv [rapport]="v.rapport" [page]="v.support === 'PAGE'" (aller)="allerA($event)" (inserer)="insererManquante($event)"
                                            [declarable]="!figee() && !ecriture()" (declarer)="declarerCeQueLeWordUtilise()" />
+                  @if (f.nature === 'DOCUMENT_DAO' && v.support === 'PAGE') {
+                    <app-ecarts-armp [idModele]="f.id" [numero]="v.numero" [empreinte]="v.empreinte" />
+                  }
                 }
                 @case ('variables') {
                   @if (v.support === 'PAGE') {
@@ -368,8 +395,8 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
                   <app-formulaire-apercu [champs]="v.champs" [conditions]="v.conditions" />
                 }
                 @case ('apercu') {
-                  <app-apercu-version [idModele]="f.id" [numero]="v.numero" [champs]="v.champs" [codeModele]="f.code" [avecWord]="v.support !== 'PAGE' || f.nature === 'PROJET_MARCHE'" [avecAvis]="f.nature === 'PV'"
-                                      [surProcedure]="f.nature === 'PROJET_MARCHE'"
+                  <app-apercu-version [idModele]="f.id" [numero]="v.numero" [champs]="v.champs" [codeModele]="f.code" [avecWord]="v.support !== 'PAGE' || documentMarche()" [avecAvis]="f.nature === 'PV'"
+                                      [surProcedure]="documentMarche()"
                                       [sousTypesServis]="codesSousTypes()" />
                 }
               }
@@ -390,9 +417,30 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
             @switch (m) {
               @case ('vigueur') {
                 <p>
-                  La version {{ version()?.numero }} servira aux PV à venir des sous-types de ce modèle.
-                  @if (enVigueur(); as ev) { La version {{ ev.numero }} passera « remplacée ». } Les PV déjà signés gardent la version qui les a produits.
+                  @if (documentMarche()) {
+                    La version {{ version()?.numero }} produira ce document à la place du texte actuel.
+                    @if (enVigueur(); as ev) { La version {{ ev.numero }} passera « remplacée ». } Les documents déjà produits ne changent pas.
+                  } @else {
+                    La version {{ version()?.numero }} servira aux PV à venir des sous-types de ce modèle.
+                    @if (enVigueur(); as ev) { La version {{ ev.numero }} passera « remplacée ». } Les PV déjà signés gardent la version qui les a produits.
+                  }
                 </p>
+                @if (nbEcartsArmp() > 0) {
+                  <p class="alert alert-warning"><span>Cette version s’écarte du document type de l’ARMP ({{ nbEcartsArmp() }} écart{{ nbEcartsArmp() > 1 ? 's' : '' }}) :
+                    sa mise en vigueur demande la validation du juriste.</span></p>
+                  <label class="form-group">
+                    <span class="form-label">Juriste qui a validé (nom)</span>
+                    <input class="form-control" [value]="juristeNom()" (input)="juristeNom.set($any($event.target).value)" />
+                  </label>
+                  <label class="form-group">
+                    <span class="form-label">Qualité</span>
+                    <input class="form-control" [value]="juristeQualite()" (input)="juristeQualite.set($any($event.target).value)" />
+                  </label>
+                  <label class="form-group">
+                    <span class="form-label">Date de la validation</span>
+                    <input class="form-control" type="date" [value]="juristeDate()" (input)="juristeDate.set($any($event.target).value)" />
+                  </label>
+                }
                 <label class="form-group">
                   <span class="form-label">Motif (obligatoire)</span>
                   <textarea class="form-control" rows="3" [value]="motif()" (input)="motif.set($any($event.target).value)"></textarea>
@@ -598,7 +646,22 @@ export class ModelePvFicheEcran implements OnInit {
   readonly portee = signal<PorteeDepart>('les-deux');
 
   // ——— ⚠️ 22/10 (M1 « modeles-documents-marche ») — le projet de marché : un modèle par catégorie, en Word et en PDF ———
-  readonly typesModele: Readonly<Record<string, string>> = { PV: 'MODÈLE DE PV', LETTRE_RENVOI: 'MODÈLE DE LETTRE DE RENVOI', PROJET_MARCHE: 'MODÈLE DE PROJET DE MARCHÉ' };
+  readonly typesModele: Readonly<Record<string, string>> = {
+    PV: 'MODÈLE DE PV',
+    LETTRE_RENVOI: 'MODÈLE DE LETTRE DE RENVOI',
+    PROJET_MARCHE: 'MODÈLE DE PROJET DE MARCHÉ',
+    DOCUMENT_DAO: 'MODÈLE DE DOCUMENT DU DAO',
+  };
+  /** Un projet de marché ou un document du DAO : Word et PDF, essayé sur une procédure et un lot. */
+  readonly ongletRetour = computed(() => ({ PROJET_MARCHE: { onglet: 'marche' }, DOCUMENT_DAO: { onglet: 'dao' } } as Record<string, Record<string, string>>)[this.fiche()?.nature ?? ''] ?? {});
+  readonly documentMarche = computed(() => ['PROJET_MARCHE', 'DOCUMENT_DAO'].includes(this.fiche()?.nature ?? ''));
+
+  // ——— ⚠️ 22/10 (D-ARMP) — la validation du juriste, exigée à la mise en vigueur d'une version qui s'écarte du document type ———
+  /** Le nombre d'écarts de la version choisie, lu sur son rapport (un point `ECART_ARMP` par écart). */
+  readonly nbEcartsArmp = computed(() => (this.version()?.rapport?.points ?? []).filter((p) => p.code === 'ECART_ARMP').length);
+  readonly juristeNom = signal('');
+  readonly juristeQualite = signal('');
+  readonly juristeDate = signal(new Date().toISOString().slice(0, 10));
   readonly categoriesMarche = CATEGORIES_MARCHE;
   readonly categoriesCochees = signal<CategorieMarche[]>([]);
   readonly categoriesModifiees = computed(() => [...this.categoriesCochees()].sort().join() !== [...(this.fiche()?.categories ?? [])].sort().join());
@@ -698,7 +761,7 @@ export class ModelePvFicheEcran implements OnInit {
   readonly modaleValide = computed(() => {
     switch (this.modale()) {
       case 'vigueur':
-        return !!this.motif().trim();
+        return !!this.motif().trim() && (this.nbEcartsArmp() === 0 || (!!this.juristeNom().trim() && !!this.juristeQualite().trim() && !!this.juristeDate()));
       case 'dupliquer':
         return MOTIF_CODE_MODELE.test(this.codeCopie().trim()) && !!this.libelleCopie().trim();
       case 'archiver':
@@ -793,8 +856,9 @@ export class ModelePvFicheEcran implements OnInit {
     // (⚠️ 22/10, L1) — une variable hors de sa nature serait bloquante au contrôle.
     if (this.catalogue() === null || avant !== f.sousTypes.map((s) => s.id).join()) {
       const lettre = f.nature !== 'PV';
+      const sigle = f.nature === 'DOCUMENT_DAO' ? (f.sigles?.[0] ?? null) : null;
       this.service
-        .variables(lettre ? null : (f.sousTypes[0]?.id ?? null), lettre ? f.nature : null)
+        .variables(lettre ? null : (f.sousTypes[0]?.id ?? null), lettre ? f.nature : null, sigle)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({ next: (c) => this.catalogue.set(c), error: () => this.catalogue.set(null) });
     }
@@ -832,7 +896,7 @@ export class ModelePvFicheEcran implements OnInit {
     this.generation.set(true);
     this.messageDepart.set(null);
     const categorie = this.fiche()?.nature === 'PROJET_MARCHE' ? this.categorieDepartEffective() : null;
-    this.service.genererDepart(this.idModele, this.portee(), categorie).subscribe({
+    this.service.genererDepart(this.idModele, this.portee(), categorie, this.fiche()?.nature === 'DOCUMENT_DAO').subscribe({
       next: (v) => {
         this.generation.set(false);
         this.onglet.set('depot');
@@ -1070,7 +1134,8 @@ export class ModelePvFicheEcran implements OnInit {
     };
     if (m === 'vigueur') {
       const v = this.version()!;
-      this.service.mettreEnVigueur(this.idModele, v.numero, this.motif().trim()).subscribe({
+      const juriste = this.nbEcartsArmp() > 0 ? { nom: this.juristeNom().trim(), qualite: this.juristeQualite().trim(), date: this.juristeDate() } : null;
+      this.service.mettreEnVigueur(this.idModele, v.numero, this.motif().trim(), juriste).subscribe({
         next: () => {
           fin();
           this.modale.set(null);
@@ -1078,7 +1143,9 @@ export class ModelePvFicheEcran implements OnInit {
           this.recharger(v.numero);
         },
         error: (e: ApiError) =>
-          codeErreur(e) === 'RAPPORT_BLOQUANT' ? echec(e, 'Le rapport de contrôle est bloquant : corrigez la version d’abord.') : echec(e, 'La mise en vigueur a échoué.'),
+          codeErreur(e) === 'RAPPORT_BLOQUANT' ? echec(e, 'Le rapport de contrôle est bloquant : corrigez la version d’abord.')
+          : codeErreur(e) === 'VALIDATION_JURISTE_REQUISE' ? echec(e, 'La validation du juriste est requise.')
+          : echec(e, 'La mise en vigueur a échoué.'),
       });
     } else if (m === 'dupliquer') {
       this.service.dupliquer(this.idModele, { code: this.codeCopie().trim(), libelle: this.libelleCopie().trim() }).subscribe({

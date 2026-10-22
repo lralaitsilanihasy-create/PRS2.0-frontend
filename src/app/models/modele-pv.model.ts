@@ -7,10 +7,11 @@ import { CategorieMarche } from './acte-gestion.model';
  */
 
 /** ⚠️ 22/10 (M1 « modeles-documents-marche ») — `PROJET_MARCHE` : le projet de marché, un modèle par catégorie, en Word et en PDF. */
-export type NatureModelePv = 'PV' | 'LETTRE_RENVOI' | 'PROJET_MARCHE';
+export type NatureModelePv = 'PV' | 'LETTRE_RENVOI' | 'PROJET_MARCHE' | 'DOCUMENT_DAO';
 export type EtatModelePv = 'ACTIF' | 'ARCHIVE';
 export type EtatVersionModelePv = 'BROUILLON' | 'EN_VIGUEUR' | 'REMPLACEE';
-export type NiveauPointRapport = 'OK' | 'AVERTISSEMENT' | 'BLOQUANT';
+/** ⚠️ 22/10 (D-ARMP) — `INFO` : un point qui ne compte ni dans les bloquants ni dans les avertissements (écarts au document type). */
+export type NiveauPointRapport = 'OK' | 'INFO' | 'AVERTISSEMENT' | 'BLOQUANT';
 export type TypeChampSaisi = 'TEXTE' | 'TEXTE_LONG' | 'LISTE' | 'CASE' | 'DATE' | 'NOMBRE' | 'PIECE';
 export type AvisApercu = 'FAV' | 'FAVR' | 'DEF' | 'NSP';
 /** Portée du modèle de départ : un seul fichier, ou les deux variantes en blocs CENTRALE / REGIONALE (défaut). */
@@ -37,6 +38,8 @@ export interface ModelePvResume {
   sousTypes: string[];
   /** ⚠️ 22/10 — les catégories servies par un modèle de projet de marché (vide sinon). */
   categories?: CategorieMarche[];
+  /** ⚠️ 22/10 (D1-D3) — le sigle du document du DAO servi par un modèle `DOCUMENT_DAO` (un seul). */
+  sigles?: string[];
   enVigueur: VersionCourteModelePv | null;
   derniere: VersionCourteModelePv | null;
 }
@@ -106,6 +109,35 @@ export interface VersionModelePv {
   support?: SupportVersion;
   /** Le document d'une page — servi par `GET …/versions/{n}` et les gestes qui la produisent ; nul dans la fiche. */
   document?: DocumentPage | null;
+  /** ⚠️ 22/10 (D-ARMP) — le juriste qui a validé les écarts au document type, à la mise en vigueur. */
+  juriste?: JuristeValidation | null;
+}
+
+/** ⚠️ 22/10 (D-ARMP) — la validation du juriste, saisie par l'Administrateur à la mise en vigueur d'une version qui s'écarte. */
+export interface JuristeValidation {
+  nom: string;
+  qualite: string;
+  /** `yyyy-MM-dd`. */
+  date: string;
+}
+
+/** ⚠️ 22/10 (D-ARMP) — `GET …/versions/{n}/ecarts` : un écart avec le document type, ligne à ligne sur le fichier de commande. */
+export interface EcartArmp {
+  type: 'MODIFIE' | 'AJOUTE' | 'RETIRE';
+  rang: number;
+  avant: string | null;
+  apres: string | null;
+}
+
+/** ⚠️ 22/10 (D0) — `GET /api/modeles-pv/integres/dao` : un document intégré du DAO (fichier de commande), par sigle. */
+export interface DocumentDaoIntegre {
+  sigle: string;
+  libelle: string;
+  typeDocument: 'DPAO' | 'DPAC' | 'DPIC' | 'AE' | 'CCAP' | 'AVIS' | 'LETTRE' | (string & {});
+  categories: CategorieMarche[];
+  couvertures: { typeMarche: string | null; categorie: string | null; mode: string | null }[];
+  enService: boolean;
+  modeleRattache: { id: number; code: string; numeroEnVigueur: number | null } | null;
 }
 
 export interface EvenementModelePv {
@@ -129,6 +161,7 @@ export interface ModelePvFiche {
   motifArchivage: string | null;
   sousTypes: SousTypeModelePv[];
   categories?: CategorieMarche[];
+  sigles?: string[];
   versions: VersionModelePv[];
   historique: EvenementModelePv[];
 }

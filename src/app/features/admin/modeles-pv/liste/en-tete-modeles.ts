@@ -15,7 +15,7 @@ import { Icone } from '../../../../shared/ui/icone';
       <span class="etm__icone" aria-hidden="true"><app-icone nom="file" [taille]="22" /></span>
       <div class="etm__titres">
         <h1 class="etm__titre">Modèles de documents</h1>
-        <p class="etm__role">Les modèles qui produisent les PV d’examen, les lettres de renvoi et les projets de marché.</p>
+        <p class="etm__role">Les modèles qui produisent les PV d’examen, les lettres de renvoi, les documents du DAO et les projets de marché.</p>
       </div>
       <div class="etm__actions">
         @if (avecNouveau()) {

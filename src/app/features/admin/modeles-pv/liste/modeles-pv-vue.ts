@@ -1,4 +1,4 @@
-import { CategorieMarche, CouvertureSousType, ModeleIntegre, ModelePvResume } from '../../../../models';
+import { CategorieMarche, CouvertureSousType, DocumentDaoIntegre, ModeleIntegre, ModelePvResume } from '../../../../models';
 import { CATEGORIES_MARCHE, LIBELLES_NATURE, propositionPourFamille, reprisParModele, sansDocument } from '../modeles-pv-libelles';
 
 /**
@@ -106,8 +106,8 @@ export function construireLignes(
 
   // Modèles gérés : à déposer (ou à valider) tant qu'aucune version n'est en vigueur ; en service ensuite.
   for (const m of modeles) {
-    // ⚠️ 22/10 (M1) — les projets de marché ont leur onglet (`lignesMarche`).
-    if (m.etat !== 'ACTIF' || m.nature === 'PROJET_MARCHE') continue;
+    // ⚠️ 22/10 (M1, D1-D3) — les projets de marché et les documents du DAO ont leur onglet (`lignesMarche`, `groupesDao`).
+    if (m.etat !== 'ACTIF' || m.nature === 'PROJET_MARCHE' || m.nature === 'DOCUMENT_DAO') continue;
     const remplace = reprisParModele(couverture, m.id);
     const d = m.derniere;
     const v = m.enVigueur;
@@ -251,4 +251,48 @@ export function lignesMarche(modeles: readonly ModelePvResume[]): LigneMarche[] 
     const aValider = !!m.derniere;
     return { categorie: c.code, libelle: c.libelle, codeModele: c.codeModele, modele: m, etat: 'prep', badge: aValider ? 'À valider' : 'À rédiger', action: aValider ? 'Valider' : 'Rédiger' };
   });
+}
+
+/**
+ * ⚠️ 22/10 (D0-D3 « modeles-dao ») — l'onglet « Dossier de mise en concurrence » : les 15 documents du DAO, groupés par catégorie (un
+ * document servi par plusieurs catégories — contrat-cadre, appel d'offres restreint — dans son propre groupe). Sans modèle actif
+ * rattaché à son sigle, le document est produit par son document type intégré.
+ */
+export interface LigneDao {
+  sigle: string;
+  libelle: string;
+  typeDocument: string;
+  modele: ModelePvResume | null;
+  etat: 'integre' | EtatLigne;
+  badge: string;
+  action: 'Créer' | 'Rédiger' | 'Valider' | 'Voir';
+}
+
+export interface GroupeDao {
+  cle: string;
+  titre: string;
+  lignes: LigneDao[];
+}
+
+const ORDRE_TYPES = ['AVIS', 'LETTRE', 'DPAO', 'DPAC', 'DPIC', 'AE', 'CCAP'];
+
+export function groupesDao(integres: readonly DocumentDaoIntegre[], modeles: readonly ModelePvResume[]): GroupeDao[] {
+  const ligne = (i: DocumentDaoIntegre): LigneDao => {
+    const m = modeles.find((x) => x.nature === 'DOCUMENT_DAO' && x.etat === 'ACTIF' && (x.sigles ?? []).includes(i.sigle)) ?? null;
+    const base = { sigle: i.sigle, libelle: i.libelle, typeDocument: i.typeDocument, modele: m };
+    if (!m) return { ...base, etat: 'integre', badge: 'Document type intégré', action: 'Créer' };
+    if (m.enVigueur) return { ...base, etat: 'ok', badge: `v${m.enVigueur.numero} en vigueur`, action: 'Voir' };
+    return m.derniere ? { ...base, etat: 'prep', badge: 'À valider', action: 'Valider' } : { ...base, etat: 'prep', badge: 'À rédiger', action: 'Rédiger' };
+  };
+  const rang = (t: string): number => (ORDRE_TYPES.indexOf(t) + 1 || ORDRE_TYPES.length + 1);
+  const groupes: GroupeDao[] = [
+    ...CATEGORIES_MARCHE.map((c) => ({ cle: c.code as string, titre: c.libelle, lignes: [] as LigneDao[] })),
+    { cle: 'PLUSIEURS', titre: 'Communs à plusieurs catégories (contrat-cadre, appel d’offres restreint)', lignes: [] },
+  ];
+  for (const i of integres) {
+    const cle = i.categories.length === 1 ? i.categories[0] : 'PLUSIEURS';
+    (groupes.find((g) => g.cle === cle) ?? groupes[groupes.length - 1]).lignes.push(ligne(i));
+  }
+  for (const g of groupes) g.lignes.sort((a, b) => rang(a.typeDocument) - rang(b.typeDocument) || a.sigle.localeCompare(b.sigle));
+  return groupes.filter((g) => g.lignes.length);
 }

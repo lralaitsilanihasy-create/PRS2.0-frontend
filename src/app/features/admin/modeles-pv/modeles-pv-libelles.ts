@@ -5,7 +5,7 @@ import { CategorieMarche, CouvertureSousType, EtatVersionModelePv, ModelePvFiche
  * reprennent ceux du serveur (`ModelePvService`) : l'écran refuse avant l'envoi ce que le serveur refuserait.
  */
 
-export const LIBELLES_NATURE: Readonly<Record<NatureModelePv, string>> = { PV: 'Procès-verbal', LETTRE_RENVOI: 'Lettre de renvoi', PROJET_MARCHE: 'Projet de marché' };
+export const LIBELLES_NATURE: Readonly<Record<NatureModelePv, string>> = { PV: 'Procès-verbal', LETTRE_RENVOI: 'Lettre de renvoi', PROJET_MARCHE: 'Projet de marché', DOCUMENT_DAO: 'Document du DAO' };
 
 /** ⚠️ 22/10 (M1) — les catégories d'un projet de marché, dans l'ordre de l'écran, avec le code proposé à la création du modèle. */
 export const CATEGORIES_MARCHE: readonly { code: CategorieMarche; libelle: string; codeModele: string }[] = [
@@ -53,10 +53,11 @@ export const LIBELLES_ACTION: Readonly<Record<string, string>> = {
  * ⚠️ 21/10 — la règle du serveur (`DELETE /api/modeles-pv/{id}`) : jamais en vigueur (aucune version `EN_VIGUEUR` ni `REMPLACEE`,
  * aucune `MISE_EN_VIGUEUR` au journal) et aucun sous-type servi. Le bouton ne se montre qu'à ces conditions ; le serveur tranche.
  */
-export function modeleSupprimable(f: Pick<ModelePvFiche, 'versions' | 'historique' | 'sousTypes' | 'categories'>): boolean {
+export function modeleSupprimable(f: Pick<ModelePvFiche, 'versions' | 'historique' | 'sousTypes' | 'categories' | 'sigles'>): boolean {
   return (
     !f.sousTypes.length &&
     !(f.categories ?? []).length &&
+    !(f.sigles ?? []).length &&
     !f.versions.some((v) => v.etat === 'EN_VIGUEUR' || v.etat === 'REMPLACEE') &&
     !f.historique.some((h) => h.action === 'MISE_EN_VIGUEUR')
   );

@@ -1,5 +1,5 @@
 import { CouvertureSousType, ModeleIntegre, ModelePvResume } from '../../../../models';
-import { construireLignes, couvertureLettres, lignesMarche, couvertureSousTypes, filtrer, grouper, recommandation } from './modeles-pv-vue';
+import { construireLignes, couvertureLettres, groupesDao, lignesMarche, couvertureSousTypes, filtrer, grouper, recommandation } from './modeles-pv-vue';
 
 const cv = (sousType: string, famille: string, o: Partial<CouvertureSousType> = {}): CouvertureSousType => ({
   sousType, libelle: null, famille, nature: 'PV', produitPar: 'AUCUN', integre: null, modeleRattache: null, ...o,
@@ -87,5 +87,18 @@ describe('Modèles de procès-verbaux — modèle de vue (21/10)', () => {
       ['FOURNITURES_SERVICES', 'ok', 'Voir'], ['TRAVAUX', 'prep', 'Valider'], ['PRESTATIONS_INTELLECTUELLES', 'code', 'Créer'],
     ]);
     expect(construireLignes([...MODELES, pm(10, ['FOURNITURES_SERVICES'], true)], INTEGRES, COUVERTURE, FAMILLES).some((x) => x.id === 'gere-10')).toBe(false);
+  });
+
+  it('dossier de mise en concurrence (22/10) : les documents par catégorie, avec leur modèle', () => {
+    const d = (sigle: string, typeDocument: string, categories: ('FOURNITURES_SERVICES' | 'TRAVAUX')[]) =>
+      ({ sigle, libelle: sigle, typeDocument, categories, couvertures: [], enService: true, modeleRattache: null });
+    const modele: ModelePvResume = { id: 50, code: 'DAO-AE-F', libelle: 'AE', nature: 'DOCUMENT_DAO', etat: 'ACTIF', sousTypes: [], sigles: ['AE-F'], enVigueur: null,
+      derniere: { numero: 1, etat: 'BROUILLON', bloquant: false, deposeeLe: null, enVigueurLe: null } };
+    const g = groupesDao([d('AE-F', 'AE', ['FOURNITURES_SERVICES']), d('AVIS-F', 'AVIS', ['FOURNITURES_SERVICES']), d('AE-CC', 'AE', ['FOURNITURES_SERVICES', 'TRAVAUX'])], [modele]);
+    expect(g.map((x) => [x.cle, x.lignes.map((l) => l.sigle + ':' + l.action)])).toEqual([
+      ['FOURNITURES_SERVICES', ['AVIS-F:Créer', 'AE-F:Valider']],
+      ['PLUSIEURS', ['AE-CC:Créer']],
+    ]);
+    expect(construireLignes([...MODELES, modele], INTEGRES, COUVERTURE, FAMILLES).some((x) => x.id === 'gere-50')).toBe(false);
   });
 });
