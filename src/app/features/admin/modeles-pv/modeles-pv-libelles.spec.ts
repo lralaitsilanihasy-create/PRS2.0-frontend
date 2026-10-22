@@ -1,5 +1,5 @@
 import { CouvertureSousType, ModelePvResume } from '../../../models';
-import { ecrireExpression, etatModele, evaluerCondition, expressionProposee, grilleFichiers, champsLusPar, libelleDeCode, modeleSupprimable, nonDeclares, phrasesRegle, expressionEnClair, lireExpression, propositionPourFamille, reprisParModele, sansDocument, tailleLisible } from './modeles-pv-libelles';
+import { ecrireExpression, etatModele, evaluerCondition, expressionProposee, grilleFichiers, champsLusPar, dossiersExemples, libelleDeCode, modeleSupprimable, nonDeclares, phrasesRegle, expressionEnClair, lireExpression, propositionPourFamille, reprisParModele, sansDocument, tailleLisible } from './modeles-pv-libelles';
 
 const v = (numero: number, etat: 'BROUILLON' | 'EN_VIGUEUR' | 'REMPLACEE', bloquant = false) => ({ numero, etat, bloquant, deposeeLe: null, enVigueurLe: null });
 const modele = (o: Partial<ModelePvResume>): ModelePvResume => ({
@@ -154,5 +154,15 @@ describe('OBS_GENERALE (21/10) — règle du départ du serveur, et le champ qu�
     expect(expressionProposee('OBS_GENERALE')).toBe('saisi.observation_generale renseigne');
     expect(champsLusPar('saisi.observation_generale renseigne ou avis = DEF')).toEqual(['observation_generale']);
     expect(champsLusPar('avis = FAV')).toEqual([]);
+  });
+});
+
+describe('dossiersExemples (22/10) — les dossiers proposés pour l’aperçu', () => {
+  const d = (idDossier: number, idSousType: string, statut: string) => ({ idDossier, idSousType, statut });
+  it('sous-types servis, examinés, les plus avancés puis les plus récents', () => {
+    const l = [d(1, 'PPM', 'EN_EXAMEN'), d(2, 'PPM', 'CLOTURE'), d(3, 'DAOO', 'CLOTURE'), d(4, 'PPM-AGPM', 'BROUILLON'), d(5, 'PPM-AGPM', 'CLOTURE')];
+    expect(dossiersExemples(l, ['PPM', 'PPM-AGPM']).map((x) => x.idDossier)).toEqual([5, 2, 1]);
+    expect(dossiersExemples(l, ['PPM', 'PPM-AGPM'], 1).map((x) => x.idDossier)).toEqual([5]);
+    expect(dossiersExemples(l, [])).toEqual([]);
   });
 });

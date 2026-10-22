@@ -306,3 +306,23 @@ export function tailleLisible(octets: number | null | undefined): string {
   if (octets < 1024 * 1024) return `${Math.round(octets / 1024)} Ko`;
   return `${(octets / (1024 * 1024)).toFixed(1).replace('.', ',')} Mo`;
 }
+
+/**
+ * ⚠️ 22/10 (demande du pilote) — les dossiers proposés pour l'aperçu : ceux des sous-types servis, les plus avancés d'abord (un dossier
+ * examiné a un PV, donc un avis et des observations), puis les plus récents. Un dossier pas encore examiné n'a rien à montrer.
+ */
+const ORDRE_EXEMPLE: readonly string[] = [
+  'CLOTURE', 'DECISION_TRANSMISE_SIGMP', 'OBSERVATIONS_LEVEES', 'EN_ATTENTE_DECISION_PRMP', 'A_REEXAMINER', 'EN_ATTENTE_PIECES', 'EN_EXAMEN',
+];
+
+export function dossiersExemples<T extends { idDossier: number; idSousType?: string | null; statut?: string | null }>(
+  dossiers: readonly T[],
+  sousTypes: readonly string[],
+  max = 5,
+): T[] {
+  const rang = (d: T): number => ORDRE_EXEMPLE.indexOf(d.statut ?? '');
+  return dossiers
+    .filter((d) => !!d.idSousType && sousTypes.includes(d.idSousType) && rang(d) >= 0)
+    .sort((a, b) => rang(a) - rang(b) || b.idDossier - a.idDossier)
+    .slice(0, max);
+}

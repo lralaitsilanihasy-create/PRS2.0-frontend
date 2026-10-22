@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, effect, inject, input, signal } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
@@ -7,6 +7,7 @@ import { ApiError, codeErreur } from '../../../core/errors/api-error';
 import { ouvrirBlobSur, telechargerBlob, urlBlobSure } from '../../../core/securite/fichiers-surs';
 import { AvisApercu, ChampModelePv, Dossier } from '../../../models';
 import { DossierService, ModelePvService } from '../../../services';
+import { dossiersExemples } from './modeles-pv-libelles';
 
 const AVIS: readonly { code: AvisApercu | ''; libelle: string }[] = [
   { code: '', libelle: 'l’avis du dernier PV du dossier' },
@@ -46,6 +47,20 @@ const AVIS: readonly { code: AvisApercu | ''; libelle: string }[] = [
         <button type="button" class="btn btn-secondary btn-sm" [disabled]="!pdf()" (click)="ouvrirPdf()">PDF ↗</button>
       </div>
       <p class="text-sm text-muted apv__rien">Rien n’est enregistré au dossier. @if (avecWord()) { « Word » télécharge le document rempli ; } « PDF ↗ » ouvre l’aperçu dans un nouvel onglet.</p>
+      @if (exemples().length) {
+        <div class="apv__exemples" role="group" aria-label="Dossiers d’exemple">
+          <span class="apv__exemples-titre">Dossiers d’exemple :</span>
+          @for (e of exemples(); track e.idDossier) {
+            <button type="button" class="apv__exemple" [class.apv__exemple--on]="e.idDossier === idDossier()" [disabled]="!!enCours()"
+                    [attr.aria-pressed]="e.idDossier === idDossier()" [title]="'Produire l’aperçu sur le dossier ' + e.idDossier"
+                    (click)="essayerExemple(e.idDossier)">
+              {{ e.refeDossier || 'n° ' + e.idDossier }} <span>· {{ e.idSousType }}</span>
+            </button>
+          }
+        </div>
+      } @else if (exemplesCharges() && sousTypesServis().length) {
+        <p class="text-sm text-muted apv__rien">Aucun dossier examiné des sous-types de ce modèle : saisissez un numéro de dossier.</p>
+      }
       @if (dossier(); as d) {
         <p class="apv__dossier-lu" role="status">
           <strong>{{ d.refeDossier || 'Dossier sans référence' }}</strong>
@@ -106,6 +121,14 @@ const AVIS: readonly { code: AvisApercu | ''; libelle: string }[] = [
     .apv__cadre { width: 100%; height: 75vh; min-height: 32rem; border: 1px solid var(--n-300); border-radius: 8px; background: #fff; }
     .apv__vide { border: 1px dashed var(--n-300); border-radius: 8px; padding: 2.5rem 1rem; text-align: center; color: var(--n-500); background: #fff; }
     .apv__dossier-lu { margin: 0; color: var(--n-700); }
+    .apv__exemples { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
+    .apv__exemples-titre { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+    .apv__exemple { border: 1px solid var(--border); background: var(--card-bg); color: var(--primary); border-radius: 999px; padding: 0.15rem 0.7rem;
+      font: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+    .apv__exemple span { color: var(--text-muted); font-weight: 400; }
+    .apv__exemple:hover:not(:disabled) { background: var(--reco-bg); }
+    .apv__exemple--on { background: var(--reco-bg); border-color: var(--primary); }
+    .apv__exemple:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .apv__fichier { margin: 0; font-size: 0.85rem; color: var(--n-700); }
     .apv__fichier code { font-family: Consolas, monospace; }
     .apv__alerte { display: block; color: var(--warning-text); font-size: 0.85rem; }
@@ -114,7 +137,7 @@ const AVIS: readonly { code: AvisApercu | ''; libelle: string }[] = [
 
   `,
 })
-export class ApercuVersion {
+export class ApercuVersion implements OnInit {
   private readonly service = inject(ModelePvService);
   private readonly dossiers = inject(DossierService);
   private readonly destroyRef = inject(DestroyRef);
@@ -146,6 +169,32 @@ export class ApercuVersion {
   readonly pdf = signal<Blob | null>(null);
   readonly urlPdf = signal<SafeResourceUrl | null>(null);
   readonly fichierUtilise = signal<string | null>(null);
+  /** ⚠️ 22/10 — des dossiers examinés des sous-types servis, proposés pour l'aperçu ; le premier est prérempli. */
+  readonly exemples = signal<Dossier[]>([]);
+  readonly exemplesCharges = signal(false);
+
+  ngOnInit(): void {
+    const sousTypes = this.sousTypesServis();
+    if (!sousTypes.length) return;
+    this.dossiers
+      .list()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (l) => {
+          const e = dossiersExemples(l, sousTypes);
+          this.exemples.set(e);
+          this.exemplesCharges.set(true);
+          if (e.length && this.idDossier() === null) this.choisirDossier(String(e[0].idDossier));
+        },
+        error: () => this.exemplesCharges.set(true),
+      });
+  }
+
+  /** Un dossier d'exemple : choisi, et son aperçu produit d'un coup. */
+  essayerExemple(id: number): void {
+    this.choisirDossier(String(id));
+    this.produire('pdf');
+  }
 
   constructor() {
     // Une autre version choisie : les valeurs saisies pour l'ancienne n'ont plus de sens.
