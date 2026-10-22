@@ -66,10 +66,10 @@ const LIBELLE: Readonly<Record<EcartArmp['type'], string>> = { MODIFIE: 'Modifi√
     .ear__titre { margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--p-700); text-transform: uppercase; letter-spacing: 0.04em; }
     .ear__conforme, .ear__resume { margin: 0; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; color: var(--n-700); font-size: 0.9rem; }
     .ear__liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
-    .ear__ecart { border-left: 3px solid var(--prep-accent, #ca8a04); background: var(--prep-bg, #fef9c3); border-radius: 0 8px 8px 0; padding: 0.4rem 0.6rem;
+    .ear__ecart { background: var(--card-bg, #fff); border: 1px solid var(--n-200, #e2e8f0); border-left: 3px solid var(--prep-accent, #ca8a04); border-radius: 0 8px 8px 0; padding: 0.4rem 0.6rem;
       display: flex; flex-direction: column; gap: 0.15rem; font-size: 0.85rem; }
-    .ear__ecart--AJOUTE { border-left-color: var(--ok-accent, #059669); background: var(--ok-bg, #d1fae5); }
-    .ear__ecart--RETIRE { border-left-color: var(--miss-accent, #dc2626); background: var(--miss-bg, #fee2e2); }
+    .ear__ecart--AJOUTE { border-left-color: var(--ok-accent, #059669); }
+    .ear__ecart--RETIRE { border-left-color: var(--miss-accent, #dc2626); }
     .ear__type { font-weight: 700; color: var(--n-800); }
     .ear__type small { font-weight: 400; color: var(--n-500); }
     .ear__texte { margin: 0; color: var(--n-700); line-height: 1.5; white-space: pre-wrap; }
