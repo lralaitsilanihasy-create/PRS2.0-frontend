@@ -287,7 +287,9 @@ const REGLES_USUELLES: Readonly<Record<string, string>> = {
     .edp .ProseMirror { outline: none; min-height: 1.5em; }
     .edp .ProseMirror p { margin: 0 0 4pt; }
     .edp .ProseMirror table { border-collapse: collapse; width: 100%; margin: 4pt 0; table-layout: fixed; }
-    .edp .ProseMirror td, .edp .ProseMirror th { border: 1px solid #000; padding: 3pt 5pt; vertical-align: top; }
+    /* Les tableaux de l'application ne coupent pas les lignes (« nowrap ») : la feuille, si, comme le PDF. */
+    .edp .ProseMirror td, .edp .ProseMirror th { border: 1px solid #000; padding: 3pt 5pt; vertical-align: top; white-space: break-spaces; }
+    .edp .ProseMirror td .pg-var, .edp .ProseMirror td .pg-champ { white-space: normal; max-width: 100%; }
     .edp .ProseMirror table[data-sans-bordures] td, .edp .ProseMirror table[data-sans-bordures] th,
     .edp .ProseMirror td[data-sans-bordures], .edp .ProseMirror th[data-sans-bordures] { border: 1px dotted #d0d8e8; }
     .edp .ProseMirror .selectedCell { background: #e0f2fe; }
