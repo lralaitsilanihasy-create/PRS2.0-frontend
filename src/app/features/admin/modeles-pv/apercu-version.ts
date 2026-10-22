@@ -48,8 +48,8 @@ const AVIS: readonly { code: AvisApercu | ''; libelle: string }[] = [
       </div>
       <p class="text-sm text-muted apv__rien">Rien n’est enregistré au dossier. @if (avecWord()) { « Word » télécharge le document rempli ; } « PDF ↗ » ouvre l’aperçu dans un nouvel onglet.</p>
       @if (exemples().length) {
-        <div class="apv__exemples" role="group" aria-label="Dossiers d’exemple">
-          <span class="apv__exemples-titre">Dossiers d’exemple :</span>
+        <div class="apv__exemples" role="group" aria-label="Dossier d’exemple">
+          <span class="apv__exemples-titre">Dossier d’exemple :</span>
           @for (e of exemples(); track e.idDossier) {
             <button type="button" class="apv__exemple" [class.apv__exemple--on]="e.idDossier === idDossier()" [disabled]="!!enCours()"
                     [attr.aria-pressed]="e.idDossier === idDossier()" [title]="'Produire l’aperçu sur le dossier ' + e.idDossier"
@@ -169,7 +169,7 @@ export class ApercuVersion implements OnInit {
   readonly pdf = signal<Blob | null>(null);
   readonly urlPdf = signal<SafeResourceUrl | null>(null);
   readonly fichierUtilise = signal<string | null>(null);
-  /** ⚠️ 22/10 — des dossiers examinés des sous-types servis, proposés pour l'aperçu ; le premier est prérempli. */
+  /** ⚠️ 22/10 — un dossier examiné des sous-types servis, proposé et prérempli pour l'aperçu (un seul suffit, demande du pilote). */
   readonly exemples = signal<Dossier[]>([]);
   readonly exemplesCharges = signal(false);
 
@@ -181,7 +181,7 @@ export class ApercuVersion implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (l) => {
-          const e = dossiersExemples(l, sousTypes);
+          const e = dossiersExemples(l, sousTypes, 1);
           this.exemples.set(e);
           this.exemplesCharges.set(true);
           if (e.length && this.idDossier() === null) this.choisirDossier(String(e[0].idDossier));
