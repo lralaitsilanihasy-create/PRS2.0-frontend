@@ -136,8 +136,10 @@ export function construireLignes(
     });
   }
 
-  // Modèles intégrés au serveur.
+  // Modèles intégrés au serveur. ⚠️ 22/10 — un intégré relevé par un modèle de l'application (`enService: false`, relève D2/L2)
+  // ne produit plus rien : il quitte la liste (la page le range sous « Modèles intégrés remplacés », en consultation).
   for (const i of integres) {
+    if (!i.enService) continue;
     lignes.push({
       id: `integre-${i.code}`,
       nom: i.libelle,

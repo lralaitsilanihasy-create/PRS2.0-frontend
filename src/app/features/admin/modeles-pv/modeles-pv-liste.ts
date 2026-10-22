@@ -50,6 +50,16 @@ import { LIBELLES_NATURE, MOTIF_CODE_MODELE, propositionPourFamille } from './mo
             </ul>
           </details>
         }
+        @if (remplaces().length) {
+          <details class="mpv__archives">
+            <summary>Modèles intégrés remplacés ({{ remplaces().length }})</summary>
+            <ul>
+              @for (i of remplaces(); track i.code) {
+                <li><button type="button" class="mpv__lien" (click)="integreConsulte.set(i)">{{ i.libelle }}</button><span class="mpv__code"> · {{ i.code }} · {{ i.fichiers.length }} fichier(s) Word, en consultation</span></li>
+              }
+            </ul>
+          </details>
+        }
       }
     </div>
 
@@ -105,6 +115,8 @@ import { LIBELLES_NATURE, MOTIF_CODE_MODELE, propositionPourFamille } from './mo
     .mpv__archives li { break-inside: avoid; margin: 2px 0; }
     .mpv__code { font-family: Consolas, monospace; font-size: 12px; color: var(--text-muted); }
     .mpv__archives a { color: var(--primary); }
+    .mpv__lien { border: 0; background: none; padding: 0; font: inherit; color: var(--primary); text-decoration: underline; cursor: pointer; }
+    .mpv__lien:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .mpv__form { display: flex; flex-direction: column; gap: 0.75rem; }
     .mpv__nature { border: 0; padding: 0; margin: 0; display: flex; gap: 1.25rem; flex-wrap: wrap; }
     .mpv__nature legend { width: 100%; }
@@ -140,6 +152,8 @@ export class ModelesPvListe implements OnInit {
   readonly reco = computed(() => recommandation(this.lignes()));
   readonly groupes = computed(() => grouper(filtrer(this.lignes(), this.recherche(), this.filtre()), this.tri()));
   readonly archives = computed(() => this.modeles().filter((m) => m.etat === 'ARCHIVE'));
+  /** ⚠️ 22/10 — les intégrés relevés par un modèle de l'application : ils ne produisent plus, ils se consultent encore. */
+  readonly remplaces = computed(() => this.integres().filter((i) => !i.enService));
 
   readonly creation = signal(false);
   readonly libelle = signal('');

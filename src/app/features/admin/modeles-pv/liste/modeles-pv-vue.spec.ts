@@ -68,4 +68,11 @@ describe('Modèles de procès-verbaux — modèle de vue (21/10)', () => {
     const mixte = [...COUVERTURE, cv('DSS', 'DSS', { nature: 'LETTRE_RENVOI' }), cv('AVN', 'DGC', { nature: 'LETTRE_RENVOI', produitPar: 'GERE' })];
     expect(couvertureLettres(mixte)).toEqual({ total: 3, integre: 1, modele: 1, aucun: 1, codeIntegre: 'LETTRE-RENVOI-INTEGREE' });
   });
+
+  it('relève (22/10) : un intégré qui n’est plus en service quitte la liste', () => {
+    const releve = INTEGRES.map((i) => (i.code === 'PV-PLAN-INTEGRE' ? { ...i, enService: false } : i));
+    const ids = construireLignes(MODELES, releve, COUVERTURE, FAMILLES).map((l) => l.id);
+    expect(ids).not.toContain('integre-PV-PLAN-INTEGRE');
+    expect(ids).toContain('integre-LETTRE-RENVOI-INTEGREE');
+  });
 });
