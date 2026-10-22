@@ -3,13 +3,22 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { Icone } from '../../../../shared/ui/icone';
 import { GroupeDao, LigneDao } from './modeles-pv-vue';
 
+/** Les familles de documents, dans l'ordre du dossier : ce qu'on publie, ce qui règle la consultation, l'engagement, le cahier. */
+const FAMILLES: readonly { cle: string; titre: string; detail: string; types: readonly string[] }[] = [
+  { cle: 'avis', titre: 'Avis et lettres', detail: 'publication, invitation', types: ['AVIS', 'LETTRE'] },
+  { cle: 'donnees', titre: 'Données particulières', detail: 'DPAO, DPIC, DPAC', types: ['DPAO', 'DPIC', 'DPAC'] },
+  { cle: 'ae', titre: 'Acte d’engagement', detail: 'rempli par le candidat', types: ['AE'] },
+  { cle: 'cahier', titre: 'Cahier des charges', detail: 'CCAP, CPS', types: ['CCAP'] },
+];
+
 /**
- * ⚠️ 22/10 (D0-D3 « modeles-dao ») — l'onglet « Dossier de mise en concurrence » : les 15 documents du DAO. Chacun est produit par son
+ * ⚠️ 22/10 (D0-D3 « modeles-dao ») — l'onglet « Dossier de mise en concurrence » : les 15 documents du DAO, chacun produit par son
  * document type de l'ARMP intégré tant qu'aucun modèle de l'application n'est en vigueur pour son sigle.
  *
- * ⚠️ 22/10 (présentation, demande du pilote) — un résumé (combien en vigueur, à valider, sans modèle), puis une carte par catégorie ;
- * dans une carte, une ligne compacte par document : son type, son nom (sans la catégorie, déjà dite par la carte), son état, « Texte
- * intégré » en icône et « Ouvrir » (ou « Créer » sans modèle).
+ * ⚠️ 22/10 (présentation, 2e passe, demande du pilote) — un tableau croisé : une ligne par famille de documents (avis et lettres,
+ * données particulières, acte d'engagement, cahier des charges), une colonne par catégorie. Les documents de même nature s'alignent ;
+ * chaque case est une tuile cliquable (« Ouvrir » ou « Créer »), son état en couleur, le document type intégré à l'œil. Sur un écran
+ * étroit, chaque famille devient une pile de tuiles qui rappellent leur catégorie.
  */
 @Component({
   selector: 'app-modeles-dao',
@@ -17,117 +26,141 @@ import { GroupeDao, LigneDao } from './modeles-pv-vue';
   imports: [Icone],
   template: `
     <section class="mdo" aria-labelledby="mdo-titre">
-      <div class="mdo__tete">
-        <div>
+      <header class="mdo__tete">
+        <div class="mdo__tete-texte">
           <h2 id="mdo-titre" class="mdo__titre">Documents du dossier de mise en concurrence</h2>
-          <p class="mdo__sous">Un modèle par document, produit en Word et en PDF. Son départ est le document type de l’ARMP, mot pour mot.</p>
+          <p class="mdo__sous">Un modèle par document, produit en Word et en PDF. Son départ est le document type de l’ARMP, mot pour mot ;
+            une version qui s’en écarte demande la validation du juriste.</p>
         </div>
-        <dl class="mdo__compteurs">
-          @for (c of compteurs(); track c.cle) {
-            <div [class]="'mdo__compteur mdo__compteur--' + c.cle"><dt>{{ c.libelle }}</dt><dd>{{ c.n }}</dd></div>
-          }
-        </dl>
-      </div>
+        <div class="mdo__avancement" role="img" [attr.aria-label]="resume()">
+          <div class="mdo__barre">
+            @if (nb('ok')) { <span class="mdo__barre-ok" [style.flex-grow]="nb('ok')"></span> }
+            @if (nb('prep')) { <span class="mdo__barre-prep" [style.flex-grow]="nb('prep')"></span> }
+            @if (nb('integre')) { <span class="mdo__barre-integre" [style.flex-grow]="nb('integre')"></span> }
+          </div>
+          <ul class="mdo__legende">
+            <li><span class="mdo__pastille mdo__pastille--ok"></span><b>{{ nb('ok') }}</b> en vigueur</li>
+            <li><span class="mdo__pastille mdo__pastille--prep"></span><b>{{ nb('prep') }}</b> brouillon{{ nb('prep') > 1 ? 's' : '' }} à valider</li>
+            <li><span class="mdo__pastille mdo__pastille--integre"></span><b>{{ nb('integre') }}</b> sans modèle</li>
+          </ul>
+        </div>
+      </header>
 
-      <div class="mdo__grille">
-        @for (g of groupes(); track g.cle) {
-          <article class="mdo__carte" [attr.aria-labelledby]="'mdo-g-' + g.cle">
-            <header class="mdo__carte-tete">
-              <h3 [id]="'mdo-g-' + g.cle">{{ g.titre }}</h3>
-              <span>{{ g.lignes.length }} document{{ g.lignes.length > 1 ? 's' : '' }}</span>
-            </header>
-            <ul class="mdo__liste">
-              @for (l of g.lignes; track l.sigle) {
-                <li class="mdo__ligne">
-                  <span [class]="'mdo__type mdo__type--' + l.typeDocument">{{ typeCourt(l) }}</span>
-                  <div class="mdo__nom">
-                    <strong [title]="l.libelle">{{ nomCourt(l, g.cle) }}</strong>
-                    <span>{{ l.sigle }}</span>
+      <div class="mdo__tableau" role="table" aria-label="Documents du DAO par famille et par catégorie">
+        <div class="mdo__ligne mdo__ligne--entete" role="row">
+          <div class="mdo__coin" role="columnheader"><span class="cnm-sr-only">Famille</span></div>
+          @for (c of colonnes(); track c.cle) {
+            <div class="mdo__col" role="columnheader">{{ c.titre }}</div>
+          }
+        </div>
+        @for (f of familles; track f.cle) {
+          <div class="mdo__ligne" role="row">
+            <div class="mdo__famille" role="rowheader">
+              <strong>{{ f.titre }}</strong>
+              <span>{{ f.detail }}</span>
+            </div>
+            @for (c of colonnes(); track c.cle) {
+              <div class="mdo__case" role="cell">
+                @for (l of cellule(c.cle, f.types); track l.sigle) {
+                  <div [class]="'mdo__tuile mdo__tuile--' + l.etat">
+                    <button type="button" class="mdo__ouvrir" [disabled]="!!occupe()"
+                            [attr.aria-label]="(l.modele ? 'Ouvrir le modèle ' : 'Créer le modèle ') + l.sigle + ' — ' + l.libelle" (click)="agir.emit(l)">
+                      <span class="mdo__tuile-haut">
+                        <span class="mdo__sigle">{{ l.sigle }}</span>
+                        <span [class]="'mdo__etat mdo__etat--' + l.etat">{{ occupe() === l.sigle ? 'Création…' : etatCourt(l) }}</span>
+                      </span>
+                      <span class="mdo__nom" [title]="l.libelle">{{ nomCourt(l.libelle) }}</span>
+                      <span class="mdo__cat">{{ c.titre }}</span>
+                      <span class="mdo__action">{{ l.modele ? 'Ouvrir' : 'Créer le modèle' }} <app-icone nom="chev" [taille]="13" /></span>
+                    </button>
+                    <button type="button" class="mdo__oeil" [disabled]="!!occupe()" [attr.aria-label]="'Document type intégré — ' + l.sigle"
+                            title="Voir le document type intégré (PDF, données non remplies)" (click)="texte.emit(l.sigle)">
+                      <app-icone nom="eye" [taille]="15" />
+                    </button>
                   </div>
-                  <span [class]="'mdo__etat mdo__etat--' + l.etat"><span class="mdo__point" aria-hidden="true"></span>{{ etatCourt(l) }}</span>
-                  <button type="button" class="mdo__icone" [disabled]="!!occupe()" [attr.aria-label]="'Texte intégré — ' + l.sigle"
-                          title="Voir le document type intégré (PDF, données non remplies)" (click)="texte.emit(l.sigle)">
-                    <app-icone nom="eye" [taille]="16" />
-                  </button>
-                  <button type="button" class="mdo__action" [class.mdo__action--creer]="!l.modele" [disabled]="!!occupe()"
-                          [attr.aria-label]="(l.modele ? 'Ouvrir le modèle ' : 'Créer le modèle ') + l.sigle" (click)="agir.emit(l)">
-                    {{ occupe() === l.sigle ? '…' : l.modele ? 'Ouvrir' : 'Créer' }}
-                    <app-icone nom="chev" [taille]="14" />
-                  </button>
-                </li>
-              }
-            </ul>
-          </article>
+                } @empty {
+                  <span class="mdo__vide" aria-label="Sans objet">—</span>
+                }
+              </div>
+            }
+          </div>
         }
       </div>
       <p class="mdo__note">
-        Une version qui s’écarte du document type demande, à sa mise en vigueur, la validation du juriste. Les pièces fixes (CCAG, instructions
-        aux candidats) restent hors des modèles.
+        <app-icone nom="eye" [taille]="13" /> ouvre le document type intégré, données non remplies. Les pièces fixes (CCAG, instructions aux
+        candidats) restent hors des modèles.
       </p>
     </section>
   `,
   styles: `
     .mdo { display: flex; flex-direction: column; gap: 12px; }
-    .mdo__tete { display: flex; gap: 16px; align-items: flex-end; justify-content: space-between; flex-wrap: wrap;
-      background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+    .mdo__tete { display: flex; gap: 16px 24px; align-items: center; justify-content: space-between; flex-wrap: wrap;
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; }
+    .mdo__tete-texte { flex: 1 1 26rem; min-width: 0; }
     .mdo__titre { margin: 0; font-size: 16px; font-weight: 600; color: var(--text); }
-    .mdo__sous { margin: 2px 0 0; font-size: 13px; color: var(--text-muted); }
-    .mdo__compteurs { display: flex; gap: 8px; margin: 0; flex-wrap: wrap; }
-    .mdo__compteur { border: 1px solid var(--border); border-left-width: 3px; border-radius: 8px; padding: 6px 12px; min-width: 7.5rem; }
-    .mdo__compteur dt { font-size: 12px; color: var(--text-muted); }
-    .mdo__compteur dd { margin: 0; font-size: 20px; font-weight: 600; color: var(--text); }
-    .mdo__compteur--total { border-left-color: var(--primary); }
-    .mdo__compteur--ok { border-left-color: var(--ok-accent); }
-    .mdo__compteur--prep { border-left-color: var(--prep-accent); }
-    .mdo__compteur--integre { border-left-color: var(--border); }
+    .mdo__sous { margin: 3px 0 0; font-size: 13px; color: var(--text-muted); max-width: 52rem; }
+    .mdo__avancement { flex: 0 1 24rem; display: flex; flex-direction: column; gap: 6px; }
+    .mdo__barre { display: flex; height: 8px; border-radius: 4px; overflow: hidden; gap: 2px; background: var(--page-bg); }
+    .mdo__barre span { flex-basis: 0; }
+    .mdo__barre-ok { background: var(--ok-accent); }
+    .mdo__barre-prep { background: var(--prep-accent); }
+    .mdo__barre-integre { background: var(--n-300, #cbd5e1); }
+    .mdo__legende { list-style: none; margin: 0; padding: 0; display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--text-muted); }
+    .mdo__legende li { display: inline-flex; align-items: center; gap: 5px; }
+    .mdo__legende b { color: var(--text); }
+    .mdo__pastille { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .mdo__pastille--ok { background: var(--ok-accent); }
+    .mdo__pastille--prep { background: var(--prep-accent); }
+    .mdo__pastille--integre { background: var(--n-300, #cbd5e1); }
 
-    .mdo__grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(30rem, 1fr)); gap: 12px; }
-    .mdo__carte { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-    .mdo__carte-tete { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 10px 14px;
-      background: var(--page-bg); border-bottom: 1px solid var(--border); }
-    .mdo__carte-tete h3 { margin: 0; font-size: 14px; font-weight: 600; color: var(--text); }
-    .mdo__carte-tete span { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
-    .mdo__liste { list-style: none; margin: 0; padding: 0; }
-    .mdo__ligne { display: grid; grid-template-columns: 3.6rem minmax(0, 1fr) auto auto auto; gap: 10px; align-items: center; padding: 8px 14px;
-      border-top: 1px solid var(--border); }
-    .mdo__ligne:first-child { border-top: 0; }
-    .mdo__ligne:hover { background: var(--page-bg); }
+    .mdo__tableau { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .mdo__ligne { display: grid; grid-template-columns: 12rem repeat(var(--mdo-cols, 4), minmax(0, 1fr)); border-top: 1px solid var(--border); }
+    .mdo__ligne--entete { border-top: 0; background: var(--page-bg); }
+    .mdo__col { padding: 9px 12px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted);
+      border-left: 1px solid var(--border); }
+    .mdo__famille { padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; background: var(--page-bg); }
+    .mdo__famille strong { font-size: 14px; font-weight: 600; color: var(--primary); }
+    .mdo__famille span { font-size: 12px; color: var(--text-muted); }
+    .mdo__case { padding: 8px; border-left: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; }
+    .mdo__vide { margin: auto; color: var(--n-300, #cbd5e1); font-size: 18px; }
 
-    .mdo__type { font-size: 11px; font-weight: 700; letter-spacing: 0.03em; text-align: center; border-radius: 6px; padding: 3px 0;
-      background: var(--reco-bg); color: var(--primary); border: 1px solid var(--reco-border); }
-    .mdo__type--AVIS, .mdo__type--LETTRE { background: #f5f3ff; color: #5b21b6; border-color: #ddd6fe; }
-    .mdo__type--AE { background: #ecfdf5; color: #065f46; border-color: #a7f3d0; }
-    .mdo__type--CCAP { background: #fff7ed; color: #9a3412; border-color: #fed7aa; }
+    .mdo__tuile { position: relative; height: 100%; }
+    .mdo__ouvrir { width: 100%; height: 100%; text-align: left; display: flex; flex-direction: column; gap: 3px; padding: 9px 10px 8px;
+      border: 1px solid var(--border); border-left: 4px solid var(--n-300, #cbd5e1); border-radius: 8px; background: var(--card-bg);
+      font: inherit; color: var(--text); cursor: pointer; transition: border-color 0.12s, box-shadow 0.12s, background 0.12s; }
+    .mdo__tuile--prep .mdo__ouvrir { border-left-color: var(--prep-accent); }
+    .mdo__tuile--ok .mdo__ouvrir { border-left-color: var(--ok-accent); }
+    .mdo__ouvrir:hover:not(:disabled) { border-color: var(--reco-border); background: var(--reco-bg); box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08); }
+    .mdo__tuile--prep .mdo__ouvrir:hover:not(:disabled) { border-left-color: var(--prep-accent); }
+    .mdo__tuile--ok .mdo__ouvrir:hover:not(:disabled) { border-left-color: var(--ok-accent); }
+    .mdo__ouvrir:focus-visible, .mdo__oeil:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .mdo__ouvrir:disabled, .mdo__oeil:disabled { opacity: 0.6; cursor: default; }
+    .mdo__tuile-haut { display: flex; align-items: center; gap: 6px; padding-right: 26px; flex-wrap: wrap; }
+    .mdo__sigle { font-family: Consolas, monospace; font-size: 12px; font-weight: 700; color: var(--primary); }
+    .mdo__etat { font-size: 11px; font-weight: 600; border-radius: 999px; padding: 0 7px; border: 1px solid; white-space: nowrap; }
+    .mdo__etat--integre { color: var(--text-muted); background: var(--page-bg); border-color: var(--border); }
+    .mdo__etat--prep { color: var(--prep-text); background: var(--prep-bg); border-color: var(--prep-border); }
+    .mdo__etat--ok { color: var(--ok-text); background: var(--ok-bg); border-color: var(--ok-border); }
+    .mdo__nom { font-size: 13.5px; font-weight: 500; line-height: 1.3; }
+    .mdo__cat { display: none; font-size: 11.5px; color: var(--text-muted); }
+    .mdo__action { margin-top: auto; padding-top: 4px; font-size: 12.5px; font-weight: 600; color: var(--primary); display: inline-flex; align-items: center; gap: 2px; }
+    .mdo__tuile--integre .mdo__action { color: #fff; background: var(--primary); align-self: flex-start; border-radius: 6px; padding: 3px 8px; margin-top: 6px; }
+    .mdo__oeil { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border-radius: 6px; border: 1px solid transparent; background: none;
+      color: var(--text-muted); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+    .mdo__oeil:hover:not(:disabled) { color: var(--primary); border-color: var(--border); background: var(--card-bg); }
+    .mdo__note { margin: 0; font-size: 12.5px; color: var(--text-muted); display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 
-    .mdo__nom { display: flex; flex-direction: column; min-width: 0; }
-    .mdo__nom strong { font-weight: 500; font-size: 14px; line-height: 1.3; color: var(--text); overflow: hidden;
-      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-    .mdo__nom span { font-size: 11.5px; color: var(--text-muted); font-family: Consolas, monospace; }
-
-    .mdo__etat { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-muted); white-space: nowrap; }
-    .mdo__point { width: 8px; height: 8px; border-radius: 50%; background: var(--n-300, #cbd5e1); }
-    .mdo__etat--ok .mdo__point { background: var(--ok-accent); }
-    .mdo__etat--ok { color: var(--ok-text); font-weight: 600; }
-    .mdo__etat--prep .mdo__point { background: var(--prep-accent); }
-    .mdo__etat--prep { color: var(--prep-text); }
-
-    .mdo__icone { border: 1px solid transparent; background: none; color: var(--text-muted); border-radius: 6px; width: 30px; height: 30px;
-      display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
-    .mdo__icone:hover:not(:disabled) { color: var(--primary); border-color: var(--border); background: var(--card-bg); }
-    .mdo__action { border: 1px solid var(--border); background: var(--card-bg); color: var(--primary); border-radius: 8px; padding: 4px 8px 4px 12px;
-      font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 2px; min-width: 5.5rem; justify-content: center; }
-    .mdo__action:hover:not(:disabled) { border-color: var(--primary); background: var(--reco-bg); }
-    .mdo__action--creer { background: var(--primary); border-color: var(--primary); color: #fff; }
-    .mdo__icone:focus-visible, .mdo__action:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-    .mdo__icone:disabled, .mdo__action:disabled { opacity: 0.6; cursor: default; }
-    .mdo__note { margin: 0; font-size: 13px; color: var(--text-muted); }
-
-    @media (max-width: 640px) {
-      .mdo__grille { grid-template-columns: 1fr; }
-      .mdo__ligne { grid-template-columns: 3.2rem minmax(0, 1fr) auto auto; }
-      .mdo__etat { grid-column: 2 / -1; grid-row: 2; }
+    @media (max-width: 900px) {
+      .mdo__ligne--entete { display: none; }
+      .mdo__ligne { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .mdo__famille { grid-column: 1 / -1; flex-direction: row; gap: 8px; align-items: baseline; }
+      .mdo__case { border-left: 0; }
+      .mdo__case:has(.mdo__vide) { display: none; }
+      .mdo__cat { display: block; }
     }
+    @media (max-width: 520px) { .mdo__ligne { grid-template-columns: minmax(0, 1fr); } }
   `,
+  host: { '[style.--mdo-cols]': 'colonnes().length' },
 })
 export class ModelesDao {
   readonly groupes = input.required<GroupeDao[]>();
@@ -136,29 +169,31 @@ export class ModelesDao {
   readonly agir = output<LigneDao>();
   readonly texte = output<string>();
 
-  readonly compteurs = computed(() => {
-    const l = this.groupes().flatMap((g) => g.lignes);
-    return [
-      { cle: 'total', libelle: 'Documents', n: l.length },
-      { cle: 'ok', libelle: 'En vigueur', n: l.filter((x) => x.etat === 'ok').length },
-      { cle: 'prep', libelle: 'À valider', n: l.filter((x) => x.etat === 'prep').length },
-      { cle: 'integre', libelle: 'Sans modèle', n: l.filter((x) => x.etat === 'integre').length },
-    ];
-  });
+  readonly familles = FAMILLES;
+  /** Les colonnes : les catégories servies, dans l'ordre des groupes (« Communs » en dernier). */
+  readonly colonnes = computed(() =>
+    this.groupes().map((g) => ({ cle: g.cle, titre: g.cle === 'PLUSIEURS' ? 'Communs (contrat-cadre, restreint)' : g.titre })),
+  );
+  private readonly toutes = computed(() => this.groupes().flatMap((g) => g.lignes.map((l) => ({ l, cle: g.cle }))));
 
-  /** Le type lu sur le sigle (« CPS » pour le CPS des prestations intellectuelles, qui tient le rôle du CCAP). */
-  typeCourt(l: LigneDao): string {
-    return l.sigle.split('-')[0];
+  cellule(cle: string, types: readonly string[]): LigneDao[] {
+    return this.toutes().filter((x) => x.cle === cle && types.includes(x.l.typeDocument)).map((x) => x.l);
   }
 
-  /** Le nom sans la catégorie entre parenthèses, que le titre de la carte dit déjà (gardée dans la carte des documents communs). */
-  nomCourt(l: LigneDao, groupe: string): string {
-    return groupe === 'PLUSIEURS' ? l.libelle : l.libelle.replace(/\s*\([^)]*\)\s*$/, '');
+  nb(etat: LigneDao['etat']): number {
+    return this.toutes().filter((x) => x.l.etat === etat).length;
+  }
+
+  readonly resume = computed(() => `${this.toutes().length} documents : ${this.nb('ok')} en vigueur, ${this.nb('prep')} à valider, ${this.nb('integre')} sans modèle`);
+
+  /** Le nom sans la catégorie entre parenthèses : la colonne la dit déjà. */
+  nomCourt(libelle: string): string {
+    return libelle.replace(/\s*\([^)]*\)\s*$/, '');
   }
 
   etatCourt(l: LigneDao): string {
-    if (l.etat === 'integre') return 'Document type intégré';
+    if (l.etat === 'integre') return 'Document type';
     if (l.etat === 'ok') return l.badge;
-    return l.badge === 'À valider' ? 'Brouillon à valider' : 'À rédiger';
+    return l.badge === 'À valider' ? 'À valider' : 'À rédiger';
   }
 }
