@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, forkJoin, of, switchMap } from 'rxjs';
 
 import { ApiError, codeErreur } from '../../../core/errors/api-error';
@@ -49,7 +50,7 @@ import { LIBELLES_NATURE, MOTIF_CODE_MODELE, propositionPourFamille } from './mo
           <app-modeles-marche [lignes]="lignesMarcheCalculees()" [occupe]="creationMarche()" (agir)="agirMarche($event)" />
           @if (messageMarche(); as m) { <p class="form-error" role="alert">{{ m }}</p> }
         } @else if (onglet() === 'dao') {
-          <app-modeles-dao [groupes]="groupesDaoCalcules()" [occupe]="occupeDao()" (agir)="agirDao($event)" (texte)="texteIntegreDao($event)" />
+          <app-modeles-dao [groupes]="groupesDaoCalcules()" [ecarts]="ecartsDao()" [occupe]="occupeDao()" (agir)="agirDao($event)" (texte)="texteIntegreDao($event)" />
           @if (messageDao(); as m) { <p class="form-error" role="alert">{{ m }}</p> }
         } @else {
         @if (reco(); as r) { <app-bandeau-recommandation [reco]="r" (commencer)="commencer()" /> }
@@ -152,6 +153,7 @@ export class ModelesPvListe implements OnInit {
   private readonly typesService = inject(TypeDossierService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly natures = LIBELLES_NATURE;
   readonly listeNatures: readonly NatureModelePv[] = ['PV', 'LETTRE_RENVOI'];
@@ -191,6 +193,16 @@ export class ModelesPvListe implements OnInit {
   // ——— ⚠️ 22/10 (D0-D3 « modeles-dao ») — l'onglet « Dossier de mise en concurrence » ———
   private readonly integresDao = signal<DocumentDaoIntegre[]>([]);
   readonly groupesDaoCalcules = computed(() => groupesDao(this.integresDao(), this.modeles()));
+  /** Le nombre d'écarts au document type de la dernière version de chaque modèle du DAO, par sigle (lu après la liste). */
+  readonly ecartsDao = signal<Record<string, number>>({});
+
+  private chargerEcartsDao(modeles: ModelePvResume[]): void {
+    const dao = modeles.filter((m) => m.nature === 'DOCUMENT_DAO' && m.etat === 'ACTIF' && m.derniere && (m.sigles ?? []).length);
+    if (!dao.length) return;
+    forkJoin(dao.map((m) => this.service.ecarts(m.id, m.derniere!.numero).pipe(catchError(() => of(null)))))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((l) => this.ecartsDao.set(Object.fromEntries(dao.flatMap((m, i) => (l[i] ? [[m.sigles![0], l[i]!.length]] : [])))));
+  }
   readonly occupeDao = signal<string | null>(null);
   readonly messageDao = signal<string | null>(null);
 
@@ -295,6 +307,7 @@ export class ModelesPvListe implements OnInit {
         this.couverture.set(couverture);
         this.integres.set(integres);
         this.integresDao.set(integresDao ?? []);
+        this.chargerEcartsDao(modeles);
         this.messageDao.set(integresDao ? null : 'Les documents du DAO n’ont pas pu être lus.');
         this.libellesFamilles.set(Object.fromEntries(familles.map((f) => [f.idTypeDossier, f.libelleType ?? f.idTypeDossier])));
         this.loading.set(false);
