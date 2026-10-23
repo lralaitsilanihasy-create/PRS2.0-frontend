@@ -212,33 +212,39 @@ const REGLES_USUELLES: Readonly<Record<string, string>> = {
                         </li>
                       }
                     </ul>
-                  } @else if (blocs().length) {
-                    <!-- ⚠️ 23/10 — un document du DAO : ses rubriques rangées sous leur bloc de la fiche, fermées. -->
-                    @for (b of blocs(); track b.nom) {
-                      <details class="edp__bloc">
-                        <summary>{{ b.nom }} <span class="edp__nb">{{ b.nb }}</span></summary>
-                        @for (g of b.groupes; track g.nom) {
-                          <details class="edp__det edp__det--rubrique">
-                            <summary>{{ g.nom }} <span class="edp__nb">{{ g.variables.length }}</span></summary>
-                            <div class="edp__puces">
-                              @for (vr of g.variables; track vr.code) {
-                                <button type="button" class="edp__puce" [title]="vr.code + (vr.exemple ? ' — ex. ' + vr.exemple : '')" (click)="insererVariable(vr.code)">{{ libelleCourt(vr.libelle) }}</button>
-                              }
-                            </div>
-                          </details>
-                        }
-                      </details>
-                    }
-                  }
-                  @for (g of (recherche().trim() ? [] : groupesHorsBloc()); track g.nom) {
-                    <details class="edp__det" [open]="!blocs().length && $index < 3">
-                      <summary>{{ g.nom }} <span class="edp__nb">{{ g.variables.length }}</span></summary>
-                      <div class="edp__puces">
-                        @for (vr of g.variables; track vr.code) {
-                          <button type="button" class="edp__puce" [title]="vr.code + (vr.exemple ? ' — ex. ' + vr.exemple : '')" (click)="insererVariable(vr.code)">{{ libelleCourt(vr.libelle) }}</button>
-                        }
-                      </div>
-                    </details>
+                  } @else {
+                    <!-- ⚠️ 23/10 (demande du pilote) — un menu en cascade : bloc › rubrique › valeur (un PV : groupe › valeur), ouvert vers la gauche. -->
+                    <ul class="edp__casc" role="menu" aria-label="Valeurs du dossier" (mouseleave)="fermerCascade()">
+                      @for (n of niveau1(); track n.nom) {
+                        <li class="edp__casc-li" role="none" (mouseenter)="choisir1(n.nom)">
+                          <button type="button" role="menuitem" class="edp__casc-item" (keydown.escape)="fermerCascade()" aria-haspopup="true" [class.on]="choix1() === n.nom" [attr.aria-expanded]="choix1() === n.nom" (click)="choisir1(n.nom)" (focus)="choisir1(n.nom)"><span>{{ n.nom }}</span><small>{{ n.nb }}</small></button>
+                          @if (choix1() === n.nom) {
+                            @if (niveau2(); as n2) {
+                              <ul class="edp__flyout" role="menu" [attr.aria-label]="n.nom">
+                                @if (n2.rubriques) {
+                                  @for (g of n2.rubriques; track g.nom) {
+                                    <li class="edp__casc-li" role="none" (mouseenter)="choix2.set(g.nom)">
+                                      <button type="button" role="menuitem" class="edp__casc-item" (keydown.escape)="fermerCascade()" aria-haspopup="true" [class.on]="choix2() === g.nom" [attr.aria-expanded]="choix2() === g.nom" (click)="choix2.set(g.nom)" (focus)="choix2.set(g.nom)"><span>{{ g.nom }}</span><small>{{ g.variables.length }}</small></button>
+                                      @if (choix2() === g.nom) {
+                                        <ul class="edp__flyout" role="menu" [attr.aria-label]="g.nom">
+                                          @for (vr of g.variables; track vr.code) {
+                                            <li role="none"><button type="button" role="menuitem" class="edp__casc-item" (keydown.escape)="fermerCascade()" [title]="vr.code + (vr.exemple ? ' — ex. ' + vr.exemple : '')" (click)="choisirValeur(vr.code)"><span>{{ libelleCourt(vr.libelle) }}</span></button></li>
+                                          }
+                                        </ul>
+                                      }
+                                    </li>
+                                  }
+                                } @else {
+                                  @for (vr of n2.variables ?? []; track vr.code) {
+                                    <li role="none"><button type="button" role="menuitem" class="edp__casc-item" (keydown.escape)="fermerCascade()" [title]="vr.code + (vr.exemple ? ' — ex. ' + vr.exemple : '')" (click)="choisirValeur(vr.code)"><span>{{ libelleCourt(vr.libelle) }}</span></button></li>
+                                  }
+                                }
+                              </ul>
+                            }
+                          }
+                        </li>
+                      }
+                    </ul>
                   }
                 </section>
                 @if (avecChamps()) {
@@ -382,13 +388,21 @@ const REGLES_USUELLES: Readonly<Record<string, string>> = {
     .edp__res { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
     .edp__res li { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; }
     .edp__res span { font-size: 10.5px; color: var(--n-500); padding-left: 4px; }
-    .edp__bloc { border: 1px solid var(--n-200, #e2e8f0); border-radius: 8px; margin: 5px 0; background: #fff; }
-    .edp__bloc > summary { cursor: pointer; padding: 6px 9px; font-size: 12.5px; font-weight: 700; color: var(--p-800, #075985); background: var(--p-50, #f0f9ff); border-radius: 8px; list-style-position: inside; }
-    .edp__bloc[open] > summary { border-radius: 8px 8px 0 0; border-bottom: 1px solid var(--n-200, #e2e8f0); }
-    .edp__det--rubrique { margin: 0; padding: 3px 9px 3px 14px; border-top: 1px solid var(--n-100, #f1f5f9); }
-    .edp__det--rubrique:first-of-type { border-top: 0; }
-    .edp__det--rubrique > summary { font-weight: 500; }
-    .edp__det--rubrique .edp__puces { padding: 3px 0 5px; }
+    /* ⚠️ 23/10 — le menu en cascade du panneau : chaque sous-menu s'ouvre à gauche de son entrée, par-dessus la page. */
+    .edp__casc, .edp__flyout { list-style: none; margin: 0; padding: 3px; display: flex; flex-direction: column; gap: 1px; }
+    .edp__casc { border: 1px solid var(--n-200, #e2e8f0); border-radius: 8px; background: var(--n-50, #f8fafc); }
+    .edp__casc-li { position: relative; }
+    .edp__casc-item { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; border: 0; background: none;
+      border-radius: 6px; padding: 6px 8px; cursor: pointer; font: 12.5px 'Segoe UI', sans-serif; color: var(--n-800); line-height: 1.3; }
+    .edp__casc-item small { color: var(--n-500); font-size: 11px; flex: none; }
+    .edp__casc-item[aria-haspopup]::before { content: '‹'; color: var(--n-400, #94a3b8); font-size: 15px; line-height: 1; order: -1; margin-right: -2px; }
+    .edp__casc-item[aria-haspopup] span { flex: 1; }
+    .edp__casc-item:hover, .edp__casc-item.on { background: var(--p-50); color: var(--p-800, #075985); }
+    .edp__casc-item.on { font-weight: 600; }
+    .edp__casc-item:focus-visible { outline: 2px solid var(--p-700); outline-offset: -2px; }
+    .edp__flyout { position: absolute; top: -4px; right: 100%; z-index: 40; width: 17rem; background: #fff; border: 1px solid var(--n-200, #e2e8f0);
+      border-radius: 8px; box-shadow: 0 10px 28px rgba(15, 23, 42, 0.18); }
+    @media (max-width: 1100px) { .edp__flyout { position: static; width: auto; box-shadow: none; margin: 2px 0 4px 12px; } }
     .edp__det summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--n-700); padding: 2px 0; }
     .edp__nb { font-weight: 400; color: var(--n-500); }
     .edp__puces--col { flex-direction: column; align-items: flex-start; }
@@ -520,6 +534,41 @@ export class EditeurPage implements AfterViewInit, OnDestroy {
     return [...parBloc.values()];
   });
   readonly groupesHorsBloc = computed(() => this.groupes().filter((g) => !g.bloc));
+
+  // ——— ⚠️ 23/10 — le menu en cascade du panneau ———
+  readonly choix1 = signal<string | null>(null);
+  readonly choix2 = signal<string | null>(null);
+  /** 1er niveau : les blocs (document du DAO), sinon les groupes ; les groupes hors bloc (jetons du moteur) à la fin. */
+  readonly niveau1 = computed(() => [
+    ...this.blocs().map((b) => ({ nom: b.nom, nb: b.nb })),
+    ...(this.blocs().length ? this.groupesHorsBloc() : this.groupes()).map((g) => ({ nom: g.nom, nb: g.variables.length })),
+  ]);
+  /** 2e niveau : les rubriques du bloc ouvert, ou directement les valeurs du groupe ouvert. */
+  readonly niveau2 = computed(() => {
+    const c = this.choix1();
+    if (!c) return null;
+    const b = this.blocs().find((x) => x.nom === c);
+    if (b) return { rubriques: b.groupes, variables: null };
+    const g = this.groupes().find((x) => x.nom === c && !x.bloc);
+    return g ? { rubriques: null, variables: g.variables } : null;
+  });
+
+  choisir1(nom: string): void {
+    if (this.choix1() === nom) return;
+    this.choix1.set(nom);
+    this.choix2.set(null);
+  }
+
+  fermerCascade(): void {
+    this.choix1.set(null);
+    this.choix2.set(null);
+  }
+
+  /** Insère la valeur au curseur, et referme la cascade. */
+  choisirValeur(code: string): void {
+    this.insererVariable(code);
+    this.fermerCascade();
+  }
 
   /** La recherche dans toutes les valeurs, sur le libellé et le code, sans tenir compte des accents ni de la casse. */
   readonly recherche = signal('');
