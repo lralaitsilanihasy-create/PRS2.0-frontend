@@ -1,5 +1,5 @@
 import { CouvertureSousType, ModelePvResume } from '../../../models';
-import { ecrireExpression, etatModele, evaluerCondition, expressionProposee, grilleFichiers, champsLusPar, dossiersExemples, libelleDeCode, modeleSupprimable, nonDeclares, phrasesRegle, expressionEnClair, lireExpression, propositionPourFamille, reprisParModele, sansDocument, tailleLisible } from './modeles-pv-libelles';
+import { ecrireExpression, etatModele, evaluerCondition, expressionProposee, grilleFichiers, champsLusPar, dossiersExemples, nommerRubriques, libelleDeCode, modeleSupprimable, nonDeclares, phrasesRegle, expressionEnClair, lireExpression, propositionPourFamille, reprisParModele, sansDocument, tailleLisible } from './modeles-pv-libelles';
 
 const v = (numero: number, etat: 'BROUILLON' | 'EN_VIGUEUR' | 'REMPLACEE', bloquant = false) => ({ numero, etat, bloquant, deposeeLe: null, enVigueurLe: null });
 const modele = (o: Partial<ModelePvResume>): ModelePvResume => ({
@@ -164,5 +164,16 @@ describe('dossiersExemples (22/10) — les dossiers proposés pour l’aperçu',
     expect(dossiersExemples(l, ['PPM', 'PPM-AGPM']).map((x) => x.idDossier)).toEqual([5, 2, 1]);
     expect(dossiersExemples(l, ['PPM', 'PPM-AGPM'], 1).map((x) => x.idDossier)).toEqual([5]);
     expect(dossiersExemples(l, [])).toEqual([]);
+  });
+});
+
+describe('nommerRubriques (23/10) — les groupes du catalogue du DAO par leur nom', () => {
+  it('« Fiche — rubrique B01-AC » devient « Acheteur » ; un doublon prend son bloc ; le reste ne bouge pas', () => {
+    const blocs = [
+      { code: 'B01', libelle: 'Identification', rubriques: [{ code: 'B01-AC', libelle: 'Acheteur' }, { code: 'B01-GE', libelle: 'Généralités' }] },
+      { code: 'B09', libelle: 'Exécution', rubriques: [{ code: 'B09-GE', libelle: 'Généralités' }] },
+    ];
+    const c = { groupes: [{ nom: 'Fiche — rubrique B01-AC', variables: [] }, { nom: 'Fiche — rubrique B01-GE', variables: [] }, { nom: 'Fiche — rubrique B09-GE', variables: [] }, { nom: 'Jetons du moteur du DAO', variables: [] }] };
+    expect(nommerRubriques(c, blocs).groupes.map((g) => g.nom)).toEqual(['Acheteur', 'Généralités — Identification', 'Généralités — Exécution', 'Jetons du moteur du DAO']);
   });
 });

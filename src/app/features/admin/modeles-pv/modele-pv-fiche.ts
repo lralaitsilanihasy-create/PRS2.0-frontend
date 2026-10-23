@@ -2,7 +2,7 @@ import { DatePipe, LowerCasePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { forkJoin, of, switchMap } from 'rxjs';
+import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 
 import { ApiError, codeErreur, corpsErreur } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
@@ -21,7 +21,7 @@ import {
   SousTypeDossier,
   VersionModelePv,
 } from '../../../models';
-import { ModelePvService, SousTypeDossierService, TypeDossierService } from '../../../services';
+import { ChampFicheMarcheService, ModelePvService, SousTypeDossierService, TypeDossierService } from '../../../services';
 import { ModaleDirective } from '../../../shared/a11y/modale.directive';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { ApercuVersion } from './apercu-version';
@@ -42,6 +42,7 @@ import {
   champsLusPar,
   libelleCategorie,
   modeleSupprimable,
+  nommerRubriques,
   nonDeclares,
   reprisParModele,
   tailleLisible,
@@ -559,6 +560,7 @@ export class ModelePvFicheEcran implements OnInit {
   private readonly service = inject(ModelePvService);
   private readonly sousTypesService = inject(SousTypeDossierService);
   private readonly typesService = inject(TypeDossierService);
+  private readonly champsFiche = inject(ChampFicheMarcheService);
   private readonly libellesFamilles = signal<Record<string, string>>({});
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
@@ -859,7 +861,15 @@ export class ModelePvFicheEcran implements OnInit {
       const sigle = f.nature === 'DOCUMENT_DAO' ? (f.sigles?.[0] ?? null) : null;
       this.service
         .variables(lettre ? null : (f.sousTypes[0]?.id ?? null), lettre ? f.nature : null, sigle)
-        .pipe(takeUntilDestroyed(this.destroyRef))
+        // ⚠️ 23/10 — un document du DAO : ses groupes « Fiche — rubrique B01-AC » prennent le nom de la rubrique (référentiel de la fiche).
+        .pipe(
+          switchMap((c) =>
+            sigle
+              ? this.champsFiche.referentiel().pipe(map((r) => nommerRubriques(c, r.blocs)), catchError(() => of(c)))
+              : of(c),
+          ),
+          takeUntilDestroyed(this.destroyRef),
+        )
         .subscribe({ next: (c) => this.catalogue.set(c), error: () => this.catalogue.set(null) });
     }
   }
