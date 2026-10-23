@@ -341,23 +341,20 @@ export function dossiersExemples<T extends { idDossier: number; idSousType?: str
 /**
  * ⚠️ 23/10 (demande du pilote) — le catalogue d'un document du DAO nomme ses groupes par le code de la rubrique de la fiche
  * (« Fiche — rubrique B01-AC ») : on les renomme par le libellé de la rubrique du référentiel de la fiche DAO (« Acheteur »), suivi de
- * son bloc quand deux rubriques portent le même nom. Un groupe sans correspondance garde son nom.
+ * son bloc (`bloc`), sous lequel l'éditeur la range. Un groupe sans correspondance garde son nom.
  */
-export function nommerRubriques<C extends { groupes: { nom: string; variables: unknown[] }[] }>(
+export function nommerRubriques<C extends { groupes: { nom: string; bloc?: string | null; variables: unknown[] }[] }>(
   catalogue: C,
   blocs: readonly { code: string; libelle: string; rubriques: readonly { code: string; libelle: string }[] }[],
 ): C {
   const rubriques = new Map<string, { libelle: string; bloc: string }>();
   for (const b of blocs) for (const r of b.rubriques) rubriques.set(r.code, { libelle: r.libelle, bloc: b.libelle });
   const code = (nom: string): string | null => /^Fiche — rubrique (\S+)$/.exec(nom)?.[1] ?? null;
-  const libelles = catalogue.groupes.map((g) => rubriques.get(code(g.nom) ?? '')?.libelle).filter((x): x is string => !!x);
-  const doublons = new Set(libelles.filter((l, i) => libelles.indexOf(l) !== i));
   return {
     ...catalogue,
     groupes: catalogue.groupes.map((g) => {
       const r = rubriques.get(code(g.nom) ?? '');
-      // Un nom qui ne se comprend qu'avec son bloc (« Autres éléments du bloc ») le prend aussi.
-      return r ? { ...g, nom: doublons.has(r.libelle) || /du bloc$/i.test(r.libelle) ? `${r.libelle} — ${r.bloc}` : r.libelle } : g;
+      return r ? { ...g, nom: r.libelle, bloc: r.bloc } : g;
     }),
   };
 }

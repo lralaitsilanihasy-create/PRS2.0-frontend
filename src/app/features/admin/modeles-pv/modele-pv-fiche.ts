@@ -332,7 +332,7 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
                     }
                     @if (detail(); as d) {
                       <app-editeur-page [documentInitial]="d.document ?? null" [catalogue]="catalogue()" [schema]="schema()" [conditions]="v.conditions"
-                                        [champs]="v.champs" [figee]="figee()" [enregistrement]="ecriture()" [nbBloquants]="v.rapport?.nbBloquants ?? 0" (voirRapport)="voirRapport()"
+                                        [champs]="v.champs" [avecChamps]="f.nature === 'PV'" [figee]="figee()" [enregistrement]="ecriture()" [nbBloquants]="v.rapport?.nbBloquants ?? 0" (voirRapport)="voirRapport()"
                                         (enregistrer)="enregistrerBrouillon($event)" (nouvelleVersion)="enregistrerNouvelleVersion($event)" />
                     } @else {
                       <p class="text-muted" role="status">Chargement de la page…</p>

@@ -178,7 +178,8 @@ export interface VariableCatalogue {
 export interface CatalogueModelePv {
   sousType: string | null;
   famille: string | null;
-  groupes: { nom: string; variables: VariableCatalogue[] }[];
+  /** ⚠️ 23/10 — `bloc` : le bloc de la fiche DAO d'une rubrique (posé par l'écran, `nommerRubriques`), pour ranger les rubriques. */
+  groupes: { nom: string; bloc?: string | null; variables: VariableCatalogue[] }[];
   listes: { nom: string; prefixe: string; libelle: string }[];
   cles: { cle: string; libelle: string; valeurs: string[] | null }[];
   formats: string[];

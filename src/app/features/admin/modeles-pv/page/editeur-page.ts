@@ -18,7 +18,7 @@ import { Node as NoeudPm } from '@tiptap/pm/model';
 
 import { ApiError } from '../../../../core/errors/api-error';
 import { validerFichier } from '../../../../core/securite/fichiers-surs';
-import { CatalogueModelePv, ChampModelePv, ConditionModelePv, DocumentPage, NoeudPage, ReglagesPage, SchemaModelePv } from '../../../../models';
+import { CatalogueModelePv, ChampModelePv, ConditionModelePv, DocumentPage, NoeudPage, ReglagesPage, SchemaModelePv, VariableCatalogue } from '../../../../models';
 import { ModelePvService } from '../../../../services';
 import { expressionProposee } from '../modeles-pv-libelles';
 import { cheminVersZone, depuisServeur, docVide, enveloppe } from './conversion-page';
@@ -199,8 +199,39 @@ const REGLES_USUELLES: Readonly<Record<string, string>> = {
                       </select>
                     </label>
                   </div>
-                  @for (g of groupes(); track g.nom) {
-                    <details class="edp__det" [open]="$index < 3">
+                  <input type="search" class="edp__recherche" placeholder="Chercher une valeur…" aria-label="Chercher une valeur du dossier"
+                         [value]="recherche()" (input)="recherche.set($any($event.target).value)" />
+                  @if (recherche().trim()) {
+                    @let res = trouvees();
+                    <p class="edp__res-nb" role="status">{{ res.length }} valeur{{ res.length > 1 ? 's' : '' }}{{ res.length > 40 ? ' — les 40 premières' : '' }}</p>
+                    <ul class="edp__res">
+                      @for (r of res.slice(0, 40); track r.v.code) {
+                        <li>
+                          <button type="button" class="edp__puce" [title]="r.v.code + (r.v.exemple ? ' — ex. ' + r.v.exemple : '')" (click)="insererVariable(r.v.code)">{{ libelleCourt(r.v.libelle) }}</button>
+                          <span>{{ r.ou }}</span>
+                        </li>
+                      }
+                    </ul>
+                  } @else if (blocs().length) {
+                    <!-- ⚠️ 23/10 — un document du DAO : ses rubriques rangées sous leur bloc de la fiche, fermées. -->
+                    @for (b of blocs(); track b.nom) {
+                      <details class="edp__bloc">
+                        <summary>{{ b.nom }} <span class="edp__nb">{{ b.nb }}</span></summary>
+                        @for (g of b.groupes; track g.nom) {
+                          <details class="edp__det edp__det--rubrique">
+                            <summary>{{ g.nom }} <span class="edp__nb">{{ g.variables.length }}</span></summary>
+                            <div class="edp__puces">
+                              @for (vr of g.variables; track vr.code) {
+                                <button type="button" class="edp__puce" [title]="vr.code + (vr.exemple ? ' — ex. ' + vr.exemple : '')" (click)="insererVariable(vr.code)">{{ libelleCourt(vr.libelle) }}</button>
+                              }
+                            </div>
+                          </details>
+                        }
+                      </details>
+                    }
+                  }
+                  @for (g of (recherche().trim() ? [] : groupesHorsBloc()); track g.nom) {
+                    <details class="edp__det" [open]="!blocs().length && $index < 3">
                       <summary>{{ g.nom }} <span class="edp__nb">{{ g.variables.length }}</span></summary>
                       <div class="edp__puces">
                         @for (vr of g.variables; track vr.code) {
@@ -210,6 +241,7 @@ const REGLES_USUELLES: Readonly<Record<string, string>> = {
                     </details>
                   }
                 </section>
+                @if (avecChamps()) {
                 <section>
                   <h4>Champs du formulaire</h4>
                   <div class="edp__puces">
@@ -219,6 +251,7 @@ const REGLES_USUELLES: Readonly<Record<string, string>> = {
                   </div>
                   <p class="edp__aide">Un champ nouveau se déclare dans l’onglet « Champs saisis ».</p>
                 </section>
+                }
               }
               @case ('passages') {
                 <section>
@@ -342,6 +375,20 @@ const REGLES_USUELLES: Readonly<Record<string, string>> = {
     .edp__ongl button:focus-visible { outline: 2px solid var(--p-700); outline-offset: 1px; }
     .edp__titre-ligne { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
     .edp__det { margin: 4px 0; }
+    /* ⚠️ 23/10 — recherche, blocs et rubriques du catalogue d'un document du DAO. */
+    .edp__recherche { width: 100%; box-sizing: border-box; margin: 4px 0 6px; padding: 5px 9px; border: 1px solid var(--n-300, #cbd5e1); border-radius: 8px; font: 12.5px 'Segoe UI', sans-serif; }
+    .edp__recherche:focus-visible { outline: 2px solid var(--p-700); outline-offset: 1px; }
+    .edp__res-nb { margin: 0 0 4px; font-size: 11.5px; color: var(--n-500); }
+    .edp__res { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+    .edp__res li { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; }
+    .edp__res span { font-size: 10.5px; color: var(--n-500); padding-left: 4px; }
+    .edp__bloc { border: 1px solid var(--n-200, #e2e8f0); border-radius: 8px; margin: 5px 0; background: #fff; }
+    .edp__bloc > summary { cursor: pointer; padding: 6px 9px; font-size: 12.5px; font-weight: 700; color: var(--p-800, #075985); background: var(--p-50, #f0f9ff); border-radius: 8px; list-style-position: inside; }
+    .edp__bloc[open] > summary { border-radius: 8px 8px 0 0; border-bottom: 1px solid var(--n-200, #e2e8f0); }
+    .edp__det--rubrique { margin: 0; padding: 3px 9px 3px 14px; border-top: 1px solid var(--n-100, #f1f5f9); }
+    .edp__det--rubrique:first-of-type { border-top: 0; }
+    .edp__det--rubrique > summary { font-weight: 500; }
+    .edp__det--rubrique .edp__puces { padding: 3px 0 5px; }
     .edp__det summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--n-700); padding: 2px 0; }
     .edp__nb { font-weight: 400; color: var(--n-500); }
     .edp__puces--col { flex-direction: column; align-items: flex-start; }
@@ -349,7 +396,7 @@ const REGLES_USUELLES: Readonly<Record<string, string>> = {
     .edp__panneau h4 { margin: 0 0 4px; font-size: 11.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--p-700); }
     .edp__groupe { margin: 6px 0 3px; font-size: 11.5px; font-weight: 600; color: var(--n-700); }
     .edp__puces { display: flex; flex-wrap: wrap; gap: 4px; }
-    .edp__puce { border: 1px solid #7dd3fc; background: var(--p-50); color: var(--p-800, #075985); border-radius: 10px; font: 12px 'Segoe UI', sans-serif; padding: 1px 8px; cursor: pointer; }
+    .edp__puce { text-align: left; border: 1px solid #7dd3fc; background: var(--p-50); color: var(--p-800, #075985); border-radius: 10px; font: 12px 'Segoe UI', sans-serif; padding: 1px 8px; cursor: pointer; }
     .edp__puce--champ { border-color: #fde68a; background: #fef9c3; color: #854d0e; }
     .edp__puce--bloc { border-style: dashed; background: #fff; }
     .edp__aide { margin: 4px 0; font-size: 12px; color: var(--n-500); }
@@ -372,6 +419,8 @@ export class EditeurPage implements AfterViewInit, OnDestroy {
   readonly schema = input<SchemaModelePv | null>(null);
   readonly conditions = input<ConditionModelePv[]>([]);
   readonly champs = input<ChampModelePv[]>([]);
+  /** ⚠️ 23/10 — les champs saisis par le membre n'existent que pour un PV : la section est masquée ailleurs (DAO, projet de marché). */
+  readonly avecChamps = input(true);
   readonly figee = input(false);
   readonly enregistrement = input(false);
   /** Le nombre de points bloquants du rapport, rappelé dans la barre. */
@@ -458,6 +507,30 @@ export class EditeurPage implements AfterViewInit, OnDestroy {
   readonly fonds = computed(() => Object.entries(this.schema()?.fonds ?? {}));
   readonly formats = computed(() => this.schema()?.formats ?? this.catalogue()?.formats ?? []);
   readonly groupes = computed(() => (this.catalogue()?.groupes ?? []).filter((g) => g.variables.length));
+  /** ⚠️ 23/10 — les rubriques d'un document du DAO, rangées sous leur bloc (dans l'ordre du catalogue). */
+  readonly blocs = computed(() => {
+    const parBloc = new Map<string, { nom: string; nb: number; groupes: { nom: string; variables: VariableCatalogue[] }[] }>();
+    for (const g of this.groupes()) {
+      if (!g.bloc) continue;
+      const b = parBloc.get(g.bloc) ?? { nom: g.bloc, nb: 0, groupes: [] };
+      b.groupes.push(g);
+      b.nb += g.variables.length;
+      parBloc.set(g.bloc, b);
+    }
+    return [...parBloc.values()];
+  });
+  readonly groupesHorsBloc = computed(() => this.groupes().filter((g) => !g.bloc));
+
+  /** La recherche dans toutes les valeurs, sur le libellé et le code, sans tenir compte des accents ni de la casse. */
+  readonly recherche = signal('');
+  readonly trouvees = computed(() => {
+    const plat = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    const q = plat(this.recherche().trim());
+    if (!q) return [];
+    return this.groupes().flatMap((g) =>
+      g.variables.filter((v) => plat(v.libelle).includes(q) || plat(v.code).includes(q)).map((v) => ({ v, ou: g.bloc ? `${g.bloc} › ${g.nom}` : g.nom })),
+    );
+  });
   readonly listes = computed(() => this.catalogue()?.listes ?? []);
   private readonly libellesVariables = computed(() => {
     const m = new Map<string, string>();

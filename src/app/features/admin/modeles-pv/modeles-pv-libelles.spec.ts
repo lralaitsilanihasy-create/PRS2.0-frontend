@@ -168,12 +168,14 @@ describe('dossiersExemples (22/10) — les dossiers proposés pour l’aperçu',
 });
 
 describe('nommerRubriques (23/10) — les groupes du catalogue du DAO par leur nom', () => {
-  it('« Fiche — rubrique B01-AC » devient « Acheteur » ; un doublon prend son bloc ; le reste ne bouge pas', () => {
+  it('« Fiche — rubrique B01-AC » devient « Acheteur », rangée sous son bloc ; le reste ne bouge pas', () => {
     const blocs = [
       { code: 'B01', libelle: 'Identification', rubriques: [{ code: 'B01-AC', libelle: 'Acheteur' }, { code: 'B01-GE', libelle: 'Généralités' }] },
       { code: 'B09', libelle: 'Exécution', rubriques: [{ code: 'B09-GE', libelle: 'Généralités' }] },
     ];
-    const c = { groupes: [{ nom: 'Fiche — rubrique B01-AC', variables: [] }, { nom: 'Fiche — rubrique B01-GE', variables: [] }, { nom: 'Fiche — rubrique B09-GE', variables: [] }, { nom: 'Jetons du moteur du DAO', variables: [] }] };
-    expect(nommerRubriques(c, blocs).groupes.map((g) => g.nom)).toEqual(['Acheteur', 'Généralités — Identification', 'Généralités — Exécution', 'Jetons du moteur du DAO']);
+    const c: { groupes: { nom: string; bloc?: string | null; variables: unknown[] }[] } = { groupes: [{ nom: 'Fiche — rubrique B01-AC', variables: [] }, { nom: 'Fiche — rubrique B01-GE', variables: [] }, { nom: 'Fiche — rubrique B09-GE', variables: [] }, { nom: 'Jetons du moteur du DAO', variables: [] }] };
+    expect(nommerRubriques(c, blocs).groupes.map((g) => [g.nom, g.bloc ?? null])).toEqual([
+      ['Acheteur', 'Identification'], ['Généralités', 'Identification'], ['Généralités', 'Exécution'], ['Jetons du moteur du DAO', null],
+    ]);
   });
 });
