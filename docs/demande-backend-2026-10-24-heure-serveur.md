@@ -34,6 +34,15 @@ n'existe qu'en recette. L'en-tête HTTP `Date` est posé par Tomcat à l'heure r
 >   compris, sont donc à l'heure de Paris : 1 heure de moins qu'à Antananarivo aujourd'hui, 2 heures après le passage à l'heure
 >   d'hiver du 25/10. Le front doit comparer `maintenant` aux dates de l'API telles quelles, sans conversion de fuseau. La
 >   correction (régler la JVM sur `Indian/Antananarivo`) est signalée au pilote ; elle n'est pas faite.
+>
+> ⚠️ **2026-10-24, corrigé (backend), sur décision du pilote** — la JVM est désormais en `Indian/Antananarivo`, imposé au
+> démarrage. On peut le surcharger par `APP_FUSEAU`. Le serveur et `fuseau` disent maintenant la même heure.
+> - **Effet sur la recette** : l'horloge de recette est en décembre, et Paris y est à l'heure d'hiver (UTC+1). À décalage égal,
+>   l'heure du serveur avance donc de **2 heures** (07/12 11:24 devient 13:24). Il suffit de reposer l'heure voulue avec
+>   `PUT /api/admin/horloge-recette { maintenant }`.
+> - **Les heures enregistrées avant le redémarrage** restent à l'heure de Paris, donc plus tôt qu'en heure de Madagascar : de
+>   2 heures pour celles de la chaîne jouée en décembre, d'1 heure pour celles d'octobre. L'ordre des événements est conservé.
+>   Elles ne sont pas recalées.
 
 - Le front calcule un **écart** (serveur − poste) au chargement, le relit périodiquement (toutes les 10 minutes, et après une
   réponse `HORLOGE_RECETTE`). Il l'applique à toutes ses dates : valeurs par défaut des formulaires, délais restants, échéances.
