@@ -21,6 +21,10 @@ import {
 } from '../../services';
 import { ChronometrageDossier, StatutBadge } from '../../shared/circuit';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
+import { DossierContenuStore } from './dossier/dossier-contenu.store';
+import { DossierDocuments } from './dossier/dossier-documents';
+import { documentsDuDossier } from './dossier/documents-du-dossier';
+import { OngletPieceFournie, avecProcedure, ongletDuFichier } from './dossier/dossier-pieces';
 
 /** Ligne du contrôle de complétude : type attendu + pièce déposée (ou non) + dernière décision. */
 interface LigneControle {
@@ -29,6 +33,28 @@ interface LigneControle {
   decision: VerificationPieceDepot | null;
   /** ⚠️ 18/10 (B1 du 17/10) — fournie par l'application par ses données : ni déposée, ni à déclarer conforme. */
   fournie: boolean;
+  /** ⚠️ 24/10 (pilote) — la vue en données qui présente la pièce, quand l'application la produit ; sinon le fichier s'ouvre. */
+  element: OngletPieceFournie | null;
+}
+
+/** Les pièces fournies par l'application dont les données ont leur vue dans le dossier (les autres s'ouvrent encore en PDF). */
+const ELEMENT_PAR_CODE: Readonly<Record<string, OngletPieceFournie>> = {
+  FICHE_PRESENTATION: 'presentation',
+  PV_CNM_DMC: 'pv-cnm',
+  PV_VALIDATION_CAO: 'evaluation',
+  CANEVAS_RAPPORT: 'canevas',
+};
+
+/**
+ * ⚠️ 24/10 (pilote, « les pièces jointes en tableaux de données, pas en PDF ») — la vue en données d'une ligne du contrôle, dans un
+ * dossier né d'une fiche ou d'une attribution : par le code de la pièce fournie par l'application (fiche de présentation, PV de la
+ * Commission, PV de validation), ou par le fichier joint d'office (PV d'ouverture, rapport, projet de marché, DAO complet, bordereau),
+ * même règle que la page du dossier (`ongletDuFichier`). Les journaux de publication, vrais documents extérieurs, restent des fichiers.
+ */
+export function elementDeLaPiece(t: TypePieceJointe, piece: PieceJointeDossier | null, avecFiche: boolean): OngletPieceFournie | null {
+  if (!avecFiche) return null;
+  if (t.fourniePar === 'APPLICATION' && t.code && ELEMENT_PAR_CODE[t.code]) return ELEMENT_PAR_CODE[t.code];
+  return piece ? ongletDuFichier(piece, true) : null;
 }
 
 /**
@@ -43,7 +69,9 @@ interface LigneControle {
 @Component({
   selector: 'app-reception-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ModaleDirective, ReactiveFormsModule, SlicePipe, StatutBadge, ChronometrageDossier],
+  imports: [ModaleDirective, ReactiveFormsModule, SlicePipe, StatutBadge, ChronometrageDossier, DossierDocuments],
+  // La vue en données des pièces lit le contenu du dossier (fiche, procédure, pièces) : un magasin propre à la fenêtre.
+  providers: [DossierContenuStore],
   template: `
     <div class="modal-backdrop" [class.closing]="closingD()">
       <form
@@ -130,12 +158,18 @@ interface LigneControle {
                          réception ne les compte pas. Aucune décision à prendre. -->
                     @if (l.fournie) {
                       <div class="rf-piece__actions">
-                        <button type="button" class="btn btn-secondary btn-sm" [disabled]="ouvertureFournie() === l.type.idTypePiece" (click)="ouvrirFournie(l.type)">👁 Ouvrir</button>
+                        @if (vue(l); as e) {
+                          <button type="button" class="btn btn-secondary btn-sm" (click)="donnees.set(e)">▦ Voir les données</button>
+                        } @else {
+                          <button type="button" class="btn btn-secondary btn-sm" [disabled]="ouvertureFournie() === l.type.idTypePiece" (click)="ouvrirFournie(l.type)">👁 Ouvrir</button>
+                        }
                         <span class="rf-piece__meta">Produite à partir des données du dossier : rien à déposer ni à déclarer.</span>
                       </div>
                     } @else {
                     <div class="rf-piece__actions">
-                      @if (l.piece) {
+                      @if (vue(l); as e) {
+                        <button type="button" class="btn btn-secondary btn-sm" (click)="donnees.set(e)">▦ Voir les données</button>
+                      } @else if (l.piece) {
                         <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrir(l.piece!)">👁 Ouvrir</button>
                       }
                       <input class="form-control rf-piece__obs" type="text" maxlength="500"
@@ -191,9 +225,26 @@ interface LigneControle {
         </footer>
       </form>
     </div>
+    <!-- ⚠️ 24/10 (pilote) — la pièce en données : la vue du dossier (séance, rapport, attribution, bordereau…), hors du formulaire. -->
+    @if (donnees(); as cle) {
+      <div class="modal-backdrop">
+        <div class="modal rf-donnees" role="dialog" aria-modal="true" [attr.aria-label]="libelleElement(cle)" appModale (appModaleFermer)="donnees.set(null)">
+          <div class="modal-header">
+            <h2 class="modal-title">{{ libelleElement(cle) }} <span class="rf-donnees__ref">· {{ dossier().refeDossier || 'Dossier n° ' + dossier().idDossier }}</span></h2>
+            <button type="button" class="btn-close" aria-label="Fermer" (click)="donnees.set(null)">✕</button>
+          </div>
+          <div class="modal-body rf-donnees__corps">
+            <app-dossier-documents [ongletImpose]="cle" (ongletDemande)="donnees.set($any($event))" />
+          </div>
+        </div>
+      </div>
+    }
   `,
   styles: `
     .rf-modal { max-width: 48rem; }
+    .rf-donnees { width: 96vw; max-width: 96vw; height: 94vh; max-height: 94vh; display: flex; flex-direction: column; }
+    .rf-donnees__ref { font-weight: 400; color: var(--n-500); font-size: 0.9rem; }
+    .rf-donnees__corps { flex: 1; overflow: auto; padding: 0; }
     /* En-tête : titre + référence, ✕ calé à droite. */
     /* Titre décalé un peu vers le bas et la droite (demande pilote 02/09) : il collait au coin du modal. */
     .rf-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 0.9rem 0 0 1.1rem; }
@@ -268,6 +319,20 @@ export class ReceptionForm implements OnInit {
   private readonly pieceService = inject(PieceJointeDossierService);
   private readonly verifService = inject(VerificationPieceDepotService);
   private readonly lookups = inject(ReferenceLookupService);
+  private readonly contenu = inject(DossierContenuStore);
+
+  /** Le dossier relu par sa lecture unitaire (les listes ne portent ni la fiche ni la procédure), chargé dans le magasin. */
+  private readonly dossierComplet = signal<Dossier | null>(null);
+  private readonly avecFiche = computed(() => { const d = this.dossierComplet(); return !!d && avecProcedure(d); });
+  /** Les vues que le dossier présente : une pièce n'ouvre en données que l'élément qui existe pour lui. */
+  private readonly elements = computed(() =>
+    this.dossierComplet() && !this.contenu.loading() ? documentsDuDossier(this.contenu) : []);
+  /** La pièce ouverte en données. */
+  readonly donnees = signal<OngletPieceFournie | null>(null);
+  vue(l: LigneControle): OngletPieceFournie | null {
+    return l.element && this.elements().some((e) => e.cle === l.element) ? l.element : null;
+  }
+  libelleElement(cle: OngletPieceFournie): string { return this.elements().find((e) => e.cle === cle)?.libelle ?? 'Pièce'; }
 
   readonly submitting = signal(false);
   readonly signalement = signal(false);
@@ -299,6 +364,7 @@ export class ReceptionForm implements OnInit {
         piece: parType.get(t.idTypePiece) ?? null,
         decision: this.decisions().get(t.idTypePiece) ?? null,
         fournie: t.fourniePar === 'APPLICATION',
+        element: elementDeLaPiece(t, parType.get(t.idTypePiece) ?? null, this.avecFiche()),
       }))
       .filter((l) => l.type.obligatoire || l.piece !== null);
   });
@@ -344,6 +410,10 @@ export class ReceptionForm implements OnInit {
   }
 
   ngOnInit(): void {
+    this.dossierService.getById(this.dossier().idDossier).subscribe({
+      next: (d) => { this.contenu.charger(signal(d).asReadonly()); this.dossierComplet.set(d); },
+      error: () => {},
+    });
     // UNE vague : référentiel du type + pièces déposées + historique des vérifications.
     forkJoin({
       // ⚠️ Manuel de contrôle, M2 (V95) — les pièces exigées DE CE DOSSIER (sous-type, conditions de sa fiche) ; repli : la famille.
