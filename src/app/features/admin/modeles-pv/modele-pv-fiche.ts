@@ -12,6 +12,7 @@ import {
   ChampModelePv,
   CategorieMarche,
   CouvertureSousType,
+  EcartArmp,
   ConditionModelePv,
   DocumentPage,
   MOTIF_VERSION_DEPART,
@@ -667,9 +668,11 @@ export class ModelePvFicheEcran implements OnInit {
    * Les écarts de la version choisie, lus sur son rapport (un point `ECART_ARMP` par écart, préfixé « [forme] » ou « [fond] ») ;
    * ⚠️ 23/10 (« ecarts-de-forme ») seul le fond demande le juriste.
    */
-  private readonly pointsEcarts = computed(() => (this.version()?.rapport?.points ?? []).filter((p) => p.code === 'ECART_ARMP'));
-  readonly nbEcartsArmp = computed(() => this.pointsEcarts().filter((p) => !p.message.startsWith('[forme]')).length);
-  readonly nbEcartsForme = computed(() => this.pointsEcarts().filter((p) => p.message.startsWith('[forme]')).length);
+  // Lu sur `GET …/ecarts` (la nature de chaque écart), et non sur le rapport : un rapport enregistré avant la classification n'a pas les
+  // préfixes. Sans nature servie, un écart compte comme du fond.
+  private readonly ecartsVersion = signal<EcartArmp[]>([]);
+  readonly nbEcartsArmp = computed(() => this.ecartsVersion().filter((e) => e.nature !== 'FORME').length);
+  readonly nbEcartsForme = computed(() => this.ecartsVersion().filter((e) => e.nature === 'FORME').length);
   readonly juristeNom = signal('');
   readonly juristeQualite = signal('');
   readonly juristeDate = signal(new Date().toISOString().slice(0, 10));
@@ -787,6 +790,17 @@ export class ModelePvFicheEcran implements OnInit {
   });
 
   constructor() {
+    // Un document du DAO : ses écarts au document type, relus à chaque version (la fiche rechargée après un enregistrement en sert une nouvelle).
+    effect(() => {
+      const v = this.version();
+      const f = this.fiche();
+      this.ecartsVersion.set([]);
+      if (!v || f?.nature !== 'DOCUMENT_DAO' || v.support !== 'PAGE') return;
+      this.service
+        .ecarts(f.id, v.numero)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({ next: (l) => this.ecartsVersion.set(l), error: () => this.ecartsVersion.set([]) });
+    });
     // La version affichée change : on lit son document (une page) ; une version Word n'en a pas.
     effect(() => {
       const v = this.version();
