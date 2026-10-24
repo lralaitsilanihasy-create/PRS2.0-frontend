@@ -127,6 +127,8 @@ export interface EcartArmp {
   rang: number;
   avant: string | null;
   apres: string | null;
+  /** ⚠️ 23/10 (« ecarts-de-forme ») — FORME : orthographe, accord, ponctuation, style ; FOND : le reste (seul le fond demande le juriste). */
+  nature?: 'FORME' | 'FOND';
 }
 
 /** ⚠️ 22/10 (D0) — `GET /api/modeles-pv/integres/dao` : un document intégré du DAO (fichier de commande), par sigle. */

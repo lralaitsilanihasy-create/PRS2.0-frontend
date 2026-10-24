@@ -24,14 +24,23 @@ const LIBELLE: Readonly<Record<EcartArmp['type'], string>> = { MODIFIE: 'Modifi�
         @if (!l.length) {
           <p class="ear__conforme"><span class="badge badge-success">Conforme ARMP</span> Le texte est celui du document type intégré à l’application.</p>
         } @else {
-          <p class="ear__resume">
-            <span class="badge badge-warning">{{ l.length }} écart{{ l.length > 1 ? 's' : '' }}</span>
-            La mise en vigueur de cette version demandera la validation du juriste (nom, qualité, date).
-          </p>
+          @let fond = nbFond(l);
+          <div class="ear__resume">
+            <span class="ear__compte ear__compte--forme">{{ l.length - fond }} de forme</span>
+            <span class="ear__compte ear__compte--fond">{{ fond }} de fond</span>
+            <span>
+              @if (fond) { La mise en vigueur demandera la validation du juriste, pour le fond. }
+              @else { Corrections de forme seulement : la mise en vigueur ne demande pas le juriste. }
+            </span>
+            @if (fond && fond < l.length) {
+              <label class="ear__filtre"><input type="checkbox" [checked]="fondSeul()" (change)="fondSeul.set($any($event.target).checked)" /> Le fond seulement</label>
+            }
+          </div>
           <ul class="ear__liste">
-            @for (e of l; track $index) {
-              <li [class]="'ear__ecart ear__ecart--' + e.type">
-                <span class="ear__type">{{ libelle[e.type] }} <small>· ligne {{ e.rang }}</small>
+            @for (e of affiches(l); track $index) {
+              <li [class]="'ear__ecart ear__ecart--' + e.type + ' ear__ecart--' + (e.nature ?? 'FOND')">
+                <span class="ear__type"><span [class]="'ear__nature ear__nature--' + (e.nature ?? 'FOND')">{{ e.nature === 'FORME' ? 'forme' : 'fond' }}</span>
+                  {{ libelle[e.type] }} <small>· ligne {{ e.rang }}</small>
                   @if (e.type !== 'RETIRE') {
                     <button type="button" class="ear__aller" (click)="aller.emit(passages(e))">Aller à l’endroit</button>
                   }
@@ -70,6 +79,16 @@ const LIBELLE: Readonly<Record<EcartArmp['type'], string>> = { MODIFIE: 'Modifi�
       display: flex; flex-direction: column; gap: 0.15rem; font-size: 0.85rem; }
     .ear__ecart--AJOUTE { border-left-color: var(--ok-accent, #059669); }
     .ear__ecart--RETIRE { border-left-color: var(--miss-accent, #dc2626); }
+    /* ⚠️ 23/10 — la forme en gris, le fond en ambre : seul le fond demande le juriste. */
+    .ear__ecart--FORME { border-left-color: var(--n-300, #cbd5e1); }
+    .ear__ecart--FOND { border-left-color: var(--prep-accent, #ca8a04); }
+    .ear__nature { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; border-radius: 999px; padding: 0 7px; margin-right: 4px; border: 1px solid; }
+    .ear__nature--FORME { color: var(--n-600, #475569); background: var(--n-50, #f8fafc); border-color: var(--n-200, #e2e8f0); }
+    .ear__nature--FOND { color: var(--prep-text, #854d0e); background: var(--prep-bg, #fef9c3); border-color: var(--prep-border, #fde047); }
+    .ear__compte { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 1px 9px; border: 1px solid; }
+    .ear__compte--forme { color: var(--n-600, #475569); background: var(--n-50, #f8fafc); border-color: var(--n-200, #e2e8f0); }
+    .ear__compte--fond { color: var(--prep-text, #854d0e); background: var(--prep-bg, #fef9c3); border-color: var(--prep-border, #fde047); }
+    .ear__filtre { display: inline-flex; gap: 5px; align-items: center; font-size: 12.5px; color: var(--n-700); margin-left: auto; cursor: pointer; }
     .ear__type { font-weight: 700; color: var(--n-800); }
     .ear__type small { font-weight: 400; color: var(--n-500); }
     .ear__texte { margin: 0; color: var(--n-700); line-height: 1.5; white-space: pre-wrap; }
@@ -90,6 +109,16 @@ export class EcartsArmp {
   readonly empreinte = input<string | null>(null);
 
   readonly libelle = LIBELLE;
+  /** « Le fond seulement » : n'affiche que les écarts que le juriste aura à valider. */
+  readonly fondSeul = signal(false);
+
+  nbFond(l: readonly EcartArmp[]): number {
+    return l.filter((e) => e.nature !== 'FORME').length;
+  }
+
+  affiches(l: readonly EcartArmp[]): readonly EcartArmp[] {
+    return this.fondSeul() ? l.filter((e) => e.nature !== 'FORME') : l;
+  }
   /** « Aller à l'endroit » : les passages à chercher dans la page, du plus précis au plus large. */
   readonly aller = output<string[]>();
 

@@ -194,14 +194,18 @@ export class ModelesPvListe implements OnInit {
   private readonly integresDao = signal<DocumentDaoIntegre[]>([]);
   readonly groupesDaoCalcules = computed(() => groupesDao(this.integresDao(), this.modeles()));
   /** Le nombre d'écarts au document type de la dernière version de chaque modèle du DAO, par sigle (lu après la liste). */
-  readonly ecartsDao = signal<Record<string, number>>({});
+  readonly ecartsDao = signal<Record<string, { fond: number; forme: number }>>({});
 
   private chargerEcartsDao(modeles: ModelePvResume[]): void {
     const dao = modeles.filter((m) => m.nature === 'DOCUMENT_DAO' && m.etat === 'ACTIF' && m.derniere && (m.sigles ?? []).length);
     if (!dao.length) return;
     forkJoin(dao.map((m) => this.service.ecarts(m.id, m.derniere!.numero).pipe(catchError(() => of(null)))))
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((l) => this.ecartsDao.set(Object.fromEntries(dao.flatMap((m, i) => (l[i] ? [[m.sigles![0], l[i]!.length]] : [])))));
+      .subscribe((l) =>
+        this.ecartsDao.set(
+          Object.fromEntries(dao.flatMap((m, i) => (l[i] ? [[m.sigles![0], { fond: l[i]!.filter((e) => e.nature !== 'FORME').length, forme: l[i]!.filter((e) => e.nature === 'FORME').length }]] : []))),
+        ),
+      );
   }
   readonly occupeDao = signal<string | null>(null);
   readonly messageDao = signal<string | null>(null);

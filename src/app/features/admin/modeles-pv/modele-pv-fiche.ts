@@ -426,8 +426,12 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
                     @if (enVigueur(); as ev) { La version {{ ev.numero }} passera « remplacée ». } Les PV déjà signés gardent la version qui les a produits.
                   }
                 </p>
+                @if (nbEcartsArmp() === 0 && nbEcartsForme() > 0) {
+                  <p class="alert alert-info"><span>{{ nbEcartsForme() }} correction{{ nbEcartsForme() > 1 ? 's' : '' }} de forme au document type de l’ARMP
+                    (orthographe, accords, ponctuation) : pas de validation du juriste.</span></p>
+                }
                 @if (nbEcartsArmp() > 0) {
-                  <p class="alert alert-warning"><span>Cette version s’écarte du document type de l’ARMP ({{ nbEcartsArmp() }} écart{{ nbEcartsArmp() > 1 ? 's' : '' }}) :
+                  <p class="alert alert-warning"><span>Cette version s’écarte du document type de l’ARMP sur le fond ({{ nbEcartsArmp() }} écart{{ nbEcartsArmp() > 1 ? 's' : '' }} de fond{{ nbEcartsForme() ? ', ' + nbEcartsForme() + ' de forme' : '' }}) :
                     sa mise en vigueur demande la validation du juriste.</span></p>
                   <label class="form-group">
                     <span class="form-label">Juriste qui a validé (nom)</span>
@@ -659,8 +663,13 @@ export class ModelePvFicheEcran implements OnInit {
   readonly documentMarche = computed(() => ['PROJET_MARCHE', 'DOCUMENT_DAO'].includes(this.fiche()?.nature ?? ''));
 
   // ——— ⚠️ 22/10 (D-ARMP) — la validation du juriste, exigée à la mise en vigueur d'une version qui s'écarte du document type ———
-  /** Le nombre d'écarts de la version choisie, lu sur son rapport (un point `ECART_ARMP` par écart). */
-  readonly nbEcartsArmp = computed(() => (this.version()?.rapport?.points ?? []).filter((p) => p.code === 'ECART_ARMP').length);
+  /**
+   * Les écarts de la version choisie, lus sur son rapport (un point `ECART_ARMP` par écart, préfixé « [forme] » ou « [fond] ») ;
+   * ⚠️ 23/10 (« ecarts-de-forme ») seul le fond demande le juriste.
+   */
+  private readonly pointsEcarts = computed(() => (this.version()?.rapport?.points ?? []).filter((p) => p.code === 'ECART_ARMP'));
+  readonly nbEcartsArmp = computed(() => this.pointsEcarts().filter((p) => !p.message.startsWith('[forme]')).length);
+  readonly nbEcartsForme = computed(() => this.pointsEcarts().filter((p) => p.message.startsWith('[forme]')).length);
   readonly juristeNom = signal('');
   readonly juristeQualite = signal('');
   readonly juristeDate = signal(new Date().toISOString().slice(0, 10));

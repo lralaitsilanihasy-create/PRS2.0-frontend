@@ -16,8 +16,8 @@ const FAMILLES: readonly { cle: string; titre: string; detail: string; types: re
  * document type de l'ARMP intégré tant qu'aucun modèle de l'application n'est en vigueur pour son sigle.
  *
  * ⚠️ 22/10 (présentation, 3e passe, demande du pilote) — un tableau croisé familles × catégories, en tuiles compactes : le sigle, le nom
- * seulement quand il dit plus que la ligne, l'état en point de couleur, et le nombre d'écarts au document type (ce que le juriste aura
- * à valider). Fond neutre ; le vert est réservé à ce qui est en vigueur. La tuile entière ouvre le modèle ; l'œil, au survol, ouvre le
+ * seulement quand il dit plus que la ligne, l'état en point de couleur, et le nombre d'écarts de fond au document type (ce que le
+ * juriste aura à valider ; ⚠️ 23/10 la forme passe sans lui). Fond neutre ; le vert est réservé à ce qui est en vigueur. La tuile entière ouvre le modèle ; l'œil, au survol, ouvre le
  * document type intégré.
  */
 @Component({
@@ -34,7 +34,7 @@ const FAMILLES: readonly { cle: string; titre: string; detail: string; types: re
         <dl class="mdo__chiffres">
           <div><dt>En vigueur</dt><dd class="mdo__chiffre--ok">{{ nb('ok') }}<small> / {{ total() }}</small></dd></div>
           <div><dt>À valider</dt><dd>{{ nb('prep') }}</dd></div>
-          <div><dt>Écarts à valider</dt><dd>{{ totalEcarts() }}</dd></div>
+          <div><dt>Écarts de fond (juriste)</dt><dd>{{ totalEcarts() }}</dd></div>
         </dl>
       </header>
 
@@ -56,8 +56,11 @@ const FAMILLES: readonly { cle: string; titre: string; detail: string; types: re
                       @if (nomUtile(l.libelle, f.titre); as nom) { <span class="mdo__nom" [title]="l.libelle">{{ nom }}</span> }
                       <span class="mdo__bas">
                         <span [class]="'mdo__etat mdo__etat--' + l.etat"><span class="mdo__point" aria-hidden="true"></span>{{ occupe() === l.sigle ? 'Création…' : etatCourt(l) }}</span>
-                        @if (ecarts()[l.sigle]; as n) { <span class="mdo__ecarts">{{ n }} écart{{ n > 1 ? 's' : '' }}</span> }
-                        @else if (l.modele && ecarts()[l.sigle] === 0) { <span class="mdo__conforme">conforme</span> }
+                        @if (ecarts()[l.sigle]; as e) {
+                          @if (e.fond) { <span class="mdo__ecarts">{{ e.fond }} de fond</span> }
+                          @else if (e.forme) { <span class="mdo__conforme">forme seulement</span> }
+                          @else { <span class="mdo__conforme">conforme</span> }
+                        }
                       </span>
                       <app-icone class="mdo__chev" nom="chev" [taille]="16" />
                     </button>
@@ -141,7 +144,7 @@ const FAMILLES: readonly { cle: string; titre: string; detail: string; types: re
 export class ModelesDao {
   readonly groupes = input.required<GroupeDao[]>();
   /** Le nombre d'écarts au document type, par sigle (dernière version de son modèle) ; absent tant qu'il n'est pas lu. */
-  readonly ecarts = input<Record<string, number>>({});
+  readonly ecarts = input<Record<string, { fond: number; forme: number }>>({});
   /** Ce qui est en cours : le sigle d'une création, ou « texte-<sigle> » pour une ouverture. */
   readonly occupe = input<string | null>(null);
   readonly agir = output<LigneDao>();
@@ -154,7 +157,8 @@ export class ModelesDao {
   );
   private readonly toutes = computed(() => this.groupes().flatMap((g) => g.lignes.map((l) => ({ l, cle: g.cle }))));
   readonly total = computed(() => this.toutes().length);
-  readonly totalEcarts = computed(() => Object.values(this.ecarts()).reduce((n, x) => n + x, 0));
+  /** Ce que le juriste aura à valider : les écarts de fond (la forme passe sans lui). */
+  readonly totalEcarts = computed(() => Object.values(this.ecarts()).reduce((n, x) => n + x.fond, 0));
 
   cellule(cle: string, types: readonly string[]): LigneDao[] {
     return this.toutes().filter((x) => x.cle === cle && types.includes(x.l.typeDocument)).map((x) => x.l);
