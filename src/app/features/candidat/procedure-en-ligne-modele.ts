@@ -1,4 +1,5 @@
 import { DocumentProcedureEnLigne, ProcedureEnLigne, RecuDao } from '../../models';
+import { maintenantServeur } from '../../core/horloge/heure-serveur';
 
 /**
  * ⚠️ 18/10 (pilote, refonte de la page de la procédure côté candidat) — les règles de présentation, sans Angular : le parcours du
@@ -144,7 +145,7 @@ export function grouperDocuments(docs: readonly DocumentProcedureEnLigne[]): Gro
  * Le temps qui reste avant la date limite, en clair : « dans 137 jours », « demain », « aujourd’hui », « dans 3 heures » ; `null`
  * passée ou illisible. Indicatif : l'heure qui fait foi est celle du serveur, que l'écran affiche à côté.
  */
-export function tempsRestant(dateLimite: string | null | undefined, maintenant: Date = new Date()): string | null {
+export function tempsRestant(dateLimite: string | null | undefined, maintenant: Date = maintenantServeur()): string | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/.exec(dateLimite ?? '');
   if (!m) return null;
   const limite = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4] ?? 23), Number(m[5] ?? 59));
@@ -166,7 +167,7 @@ export interface Jalon {
   fort?: boolean;
 }
 
-export function jalons(p: ProcedureEnLigne, maintenant: Date = new Date()): Jalon[] {
+export function jalons(p: ProcedureEnLigne, maintenant: Date = maintenantServeur()): Jalon[] {
   const passe = (iso: string | null | undefined): boolean => {
     const m = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/.exec(iso ?? '');
     return !!m && new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4] ?? 0), Number(m[5] ?? 0)).getTime() <= maintenant.getTime();
@@ -237,7 +238,7 @@ export function lignesProcedures(
   procedures: readonly ProcedureEnLigne[],
   amis: readonly AmiLigne[],
   categories: Readonly<Record<string, string>>,
-  maintenant: Date = new Date(),
+  maintenant: Date = maintenantServeur(),
 ): LigneProcedure[] {
   const lignes: LigneProcedure[] = [
     ...amis.map((a): LigneProcedure => ({

@@ -58,6 +58,27 @@ module.exports = tseslint.config(
     },
   },
   {
+    // ⚠️ 24/10 (« heure-serveur », back 1705d00) — l'heure de l'application est celle du SERVEUR : depuis l'horloge de recette
+    // (ADR-0016), il peut vivre à une autre date que le poste, et une date proposée à l'heure du poste serait refusée
+    // (DATE_ANTERIEURE / DATE_FUTURE). « Maintenant » passe donc par core/horloge/heure-serveur : maintenantServeur(),
+    // aujourdhuiServeur(), ou maintenantPoste() quand seul le poste a un sens (session, identifiant technique, brouillon local).
+    files: ["src/app/**/*.ts"],
+    ignores: ["src/app/**/*.spec.ts", "src/app/core/horloge/heure-serveur.ts"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "NewExpression[callee.name='Date'][arguments.length=0]",
+          message: "L'heure de l'application est celle du serveur : maintenantServeur() / aujourdhuiServeur() (core/horloge/heure-serveur).",
+        },
+        {
+          selector: "CallExpression[callee.object.name='Date'][callee.property.name='now']",
+          message: "L'heure de l'application est celle du serveur : maintenantServeur() ; maintenantPoste() si seul le poste a un sens.",
+        },
+      ],
+    },
+  },
+  {
     // Le module des fichiers sûrs EST l'implémentation de la garde : il lui faut l'appel brut.
     files: ["src/app/core/securite/fichiers-surs.ts"],
     rules: { "no-restricted-properties": "off" },

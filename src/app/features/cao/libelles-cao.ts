@@ -1,4 +1,5 @@
 import { EtatCao, EtatCeremonie, EtatCompteCao, EtatPart, EtatPartDeSecours, OrigineMembreCao } from '../../models';
+import { maintenantServeur } from '../../core/horloge/heure-serveur';
 
 /**
  * Soumission en ligne, lots 2a et 2b (04/10) — libellés de la commission d'appel d'offres et de la cérémonie des clés,
@@ -79,7 +80,7 @@ export interface ProchainPasCao {
  * ⚠️ 19/10 (pilote) — ce que « Mes procédures » dit au membre, d'un coup d'œil : sa clé d'abord (à publier, perdue, cérémonie
  * rouverte), puis le temps des dépôts, puis la séance et l'évaluation une fois la date limite passée.
  */
-export function prochainPasCao(p: { etatPart: EtatPart; etatCeremonie: EtatCeremonie | null; dateLimite: string | null }, maintenant = new Date()): ProchainPasCao {
+export function prochainPasCao(p: { etatPart: EtatPart; etatCeremonie: EtatCeremonie | null; dateLimite: string | null }, maintenant = maintenantServeur()): ProchainPasCao {
   if (p.etatPart === 'PERDUE') return { texte: 'Part perdue : remplacer ma clé', ton: 'alerte' };
   if (p.etatPart === 'ABSENTE' || p.etatCeremonie === 'A_REFAIRE') return { texte: p.etatCeremonie === 'A_REFAIRE' ? 'Cérémonie rouverte : republier ma clé' : 'Publier ma clé', ton: 'action' };
   if (p.etatCeremonie !== 'CLOSE') return { texte: 'Clé publiée : attendre la clôture de la cérémonie', ton: 'attente' };

@@ -4,6 +4,7 @@ import { TextAlign } from '@tiptap/extension-text-align';
 import { Color, FontFamily, FontSize, TextStyle } from '@tiptap/extension-text-style';
 import StarterKit from '@tiptap/starter-kit';
 import { TextSelection } from '@tiptap/pm/state';
+import { maintenantPoste } from '../../../../core/horloge/heure-serveur';
 
 /**
  * ⚠️ 21/10 (option C', demande « modele-pv-page ») — les extensions de l'éditeur de page, sur le schéma du serveur
@@ -228,7 +229,7 @@ export function extensionsPage(ctx: ContexteEditeur): Extensions {
       numeroterTitre: (gabarit) => ({ state, commands }) => {
         const titre = state.selection.$from.parent;
         if (titre.type.name !== 'heading') return false;
-        const id = gabarit ? ((titre.attrs['id'] as string | null) ?? `art-${Date.now().toString(36)}`) : titre.attrs['id'];
+        const id = gabarit ? ((titre.attrs['id'] as string | null) ?? `art-${maintenantPoste().toString(36)}`) : titre.attrs['id'];
         return commands.updateAttributes('heading', { numerotation: gabarit, id });
       },
     }),

@@ -34,6 +34,7 @@ import { Icone } from '../../shared/ui/icone';
 import { Actualite } from '../../models/actualite.model';
 import { ActualiteService } from '../../services/actualite.services';
 import { Dossier, estLocaliteCentrale, Role } from '../../models';
+import { HeureServeur } from '../../core/horloge/heure-serveur';
 
 /** Entrée de menu du Vérificateur portant le badge du nombre de dossiers restant à traiter. */
 const CHEMIN_A_VERIFIER = '/verificateur/a-verifier';
@@ -80,6 +81,13 @@ export function routeEnConcentration(racine: ActivatedRouteSnapshot | null): boo
 })
 export class MainLayout {
   private readonly auth = inject(AuthService);
+  /** ⚠️ 24/10 (« heure-serveur ») — la pastille « Heure de recette », quand le serveur est décalé. */
+  readonly heure = inject(HeureServeur);
+  readonly heureRecette = computed(() => {
+    const d = this.heure.maintenant();
+    const z = (n: number) => String(n).padStart(2, '0');
+    return `${z(d.getDate())}/${z(d.getMonth() + 1)}/${d.getFullYear()} ${z(d.getHours())}:${z(d.getMinutes())}`;
+  });
   private readonly router = inject(Router);
   private readonly prmpService = inject(PrmpService);
   private readonly controleurService = inject(ControleurService);

@@ -45,6 +45,7 @@ import {
   StatutMarcheService,
   TypePieceJointeService,
 } from '../../services';
+import { maintenantServeur } from '../../core/horloge/heure-serveur';
 
 type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
 
@@ -1181,7 +1182,7 @@ export class SoumettreDossier {
 
   readonly ppmForm = this.fb.nonNullable.group({
     idEntiteContract: [null as number | null, Validators.required],
-    exercice: [new Date().getFullYear(), Validators.required],
+    exercice: [maintenantServeur().getFullYear(), Validators.required],
     dateSignature: ['', Validators.required],
     marches: this.fb.array([] as FormGroup[]),
     // ⚠️ Fiche de présentation (2026-09-01) — « Justification : » globale, exigée par le serveur
@@ -1950,7 +1951,7 @@ export class SoumettreDossier {
     this.soaCreating.set(null);
     this.soaCreatingAll.set(false);
     // En-tête repris du PDF remis aux valeurs par défaut.
-    this.ppmForm.controls.exercice.setValue(new Date().getFullYear());
+    this.ppmForm.controls.exercice.setValue(maintenantServeur().getFullYear());
     this.ppmForm.controls.dateSignature.setValue('');
     this.ppmForm.controls.idEntiteContract.setValue(null);
   }

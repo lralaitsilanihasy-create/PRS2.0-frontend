@@ -9,6 +9,7 @@ import { DecisionReceptionCommande, ReceptionCommande, ReceptionsBon } from '../
 import { ReceptionsCommandesService } from '../../services';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 import { ariary } from '../evaluation/libelles-evaluation';
+import { maintenantServeur } from '../../core/horloge/heure-serveur';
 
 export const ETATS_RECEPTION_BON: Readonly<Record<string, { texte: string; classe: string }>> = {
   A_LIVRER: { texte: 'À livrer', classe: 'badge-neutral' },
@@ -60,7 +61,7 @@ export function refusReception(e: ApiError): string {
 }
 
 function aujourdhui(): string {
-  const d = new Date();
+  const d = maintenantServeur();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 

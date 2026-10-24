@@ -25,6 +25,7 @@ import { DossierContenuStore } from './dossier/dossier-contenu.store';
 import { DossierDocuments } from './dossier/dossier-documents';
 import { documentsDuDossier } from './dossier/documents-du-dossier';
 import { OngletPieceFournie, avecProcedure, ongletDuFichier } from './dossier/dossier-pieces';
+import { aujourdhuiServeur } from '../../core/horloge/heure-serveur';
 
 /** Ligne du contrôle de complétude : type attendu + pièce déposée (ou non) + dernière décision. */
 interface LigneControle {
@@ -114,7 +115,8 @@ export function elementDeLaPiece(t: TypePieceJointe, piece: PieceJointeDossier |
             </div>
             <div class="rf-tuile">
               <span class="rf-tuile__lbl">Date de réception</span>
-              <input class="form-control rf-tuile__date" type="date" formControlName="dateReception" />
+              <input class="form-control rf-tuile__date" type="date" formControlName="dateReception" aria-label="Date de réception" [max]="aujourdhui" (input)="dateErreur.set(null)" />
+              @if (dateErreur(); as m) { <span class="rf-date-erreur" role="alert">{{ m }}</span> }
             </div>
           </div>
 
@@ -242,6 +244,7 @@ export function elementDeLaPiece(t: TypePieceJointe, piece: PieceJointeDossier |
   `,
   styles: `
     .rf-modal { max-width: 48rem; }
+    .rf-date-erreur { display: block; margin-top: 0.25rem; font-size: var(--text-xs); color: var(--danger-text, #b91c1c); }
     .rf-donnees { width: 96vw; max-width: 96vw; height: 94vh; max-height: 94vh; display: flex; flex-direction: column; }
     .rf-donnees__ref { font-weight: 400; color: var(--n-500); font-size: 0.9rem; }
     .rf-donnees__corps { flex: 1; overflow: auto; padding: 0; }
@@ -335,6 +338,10 @@ export class ReceptionForm implements OnInit {
   libelleElement(cle: OngletPieceFournie): string { return this.elements().find((e) => e.cle === cle)?.libelle ?? 'Pièce'; }
 
   readonly submitting = signal(false);
+  /** Le jour du serveur : borne haute du champ de date (une réception ne se date pas dans le futur). */
+  readonly aujourdhui = aujourdhuiServeur();
+  /** Le refus du serveur sur la date (DATE_ANTERIEURE / DATE_FUTURE), affiché sous le champ. */
+  readonly dateErreur = signal<string | null>(null);
   readonly signalement = signal(false);
   readonly decisionEnCours = signal(false);
   readonly chargementCtrl = signal(true);
@@ -384,7 +391,7 @@ export class ReceptionForm implements OnInit {
   );
 
   readonly form = this.fb.nonNullable.group({
-    dateReception: [new Date().toISOString().slice(0, 10)],
+    dateReception: [aujourdhuiServeur()],
     observation: [''],
   });
 
@@ -566,7 +573,11 @@ export class ReceptionForm implements OnInit {
         this.submitting.set(false);
         this.saved.emit(created);
       },
-      error: (_e: ApiError) => this.submitting.set(false), // 400/403/409 → toast centralisé
+      error: (e: ApiError) => {
+        this.submitting.set(false); // 400/403/409 → dialogue centralisé
+        // ⚠️ 24/10 (back 1705d00) — une date avant la soumission, ou après l'heure du serveur : le message aussi sous le champ.
+        if (e.code === 'DATE_ANTERIEURE' || e.code === 'DATE_FUTURE') this.dateErreur.set(e.message);
+      },
     });
   }
 }

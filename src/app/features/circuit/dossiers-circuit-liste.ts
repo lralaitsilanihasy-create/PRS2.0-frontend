@@ -1,3 +1,4 @@
+import { aujourdhuiServeur } from '../../core/horloge/heure-serveur';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -610,7 +611,7 @@ export class DossiersCircuitListe {
         imCtrlDispatch: moi ?? disp.imCtrlDispatch,
         imCtrlCc: undefined,
         imCtrlMembre: moi ?? undefined,
-        dateDispatch: new Date().toISOString().slice(0, 10),
+        dateDispatch: aujourdhuiServeur(),
       };
       this.dispatchService.update(disp.idDispatch, body).subscribe({
         next: () => fin('Dossier repris : de retour dans vos dossiers à examiner.'),

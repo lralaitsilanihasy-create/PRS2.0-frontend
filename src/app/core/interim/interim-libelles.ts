@@ -1,4 +1,5 @@
 import { Controleur, Interim, MotifInterim, Role, StatutInterim } from '../../models';
+import { maintenantServeur } from '../horloge/heure-serveur';
 
 /**
  * Libellés et règles pures de l'intérim désigné (demande 2026-09-21, backend `e867082`) — fichier unique,
@@ -38,7 +39,7 @@ export function jusquA(i: Pick<Interim, 'dateFin'>): string {
 
 /** Date du jour au format ISO (`yyyy-MM-dd`), en heure locale — valeur par défaut des formulaires. */
 export function aujourdHuiIso(): string {
-  const d = new Date();
+  const d = maintenantServeur();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 

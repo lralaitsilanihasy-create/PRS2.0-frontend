@@ -6,6 +6,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { CommissionReception } from '../../models';
 import { ReceptionsCommandesService } from '../../services';
 import { refusReception } from './receptions-bon';
+import { maintenantServeur } from '../../core/horloge/heure-serveur';
 
 interface MembreSaisi {
   nom: string;
@@ -18,7 +19,7 @@ interface MembreSaisi {
 const MEMBRE_VIDE = (): MembreSaisi => ({ nom: '', prenom: '', email: '', fonction: '', president: false });
 
 function aujourdhui(): string {
-  const d = new Date();
+  const d = maintenantServeur();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 

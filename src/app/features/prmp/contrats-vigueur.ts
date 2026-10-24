@@ -12,6 +12,7 @@ import { ariary } from '../evaluation/libelles-evaluation';
 import { ProfilRemise, RemiseDetail, refusRemise } from '../remises/remise-detail';
 import { BonsCommandeContrat } from '../bons-commande/bons-commande-contrat';
 import { CommissionReceptionPanneau } from '../receptions/commission-reception';
+import { maintenantServeur } from '../../core/horloge/heure-serveur';
 
 const ALERTES: Readonly<Record<string, { texte: string; classe: string }>> = {
   RECONDUCTION_A_DECIDER: { texte: 'Reconduction à décider', classe: 'badge-warning' },
@@ -46,7 +47,7 @@ export function refusReconduction(e: ApiError): string {
 
 /** Aujourd'hui, au format des champs de date. */
 function aujourdhui(): string {
-  const d = new Date();
+  const d = maintenantServeur();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 

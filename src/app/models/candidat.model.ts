@@ -281,6 +281,8 @@ export interface Horloge {
   /** `AAAA-MM-JJTHH:MM:SS`, à l'heure de `fuseau`. */
   maintenant: string;
   fuseau: string;
+  /** ⚠️ 24/10 (back 1705d00) — le serveur est sur une horloge de recette décalée ; toujours `false` hors recette. */
+  decalee?: boolean;
 }
 
 /** Une pièce attendue dans l'offre (`GET /api/procedures-en-ligne/{idDmc}/pieces`, public). `code` rattache un fichier à la pièce. */

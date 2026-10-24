@@ -1,5 +1,6 @@
 import { FormulairesOffre, NatureDebourse, TotauxOffre } from '../../core/securite/scellement';
 import { ArticleBesoin, BesoinEnLigne, LotBesoin } from '../../models';
+import { maintenantServeur } from '../../core/horloge/heure-serveur';
 
 /**
  * L'**offre des travaux, lot 5b** (`demande-backend-2026-10-05-formulaires-en-ligne`) : coefficient K1, sous-détail des prix,
@@ -94,7 +95,7 @@ export function prixSousDetail(sd: { rendement: number | null; lignes: LigneDebo
 /** Les exercices demandés : les `annees` dernières années complètes avant celle de la date limite, la plus récente d'abord. */
 export function exercices(lot: LotBesoin, dateLimite: string | null): number[] {
   const n = lot.qualification?.chiffreAffaires?.annees || 5;
-  const ref = dateLimite ? Number(dateLimite.slice(0, 4)) : new Date().getFullYear();
+  const ref = dateLimite ? Number(dateLimite.slice(0, 4)) : maintenantServeur().getFullYear();
   return Array.from({ length: n }, (_, i) => ref - 1 - i);
 }
 
@@ -117,7 +118,7 @@ export function seuilLiquidite(lot: LotBesoin, ttc: number): number | null {
 /** Les références retenues : celles de la période, les `nombre` meilleures ; leur cumul (ou la meilleure, sans cumul). */
 export function referencesRetenues(lot: LotBesoin, s: SaisieTravaux, dateLimite: string | null): number {
   const r = lot.qualification?.references;
-  const ref = dateLimite ? Number(dateLimite.slice(0, 4)) : new Date().getFullYear();
+  const ref = dateLimite ? Number(dateLimite.slice(0, 4)) : maintenantServeur().getFullYear();
   const recevables = s.references.filter((x) => x.montant && x.annee && (!r?.annees || x.annee >= ref - r.annees)).map((x) => x.montant!);
   const tri = recevables.sort((a, b) => b - a).slice(0, r?.cumul ? r.nombre || recevables.length : 1);
   return tri.reduce((x, v) => x + v, 0);

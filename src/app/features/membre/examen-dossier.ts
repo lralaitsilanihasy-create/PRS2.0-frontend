@@ -136,6 +136,7 @@ import { ExamenParcours } from './examen/examen-parcours';
 import { ExamenSynthese } from './examen/examen-synthese';
 import { PreControlePanneau } from '../../shared/pre-controle';
 import { ControlesDossier } from '../../shared/circuit/controles-dossier';
+import { aujourdhuiServeur, maintenantPoste, maintenantServeur } from '../../core/horloge/heure-serveur';
 
 type OngletDocument = 'ppm' | 'fiche' | 'agpm' | 'dao' | 'presentation' | 'avis' | 'plan' | 'bordereau' | 'canevas' | 'pieces';
 /** Les onglets qui portent des annotations (état d'examen, versionnement) : les vues de données du dossier DAO n'en ont pas. */
@@ -773,7 +774,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
   private readonly delais = signal<DelaiStandard[]>([]);
   readonly delai = computed(() => delaiExamen(this.chrono(), this.delais()));
 
-  readonly dateExamen = signal(new Date().toISOString().slice(0, 10));
+  readonly dateExamen = signal(aujourdhuiServeur());
   /**
    * Avis global du PV — ÉMIS PAR LE MEMBRE à la soumission (⚠️ visa unique 2026-08-31, règle du
    * 01/08 inversée), modifiable tant que le PV est entre ses mains ; le Président/CC peut encore
@@ -912,7 +913,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
   allerInformation(code: string): void {
     if (this.dossier()?.idDmc == null) return;
     if (this.ongletAffiche() !== 'dao') this.ongletContenu.set('dao');
-    this.ficheCible.set({ code, jeton: Date.now() });
+    this.ficheCible.set({ code, jeton: maintenantPoste() });
   }
   /** ⚠️ 18/10 (pilote, lot C) — la largeur de la grille, réglée à la poignée et retenue par le navigateur. */
   readonly largeurGrille = signal<string | null>((() => { try { return localStorage.getItem('cnm.examen.largeur-grille'); } catch { return null; } })());
@@ -2565,7 +2566,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
     return (ev.target as HTMLInputElement).value;
   }
   private heureCourante(): string {
-    const d = new Date();
+    const d = maintenantServeur();
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   }
   /** Valeur affichée d'une cellule du plan (pré-remplissage « Au lieu de » depuis la cellule visée). */

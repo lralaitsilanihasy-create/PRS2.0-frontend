@@ -10,6 +10,7 @@ import { NotificationsStore } from '../../core/notifications/notifications.store
 import { Dossier, Notification, Role } from '../../models';
 import { DossierService, NotificationService } from '../../services';
 import { DossierConsultation } from '../circuit/dossier-consultation';
+import { maintenantServeur } from '../../core/horloge/heure-serveur';
 
 /** Les sigles d'un code de notification, gardés en capitales dans son libellé. */
 const SIGLES: ReadonlySet<string> = new Set(['PV', 'CC', 'PRMP', 'UGPM', 'CAO', 'AMI', 'DAO', 'DMC', 'PPM', 'AGPM', 'SIGMP', 'AE', 'PI', 'CNM', 'ARMP']);
@@ -369,7 +370,7 @@ export class NotificationsPage {
     const d = new Date(iso);
     if (isNaN(d.getTime())) return 'Sans date';
     const jour = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    const auj = new Date();
+    const auj = maintenantServeur();
     const aujJour = new Date(auj.getFullYear(), auj.getMonth(), auj.getDate());
     const diff = Math.round((aujJour.getTime() - jour.getTime()) / 86_400_000);
     if (diff === 0) return "Aujourd'hui";

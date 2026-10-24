@@ -7,6 +7,7 @@ import { PublicationAgpm } from '../../models';
 import { DossierService } from '../../services';
 import { ModaleDirective } from '../a11y/modale.directive';
 import { horodatage, jjmmaaaa } from '../prmp/avis-specifique-modele';
+import { aujourdhuiServeur } from '../../core/horloge/heure-serveur';
 
 type Champ = 'fichier' | 'journal' | 'numero' | 'dateParution' | 'referenceAgpm';
 
@@ -132,7 +133,7 @@ export class PublicationAgpmPanneau implements OnInit {
     const s = this.saisie();
     return this.fichier() !== null && !!s.journal.trim() && !!s.dateParution && !!s.referenceAgpm.trim();
   });
-  readonly aujourdhui = new Date().toISOString().slice(0, 10);
+  readonly aujourdhui = aujourdhuiServeur();
   readonly jj = jjmmaaaa;
   readonly quand = horodatage;
 

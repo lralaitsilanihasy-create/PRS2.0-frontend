@@ -19,6 +19,7 @@ import { OffreTravauxFormulaires } from './offre-travaux-formulaires';
 import { RabaisOffreSaisie, controlerRabais } from './rabais-offre';
 import { avertissementsTravaux, construireTravaux, saisieTravauxVide } from './offre-travaux';
 import { RecapitulatifOffre, construireRecapitulatif, imprimerRecapitulatif } from './recapitulatif-offre';
+import { maintenantPoste } from '../../core/horloge/heure-serveur';
 
 /** ⚠️ V86 (PI-b) — le nom de l'enveloppe, tel qu'on le dit au candidat. */
 const LIBELLES_ENVELOPPE: Readonly<Record<EnveloppeOffre, string>> = { TECHNIQUE: 'enveloppe technique', FINANCIERE: 'enveloppe financière' };
@@ -500,7 +501,7 @@ export class DepotOffre implements OnInit, OnDestroy {
   private minuterieBrouillon: ReturnType<typeof setTimeout> | undefined;
   private readonly instantane = computed<BrouillonOffre>(() => ({
     v: 1,
-    enregistreLe: new Date().toISOString(),
+    enregistreLe: new Date(maintenantPoste()).toISOString(),
     dateLimite: this.procedure()?.dateLimite ?? null,
     lot: this.lot(),
     enGroupement: this.enGroupement(),
@@ -524,7 +525,7 @@ export class DepotOffre implements OnInit, OnDestroy {
 
   /** Écart entre l'horloge du serveur et celle du poste, en ms : le temps restant se compte à l'heure du serveur. */
   private ecartHorloge = 0;
-  readonly maintenant = signal(Date.now());
+  readonly maintenant = signal(maintenantPoste());
   private minuterie: ReturnType<typeof setInterval> | undefined;
 
   readonly occupe = computed(() => !['saisie', 'fait'].includes(this.phase()));
@@ -588,7 +589,7 @@ export class DepotOffre implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.charger();
-    this.minuterie = setInterval(() => this.maintenant.set(Date.now()), 30_000);
+    this.minuterie = setInterval(() => this.maintenant.set(maintenantPoste()), 30_000);
   }
 
   ngOnDestroy(): void {
@@ -614,8 +615,8 @@ export class DepotOffre implements OnInit, OnDestroy {
         this.pieces.set(pieces);
         this.entreprise.set(entreprise);
         this.recuValide.set(procedure.retraitPayant && recu?.etat === 'VALIDE' ? recu : null);
-        this.ecartHorloge = new Date(horloge.maintenant).getTime() - Date.now();
-        this.maintenant.set(Date.now());
+        this.ecartHorloge = new Date(horloge.maintenant).getTime() - maintenantPoste();
+        this.maintenant.set(maintenantPoste());
         this.document.title = `Dépôt — ${procedure.reference || 'procédure'} — Espace candidat — PRS 2.0`;
         if (entreprise.exclusion) this.bloquant.set(messageExclusion(entreprise.exclusion));
         else if (!procedure.depotsOuverts) {

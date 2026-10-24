@@ -12,6 +12,7 @@ import { dateFr } from '../../core/interim/interim-libelles';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 import { ariary } from './libelles-evaluation';
 import { TitulairesProposes } from './titulaires-proposes';
+import { maintenantServeur } from '../../core/horloge/heure-serveur';
 
 const MESSAGES: Readonly<Record<string, string>> = {
   AVIS_NON_RENDU: 'La Commission n’a pas encore rendu son avis sur le dossier de marché.',
@@ -91,7 +92,7 @@ export function messagePieceTropAncienne(e: ApiError): string {
 
 /** Aujourd'hui, au format des champs de date (`AAAA-MM-JJ`), à l'heure locale. */
 function aujourdhui(): string {
-  const d = new Date();
+  const d = maintenantServeur();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 

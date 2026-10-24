@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { ActeEngagementSaisi, TotauxOffre } from '../../core/securite/scellement';
 import { EnveloppeOffre, LotBesoin, PieceAttendue } from '../../models';
 import { SaisieOffre, calculerTotaux, montantLigne, quantites } from './offre-financiere';
+import { maintenantServeur } from '../../core/horloge/heure-serveur';
 
 /**
  * ⚠️ 19/10 (pilote, « copie-offre-candidat ») — le **récapitulatif de l'offre** : ce que le candidat a saisi, mis en forme pour être
@@ -95,7 +96,7 @@ export function construireRecapitulatif(e: ElementsRecapitulatif): Recapitulatif
   const libelleDe = (code: string): string => e.piecesAttendues.find((p) => p.code === code)?.libelle ?? code;
   return {
     v: 1,
-    genereLe: e.maintenant ?? new Date().toISOString(),
+    genereLe: e.maintenant ?? maintenantServeur().toISOString(),
     procedure: e.procedure,
     entreprise: e.entreprise,
     groupement: e.groupement,

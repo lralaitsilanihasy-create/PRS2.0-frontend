@@ -10,6 +10,7 @@ import {
   PpmService,
   RegleAlerteService,
 } from '../../services';
+import { maintenantServeur } from '../../core/horloge/heure-serveur';
 
 /** Alerte d'un jalon d'une ligne : imminent (dans ≤ seuil jours) ou en retard (prévu dépassé, pas de réel). */
 interface AlerteJalon {
@@ -155,7 +156,7 @@ export class CalendrierMarches implements OnInit {
       l.push(e);
       echParDetail.set(e.idDetail, l);
     }
-    const aujourdhui = this.isoJour(new Date());
+    const aujourdhui = this.isoJour(maintenantServeur());
     return this.marches()
       .filter((m) => !m.supprimee)
       .map((m) => {

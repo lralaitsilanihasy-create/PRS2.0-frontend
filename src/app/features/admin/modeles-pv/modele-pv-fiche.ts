@@ -49,6 +49,7 @@ import {
   tailleLisible,
 } from './modeles-pv-libelles';
 import { RapportControlePv } from './rapport-controle-pv';
+import { aujourdhuiServeur } from '../../../core/horloge/heure-serveur';
 
 type Onglet = 'depot' | 'variables' | 'champs' | 'apercu';
 type Modale = 'vigueur' | 'dupliquer' | 'archiver' | 'supprimerVersion' | 'supprimer' | null;
@@ -675,7 +676,7 @@ export class ModelePvFicheEcran implements OnInit {
   readonly nbEcartsForme = computed(() => this.ecartsVersion().filter((e) => e.nature === 'FORME').length);
   readonly juristeNom = signal('');
   readonly juristeQualite = signal('');
-  readonly juristeDate = signal(new Date().toISOString().slice(0, 10));
+  readonly juristeDate = signal(aujourdhuiServeur());
   readonly categoriesMarche = CATEGORIES_MARCHE;
   readonly categoriesCochees = signal<CategorieMarche[]>([]);
   readonly categoriesModifiees = computed(() => [...this.categoriesCochees()].sort().join() !== [...(this.fiche()?.categories ?? [])].sort().join());

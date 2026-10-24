@@ -1,3 +1,4 @@
+import { maintenantServeur } from '../../core/horloge/heure-serveur';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
@@ -530,7 +531,7 @@ export class AdminAccueil {
    * Instant de référence des ancienneté, figé au chargement : sans lui, deux lectures du même signal
    * à quelques millisecondes d'écart donneraient deux libellés, et les tests n'auraient pas de prise.
    */
-  private readonly maintenant = signal(new Date());
+  private readonly maintenant = signal(maintenantServeur());
 
   constructor() {
     this.charger();
@@ -556,7 +557,7 @@ export class AdminAccueil {
     this.erreur.set(false);
     this.kpi.badgesAdmin().subscribe({
       next: (b) => {
-        this.maintenant.set(new Date());
+        this.maintenant.set(maintenantServeur());
         this.compteurs.set(b.compteurs);
         this.chargement.set(false);
       },
@@ -602,7 +603,7 @@ export class AdminAccueil {
     forkJoin({ toutes: this.actualites.list(), parametre: this.parametres.lire() }).subscribe({
       next: ({ toutes, parametre }) => {
         this.actualitesActives.set(parametre.actif);
-        this.affichees.set(parametre.actif ? trierAffichees(toutes, new Date()) : []);
+        this.affichees.set(parametre.actif ? trierAffichees(toutes, maintenantServeur()) : []);
         this.actuChargement.set(false);
       },
       error: () => {

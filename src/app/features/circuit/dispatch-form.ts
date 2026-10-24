@@ -1,3 +1,4 @@
+import { aujourdhuiServeur } from '../../core/horloge/heure-serveur';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { catchError, concatMap, forkJoin, from, map, of, toArray } from 'rxjs';
@@ -245,7 +246,7 @@ export class DispatchForm {
   readonly form = this.fb.nonNullable.group({
     imCtrlCc: [null as string | null],
     imCtrlMembre: [null as string | null, Validators.required],
-    dateDispatch: [new Date().toISOString().slice(0, 10)],
+    dateDispatch: [aujourdhuiServeur()],
     instructions: [''],
   });
 

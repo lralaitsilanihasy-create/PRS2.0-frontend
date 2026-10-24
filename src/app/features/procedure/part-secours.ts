@@ -21,6 +21,7 @@ import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { LIBELLES_ETAT_PART, classePart } from '../cao/libelles-cao';
 import { dateHeureFr } from '../candidat/libelles-candidat';
+import { maintenantServeur } from '../../core/horloge/heure-serveur';
 
 /** Qui regarde la part de secours : son détenteur (le dépositaire) ou le responsable de la procédure. */
 export type VuePartSecours = 'depositaire' | 'responsable';
@@ -260,7 +261,7 @@ export class PartSecours {
       'PRS 2.0 — PLI SCELLÉ DE LA PART DE SECOURS',
       `Procédure n° ${this.idDmc()}`,
       `Dépositaire : ${d?.nom ?? '—'}${d?.organisme ? ` (${d.organisme})` : ''}`,
-      `Imprimé le ${new Date().toLocaleString('fr-FR')}`,
+      `Imprimé le ${maintenantServeur().toLocaleString('fr-FR')}`,
       '',
       'PHRASE SECRÈTE (à saisir vous-même pour apporter la part, si la séance d’ouverture la demande) :',
       p.phrase,

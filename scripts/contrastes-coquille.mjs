@@ -142,6 +142,10 @@ nouveau('Bouton « Assistant IA » — libellé au repos', 4.5, '#075985', '#f0f
 nouveau('Bouton « Assistant IA » — libellé ouvert ou survolé', 4.5, '#075985', '#e0f2fe');
 nouveau('Repère de focus du bouton « Assistant IA »', 3, '#0369a1', '#ffffff');
 
+// ⚠️ 24/10 (« heure-serveur ») — la pastille « Heure de recette » de la barre du haut (horloge de recette décalée, recette seulement).
+nouveau('Pastille « Heure de recette » — texte sur fond ambre', 4.5, '#92400e', '#fef3c7');
+nouveau('Pastille « Heure de recette » — liseré sur blanc', 3, '#d97706', '#ffffff');
+
 // ── ENTRÉE PUBLIQUE (proposition 2026-09-22) — hors coquille, mais mêmes jetons : mesurée ici, même garde-fou ──
 // Bannière : dégradé #082f49 → #0c4a6e → #0d5578 ; le pire cas pour un texte clair est le bout le plus CLAIR
 // (#0f6a94, premier jet, laissait l'or à 3,69:1 : le bout clair a été assombri, pas l'or éclairci).

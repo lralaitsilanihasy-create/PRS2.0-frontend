@@ -287,6 +287,10 @@
     }
   </div>
   <div class="topbar-right">
+    <!-- ⚠️ 24/10 (« heure-serveur ») — le serveur de recette vit sur une horloge décalée (ADR-0016) : l'heure qui fait foi est rappelée ici. -->
+    @if (heure.decalee()) {
+      <span class="topbar-recette" role="status" title="Serveur de recette sur une horloge décalée : les dates proposées et les délais suivent cette heure.">Heure de recette : {{ heureRecette() }}</span>
+    }
     @if (login()) {
       <!-- Assistant IA (lot 1, 2026-09-18) — proposé seulement s'il est actif côté serveur. Un bouton
            de la barre du haut plutôt qu'une entrée de menu : c'est un outil transverse, pas une page,

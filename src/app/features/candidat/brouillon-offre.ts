@@ -1,6 +1,7 @@
 import { ActeEngagementSaisi } from '../../core/securite/scellement';
 import { SaisieOffre } from './offre-financiere';
 import { SaisieTravaux } from './offre-travaux';
+import { maintenantPoste } from '../../core/horloge/heure-serveur';
 
 /**
  * Le **brouillon local** d'une offre en cours de saisie (lot 5, H4 — « le front garde un brouillon local, sans prix en clair
@@ -33,7 +34,7 @@ export function cleBrouillon(login: string, idDmc: number): string {
   return `${PREFIXE}:${login.toLowerCase()}:${idDmc}`;
 }
 
-export function lireBrouillon(cle: string, maintenant = Date.now()): BrouillonOffre | null {
+export function lireBrouillon(cle: string, maintenant = maintenantPoste()): BrouillonOffre | null {
   try {
     const brut = localStorage.getItem(cle);
     if (!brut) return null;

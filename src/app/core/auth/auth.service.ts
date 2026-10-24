@@ -17,6 +17,7 @@ import {
   TypeActeur,
 } from '../../models';
 import { skipErrorToast } from '../errors/api-error';
+import { maintenantPoste } from '../horloge/heure-serveur';
 
 /**
  * Session persistée = réponse de login SANS LE JETON + date d'expiration calculée (epoch ms).
@@ -103,7 +104,7 @@ export class AuthService {
   /** Vrai si une session non expirée est présente (le jeton lui-même vit dans le cookie HttpOnly). */
   readonly isAuthenticated = computed(() => {
     const s = this.session();
-    return !!s && Date.now() < s.expiresAt;
+    return !!s && maintenantPoste() < s.expiresAt;
   });
 
   /**
@@ -211,7 +212,7 @@ export class AuthService {
   private persist(res: LoginResponse, remember: boolean): void {
     // ⚠️ Phase 2 : le jeton est ÉCARTÉ avant toute persistance — il vit dans le cookie HttpOnly.
     const { token: _jeton, ...profil } = res;
-    const stored: StoredSession = { ...profil, expiresAt: Date.now() + res.expiresIn * 1000 };
+    const stored: StoredSession = { ...profil, expiresAt: maintenantPoste() + res.expiresIn * 1000 };
     this.session.set(stored);
     const primary = remember ? localStorage : sessionStorage;
     const secondary = remember ? sessionStorage : localStorage;
@@ -222,7 +223,7 @@ export class AuthService {
 
   /**
    * Déconnexion automatique à l'échéance du jeton. Sans cette minuterie,
-   * `isAuthenticated` (mémoïsé sur la session seule, `Date.now()` n'étant pas
+   * `isAuthenticated` (mémoïsé sur la session seule, `maintenantPoste()` n'étant pas
    * réactif) resterait vrai après expiration, jusqu'au premier 401 serveur.
    */
   private armerExpiration(expiresAt: number): void {
@@ -230,7 +231,7 @@ export class AuthService {
     this.expirationTimer = setTimeout(() => {
       this.logout();
       this.router.navigate(['/login']);
-    }, Math.max(0, expiresAt - Date.now()));
+    }, Math.max(0, expiresAt - maintenantPoste()));
   }
 
   /**
@@ -246,7 +247,7 @@ export class AuthService {
     }
     try {
       const brut = JSON.parse(raw) as StoredSession & { token?: string | null };
-      if (!brut.login || Date.now() >= brut.expiresAt) {
+      if (!brut.login || maintenantPoste() >= brut.expiresAt) {
         this.clearStorage();
         return null;
       }

@@ -18,6 +18,7 @@ export * from './assistant-ia.services';
 export * from './pre-controle.services';
 export * from './fiche-marche.services';
 export * from './candidat.services';
+export * from './horloge.services';
 export * from './cao.services';
 export * from './evaluation.services';
 export * from './ami.services';

@@ -6,6 +6,7 @@ import { TYPES_PIECE, ouvrirBlobSur, validerFichier } from '../../core/securite/
 import { ProcedureEnLigne, RecuDao } from '../../models';
 import { ProceduresEnLigneService } from '../../services';
 import { dateHeureFr } from './libelles-candidat';
+import { aujourdhuiServeur } from '../../core/horloge/heure-serveur';
 
 const LIBELLES_ETAT: Readonly<Record<RecuDao['etat'], string>> = {
   EN_ATTENTE: 'En attente de validation',
@@ -136,7 +137,7 @@ export class FraisDossier implements OnInit {
 
   readonly etats = LIBELLES_ETAT;
   readonly dateHeure = dateHeureFr;
-  readonly aujourdhui = new Date().toISOString().slice(0, 10);
+  readonly aujourdhui = aujourdhuiServeur();
 
   readonly chargement = signal(true);
   readonly formulaire = signal(false);

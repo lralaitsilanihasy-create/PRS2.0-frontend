@@ -1,3 +1,4 @@
+import { aujourdhuiServeur } from '../../core/horloge/heure-serveur';
 import { ChangeDetectionStrategy, Component, OnDestroy, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
@@ -601,7 +602,7 @@ export class DispatchsControleurs implements OnDestroy {
         imCtrlDispatch: moi ?? r.a.dispatch.imCtrlDispatch,
         imCtrlCc: undefined,
         imCtrlMembre: moi ?? undefined,
-        dateDispatch: new Date().toISOString().slice(0, 10),
+        dateDispatch: aujourdhuiServeur(),
       };
       this.dispatchService.update(r.a.dispatch.idDispatch, body).subscribe({
         next: () => fin('Dossier repris : de retour dans vos dossiers à examiner.'),
