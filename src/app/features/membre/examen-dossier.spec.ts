@@ -231,7 +231,7 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
     expect(lignes.tagName).toBe('BUTTON');
     expect(lignes.getAttribute('aria-current')).toBe('step');
     expect(lignes.textContent).toContain('0 sur 3');
-    expect(etapeParcours('Pièces jointes').textContent).toContain('0 sur 2');
+    expect(etapeParcours('Contrôle des pièces').textContent).toContain('0 sur 2');
     expect(etapeParcours('Grille du dossier').textContent).toContain('À faire');
 
     valider(); // ligne 1 : RAS par défaut
@@ -341,8 +341,8 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
     expect(groupe('Lignes du plan')).toContain('1 observation');
     expect(groupe('Lignes du plan')).toContain('Ligne 2');
     expect(groupe('Lignes du plan')).toContain('2 lignes sans observation');
-    expect(groupe('Pièces jointes')).toContain('Pièce 2');
-    expect(groupe('Pièces jointes')).toContain('Document non signé par la PRMP');
+    expect(groupe('Contrôle des pièces')).toContain('Pièce 2');
+    expect(groupe('Contrôle des pièces')).toContain('Document non signé par la PRMP');
     expect(groupe('Grille du dossier')).toContain('RAS');
     expect(Array.from(racine().querySelectorAll('.o__n')).map((n) => n.textContent?.trim())).toEqual(['1', '2']);
     expect(texte('.recap__consigne')).toContain('lignes 2 et 3 ; observations sur la ligne 2.');

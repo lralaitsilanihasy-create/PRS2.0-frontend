@@ -1660,7 +1660,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       eyebrow: 'Grille du dossier',
       titre: this.estPpm() ? 'Points inter-lignes : fractionnement, cohérence' : 'Points de contrôle du dossier',
       raison: raison('la grille du dossier'),
-      libelleValider: this.grilleAvantPieces() && this.nbPieces() ? 'Valider la grille et passer aux pièces jointes' : 'Valider la grille du dossier',
+      libelleValider: this.grilleAvantPieces() && this.nbPieces() ? 'Valider la grille et passer au contrôle des pièces' : 'Valider la grille du dossier',
       libellePrecedent: precedent,
     };
   });
