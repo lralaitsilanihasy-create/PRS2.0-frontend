@@ -30,12 +30,28 @@ dossiers de l'exercice. Le segment du sous-type reste dans la référence ; seul
 - Il repart à 1 chaque année, comme aujourd'hui.
 - Le **compteur des lettres de renvoi** (`LETTRE`) ne change pas.
 
+> ⚠️ **2026-10-27, livré (backend)**
+> - **`ReferenceService.generer` n'a plus de clé de famille.** Tous les dossiers reçus d'un exercice prennent leur numéro dans une
+>   seule ligne de compteur, `t_sequence_reference` (`TOUS`, `DOSSIER`, exercice). Le compteur est national et repart à 1 chaque
+>   année.
+> - **Rien d'autre ne change** : la réception reste le seul moment où un numéro s'attribue, le segment de sous-type est inchangé,
+>   et le PV garde le numéro de son dossier.
+> - **Les autres compteurs restent séparés** : les lettres de renvoi (`LR` / `LETTRE`) et les références PPM par entité
+>   (`PPM_REF`).
+
 ## N2 — Le passage à la nouvelle règle
 
 - **Les références déjà attribuées ne changent pas.** Elles sont imprimées sur des PV signés et sur les accusés de réception.
 - Pour l'exercice en cours, le compteur unique **reprend après le plus grand numéro déjà attribué**, toutes familles confondues : en
   recette 2026, le prochain dossier reçu porte **00005**, quel que soit son type.
 - Migration de données : le backend décide de sa forme (une ligne de compteur par exercice, initialisée au maximum par exercice).
+
+> ⚠️ **2026-10-27, livré (backend) — migration V143**, sous la forme proposée
+> - **Pour chaque exercice déjà ouvert**, une ligne `TOUS` est initialisée au plus grand des compteurs par famille de cet exercice.
+>   En recette 2026, ces compteurs valent DDP 1, DMC 4, DDM 1 et DSS 0. Le compteur unique part donc de 4, et **le prochain dossier
+>   reçu porte 00005**. Ce sera le dossier de marché 100387 s'il est reçu le premier.
+> - **Les compteurs par famille restent en base**, figés : ils ne sont plus incrémentés. Aucune référence attribuée n'est modifiée.
+> - **La migration s'appliquera au prochain redémarrage du backend de recette.**
 
 ## Arbitrages du pilote (27/10)
 
