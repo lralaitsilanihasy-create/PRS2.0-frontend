@@ -32,7 +32,8 @@ const notifSansEcran = (idDossier?: number): Notification => ({
   titre: 'Dossier clôturé',
   corps: 'Le dossier 42 a été clôturé.',
   dateEnvoi: '2026-09-15T09:00:00',
-  lu: true,
+  // ⚠️ 27/10 — le panneau ne montre que les non lues.
+  lu: false,
 });
 
 describe('Cloche — notification sans écran dédié (lot L5-F6)', () => {
@@ -92,6 +93,13 @@ describe('Cloche — notification sans écran dédié (lot L5-F6)', () => {
     });
   }
 
+  it('une notification lue disparaît du panneau (pilote, 27/10)', async () => {
+    const { hote } = await monter('MEMBRE', [{ ...notifSansEcran(42), lu: true }, { ...notifSansEcran(43), idNotification: 8, titre: 'Non lue' }]);
+    const items = hote.querySelectorAll('.notif__item');
+    expect(items.length).toBe(1);
+    expect(items[0].textContent).toContain('Non lue');
+  });
+
   it('sans objet, la mention ne parle pas de dossier', async () => {
     const { hote } = await monter('CHARGE_PUBLICATION', [notifSansEcran(undefined)]);
     expect(hote.querySelector('.notif__item-note')?.textContent?.trim()).toBe(
@@ -101,13 +109,14 @@ describe('Cloche — notification sans écran dédié (lot L5-F6)', () => {
 
   it("Chargé de publication : une notification qui, elle, a son écran reste actionnable", async () => {
     const { fixture, http, hote } = await monter('CHARGE_PUBLICATION', [
-      { ...notifSansEcran(42), typeNotif: 'CLOTURE_ELIGIBLE', lu: true },
+      { ...notifSansEcran(42), typeNotif: 'CLOTURE_ELIGIBLE' },
     ]);
     expect(hote.querySelector('.notif__item--inerte')).toBeNull();
     const bouton = hote.querySelector('button.notif__item') as HTMLButtonElement;
     expect(bouton).not.toBeNull();
 
     bouton.click();
+    http.expectOne('/api/notifications/7/lu').flush({});
     await fixture.whenStable();
     // L'écran d'action est atteint sans passer par le serveur.
     http.expectNone('/api/dossiers/42');
@@ -121,6 +130,7 @@ describe('Cloche — notification sans écran dédié (lot L5-F6)', () => {
     expect(bouton).not.toBeNull();
 
     bouton.click();
+    http.expectOne('/api/notifications/7/lu').flush({});
     await fixture.whenStable();
     http.expectNone('/api/dossiers/42');
     expect(TestBed.inject(Router).url).toContain('/membre/dossier/42');
@@ -128,10 +138,11 @@ describe('Cloche — notification sans écran dédié (lot L5-F6)', () => {
 
   it("Administrateur : une notification routée (inscription) reste un bouton", async () => {
     const { fixture, http, hote } = await monter('ADMINISTRATEUR', [
-      { ...notifSansEcran(undefined), typeNotif: 'NOUVELLE_INSCRIPTION', typeObjet: 'COMPTE', lu: true },
+      { ...notifSansEcran(undefined), typeNotif: 'NOUVELLE_INSCRIPTION', typeObjet: 'COMPTE' },
     ]);
     expect(hote.querySelector('.notif__item--inerte')).toBeNull();
     (hote.querySelector('button.notif__item') as HTMLButtonElement).click();
+    http.expectOne('/api/notifications/7/lu').flush({});
     await fixture.whenStable();
     http.expectNone('/api/dossiers/42');
     expect(TestBed.inject(Router).url).toBe('/admin/inscriptions');

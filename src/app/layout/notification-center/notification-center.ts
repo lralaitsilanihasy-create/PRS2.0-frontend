@@ -79,7 +79,7 @@ const MESSAGERIE_ROLES: Record<string, string> = {
                   </button>
                 }
               } @empty {
-                <p class="notif__info">Aucune notification.</p>
+                <p class="notif__info">Aucune notification non lue.</p>
               }
             }
           </div>
@@ -140,8 +140,10 @@ export class NotificationCenter {
    * Jusqu'ici le clic partait quand même chercher le dossier : le serveur refusait, la branche
    * d'erreur était vide, il ne se passait rien et rien ne le disait (un « 403 silencieux »).
    */
+  // ⚠️ 27/10 (pilote) — le panneau ne montre que les NON LUES : une notification lue en disparaît (l'historique complet reste sur
+  // l'écran « Voir toutes les notifications »).
   readonly lignes = computed(() =>
-    this.notifs().map((n) => {
+    this.notifs().filter((n) => !n.lu).map((n) => {
       const sansEcran =
         routePourNotification(n, this.auth.role()) === null &&
         (n.idDossier == null || this.sansPageDossier());
