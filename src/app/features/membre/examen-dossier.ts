@@ -85,7 +85,8 @@ import { BordereauEstimatifDoc } from '../circuit/dossier/bordereau-estimatif-do
 import { CanevasRapportDoc } from '../circuit/dossier/canevas-rapport-doc';
 import { FichePresentationDaoDoc } from '../circuit/dossier/fiche-presentation-dao';
 import { PlanDuDossierDao } from '../circuit/dossier/plan-du-dossier-dao';
-import { ongletDuFichier } from '../circuit/dossier/dossier-pieces';
+import { OngletPieceFournie, avecProcedure, ongletDuFichier } from '../circuit/dossier/dossier-pieces';
+import { PieceEnDonnees } from '../circuit/dossier/piece-en-donnees';
 import {
   COLONNES_PPM_OFFICIEL,
   CelluleCliquee,
@@ -138,7 +139,7 @@ import { PreControlePanneau } from '../../shared/pre-controle';
 import { ControlesDossier } from '../../shared/circuit/controles-dossier';
 import { aujourdhuiServeur, maintenantPoste, maintenantServeur } from '../../core/horloge/heure-serveur';
 
-type OngletDocument = 'ppm' | 'fiche' | 'agpm' | 'dao' | 'presentation' | 'avis' | 'plan' | 'bordereau' | 'canevas' | 'pieces';
+type OngletDocument = 'ppm' | 'fiche' | 'agpm' | 'dao' | 'presentation' | 'avis' | 'plan' | 'bordereau' | 'canevas' | 'pv-cnm' | 'pieces';
 /** Les onglets qui portent des annotations (état d'examen, versionnement) : les vues de données du dossier DAO n'en ont pas. */
 const ONGLETS_ANNOTES: readonly OngletDocument[] = ['ppm', 'fiche', 'agpm', 'dao'];
 
@@ -215,6 +216,7 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
   selector: 'app-examen-dossier',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    PieceEnDonnees,
     PpmMarchesTable,
     FichePresentationDoc,
     FicheDaoDoc,
@@ -446,6 +448,9 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
                   @case ('presentation') {
                     <app-document-visionneuse><app-fiche-presentation-dao [idDossier]="dossier()!.idDossier" /></app-document-visionneuse>
                   }
+                  @case ('pv-cnm') {
+                    <div class="pj__donnees pj__donnees--seul"><app-piece-en-donnees [dossier]="dossier()!" element="pv-cnm" /></div>
+                  }
                   @case ('avis') {
                     <app-document-visionneuse><app-avis-specifique-doc [idDossier]="dossier()!.idDossier" /></app-document-visionneuse>
                   }
@@ -496,7 +501,8 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
                                   </span>
                                   <span class="pj__idx">{{ rangPiece(p) }}</span>
                                   <span class="pj__nom">{{ libellePiece(p) }}</span>
-                                  @if (p.format) { <span class="pj__fmt">{{ p.format }}</span> }
+                                  @if (donneesDe(p)) { <span class="pj__fmt pj__fmt--donnees">Données</span> }
+                                  @else if (p.format) { <span class="pj__fmt">{{ p.format }}</span> }
                                 </button>
                               </li>
                             }
@@ -505,6 +511,9 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
                         <div class="pj__apercu">
                           @if (openPiece() == null) {
                             <p class="exam__info">Sélectionnez une pièce pour l'afficher.</p>
+                          } @else if (elementOuvert(); as e) {
+                            <!-- ⚠️ 27/10 (pilote) — une pièce produite par l'application se lit en données, pas en PDF. -->
+                            <div class="pj__donnees"><app-piece-en-donnees [dossier]="dossier()!" [element]="e" /></div>
                           } @else if (loadingPiece() === openPiece()) {
                             <p class="exam__info" role="status">Chargement de l'aperçu…</p>
                           } @else if (openUrl(); as u) {
@@ -757,6 +766,19 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
   readonly openPiece = signal<number | null>(null);
   readonly openUrl = signal<SafeResourceUrl | null>(null);
   readonly loadingPiece = signal<number | null>(null);
+  /**
+   * ⚠️ 27/10 (pilote, « les éléments du dossier en données, pas en PDF, sauf les pièces sans données dans l'application ») — la vue
+   * en données d'une pièce jointe d'office (séance, rapport, attribution, DAO complet, bordereau, avis), dans un dossier né d'une
+   * fiche ou d'une attribution ; les pièces déposées (journaux de publication…) restent des fichiers.
+   */
+  donneesDe(p: PieceJointeDossier): OngletPieceFournie | null {
+    const d = this.dossier();
+    return d && avecProcedure(d) ? ongletDuFichier(p, true) : null;
+  }
+  readonly elementOuvert = computed(() => {
+    const p = this.piecesOrdonnees().find((x) => x.idPiece === this.openPiece());
+    return p ? this.donneesDe(p) : null;
+  });
   private currentObjectUrl: string | null = null;
   readonly idDispatch = signal<number | null>(null);
   /** Consigne donnée au dispatch (`instructions`), s'il y en a une. */
@@ -1131,7 +1153,9 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
     // ⚠️ Lot B (26/09, recette) — un dossier DAO est un dossier DMC, pas DDP : sans cette branche, la zone
     // document retombait toujours sur les pièces et l'onglet « Fiche DAO » n'était jamais atteignable.
     const o = this.ongletContenu();
-    return this.dossier()?.idDmc != null && this.onglets().some((t) => t.cle === o) ? o : 'pieces';
+    // ⚠️ 27/10 — un dossier de marché né d'une attribution (`procedure`) a lui aussi ses onglets en données.
+    const d = this.dossier();
+    return (d?.idDmc != null || d?.procedure) && this.onglets().some((t) => t.cle === o) ? o : 'pieces';
   });
   /**
    * ⚠️ 2026-09-14 (décision des chefs) — annotations des documents officiels visibles (état d'examen,
@@ -1266,6 +1290,13 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
   readonly onglets = computed<{ cle: OngletDocument; libelle: string; nombre: number | null }[]>(() => {
     if (!this.estPpm()) {
       const d = this.dossier();
+      // ⚠️ 27/10 (pilote) — un dossier de marché né d'une attribution : ce que l'application fournit sans fichier se lit en données
+      // (fiche de présentation, PV de la Commission sur le DAO) ; séance, rapport et attribution, dans les pièces jointes, en données aussi.
+      if (d?.idDmc == null && d?.procedure) return [
+        { cle: 'presentation' as const, libelle: 'Fiche de présentation', nombre: null },
+        { cle: 'pv-cnm' as const, libelle: 'PV de la Commission sur le DAO', nombre: null },
+        { cle: 'pieces' as const, libelle: 'Pièces jointes', nombre: this.nbPieces() },
+      ];
       if (d?.idDmc == null) return [{ cle: 'pieces' as const, libelle: 'Pièces jointes', nombre: this.nbPieces() }];
       // ⚠️ 18/10 (pilote, examen du DAO) — les éléments du dossier né d'une fiche, dans l'ordre des cartes de sa page.
       const lettre = (this.pieceAvis()?.nomFichier ?? '').startsWith('LETTRE_PROJET_');
@@ -2482,6 +2513,8 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
     this.revoquer();
     this.openUrl.set(null);
     this.openPiece.set(idPiece);
+    // Lue en données : aucun fichier à télécharger.
+    if (this.donneesDe(p)) { this.loadingPiece.set(null); return; }
     this.loadingPiece.set(idPiece);
     this.pieceService.telecharger(idPiece).subscribe({
       next: (blob) => {
