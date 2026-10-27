@@ -543,15 +543,23 @@ interface ApercuDossier {
             @if (marcheParAttribution()) {
               <section class="sd__fiche" data-testid="sd-marche-attribution" aria-labelledby="sd-attrib-t">
                 <h2 class="sd__sub" id="sd-attrib-t">Le dossier de marché naît de l'attribution du lot</h2>
+                <!-- ⚠️ 27/10 (pilote, « dossier-marche-remise-papier », P3) — plus de création libre : la procédure papier aussi passe par
+                     « Choisir la procédure » (409 DOSSIER_PAR_PROCEDURE sinon) ; l'application fournit ce qu'elle a, la PRMP joint le papier. -->
                 <p class="sd__fiche-p">
-                  Pour une procédure menée dans l'application (remise électronique), ouvrez sa fiche DAO : à l'attribution du lot,
-                  « Créer le dossier de marché » le produit pour vous, avec le projet de marché, le PV d'ouverture et le rapport
-                  d'évaluation signé, <strong>sans rien ressaisir ici</strong>.
+                  Choisissez la procédure, puis le lot. En <strong>remise électronique</strong>, « Créer le dossier de marché » le produit à
+                  l'attribution, avec le projet de marché, le PV d'ouverture et le rapport d'évaluation signé. En <strong>remise papier</strong>,
+                  il est créé rattaché à sa procédure : la fiche de présentation, le PV de la Commission, le devis estimatif et l'AGPM sont
+                  fournis d'office ; vous ne joignez que les documents papier (journal de l'avis, PV d'ouverture, rapport, PV de validation,
+                  projet de marché signé).
                 </p>
                 <a class="btn btn-primary" routerLink="/prmp/dossier-marche" [queryParams]="{ sousType: sousTypeChoisi() }">Choisir la procédure</a>
               </section>
-              <p class="form-hint">Procédure à remise papier, évaluée hors de l'application : créez le dossier de marché ci-dessous et joignez ses pièces.</p>
             }
+            @if (marcheParAttribution()) {
+              <footer class="sd__foot">
+                <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
+              </footer>
+            } @else {
             <div class="sd__reste">
             <div class="cnm-form-grid">
               <label class="form-group">
@@ -626,6 +634,7 @@ interface ApercuDossier {
               </button>
             </footer>
             </div>
+            }
             }
           </form>
         }

@@ -1,10 +1,12 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 
 import { LigneEligible } from '../../models';
-import { DmcService } from '../../services';
+import { AttributionService, DmcService } from '../../services';
+import { ApiError, corpsErreur } from '../../core/errors/api-error';
+import { ToastService } from '../../core/notifications/toast.service';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { statutDossierLabel } from '../../shared/circuit/circuit-workflow';
 import { LIBELLES_ETAT_ATTRIBUTION } from '../circuit/dossier/instantanes-vues';
@@ -42,7 +44,23 @@ export function lotsSansDossierMarche(l: Pick<LigneEligible, 'attributions' | 'd
  */
 export function proceduresPourMarche(lignes: readonly LigneEligible[], sousTypeMarche: string | null): LigneEligible[] {
   const mec = sousTypeMarche ? SOUS_TYPE_MEC_DU_MARCHE[sousTypeMarche] ?? null : null;
-  return lignes.filter((l) => l.idDmc != null && (l.nbOffres ?? 0) > 0 && l.dossier?.statut === 'CLOTURE' && (mec == null || l.sousType === mec));
+  return lignes.filter((l) => l.idDmc != null && (mec == null || l.sousType === mec)
+    // ⚠️ 27/10 (P1) — une procédure papier figure dès que sa fiche est validée : `marchePapier` dit si son dossier peut naître, et pourquoi pas.
+    && (l.modeRemise === 'PAPIER' ? l.marchePapier != null : (l.nbOffres ?? 0) > 0 && l.dossier?.statut === 'CLOTURE'));
+}
+
+/** ⚠️ 27/10 (P1) — pourquoi le dossier de marché d'une procédure papier ne peut pas encore naître. */
+export const MOTIFS_MARCHE_PAPIER: Readonly<Record<string, string>> = {
+  FICHE_NON_VALIDEE: 'La fiche DAO n’est pas validée.',
+  DOSSIER_NON_CLOTURE: 'Le dossier de mise en concurrence n’est pas encore clôturé.',
+  AVIS_NON_FAVORABLE: 'L’avis de la Commission sur le DAO n’est pas favorable.',
+  AVIS_NON_PUBLIE: 'L’avis spécifique n’a pas encore été imprimé (publié).',
+};
+
+/** Les lots d'une procédure papier dont le dossier de marché reste à créer. */
+export function lotsPapierACreer(l: Pick<LigneEligible, 'lots' | 'dossiersMarche'>): { lot: number; intitule: string | null }[] {
+  const crees = new Set((l.dossiersMarche ?? []).map((d) => d.lot));
+  return (l.lots ?? [{ lot: 1, intitule: null }]).filter((x) => !crees.has(x.lot));
 }
 
 /**
@@ -66,10 +84,10 @@ export function proceduresPourMarche(lignes: readonly LigneEligible[], sousTypeM
       <h1 class="page-title">Dossier de marché — choisir la procédure</h1>
     </header>
     <p class="page-role">
-      Le dossier de marché d'une procédure menée dans l'application naît de l'attribution du lot : ouvrez la procédure, puis
-      « Créer le dossier de marché ». Il reprend d'office le projet de marché, le PV d'ouverture, le rapport d'évaluation signé et le
-      bordereau estimatif. Seules figurent ici les procédures dont le dossier de mise en concurrence est clôturé et qui ont reçu des
-      offres en ligne.
+      En <strong>remise électronique</strong>, le dossier de marché naît de l'attribution du lot : ouvrez la procédure, puis « Créer le
+      dossier de marché ». Il reprend d'office le projet de marché, le PV d'ouverture, le rapport d'évaluation signé et le bordereau
+      estimatif. En <strong>remise papier</strong>, « Créer le dossier de marché » le crée rattaché à sa procédure, lot par lot : la fiche de
+      présentation, le PV de la Commission, le devis estimatif et l'AGPM sont fournis d'office, vous joignez les documents papier.
     </p>
     @if (sousType(); as st) {
       <p class="dm__filtre" data-testid="dm-filtre">
@@ -97,13 +115,18 @@ export function proceduresPourMarche(lignes: readonly LigneEligible[], sousTypeM
               <tr>
                 <td>
                   @if (l.numeroProcedure) { <span class="dm__num cnm-mono">{{ l.numeroProcedure }}</span> }
+                  @if (l.modeRemise === 'PAPIER') { <span class="dm__papier">remise papier</span> }
                   <span class="dm__objet">{{ l.designationMarche }}</span>
                   <span class="dm__sous">{{ caracteristiques(l) }}</span>
                 </td>
                 <td class="r dm__mt">{{ montant(l.montEstim) }}</td>
                 <td>
                   @if (l.dossier; as d) { <a class="dm__dossier cnm-mono" [routerLink]="['/dossier', d.idDossier]">{{ d.refeDossier || ('Dossier n° ' + d.idDossier) }}</a> }
-                  <span class="dm__etat">{{ l.dossier ? statutLibelle(l.dossier.statut) + ' · ' : '' }}{{ l.nbOffres }} offre{{ (l.nbOffres ?? 0) > 1 ? 's' : '' }} reçue{{ (l.nbOffres ?? 0) > 1 ? 's' : '' }}</span>
+                  @if (l.modeRemise === 'PAPIER') {
+                    <span class="dm__etat">{{ l.dossier ? statutLibelle(l.dossier.statut) + ' · ' : '' }}offres remises sur papier</span>
+                  } @else {
+                    <span class="dm__etat">{{ l.dossier ? statutLibelle(l.dossier.statut) + ' · ' : '' }}{{ l.nbOffres }} offre{{ (l.nbOffres ?? 0) > 1 ? 's' : '' }} reçue{{ (l.nbOffres ?? 0) > 1 ? 's' : '' }}</span>
+                  }
                 </td>
                 <!-- ⚠️ 20/10 (« liste-dossier-marche », B2) — par lot : l'état, le rapport signé, l'offre classée 1re. -->
                 <td>
@@ -112,7 +135,7 @@ export function proceduresPourMarche(lignes: readonly LigneEligible[], sousTypeM
                     @if (a.propose; as p) { <span class="dm__etat">{{ p.candidat }} — {{ montant(p.montant) }} HT{{ p.nbTitulaires > 1 ? ' (+ ' + (p.nbTitulaires - 1) + ' titulaire' + (p.nbTitulaires > 2 ? 's' : '') + ')' : '' }}</span> }
                     @if (a.rapportSigneLe) { <span class="dm__etat">Rapport signé le {{ date(a.rapportSigneLe) }}</span> }
                   } @empty {
-                    <span class="dm__etat">{{ l.attributions == null ? '—' : 'Évaluation non ouverte' }}</span>
+                    <span class="dm__etat">{{ l.modeRemise === 'PAPIER' ? 'Séance et évaluation hors de l’application' : l.attributions == null ? '—' : 'Évaluation non ouverte' }}</span>
                   }
                 </td>
                 <!-- ⚠️ 20/10 (pilote, « est-ce vraiment le dossier de marché ? ») — le dossier de marché dans sa propre colonne, son état en clair. -->
@@ -121,19 +144,33 @@ export function proceduresPourMarche(lignes: readonly LigneEligible[], sousTypeM
                     <a class="dm__dossier" [routerLink]="['/dossier', dm.idDossier]">{{ dm.refeDossier || ('Dossier n° ' + dm.idDossier) }}{{ (l.dossiersMarche?.length ?? 0) > 1 ? ' · lot ' + dm.lot : '' }}</a>
                     <span class="dm__etat">{{ etatDossierMarche(dm.statut) }}</span>
                   } @empty {
-                    <span class="dm__etat">{{ l.dossiersMarche == null ? '—' : 'À créer depuis l’attribution' }}</span>
+                    <span class="dm__etat">{{ l.dossiersMarche == null ? '—' : l.modeRemise === 'PAPIER' ? 'À créer' : 'À créer depuis l’attribution' }}</span>
                   }
                 </td>
                 <td class="r">
-                  <!-- Champ non servi (serveur antérieur) : rien n'est présumé, le geste reste neutre. -->
-                  @let aCreer = lotsACreer(l) > 0;
-                  <a class="btn btn-sm" [class.btn-primary]="aCreer" [class.btn-outline]="!aCreer" [routerLink]="['/procedure', l.idDmc, 'evaluation']">{{ aCreer ? 'Créer le dossier de marché' : 'Ouvrir l’attribution' }}</a>
+                  @if (l.modeRemise === 'PAPIER') {
+                    <!-- ⚠️ 27/10 (P2) — remise papier : le dossier se crée ici, lot par lot, rattaché à la procédure. -->
+                    @if (!l.marchePapier?.ouvert) {
+                      <span class="dm__etat">{{ motifPapier(l.marchePapier?.motif) }}</span>
+                    } @else {
+                      @for (x of lotsPapier(l); track x.lot) {
+                        <button type="button" class="btn btn-sm btn-primary dm__creer" [disabled]="creation() !== null"
+                          (click)="creerPapier(l, x.lot)">{{ creation() === l.idDmc + ':' + x.lot ? 'Création…' : 'Créer le dossier de marché' + ((l.lots?.length ?? 1) > 1 ? ' — lot ' + x.lot : '') }}</button>
+                      } @empty {
+                        <span class="dm__etat">Dossier(s) de marché créé(s).</span>
+                      }
+                    }
+                  } @else {
+                    <!-- Champ non servi (serveur antérieur) : rien n'est présumé, le geste reste neutre. -->
+                    @let aCreer = lotsACreer(l) > 0;
+                    <a class="btn btn-sm" [class.btn-primary]="aCreer" [class.btn-outline]="!aCreer" [routerLink]="['/procedure', l.idDmc, 'evaluation']">{{ aCreer ? 'Créer le dossier de marché' : 'Ouvrir l’attribution' }}</a>
+                  }
                 </td>
               </tr>
             } @empty {
               <tr><td colspan="6" class="dm__vide">
-                Aucune procédure prête : il faut une procédure menée dans l'application, dont le dossier de mise en concurrence est
-                clôturé. Pour une procédure à remise papier, créez le dossier de marché depuis « Créer dossier ».
+                Aucune procédure prête : il faut une fiche DAO validée ; en remise électronique, un dossier de mise en concurrence clôturé
+                et des offres reçues en ligne.
               </td></tr>
             }
           </tbody>
@@ -165,11 +202,16 @@ export function proceduresPourMarche(lignes: readonly LigneEligible[], sousTypeM
     .dm__dossier--texte { color: var(--n-800); }
     .dm__table td { overflow-wrap: anywhere; white-space: normal; }
     .dm__vide { padding: 1rem; color: var(--n-500); font-size: var(--text-sm); }
+    .dm__papier { display: inline-block; margin: 0.1rem 0; padding: 0 0.45rem; border-radius: 999px; background: var(--warning-bg, #fef3c7); color: var(--warning-text, #92400e); font-size: 0.72rem; font-weight: 700; }
+    .dm__creer { display: block; margin-left: auto; margin-bottom: 0.3rem; }
   `,
 })
 export class DossierMarcheProcedures implements OnInit {
   private readonly service = inject(DmcService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly attributions = inject(AttributionService);
+  private readonly dialogue = inject(ToastService);
 
   readonly sousType = toSignal(this.route.queryParamMap.pipe(map((q) => q.get('sousType')?.toUpperCase() || null)), { initialValue: null });
   readonly chargement = signal(true);
@@ -181,6 +223,26 @@ export class DossierMarcheProcedures implements OnInit {
   readonly date = dateHeureFr;
   readonly etatAttribution = (e: string): string => LIBELLES_ETAT_ATTRIBUTION[e] ?? e;
   readonly lotsACreer = lotsSansDossierMarche;
+  readonly lotsPapier = lotsPapierACreer;
+  /** Le lot en cours de création (« idDmc:lot »). */
+  readonly creation = signal<string | null>(null);
+  motifPapier(m: string | null | undefined): string { return (m && MOTIFS_MARCHE_PAPIER[m]) || 'Le dossier de marché ne peut pas encore être créé.'; }
+
+  /** ⚠️ 27/10 (P2) — crée le dossier de marché papier du lot, puis l'ouvre pour y joindre les documents papier. */
+  creerPapier(l: LigneEligible, lot: number): void {
+    if (l.idDmc == null) return;
+    this.creation.set(l.idDmc + ':' + lot);
+    this.attributions.creerDossierPapier(l.idDmc, lot).subscribe({
+      next: (d) => { this.creation.set(null); void this.router.navigate(['/dossier', d.idDossier]); },
+      error: (e: ApiError) => {
+        this.creation.set(null);
+        const id = corpsErreur<{ details?: { idDossier?: number } }>(e)?.details?.idDossier;
+        if (e.code === 'DOSSIER_EXISTANT' && id) { void this.router.navigate(['/dossier', id]); return; }
+        this.dialogue.error(e.message || 'Le dossier de marché n’a pas pu être créé.');
+        this.charger();
+      },
+    });
+  }
   readonly montant = (v: number | null | undefined): string => (v == null ? '—' : `${new Intl.NumberFormat('fr-FR').format(v)} Ar`);
   /** Forme, catégorie et ligne du plan, sous l'objet. */
   caracteristiques(l: LigneEligible): string {

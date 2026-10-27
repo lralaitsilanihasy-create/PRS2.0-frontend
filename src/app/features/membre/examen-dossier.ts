@@ -1318,9 +1318,12 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
         { cle: 'presentation' as const, libelle: 'Fiche de présentation', nombre: null },
         { cle: 'pv-cnm' as const, libelle: 'PV de la CNM (DAO)', nombre: null },
         { cle: 'dao' as const, libelle: 'Fiche DAO', nombre: null },
-        { cle: 'seance' as const, libelle: 'Séance d’ouverture', nombre: null },
-        { cle: 'evaluation' as const, libelle: 'Rapport d’évaluation', nombre: null },
-        { cle: 'attribution' as const, libelle: 'Attribution', nombre: null },
+        // ⚠️ 27/10 (P4) — remise papier : la séance, l'évaluation et l'attribution n'existent pas dans l'application.
+        ...(d.procedure.remisePapier ? [] : [
+          { cle: 'seance' as const, libelle: 'Séance d’ouverture', nombre: null },
+          { cle: 'evaluation' as const, libelle: 'Rapport d’évaluation', nombre: null },
+          { cle: 'attribution' as const, libelle: 'Attribution', nombre: null },
+        ]),
         { cle: 'bordereau' as const, libelle: 'Bordereau estimatif', nombre: null },
         { cle: 'pieces' as const, libelle: 'Pièces jointes', nombre: this.nbPieces() },
       ];

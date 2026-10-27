@@ -37,6 +37,11 @@ export interface ProcedureDossierMarche {
   designationMarche?: string | null;
   /** B3 — « Lot n°01 : désignation » ; nul si la ligne n'a pas plusieurs lots. */
   intituleLot?: string | null;
+  /**
+   * ⚠️ 27/10 (« dossier-marche-remise-papier », P4) — procédure à remise papier : ni séance, ni évaluation, ni attribution dans
+   * l'application ; ces éléments ne se proposent pas, leurs pièces papier sont jointes.
+   */
+  remisePapier?: boolean;
 }
 
 export interface Dossier {

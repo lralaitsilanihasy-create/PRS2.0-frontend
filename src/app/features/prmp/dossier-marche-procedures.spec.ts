@@ -1,5 +1,5 @@
 import { LigneEligible } from '../../models';
-import { lotsSansDossierMarche, proceduresPourMarche } from './dossier-marche-procedures';
+import { lotsPapierACreer, lotsSansDossierMarche, proceduresPourMarche } from './dossier-marche-procedures';
 
 const ligne = (o: Partial<LigneEligible>): LigneEligible =>
   ({ idDetail: 1, idDossier: 1, refeDossier: null, designationMarche: 'X', idMode: null, libelleMode: null, montEstim: null, dejaDao: true, ...o }) as LigneEligible;
@@ -34,5 +34,22 @@ describe('Lots dont le dossier de marché reste à créer (20/10, B2)', () => {
   it('sans état servi : repli sur l’absence de dossier, et rien si rien n’est servi', () => {
     expect(lotsSansDossierMarche({ dossiersMarche: [] })).toBe(1);
     expect(lotsSansDossierMarche({})).toBe(0);
+  });
+});
+
+describe('Remise papier : la procédure figure, et ses lots à créer (27/10, P1-P2)', () => {
+  it('une procédure papier figure dès que marchePapier est servi, ouverte ou non, sans offre en ligne', () => {
+    const l = [
+      ligne({ idDetail: 1, idDmc: 1, nbOffres: 0, dossier: null, sousType: 'DAOO-CC', modeRemise: 'PAPIER', marchePapier: { ouvert: false, motif: 'DOSSIER_NON_CLOTURE' } }),
+      ligne({ idDetail: 2, idDmc: 2, nbOffres: 0, dossier: null, sousType: 'DAOO-CC', modeRemise: 'PAPIER', marchePapier: { ouvert: true, motif: null } }),
+      ligne({ idDetail: 3, idDmc: 3, nbOffres: 0, dossier: null, sousType: 'DAOO-CC', modeRemise: 'PAPIER', marchePapier: null }),
+      ligne({ idDetail: 4, idDmc: 4, nbOffres: 0, dossier: null, sousType: 'DAOO-CC', modeRemise: 'ELECTRONIQUE' }),
+    ];
+    expect(proceduresPourMarche(l, 'MAOO-CC').map((x) => x.idDetail)).toEqual([1, 2]);
+  });
+
+  it('les lots sans dossier de marché restent à créer ; une ligne sans lot a son lot 1', () => {
+    expect(lotsPapierACreer({ lots: [{ lot: 1, intitule: 'A' }, { lot: 2, intitule: 'B' }], dossiersMarche: [{ lot: 1, idDossier: 9, refeDossier: null, statut: 'BROUILLON' }] }).map((x) => x.lot)).toEqual([2]);
+    expect(lotsPapierACreer({ lots: null, dossiersMarche: [] }).map((x) => x.lot)).toEqual([1]);
   });
 });

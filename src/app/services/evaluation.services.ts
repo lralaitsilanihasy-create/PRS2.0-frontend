@@ -29,6 +29,7 @@ import {
   QualificationRejet,
   CoteConformite,
   SpecificationOffre,
+  Dossier,
 } from '../models';
 
 /**
@@ -256,6 +257,15 @@ export class AttributionService {
   }
 
   /** 201 avec l'attribution ; 409 `EVALUATION_NON_CLOSE`, `LOT_INFRUCTUEUX`, `DOSSIER_EXISTANT` (avec `idDossier`). */
+  /**
+   * ⚠️ 27/10 (« dossier-marche-remise-papier », P2) — `POST /{idDmc}/marche-papier/lots/{lot}/dossier` : le dossier de marché d'un lot
+   * d'une procédure à remise papier, rattaché à elle, en brouillon. 409 `DOSSIER_EXISTANT` (`idDossier`), `PROCEDURE_ELECTRONIQUE`,
+   * `FICHE_NON_VALIDEE`, `DOSSIER_NON_CLOTURE`, `AVIS_NON_FAVORABLE`, `AVIS_NON_PUBLIE`, `SANS_SUITE_DECLAREE`.
+   */
+  creerDossierPapier(idDmc: number, lot: number): Observable<Dossier> {
+    return this.http.post<Dossier>(`${this.base}/${idDmc}/marche-papier/lots/${lot}/dossier`, null, { context: skipErrorToast() });
+  }
+
   creerDossier(idDmc: number, lot: number): Observable<Attribution> {
     return this.http.post<Attribution>(`${this.base}/${idDmc}/attribution/lots/${lot}/dossier`, null, { context: skipErrorToast() });
   }

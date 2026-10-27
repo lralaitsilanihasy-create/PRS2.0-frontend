@@ -584,6 +584,15 @@ export interface LigneEligible {
   numeroProcedure?: string | null;
   /** B2 — l'état de l'attribution par lot ; vide tant que l'évaluation n'est pas ouverte, `null` sans fiche. */
   attributions?: AttributionLigne[] | null;
+  /** ⚠️ 27/10 (« dossier-marche-remise-papier », P1) — le mode de remise figé par la dernière version validée ; nul sans version validée. */
+  modeRemise?: 'PAPIER' | 'ELECTRONIQUE' | null;
+  /** P1 — les lots de la procédure (un lot 1, intitulé nul, pour une ligne sans lot) ; nul sans fiche. */
+  lots?: { lot: number; intitule: string | null }[] | null;
+  /**
+   * P1 — remise papier seulement : le dossier de marché peut-il naître (`ouvert`) ; sinon la première condition qui manque
+   * (`FICHE_NON_VALIDEE`, `DOSSIER_NON_CLOTURE`, `AVIS_NON_FAVORABLE`, `AVIS_NON_PUBLIE`). Nul hors remise papier.
+   */
+  marchePapier?: { ouvert: boolean; motif: string | null } | null;
 }
 
 /** ⚠️ 20/10 (B2) — un lot de la ligne : son état d'attribution, le rapport signé, l'offre du rang 1 (et le nombre de titulaires). */

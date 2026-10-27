@@ -55,9 +55,13 @@ export function documentsDuDossier(contenu: DossierContenuStore, manquantes = 0)
       { cle: 'presentation', libelle: 'Fiche de présentation', teinte: 'vert', resume: 'Identification, marché, procédure et attribution' },
       { cle: 'pv-cnm', libelle: 'PV de la Commission sur le DAO', resume: p.refeDossierMiseEnConcurrence ? 'Dossier ' + p.refeDossierMiseEnConcurrence : 'Le dossier de mise en concurrence' },
       { cle: 'fiche-dao', libelle: 'Fiche DAO', resume: 'Le dossier d’appel d’offres de la procédure' },
-      { cle: 'seance', libelle: 'Séance d’ouverture', teinte: 'bleu', resume: 'La lecture des offres (PV d’ouverture)' },
-      { cle: 'evaluation', libelle: 'Rapport d’évaluation', teinte: 'bleu', resume: 'Décisions par offre, classement, signatures (PV de validation)' },
-      { cle: 'attribution', libelle: 'Attribution', resume: 'Titulaires proposés, montants, délais ; projet de marché' },
+      // ⚠️ 27/10 (« dossier-marche-remise-papier », P4) — remise papier : ni séance, ni évaluation, ni attribution dans l'application ;
+      // leurs pièces papier se lisent dans « Pièces jointes ».
+      ...(p.remisePapier ? [] : [
+        { cle: 'seance' as const, libelle: 'Séance d’ouverture', teinte: 'bleu' as const, resume: 'La lecture des offres (PV d’ouverture)' },
+        { cle: 'evaluation' as const, libelle: 'Rapport d’évaluation', teinte: 'bleu' as const, resume: 'Décisions par offre, classement, signatures (PV de validation)' },
+        { cle: 'attribution' as const, libelle: 'Attribution', resume: 'Titulaires proposés, montants, délais ; projet de marché' },
+      ]),
       { cle: 'bordereau', libelle: 'Bordereau estimatif', resume: 'Prix unitaires estimés de la fiche' },
     );
   }
