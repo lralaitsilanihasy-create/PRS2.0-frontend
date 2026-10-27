@@ -24,7 +24,17 @@ describe('Q-pièce — le refus CAPM_INCOMPLET, nommé ligne par ligne', () => {
   it('liste chaque ligne et ses processus manquants', () => {
     const m = messageSoumissionRefusee(refus('CAPM_INCOMPLET', { lignes: [{ idDetail: 7, designation: 'Pont', processus: ['Ouverture des plis', 'Attribution'] }] }));
     expect(m).toContain('calendrier prévisionnel est incomplet');
-    expect(m).toContain('« Pont » : Ouverture des plis, Attribution');
+    expect(m).toContain('• Pont — Ouverture des plis, Attribution');
+  });
+
+  it('au-delà de trois processus, leur nombre ; au-delà de dix lignes, le reste compté (27/10)', () => {
+    const processus = Array.from({ length: 27 }, (_, i) => 'P' + i);
+    const lignes = Array.from({ length: 12 }, (_, i) => ({ idDetail: i, designation: 'Ligne ' + i, processus }));
+    const m = messageSoumissionRefusee(refus('CAPM_INCOMPLET', { lignes }));
+    expect(m).toContain('12 ligne(s) à compléter');
+    expect(m).toContain('• Ligne 0 — 27 processus à dater');
+    expect(m).toContain('… et 2 autre(s) ligne(s)');
+    expect(m).not.toContain('P26');
   });
 });
 

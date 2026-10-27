@@ -76,8 +76,18 @@ export function messageCapmIncomplet(e: ApiError | HttpErrorResponse): string | 
   const lignes = corpsErreur<{ details?: { lignes?: { designation?: string | null; processus?: string[] }[] } }>(e)?.details?.lignes ?? [];
   const tete = 'Le calendrier prévisionnel est incomplet : chaque ligne doit dater, ou marquer « sans objet » avec un motif, tous les processus de son mode de passation.';
   if (!lignes.length) return tete;
-  const detail = lignes.map((l) => `« ${l.designation || 'ligne sans objet'} » : ${(l.processus ?? []).join(', ')}`).join(' ; ');
-  return `${tete} À compléter — ${detail}.`;
+  // ⚠️ 27/10 (pilote) — la liste complète des processus, ligne par ligne, rendait le message illisible (7 lignes × 27 processus) :
+  // une ligne par marché, avec le nombre de processus à compléter ; les processus se voient dans « Voir dates » de la ligne.
+  const MAX = 10;
+  const court = (t: string) => (t.length > 70 ? t.slice(0, 69).trimEnd() + '…' : t);
+  const detail = lignes.slice(0, MAX).map((l) => {
+    const n = (l.processus ?? []).length;
+    // Jusqu'à trois processus, leurs noms ; au-delà, leur nombre.
+    const quoi = n <= 3 ? (l.processus ?? []).join(', ') : `${n} processus à dater`;
+    return `• ${court(l.designation || 'ligne sans objet')} — ${quoi}`;
+  });
+  if (lignes.length > MAX) detail.push(`• … et ${lignes.length - MAX} autre(s) ligne(s)`);
+  return `${tete}\n${lignes.length} ligne(s) à compléter (bouton « Voir dates » de chaque ligne) :\n${detail.join('\n')}`;
 }
 
 /** Le refus 409 `CONTROLE_NON_CONFORME` de l'avis « Favorable » sans réserve ; `null` pour une autre erreur. */
