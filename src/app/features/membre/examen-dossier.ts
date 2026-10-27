@@ -85,7 +85,7 @@ import { BordereauEstimatifDoc } from '../circuit/dossier/bordereau-estimatif-do
 import { CanevasRapportDoc } from '../circuit/dossier/canevas-rapport-doc';
 import { FichePresentationDaoDoc } from '../circuit/dossier/fiche-presentation-dao';
 import { PlanDuDossierDao } from '../circuit/dossier/plan-du-dossier-dao';
-import { OngletPieceFournie, avecProcedure, ongletDuFichier } from '../circuit/dossier/dossier-pieces';
+import { OngletPieceFournie, avecProcedure, ficheDuDossier, ongletDuFichier } from '../circuit/dossier/dossier-pieces';
 import { PieceEnDonnees } from '../circuit/dossier/piece-en-donnees';
 import {
   COLONNES_PPM_OFFICIEL,
@@ -139,7 +139,7 @@ import { PreControlePanneau } from '../../shared/pre-controle';
 import { ControlesDossier } from '../../shared/circuit/controles-dossier';
 import { aujourdhuiServeur, maintenantPoste, maintenantServeur } from '../../core/horloge/heure-serveur';
 
-type OngletDocument = 'ppm' | 'fiche' | 'agpm' | 'dao' | 'presentation' | 'avis' | 'plan' | 'bordereau' | 'canevas' | 'pv-cnm' | 'pieces';
+type OngletDocument = 'ppm' | 'fiche' | 'agpm' | 'dao' | 'presentation' | 'avis' | 'plan' | 'bordereau' | 'canevas' | 'pv-cnm' | 'seance' | 'evaluation' | 'attribution' | 'pieces';
 /** Les onglets qui portent des annotations (état d'examen, versionnement) : les vues de données du dossier DAO n'en ont pas. */
 const ONGLETS_ANNOTES: readonly OngletDocument[] = ['ppm', 'fiche', 'agpm', 'dao'];
 
@@ -427,7 +427,7 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
                          fiche dans le modèle type ; son PDF reste à portée pour le texte type (IC, CCAG, modèles). -->
                     <app-document-visionneuse [annotations]="annotationsDoc()">
                       <app-fiche-dao-doc
-                        [idDmc]="dossier()!.idDmc!"
+                        [idDmc]="idFicheDossier()!"
                         [observations]="observationsDao()"
                         [modifiees]="perimetre()?.ficheDao?.informations ?? []"
                         [observable]="mode() !== 'locked' && pointsCourants().length > 0"
@@ -444,6 +444,15 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
                   @case ('presentation') {
                     <app-document-visionneuse><app-fiche-presentation-dao [idDossier]="dossier()!.idDossier" /></app-document-visionneuse>
                   }
+                  @case ('seance') {
+                    <div class="pj__donnees pj__donnees--seul"><app-piece-en-donnees [dossier]="dossier()!" element="seance" /></div>
+                  }
+                  @case ('evaluation') {
+                    <div class="pj__donnees pj__donnees--seul"><app-piece-en-donnees [dossier]="dossier()!" element="evaluation" /></div>
+                  }
+                  @case ('attribution') {
+                    <div class="pj__donnees pj__donnees--seul"><app-piece-en-donnees [dossier]="dossier()!" element="attribution" /></div>
+                  }
                   @case ('pv-cnm') {
                     <div class="pj__donnees pj__donnees--seul"><app-piece-en-donnees [dossier]="dossier()!" element="pv-cnm" /></div>
                   }
@@ -454,7 +463,7 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
                     <app-plan-du-dossier-dao [idDossierPlan]="dossier()!.idDossierPlan!" [idDetail]="dossier()!.ficheMarche?.idDetail" />
                   }
                   @case ('bordereau') {
-                    <app-document-visionneuse><app-bordereau-estimatif-doc [idDmc]="dossier()!.idDmc!" [versionSoumise]="dossier()!.ficheMarche?.versionSoumise" /></app-document-visionneuse>
+                    <app-document-visionneuse><app-bordereau-estimatif-doc [idDmc]="idFicheDossier()!" [versionSoumise]="dossier()!.ficheMarche?.versionSoumise" /></app-document-visionneuse>
                   }
                   @case ('canevas') {
                     <app-document-visionneuse><app-canevas-rapport-doc [idDossier]="dossier()!.idDossier" /></app-document-visionneuse>
@@ -929,7 +938,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
   rangPoint(p: PointsCtrl): number { return this.pointsCourants().findIndex((x) => x.idPointCtrl === p.idPointCtrl) + 1; }
   /** Clic sur une référence d'un point : la fiche DAO s'affiche, défile jusqu'à l'information et la surligne. */
   allerInformation(code: string): void {
-    if (this.dossier()?.idDmc == null) return;
+    if (this.idFicheDossier() == null) return;
     if (this.ongletAffiche() !== 'dao') this.ongletContenu.set('dao');
     this.ficheCible.set({ code, jeton: maintenantPoste() });
   }
@@ -1030,10 +1039,16 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
    * Commission y relève se porte sur les points de la grille du dossier (observation ancrée sur l'information de la fiche). Seules
    * les pièces réellement jointes (publication de l'AGPM, autres documents) passent par RAS / Observation.
    */
+  // ⚠️ 27/10 (pilote) — de même pour un dossier de marché : le projet, le DAO complet, le PV d'ouverture, le rapport, les bordereaux
+  // joints d'office par l'attribution se lisent dans leurs onglets, hors examen pièce par pièce.
   readonly piecesOrdonnees = computed(() => {
-    const neDUneFiche = this.dossier()?.idDmc != null;
-    return [...this.piecesInitiales(), ...this.piecesApresRenvoi()].filter((p) => p.idPiece != null && !(neDUneFiche && p.idDocumentFiche != null));
+    const d = this.dossier();
+    const avecFiche = !!d && avecProcedure(d);
+    return [...this.piecesInitiales(), ...this.piecesApresRenvoi()]
+      .filter((p) => p.idPiece != null && !(avecFiche && (p.idDocumentFiche != null || ongletDuFichier(p, true) !== null)));
   });
+  /** La fiche DAO de la procédure : celle du dossier né d'une fiche, ou celle d'où procède le dossier de marché. */
+  readonly idFicheDossier = computed(() => { const d = this.dossier(); return d ? ficheDuDossier(d) : null; });
   /** Le projet d'avis (ou de lettre d'invitation) produit par la fiche : l'onglet « Avis spécifique » existe s'il est là. */
   readonly pieceAvis = computed(() => this.pieces().find((p) => ongletDuFichier(p, true) === 'avis') ?? null);
   /** ⚠️ 18/10 — pour un dossier de procédure (DMC), la grille du dossier PRÉCÈDE les pièces : la Commission contrôle d'abord le DAO
@@ -1286,9 +1301,16 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       const d = this.dossier();
       // ⚠️ 27/10 (pilote) — un dossier de marché né d'une attribution : ce que l'application fournit sans fichier se lit en données
       // (fiche de présentation, PV de la Commission sur le DAO) ; séance, rapport et attribution, dans les pièces jointes, en données aussi.
+      // ⚠️ 27/10 (pilote, « retirer des pièces jointes les dossiers en données ») — chaque élément produit par l'application a son
+      // onglet, dans l'ordre de la procédure ; « Pièces jointes » ne garde que les fichiers déposés (journaux de publication…).
       if (d?.idDmc == null && d?.procedure) return [
         { cle: 'presentation' as const, libelle: 'Fiche de présentation', nombre: null },
-        { cle: 'pv-cnm' as const, libelle: 'PV de la Commission sur le DAO', nombre: null },
+        { cle: 'pv-cnm' as const, libelle: 'PV de la CNM (DAO)', nombre: null },
+        { cle: 'dao' as const, libelle: 'Fiche DAO', nombre: null },
+        { cle: 'seance' as const, libelle: 'Séance d’ouverture', nombre: null },
+        { cle: 'evaluation' as const, libelle: 'Rapport d’évaluation', nombre: null },
+        { cle: 'attribution' as const, libelle: 'Attribution', nombre: null },
+        { cle: 'bordereau' as const, libelle: 'Bordereau estimatif', nombre: null },
         { cle: 'pieces' as const, libelle: 'Pièces jointes', nombre: this.nbPieces() },
       ];
       if (d?.idDmc == null) return [{ cle: 'pieces' as const, libelle: 'Pièces jointes', nombre: this.nbPieces() }];
@@ -1772,7 +1794,8 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       else if (this.estEtapeFiche()) this.ongletContenu.set('fiche');
       else if (this.estEtapeAgpm()) this.ongletContenu.set('agpm');
       // ⚠️ Lot B — aux contrôles du dossier, le document sous les yeux est la fiche DAO quand le dossier en porte une.
-      else if (this.estEtapeDossier()) this.ongletContenu.set(this.dossier()?.idDmc != null ? 'dao' : 'ppm');
+      // ⚠️ 27/10 — un dossier de marché lit la fiche DAO de sa procédure.
+      else if (this.estEtapeDossier()) this.ongletContenu.set(this.idFicheDossier() != null ? 'dao' : 'ppm');
     });
     // Étape « Pièce N » : la pièce s'affiche d'elle-même dans la zone document.
     effect(() => {
