@@ -86,6 +86,7 @@ import { CanevasRapportDoc } from '../circuit/dossier/canevas-rapport-doc';
 import { FichePresentationDaoDoc } from '../circuit/dossier/fiche-presentation-dao';
 import { PlanDuDossierDao } from '../circuit/dossier/plan-du-dossier-dao';
 import { OngletPieceFournie, avecProcedure, ficheDuDossier, ongletDuFichier } from '../circuit/dossier/dossier-pieces';
+import { LIBELLES_ELEMENT_GRILLE, pointsDeLElement } from './examen/examen-modele';
 import { PieceEnDonnees } from '../circuit/dossier/piece-en-donnees';
 import {
   COLONNES_PPM_OFFICIEL,
@@ -935,6 +936,16 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
   /** Les codes que la fiche DAO du dossier rend (selon sa forme et sa catégorie) ; nul tant qu'elle n'a pas été lue. */
   readonly codesFiche = signal<ReadonlySet<string> | null>(null);
   readonly autresPoints = signal(false);
+  /** ⚠️ 27/10 (pilote) — l'onglet d'élément du dossier de marché ouvert : la grille du dossier se réduit à ses points. */
+  readonly elementGrille = signal<OngletDocument | null>(null);
+  /** L'utilisateur a demandé toute la grille malgré l'onglet ouvert. */
+  readonly tousPointsGrille = signal(false);
+  /** Les points de l'onglet ouvert, à l'étape de la grille d'un dossier de marché ; `null` : toute la grille. */
+  private readonly pointsElement = computed(() => {
+    if (!this.estEtapeDossier() || !this.dossier()?.procedure) return null;
+    const l = pointsDeLElement(this.elementGrille(), this.pointsDossier());
+    return l ? new Set(l.map((x) => x.idPointCtrl)) : null;
+  });
   rangPoint(p: PointsCtrl): number { return this.pointsCourants().findIndex((x) => x.idPointCtrl === p.idPointCtrl) + 1; }
   /** Clic sur une référence d'un point : la fiche DAO s'affiche, défile jusqu'à l'information et la surligne. */
   allerInformation(code: string): void {
@@ -1553,13 +1564,19 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
         seraRas: st.statut === 'OBS' && !estObservationEffective(st),
       };
     });
+    // ⚠️ 27/10 — à la grille d'un dossier de marché, seuls les points de l'onglet ouvert s'affichent (sauf « Tous les points »).
+    const ids = this.pointsElement();
+    const tous = this.tousPointsGrille();
+    const affiches = ids && !tous ? points.filter((x) => ids.has(x.idPt)) : points;
+    const filtre = ids ? { libelle: LIBELLES_ELEMENT_GRILLE[this.elementGrille() ?? ''] ?? '', n: ids.size, total: points.length, tous } : null;
     // Résumé sur l'EFFECTIF : un point « Observation » sans texte compte déjà pour RAS.
+    // Le décompte suit les points affichés (la barre « n / total »).
     const resume = {
-      ras: points.filter((p) => p.statut === 'RAS' || p.seraRas).length,
-      obs: points.filter((p) => p.statut === 'OBS' && !p.seraRas).length,
-      aRenseigner: points.filter((p) => p.statut === null).length,
+      ras: affiches.filter((p) => p.statut === 'RAS' || p.seraRas).length,
+      obs: affiches.filter((p) => p.statut === 'OBS' && !p.seraRas).length,
+      aRenseigner: affiches.filter((p) => p.statut === null).length,
     };
-    const base = { points, resume, piece: null, options: [] as OptionCible[], verrouille, justifications: [] as VueGrille['justifications'], puces: [] as VueGrille['puces'] };
+    const base = { points: affiches, resume, piece: null, options: [] as OptionCible[], verrouille, justifications: [] as VueGrille['justifications'], puces: [] as VueGrille['puces'] };
     const precedent = this.etape() > 0 ? 'Précédent' : null;
     const raison = (objet: string): string | null =>
       raisonValidationImpossible({ verrouille, objet, points: points.map((p) => ({ rang: p.rang, statut: p.statut, observations: this.resultat(idDetail, p.idPt).observations })) });
@@ -1659,6 +1676,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       ...base,
       eyebrow: 'Grille du dossier',
       titre: this.estPpm() ? 'Points inter-lignes : fractionnement, cohérence' : 'Points de contrôle du dossier',
+      filtre,
       raison: raison('la grille du dossier'),
       libelleValider: this.grilleAvantPieces() && this.nbPieces() ? 'Valider la grille et passer au contrôle des pièces' : 'Valider la grille du dossier',
       libellePrecedent: precedent,
@@ -1790,12 +1808,12 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
     // du dossier → Plan (lot 2 : les points inter-lignes se lisent sur le plan).
     effect(() => {
       if (this.estEtapeMarche()) this.ongletContenu.set('ppm');
-      else if (this.estEtapePiece()) this.ongletContenu.set('pieces');
+      else if (this.estEtapePiece()) { this.ongletContenu.set('pieces'); untracked(() => this.elementGrille.set(null)); }
       else if (this.estEtapeFiche()) this.ongletContenu.set('fiche');
       else if (this.estEtapeAgpm()) this.ongletContenu.set('agpm');
       // ⚠️ Lot B — aux contrôles du dossier, le document sous les yeux est la fiche DAO quand le dossier en porte une.
       // ⚠️ 27/10 — un dossier de marché lit la fiche DAO de sa procédure.
-      else if (this.estEtapeDossier()) this.ongletContenu.set(this.idFicheDossier() != null ? 'dao' : 'ppm');
+      else if (this.estEtapeDossier() && !untracked(() => this.elementGrille())) this.ongletContenu.set(this.idFicheDossier() != null ? 'dao' : 'ppm');
     });
     // Étape « Pièce N » : la pièce s'affiche d'elle-même dans la zone document.
     effect(() => {
@@ -2276,6 +2294,14 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       setTimeout(replacer, 100);
     };
     setTimeout(replacer);
+    // ⚠️ 27/10 (pilote) — dossier de marché : un onglet d'élément amène la grille du dossier, réduite à ses points.
+    if (this.dossier()?.procedure && o !== 'pieces') {
+      this.elementGrille.set(o);
+      this.tousPointsGrille.set(false);
+      if (this.hasEtapeDossier() && !this.estEtapeDossier()) this.allerEtape(this.etapeDossierIdx());
+      return;
+    }
+    if (o === 'pieces') this.elementGrille.set(null);
     const avant = this.etape();
     // ⚠️ Ordre pilote (2026-09-04) : fiche → lignes → AGPM → pièces. La fiche ouvre le fil, elle
     // est toujours atteignable ; les autres onglets expliquent la séquence quand leur tour n'est
@@ -2390,6 +2416,9 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
         break;
       case 'ref':
         this.allerInformation(a.code);
+        break;
+      case 'tousPoints':
+        this.tousPointsGrille.update((v) => !v);
         break;
     }
   }

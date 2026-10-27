@@ -53,6 +53,12 @@ import { ActionGrille, PointVue, VueGrille, codesCites, pluriel } from './examen
             </button>
           </div>
           <h2 id="grille-titre" class="grille__titre">{{ vue().titre }}</h2>
+          @if (vue().filtre; as f) {
+            <div class="grille__filtre">
+              <span>{{ f.tous ? 'Tous les points du dossier (' + f.total + ')' : 'Points liés à « ' + f.libelle + ' » · ' + f.n + ' sur ' + f.total }}</span>
+              <button type="button" class="grille__filtre-btn" (click)="action.emit({ type: 'tousPoints' })">{{ f.tous ? 'Seulement « ' + f.libelle + ' »' : 'Tous les points' }}</button>
+            </div>
+          }
           @if (vue().puces.length) {
             <div class="grille__puces">
               @for (p of vue().puces; track $index) {

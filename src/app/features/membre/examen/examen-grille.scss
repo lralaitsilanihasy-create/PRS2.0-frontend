@@ -369,3 +369,27 @@
 .grille__touches { margin: 0 0 0.35rem; font-size: 0.7rem; color: #5b6784; }
 .grille__touches kbd { padding: 0 0.28rem; border: 1px solid #dde4ee; border-bottom-width: 2px; border-radius: 4px; background: #fff; font: 500 0.64rem var(--font-mono, monospace); color: #34405a; }
 .pt__absentes { align-self: center; font-size: 0.68rem; color: #5b6784; font-style: italic; }
+
+// ⚠️ 27/10 (pilote) — la grille réduite aux points de l'onglet ouvert.
+.grille__filtre {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  background: var(--p-50, #f0f9ff);
+  color: var(--p-800, #075985);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.grille__filtre-btn {
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: var(--p-700, #0369a1);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}

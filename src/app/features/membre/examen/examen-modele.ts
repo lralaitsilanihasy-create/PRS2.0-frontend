@@ -447,6 +447,33 @@ export interface PieceVue {
   seraRas: boolean;
 }
 
+/**
+ * ⚠️ 27/10 (pilote, « la grille de contrôle change si on change d'onglet d'élément du dossier ») — les points de la grille du
+ * dossier de marché qui portent sur un élément lu en données, reconnus à leur libellé. Un élément sans point propre (fiche de
+ * présentation, PV de la CNM) montre toute la grille.
+ */
+const POINTS_PAR_ELEMENT: Readonly<Record<string, RegExp>> = {
+  seance: /ouverture|remise des offres|CAO désignée/i,
+  evaluation: /rejet|montant évalué|anormal|classement|qualification|rapport|documents essentiels|spécifications|moralité|PV de validation/i,
+  attribution: /projet de marché|attributaire|validité de l.offre/i,
+  bordereau: /montant évalué|moralité des prix|spécifications/i,
+  dao: /DAO|documents essentiels|spécifications|remise des offres/i,
+};
+export const LIBELLES_ELEMENT_GRILLE: Readonly<Record<string, string>> = {
+  seance: 'Séance d’ouverture',
+  evaluation: 'Rapport d’évaluation',
+  attribution: 'Attribution',
+  bordereau: 'Bordereau estimatif',
+  dao: 'Fiche DAO',
+};
+/** Les points de l'élément ; `null` quand l'élément n'en a pas de propres (toute la grille s'affiche). */
+export function pointsDeLElement<T extends { libelPointCtrl?: string | null }>(element: string | null, points: readonly T[]): T[] | null {
+  const re = element ? POINTS_PAR_ELEMENT[element] : undefined;
+  if (!re) return null;
+  const l = points.filter((x) => re.test(x.libelPointCtrl ?? ''));
+  return l.length ? l : null;
+}
+
 export interface VueGrille {
   eyebrow: string;
   titre: string;
@@ -461,6 +488,8 @@ export interface VueGrille {
   libelleValider: string;
   libellePrecedent: string | null;
   verrouille: boolean;
+  /** ⚠️ 27/10 — la grille réduite aux points de l'onglet ouvert (dossier de marché) ; `tous` : l'utilisateur a demandé toute la grille. */
+  filtre?: { libelle: string; n: number; total: number; tous: boolean } | null;
 }
 
 export type ActionGrille =
@@ -476,7 +505,9 @@ export type ActionGrille =
   | { type: 'basculer' }
   // ⚠️ 18/10 (pilote, lot B) — ouvrir un point (grille compacte), aller à une information citée par un point.
   | { type: 'ouvrir'; idPt: number }
-  | { type: 'ref'; code: string };
+  | { type: 'ref'; code: string }
+  // ⚠️ 27/10 — basculer entre les points de l'onglet ouvert et toute la grille du dossier.
+  | { type: 'tousPoints' };
 
 /**
  * ⚠️ 18/10 (pilote, lot B) — les informations de la fiche DAO qu'un point de contrôle cite dans son texte : un champ
