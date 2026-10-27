@@ -1,14 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 
 import { ApiError, corpsErreur } from '../../../core/errors/api-error';
-import { ouvrirBlobSur } from '../../../core/securite/fichiers-surs';
 import { FichePresentationDao } from '../../../models';
 import { DossierService } from '../../../services';
 
 /**
  * ⚠️ 17/10 (demande « pieces-dmc-par-les-donnees », B2 ; PRS20 be8089c) — la **fiche de présentation** d'un dossier DAO né d'une fiche,
  * produite des données (identification, marché, procédure, cohérence avec l'AGPM, validation), comme celle du dossier de
- * planification. Elle tient lieu de la pièce « Fiche de présentation datée et signée » ; le PDF sert à l'impression.
+ * planification. Elle tient lieu de la pièce « Fiche de présentation datée et signée ».
+ * ⚠️ 27/10 (pilote, « les éléments du dossier en données, pas en PDF ») — plus de bouton « Ouvrir le PDF » : elle se lit en données.
  */
 @Component({
   selector: 'app-fiche-presentation-dao',
@@ -21,9 +21,6 @@ import { DossierService } from '../../../services';
         @if (fiche(); as f) {
           <span class="fp__version">{{ duMarche() ? (lot() ? 'lot n° ' + lot() + ' · ' : '') + 'issue de l’attribution' : 'fiche DAO, version ' + f.versionFiche }}</span>
         }
-        <button type="button" class="btn btn-sm btn-outline fp__pdf" [disabled]="production()" (click)="ouvrirPdf()">
-          {{ production() ? 'Production…' : 'Ouvrir le PDF' }}
-        </button>
       </div>
       @if (chargement()) {
         <p class="fp__aide" role="status">Chargement…</p>
@@ -53,7 +50,6 @@ import { DossierService } from '../../../services';
     .fp__tete { display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; }
     .fp__titre { margin: 0; font-size: 1.05rem; }
     .fp__version { font-size: 0.8rem; color: var(--n-500); }
-    .fp__pdf { margin-left: auto; }
     .fp__section { border: 1px solid var(--n-200); border-radius: var(--radius-lg, 10px); overflow: hidden; }
     .fp__s-titre { margin: 0; padding: 0.5rem 0.9rem; background: var(--success-bg, #ecfdf5); color: var(--success-text, #047857); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; }
     .fp__lignes { margin: 0; }
@@ -71,7 +67,6 @@ export class FichePresentationDaoDoc {
   readonly fiche = signal<FichePresentationDao | null>(null);
   readonly chargement = signal(true);
   readonly refus = signal<string | null>(null);
-  readonly production = signal(false);
   /** ⚠️ 20/10 — la fiche d'un dossier de marché porte la section « Attribution » (V137). */
   readonly duMarche = computed(() => !!this.fiche()?.sections.some((x) => x.code === 'ATTRIBUTION'));
   readonly lot = computed(() => this.fiche()?.sections.find((x) => x.code === 'ATTRIBUTION')?.lignes.find((l) => l.code === 'LOT')?.valeur ?? null);
@@ -90,14 +85,6 @@ export class FichePresentationDaoDoc {
         },
       });
       nettoyer(() => abonnement.unsubscribe());
-    });
-  }
-
-  ouvrirPdf(): void {
-    this.production.set(true);
-    this.dossiers.fichePresentationPdf(this.idDossier()).subscribe({
-      next: (b) => { this.production.set(false); ouvrirBlobSur(b); },
-      error: () => { this.production.set(false); this.refus.set('Le PDF n’a pas pu être produit.'); },
     });
   }
 }

@@ -1,4 +1,3 @@
-import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 
 import { ToastService } from '../../../core/notifications/toast.service';
@@ -36,7 +35,7 @@ import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marc
 @Component({
   selector: 'app-dossier-documents',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PpmMarchesTable, FichePresentationDoc, AgpmDoc, DocumentVisionneuse, DossierPieces, DossierVersions, DossierInstantanes, ControlesDossier, CalendrierAnnuel, PublicationAgpmPanneau, FicheDaoDoc, FichePresentationDaoDoc, PlanDuDossierDao, CanevasRapportDoc, BordereauEstimatifDoc, AvisSpecifiqueDoc, FicheMarcheDossier, NgTemplateOutlet, SeanceMarcheDoc, EvaluationMarcheDoc, PvCnmDoc],
+  imports: [PpmMarchesTable, FichePresentationDoc, AgpmDoc, DocumentVisionneuse, DossierPieces, DossierVersions, DossierInstantanes, ControlesDossier, CalendrierAnnuel, PublicationAgpmPanneau, FicheDaoDoc, FichePresentationDaoDoc, PlanDuDossierDao, CanevasRapportDoc, BordereauEstimatifDoc, AvisSpecifiqueDoc, FicheMarcheDossier, SeanceMarcheDoc, EvaluationMarcheDoc, PvCnmDoc],
   host: { '[class.dc-documents--borne]': 'panneauBorne()' },
   template: `
     @if (contenu.estPpm()) {
@@ -176,12 +175,7 @@ import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marc
       }
       @if (contenu.dossier().idDmc && ongletProcedure() === 'avis') {
         <div class="dc-section">
-          <div class="dc-fichiers">
-            <span>La pièce jointe d’office :</span>
-            @for (p of fichiersOnglet('avis'); track p.idPiece) {
-              <button type="button" class="btn btn-outline btn-sm" (click)="ouvrirPiece(p)">{{ p.nomFichier }} ↗</button>
-            }
-          </div>
+          <!-- ⚠️ 27/10 (pilote) — en données seulement : le PDF joint d’office n’est plus proposé à côté. -->
           <app-document-visionneuse>
             <app-avis-specifique-doc [idDossier]="contenu.dossier().idDossier" />
           </app-document-visionneuse>
@@ -189,14 +183,6 @@ import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marc
       }
       @if (idFiche() && ongletProcedure() === 'bordereau') {
         <div class="dc-section">
-          @if (fichiersOnglet('bordereau').length) {
-            <div class="dc-fichiers">
-              <span>La pièce jointe d’office :</span>
-              @for (p of fichiersOnglet('bordereau'); track p.idPiece) {
-                <button type="button" class="btn btn-outline btn-sm" (click)="ouvrirPiece(p)">{{ p.nomFichier }} ↗</button>
-              }
-            </div>
-          }
           <app-document-visionneuse>
             <app-bordereau-estimatif-doc [idDmc]="idFiche()!" [versionSoumise]="contenu.dossier().ficheMarche?.versionSoumise" />
           </app-document-visionneuse>
@@ -209,33 +195,20 @@ import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marc
         }
         @if (ongletProcedure() === 'seance') {
           <div class="dc-section">
-            <ng-container *ngTemplateOutlet="fichiersAttribution; context: { $implicit: 'seance' }" />
             <app-seance-marche-doc [idDmc]="pr.idDmc" />
           </div>
         }
         @if (ongletProcedure() === 'evaluation') {
           <div class="dc-section">
-            <ng-container *ngTemplateOutlet="fichiersAttribution; context: { $implicit: 'evaluation' }" />
             <app-evaluation-marche-doc [idDmc]="pr.idDmc" [lot]="pr.lot" />
           </div>
         }
         @if (ongletProcedure() === 'attribution') {
           <div class="dc-section">
-            <ng-container *ngTemplateOutlet="fichiersAttribution; context: { $implicit: 'attribution' }" />
             <app-evaluation-marche-doc [idDmc]="pr.idDmc" [lot]="pr.lot" [vue]="'attribution'" />
           </div>
         }
       }
-      <ng-template #fichiersAttribution let-onglet>
-        @if (fichiersOnglet(onglet).length) {
-          <div class="dc-fichiers">
-            <span>Joint d’office par l’attribution :</span>
-            @for (p of fichiersOnglet(onglet); track p.idPiece) {
-              <button type="button" class="btn btn-outline btn-sm" (click)="ouvrirPiece(p)">{{ p.nomFichier }} ↗</button>
-            }
-          </div>
-        }
-      </ng-template>
       @if (avecCanevas() && ongletProcedure() === 'canevas') {
         <div class="dc-section">
           <app-document-visionneuse>
@@ -298,7 +271,6 @@ import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marc
     /* Marges resserrées dans un panneau borné (2026-09-15) : la largeur va au document. */
     :host(.dc-documents--borne) .dc-section { padding: 12px 16px; }
     .dc-plan { display: flex; flex-direction: column; gap: 0.75rem; }
-    .dc-fichiers { display: flex; align-items: center; gap: 0.5rem 0.75rem; flex-wrap: wrap; margin-bottom: 0.75rem; font-size: 0.85rem; color: var(--n-700); }
     .dc-plan__bandeau { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem 1.5rem; flex-wrap: wrap;
       padding: 0.6rem 0.9rem; border: 1px solid var(--n-200); border-radius: var(--radius-lg, 10px); background: #fff; }
     .dc-plan__texte { margin: 0; }

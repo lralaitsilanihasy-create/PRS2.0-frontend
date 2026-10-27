@@ -44,6 +44,10 @@ const ELEMENT_PAR_CODE: Readonly<Record<string, OngletPieceFournie>> = {
   PV_CNM_DMC: 'pv-cnm',
   PV_VALIDATION_CAO: 'evaluation',
   CANEVAS_RAPPORT: 'canevas',
+  // ⚠️ 27/10 (pilote) — le calendrier et le plan (AGPM) contrôlés se lisent dans la vue « Plan de passation », comme sur la page.
+  CALENDRIER: 'plan',
+  AGPM_CONTROLE: 'plan',
+  PPM_CONTROLE: 'plan',
 };
 
 /**

@@ -9,6 +9,8 @@ describe('elementDeLaPiece — la pièce lue en données à la réception (pilot
     expect(elementDeLaPiece(type('FICHE_PRESENTATION', true), null, true)).toBe('presentation');
     expect(elementDeLaPiece(type('PV_CNM_DMC', true), null, true)).toBe('pv-cnm');
     expect(elementDeLaPiece(type('PV_VALIDATION_CAO', true), null, true)).toBe('evaluation');
+    expect(elementDeLaPiece(type('CALENDRIER', true), null, true)).toBe('plan');
+    expect(elementDeLaPiece(type('AGPM_CONTROLE', true), null, true)).toBe('plan');
   });
 
   it('les fichiers joints d’office par l’attribution ouvrent leur vue, comme sur la page du dossier', () => {
