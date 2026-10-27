@@ -134,6 +134,12 @@ plus, pour ne pas les proposer. La page du dossier, la réception, l'examen et l
   - `true` pour un dossier créé par `POST …/marche-papier/lots/{lot}/dossier` (attribution marquée `REMISE_PAPIER`) ;
   - `false` sinon.
 
+> ⚠️ **2026-10-27, livré (backend), conforme à la demande**
+> - **`procedure.remisePapier`** vaut `true` pour un dossier de marché papier et `false` pour un dossier né de l'attribution. Il est
+>   servi par `GET /api/dossiers/{id}` et partout où `procedure` l'est déjà, sans appel de plus.
+> - **`procedure` reste nul pour tout autre dossier.**
+> - **Recette** : le dossier 100388 (consomptibles, lot 1) le servira à `true` dès le redémarrage du backend sur ce commit.
+
 ## Questions
 
 - **Q1 — Les procédures antérieures au 15/10**, dont le DAO n'est pas passé par une fiche : en reste-t-il en cours ? Si oui, faut-il
