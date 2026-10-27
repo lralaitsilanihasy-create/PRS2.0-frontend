@@ -1,4 +1,4 @@
-import { ProcedureEnLigne } from './candidat.model';
+import { ProcedureEnLigne, TentativeRefusee } from './candidat.model';
 import { EtatCao, EtatCeremonie } from './fiche-marche.model';
 
 /**
@@ -306,6 +306,11 @@ export interface PvSeance {
   signatures?: SignaturePv[];
   signaturesAttendues?: SignataireAttendu[];
   quorum?: QuorumCao | null;
+  /**
+   * ⚠️ 27/10 (« lectures-cnm-dossier-marche », L1) — les tentatives de dépôt refusées hors délai, portées au PV d'ouverture : servies à
+   * tout lecteur de la séance, la Commission comprise ; `null` tant que la séance n'est pas ouverte, `[]` : aucune.
+   */
+  tentativesRefusees?: TentativeRefusee[] | null;
 }
 
 /** Une part chiffrée pour la clé de l'appelant ; `enveloppe` seulement si l'offre a été scellée pour une clé archivée (S4). */
@@ -323,7 +328,9 @@ export interface OffreLue {
   etat: string;
   integrite: IntegriteOffre;
   motif: string | null;
-  entreprise: { nif: string; raisonSociale: string; verification: { statut: string; source: string | null } | null; exclusion: unknown | null };
+  entreprise: { nif: string; raisonSociale: string; verification: { statut: string; source: string | null } | null; exclusion: unknown | null;
+    /** ⚠️ 27/10 (Q2) — le STAT déclaré par l'entreprise, non vérifié (`verification` ne porte que sur le NIF) ; nul s'il n'est pas déclaré. */
+    stat?: string | null };
   groupement: { nif: string; raisonSociale: string; mandataire: boolean }[] | null;
   acteEngagement: { montantHt: number; montantTtc: number; delai: number; delaiUnite: 'JOURS' | 'MOIS'; validiteJours: number; rabais: string | RabaisDeclare | null } | null;
   /**

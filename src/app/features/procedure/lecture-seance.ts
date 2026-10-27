@@ -64,6 +64,7 @@ const LIBELLES_INTEGRITE: Readonly<Record<string, string>> = {
               <div class="ls__ident">
                 <h3 class="ls__titre">{{ o.entreprise.raisonSociale }}{{ o.lot ? ' — lot ' + o.lot : '' }}</h3>
                 <span class="text-sm text-muted">Offre n° {{ o.numero ?? '—' }} · NIF <span class="cnm-mono">{{ o.entreprise.nif }}</span>
+                  · STAT <span class="cnm-mono">{{ o.entreprise.stat || 'non déclaré' }}</span>
                   @if (o.entreprise.verification; as v) {
                     · <span [class.ls__nif-ok]="v.statut === 'VERIFIE_DGI' || v.statut === 'VERIFIE_SUR_PIECES'" [class.ls__nif-ko]="v.statut === 'INCONNU_DGI' || v.statut === 'REFUSE_SUR_PIECES'">{{ statutsNif[v.statut] ?? v.statut }}</span>
                   }

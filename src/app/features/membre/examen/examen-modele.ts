@@ -453,13 +453,16 @@ export interface PieceVue {
  * présentation, PV de la CNM) montre toute la grille.
  */
 const POINTS_PAR_ELEMENT: Readonly<Record<string, RegExp>> = {
-  seance: /ouverture|remise des offres|CAO désignée/i,
-  evaluation: /rejet|montant évalué|anormal|classement|qualification|rapport|documents essentiels|spécifications|moralité|PV de validation/i,
+  // ⚠️ 27/10 (vérification de cohérence) — chaque point va à l'onglet qui en affiche les données.
+  presentation: /remise des offres|date et heure|quorum/i,
+  seance: /PV d.ouverture|documents essentiels|validité de l.offre|qualification : activités/i,
+  evaluation: /CAO désignée|rejet|montant évalué|anormal|classement|qualification|rapport|documents essentiels|spécifications|moralité|PV de validation/i,
   attribution: /projet de marché|attributaire|validité de l.offre/i,
-  bordereau: /montant évalué|moralité des prix|spécifications/i,
-  dao: /DAO|documents essentiels|spécifications|remise des offres/i,
+  bordereau: /montant évalué|moralité des prix/i,
+  dao: /DAO|documents essentiels|spécifications|remise des offres|critères/i,
 };
 export const LIBELLES_ELEMENT_GRILLE: Readonly<Record<string, string>> = {
+  presentation: 'Fiche de présentation',
   seance: 'Séance d’ouverture',
   evaluation: 'Rapport d’évaluation',
   attribution: 'Attribution',
