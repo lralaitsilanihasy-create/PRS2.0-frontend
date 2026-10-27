@@ -393,3 +393,14 @@
   gap: 0.75rem;
   padding: 0 0.6rem 0.6rem;
 }
+
+// ⚠️ 27/10 (pilote) — la confirmation de la soumission directe.
+.af-soum { max-width: 34rem; }
+.af-soum__ref { margin: 0; font-weight: 700; color: var(--n-800); }
+.af-soum__ent { margin: 0.1rem 0 0.6rem; font-size: var(--text-sm); color: var(--n-500); }
+.af-soum__faits { margin: 0 0 0.6rem; display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 1rem; font-size: var(--text-sm); }
+.af-soum__faits > div { display: contents; }
+.af-soum__faits dt { color: var(--n-500); }
+.af-soum__faits dd { margin: 0; }
+.af-soum__aide { margin: 0; font-size: var(--text-sm); color: var(--n-500); }
+.af-soum__refus { margin: 0.6rem 0 0; padding: 0.5rem 0.75rem; border-radius: 6px; background: var(--danger-bg, #fef2f2); color: var(--danger-text, #b91c1c); font-size: var(--text-sm); white-space: pre-line; }

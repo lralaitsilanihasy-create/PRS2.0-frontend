@@ -27,6 +27,7 @@ const erreur = (status: number, fieldErrors?: Record<string, string>): ApiError 
 describe('Accueil « À faire » (écran)', () => {
   let aFaire: ReturnType<typeof vi.fn<(delegations: boolean) => Observable<AFaire>>>;
   let harness: RouterTestingHarness;
+  let soumettre: ReturnType<typeof vi.fn<(id: number) => Observable<Dossier>>>;
   const racine = (): HTMLElement => harness.routeNativeElement as HTMLElement;
   const texte = (el: Element | null | undefined): string => (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
   const tous = (sel: string): HTMLElement[] => Array.from(racine().querySelectorAll<HTMLElement>(sel));
@@ -34,6 +35,7 @@ describe('Accueil « À faire » (écran)', () => {
 
   const monter = async (role: Role, reponse: () => Observable<AFaire>, url: string): Promise<void> => {
     aFaire = vi.fn((delegations: boolean) => (delegations ? of(exempleDelegationsPresident()) : reponse()));
+    soumettre = vi.fn((id: number) => of({ idDossier: id, statut: 'SOUMIS' } as Dossier));
     TestBed.configureTestingModule({
       providers: [
         provideRouter([
@@ -41,7 +43,7 @@ describe('Accueil « À faire » (écran)', () => {
           { path: 'prmp/a-faire', component: AFaireEcran },
         ]),
         { provide: AuthService, useValue: { role: signal(role), nomAffichage: signal('RAVELOMANANA Mamy'), login: signal('PRES001') } },
-        { provide: DossierService, useValue: { aFaire, getById: (id: number) => of({ idDossier: id, statut: 'PRET_DISPATCH' } as Dossier) } },
+        { provide: DossierService, useValue: { aFaire, soumettre, getById: (id: number) => of({ idDossier: id, statut: 'PRET_DISPATCH' } as Dossier) } },
         { provide: ReceptionService, useValue: { getById: (id: number) => of({ idReception: id, idDossier: 1 } as Reception) } },
         { provide: DispatchService, useValue: { getById: (id: number) => of({ idDispatch: id, idReception: 1 } as Dispatch) } },
       ],
@@ -175,6 +177,38 @@ describe('Accueil « À faire » (écran)', () => {
     rendre();
     agirSur('00015/DGSR/DAO/2026');
     expect(naviguer).toHaveBeenLastCalledWith(['/', 'president', 'dossier', 1051], { queryParams: { returnUrl: '/president/a-faire?vue=etape', geste: 'DISPATCHER' } });
+  });
+
+  it('soumettre : une confirmation sur l’accueil, puis la soumission — sans repasser par l’écran de saisie (27/10)', async () => {
+    await monter('PRMP', () => of(exempleAFairePrmp()), '/prmp/a-faire');
+    const naviguer = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    (tous('.af-l__corps')[0] as HTMLButtonElement).click();
+    rendre();
+    (racine().querySelector('.ap__principal') as HTMLButtonElement).click();
+    rendre();
+    const dlg = racine().querySelector('.af-soum') as HTMLElement;
+    expect(dlg).not.toBeNull();
+    expect(naviguer).not.toHaveBeenCalled();
+    (Array.from(dlg.querySelectorAll('button')).find((b) => texte(b) === 'Soumettre') as HTMLButtonElement).click();
+    rendre();
+    expect(soumettre).toHaveBeenCalledWith(1200);
+    expect(racine().querySelector('.af-soum')).toBeNull();
+  });
+
+  it('soumettre refusé : le motif, et « Compléter le brouillon » mène à l’écran de saisie', async () => {
+    await monter('PRMP', () => of(exempleAFairePrmp()), '/prmp/a-faire');
+    soumettre.mockReturnValue(throwError(() => ({ ...erreur(400), message: 'Pièce obligatoire manquante : AGPM.' })));
+    const naviguer = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    (tous('.af-l__corps')[0] as HTMLButtonElement).click();
+    rendre();
+    (racine().querySelector('.ap__principal') as HTMLButtonElement).click();
+    rendre();
+    const bouton = (t: string) => Array.from(racine().querySelectorAll('.af-soum button')).find((b) => texte(b) === t) as HTMLButtonElement;
+    bouton('Soumettre').click();
+    rendre();
+    expect(texte(racine().querySelector('.af-soum__refus'))).toContain('Pièce obligatoire manquante');
+    bouton('Compléter le brouillon').click();
+    expect(naviguer).toHaveBeenCalledWith(['/prmp', 'soumettre-dossier'], expect.objectContaining({ queryParams: expect.objectContaining({ reprendre: 1200 }) }));
   });
 
   it('dispatch groupé : la seule modale restée sur l’accueil', async () => {

@@ -12,6 +12,11 @@ import { DispatchForm, DispatchItem } from '../circuit/dispatch-form';
 import { ModaleGeste, OuvrirGeste } from '../circuit/gestes/ouvrir-geste';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
 import { AFaireApercu } from './a-faire/a-faire-apercu';
+import { ApiError } from '../../core/errors/api-error';
+import { ToastService } from '../../core/notifications/toast.service';
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
+import { messageSoumissionRefusee } from '../../shared/circuit/controles-libelles';
+import { faitsApercu } from './a-faire/a-faire-modele';
 import { LIBELLES_SECTIONS } from './a-faire/a-faire-libelles';
 import {
   GroupeAFaire,
@@ -57,7 +62,7 @@ const VUES: readonly { cle: VueAFaire; libelle: string }[] = [
 @Component({
   selector: 'app-a-faire',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgTemplateOutlet, RouterLink, Icone, EtatErreur, AFaireApercu, DispatchForm],
+  imports: [NgTemplateOutlet, RouterLink, Icone, EtatErreur, AFaireApercu, DispatchForm, ModaleDirective],
   template: `
     <section class="af">
       <header class="af__tete">
@@ -190,6 +195,37 @@ const VUES: readonly { cle: VueAFaire; libelle: string }[] = [
     <!-- Dispatch GROUPÉ : le seul geste encore en modale sur l'accueil (plan L4 §4). -->
     @if (modale(); as m) {
       <app-dispatch-form [items]="itemsDe(m)" [reattribution]="null" (closed)="fermerModale()" (saved)="apresGeste()" />
+    }
+    <!-- ⚠️ 27/10 (pilote) — « Soumettre le dossier » soumet, après confirmation : l'écran de saisie du brouillon n'est plus traversé ;
+         un refus du serveur s'affiche ici, avec « Compléter le brouillon » pour y retourner. -->
+    @if (aSoumettre(); as t) {
+      <div class="modal-backdrop">
+        <div class="modal af-soum" role="dialog" aria-modal="true" aria-label="Soumettre le dossier à la Commission" appModale (appModaleFermer)="fermerSoumission()">
+          <div class="modal-header">
+            <h2 class="modal-title">Soumettre le dossier à la Commission</h2>
+            <button type="button" class="btn-close" aria-label="Fermer" (click)="fermerSoumission()">✕</button>
+          </div>
+          <div class="modal-body">
+            <p class="af-soum__ref">{{ t.dossier.refeDossier || 'Brouillon sans référence' }}{{ t.dossier.idSousType ? ' · ' + t.dossier.idSousType : '' }}</p>
+            @if (t.dossier.libelleEntite) { <p class="af-soum__ent">{{ t.dossier.libelleEntite }}</p> }
+            @if (faitsSoumission().length) {
+              <dl class="af-soum__faits">
+                @for (f of faitsSoumission(); track f.libelle) { <div><dt>{{ f.libelle }}</dt><dd>{{ f.valeur }}</dd></div> }
+              </dl>
+            }
+            <p class="af-soum__aide">Une fois soumis, le dossier part à la réception de la Commission : il ne se modifie plus, sauf à la demande de la Commission.</p>
+            @if (refusSoumission(); as r) { <p class="af-soum__refus" role="alert">{{ r }}</p> }
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" [disabled]="soumission()" (click)="fermerSoumission()">Annuler</button>
+            @if (refusSoumission()) {
+              <button type="button" class="btn btn-secondary" (click)="completerBrouillon(t)">Compléter le brouillon</button>
+            } @else {
+              <button type="button" class="btn btn-primary" [disabled]="soumission()" (click)="soumettreConfirme(t)">{{ soumission() ? 'Soumission…' : 'Soumettre' }}</button>
+            }
+          </div>
+        </div>
+      </div>
     }
   `,
   styleUrl: './a-faire.scss',
@@ -365,9 +401,54 @@ export class AFaireEcran {
   agir(t: AFaireTache, geste: GesteAFaire): void {
     if (this.ouverture() !== null) return;
     this.selection.set(cleTache(t));
+    // ⚠️ 27/10 (pilote) — soumettre, c'est soumettre : confirmation ici, sans repasser par l'écran de saisie.
+    if (geste === 'SOUMETTRE') {
+      this.refusSoumission.set(null);
+      this.aSoumettre.set(t);
+      return;
+    }
     const cible = cibleAccueil(geste, t, this.espace, this.retour());
     if (cible.type !== 'route') return;
     void this.router.navigate(cible.commandes, cible.queryParams ? { queryParams: cible.queryParams } : {});
+  }
+
+  // ── Soumission directe (27/10) ──────────────────────────────────────────────────────────────
+  private readonly toast = inject(ToastService);
+  readonly aSoumettre = signal<AFaireTache | null>(null);
+  readonly soumission = signal(false);
+  readonly refusSoumission = signal<string | null>(null);
+  readonly faitsSoumission = computed(() => { const t = this.aSoumettre(); return t ? faitsApercu(t) : []; });
+
+  fermerSoumission(): void {
+    if (this.soumission()) return;
+    this.aSoumettre.set(null);
+    this.refusSoumission.set(null);
+  }
+
+  soumettreConfirme(t: AFaireTache): void {
+    this.soumission.set(true);
+    this.refusSoumission.set(null);
+    this.dossierService.soumettre(t.dossier.idDossier).subscribe({
+      next: () => {
+        this.soumission.set(false);
+        this.aSoumettre.set(null);
+        this.toast.success('Dossier soumis à la Commission.');
+        this.dossiersRefresh.notifierChangement();
+        this.charger();
+      },
+      error: (e: ApiError) => {
+        this.soumission.set(false);
+        this.refusSoumission.set(messageSoumissionRefusee(e, 'Le dossier n’a pas pu être soumis.'));
+      },
+    });
+  }
+
+  /** Le refus du serveur appelle une correction : l'écran de saisie du brouillon, comme avant. */
+  completerBrouillon(t: AFaireTache): void {
+    this.aSoumettre.set(null);
+    this.refusSoumission.set(null);
+    const cible = cibleAccueil('COMPLETER_BROUILLON', t, this.espace, this.retour());
+    if (cible.type === 'route') void this.router.navigate(cible.commandes, cible.queryParams ? { queryParams: cible.queryParams } : {});
   }
 
   private ouvrirModale(m: ModaleOuverte): void {
