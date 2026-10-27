@@ -20,7 +20,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ApiError, estConflitVersion } from '../../core/errors/api-error';
 import { SortieProtegee } from '../../core/navigation/sortie-protegee';
 import { ToastService } from '../../core/notifications/toast.service';
-import { urlBlobSure, ouvrirBlobSur } from '../../core/securite/fichiers-surs';
+import { urlBlobSure } from '../../core/securite/fichiers-surs';
 import { bilanControles, messageControleNonConforme } from '../../shared/circuit/controles-libelles';
 import {
   Avis,
@@ -435,11 +435,7 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
                         [cible]="ficheCible()"
                         (codesRendus)="codesFiche.set($event)"
                         (celluleClick)="proposerObservationFiche($event)"
-                      >
-                        @if (daoCompletPiece(); as p) {
-                          <button ficheActions type="button" class="btn btn-outline btn-sm" title="Le rendu de cette fiche dans le modèle type (texte type : IC, CCAG, modèles)" (click)="ouvrirDansOnglet(p)">DAO complet (PDF) ↗</button>
-                        }
-                      </app-fiche-dao-doc>
+                      />
                     </app-document-visionneuse>
                   }
                   <!-- ⚠️ 18/10 (pilote, examen du DAO) — les éléments du dossier né d'une fiche se lisent EN DONNÉES, par les mêmes vues que
@@ -1038,8 +1034,6 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
     const neDUneFiche = this.dossier()?.idDmc != null;
     return [...this.piecesInitiales(), ...this.piecesApresRenvoi()].filter((p) => p.idPiece != null && !(neDUneFiche && p.idDocumentFiche != null));
   });
-  /** Le DAO complet produit par la fiche (ouvert dans un nouvel onglet depuis l'onglet « Fiche DAO »). */
-  readonly daoCompletPiece = computed(() => this.pieces().find((p) => p.idDocumentFiche != null && ongletDuFichier(p, true) === 'fiche-dao') ?? null);
   /** Le projet d'avis (ou de lettre d'invitation) produit par la fiche : l'onglet « Avis spécifique » existe s'il est là. */
   readonly pieceAvis = computed(() => this.pieces().find((p) => ongletDuFichier(p, true) === 'avis') ?? null);
   /** ⚠️ 18/10 — pour un dossier de procédure (DMC), la grille du dossier PRÉCÈDE les pièces : la Commission contrôle d'abord le DAO
@@ -2500,11 +2494,6 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
     const i = this.piecesOrdonnees().findIndex((x) => x.idPiece === p.idPiece);
     if (this.estEtapePiece() && i >= 0) this.allerEtape(this.offsetPieces() + i);
     if (this.openPiece() !== p.idPiece) this.ouvrirPiece(p);
-  }
-  /** Le DAO complet (PDF) dans un nouvel onglet — par `fichiers-surs`, assainissement et révocation compris. */
-  ouvrirDansOnglet(p: PieceJointeDossier): void {
-    if (p.idPiece == null) return;
-    this.pieceService.telecharger(p.idPiece).subscribe({ next: (b) => ouvrirBlobSur(b), error: () => this.toast.error("Impossible d'ouvrir la pièce.") });
   }
   /** Ouvre l'aperçu d'une pièce (une seule à la fois) — URL blob assainie (`fichiers-surs`). */
   ouvrirPiece(p: PieceJointeDossier): void {

@@ -2,8 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output, si
 
 import { ToastService } from '../../../core/notifications/toast.service';
 import { ouvrirBlobSur } from '../../../core/securite/fichiers-surs';
-import { PieceJointeDossier } from '../../../models';
-import { PieceJointeDossierService, PvExamenService } from '../../../services';
+import { PvExamenService } from '../../../services';
 
 import { CalendrierAnnuel } from '../../../shared/circuit/calendrier-annuel';
 import { ControlesDossier } from '../../../shared/circuit/controles-dossier';
@@ -15,7 +14,7 @@ import { PpmMarchesTable } from '../../../shared/prmp/ppm-marches-table';
 import { DocumentVisionneuse } from '../../../shared/ui/document-visionneuse';
 import { DossierContenuStore } from './dossier-contenu.store';
 import { DossierInstantanes } from './dossier-instantanes';
-import { DocumentDuDossier, OngletDossier, documentsDuDossier, fichiersDeLOnglet } from './documents-du-dossier';
+import { DocumentDuDossier, OngletDossier, documentsDuDossier } from './documents-du-dossier';
 import { DossierPieces } from './dossier-pieces';
 import { AvisSpecifiqueDoc } from './avis-specifique-doc';
 import { BordereauEstimatifDoc } from './bordereau-estimatif-doc';
@@ -163,13 +162,9 @@ import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marc
           @if (ongletImpose() && contenu.dossier().idDmc) {
             <app-fiche-marche-dossier [dossier]="contenu.dossier()" [enModale]="true" (liaisonChangee)="liaisonChangee.emit()" />
           }
-          <!-- ⚠️ 18/10 — le DAO complet en est le rendu dans le modèle type : son PDF reste à portée, pour le texte type (IC, CCAG, modèles). -->
+          <!-- ⚠️ 27/10 (pilote) — la fiche DAO en données seulement : le PDF du DAO complet n’est plus proposé ici. -->
           <app-document-visionneuse>
-            <app-fiche-dao-doc [idDmc]="idFiche()!">
-              @for (p of fichiersOnglet('fiche-dao'); track p.idPiece) {
-                <button ficheActions type="button" class="btn btn-outline btn-sm" title="Le rendu de cette fiche dans le modèle type (texte type : IC, CCAG, modèles)" (click)="ouvrirPiece(p)">DAO complet (PDF) ↗</button>
-              }
-            </app-fiche-dao-doc>
+            <app-fiche-dao-doc [idDmc]="idFiche()!" />
           </app-document-visionneuse>
         </div>
       }
@@ -317,20 +312,7 @@ export class DossierDocuments {
     && (this.avecProc() || this.contenu.instantanesVisible() || this.contenu.controlesVisible()));
   private readonly pvService = inject(PvExamenService);
   private readonly toast = inject(ToastService);
-  private readonly pieceService = inject(PieceJointeDossierService);
 
-  /** ⚠️ 18/10 — les fichiers produits par la fiche que montre un onglet (hors pièces d'après lettre de renvoi). */
-  fichiersOnglet(onglet: 'fiche-dao' | 'avis' | 'bordereau' | 'seance' | 'evaluation' | 'attribution'): PieceJointeDossier[] {
-    return fichiersDeLOnglet(this.contenu.pieces(), onglet);
-  }
-
-  ouvrirPiece(p: PieceJointeDossier): void {
-    if (p.idPiece == null) return;
-    this.pieceService.telecharger(p.idPiece).subscribe({
-      next: (b) => ouvrirBlobSur(b),
-      error: () => this.toast.error('Impossible d’ouvrir la pièce.'),
-    });
-  }
   readonly ouverturePv = signal(false);
   /** Le PV signé de l'examen du plan, en PDF (il tient lieu de l'AGPM contrôlé). */
   ouvrirPv(idPv: number): void {

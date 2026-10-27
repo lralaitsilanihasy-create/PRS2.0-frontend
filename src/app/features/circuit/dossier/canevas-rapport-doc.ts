@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 
 import { ApiError, corpsErreur } from '../../../core/errors/api-error';
-import { ouvrirBlobSur } from '../../../core/securite/fichiers-surs';
 import { CanevasRapport, CanevasSection } from '../../../models';
 import { DossierService } from '../../../services';
 
@@ -14,7 +13,8 @@ const LIBELLES_PARTIE: Record<'TECHNIQUE' | 'FINALE', string> = {
 /**
  * ⚠️ 17/10 (demande « canevas-rapport-evaluation », B1 ; PRS20 17f0f26) — le **canevas de rapport d'évaluation** d'un dossier DAO né
  * d'une fiche validée hors contrat-cadre, produit par l'application (jamais téléversé). Le plan du rapport du guide de la CAO, rempli
- * de ce que la fiche exige (lignes) ; les tableaux que la commission remplira sont montrés vides. Le PDF sert à l'impression.
+ * de ce que la fiche exige (lignes) ; les tableaux que la commission remplira sont montrés vides.
+ * ⚠️ 27/10 (pilote, « les éléments du dossier en données, pas en PDF ») — plus de bouton « Ouvrir le PDF ».
  */
 @Component({
   selector: 'app-canevas-rapport-doc',
@@ -24,9 +24,6 @@ const LIBELLES_PARTIE: Record<'TECHNIQUE' | 'FINALE', string> = {
       <div class="cr__tete">
         <h3 id="cr-titre" class="cr__titre">Canevas de rapport d’évaluation</h3>
         @if (canevas(); as c) { <span class="cr__version">fiche DAO, version {{ c.versionFiche }}</span> }
-        <button type="button" class="btn btn-sm btn-outline cr__pdf" [disabled]="production() || !canevas()" (click)="ouvrirPdf()">
-          {{ production() ? 'Production…' : 'Ouvrir le PDF' }}
-        </button>
       </div>
       @if (chargement()) {
         <p class="cr__aide" role="status">Chargement…</p>
@@ -73,7 +70,6 @@ const LIBELLES_PARTIE: Record<'TECHNIQUE' | 'FINALE', string> = {
     .cr__tete { display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; }
     .cr__titre { margin: 0; font-size: 1.05rem; }
     .cr__version { font-size: 0.8rem; color: var(--n-500); }
-    .cr__pdf { margin-left: auto; }
     .cr__partie { margin: 0.5rem 0 0; font-size: 0.95rem; color: var(--n-800); }
     .cr__section { border: 1px solid var(--n-200); border-radius: var(--radius-lg, 10px); overflow: hidden; }
     .cr__s-titre { margin: 0; padding: 0.5rem 0.9rem; background: var(--info-bg, #eff6ff); color: var(--info-text, #1d4ed8); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; }
@@ -99,7 +95,6 @@ export class CanevasRapportDoc {
   readonly sections = computed(() => this.canevas()?.sections ?? []);
   readonly chargement = signal(true);
   readonly refus = signal<string | null>(null);
-  readonly production = signal(false);
 
   constructor() {
     effect((nettoyer) => {
@@ -123,12 +118,4 @@ export class CanevasRapportDoc {
 
   /** Les rangées vierges, à numéroter pour le suivi. */
   vides(n: number): number[] { return Array.from({ length: Math.max(0, n) }, (_, i) => i); }
-
-  ouvrirPdf(): void {
-    this.production.set(true);
-    this.dossiers.canevasRapportPdf(this.idDossier()).subscribe({
-      next: (b) => { this.production.set(false); ouvrirBlobSur(b); },
-      error: () => { this.production.set(false); this.refus.set('Le PDF n’a pas pu être produit.'); },
-    });
-  }
 }
