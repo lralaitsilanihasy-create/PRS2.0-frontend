@@ -145,7 +145,10 @@ tr.cnm-row-cloture > td {
  * `display: none`). Sert à nommer un champ dont le libellé n'est porté que par une icône ou un
  * texte de substitution — celui-ci disparaît à la saisie et n'est pas un nom accessible fiable.
  */
-.cnm-sr-only {
+/* ⚠️ 27/10 — `visually-hidden` (le champ de fichier d'un bouton « Joindre ») n'était défini que dans un écran : ailleurs, le sélecteur
+   natif du navigateur (« Sélect. fichiers · Aucun fichier choisi ») s'affichait à côté du bouton. */
+.cnm-sr-only,
+.visually-hidden {
   position: absolute;
   width: 1px;
   height: 1px;
