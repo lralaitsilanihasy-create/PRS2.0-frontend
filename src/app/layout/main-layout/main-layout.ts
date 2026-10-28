@@ -506,12 +506,15 @@ export class MainLayout {
     // statut, fenêtre de dates, interrupteur global) — vide si la fonctionnalité est coupée.
     // L'échec est silencieux : une annonce manquante ne doit pas gêner l'entrée dans l'application,
     // et l'endpoint peut ne pas encore être déployé.
-    this.actualiteService.mesActualites().subscribe({
-      next: (rows) => this.actualites.set(rows ?? []),
-      error: () => this.actualites.set([]),
-    });
-
-    this.chargerEtatAssistantIa();
+    // ⚠️ 28/10 (V145) — le Responsable de procédure n'a ni actualités ni assistant (403 serveur) : on ne les demande pas.
+    const sansActualitesNiAssistant = this.auth.role() === 'RESPONSABLE_PROCEDURE';
+    if (!sansActualitesNiAssistant) {
+      this.actualiteService.mesActualites().subscribe({
+        next: (rows) => this.actualites.set(rows ?? []),
+        error: () => this.actualites.set([]),
+      });
+      this.chargerEtatAssistantIa();
+    }
 
     const ref = this.auth.ref();
     if (!ref) {

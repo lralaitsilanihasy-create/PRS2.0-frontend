@@ -36,7 +36,8 @@ const IMG_OK = ['image/jpeg', 'image/png'];
         <div class="cnm-form-grid">
           <label class="form-group">
             <span class="form-label">Matricule *</span>
-            <input class="form-control" type="text" formControlName="imControleur" placeholder="matricule" [readonly]="editId() !== null" />
+            <!-- ⚠️ 28/10 — le matricule est un varchar(7) : plus long, le serveur refusait en 409 générique. -->
+            <input class="form-control" type="text" formControlName="imControleur" placeholder="matricule" maxlength="7" [readonly]="editId() !== null" />
             @if (editId()) { <span class="form-hint">Non modifiable (identifiant).</span> }
             @if (invalide('imControleur')) { <span class="form-error">Obligatoire.</span> }
           </label>
@@ -292,7 +293,7 @@ export class ControleurAdmin implements OnInit, OnDestroy {
   readonly photoPreview = signal<string | null>(null);
 
   readonly form = this.fb.group({
-    imControleur: ['', Validators.required],
+    imControleur: ['', [Validators.required, Validators.maxLength(7)]],
     nomCont: [''],
     prenomsCont: [''],
     emailCont: ['', Validators.email],
