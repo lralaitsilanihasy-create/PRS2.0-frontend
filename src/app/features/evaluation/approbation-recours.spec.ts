@@ -122,4 +122,11 @@ describe('R9a — le DAO complet avant la publication', () => {
     expect(messageDaoCompletAbsent(e, 'avis')).toContain('de la version 3');
     expect(messageDaoCompletAbsent(e, 'lettres')).toMatch(/^Les lettres ne s’impriment/);
   });
+
+  it('⚠️ V144 — le refus porte le rang dans la file, ou l’assemblage en cours', () => {
+    const enFile = new HttpErrorResponse({ status: 409, error: { code: 'DAO_COMPLET_ABSENT', details: { version: 2, rang: 1 } } });
+    expect(messageDaoCompletAbsent(enFile, 'avis')).toContain('en préparation (n° 1 dans la file)');
+    const enCours = new HttpErrorResponse({ status: 409, error: { code: 'DAO_COMPLET_ABSENT', details: { version: 2, rang: null } } });
+    expect(messageDaoCompletAbsent(enCours, 'avis')).toContain('(assemblage en cours)');
+  });
 });

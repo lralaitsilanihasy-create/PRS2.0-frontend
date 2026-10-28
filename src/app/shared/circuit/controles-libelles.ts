@@ -63,8 +63,25 @@ export function messageSoumissionRefusee(e: ApiError, repli = 'Échec de la soum
   if (bloquants) return bloquants;
   const capm = messageCapmIncomplet(e);
   if (capm) return capm;
+  const dao = messageDaoCompletEnPreparation(e);
+  if (dao) return dao;
   const detail = e.fieldErrors ? Object.values(e.fieldErrors).join(' ') : '';
   return detail || e.message || repli;
+}
+
+/**
+ * ⚠️ 28/10 (demande « dao-complet-en-file », Q5, V144) — le refus 409 `DAO_COMPLET_EN_PREPARATION` `{ rang }` de la soumission, de la
+ * resoumission ou de la transmission des compléments : la Commission examine le DAO tel que les candidats le recevront. Le message du
+ * serveur nomme déjà le rang ; le repli le reconstruit (`rang` nul = assemblage en cours).
+ */
+export function messageDaoCompletEnPreparation(e: ApiError | HttpErrorResponse): string | null {
+  if (codeErreur(e) !== 'DAO_COMPLET_EN_PREPARATION') return null;
+  const corps = corpsErreur<{ message?: string; details?: { rang?: number | null } }>(e);
+  const serveur = corps?.message?.trim();
+  if (serveur) return serveur;
+  const rang = corps?.details?.rang;
+  const ou = rang != null ? `n° ${rang} dans la file` : 'assemblage en cours';
+  return `Le DAO complet est en préparation (${ou}) : la Commission examine le DAO tel que les candidats le recevront. Réessayez quand il sera prêt ; vous serez prévenu.`;
 }
 
 /**

@@ -201,7 +201,7 @@ export class AvisSpecifique implements OnInit {
             this.refus.set(messageDelaiPublicite(e));
             return;
           }
-          // ⚠️ R9a (V111) — le DAO complet, assemblé à l'impression s'il manque, n'a pas pu l'être.
+          // ⚠️ R9a (V111) — le DAO complet manque ; ⚠️ 28/10 (V144) il est mis en tête de la file, avec son rang.
           if (e.status === 409 && codeErreur(e) === 'DAO_COMPLET_ABSENT') {
             this.refus.set(messageDaoCompletAbsent(e, 'avis'));
             return;

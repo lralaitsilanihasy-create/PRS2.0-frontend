@@ -1,6 +1,6 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { signal } from '@angular/core';
+import { WritableSignal, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
@@ -8,6 +8,7 @@ import { vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { ToastService } from '../../../core/notifications/toast.service';
+import { NotificationsStore } from '../../../core/notifications/notifications.store';
 import { DocumentFiche, FicheMarche, LigneEligible, ReferentielFiche, Role, VersionFiche } from '../../../models';
 import { FicheMarcheEcran } from './fiche-marche';
 
@@ -155,7 +156,9 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     return b;
   };
 
+  let revision: WritableSignal<number>;
   function monter(role: Role, idDmc: number | null, query: Record<string, string> = {}): void {
+    revision = signal(0);
     toast = { success: vi.fn(), error: vi.fn(), info: vi.fn() };
     params = new BehaviorSubject(convertToParamMap(idDmc == null ? {} : { idDmc: String(idDmc) }));
     TestBed.configureTestingModule({
@@ -165,6 +168,7 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
         provideRouter([]),
         { provide: ActivatedRoute, useValue: { paramMap: params.asObservable(), queryParamMap: new BehaviorSubject(convertToParamMap(query)).asObservable(), snapshot: { data: {} } } },
         { provide: AuthService, useValue: { role: signal(role) } },
+        { provide: NotificationsStore, useValue: { revision } },
         { provide: ToastService, useValue: toast },
       ],
     });
@@ -1107,14 +1111,15 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     bouton('Valider la fiche').click();
     const post = http.expectOne('/api/fiches-marche/42/valider');
     expect(post.request.method).toBe('POST');
-    post.flush(fiche({ statut: 'VALIDEE', version: 1, dateValidation: '2026-09-22T10:05:00', validePar: 'PRMP001' }));
+    // ⚠️ 28/10 (V144) — la réponse part sans attendre Word : le DAO complet est en file.
+    post.flush(fiche({ statut: 'VALIDEE', version: 1, dateValidation: '2026-09-22T10:05:00', validePar: 'PRMP001', daoComplet: { etat: 'EN_FILE', rang: 1, depuis: '2026-09-22T10:05:00', motif: null } }));
     // ⚠️ Lot 2 — la validation produit les documents : l'écran les relit pour les offrir sans recharger la page.
     http.expectOne('/api/fiches-marche/42/documents').flush([
       { idDocument: 11, type: 'DPAO', nomFichier: 'DPAO_PPM-2026-003_7_v1.docx', tailleOctets: 240000, dateGeneration: '2026-09-22T10:05:00', version: 1 },
       { idDocument: 12, type: 'AE', nomFichier: 'AE_PPM-2026-003_7_v1.docx', tailleOctets: 31000, dateGeneration: '2026-09-22T10:05:00', version: 1 },
     ] as DocumentFiche[]);
     rendre();
-    expect(toast.success).toHaveBeenCalledWith(expect.stringContaining('version 1 figée'));
+    expect(toast.success).toHaveBeenCalledWith(expect.stringContaining('version 1 figée. Le DAO complet est en préparation — n° 1 dans la file.'));
     expect(racine().querySelector('.fm__etape--courante .fm__etape-t')?.textContent).toBe('Documents');
     expect(texte(racine().querySelector('.page-subtitle'))).toContain('fiche validée, version 1');
     // La version figée rejoint l'historique de l'étape 6 sans relecture serveur (en-tête dérivé de la fiche).
@@ -1124,6 +1129,25 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     expect(Array.from(racine().querySelectorAll('.fm__versions tbody tr')).map((tr) => cellules(tr))).toEqual(['1 22/09/2026 10:05 PRMP001 1 Documents']);
   });
 
+
+  it('28/10 (V144) — le DAO complet en file : son rang aux documents, relu à la notification, puis offert une fois prêt', () => {
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ statut: 'VALIDEE', version: 1, daoComplet: { etat: 'EN_FILE', rang: 2, depuis: '2026-10-28T10:00:31', motif: null } }), [], []);
+    fixture.componentInstance.etape.set(6);
+    rendre();
+    expect(texte(racine().querySelector('.alert-info'))).toBe('Le DAO complet est en préparation — n° 2 dans la file. Vous serez prévenu quand il sera prêt.');
+
+    // La notification DAO_COMPLET_PRET fait relire la fiche ; prêt, les documents sont relus.
+    revision.set(1);
+    rendre();
+    http.expectOne('/api/fiches-marche/42').flush(fiche({ statut: 'VALIDEE', version: 1, daoComplet: { etat: 'PRET', rang: null, depuis: '2026-10-28T10:01:54', motif: null } }));
+    http.expectOne('/api/fiches-marche/42/documents').flush([
+      { idDocument: 21, type: 'DAO_COMPLET', nomFichier: 'DAO_COMPLET_PPM-2026-003_7_v1.pdf', tailleOctets: 780000, dateGeneration: '2026-10-28T10:01:54', version: 1 },
+    ] as DocumentFiche[]);
+    rendre();
+    expect(racine().querySelector('.alert-info')).toBeNull();
+    expect(texte(racine().querySelector('.fm__docs'))).toContain('DAO_COMPLET_PPM-2026-003_7_v1.pdf');
+  });
 
   it('supprimer une fiche SANS HISTOIRE : geste offert, confirmation nommée, la ligne redevient préparable', () => {
     monter('PRMP', 42);

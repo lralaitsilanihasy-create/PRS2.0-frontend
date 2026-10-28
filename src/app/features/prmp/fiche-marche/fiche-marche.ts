@@ -9,6 +9,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { ouvrirBlobSur, telechargerBlob } from '../../../core/securite/fichiers-surs';
 import { ApiError, codeErreur, corpsErreur, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
+import { NotificationsStore } from '../../../core/notifications/notifications.store';
 import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, CompteDesignable, DocumentDao, DocumentFiche, EtatParametresInternes, TypeChamp, FicheMarche, LigneEligible, ObservationPv, PRESENTATION_SOUS_TYPE_FICHE, ReferentielFiche, RubriqueFiche, TypeMarche, VersionFiche } from '../../../models';
 import { ChampFicheMarcheService, DmcService, FicheMarcheService } from '../../../services/fiche-marche.services';
 import { DossierService, ObservationPvService } from '../../../services/circuit.services';
@@ -28,6 +29,7 @@ import { AvisSpecifique } from '../../../shared/prmp/avis-specifique';
 import { LettresInvitation } from '../../../shared/prmp/lettres-invitation';
 import { SansSuiteVue } from '../../evaluation/sans-suite';
 import { sansAvis } from '../../../shared/prmp/avis-specifique-modele';
+import { daoCompletEnPreparation, phraseDaoComplet } from './dao-complet-etat';
 import { ModaleDirective } from '../../../shared/a11y/modale.directive';
 import { Icone } from '../../../shared/ui/icone';
 import { TitreSiTronqueDirective } from '../../../shared/ui/titre-si-tronque';
@@ -628,6 +630,38 @@ export class FicheMarcheEcran {
     });
   }
 
+  /**
+   * ⚠️ 28/10 (demande « dao-complet-en-file », V144) — la validation n'attend plus Word : le DAO complet suit, assemblé dans une file
+   * à un seul ouvrier. Tant qu'il est en file ou en cours, la fiche se relit à chaque notification (`DAO_COMPLET_PRET`) et, à défaut,
+   * toutes les 30 s pour suivre le rang ; prêt, les documents sont relus pour l'offrir tout de suite.
+   */
+  private readonly notifications = inject(NotificationsStore);
+  readonly phraseDaoComplet = computed(() => phraseDaoComplet(this.fiche()?.daoComplet));
+  private revisionVue = -1;
+  private readonly suivreDaoComplet = effect((onCleanup) => {
+    const revision = this.notifications.revision();
+    const enPreparation = daoCompletEnPreparation(this.fiche()?.daoComplet);
+    const nouvelle = revision !== this.revisionVue;
+    this.revisionVue = revision;
+    if (!enPreparation) return;
+    if (nouvelle) untracked(() => this.relireDaoComplet());
+    const minuterie = setTimeout(() => this.relireDaoComplet(), 30_000);
+    onCleanup(() => clearTimeout(minuterie));
+  });
+
+  private relireDaoComplet(): void {
+    const id = this.idDmc();
+    if (id == null) return;
+    this.ficheService.lire(id).pipe(catchError(() => of(null))).subscribe((r) => {
+      if (!r || this.idDmc() !== id) return;
+      const avant = this.fiche()?.daoComplet;
+      this.fiche.update((f) => (f && f.idDmc === id ? { ...f, daoComplet: r.daoComplet ?? null } : f));
+      if (daoCompletEnPreparation(avant) && r.daoComplet?.etat === 'PRET') {
+        this.ficheService.documents(id).pipe(catchError(() => of(null))).subscribe((d) => d && this.documents.set(sansAvis(d)));
+      }
+    });
+  }
+
   charger(id: number | null = this.idDmc()): void {
     this.loading.set(true);
     this.erreur.set(false);
@@ -1180,7 +1214,9 @@ export class FicheMarcheEcran {
         const entete: VersionFiche = { idFiche: f.idFiche ?? null, version: f.version, statut: f.statut, typeMarche: f.typeMarche, dateCreation: f.dateCreation, dateValidation: f.dateValidation, validePar: f.validePar, nbValeurs: Object.keys(f.valeurs ?? {}).length };
         this.versions.update((v) => [entete, ...v.filter((x) => x.version !== f.version)]);
         this.etape.set(6);
-        this.toast.success(`Fiche DAO validée — version ${f.version} figée.`);
+        // ⚠️ 28/10 (V144) — la réponse part sans attendre Word : le message dit où en est le DAO complet.
+        const suite = phraseDaoComplet(f.daoComplet);
+        this.toast.success(`Fiche DAO validée — version ${f.version} figée.${suite ? ' ' + suite.texte : ''}`);
         // Lot 2 : la validation produit les documents ; on les relit pour les offrir tout de suite.
         this.ficheService.documents(id).pipe(catchError(() => of(null))).subscribe((d) => {
           this.documents.set(sansAvis(d ?? []));

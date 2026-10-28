@@ -366,8 +366,23 @@ export interface BilanControles {
 /** Le mode de remise des offres (cadrage `modeRemise`, H3) : papier ou électronique, jamais les deux. */
 export type ModeRemise = 'PAPIER' | 'ELECTRONIQUE';
 
+/**
+ * ⚠️ 28/10 (demande « dao-complet-en-file », V144) — le DAO complet de la dernière version validée, assemblé par Word dans une file
+ * à un seul ouvrier, après la validation. `rang` : 1 = le prochain, nul hors `EN_FILE` ; `depuis` : entrée dans l'état courant
+ * (nul en `SANS_WORD`) ; `motif` : le dernier échec, en `ECHEC` et en `EN_FILE` quand la version attend un nouvel essai.
+ */
+export type EtatDaoComplet = 'EN_FILE' | 'EN_COURS' | 'PRET' | 'ECHEC' | 'SANS_WORD';
+export interface DaoCompletFile {
+  etat: EtatDaoComplet;
+  rang: number | null;
+  depuis: string | null;
+  motif: string | null;
+}
+
 export interface FicheMarche {
   idFiche?: number | null;
+  /** ⚠️ 28/10 (V144) — servi sur la lecture de la fiche et la réponse de la validation ; nul sans version validée. */
+  daoComplet?: DaoCompletFile | null;
   /** ⚠️ Q11 (V116) — l'estimation de chaque lot face au plan ; `null` hors du besoin (prestations intellectuelles). */
   estimations?: EstimationLot[] | null;
   idDmc: number;
@@ -779,8 +794,8 @@ export interface DisponibiliteAvis {
   idDossierSoumis: number | null;
   /**
    * ⚠️ R9a (V111, 14/10, art. 31) — l'avis et les lettres exigent le DAO complet de la version validée : `PRODUIT` ; `A_ASSEMBLER`
-   * (assemblé à l'impression, ~20 s, qui peut rendre 409 `DAO_COMPLET_ABSENT`) ; `SANS_ASSEMBLAGE` (serveur sans Word : la règle ne
-   * s'applique pas) ; nul sans version validée. Indicatif : `disponible` n'en dépend pas.
+   * (⚠️ 28/10, V144 : l'impression le met en tête de file et rend 409 `DAO_COMPLET_ABSENT` — il n'est plus assemblé sur-le-champ) ;
+   * `SANS_ASSEMBLAGE` (serveur sans Word : la règle ne s'applique pas) ; nul sans version validée. Indicatif : `disponible` n'en dépend pas.
    */
   daoComplet?: 'PRODUIT' | 'A_ASSEMBLER' | 'SANS_ASSEMBLAGE' | null;
   /**

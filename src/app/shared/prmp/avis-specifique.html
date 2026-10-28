@@ -116,16 +116,17 @@
             <span>Le <strong>compte bancaire de l’ARMP</strong> n’est pas encore réglé par l’Administrateur : l’avis imprimera des pointillés à la place du compte où verser le prix du dossier.</span>
           </div>
         }
-        <!-- ⚠️ R9a (V111) — le DAO complet manque : l'impression l'assemble d'abord (la requête attend), ou rend DAO_COMPLET_ABSENT. -->
+        <!-- ⚠️ R9a (V111) — le DAO complet manque. ⚠️ 28/10 (V144) : l'impression ne l'assemble plus sur-le-champ, elle le met en tête de
+             la file et rend DAO_COMPLET_ABSENT { version, rang }. -->
         @if (etat()?.daoComplet === 'A_ASSEMBLER') {
-          <div class="alert alert-info" role="status"><span>Le dossier d’appel d’offres complet de la version validée n’est pas encore assemblé : l’impression l’assemble d’abord, ce qui prend une vingtaine de secondes.</span></div>
+          <div class="alert alert-info" role="status"><span>Le dossier d’appel d’offres complet de la version validée n’est pas encore assemblé : l’avis ne s’imprime qu’avec lui. Imprimer le met en tête de la file ; réessayez quand il sera prêt, vous serez prévenu.</span></div>
         }
         @if (refus(); as r) { <div class="alert alert-danger" role="alert"><span>{{ r }}</span></div> }
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline" [disabled]="envoi()" (click)="fermer()">Annuler</button>
         <button type="button" class="btn btn-primary" [disabled]="envoi() || !complete()" (click)="imprimer()">
-          {{ envoi() ? (etat()?.daoComplet === 'A_ASSEMBLER' ? 'Assemblage du DAO complet…' : 'Impression…') : 'Imprimer l’avis' }}
+          {{ envoi() ? 'Impression…' : 'Imprimer l’avis' }}
         </button>
       </div>
     </div>

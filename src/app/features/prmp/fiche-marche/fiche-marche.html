@@ -736,8 +736,12 @@
               <div class="fm__rub">
                 @if (figee()) {
                   <p class="fm__ok">Fiche validée — version {{ fiche()?.version }} figée{{ fiche()?.dateValidation ? ' le ' + dateFr(fiche()?.dateValidation) : '' }}.{{ ficheVerrouillee() ? '' : ' Une modification ouvre une nouvelle version.' }}</p>
+                  <!-- ⚠️ 28/10 (V144) — le DAO complet suit la validation, assemblé dans une file : où il en est. -->
+                  @if (phraseDaoComplet(); as p) {
+                    <div class="alert" [class.alert-info]="p.ton === 'info'" [class.alert-warning]="p.ton === 'alerte'" role="status"><span>{{ p.texte }}</span></div>
+                  }
                 } @else if (estPrmp()) {
-                  <p>La validation <strong>fige</strong> la fiche et lui donne un numéro de version. Elle <strong>produit les documents</strong> — {{ documentsEnToutesLettres() }} — depuis cette version, et les joint au dossier à soumettre.</p>
+                  <p>La validation <strong>fige</strong> la fiche et lui donne un numéro de version. Elle <strong>produit les documents</strong> — {{ documentsEnToutesLettres() }} — depuis cette version, et les joint au dossier à soumettre. Le DAO complet, assemblé par Word, suit quelques minutes plus tard : vous serez prévenu.</p>
                   @if (bilan().bloquants.length) { <p class="fm__ctrl fm__ctrl--r">{{ bilan().bloquants.length }} contrôle(s) bloquant(s) à lever avant de valider.</p> }
                 } @else {
                   <p>Vous préparez la fiche ; <strong>la PRMP</strong> la valide et soumet le dossier. Rien d'autre à faire ici.</p>
@@ -834,6 +838,10 @@
               <div class="fm__rub">
                 <!-- ⚠️ Lot 2 (demande du 23/09) — développé CONTRE le contrat proposé : tant que la route n'est pas
                      servie, on annonce ce qui viendra au lieu de laisser une promesse creuse. -->
+                <!-- ⚠️ 28/10 (V144) — le DAO complet rejoint la liste quand il est prêt ; en attendant, son état. -->
+                @if (phraseDaoComplet(); as p) {
+                  <div class="alert" [class.alert-info]="p.ton === 'info'" [class.alert-warning]="p.ton === 'alerte'" role="status"><span>{{ p.texte }}</span></div>
+                }
                 @if (documents().length) {
                   <!-- ⚠️ V43/V46 — l'acte d'engagement, la liste des fournitures, le bordereau et le tableau de
                        conformité sont produits UNE FOIS PAR LOT : on les groupe, sinon cinq lots donnent cinq

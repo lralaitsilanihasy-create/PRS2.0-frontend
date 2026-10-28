@@ -179,11 +179,15 @@ export function horodatage(iso: string | null | undefined): string {
 /**
  * ⚠️ R9a (V111, 14/10, art. 31) — le refus 409 `DAO_COMPLET_ABSENT` de l'impression de l'avis ou des lettres : le DAO complet de la
  * version validée n'a pas pu être assemblé. Le rattrapage périodique du serveur le reprend : réessayer plus tard.
+ * ⚠️ 28/10 (V144) — l'impression ne l'assemble plus : elle met la version en tête de la file, `details: { version, rang }` (rang nul
+ * quand Word l'assemble déjà).
  */
 export function messageDaoCompletAbsent(e: ApiError | HttpErrorResponse, quoi: 'avis' | 'lettres'): string {
-  const version = corpsErreur<{ details?: { version?: number } }>(e)?.details?.version;
+  const details = corpsErreur<{ details?: { version?: number; rang?: number | null } }>(e)?.details;
+  const version = details?.version;
+  const ou = details?.rang != null ? `n° ${details.rang} dans la file` : 'assemblage en cours';
   const doc = quoi === 'avis' ? 'L’avis ne s’imprime' : 'Les lettres ne s’impriment';
-  return `${doc} qu’avec le dossier d’appel d’offres complet${version != null ? ' de la version ' + version : ''}, qui n’a pas pu être assemblé. Le serveur le reprendra de lui-même : réessayez dans quelques minutes.`;
+  return `${doc} qu’avec le dossier d’appel d’offres complet${version != null ? ' de la version ' + version : ''}, en préparation (${ou}). Réessayez dans quelques minutes : vous serez prévenu quand il sera prêt.`;
 }
 
 /**
