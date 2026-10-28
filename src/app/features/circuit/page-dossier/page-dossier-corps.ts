@@ -149,7 +149,7 @@ const HAUT_TOPBAR = 48;
         </div>
         @if (cnmTerminee()) {
           <!-- ⚠️ 28/10 (pilote) — après la transmission à SIGMP, plus de prévision : le délai de la CNM est clos. -->
-          <p class="pd-fin">Traitement de la CNM<b>terminé</b></p>
+          <p class="pd-fin">Traitement de la CNM<b>{{ finCnm() ? 'terminé le ' + finCnm() : 'terminé' }}</b></p>
         } @else if (finPrevue()) {
           <p class="pd-fin">Fin de traitement prévue<b>{{ finPrevue() }}</b></p>
         }
@@ -410,6 +410,8 @@ export class PageDossierCorps implements OnInit {
   readonly etapes = computed(() => etapesPage(this.dossier(), this.contenu.restitutionsVisibles()));
   readonly finPrevue = computed(() => jourSemaineDate(this.dossier().datePrevisionnelleFin));
   readonly cnmTerminee = computed(() => traitementCnmTermine(this.dossier().statut));
+  /** ⚠️ 28/10 (PRS20 d1485b8, B3) — la fin du compteur de la CNM (clôture de la transmission à SIGMP), lue sur le chronométrage déjà chargé ; vide sans lui. */
+  readonly finCnm = computed(() => jourSemaineDate(this.contenu.chronoDossier()?.finCompteur));
 
   // ── Étape en cours et gestes (lot F3) ────────────────────────────────────────────────────────
   readonly vue = computed<VueEtape | null>(() => {
