@@ -1,11 +1,16 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, OnInit, computed, effect, inject, input, output, signal, untracked, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Observable } from 'rxjs';
 import { NgTemplateOutlet } from '@angular/common';
 import { Router, RouterLink, UrlTree } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { Dispatch, Dossier, PublicationAgpm, SOUS_TYPES_FICHE_DAO, TypePieceJointe } from '../../../models';
-import { DossierService } from '../../../services';
+import { DossierService, TransmissionSigmpService } from '../../../services';
+import { ApiError } from '../../../core/errors/api-error';
+import { ToastService } from '../../../core/notifications/toast.service';
+import { messageSoumissionRefusee } from '../../../shared/circuit/controles-libelles';
+import { faitsApercu } from '../../home/a-faire/a-faire-modele';
 import { ModaleDirective } from '../../../shared/a11y/modale.directive';
 import { ChronometrageDossier, ReputeApprouve, StatutBadge } from '../../../shared/circuit';
 import { jourSemaineDate } from '../../../shared/circuit/frise-delai';
@@ -280,6 +285,37 @@ const HAUT_TOPBAR = 48;
       }
     }
 
+    <!-- ⚠️ 27/10 (pilote) — soumettre et transmettre à SIGMP se font ici, après confirmation : l'écran de saisie du brouillon et l'écran
+         « Vérifier » ne sont plus traversés (ce dernier reste la cible du geste VERIFIER, quand des observations sont à lever). -->
+    @if (confirmation(); as c) {
+      <div class="modal-backdrop">
+        <div class="modal pd-confirm" role="dialog" aria-modal="true" [attr.aria-label]="c.titre" appModale (appModaleFermer)="fermerConfirmation()">
+          <div class="modal-header">
+            <h2 class="modal-title">{{ c.titre }}</h2>
+            <button type="button" class="btn-close" aria-label="Fermer" (click)="fermerConfirmation()">✕</button>
+          </div>
+          <div class="modal-body">
+            <p class="pd-confirm__ref">{{ reference() }}</p>
+            @if (c.faits.length) {
+              <dl class="pd-confirm__faits">
+                @for (f of c.faits; track f.libelle) { <div><dt>{{ f.libelle }}</dt><dd>{{ f.valeur }}</dd></div> }
+              </dl>
+            }
+            <p class="pd-confirm__aide">{{ c.aide }}</p>
+            @if (refusConfirmation(); as r) { <p class="pd-confirm__refus" role="alert">{{ r }}</p> }
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" [disabled]="confirmationEnCours()" (click)="fermerConfirmation()">Annuler</button>
+            @if (refusConfirmation() && c.repli) {
+              <button type="button" class="btn btn-secondary" (click)="ouvrirRepli(c.bouton)">{{ c.repli }}</button>
+            } @else {
+              <button type="button" class="btn btn-primary" [disabled]="confirmationEnCours()" (click)="confirmer(c)">{{ confirmationEnCours() ? 'Envoi…' : c.action }}</button>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
     <!-- Sous-dialogues des restitutions (demande pilote du 06/09) : mêmes blocs que la modale. -->
     @if (chronoOuvert()) {
       <div class="modal-backdrop">
@@ -496,9 +532,65 @@ export class PageDossierCorps implements OnInit {
       : `Pour soumettre, joignez d’abord les ${m.length} pièces obligatoires : ${m.join(' ; ')}.` };
   });
 
+  // ── Soumettre / transmettre à SIGMP : confirmation sur la page (27/10) ─────────────────────
+  private readonly sigmp = inject(TransmissionSigmpService);
+  private readonly toastConfirmation = inject(ToastService);
+  readonly confirmation = signal<{ bouton: GesteBouton; titre: string; action: string; aide: string; repli: string | null; faits: { libelle: string; valeur: string }[] } | null>(null);
+  readonly confirmationEnCours = signal(false);
+  readonly refusConfirmation = signal<string | null>(null);
+
+  private ouvrirConfirmation(b: GesteBouton): void {
+    const faits = faitsApercu(b.tache);
+    this.refusConfirmation.set(null);
+    this.confirmation.set(b.geste === 'SOUMETTRE'
+      ? { bouton: b, faits, titre: 'Soumettre le dossier à la Commission', action: 'Soumettre', repli: 'Compléter le brouillon',
+          aide: 'Une fois soumis, le dossier part à la réception de la Commission : il ne se modifie plus, sauf à la demande de la Commission.' }
+      : { bouton: b, faits, titre: 'Transmettre la décision à SIGMP', action: 'Transmettre', repli: null,
+          aide: 'La décision de la Commission est transmise à SIGMP ; le PV signé part ensuite chez l’Assistant pour archivage.' });
+  }
+
+  fermerConfirmation(): void {
+    if (this.confirmationEnCours()) return;
+    this.confirmation.set(null);
+    this.refusConfirmation.set(null);
+  }
+
+  confirmer(c: { bouton: GesteBouton }): void {
+    const id = this.dossier().idDossier;
+    const soumettre = c.bouton.geste === 'SOUMETTRE';
+    this.confirmationEnCours.set(true);
+    this.refusConfirmation.set(null);
+    const appel = soumettre ? this.dossierService.soumettre(id) : this.sigmp.transmettre(id);
+    (appel as Observable<unknown>).subscribe({
+      next: () => {
+        this.confirmationEnCours.set(false);
+        this.confirmation.set(null);
+        this.toastConfirmation.success(soumettre ? 'Dossier soumis à la Commission.' : 'Décision transmise à SIGMP.');
+        this.apresGeste();
+      },
+      error: (e: ApiError) => {
+        this.confirmationEnCours.set(false);
+        this.refusConfirmation.set(soumettre ? messageSoumissionRefusee(e, 'Le dossier n’a pas pu être soumis.') : e.message || 'La décision n’a pas pu être transmise.');
+      },
+    });
+  }
+
+  /** Le refus appelle une correction : l'écran de travail du geste, comme avant (l'écran de saisie du brouillon). */
+  ouvrirRepli(b: GesteBouton): void {
+    this.confirmation.set(null);
+    this.refusConfirmation.set(null);
+    const cible = ciblePage(b.geste, b.tache, this.espace, this.urlPage());
+    if (cible?.type === 'route') void this.router.navigate(cible.commandes, cible.queryParams ? { queryParams: cible.queryParams } : {});
+  }
+
   /** Exécute un geste servi : sa modale par-dessus la page, ou son écran de travail. */
   agir(b: GesteBouton): void {
     if (this.occupe() || this.modale()) return;
+    // ⚠️ 27/10 (pilote) — soumettre, c'est soumettre ; transmettre, c'est transmettre : confirmation ici, sans écran de plus.
+    if (b.geste === 'SOUMETTRE' || b.geste === 'TRANSMETTRE_SIGMP' || b.geste === 'TRANSMETTRE_DECISION') {
+      this.ouvrirConfirmation(b);
+      return;
+    }
     // Navette du PV (lot F4) et décision de retrait (lot F5) : elles se jouent dans le panneau — la barre
     // collante y ramène le focus.
     if (['navette', 'retrait'].includes(famillePage(b.geste))) {

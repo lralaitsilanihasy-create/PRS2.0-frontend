@@ -5,13 +5,14 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { InterimStore } from '../../core/interim/interim.store';
 import { AFaire, AFaireTache, GesteAFaire } from '../../models';
-import { DossierService } from '../../services';
+import { DossierService, TransmissionSigmpService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { Icone } from '../../shared/ui/icone';
 import { DispatchForm, DispatchItem } from '../circuit/dispatch-form';
 import { ModaleGeste, OuvrirGeste } from '../circuit/gestes/ouvrir-geste';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
 import { AFaireApercu } from './a-faire/a-faire-apercu';
+import { Observable } from 'rxjs';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
@@ -200,9 +201,9 @@ const VUES: readonly { cle: VueAFaire; libelle: string }[] = [
          un refus du serveur s'affiche ici, avec « Compléter le brouillon » pour y retourner. -->
     @if (aSoumettre(); as t) {
       <div class="modal-backdrop">
-        <div class="modal af-soum" role="dialog" aria-modal="true" aria-label="Soumettre le dossier à la Commission" appModale (appModaleFermer)="fermerSoumission()">
+        <div class="modal af-soum" role="dialog" aria-modal="true" [attr.aria-label]="titreConfirmation()" appModale (appModaleFermer)="fermerSoumission()">
           <div class="modal-header">
-            <h2 class="modal-title">Soumettre le dossier à la Commission</h2>
+            <h2 class="modal-title">{{ titreConfirmation() }}</h2>
             <button type="button" class="btn-close" aria-label="Fermer" (click)="fermerSoumission()">✕</button>
           </div>
           <div class="modal-body">
@@ -213,15 +214,15 @@ const VUES: readonly { cle: VueAFaire; libelle: string }[] = [
                 @for (f of faitsSoumission(); track f.libelle) { <div><dt>{{ f.libelle }}</dt><dd>{{ f.valeur }}</dd></div> }
               </dl>
             }
-            <p class="af-soum__aide">Une fois soumis, le dossier part à la réception de la Commission : il ne se modifie plus, sauf à la demande de la Commission.</p>
+            <p class="af-soum__aide">{{ versSigmp() ? 'La décision de la Commission est transmise à SIGMP ; le PV signé part ensuite chez l’Assistant pour archivage.' : 'Une fois soumis, le dossier part à la réception de la Commission : il ne se modifie plus, sauf à la demande de la Commission.' }}</p>
             @if (refusSoumission(); as r) { <p class="af-soum__refus" role="alert">{{ r }}</p> }
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-outline" [disabled]="soumission()" (click)="fermerSoumission()">Annuler</button>
-            @if (refusSoumission()) {
+            @if (refusSoumission() && !versSigmp()) {
               <button type="button" class="btn btn-secondary" (click)="completerBrouillon(t)">Compléter le brouillon</button>
             } @else {
-              <button type="button" class="btn btn-primary" [disabled]="soumission()" (click)="soumettreConfirme(t)">{{ soumission() ? 'Soumission…' : 'Soumettre' }}</button>
+              <button type="button" class="btn btn-primary" [disabled]="soumission()" (click)="soumettreConfirme(t)">{{ soumission() ? 'Envoi…' : versSigmp() ? 'Transmettre' : 'Soumettre' }}</button>
             }
           </div>
         </div>
@@ -402,8 +403,9 @@ export class AFaireEcran {
     if (this.ouverture() !== null) return;
     this.selection.set(cleTache(t));
     // ⚠️ 27/10 (pilote) — soumettre, c'est soumettre : confirmation ici, sans repasser par l'écran de saisie.
-    if (geste === 'SOUMETTRE') {
+    if (geste === 'SOUMETTRE' || geste === 'TRANSMETTRE_SIGMP' || geste === 'TRANSMETTRE_DECISION') {
       this.refusSoumission.set(null);
+      this.versSigmp.set(geste !== 'SOUMETTRE');
       this.aSoumettre.set(t);
       return;
     }
@@ -415,6 +417,10 @@ export class AFaireEcran {
   // ── Soumission directe (27/10) ──────────────────────────────────────────────────────────────
   private readonly toast = inject(ToastService);
   readonly aSoumettre = signal<AFaireTache | null>(null);
+  /** ⚠️ 27/10 — la même confirmation sert à transmettre la décision à SIGMP (le Vérificateur), sans passer par l'écran « Vérifier ». */
+  readonly versSigmp = signal(false);
+  readonly titreConfirmation = computed(() => (this.versSigmp() ? 'Transmettre la décision à SIGMP' : 'Soumettre le dossier à la Commission'));
+  private readonly sigmp = inject(TransmissionSigmpService);
   readonly soumission = signal(false);
   readonly refusSoumission = signal<string | null>(null);
   readonly faitsSoumission = computed(() => { const t = this.aSoumettre(); return t ? faitsApercu(t) : []; });
@@ -428,17 +434,18 @@ export class AFaireEcran {
   soumettreConfirme(t: AFaireTache): void {
     this.soumission.set(true);
     this.refusSoumission.set(null);
-    this.dossierService.soumettre(t.dossier.idDossier).subscribe({
+    const sigmp = this.versSigmp();
+    (sigmp ? this.sigmp.transmettre(t.dossier.idDossier) : this.dossierService.soumettre(t.dossier.idDossier) as Observable<unknown>).subscribe({
       next: () => {
         this.soumission.set(false);
         this.aSoumettre.set(null);
-        this.toast.success('Dossier soumis à la Commission.');
+        this.toast.success(sigmp ? 'Décision transmise à SIGMP.' : 'Dossier soumis à la Commission.');
         this.dossiersRefresh.notifierChangement();
         this.charger();
       },
       error: (e: ApiError) => {
         this.soumission.set(false);
-        this.refusSoumission.set(messageSoumissionRefusee(e, 'Le dossier n’a pas pu être soumis.'));
+        this.refusSoumission.set(sigmp ? e.message || 'La décision n’a pas pu être transmise.' : messageSoumissionRefusee(e, 'Le dossier n’a pas pu être soumis.'));
       },
     });
   }
