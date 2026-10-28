@@ -6,6 +6,7 @@ import { forkJoin, of } from 'rxjs';
 import { catchError, map, shareReplay, switchMap } from 'rxjs/operators';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { libelleRole } from '../../../core/auth/libelles-profils';
 import { ouvrirBlobSur, telechargerBlob } from '../../../core/securite/fichiers-surs';
 import { ApiError, codeErreur, corpsErreur, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
@@ -277,6 +278,8 @@ export class FicheMarcheEcran {
   readonly estAdmin = computed(() => this.auth.role() === 'ADMINISTRATEUR');
   /** Comptes désignables comme responsable, chargés quand l'Administrateur ouvre la désignation ; `null` = pas encore. */
   readonly candidatsResponsable = signal<CompteDesignable[] | null>(null);
+  /** Le profil d'un compte désignable, en clair (le serveur sert un code). */
+  readonly libelleProfil = libelleRole;
   readonly responsableChoisi = signal('');
   /** L'écran séparé des paramètres internes — pour le seul titulaire, à qui la fiche le dit (`peutModifierParametresInternes`). */
   readonly lienParametresInternes = computed<(string | number)[] | null>(() => {

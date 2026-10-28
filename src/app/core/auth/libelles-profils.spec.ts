@@ -12,6 +12,7 @@ describe('Libellés des profils (recette du 2026-09-15)', () => {
       ASSISTANT_CONTROLEUR: 'Assistant contrôleur',
       CHARGE_PUBLICATION: 'Chargé de publication',
       ADMINISTRATEUR: 'Administrateur',
+      RESPONSABLE_PROCEDURE: 'Responsable de procédure',
       PRMP: 'PRMP',
       UGPM: 'UGPM',
       CANDIDAT: 'Candidat',

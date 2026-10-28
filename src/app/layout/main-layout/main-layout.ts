@@ -134,7 +134,8 @@ export class MainLayout {
     const base = navFor(this.auth.role());
     const pied = base.findIndex((i) => i.path === '/notifications');
     const entreeProcedures: NavItem[] =
-      this.proceduresEnLigne.nombre() > 0 && this.auth.role() !== 'ADMINISTRATEUR'
+      // ⚠️ 28/10 — le Responsable de procédure a l'entrée dans son menu propre : pas de doublon.
+      this.proceduresEnLigne.nombre() > 0 && this.auth.role() !== 'ADMINISTRATEUR' && this.auth.role() !== 'RESPONSABLE_PROCEDURE'
         ? [{ label: 'Mes procédures en ligne', path: '/procedures-en-ligne', icon: 'key' }]
         : [];
     const propres = pied < 0 ? [...base, ...entreeProcedures] : [...base.slice(0, pied), ...entreeProcedures, ...base.slice(pied)];

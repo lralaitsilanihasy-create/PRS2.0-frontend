@@ -48,6 +48,12 @@ export class Home {
 
   constructor() {
     const role = this.auth.role();
+    // ⚠️ 28/10 (V145) — le Responsable de procédure n'a pas d'« À faire » (403 serveur) : il atterrit sur ses procédures.
+    if (role === 'RESPONSABLE_PROCEDURE') {
+      this.redirection.set(true);
+      void this.router.navigateByUrl('/procedures-en-ligne', { replaceUrl: true });
+      return;
+    }
     const aFaire = cheminAFaire(role);
     if (!aFaire) return;
     this.redirection.set(true);

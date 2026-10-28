@@ -277,6 +277,12 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     { label: 'Documents publics', path: '/publication/documents', icon: 'clip' },
     { label: 'Notifications', path: '/notifications', icon: 'bell' },
   ],
+  // ⚠️ 28/10 (arbitrage du pilote ; PRS20 2d20acf, V145) — le responsable de procédure : ses procédures (paramètres internes,
+  // cérémonie, séance, évaluation s'ouvrent depuis la liste) et ses notifications. Rien du circuit de contrôle.
+  RESPONSABLE_PROCEDURE: [
+    { label: 'Mes procédures en ligne', path: '/procedures-en-ligne', icon: 'key' },
+    { label: 'Notifications', path: '/notifications', icon: 'bell' },
+  ],
   // ⚠️ Refonte ergonomique, lot 6 F1 (2026-09-17) — l'ordre de déclaration suit les rubriques cibles
   // du plan (`docs/plan-refonte-L6-espace-admin.md`, §3) : accueil, Accès, Règles du contrôle,
   // Référentiels, Traces. Le classement lui-même vit dans `groupes-menu.ts`, pas ici.

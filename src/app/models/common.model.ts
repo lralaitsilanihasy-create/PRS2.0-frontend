@@ -34,6 +34,12 @@ export type Role =
   | 'CHARGE_PUBLICATION'
   | 'ADMINISTRATEUR'
   /**
+   * ⚠️ 28/10 (arbitrage du pilote ; demande « profil-responsable-procedure », PRS20 2d20acf, V145) — le RESPONSABLE DE PROCÉDURE :
+   * compte interne dédié au rôle (paramètres internes, cérémonie des clés, séance, évaluation des procédures dont il est le
+   * titulaire désigné). Coquille interne, menu réduit à ses procédures ; aucune route du circuit de contrôle (403 serveur).
+   */
+  | 'RESPONSABLE_PROCEDURE'
+  /**
    * ⚠️ Soumission en ligne, lot 1 (04/10, V63) — le CANDIDAT (une entreprise) : connexion par son adresse
    * électronique, **aucune route interne** (403 serveur sur tout ce qui n'est pas `/api/candidat/**`, les routes
    * publiques et `/api/mon-compte/**`). Il n'entre jamais dans la coquille interne : son espace est `/candidat`.

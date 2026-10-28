@@ -7,9 +7,9 @@ import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur, urlBlobSure } from '../../core/securite/fichiers-surs';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
-import { Controleur } from '../../models';
+import { Controleur, Profile } from '../../models';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
-import { ControleurService } from '../../services';
+import { ControleurService, ProfileService } from '../../services';
 import { ActionsCompte } from './actions-compte';
 
 const IMG_OK = ['image/jpeg', 'image/png'];
@@ -58,8 +58,13 @@ const IMG_OK = ['image/jpeg', 'image/png'];
             <input class="form-control" type="text" formControlName="telCont" />
           </label>
           <label class="form-group">
-            <span class="form-label">Profil (id)</span>
-            <input class="form-control" type="number" formControlName="idProfile" />
+            <!-- ⚠️ 28/10 (V145) — le profil se choisit par son nom, lu sur le serveur (« Responsable de procédure » compris) ;
+                 on ne saisit plus son numéro. -->
+            <span class="form-label">Profil</span>
+            <select class="form-control" formControlName="idProfile">
+              <option [ngValue]="null">— Choisir —</option>
+              @for (pr of profils(); track pr.idProfile) { <option [ngValue]="pr.idProfile">{{ pr.profile || 'Profil ' + pr.idProfile }}</option> }
+            </select>
           </label>
           <label class="form-group">
             <span class="form-label">Localité</span>
@@ -175,7 +180,7 @@ const IMG_OK = ['image/jpeg', 'image/png'];
           <dt>Prénoms</dt><dd>{{ d.prenomsCont || '—' }}</dd>
           <dt>Email</dt><dd>{{ d.emailCont || '—' }}</dd>
           <dt>Téléphone</dt><dd>{{ d.telCont || '—' }}</dd>
-          <dt>Profil</dt><dd>{{ d.idProfile ?? '—' }}</dd>
+          <dt>Profil</dt><dd>{{ nomProfil(d.idProfile) }}</dd>
           <dt>Localité</dt><dd>{{ d.idLocalite || '—' }}</dd>
           <dt>Supérieur</dt><dd>{{ d.idSuperieur || '—' }}</dd>
           <dt>Transversal</dt><dd>{{ d.transversal ? 'Oui' : 'Non' }}</dd>
@@ -253,6 +258,13 @@ export class ControleurAdmin implements OnInit, OnDestroy {
   }
   private readonly fb = inject(FormBuilder);
   private readonly controleurService = inject(ControleurService);
+  private readonly profileService = inject(ProfileService);
+  /** Les profils du référentiel, pour choisir celui d'un compte par son nom. */
+  readonly profils = signal<Profile[]>([]);
+  nomProfil(id: number | null | undefined): string {
+    if (id == null) return '—';
+    return this.profils().find((p) => p.idProfile === id)?.profile || String(id);
+  }
   private readonly toast = inject(ToastService);
 
   readonly controleurs = signal<Controleur[]>([]);
@@ -306,6 +318,7 @@ export class ControleurAdmin implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.charger();
+    this.profileService.listeSilencieuse().subscribe({ next: (l) => this.profils.set(l ?? []), error: () => this.profils.set([]) });
   }
   ngOnDestroy(): void {
     this.stopStream();

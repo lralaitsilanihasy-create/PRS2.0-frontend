@@ -120,7 +120,8 @@
             <span class="form-label">Compte à désigner (hors commission)</span>
             <select class="form-control" [value]="responsableChoisi()" (change)="responsableChoisi.set($any($event.target).value)">
               <option value="">— Choisir —</option>
-              @for (c of cands; track c.im) { <option [value]="c.im">{{ c.nom }} ({{ c.im }}){{ c.profil ? ' · ' + c.profil : '' }}</option> }
+              <!-- ⚠️ 28/10 (V145) — les comptes dédiés « Responsable de procédure » viennent en tête (ordre du serveur), marqués. -->
+              @for (c of cands; track c.im) { <option [value]="c.im">{{ c.nom }} ({{ c.im }}){{ c.profil ? ' · ' + libelleProfil(c.profil) : '' }}{{ c.profil === 'RESPONSABLE_PROCEDURE' ? ' — compte dédié' : '' }}</option> }
             </select>
           </label>
           <button type="button" class="btn btn-primary btn-sm" [disabled]="!responsableChoisi() || saving()" (click)="designerResponsable()">Désigner</button>

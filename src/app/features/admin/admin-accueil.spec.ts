@@ -44,6 +44,7 @@ const ACTUALITE: Actualite = {
   contenuMd: 'Le service sera interrompu.',
   profilsCibles: [
     'PRMP',
+    'RESPONSABLE_PROCEDURE',
     'UGPM',
     'SECRETAIRE',
     'PRESIDENT',

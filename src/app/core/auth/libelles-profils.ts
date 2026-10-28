@@ -16,6 +16,8 @@ export const LIBELLES_ROLES: Readonly<Record<Role, string>> = {
   ASSISTANT_CONTROLEUR: 'Assistant contrôleur',
   CHARGE_PUBLICATION: 'Chargé de publication',
   ADMINISTRATEUR: 'Administrateur',
+  // ⚠️ 28/10 (V145) — compte dédié au rôle de responsable des procédures en remise électronique.
+  RESPONSABLE_PROCEDURE: 'Responsable de procédure',
   PRMP: 'PRMP',
   UGPM: 'UGPM',
   // ⚠️ Soumission en ligne, lot 1 (04/10) — l'entreprise qui retire un DAO ; hors coquille interne.
