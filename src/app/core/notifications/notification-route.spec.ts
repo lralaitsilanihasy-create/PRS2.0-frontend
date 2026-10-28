@@ -41,6 +41,13 @@ describe('Routage d’une notification', () => {
     }
   });
 
+  it('28/10 — DECISION_TRANSMISE_SIGMP : la page du dossier, sans fenêtre ouverte d’office (PRMP et UGPM)', () => {
+    for (const role of ['PRMP', 'UGPM']) {
+      expect(routePourNotification(n({ typeNotif: 'DECISION_TRANSMISE_SIGMP', idDossier: 100391 }), role))
+        .toEqual({ genre: 'page-dossier', commands: ['/prmp', 'dossier', '100391'] });
+    }
+  });
+
   it('sans la page (Administrateur, Chargé de publication) : rien, l’appelant garde sa modale', () => {
     expect(routePourNotification(n({ typeNotif: 'TYPE_INCONNU', idDossier: 1052 }), 'ADMINISTRATEUR')).toBeNull();
     expect(routePourNotification(n({ typeNotif: 'TYPE_INCONNU', idDossier: 1052 }), 'CHARGE_PUBLICATION')).toBeNull();

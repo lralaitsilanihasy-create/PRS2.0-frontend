@@ -157,6 +157,11 @@ export function routePourNotification(n: Notification, role: string | null): Cib
   if (type === 'AVIS_A_IMPRIMER' && (role === 'PRMP' || role === 'UGPM') && n.idDossier != null) {
     return { genre: 'page-dossier', commands: ['/prmp', 'dossier', String(n.idDossier)], queryParams: { imprimer: 'avis' } };
   }
+  // ⚠️ 28/10 (demande « decision-sigmp-prmp », PRS20 5f73718) — la décision du dossier est transmise à SIGMP : le texte dit le sens
+  // et la suite (l'avis imprimable ou non) ; le clic ouvre la page du dossier, où se lisent l'état et l'avis.
+  if (type === 'DECISION_TRANSMISE_SIGMP' && (role === 'PRMP' || role === 'UGPM') && n.idDossier != null) {
+    return { genre: 'page-dossier', commands: ['/prmp', 'dossier', String(n.idDossier)] };
+  }
 
   // — Replis par OBJET (types non mappés individuellement).
   // ⚠️ Soumission en ligne, lot 2b (04/10) — la cérémonie des clés (`CLES_PUBLIEES`, `MARGE_QUORUM`, `PART_PERDUE`…) : la
