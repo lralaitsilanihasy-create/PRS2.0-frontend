@@ -95,22 +95,24 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
                 <div class="cao__lu"><span class="form-label">Date de la décision</span><strong>{{ dateDecision() ? date(dateDecision()) : '—' }}</strong></div>
               } @else {
                 <label class="form-group">
-                  <span class="form-label">Référence de la décision</span>
+                  <span class="form-label required">Référence de la décision</span>
                   <input class="form-control" type="text" [value]="reference()" (input)="reference.set($any($event.target).value)" [class.error]="!!erreurDe('decision.reference')" />
                   @if (erreurDe('decision.reference'); as m) { <span class="form-error">{{ m }}</span> }
                 </label>
                 <label class="form-group">
-                  <span class="form-label">Date de la décision</span>
+                  <span class="form-label required">Date de la décision</span>
                   <input class="form-control" type="date" [value]="dateDecision()" (input)="dateDecision.set($any($event.target).value)" [class.error]="!!erreurDe('decision.date')" />
                   @if (erreurDe('decision.date'); as m) { <span class="form-error">{{ m }}</span> }
                 </label>
               }
               <div class="cao__pdf">
-                <span class="form-label">Décision signée (PDF, {{ decisionMaxMo }} Mo au plus)</span>
+                <!-- ⚠️ 28/10 (arbitrage du pilote ; demande « decision-cao-obligatoire », PRS20 04e542b) — le PDF signé est obligatoire :
+                     sans lui la commission reste INCOMPLETE et la fiche ne se valide pas en remise électronique (SE_CAO). -->
+                <span class="form-label required">Décision signée (PDF, {{ decisionMaxMo }} Mo au plus)</span>
                 @if (cao()?.decision?.fichier) {
                   <span class="cao__pdf-ok">Jointe — en joindre une nouvelle la remplace.</span>
                 } @else {
-                  <span class="cao__pdf-ko">Non jointe : facultative, mais attendue.</span>
+                  <span class="cao__pdf-ko">Non jointe : la commission n’est pas constituée sans elle, et la fiche ne peut pas être validée.</span>
                 }
                 <div class="cao__pdf-choix">
                   <input class="form-control" type="file" accept="application/pdf" aria-label="Fichier PDF de la décision signée" (change)="choisirDecision($event)" />
