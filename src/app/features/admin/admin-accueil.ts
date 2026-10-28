@@ -648,13 +648,15 @@ export class AdminAccueil {
       // ⚠️ 06/10 — les procédures en remise électronique sans responsable : sans lui, ni cérémonie ni validation de la fiche.
       {
         cle: 'procedures',
-        titre: 'Procédures en ligne sans responsable',
+        // ⚠️ 28/10 (pilote) — « sans responsable » seul, la carte ne disait pas qu'elle mène aussi aux paramètres internes et aux
+        // cérémonies : le pilote ne trouvait pas l'écran. Le nombre reste celui à traiter (responsables à désigner).
+        titre: 'Procédures en ligne — responsables à désigner',
         nombre: this.proceduresEnLigne.sansResponsable(),
         attente: null,
         lien: '/procedures-en-ligne',
-        action: 'Voir les procédures en ligne',
+        action: 'Procédures, paramètres et cérémonies',
         texte: this.proceduresEnLigne.nombre()
-          ? `${this.proceduresEnLigne.nombre()} procédure(s) en remise électronique au total.`
+          ? `${this.proceduresEnLigne.nombre()} procédure(s) en remise électronique au total : la liste ouvre aussi leurs paramètres internes et leur cérémonie des clés.`
           : 'Aucune procédure en remise électronique.',
       },
     ];
