@@ -50,10 +50,14 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CanDirective, StatutBadge, MotifsTypes],
   template: `
-    <div class="pv-workflow">
+    <div class="pv-workflow" [class.pv-workflow--pied]="variante() === 'pied'">
+      <!-- ⚠️ 28/10 (maquette validée) — en pied de fenêtre, le statut est déjà dans l'en-tête : seule la navette à deux niveaux reste dite. -->
+      @if (variante() !== 'pied' || (estDeuxNiveaux() && pv().statutPv === 'PROJET_SOUMIS')) {
       <div class="pv-workflow__state">
+        @if (variante() !== 'pied') {
         <span class="pv-workflow__label">Statut du PV :</span>
         <app-statut-badge [statut]="pv().statutPv" [label]="statutLabel()" />
+        }
         <!-- ⚠️ Navette à DEUX NIVEAUX (2026-09-04) : Membre ↔ CC puis CC ↔ Président. -->
         @if (estDeuxNiveaux() && pv().statutPv === 'PROJET_SOUMIS') {
           <span class="pv-workflow__niveau">
@@ -62,6 +66,7 @@ import {
           </span>
         }
       </div>
+      }
 
       <div class="pv-workflow__actions">
         @if (canSoumettre()) {
@@ -472,6 +477,12 @@ import {
       gap: 0.5rem;
     }
     .pv-workflow__lettres { overflow-x: auto; }
+    /* ⚠️ 28/10 — en pied de fenêtre : fond clair, gestes alignés à droite, panneaux pleine largeur au-dessus. */
+    .pv-workflow--pied { background: none; box-shadow: none; border-radius: 0; padding: 0; gap: 0.6rem; }
+    .pv-workflow--pied .pv-workflow__actions { border-top: 0; padding-top: 0; justify-content: flex-end; }
+    .pv-workflow--pied .pv-workflow__actions .btn-outline { color: var(--n-700); border-color: var(--n-300); background: #fff; }
+    .pv-workflow--pied .pv-workflow__deja-signe { color: var(--n-500); }
+    .pv-workflow--pied .pv-workflow__niveau { color: var(--n-700); background: var(--n-100); border-color: var(--n-200); }
     .pv-workflow__lettres table { width: 100%; }
   `,
 })
@@ -497,6 +508,11 @@ export class PvWorkflow {
    * 0 → FAV suggéré (FAVR refusé). `null` = inconnu (pas de suggestion).
    */
   readonly nbObservationsExamen = input<number | null>(null);
+  /**
+   * ⚠️ 28/10 (maquette validée par le pilote) — `pied` : la barre posée dans le pied de la fenêtre du PV, sur fond clair, gestes à
+   * droite ; `bande` (défaut) : la barre de décision sombre de la page du dossier, inchangée.
+   */
+  readonly variante = input<'bande' | 'pied'>('bande');
   /** Émis après une transition réussie, avec le PV mis à jour. */
   readonly changed = output<PvExamen>();
 

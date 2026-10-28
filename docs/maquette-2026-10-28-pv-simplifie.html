@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PV simplifié — maquette</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* Maquette du 28/10 (demande du pilote) : la fenêtre du projet de PV, simplifiée. Jetons du design system de l'application. */
+  :root {
+    --p-50: #f0f9ff; --p-100: #e0f2fe; --p-600: #0284c7; --p-700: #0369a1; --p-800: #075985;
+    --n-50: #f8f9fc; --n-100: #f0f2f8; --n-200: #e8ecf4; --n-300: #d0d8e8; --n-400: #667299; --n-500: #586586; --n-700: #2e3a58; --n-800: #1a1d2e;
+    --ok: #059669; --ok-bg: #ecfdf5; --warn: #a16207; --warn-bg: #fef9c3; --ko: #b42318; --ko-bg: #fef3f2;
+    --font: 'Plus Jakarta Sans', -apple-system, 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: var(--font); color: var(--n-800); background: #e9edf5; font-size: 14px; }
+  .note { max-width: 980px; margin: 18px auto 0; padding: 0 16px; color: var(--n-500); font-size: 13px; }
+  .note b { color: var(--n-700); }
+  .roles { max-width: 980px; margin: 10px auto 14px; padding: 0 16px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .roles span { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--n-400); margin-right: 4px; }
+  .roles button { font: 600 13px var(--font); border: 1px solid var(--n-300); background: #fff; color: var(--n-700); padding: 6px 12px; border-radius: 999px; cursor: pointer; }
+  .roles button[aria-pressed="true"] { background: var(--n-800); color: #fff; border-color: var(--n-800); }
+
+  .modale { max-width: 980px; margin: 0 auto 40px; background: #fff; border-radius: 14px; box-shadow: 0 20px 50px rgba(13, 15, 26, .18); display: flex; flex-direction: column; max-height: calc(100vh - 120px); }
+  .tete { padding: 18px 24px 14px; border-bottom: 1px solid var(--n-200); display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; }
+  .tete h2 { margin: 0; font-size: 18px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .ref { font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; letter-spacing: -.01em; }
+  .fermer { grid-row: 1 / span 3; grid-column: 2; align-self: start; width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--n-300); background: #fff; color: var(--n-500); cursor: pointer; font-size: 15px; }
+  .tete p { margin: 0; color: var(--n-500); font-size: 13px; }
+  .tete p b { color: var(--n-700); font-weight: 600; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+  .badge--gris { background: var(--n-100); color: var(--n-500); }
+  .badge--bleu { background: var(--p-100); color: var(--p-800); }
+  .badge--avis { background: var(--warn-bg); color: var(--warn); }
+  .badge--ok { background: var(--ok-bg); color: var(--ok); }
+
+  .corps { padding: 18px 24px; overflow: auto; display: flex; flex-direction: column; gap: 22px; }
+  h3 { margin: 0 0 8px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--n-500); display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .lien { font: 600 13px var(--font); color: var(--p-700); background: none; border: 0; cursor: pointer; text-transform: none; letter-spacing: 0; padding: 0; }
+  .lien:hover { text-decoration: underline; }
+  .synthese { margin: 0; padding: 10px 14px; border-left: 3px solid var(--p-600); background: var(--p-50); border-radius: 0 8px 8px 0; color: var(--n-700); }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--n-400); padding: 6px 10px; border-bottom: 1px solid var(--n-200); }
+  td { padding: 9px 10px; border-bottom: 1px solid var(--n-100); vertical-align: top; }
+  tr.groupe td { background: var(--n-50); font-weight: 600; font-size: 12px; color: var(--n-500); padding: 6px 10px; }
+  td.point { width: 34%; }
+  td.res { width: 14%; white-space: nowrap; }
+  .res-ko { color: var(--ko); font-weight: 600; }
+  .res-ok { color: var(--ok); }
+  .avant { color: var(--n-500); text-decoration: line-through; text-decoration-color: rgba(180, 35, 24, .5); }
+  .apres { color: var(--n-800); font-weight: 600; }
+  .vide { color: var(--n-400); }
+  .ok-ligne { margin: 0; color: var(--ok); font-weight: 600; }
+  .ok-ligne::before { content: '✓ '; }
+
+  .circuit { display: flex; align-items: center; gap: 0; flex-wrap: wrap; margin: 0; padding: 0; list-style: none; }
+  .circuit li { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--n-500); }
+  .circuit li + li::before { content: ''; width: 34px; height: 2px; background: var(--n-300); margin: 0 10px; }
+  .circuit .pt { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--n-300); background: #fff; flex: none; }
+  .circuit .fait .pt { background: var(--ok); border-color: var(--ok); }
+  .circuit .encours .pt { background: var(--p-600); border-color: var(--p-600); box-shadow: 0 0 0 4px var(--p-100); }
+  .circuit .encours { color: var(--n-800); font-weight: 600; }
+  .circuit small { display: block; font-weight: 400; color: var(--n-400); font-size: 12px; }
+
+  details summary { cursor: pointer; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--n-500); }
+  details p { margin: 8px 0 0; color: var(--n-400); }
+
+  .pied { border-top: 1px solid var(--n-200); padding: 14px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: #fff; border-radius: 0 0 14px 14px; }
+  .pied .quoi { flex: 1 1 260px; color: var(--n-500); font-size: 13px; }
+  .pied .quoi b { color: var(--n-800); }
+  .btn { font: 600 14px var(--font); border-radius: 9px; padding: 9px 16px; cursor: pointer; border: 1px solid transparent; }
+  .btn--sec { background: #fff; border-color: var(--n-300); color: var(--n-700); }
+  .btn--pri { background: var(--p-600); color: #fff; }
+  .btn--ok { background: var(--ok); color: #fff; }
+  .btn--warn { background: #fff; border-color: #f0c36d; color: var(--warn); }
+  .btn:focus-visible, .lien:focus-visible, .roles button:focus-visible, .fermer:focus-visible { outline: 2px solid var(--p-600); outline-offset: 2px; }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--n-800); color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.on { opacity: 1; }
+  [hidden] { display: none !important; }
+  @media (max-width: 640px) {
+    .tete, .corps, .pied { padding-left: 16px; padding-right: 16px; }
+    td.point, td.res { width: auto; }
+    .circuit li + li::before { width: 14px; margin: 0 6px; }
+  }
+</style>
+</head>
+<body>
+  <p class="note"><b>Maquette — fenêtre du projet de PV simplifiée (28/10).</b> Mêmes données et mêmes gestes qu'aujourd'hui ; seule la mise en page change.
+    Choisissez un profil pour voir le pied de la fenêtre et la frise s'adapter.</p>
+  <div class="roles" role="group" aria-label="Profil de démonstration">
+    <span>Vu par</span>
+    <button type="button" data-role="membre" aria-pressed="true">Membre — projet à soumettre</button>
+    <button type="button" data-role="president" aria-pressed="false">Président — projet à viser</button>
+    <button type="button" data-role="signer" aria-pressed="false">Membre — PV à signer</button>
+    <button type="button" data-role="signe" aria-pressed="false">PV signé</button>
+  </div>
+
+  <section class="modale" role="dialog" aria-label="Projet de PV 00002/DAOO-CC/CNM/PV/2026">
+    <header class="tete">
+      <h2><span class="ref">00002/DAOO-CC/CNM/PV/2026</span> <span class="badge badge--gris" id="statut">Brouillon</span></h2>
+      <button type="button" class="fermer" aria-label="Fermer">✕</button>
+      <p>Dossier <b class="ref">00002/DAOO-CC/CNM/2026</b> · Ministère des Travaux Publics</p>
+      <p>Avis <span id="avis-lib">proposé</span> : <span class="badge badge--avis">Favorable avec réserves</span> · Fin de traitement prévue le <b>13/11/2026</b></p>
+    </header>
+
+    <div class="corps">
+      <section>
+        <h3>Synthèse du Membre</h3>
+        <p class="synthese">test</p>
+      </section>
+
+      <section>
+        <h3><span>Observations <span id="nb-obs">(1)</span></span><button type="button" class="lien" id="bascule-grille">Voir les 31 points</button></h3>
+        <table>
+          <thead><tr><th scope="col">Point de contrôle</th><th scope="col">Résultat</th><th scope="col">Au lieu de → Lire</th></tr></thead>
+          <tbody id="grille"></tbody>
+        </table>
+      </section>
+
+      <section>
+        <h3>Pièces jointes</h3>
+        <p class="ok-ligne">La pièce examinée est conforme.</p>
+      </section>
+
+      <section>
+        <h3>Circuit du PV</h3>
+        <ol class="circuit" id="circuit"></ol>
+      </section>
+
+      <details>
+        <summary>Historique des navettes (<span id="nb-nav">0</span>)</summary>
+        <p id="navettes">Aucun aller-retour : le projet n'a pas encore été soumis.</p>
+      </details>
+    </div>
+
+    <footer class="pied" id="pied"></footer>
+  </section>
+  <div class="toast" id="toast" role="status"></div>
+
+<script>
+  const POINTS = [
+    ['Dossier — points inter-lignes', [
+      ['Délais de la consultation', false, 'test', 'test'],
+      ['Cohérence du montant avec le plan', true], ['Mode de passation', true], ['Forme du marché (contrat-cadre)', true],
+    ]],
+    ['Fiche DAO — informations', [
+      ['Objet de l’appel d’offres', true], ['Garantie de soumission', true], ['Délai de validité des offres', true], ['Critères de qualification', true],
+      ['Pièces administratives exigées', true], ['Marge de préférence', true], ['Pénalités de retard', true],
+    ]],
+    ['Bordereau estimatif', [['Prix unitaires estimés', true], ['Total face au plan', true]]],
+  ];
+  const total = POINTS.reduce((t, [, l]) => t + l.length, 0) + 18; // le reste des 31 points, conformes
+  let tout = false;
+  function grille() {
+    const tb = document.getElementById('grille');
+    tb.innerHTML = '';
+    for (const [titre, lignes] of POINTS) {
+      const vues = tout ? lignes : lignes.filter((l) => !l[1]);
+      if (!vues.length) continue;
+      tb.insertAdjacentHTML('beforeend', `<tr class="groupe"><td colspan="3">${titre}</td></tr>`);
+      for (const [pt, ok, avant, apres] of vues) {
+        tb.insertAdjacentHTML('beforeend', `<tr><td class="point">${pt}</td><td class="res ${ok ? 'res-ok' : 'res-ko'}">${ok ? 'Conforme' : 'Non conforme'}</td>`
+          + `<td>${ok ? '<span class="vide">—</span>' : `<span class="avant">${avant}</span> → <span class="apres">${apres}</span>`}</td></tr>`);
+      }
+    }
+    if (tout) tb.insertAdjacentHTML('beforeend', `<tr><td colspan="3" class="vide">… et ${total - POINTS.reduce((t, [, l]) => t + l.length, 0)} autres points, tous conformes (maquette).</td></tr>`);
+    document.getElementById('bascule-grille').textContent = tout ? 'Observations seulement (1)' : `Voir les ${total} points`;
+  }
+  document.getElementById('bascule-grille').addEventListener('click', () => { tout = !tout; grille(); });
+
+  const ETATS = {
+    membre: { statut: ['Brouillon', 'badge--gris'], avis: 'proposé', nav: 0,
+      circuit: [['fait', 'Examen', 'RAFIDIMANANA Rina'], ['encours', 'Soumission du projet', 'par vous'], ['', 'Visa', 'Président'], ['', 'Signature', 'Membre co-signataire']],
+      quoi: 'Soumettre envoie le projet au <b>Président</b> pour visa. Vous pourrez encore le rectifier s’il vous est retourné.',
+      boutons: [['sec', 'Imprimer'], ['pri', 'Soumettre le projet']] },
+    president: { statut: ['Projet soumis', 'badge--bleu'], avis: 'proposé', nav: 1,
+      circuit: [['fait', 'Examen', 'RAFIDIMANANA Rina'], ['fait', 'Soumission du projet', 'le 28/10'], ['encours', 'Visa', 'par vous'], ['', 'Signature', 'Membre co-signataire']],
+      quoi: 'Viser arrête l’avis, désigne le Membre co-signataire et pose <b>votre signature</b>.',
+      boutons: [['sec', 'Imprimer'], ['warn', 'Retourner pour rectification'], ['sec', 'Lettre de renvoi'], ['ok', 'Viser…']] },
+    signer: { statut: ['Projet accepté', 'badge--bleu'], avis: 'arrêté', nav: 1,
+      circuit: [['fait', 'Examen', 'RAFIDIMANANA Rina'], ['fait', 'Soumission du projet', 'le 28/10'], ['fait', 'Visa', 'Président, le 29/10'], ['encours', 'Signature', 'par vous']],
+      quoi: 'Vous avez été <b>désigné co-signataire</b> : votre signature clôt le PV.',
+      boutons: [['sec', 'Imprimer'], ['pri', 'Signer']] },
+    signe: { statut: ['Signé', 'badge--ok'], avis: 'arrêté', nav: 1,
+      circuit: [['fait', 'Examen', 'RAFIDIMANANA Rina'], ['fait', 'Soumission du projet', 'le 28/10'], ['fait', 'Visa', 'Président, le 29/10'], ['fait', 'Signature', 'RAFIDIMANANA Rina, le 29/10']],
+      quoi: 'PV signé : le document officiel est disponible.',
+      boutons: [['pri', 'Ouvrir le PV signé (PDF)']] },
+  };
+  function afficher(role) {
+    const e = ETATS[role];
+    const st = document.getElementById('statut');
+    st.textContent = e.statut[0]; st.className = 'badge ' + e.statut[1];
+    document.getElementById('avis-lib').textContent = e.avis;
+    document.getElementById('nb-nav').textContent = e.nav;
+    document.getElementById('navettes').textContent = e.nav
+      ? 'n° 1 · Soumission · RAFIDIMANANA Rina · 28/10/2026 14:05 · —'
+      : 'Aucun aller-retour : le projet n’a pas encore été soumis.';
+    document.getElementById('circuit').innerHTML = e.circuit.map(([c, quoi, qui]) =>
+      `<li class="${c}"><span class="pt" aria-hidden="true"></span><span>${quoi}<small>${qui}</small></span></li>`).join('');
+    document.getElementById('pied').innerHTML = `<span class="quoi">${e.quoi}</span>`
+      + e.boutons.map(([s, l]) => `<button type="button" class="btn btn--${s}">${l}</button>`).join('');
+    document.querySelectorAll('.pied .btn').forEach((b) => b.addEventListener('click', () => toast(`« ${b.textContent} » — geste de démonstration.`)));
+    document.querySelectorAll('.roles button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.role === role)));
+  }
+  function toast(t) { const el = document.getElementById('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('on'), 1800); }
+  document.querySelectorAll('.roles button').forEach((b) => b.addEventListener('click', () => afficher(b.dataset.role)));
+  document.querySelector('.fermer').addEventListener('click', () => toast('Fermer — geste de démonstration.'));
+  grille(); afficher('membre');
+</script>
+</body>
+</html>

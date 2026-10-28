@@ -40,6 +40,7 @@ import { ChronometrageDossier, PvWorkflow, PV_STATUT_LABELS, StatutBadge, examen
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { LienDossier } from '../circuit/page-dossier/lien-dossier';
+import { EtapeCircuitPv, etapesCircuitPv, phraseEtatPv } from './pv-circuit';
 
 /**
  * Projets de PV du Membre : liste (lecture + contenu détaillé) et actions de workflow
@@ -99,271 +100,177 @@ import { LienDossier } from '../circuit/page-dossier/lien-dossier';
           </table>
         </div>
 
-        <!-- ⚠️ Demande pilote (2026-09-04) : le détail « Gérer » s'ouvre en MODALE — directive
-             appModale (focus, Échap, piège de Tab) + fermeture au clic sur le voile. -->
+        <!-- ⚠️ Demande pilote (2026-09-04) : le détail « Gérer » s'ouvre en MODALE — directive appModale (focus, Échap, piège de Tab).
+             ⚠️ 28/10 (maquette validée, docs/maquette-2026-10-28-pv-simplifie.html) — fenêtre simplifiée : en-tête en trois lignes, le
+             contenu du PV d'abord (synthèse, observations), la frise du circuit à la place des tuiles de signataires, les navettes
+             repliées, et les gestes dans le pied, toujours visibles. Mêmes données, mêmes gestes. -->
         @if (selected(); as pv) {
           <div class="modal-backdrop" [class.closing]="closingDetail()">
             <div class="modal modal-lg pv-modal" role="dialog" aria-modal="true"
               [attr.aria-label]="'Projet de PV ' + (pv.refePv || pv.referencePv || pv.idPv)"
               appModale (appModaleFermer)="fermerDetail()">
-              <div class="modal-header">
-                <div class="pv-modal__titre">
-                  <h2 class="modal-title">{{ pv.refePv || pv.referencePv || ('Projet de PV #' + pv.idPv) }}</h2>
-                  <app-statut-badge [statut]="pv.statutPv" [label]="label(pv)" />
+              <div class="modal-header pv-tete">
+                <div class="pv-tete__txt">
+                  <h2 class="modal-title pv-tete__titre">
+                    <span class="cnm-mono">{{ pv.refePv || pv.referencePv || ('Projet de PV #' + pv.idPv) }}</span>
+                    <app-statut-badge [statut]="pv.statutPv" [label]="label(pv)" />
+                  </h2>
+                  <p class="pv-tete__ligne">Dossier <b class="cnm-mono">{{ dossierRef(pv) }}</b> · {{ dossierEntite(pv) }}</p>
+                  <p class="pv-tete__ligne">
+                    Avis {{ pv.statutPv === 'PROJET_ACCEPTE' || pv.statutPv === 'SIGNE' ? 'arrêté' : 'proposé' }} :
+                    @if (pv.idAvis) { <span [class]="avisClasse(pv.idAvis)">{{ avisLabel(pv.idAvis) }}</span> } @else { <i>en attente</i> }
+                    @if (pv.datePv) { · Date du PV <b>{{ dateFr(pv.datePv) }}</b> }
+                  </p>
+                  @if (idDossierDe(pv); as idDos) {
+                    <app-chronometrage-dossier class="pv-tete__chrono" [idDossier]="idDos" [compact]="true" />
+                  }
                 </div>
                 <button type="button" class="btn-close" aria-label="Fermer" (click)="fermerDetail()">✕</button>
               </div>
               <div class="modal-body">
-                      <div class="pv-content" #pvContent>
-                  <div class="pv-print-bar">
-                    <button type="button" class="btn btn-secondary btn-sm" (click)="imprimer(pv)" title="Imprimer" aria-label="Imprimer">🖨 Imprimer</button>
-                    <button type="button" class="btn btn-secondary btn-sm" (click)="imprimer(pv)" title="Enregistrer au format PDF" aria-label="Enregistrer au format PDF">📄 PDF</button>
-                  </div>
-                  <!-- Chronométrage EN TÊTE : restitution de l'état + fin prévue (plus de « prise en
-                       charge » depuis 2026-09-12, backend 9648729). -->
-                  @if (idDossierDe(pv); as idDos) {
-                    <div class="pv-chrono-strip">
-                      <app-chronometrage-dossier [idDossier]="idDos" [compact]="true" />
-                    </div>
-                  }
+                <div class="pv-content" #pvContent>
                   @if (pv.statutPv === 'EN_RECTIFICATION' && dernierRetour()) {
-                    <!-- ⚠️ 2026-08-18 — le retour se lit ici : l'accès à la correction doit y être
-                         aussi. Sans ce lien, le Membre ne dispose que de « Soumettre le projet » et
-                         resoumet à l'identique ; le chemin réel (Mes dossiers → Examinés → Modifier
-                         l'examen) n'est signalé nulle part. -->
+                    <!-- ⚠️ 2026-08-18 — le retour se lit ici, avec l'accès à la correction. -->
                     <div class="alert alert-warning pv-retour">
                       <span><strong>Retour pour rectification :</strong> {{ dernierRetour() }}</span>
                       @if (peutRectifier(pv)) {
-                        <a class="btn pv-retour__cta" [routerLink]="lienRectification(pv)">
-                          ✎ Rectifier l'examen
-                        </a>
+                        <a class="btn pv-retour__cta" [routerLink]="lienRectification(pv)">✎ Rectifier l'examen</a>
                       }
                     </div>
                     @if (peutRectifier(pv)) {
                       <p class="pv-retour__aide">
-                        Corrigez la grille de contrôle et la synthèse, enregistrez, puis revenez ici
-                        pour <strong>soumettre le projet</strong> au Chef de commission.
+                        Corrigez la grille de contrôle et la synthèse, enregistrez, puis revenez ici pour <strong>soumettre le projet</strong>.
                       </p>
                     }
                   }
-                  <!-- En-tête du projet de PV : référence + tuiles d'identification (avis en badge coloré). -->
-                  <div class="pv-entete">
-                    <div class="pv-entete__titre">
-                      <span class="pv-entete__ref">{{ pv.refePv || pv.referencePv || ('Projet de PV #' + pv.idPv) }}</span>
-                      <app-statut-badge [statut]="pv.statutPv" [label]="label(pv)" />
-                    </div>
-                    <!-- ⚠️ Demande pilote (2026-09-04) : reprendre les COULEURS du tableau de bord
-                         « Mes dossiers » — chaque donnée porte sa pastille au même dégradé. -->
-                    <div class="pv-entete__grid">
-                      <div class="pv-entete__item pv-entete__item--large">
-                        <span class="pv-chip pv-chip--blue">📁</span>
-                        <span class="pv-entete__txt">
-                          <span class="pv-entete__lbl">Dossier</span>
-                          <span class="pv-entete__val cnm-mono">{{ dossierRef(pv) }}</span>
-                        </span>
-                      </div>
-                      <div class="pv-entete__item pv-entete__item--large">
-                        <span class="pv-chip pv-chip--indigo">🏛️</span>
-                        <span class="pv-entete__txt">
-                          <span class="pv-entete__lbl">Entité contractante</span>
-                          <span class="pv-entete__val">{{ dossierEntite(pv) }}</span>
-                        </span>
-                      </div>
-                      <div class="pv-entete__item">
-                        <span class="pv-chip pv-chip--amber">⚖️</span>
-                        <span class="pv-entete__txt">
-                          <span class="pv-entete__lbl">Avis global</span>
-                          <span class="pv-entete__val">
-                            @if (pv.idAvis) {
-                              <span [class]="avisClasse(pv.idAvis)">{{ avisLabel(pv.idAvis) }}</span>
-                            } @else {
-                              <span class="pv-entete__attente">En attente du visa</span>
-                            }
-                          </span>
-                        </span>
-                      </div>
-                      <div class="pv-entete__item">
-                        <span class="pv-chip pv-chip--purple">🔁</span>
-                        <span class="pv-entete__txt">
-                          <span class="pv-entete__lbl">Navettes</span>
-                          <span class="pv-entete__val">{{ pv.nbNavettes }}</span>
-                        </span>
-                      </div>
-                      @if (pv.dateSoumissionInitiale) {
-                        <div class="pv-entete__item">
-                          <span class="pv-chip pv-chip--teal">📤</span>
-                          <span class="pv-entete__txt">
-                            <span class="pv-entete__lbl">Soumis le</span>
-                            <span class="pv-entete__val cnm-mono">{{ pv.dateSoumissionInitiale }}</span>
-                          </span>
-                        </div>
-                      }
-                      @if (pv.dateAcceptation) {
-                        <div class="pv-entete__item">
-                          <span class="pv-chip pv-chip--green">✅</span>
-                          <span class="pv-entete__txt">
-                            <span class="pv-entete__lbl">Accepté le</span>
-                            <span class="pv-entete__val cnm-mono">{{ pv.dateAcceptation }}</span>
-                          </span>
-                        </div>
-                      }
-                      @if (pv.datePv) {
-                        <div class="pv-entete__item">
-                          <span class="pv-chip pv-chip--orange">📅</span>
-                          <span class="pv-entete__txt">
-                            <span class="pv-entete__lbl">Date PV</span>
-                            <span class="pv-entete__val cnm-mono">{{ pv.datePv }}</span>
-                          </span>
-                        </div>
-                      }
-                    </div>
-                  </div>
+
                   @if (pv.syntheseObservations) {
-                    <div class="pv-synthese">
-                      <span class="pv-synthese__lbl">Synthèse des observations du Membre</span>
-                      <p class="pv-synthese__texte">{{ pv.syntheseObservations }}</p>
-                    </div>
+                    <section>
+                      <h3 class="pv-sub">Synthèse du Membre</h3>
+                      <p class="pv-synthese">{{ pv.syntheseObservations }}</p>
+                    </section>
                   }
 
-                  <h3 class="pv-sub"><span class="pv-chip pv-chip--sm pv-chip--indigo">✍️</span> Signataires</h3>
-                  <!-- Tuiles d'état de signature (présentation 2026-09-04) : qui, et où en est chaque part. -->
-                  <div class="pv-sig">
-                    <!-- ⚠️ Deux niveaux (2026-09-04) : après le visa du Président, seules les parts
-                         DÉSIGNÉES existent — la tuile d'un rôle non retenu est masquée ; le nom
-                         affiché est celui du désigné (qui peut différer de l'examinateur). -->
-                    @if (!masquerTuileMembre(pv)) {
-                      <div class="pv-sig__tuile" [class.pv-sig__tuile--ok]="pv.dateSignatureMembre" [class.pv-sig__tuile--attente]="!pv.dateSignatureMembre">
-                        <span class="pv-sig__role">Membre</span>
-                        <span class="pv-sig__nom">{{ pv.nomMembreCoSignataire || acteurNom(pv.imCtrlMembre) || '—' }}</span>
-                        <span class="pv-sig__etat">{{ pv.dateSignatureMembre ? '✓ Signé le ' + pv.dateSignatureMembre : 'Signature en attente' }}</span>
-                      </div>
-                    }
-                    @if (!masquerTuileCc(pv)) {
-                      <div class="pv-sig__tuile" [class.pv-sig__tuile--ok]="pv.dateSignatureCc" [class.pv-sig__tuile--attente]="!pv.dateSignatureCc">
-                        <span class="pv-sig__role">Chef de commission</span>
-                        <span class="pv-sig__nom">{{ pv.nomCcCoSignataire || acteurNom(pv.imCtrlCc) || '—' }}</span>
-                        <span class="pv-sig__etat">{{ pv.dateSignatureCc ? '✓ Signé le ' + pv.dateSignatureCc : 'Signature en attente' }}</span>
-                      </div>
-                    }
-                    <div class="pv-sig__tuile" [class.pv-sig__tuile--ok]="pv.dateSignaturePresident" [class.pv-sig__tuile--attente]="!pv.dateSignaturePresident">
-                      <span class="pv-sig__role">Président</span>
-                      <span class="pv-sig__nom">{{ acteurNom(pv.imCtrlPresident) || '—' }}</span>
-                      <span class="pv-sig__etat">{{ pv.dateSignaturePresident ? '✓ Signé le ' + pv.dateSignaturePresident : 'Signature en attente' }}</span>
+                  <section>
+                    <div class="pv-sub">
+                      <h3>Observations ({{ nbObservations() }})</h3>
+                      @if (details().length) {
+                        <!-- Par défaut : seuls les points AVEC OBSERVATION ; la grille complète est à un clic. -->
+                        <button type="button" class="pv-lien" (click)="grilleComplete.set(!grilleComplete())">
+                          {{ grilleComplete() ? 'Observations seulement (' + nbObservations() + ')' : 'Voir les ' + details().length + ' points' }}
+                        </button>
+                      }
                     </div>
-                    <!-- Notion retirée du cycle le 02/09 : la tuile ne subsiste que sur les PV historiques qui en portent un. -->
-                    @if (pv.nomSecretaireSeance || pv.idSecretaireSeance) {
-                      <div class="pv-sig__tuile">
-                        <span class="pv-sig__role">Secrétaire de séance</span>
-                        <span class="pv-sig__nom">{{ pv.nomSecretaireSeance || pv.idSecretaireSeance }}</span>
-                      </div>
-                    }
-                  </div>
-
-                  <!-- Les actions du PV AU-DESSUS de la grille de contrôle (viser / retourner / signer). -->
-                  <div class="pv__bande-actions">
-                    <app-pv-workflow [pv]="pv" [idLocalite]="dossierLocalite(pv)" [idDossier]="idDossierDe(pv)"
-                      [nbObservationsExamen]="nbObservations() + nbObservationsPieces()" (changed)="onChanged($event)" />
-                  </div>
-
-                  <div class="pv-grille-head">
-                    <h3 class="pv-sub"><span class="pv-chip pv-chip--sm pv-chip--blue">☑️</span> Grille de contrôle</h3>
-                    @if (details().length) {
-                      <!-- ⚠️ Par défaut : seuls les points AVEC OBSERVATION sont listés ; bascule vers la grille complète. -->
-                      <button type="button" class="btn btn-secondary btn-sm" (click)="grilleComplete.set(!grilleComplete())">
-                        {{ grilleComplete() ? 'Observations seulement (' + nbObservations() + ')' : 'Tout afficher (' + details().length + ')' }}
-                      </button>
-                    }
-                  </div>
-                  @if (details().length && !groupesAffiches().length) {
-                    <p class="pv-grille-ok">✓ Tous les points de contrôle sont conformes — aucune observation.</p>
-                  }
-                  @if (details().length && groupesAffiches().length) {
-                    <table>
-                      <thead><tr><th scope="col">Point de contrôle</th><th scope="col">Résultat</th><th scope="col">Observation</th></tr></thead>
-                      <tbody>
-                        <!-- ⚠️ Résultats groupés par LIGNE DE MARCHÉ (puis points inter-lignes « Dossier »),
-                             pour refléter l'examen séquentiel — même donnée, contexte restitué. -->
-                        @for (g of groupesAffiches(); track g.cle) {
-                          <tr class="pv-grp"><td colspan="3">{{ g.titre }}</td></tr>
-                          @for (d of g.rows; track d.idDetailExamen) {
-                            <tr>
-                              <td>{{ pointLabel(d.idPtControle) }}</td>
-                              <td><span class="pv-res" [class.pv-res--obs]="!d.conforme">{{ d.conforme ? 'Conforme' : 'Non conforme' }}</span></td>
-                              <td>
-                                @if (!d.conforme && observationsTriees(d).length) {
-                                  <table class="obs-pv-table">
-                                    <thead><tr><th scope="col">AU LIEU DE</th><th scope="col">LIRE</th></tr></thead>
-                                    <tbody>
-                                      @for (o of observationsTriees(d); track o.idObservation ?? $index) {
-                                        <tr><td>{{ o.auLieuDe || '—' }}</td><td>{{ o.lire || '—' }}</td></tr>
-                                        @if (o.champFiche) {
-                                          <tr class="obs-pv-fiche"><td colspan="2">Information de la fiche DAO : <b>{{ o.libelleChampFiche || o.champFiche }}</b>@if (o.lot) { — lot {{ o.lot }} }@if (o.valeurChampFiche) { · valeur observée « {{ o.valeurChampFiche }} » }</td></tr>
-                                        }
+                    @if (details().length && !groupesAffiches().length) {
+                      <p class="pv-ok">Tous les points de contrôle sont conformes — aucune observation.</p>
+                    } @else if (details().length) {
+                      <table class="pv-table">
+                        <thead><tr><th scope="col">Point de contrôle</th><th scope="col">Résultat</th><th scope="col">Au lieu de → Lire</th></tr></thead>
+                        <tbody>
+                          <!-- Groupés par LIGNE DE MARCHÉ, puis les points inter-lignes « Dossier » (examen séquentiel). -->
+                          @for (g of groupesAffiches(); track g.cle) {
+                            <tr class="pv-grp"><td colspan="3">{{ g.titre }}</td></tr>
+                            @for (d of g.rows; track d.idDetailExamen) {
+                              <tr>
+                                <td class="pv-table__point">{{ pointLabel(d.idPtControle) }}</td>
+                                <td class="pv-table__res" [class.pv-ko]="!d.conforme" [class.pv-bon]="d.conforme">{{ d.conforme ? 'Conforme' : 'Non conforme' }}</td>
+                                <td>
+                                  @if (!d.conforme && observationsTriees(d).length) {
+                                    @for (o of observationsTriees(d); track o.idObservation ?? $index) {
+                                      <div class="pv-obs"><span class="pv-obs__avant">{{ o.auLieuDe || '—' }}</span> → <span class="pv-obs__apres">{{ o.lire || '—' }}</span></div>
+                                      @if (o.champFiche) {
+                                        <div class="pv-obs__fiche">Information de la fiche DAO : <b>{{ o.libelleChampFiche || o.champFiche }}</b>@if (o.lot) { — lot {{ o.lot }} }@if (o.valeurChampFiche) { · valeur observée « {{ o.valeurChampFiche }} » }</div>
                                       }
-                                    </tbody>
-                                  </table>
-                                } @else {
-                                  —
-                                }
-                              </td>
+                                    }
+                                  } @else {
+                                    <span class="pv-vide">—</span>
+                                  }
+                                </td>
+                              </tr>
+                            }
+                          }
+                        </tbody>
+                      </table>
+                    } @else {
+                      <p class="pv__info">Aucun détail d'examen pour ce PV.</p>
+                    }
+                  </section>
+
+                  <section>
+                    <div class="pv-sub">
+                      <h3>Pièces jointes</h3>
+                      @if (examenPiecesPv().length && nbObservationsPieces()) {
+                        <button type="button" class="pv-lien" (click)="piecesCompletes.set(!piecesCompletes())">
+                          {{ piecesCompletes() ? 'Observations seulement (' + nbObservationsPieces() + ')' : 'Voir les ' + examenPiecesPv().length + ' pièces' }}
+                        </button>
+                      }
+                    </div>
+                    @if (examenPiecesPv().length && !piecesAffichees().length) {
+                      <p class="pv-ok">{{ examenPiecesPv().length > 1 ? 'Les ' + examenPiecesPv().length + ' pièces examinées sont conformes.' : 'La pièce examinée est conforme.' }}</p>
+                    } @else if (examenPiecesPv().length) {
+                      <table class="pv-table">
+                        <thead><tr><th scope="col">Pièce</th><th scope="col">Résultat</th><th scope="col">Observation</th></tr></thead>
+                        <tbody>
+                          @for (ep of piecesAffichees(); track ep.idExamenPiece) {
+                            <tr>
+                              <td class="pv-table__point">{{ pieceLabel(ep.idPiece) }}</td>
+                              <td class="pv-table__res" [class.pv-ko]="!ep.conforme" [class.pv-bon]="ep.conforme">{{ ep.conforme ? 'Conforme' : 'Non conforme' }}</td>
+                              <td>{{ ep.observation || '—' }}</td>
                             </tr>
                           }
-                        }
-                      </tbody>
-                    </table>
-                  } @else if (!details().length) {
-                    <p class="pv__info">Aucun détail d'examen pour ce PV.</p>
-                  }
-
-                  <div class="pv-grille-head">
-                    <h3 class="pv-sub"><span class="pv-chip pv-chip--sm pv-chip--teal">📎</span> Pièces jointes</h3>
-                    @if (examenPiecesPv().length) {
-                      <!-- ⚠️ Même bascule que la grille : observations seulement (défaut) ↔ toutes les pièces. -->
-                      <button type="button" class="btn btn-secondary btn-sm" (click)="piecesCompletes.set(!piecesCompletes())">
-                        {{ piecesCompletes() ? 'Observations seulement (' + nbObservationsPieces() + ')' : 'Tout afficher (' + examenPiecesPv().length + ')' }}
-                      </button>
+                        </tbody>
+                      </table>
+                    } @else {
+                      <p class="pv__info">Aucun examen de pièce pour ce PV.</p>
                     }
-                  </div>
-                  @if (examenPiecesPv().length && !piecesAffichees().length) {
-                    <p class="pv-grille-ok">✓ Toutes les pièces jointes sont conformes — aucune observation.</p>
-                  }
-                  @if (examenPiecesPv().length && piecesAffichees().length) {
-                    <table>
-                      <thead><tr><th scope="col">Pièce</th><th scope="col">Résultat</th><th scope="col">Observation</th></tr></thead>
-                      <tbody>
-                        @for (ep of piecesAffichees(); track ep.idExamenPiece) {
-                          <tr>
-                            <td>{{ pieceLabel(ep.idPiece) }}</td>
-                            <td><span class="pv-res" [class.pv-res--obs]="!ep.conforme">{{ ep.conforme ? 'Conforme' : 'Non conforme' }}</span></td>
-                            <td>{{ ep.observation || '—' }}</td>
-                          </tr>
-                        }
-                      </tbody>
-                    </table>
-                  } @else if (!examenPiecesPv().length) {
-                    <p class="pv__info">Aucun examen de pièce pour ce PV.</p>
-                  }
+                  </section>
 
-                  <h3 class="pv-sub"><span class="pv-chip pv-chip--sm pv-chip--purple">🔁</span> Historique des navettes</h3>
-                  @if (navettes().length) {
-                    <table>
-                      <thead><tr><th scope="col">#</th><th scope="col">Sens</th><th scope="col">Acteur</th><th scope="col">Date</th><th scope="col">Commentaire</th></tr></thead>
-                      <tbody>
-                        @for (n of navettes(); track n.idNavette) {
-                          <tr>
-                            <td class="cnm-mono">{{ n.numNavette }}</td>
-                            <td>{{ sensLabel(n.sens) }}</td>
-                            <td>{{ acteurNom(n.imActeur) }}</td>
-                            <td style="white-space:nowrap;">{{ (n.dateAction | date: 'dd/MM/yyyy HH:mm') || '—' }}</td>
-                            <td>{{ n.commentaire || '—' }}</td>
-                          </tr>
-                        }
-                      </tbody>
-                    </table>
-                  } @else {
-                    <p class="pv__info">Aucune navette pour ce PV.</p>
-                  }
-                      </div>
+                  <section>
+                    <h3 class="pv-sub">Circuit du PV</h3>
+                    <ol class="pv-circuit">
+                      @for (e of circuit(pv); track e.libelle) {
+                        <li class="pv-circuit__etape" [class.pv-circuit__etape--fait]="e.etat === 'fait'" [class.pv-circuit__etape--encours]="e.etat === 'encours'"
+                          [attr.aria-current]="e.etat === 'encours' ? 'step' : null">
+                          <span class="pv-circuit__pt" aria-hidden="true"></span>
+                          <span>{{ e.libelle }}<small>{{ e.detail }}</small></span>
+                        </li>
+                      }
+                    </ol>
+                    <!-- Notion retirée du cycle le 02/09 : mention réservée aux PV historiques qui en portent un. -->
+                    @if (pv.nomSecretaireSeance || pv.idSecretaireSeance) {
+                      <p class="pv__info">Secrétaire de séance : {{ pv.nomSecretaireSeance || pv.idSecretaireSeance }}</p>
+                    }
+                  </section>
+
+                  <details class="pv-navettes">
+                    <summary>Historique des navettes ({{ navettes().length }})</summary>
+                    @if (navettes().length) {
+                      <table class="pv-table">
+                        <thead><tr><th scope="col">N°</th><th scope="col">Sens</th><th scope="col">Acteur</th><th scope="col">Date</th><th scope="col">Commentaire</th></tr></thead>
+                        <tbody>
+                          @for (n of navettes(); track n.idNavette) {
+                            <tr>
+                              <td class="cnm-mono">{{ n.numNavette }}</td>
+                              <td>{{ sensLabel(n.sens) }}</td>
+                              <td>{{ acteurNom(n.imActeur) }}</td>
+                              <td style="white-space:nowrap;">{{ (n.dateAction | date: 'dd/MM/yyyy HH:mm') || '—' }}</td>
+                              <td>{{ n.commentaire || '—' }}</td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    } @else {
+                      <p class="pv__info">Aucun aller-retour pour ce PV.</p>
+                    }
+                  </details>
+                </div>
+              </div>
+              <!-- Les gestes du PV (soumettre, viser, retourner, lettre, signer), toujours visibles ; leurs panneaux s'ouvrent ici. -->
+              <div class="modal-footer pv-pied">
+                <p class="pv-pied__quoi">{{ phraseEtat(pv) }}</p>
+                <button type="button" class="btn btn-outline" (click)="imprimer(pv)">Imprimer</button>
+                <app-pv-workflow class="pv-pied__gestes" variante="pied" [pv]="pv" [idLocalite]="dossierLocalite(pv)" [idDossier]="idDossierDe(pv)"
+                  [nbObservationsExamen]="nbObservations() + nbObservationsPieces()" (changed)="onChanged($event)" />
               </div>
             </div>
           </div>
@@ -376,95 +283,59 @@ import { LienDossier } from '../circuit/page-dossier/lien-dossier';
     .pv__info { color: var(--n-500); padding: 0.5rem 0; }
     /* « Aucune action sans prise en charge » (2026-09-04) : actions du PV inertes avant la prise en charge. */
     .pv__verrou { margin: 0.5rem 0; padding: 0.6rem 0.9rem; border: 1px solid #FDE68A; background: #FFFBEB; color: #92400E; border-radius: 8px; font-size: var(--text-sm); }
-    /* Bande des actions du PV (demande pilote 2026-09-04) : le style vit dans app-pv-workflow
-       (barre de décision indigo) — ici seuls l'espacement et le verrou. */
-    .pv__bande-actions {
-      margin: 0.9rem 0 1.1rem;
-    }
-    .pv__actions--verrouillees { pointer-events: none; opacity: 0.45; }
     /* Tableau de liste (demande pilote 2026-09-04) : même style que « PV définitifs ». */
     .pv-row__ref { font-weight: 700; color: var(--c-800); }
     .pv-row__actions { justify-content: flex-end; }
-    /* Modale du détail (demande pilote 2026-09-04) : large — le contenu porte tableaux et fiches. */
-    .pv-modal { width: min(1240px, 96vw); max-width: 96vw; }
-    .pv-modal__titre { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; min-width: 0; }
-    .pv-modal .modal-title { margin: 0; }
-    .pv-content {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      border-top: 1px solid var(--c-100);
-      padding-top: 1rem;
-    }
-    /* Le chronométrage ouvre le détail : posé sur sa propre bande, il ne flotte plus dans la page. */
-    .pv-chrono-strip {
-      background: var(--n-50, #f8fafc);
-      border: 1px solid var(--n-200);
-      border-radius: var(--radius-md);
-      padding: 0.65rem 0.95rem;
-    }
+    /* ⚠️ 28/10 (maquette validée) — la fenêtre du PV simplifiée : en-tête en trois lignes, contenu d'abord, gestes dans le pied. */
+    .pv-modal { width: min(1080px, 96vw); max-width: 96vw; }
+    .pv-tete { align-items: flex-start; }
+    .pv-tete__txt { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+    .pv-tete__titre { margin: 0; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; font-size: var(--text-lg, 1.1rem); }
+    .pv-tete__ligne { margin: 0; color: var(--n-500); font-size: var(--text-sm); }
+    .pv-tete__ligne b { color: var(--n-700); font-weight: 600; }
+    .pv-tete__chrono { margin-top: 0.2rem; font-size: var(--text-sm); }
+    .pv-content { display: flex; flex-direction: column; gap: 1.3rem; }
     .pv-content td { white-space: normal; }
-    /* ⚠️ Demande pilote (2026-09-04) : les tableaux du détail (grille, navettes) portent le MÊME
-       dégradé indigo que la barre de décision — un seul langage sombre sur l'écran. Sélecteurs en
-       enfants directs : le sous-tableau d'observations imbriqué garde son réglage discret. */
-    .pv-content > table { border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 2px 8px rgba(30, 27, 75, 0.12); }
-    .pv-content > table > thead > tr { background: linear-gradient(120deg, #1e1b4b, #312e81 48%, #4338ca); }
-    .pv-info { display: flex; flex-direction: column; gap: 0.35rem; margin: 0; }
-    .pv-info > div { display: flex; gap: 0.5rem; align-items: baseline; }
-    .pv-info dt { flex: 0 0 11rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--n-400); }
-    .pv-info dd { margin: 0; color: var(--n-700); }
-    /* En-tête du projet de PV : fiche d'identité — dégradé doux, référence en grand, filet interne. */
-    .pv-entete { display: flex; flex-direction: column; gap: 0.8rem; background: linear-gradient(180deg, var(--c-50), #fff); border: 1px solid var(--c-100); border-radius: var(--radius-lg); padding: 1rem 1.15rem; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05); }
-    .pv-entete__titre { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; padding-bottom: 0.6rem; border-bottom: 1px dashed var(--c-100); }
-    .pv-entete__ref { font-size: var(--text-xl, 1.25rem); font-weight: 800; color: var(--c-800); letter-spacing: -0.015em; }
-    .pv-entete__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 0.75rem 1rem; }
-    .pv-entete__item { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
-    .pv-entete__txt { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
-    .pv-entete__item--large { grid-column: span 2; }
-    @media (max-width: 48rem) { .pv-entete__item--large { grid-column: span 1; } }
-    /* Pastilles d'icônes aux dégradés du tableau de bord « Mes dossiers » (.cnm-stat--*) —
-       demande pilote 2026-09-04 : les mêmes couleurs vivent ici. */
-    .pv-chip { flex-shrink: 0; width: 2.3rem; height: 2.3rem; display: inline-flex; align-items: center; justify-content: center; font-size: 1.05rem; color: #fff; border-radius: var(--radius-md); box-shadow: 0 3px 8px rgba(15, 23, 42, 0.18); }
-    .pv-chip--sm { width: 1.75rem; height: 1.75rem; font-size: 0.85rem; border-radius: 8px; }
-    .pv-chip--blue { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
-    .pv-chip--indigo { background: linear-gradient(135deg, #6366f1, #4f46e5); }
-    .pv-chip--green { background: linear-gradient(135deg, #22c55e, #16a34a); }
-    .pv-chip--amber { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
-    .pv-chip--orange { background: linear-gradient(135deg, #fb923c, #ea580c); }
-    .pv-chip--purple { background: linear-gradient(135deg, #a855f7, #7c3aed); }
-    .pv-chip--teal { background: linear-gradient(135deg, #2dd4bf, #0d9488); }
-    .pv-entete__lbl { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--n-400); }
-    .pv-entete__val { font-weight: 600; color: var(--n-700); overflow-wrap: anywhere; }
-    .pv-entete__val .badge { font-weight: 700; }
-    .pv-entete__attente { font-weight: 500; font-style: italic; color: var(--n-400); }
-    /* Synthèse du Membre : panneau dédié, liseré accent (même langage visuel que l'examen). */
-    .pv-synthese { display: flex; flex-direction: column; gap: 0.3rem; background: var(--c-50); border: 1px solid var(--c-100); border-left: 3px solid var(--c-500, #4f46e5); border-radius: var(--radius-md); padding: 0.75rem 1rem; }
-    .pv-synthese__lbl { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: var(--c-800); }
-    .pv-synthese__texte { margin: 0; font-size: var(--text-sm); color: var(--n-700); white-space: pre-wrap; }
-    /* Titres de section (présentation 2026-09-04) : intitulé discret + filet séparateur — chaque
-       rubrique du PV se détache clairement de la précédente. */
-    .pv-sub { margin: 1.35rem 0 0.5rem; padding-top: 1rem; border-top: 1px solid var(--n-100); font-size: var(--text-xs); font-weight: 800; text-transform: uppercase; letter-spacing: 0.09em; color: var(--n-400); display: flex; align-items: center; gap: 0.45rem; }
-    /* Tuiles des signataires : rôle, nom, état de la part — vert quand la signature est posée. */
-    .pv-sig { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 0.6rem; }
-    .pv-sig__tuile { display: flex; flex-direction: column; gap: 0.2rem; border: 1px solid var(--n-200); border-left: 3px solid var(--n-300); border-radius: var(--radius-md); background: #fff; padding: 0.7rem 0.95rem; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06); }
-    .pv-sig__tuile--ok { border-left-color: #22C55E; background: #F6FEF9; }
-    /* Part en attente : ambre — mêmes codes que « À examiner / Examinés » du tableau de bord. */
-    .pv-sig__tuile--attente { border-left-color: #F59E0B; background: #FFFDF5; }
-    .pv-sig__role { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--n-400); font-weight: 700; }
-    .pv-sig__nom { font-weight: 700; color: var(--n-800); }
-    .pv-sig__etat { font-size: var(--text-xs); color: var(--n-400); }
-    .pv-sig__tuile--ok .pv-sig__etat { color: #15803D; font-weight: 600; }
-    .pv-sig__tuile--attente .pv-sig__etat { color: #B45309; }
-    /* Résultat d'un point / d'une pièce : badge sobre (vert conforme, ambre observation). */
-    .pv-res { display: inline-block; padding: 0.15rem 0.6rem; border-radius: var(--radius-full); font-size: var(--text-xs); font-weight: 700; background: #F0FDF4; color: #15803D; border: 1px solid #BBF7D0; white-space: nowrap; }
-    .pv-res--obs { background: #FFFBEB; color: #B45309; border-color: #FDE68A; }
-    /* Rangée d'en-tête de groupe (ligne de marché / dossier) dans la grille de contrôle. */
-    .pv-grp td { background: var(--c-50); color: var(--c-800); font-weight: 700; font-size: var(--text-sm); border-top: 2px solid var(--c-100); }
-    /* Titre de la grille + bascule « observations seulement / tout afficher ». */
-    .pv-grille-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
-    /* Examen entièrement conforme (mode observations) : constat vert, pas de tableau vide. */
-    .pv-grille-ok { margin: 0; padding: 0.5rem 0.75rem; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: var(--radius-md); color: #15803D; font-size: var(--text-sm); font-weight: 600; }
-    .pv-print-bar { display: flex; justify-content: flex-end; gap: 0.5rem; }
+    .pv-sub, .pv-sub h3 { margin: 0 0 0.5rem; font-size: var(--text-xs); font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--n-500); }
+    div.pv-sub { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+    div.pv-sub h3 { margin: 0; }
+    .pv-lien { background: none; border: 0; padding: 0; font: 600 var(--text-sm) var(--font-base); color: var(--p-700); cursor: pointer; }
+    .pv-lien:hover { text-decoration: underline; }
+    .pv-lien:focus-visible { outline: 2px solid var(--p-600); outline-offset: 2px; }
+    .pv-synthese { margin: 0; padding: 0.6rem 0.9rem; border-left: 3px solid var(--p-600); background: var(--p-50, #f0f9ff); border-radius: 0 8px 8px 0; color: var(--n-700); white-space: pre-wrap; }
+    /* Tableaux sobres : pas de bande sombre, des filets fins. */
+    .pv-table { width: 100%; border-collapse: collapse; }
+    .pv-table thead tr { background: none; }
+    .pv-table th { text-align: left; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--n-400); background: none; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--n-200); }
+    .pv-table td { padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--n-100); vertical-align: top; }
+    .pv-table__point { width: 34%; }
+    .pv-table__res { width: 14%; white-space: nowrap; }
+    .pv-ko { color: var(--danger-text, #b42318); font-weight: 600; }
+    .pv-bon { color: var(--success-text, #059669); }
+    .pv-grp td { background: var(--n-50, #f8f9fc); color: var(--n-500); font-weight: 600; font-size: var(--text-xs); padding: 0.35rem 0.6rem; }
+    .pv-obs__avant { color: var(--n-500); text-decoration: line-through; text-decoration-color: rgb(180 35 24 / 50%); }
+    .pv-obs__apres { color: var(--n-800); font-weight: 600; }
+    .pv-obs__fiche { font-size: var(--text-xs); color: var(--n-500); margin-top: 0.15rem; }
+    .pv-vide { color: var(--n-400); }
+    .pv-ok { margin: 0; color: var(--success-text, #059669); font-weight: 600; }
+    .pv-ok::before { content: '✓ '; }
+    /* La frise du circuit : examen, soumission, visa, signature. */
+    .pv-circuit { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0; margin: 0; padding: 0; list-style: none; }
+    .pv-circuit__etape { display: flex; align-items: center; gap: 0.5rem; font-size: var(--text-sm); color: var(--n-500); }
+    .pv-circuit__etape + .pv-circuit__etape::before { content: ''; width: 2rem; height: 2px; background: var(--n-300); margin: 0 0.6rem; }
+    .pv-circuit__etape small { display: block; font-size: var(--text-xs); color: var(--n-400); }
+    .pv-circuit__pt { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--n-300); background: #fff; flex: none; }
+    .pv-circuit__etape--fait .pv-circuit__pt { background: var(--success-text, #059669); border-color: var(--success-text, #059669); }
+    .pv-circuit__etape--encours { color: var(--n-800); font-weight: 600; }
+    .pv-circuit__etape--encours .pv-circuit__pt { background: var(--p-600); border-color: var(--p-600); box-shadow: 0 0 0 4px var(--p-100); }
+    .pv-navettes summary { cursor: pointer; font-size: var(--text-xs); font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--n-500); }
+    .pv-navettes[open] summary { margin-bottom: 0.5rem; }
+    /* Le pied : la phrase d'état à gauche, les gestes à droite ; un panneau ouvert (visa, retour, lettre) prend toute la largeur. */
+    .pv-pied { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.6rem 0.75rem; max-height: 55vh; overflow: auto; }
+    .pv-pied__quoi { flex: 1 1 18rem; margin: 0; align-self: center; color: var(--n-500); font-size: var(--text-sm); }
+    .pv-pied__gestes { flex: 1 1 100%; }
+    @media (min-width: 64rem) { .pv-pied__gestes { flex: 0 1 auto; } }
+    @media (max-width: 40rem) { .pv-table__point, .pv-table__res { width: auto; } .pv-circuit__etape + .pv-circuit__etape::before { width: 0.8rem; margin: 0 0.4rem; } }
     /* Le retour de navette porte son action : le motif à gauche, « Rectifier » à droite. */
     .pv-retour { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
     .pv-retour .btn { flex-shrink: 0; text-decoration: none; }
@@ -491,11 +362,6 @@ import { LienDossier } from '../circuit/page-dossier/lien-dossier';
     @media (prefers-reduced-motion: reduce) {
       .pv-retour .pv-retour__cta:hover { transform: none; }
     }
-    .obs-pv-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
-    /* Neutralise la bande bleue globale (thead tr en dégradé) : ce sous-tableau reste discret. */
-    .obs-pv-table thead tr { background: transparent; }
-    .obs-pv-table th { text-align: left; font-weight: 700; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.06em; padding: 0.2rem 0.5rem; border-bottom: 1px solid var(--n-200); background: none; color: var(--n-400); }
-    .obs-pv-table td { padding: 0.2rem 0.5rem; vertical-align: top; border-bottom: 1px solid var(--c-100); word-wrap: break-word; white-space: normal; }
   `,
 })
 export class MembrePv {
@@ -695,13 +561,6 @@ export class MembrePv {
   idDossierDe(pv: PvExamen): number | null {
     return this.dossierByExamen().get(pv.idExamen)?.idDossier ?? null;
   }
-  /** ⚠️ Deux niveaux (2026-09-04) : après le visa, seules les parts DÉSIGNÉES existent — tuile masquée sinon. */
-  masquerTuileMembre(pv: PvExamen): boolean {
-    return pv.niveauNavette != null && pv.dateSignaturePresident != null && !pv.imMembreCoSignataire && pv.dateSignatureMembre == null;
-  }
-  masquerTuileCc(pv: PvExamen): boolean {
-    return pv.niveauNavette != null && pv.dateSignaturePresident != null && !pv.imCcCoSignataire && pv.dateSignatureCc == null;
-  }
   /**
    * Attributaire COURANT du dispatch de l'examen du PV (`imCtrlMembre`, réattributions comprises).
    * Sert de garde à « Rectifier l'examen » (`peutRectifier` : seul l'assignataire rectifie).
@@ -735,15 +594,25 @@ export class MembrePv {
     const idDossier = this.dossierByExamen().get(pv.idExamen)?.idDossier;
     return ['/' + (this.router.url.split('/')[1] || 'membre'), 'examiner', idDossier];
   }
-  /** Signataire : nom du contrôleur (+ date de signature si présente), ou « — ». */
-  signataire(im?: string, date?: string): string {
-    if (!im) {
-      return '—';
-    }
-    const nom = this.controleurMap().get(im) ?? im;
-    return date ? `${nom} · signé le ${date}` : nom;
+  /** ⚠️ 28/10 (maquette validée) — la frise du circuit du PV, à la place des tuiles de signataires. */
+  circuit(pv: PvExamen): EtapeCircuitPv[] {
+    return etapesCircuitPv(pv, { nom: (im) => this.acteurNom(im ?? undefined), imDispatcheur: this.dispatcheurDe(pv) });
   }
-
+  /** La phrase du pied : où en est le PV, avec le nom de celui qui vise. */
+  phraseEtat(pv: PvExamen): string {
+    const im = pv.imCtrlPresident ?? this.dispatcheurDe(pv);
+    return phraseEtatPv(pv, im ? this.acteurNom(im) : 'le Président ou le Chef de commission');
+  }
+  /** Le dispatcheur de l'examen du PV : c'est lui qui vise (ADR visa unique). */
+  private dispatcheurDe(pv: PvExamen): string | null {
+    const exam = this.examens().find((e) => e.idExamen === pv.idExamen);
+    return exam?.idDispatch == null ? null : this.dispatchs().find((d) => d.idDispatch === exam.idDispatch)?.imCtrlDispatch ?? null;
+  }
+  /** « 2026-10-28 » → « 28/10/2026 ». */
+  dateFr(d?: string | null): string {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d ?? '');
+    return m ? `${m[3]}/${m[2]}/${m[1]}` : d ?? '';
+  }
   /** Acteur d'une navette : nom résolu depuis la fiche contrôleur (repli matricule). */
   acteurNom(im?: string): string {
     if (!im) {
@@ -767,7 +636,14 @@ export class MembrePv {
     const ref = this.echapperHtml(this.dossierRef(pv));
     // Le nom du PDF enregistré reprend la référence du dossier (titre du document).
     const titre = `PV ${ref}`;
-    const heading = `Projet de PV — ${ref}`;
+    // ⚠️ 28/10 — l'en-tête de la fenêtre n'est plus dans le contenu imprimé : l'identification du PV est écrite ici.
+    const refPv = this.echapperHtml(pv.refePv || pv.referencePv || 'Projet de PV n° ' + pv.idPv);
+    const heading = `${pv.statutPv === 'SIGNE' ? 'PV' : 'Projet de PV'} ${refPv}`;
+    const avis = pv.idAvis ? this.echapperHtml(this.avisLabel(pv.idAvis)) : 'en attente';
+    const identite = `<p class="ident">Dossier <b>${ref}</b> · ${this.echapperHtml(this.dossierEntite(pv))}<br>Statut : <b>${this.echapperHtml(this.label(pv))}</b> · Avis : <b>${avis}</b></p>`;
+    // Les navettes, repliées à l'écran, s'impriment dépliées.
+    const contenu = el.cloneNode(true) as HTMLElement;
+    contenu.querySelectorAll('details').forEach((d) => d.setAttribute('open', ''));
     w.document.write(
       `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${titre}</title>` +
         `<style>` +
@@ -788,36 +664,18 @@ export class MembrePv {
         `.badge-warning{background:#FFFBEB;color:#B45309;border-color:#FDE68A}` +
         `.badge-danger{background:#FEF2F2;color:#B91C1C;border-color:#FECACA}` +
         `.badge-info{background:#EFF6FF;color:#1D4ED8;border-color:#BFDBFE}` +
-        // En-tête du PV (bandeau + tuiles).
-        `.pv-entete{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 14px;margin-bottom:8px}` +
-        `.pv-entete__titre{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;margin-bottom:8px}` +
-        `.pv-entete__grid{display:flex;flex-wrap:wrap;gap:10px 24px}` +
-        `.pv-entete__lbl{display:block;text-transform:uppercase;font-size:10px;color:#888}` +
-        `.pv-entete__val{font-weight:600;font-size:13px}` +
-        `.pv-entete__attente{font-style:italic;font-weight:500;color:#888}` +
-        // Synthèse du Membre (panneau à liseré).
-        `.pv-synthese{background:#F8FAFC;border:1px solid #E2E8F0;border-left:3px solid #4F46E5;border-radius:6px;padding:10px 14px;margin:6px 0}` +
-        `.pv-synthese__lbl{display:block;text-transform:uppercase;font-size:10px;font-weight:700;color:#334155;margin-bottom:4px}` +
-        `.pv-synthese__texte{margin:0;font-size:13px;white-space:pre-wrap}` +
-        // Rangées de groupe de la grille (Ligne N — … / Dossier) + tableau AU LIEU DE / LIRE imbriqué.
-        `.pv-grp td{background:#EEF2F7;font-weight:700;font-size:12px;color:#1a2230}` +
-        `.pv-grille-ok{background:#F0FDF4;border:1px solid #BBF7D0;border-radius:6px;padding:8px 12px;color:#15803D;font-size:13px;font-weight:600;margin:6px 0}` +
-        `.obs-pv-table{margin:0}` +
-        `.obs-pv-table th{background:none;border:none;border-bottom:1px solid #ddd;text-transform:uppercase;font-size:10px;letter-spacing:.06em;color:#888;text-align:left}` +
-        `.obs-pv-table td{border:none;border-bottom:1px solid #eee;vertical-align:top}` +
-        // Présentation 2026-09-04 : titres de section, tuiles signataires, badges de résultat.
-        `.pv-sub{margin:14px 0 4px;padding-top:10px;border-top:1px solid #E5E7EB;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:#888}` +
-        `.pv-sig{display:flex;flex-wrap:wrap;gap:8px}` +
-        `.pv-sig__tuile{border:1px solid #E5E7EB;border-left:3px solid #CBD5E1;border-radius:6px;padding:8px 12px;min-width:170px}` +
-        `.pv-sig__tuile--ok{border-left-color:#22C55E;background:#F6FEF9}` +
-        `.pv-sig__role{display:block;text-transform:uppercase;font-size:9px;letter-spacing:.08em;color:#888;font-weight:700}` +
-        `.pv-sig__nom{display:block;font-weight:700;font-size:13px}` +
-        `.pv-sig__etat{display:block;font-size:11px;color:#666}` +
-        `.pv-sig__tuile--ok .pv-sig__etat{color:#15803D;font-weight:600}` +
-        `.pv-res{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:700;background:#F0FDF4;color:#15803D;border:1px solid #BBF7D0}` +
-        `.pv-res--obs{background:#FFFBEB;color:#B45309;border-color:#FDE68A}` +
-        `button,.pv-print-bar{display:none!important}` +
-        `</style></head><body><h1>${heading}</h1>${el.innerHTML}</body></html>`,
+        // ⚠️ 28/10 — la fenêtre simplifiée : identification, titres, synthèse, observations, frise.
+        `.ident{margin:0 0 12px;font-size:13px;color:#444}` +
+        `.pv-sub,.pv-sub h3{margin:16px 0 6px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#666}` +
+        `.pv-synthese{margin:0;border-left:3px solid #0284c7;background:#f0f9ff;padding:8px 12px;white-space:pre-wrap}` +
+        `.pv-grp td{background:#f3f5f9;font-weight:700;font-size:12px}` +
+        `.pv-ko{color:#b42318;font-weight:700}.pv-bon{color:#059669}` +
+        `.pv-obs__avant{text-decoration:line-through;color:#666}.pv-obs__apres{font-weight:700}.pv-obs__fiche{font-size:11px;color:#666}` +
+        `.pv-ok{margin:0;color:#059669;font-weight:600}` +
+        `.pv-circuit{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 18px}.pv-circuit small{display:block;color:#777;font-size:11px}.pv-circuit__pt{display:none}` +
+        `summary{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#666;list-style:none}` +
+        `button,.pv-lien{display:none!important}` +
+        `</style></head><body><h1>${heading}</h1>${identite}${contenu.innerHTML}</body></html>`,
     );
     w.document.close();
     w.focus();
