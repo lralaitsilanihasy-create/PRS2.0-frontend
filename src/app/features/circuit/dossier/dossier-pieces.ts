@@ -498,7 +498,8 @@ const LIBELLES_ONGLET: Record<OngletPieceFournie, string> = {
   attribution: 'Attribution',
   'pv-cnm': 'PV de la Commission sur le DAO',
 };
-const ORDRE_ONGLETS: readonly OngletPieceFournie[] = ['presentation', 'fiche-dao', 'avis', 'plan', 'canevas', 'bordereau', 'pv-cnm', 'seance', 'evaluation', 'attribution'];
+// ⚠️ 28/10 (pilote) — le plan avant la fiche DAO.
+const ORDRE_ONGLETS: readonly OngletPieceFournie[] = ['presentation', 'plan', 'fiche-dao', 'avis', 'canevas', 'bordereau', 'pv-cnm', 'seance', 'evaluation', 'attribution'];
 
 /**
  * ⚠️ 18/10 (pilote) — l'onglet qui présente en données un fichier produit par la fiche DAO (`idDocumentFiche`), reconnu à son nom :

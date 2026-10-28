@@ -1329,12 +1329,13 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       ];
       if (d?.idDmc == null) return [{ cle: 'pieces' as const, libelle: 'Pièces jointes', nombre: this.nbPieces() }];
       // ⚠️ 18/10 (pilote, examen du DAO) — les éléments du dossier né d'une fiche, dans l'ordre des cartes de sa page.
+      // ⚠️ 28/10 (pilote) — le plan de passation avant la fiche DAO : la ligne du plan d'abord, le DAO qui en découle ensuite.
       const lettre = (this.pieceAvis()?.nomFichier ?? '').startsWith('LETTRE_PROJET_');
       return [
         { cle: 'presentation' as const, libelle: 'Fiche de présentation', nombre: null },
+        ...(d.idDossierPlan ? [{ cle: 'plan' as const, libelle: 'Plan de passation', nombre: null }] : []),
         { cle: 'dao' as const, libelle: 'Fiche DAO', nombre: null },
         ...(this.pieceAvis() ? [{ cle: 'avis' as const, libelle: lettre ? 'Lettre d’invitation' : 'Avis spécifique', nombre: null }] : []),
-        ...(d.idDossierPlan ? [{ cle: 'plan' as const, libelle: 'Plan de passation', nombre: null }] : []),
         { cle: 'bordereau' as const, libelle: 'Bordereau estimatif', nombre: null },
         ...(d.ficheMarche?.typeMarche !== 'CONTRAT_CADRE' ? [{ cle: 'canevas' as const, libelle: 'Canevas de rapport', nombre: null }] : []),
         { cle: 'pieces' as const, libelle: 'Pièces jointes', nombre: this.nbPieces() },

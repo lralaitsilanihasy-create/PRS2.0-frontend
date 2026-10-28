@@ -34,8 +34,11 @@ export function documentsDuDossier(contenu: DossierContenuStore, manquantes = 0)
   const liste: DocumentDuDossier[] = [];
   if (d.idDmc) {
     const avis = fichiersDeLOnglet(contenu.pieces(), 'avis');
+    // ⚠️ 28/10 (pilote) — le plan de passation avant la fiche DAO, comme les onglets de l'examen.
     liste.push(
       { cle: 'presentation', libelle: 'Fiche de présentation', teinte: 'vert', resume: 'Identification, marché, procédure et cohérence avec l’AGPM' },
+      { cle: 'plan', libelle: 'Plan de passation', teinte: 'bleu', resume: d.idDossierPlan
+        ? `Plan n° ${d.idDossierPlan}${d.idPvPlan ? ` · PV n° ${d.idPvPlan} signé` : ' · PV non signé'}` : 'Plan hors de l’application' },
       { cle: 'fiche-dao', libelle: 'Fiche DAO', resume: [f?.statut === 'VALIDEE' ? 'Validée' : 'Brouillon', version,
         f?.nbAttendus ? `${f.nbSaisis ?? 0} sur ${f.nbAttendus} informations` : ''].filter(Boolean).join(' · ') },
     );
@@ -43,8 +46,6 @@ export function documentsDuDossier(contenu: DossierContenuStore, manquantes = 0)
       const lettre = avis.some((p) => (p.nomFichier ?? '').startsWith('LETTRE_PROJET_'));
       liste.push({ cle: 'avis', libelle: lettre ? 'Lettre d’invitation' : 'Avis spécifique', resume: 'Les mentions du modèle type, avec leurs valeurs' });
     }
-    liste.push({ cle: 'plan', libelle: 'Plan de passation', teinte: 'bleu', resume: d.idDossierPlan
-      ? `Plan n° ${d.idDossierPlan}${d.idPvPlan ? ` · PV n° ${d.idPvPlan} signé` : ' · PV non signé'}` : 'Plan hors de l’application' });
     // Produit par l'application hors contrat-cadre (manuel p. 32).
     if (f?.typeMarche !== 'CONTRAT_CADRE') liste.push({ cle: 'canevas', libelle: 'Canevas de rapport', resume: 'Plan du rapport d’évaluation, à remplir par la commission' });
     liste.push({ cle: 'bordereau', libelle: 'Bordereau estimatif', resume: 'Prix unitaires estimés et total face au plan' });
