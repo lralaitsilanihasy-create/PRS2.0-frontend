@@ -12,7 +12,7 @@ import { ToastService } from '../../../core/notifications/toast.service';
 import { messageSoumissionRefusee } from '../../../shared/circuit/controles-libelles';
 import { faitsApercu } from '../../home/a-faire/a-faire-modele';
 import { ModaleDirective } from '../../../shared/a11y/modale.directive';
-import { ChronometrageDossier, ReputeApprouve, StatutBadge } from '../../../shared/circuit';
+import { ChronometrageDossier, ReputeApprouve, StatutBadge, traitementCnmTermine } from '../../../shared/circuit';
 import { jourSemaineDate } from '../../../shared/circuit/frise-delai';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { Icone } from '../../../shared/ui/icone';
@@ -147,7 +147,10 @@ const HAUT_TOPBAR = 48;
             }
           </div>
         </div>
-        @if (finPrevue()) {
+        @if (cnmTerminee()) {
+          <!-- ⚠️ 28/10 (pilote) — après la transmission à SIGMP, plus de prévision : le délai de la CNM est clos. -->
+          <p class="pd-fin">Traitement de la CNM<b>terminé</b></p>
+        } @else if (finPrevue()) {
           <p class="pd-fin">Fin de traitement prévue<b>{{ finPrevue() }}</b></p>
         }
       </header>
@@ -406,6 +409,7 @@ export class PageDossierCorps implements OnInit {
   /** Frise : acteurs au survol pour la CNM, date seule pour la PRMP et l'UGPM. */
   readonly etapes = computed(() => etapesPage(this.dossier(), this.contenu.restitutionsVisibles()));
   readonly finPrevue = computed(() => jourSemaineDate(this.dossier().datePrevisionnelleFin));
+  readonly cnmTerminee = computed(() => traitementCnmTermine(this.dossier().statut));
 
   // ── Étape en cours et gestes (lot F3) ────────────────────────────────────────────────────────
   readonly vue = computed<VueEtape | null>(() => {

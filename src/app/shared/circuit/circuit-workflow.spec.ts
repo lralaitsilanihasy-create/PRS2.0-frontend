@@ -12,9 +12,16 @@ import {
   pvSignataireRole,
   statutSeverity,
   tacheChronoVisiblePour,
+  traitementCnmTermine,
 } from './circuit-workflow';
 
 describe('circuit-workflow', () => {
+  it('⚠️ 28/10 (pilote) — décision transmise à SIGMP : la frise est sur la clôture, et le délai de la CNM est clos', () => {
+    expect(CIRCUIT_ETAPES[etapeIndexForDossier('DECISION_TRANSMISE_SIGMP')].label).toBe('Clôture');
+    expect(CIRCUIT_ETAPES[etapeIndexForDossier('OBSERVATIONS_LEVEES')].label).toBe('Vérification');
+    expect(['EN_VERIFICATION', 'DECISION_TRANSMISE_SIGMP', 'CLOTURE'].map(traitementCnmTermine)).toEqual([false, true, true]);
+  });
+
   // ⚠️ Demande pilote (2026-09-04) : chacun voit ses lignes et celles de ses subordonnés,
   // jamais celles de ses supérieurs ; PRMP et Admin voient tout.
   describe('visibilité hiérarchique (journal + chronométrage)', () => {

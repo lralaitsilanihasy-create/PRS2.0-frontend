@@ -310,6 +310,8 @@ describe('Page dossier — étape en cours (règles)', () => {
       expect(verif.titre).toBe('Vérification en cours');
       const archivage = vueEtape(dossier({ statut: 'DECISION_TRANSMISE_SIGMP', nomAssistantCible: 'Faniry Randriamampionona' }), reponse([], { urgence: 'DANS_LES_DELAIS', delai: { ...DELAI_VIDE, etape: 'ARCHIVAGE', restantHeures: 4, standardHeures: 8, ecouleHeures: 4, entree: '2026-09-15T22:00:00' } }), 'VERIFICATEUR');
       expect([archivage.porteur, archivage.titre]).toEqual(['chez Faniry Randriamampionona, Assistant contrôleur', 'Archivage en cours']);
+      // ⚠️ 28/10 (pilote) — la vérification est faite : l'archivage est la dernière étape, celle de la clôture.
+      expect(archivage.etape).toBe('Étape 7 sur 7');
       const voir = vueEtape(
         dossier({ statut: 'EN_ATTENTE_DECISION_PRMP', attentePrmp: true }),
         reponse([tache({ section: 'EN_ATTENTE_PRMP', geste: 'VOIR', urgence: 'EN_PAUSE' })], { urgence: 'EN_PAUSE', delai: { ...DELAI_VIDE, etape: 'RECTIFICATION_PRMP', pauseDepuis: '2026-09-12T10:00:00.5' } }),

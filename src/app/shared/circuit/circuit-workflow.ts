@@ -124,8 +124,11 @@ export function etapeIndexForDossier(statut?: string): number {
     case 'EN_VERIFICATION':
     case 'EN_ATTENTE_DECISION_PRMP':
     case 'OBSERVATIONS_LEVEES':
+      return 5; // Vérification (⚠️ spec navette : levée des observations, transmission SIGMP)
+    // ⚠️ 28/10 (pilote) — décision transmise : la vérification est FAITE (datée), le dossier attend son archivage, qui le clôt.
+    // Le laisser sur « Vérification » faisait dire à la frise « en cours » ce que l'encadré disait « Archivage en cours ».
     case 'DECISION_TRANSMISE_SIGMP':
-      return 5; // Vérification (⚠️ spec navette : levée / transmission SIGMP / attente d'archivage)
+      return 6; // Clôture (archivage en cours)
     case 'EN_ATTENTE_PIECES':
       return 3; // Examen suspendu (lettre de renvoi — en attente de pièces complémentaires)
     case 'A_REEXAMINER':
@@ -177,6 +180,14 @@ export const DOSSIER_STATUT_LABELS: Record<string, string> = {
 };
 
 /** Libellé d'affichage d'un statut de dossier (code brut si inconnu / hors dossier). */
+/**
+ * ⚠️ 28/10 (pilote) — le délai de la CNM est clos : la transmission à SIGMP arrête son compteur (chronométrage du 01/09). Au-delà,
+ * le serveur n'a plus d'étape à compter et sert la date du jour comme « fin prévue » : on dit « terminé », pas une prévision.
+ */
+export function traitementCnmTermine(statut?: string | null): boolean {
+  return statut === 'DECISION_TRANSMISE_SIGMP' || statut === 'CLOTURE' || statut === 'REMPLACE';
+}
+
 export function statutDossierLabel(statut?: string): string {
   if (!statut) return '';
   return DOSSIER_STATUT_LABELS[statut] ?? statut;

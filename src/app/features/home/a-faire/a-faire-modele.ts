@@ -1,6 +1,6 @@
 import { isApiError } from '../../../core/errors/api-error';
 import { AFaire, AFaireCompteurs, AFaireTache, Role, SectionAFaire } from '../../../models';
-import { statutDossierLabel } from '../../../shared/circuit/circuit-workflow';
+import { statutDossierLabel, traitementCnmTermine } from '../../../shared/circuit/circuit-workflow';
 import { DelaiLigne, GenreDelai, delaiLigne, heures, jourMois, lireDate } from '../../../shared/circuit/frise-delai';
 import {
   LIBELLES_AVIS,
@@ -317,6 +317,7 @@ export function faitsApercu(t: AFaireTache): FaitApercu[] {
   pousser('Pièces', f.nbPieces != null ? pluriel(f.nbPieces, 'jointe') : null);
   pousser('Parts attendues', f.partsAttendues?.length ? f.partsAttendues.join(', ') : null);
   pousser('Déposé le', !t.dossier.refeDossier && t.dossier.dateSoumission ? jourMoisHeure(t.dossier.dateSoumission) : null);
-  pousser('Fin de traitement prévue', dateComplete(t.delai.datePrevisionnelleFin) || null);
+  // ⚠️ 28/10 (pilote) — après la transmission à SIGMP, le délai de la CNM est clos : pas de « fin prévue » (le serveur y sert le jour même).
+  pousser('Fin de traitement prévue', traitementCnmTermine(t.dossier.statut) ? null : dateComplete(t.delai.datePrevisionnelleFin) || null);
   return out;
 }
