@@ -92,7 +92,11 @@ describe('Page dossier — étape en cours (règles)', () => {
     it('écrans de travail : leur URL, avec returnUrl vers la page (la rectification ne revient plus à « À faire »)', () => {
       expect(ciblePage('EXAMINER', t, 'membre', page)).toEqual({ type: 'route', commandes: ['/membre', 'examiner', 42], ciblee: true, queryParams: { returnUrl: page } });
       expect(ciblePage('TRANSMETTRE_DECISION', t, 'verificateur', page)).toEqual({ type: 'route', commandes: ['/verificateur', 'verifier', 42], ciblee: true, queryParams: { returnUrl: page } });
-      expect(ciblePage('RECTIFIER', t, 'prmp', page)).toEqual({ type: 'route', commandes: ['/prmp', 'rectifier', 42], ciblee: true, queryParams: { returnUrl: page } });
+      // ⚠️ 28/10 (pilote) — un plan se rectifie sur l'écran du plan, un dossier né d'une fiche DAO sur celui du DAO.
+      const plan = { ...t, dossier: { ...t.dossier, idSousType: 'PPM' } };
+      const dao = { ...t, dossier: { ...t.dossier, idSousType: 'DAOO-CC' } };
+      expect(ciblePage('RECTIFIER', plan, 'prmp', page)).toEqual({ type: 'route', commandes: ['/prmp', 'rectifier', 42], ciblee: true, queryParams: { returnUrl: page } });
+      expect(ciblePage('RECTIFIER', dao, 'prmp', page)).toEqual({ type: 'route', commandes: ['/prmp', 'rectifier-dao', 42], ciblee: true, queryParams: { returnUrl: page } });
       expect(ciblePage('SOUMETTRE', t, 'prmp', page)).toEqual({ type: 'route', commandes: ['/prmp', 'soumettre-dossier'], ciblee: true, queryParams: { reprendre: 42, returnUrl: page } });
       expect(ciblePage('ARCHIVER_PV', t, 'assistant', page)).toEqual({ type: 'route', commandes: ['/assistant', 'pv-examens', 12], ciblee: true, queryParams: { returnUrl: page } });
       expect(ciblePage('SIGNER_LETTRE', t, 'cc', page)).toEqual({ type: 'route', commandes: ['/cc', 'lettre-renvois', 5], ciblee: true, queryParams: { returnUrl: page } });

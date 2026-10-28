@@ -39,6 +39,10 @@ describe('Accueil « À faire » — geste → écran existant', () => {
     expect(cibleGeste('SOUMETTRE', t(), 'prmp')).toMatchObject({ commandes: ['/prmp', 'soumettre-dossier'], queryParams: { reprendre: 1002 } });
     expect(cibleGeste('COMPLETER_BROUILLON', t(), 'prmp')).toMatchObject({ queryParams: { reprendre: 1002 } });
     expect(cibleGeste('RECTIFIER', t(), 'prmp')).toMatchObject({ commandes: ['/prmp', 'rectifier', 1002], queryParams: { returnUrl: '/prmp/a-faire' } });
+    // ⚠️ 28/10 (pilote) — un dossier né d'une fiche DAO s'ouvre sur l'écran de rectification du DAO, pas sur celui du plan.
+    const dao = t();
+    dao.dossier = { ...dao.dossier, idSousType: 'DAOO-CC' };
+    expect(cibleGeste('RECTIFIER', dao, 'prmp')).toMatchObject({ commandes: ['/prmp', 'rectifier-dao', 1002], queryParams: { returnUrl: '/prmp/a-faire' } });
     expect(cibleGeste('COMPLETER_PIECES_DEPOT', t(), 'prmp')).toEqual({ type: 'modale', modale: 'pieces-depot' });
     expect(cibleGeste('TRANSMETTRE_COMPLEMENTS', t({ idLettre: 8 }), 'prmp')).toMatchObject({ commandes: ['/prmp', 'resultat-examen', 'lettre-renvois', 8] });
   });

@@ -1135,7 +1135,7 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     ouvrir(REFERENTIEL, fiche({ statut: 'VALIDEE', version: 1, daoComplet: { etat: 'EN_FILE', rang: 2, depuis: '2026-10-28T10:00:31', motif: null } }), [], []);
     fixture.componentInstance.etape.set(6);
     rendre();
-    expect(texte(racine().querySelector('.alert-info'))).toBe('Le DAO complet est en préparation — n° 2 dans la file. Vous serez prévenu quand il sera prêt.');
+    expect(texte(racine().querySelector('.fm__dao-complet'))).toBe('Le DAO complet est en préparation — n° 2 dans la file. Vous serez prévenu quand il sera prêt.');
 
     // La notification DAO_COMPLET_PRET fait relire la fiche ; prêt, les documents sont relus.
     revision.set(1);
@@ -1145,7 +1145,7 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
       { idDocument: 21, type: 'DAO_COMPLET', nomFichier: 'DAO_COMPLET_PPM-2026-003_7_v1.pdf', tailleOctets: 780000, dateGeneration: '2026-10-28T10:01:54', version: 1 },
     ] as DocumentFiche[]);
     rendre();
-    expect(racine().querySelector('.alert-info')).toBeNull();
+    expect(racine().querySelector('.fm__dao-complet')).toBeNull();
     expect(texte(racine().querySelector('.fm__docs'))).toContain('DAO_COMPLET_PPM-2026-003_7_v1.pdf');
   });
 

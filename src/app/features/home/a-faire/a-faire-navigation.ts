@@ -1,4 +1,4 @@
-import { AFaireTache, GesteAFaire } from '../../../models';
+import { AFaireTache, GesteAFaire, SOUS_TYPES_FICHE_DAO } from '../../../models';
 
 /**
  * Geste → écran EXISTANT qui le porte (accueil « À faire »). Recensement du 2026-09-15 :
@@ -165,7 +165,9 @@ export function cibleGeste(geste: GesteAFaire, t: AFaireTache, espace: string): 
         ? route([base, 'resultat-examen', 'lettre-renvois', idLettre], true)
         : route([base, 'resultat-examen', 'lettre-renvois'], false);
     case 'RECTIFIER':
-      return route([base, 'rectifier', id], true, { returnUrl: `${base}/a-faire` });
+      // ⚠️ 28/10 (pilote) — un dossier né d'une fiche DAO se rectifie sur son écran (observations, révision de la fiche) ;
+      // l'écran générique ne rectifie qu'un plan (« Ce dossier n'a pas de PPM à rectifier »). Même règle que « Dossiers à rectifier ».
+      return route([base, SOUS_TYPES_FICHE_DAO.has(t.dossier.idSousType ?? '') ? 'rectifier-dao' : 'rectifier', id], true, { returnUrl: `${base}/a-faire` });
     // ⚠️ 18/10 (« avis-a-imprimer », §B3) — la page du dossier, fenêtre d'impression ouverte d'emblée (`?imprimer=avis`, en place
     // depuis le bouton du tableau de suivi et la notification).
     case 'IMPRIMER_AVIS':

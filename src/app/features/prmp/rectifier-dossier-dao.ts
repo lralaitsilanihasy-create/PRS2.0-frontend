@@ -41,7 +41,7 @@ type EtatRevision = 'a-ouvrir' | 'en-cours' | 'validee';
           }
         </div>
         <div class="page-header--actions">
-          <button type="button" class="btn btn-outline" (click)="retour()">← Dossiers à rectifier</button>
+          <button type="button" class="btn btn-outline" (click)="retour()">← {{ libelleRetour() }}</button>
         </div>
       </header>
 
@@ -108,9 +108,14 @@ type EtatRevision = 'a-ouvrir' | 'en-cours' | 'validee';
                     </table>
                   </details>
                 } @else if (precedente()) {
-                  <p class="text-muted">Aucune information ne diffère de la version examinée.</p>
+                  <!-- ⚠️ 28/10 (pilote) — une révision qui ne change rien ne lève aucune observation : on le dit, et on rouvre. -->
+                  <p class="rd-alerte">Aucune information ne diffère de la version examinée : les observations ne sont pas corrigées par cette version.</p>
                 }
-                <a class="btn btn-outline btn-sm" [routerLink]="['/prmp/dao', f.idDmc]">Voir la fiche et ses documents →</a>
+                <div class="rd-gestes">
+                  <!-- ⚠️ 28/10 (pilote) — la version validée est figée ; la corriger encore, c'est ouvrir la suivante. -->
+                  <button type="button" [class]="changees().length ? 'btn btn-outline btn-sm' : 'btn btn-primary btn-sm'" [disabled]="saving()" (click)="ouvrirRevision()">{{ saving() ? 'Ouverture…' : 'Corriger encore — ouvrir une nouvelle version' }}</button>
+                  <a class="btn btn-outline btn-sm" [routerLink]="['/prmp/dao', f.idDmc]">Voir la fiche et ses documents →</a>
+                </div>
               }
             }
           } @else {
@@ -127,7 +132,7 @@ type EtatRevision = 'a-ouvrir' | 'en-cours' | 'validee';
               <tbody>
                 @for (p of piecesDeposees(); track p.idPiece) {
                   <tr>
-                    <td>{{ libelleType(p.idTypePiece) }}@if (p.versionCorrigee) { <span class="rd-chip rd-chip--ok">corrigée</span> }</td>
+                    <td>{{ libelleType(p) }}@if (p.versionCorrigee) { <span class="rd-chip rd-chip--ok">corrigée</span> }</td>
                     <td class="text-muted">{{ p.nomFichier || '—' }}</td>
                     <td>{{ p.dateUpload | date: 'dd/MM/yyyy' }}</td>
                     <td>
@@ -147,7 +152,7 @@ type EtatRevision = 'a-ouvrir' | 'en-cours' | 'validee';
         <div class="card rd-form">
           <label class="form-group">
             <span class="form-label">Vos corrections, en quelques mots *</span>
-            <textarea class="form-control" rows="3" [value]="motif()" (input)="motif.set($any($event.target).value)" placeholder="Garantie de soumission du lot 2 ramenée à 2 % du maximum ; mention des plis et objet du DPAO corrigés."></textarea>
+            <textarea class="form-control" rows="3" [value]="motif()" (input)="motif.set($any($event.target).value)" placeholder="Ce que vous avez corrigé, observation par observation."></textarea>
           </label>
           @if (!revisionValidee()) {
             <p class="rd-garde">La resoumission s'ouvrira quand la révision de la fiche sera validée.</p>
@@ -171,6 +176,9 @@ type EtatRevision = 'a-ouvrir' | 'en-cours' | 'validee';
     .rd-obs { display: flex; flex-direction: column; gap: 0.6rem; }
     .rd-corriger { margin-top: 0.4rem; align-self: flex-start; }
     .rd-ok { color: #15803d; }
+    /* ⚠️ 28/10 — révision sans changement, et les gestes de la révision validée. */
+    .rd-alerte { color: var(--warning-text); font-weight: 600; }
+    .rd-gestes { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
     .rd-diff { margin: 0.5rem 0; }
     .rd-diff__t td { vertical-align: top; overflow-wrap: anywhere; }
     .rd-diff__avant { color: #b91c1c; text-decoration: line-through; }
@@ -295,8 +303,12 @@ export class RectifierDossierDao {
     this.ficheService.version(f.idDmc, n).pipe(catchError(() => of(null))).subscribe((p) => this.precedente.set(p));
   }
 
-  libelleType(idTypePiece: number): string {
-    return this.types().find((t) => t.idTypePiece === idTypePiece)?.libellePiece ?? `Pièce ${idTypePiece}`;
+  /**
+   * ⚠️ 28/10 (pilote) — le nom de la pièce : celui qu'elle porte d'abord. Une pièce d'un autre type de dossier (la publication de
+   * l'AGPM, pièce du plan) n'est pas dans la liste des types DMC : elle s'affichait « Pièce 29 ».
+   */
+  libelleType(p: { idTypePiece: number; libellePiece?: string | null }): string {
+    return p.libellePiece || this.types().find((t) => t.idTypePiece === p.idTypePiece)?.libellePiece || `Pièce ${p.idTypePiece}`;
   }
 
   ouvrirRevision(): void {
@@ -330,7 +342,7 @@ export class RectifierDossierDao {
     this.pieceService.upload(fd).subscribe({
       next: () => {
         this.upload.set(null);
-        this.toast.success(`Version corrigée de « ${this.libelleType(p.idTypePiece)} » déposée.`);
+        this.toast.success(`Version corrigée de « ${this.libelleType(p)} » déposée.`);
         this.pieceService.getByDossier(this.idDossier).subscribe((rows) => this.pieces.set(rows));
       },
       error: (e: ApiError) => { this.upload.set(null); this.toast.error(e.message || 'Dépôt impossible.'); },
@@ -355,7 +367,18 @@ export class RectifierDossierDao {
     });
   }
 
+  /**
+   * ⚠️ 28/10 (pilote) — le retour mène là d'où l'on vient (`returnUrl` : l'accueil, la page du dossier, la liste), et le dit ;
+   * sans origine connue, la liste des dossiers à rectifier, comme avant.
+   */
+  private readonly returnUrl = this.route.snapshot.queryParamMap?.get('returnUrl') ?? null;
+  readonly libelleRetour = (): string => {
+    const u = this.returnUrl ?? '';
+    return u.includes('/a-faire') ? 'À faire' : u.includes('/dossier/') ? 'Le dossier' : 'Dossiers à rectifier';
+  };
   retour(): void {
-    void this.router.navigate(['/prmp/a-rectifier']);
+    const u = this.returnUrl;
+    if (u && u.startsWith('/')) void this.router.navigateByUrl(u);
+    else void this.router.navigate(['/prmp/a-rectifier']);
   }
 }

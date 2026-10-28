@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
 import { FormArray, FormControl, FormGroup } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
@@ -70,7 +70,7 @@ import { DossierModificationStore } from './dossier-modification.store';
 @Component({
   selector: 'app-rectifier-dossier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ObservationPvCard, PpmSaisieGrid, DpmReimportRefuse, ChronometrageDossier],
+  imports: [ObservationPvCard, PpmSaisieGrid, DpmReimportRefuse, ChronometrageDossier, RouterLink],
   template: `
     <section>
       <header class="page-header">
@@ -284,7 +284,15 @@ import { DossierModificationStore } from './dossier-modification.store';
           </div>
         }
       } @else {
-        <div class="alert alert-info">Ce dossier n'a pas de PPM à rectifier.</div>
+        @if (dossier()?.idDmc != null) {
+          <!-- ⚠️ 28/10 (pilote) — un dossier né d'une fiche DAO arrivé ici par un ancien lien : son écran de rectification, pas une impasse. -->
+          <div class="alert alert-info">
+            <span>Ce dossier est un dossier d'appel d'offres : il se rectifie depuis sa fiche DAO.</span>
+            <a class="btn btn-primary btn-sm" [routerLink]="['/prmp/rectifier-dao', dossier()!.idDossier]" [queryParams]="{ returnUrl: returnUrl() }">Rectifier le dossier DAO</a>
+          </div>
+        } @else {
+          <div class="alert alert-info">Ce dossier n'a pas de PPM à rectifier.</div>
+        }
         <div class="rd-foot">
           <button type="button" class="btn btn-outline" (click)="annuler()">Retour</button>
         </div>
@@ -390,7 +398,7 @@ export class RectifierDossier {
   private readonly examenPieceVersPiece = signal<Map<number, number>>(new Map());
   /** idPiece dont la version corrigée est en cours d'envoi (null sinon). */
   readonly uploadPiece = signal<number | null>(null);
-  private readonly returnUrl = signal('/prmp/a-rectifier');
+  readonly returnUrl = signal('/prmp/a-rectifier');
   /** ⚠️ Règle pilote (2026-09-06) : justification GLOBALE de la fiche — seule saisie hors import. */
   readonly justifFiche = signal('');
 

@@ -8,6 +8,8 @@
 .fm__ref { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; color: var(--n-500); font-size: 0.85rem; }
 .fm__ref > .fm__rep, .fm__ref > .btn { white-space: nowrap; }
 .alert { display: flex; gap: 0.5rem; align-items: flex-start; }
+/* 28/10 — fiche figée : la révision proposée dès l’ouverture, le bouton au bout du bandeau. */
+.fm__figee { align-items: center; justify-content: space-between; flex-wrap: wrap; }
 
 // La même carte blanche pour les cinq conteneurs de l'écran.
 .fm__cadrage, .fm__rail, .fm__bloc, .fm__ppm, .fm__ctrls { background: #fff; border: 1px solid var(--n-200); border-radius: 12px; }
