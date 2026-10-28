@@ -135,7 +135,7 @@ function routeAbsente(e: HttpErrorResponse | ApiError): boolean {
     SansSuiteVue,
     ModaleDirective,RouterLink, Icone, EtatErreur, TitreSiTronqueDirective],
   templateUrl: './fiche-marche.html',
-  styleUrl: './fiche-marche.scss',
+  styleUrls: ['./fiche-marche.scss', './fiche-marche-suite.scss'],
 })
 export class FicheMarcheEcran {
   private readonly route = inject(ActivatedRoute);
