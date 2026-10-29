@@ -129,3 +129,20 @@ Le serveur force `RECONDUCTIBLE = false` (`ContratVigueurService`, l. 137-138) a
 trois ans. La loi (art. 30-I) ne fixe que la durée maximale, **trois ans**, et n'interdit pas la reconduction. Demandé : autoriser la
 reconduction d'un marché à commandes tant que la durée totale (période × (1 + reconductions)) ne dépasse pas 36 mois, sur le modèle
 du contrat-cadre (décision de la PRMP, 409 `DUREE_MAX_ATTEINTE`).
+
+## ⚠️ Décision du pilote (2026-10-29) : « suivre les textes en vigueur »
+
+Les réponses ci-dessus deviennent des demandes fermes :
+
+- **D1 — Le plafond est en quantité, sur toute la durée du marché** (art. 30-I et II). `QUANTITE_MAX_DEPASSEE` cumule les bons émis
+  **depuis la prise d'effet du contrat** (et non plus de l'année contractuelle) ; `Consommation.articles` donne le commandé et le reste
+  **sur la durée** (`commandeDuree`, `resteQuantite` ; le front renommera « Commandé cette année »).
+- **D2 — Le minimum est en quantité, et il est dû** (art. 30-II). `quantiteMin` est obligatoire et positif pour chaque article d'un marché
+  à commandes (bilan de la fiche) ; l'alerte `QUANTITE_MIN_NON_ATTEINTE` se calcule sur la durée du contrat, à l'approche de sa fin.
+- **D3 — Les montants annuels ne sont pas une exigence des textes.** `B05-TP-02` reste **inactif** et `B05-TP-03` **facultatif** (Q3 :
+  non, contrairement à la proposition) ; `MAXIMUM_DEPASSE` (montant annuel) n'a plus de fondement : à rendre **non bloquant** (alerte
+  `MAXIMUM_ESTIME_DEPASSE`, comme `MONTANT_ESTIME_DEPASSE` du contrat-cadre), la valeur maximale estimée valant pour la durée du marché
+  (art. 30-III). La règle `MARCHE_A_COMMANDES_MONTANTS` garde son contrôle min ≤ max seulement si les deux montants sont saisis.
+- **D4 — Travaux** (Q1 : oui). Servir aux travaux `B02-AU-04` (durée, ≤ 36 mois) et `B09-DX-03` (modalités des commandes) ; la
+  garantie est déjà lue sur `B09-GT-01`.
+- **D5 — Reconduction** (B5 ci-dessus) : autorisée tant que la durée totale ne dépasse pas trois ans.

@@ -116,3 +116,17 @@ approbation → enregistrement → notification**. Demandé : refuser l'enregist
 Décret n° 2019-1064, art. 30 : « Les titulaires du contrat-cadre qui n'ont pas été retenus sont informés, par l'acheteur public, du
 résultat de l'attribution du marché subséquent. » Le front n'a pas vérifié que l'attribution d'une remise (`POST /api/remises/{id}/
 attribution`) notifie les titulaires non retenus : le dire, et l'ajouter s'il manque.
+
+## ⚠️ Décision du pilote (2026-10-29) : « suivre les textes en vigueur »
+
+B1 à B5 deviennent des demandes fermes, selon les réponses ci-dessus :
+
+- **B1 — Visa du contrôleur financier** : étape requise entre la signature et l'approbation ; une dispense « exception de contrôle
+  préalable (CHED) » se déclare au même geste (motif obligatoire).
+- **B2 — Décision d'attribution provisoire** : document produit au geste « Attribuer » (acte formel de la PRMP, non publié), joint au
+  dossier de marché ; texte provisoire tant qu'aucun modèle officiel n'est fourni.
+- **B3 — Information des candidats** : pas de paramètre de délai ; un rappel « Informer les candidats » à la PRMP dès la décision
+  d'attribution et jusqu'à l'information (loi, art. 52-I : « dès qu'elle a fait son choix »).
+- **B4 — Ordre de fin de chaîne** : signature → visa (ou dispense) → approbation → enregistrement → notification, chaque étape refusée
+  avant la précédente.
+- **B5 — Titulaires non retenus d'un marché subséquent** : informés à l'attribution de la remise (décret n° 2019-1064, art. 30).
