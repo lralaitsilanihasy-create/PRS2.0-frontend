@@ -19,6 +19,13 @@ export const CANDIDAT_ROUTES: Routes = [
     canActivate: [externeHorsSessionGuard],
     loadComponent: () => import('./confirmation-candidat').then((m) => m.ConfirmationCandidat),
   },
+  {
+    // ⚠️ 29/10 (pilote) — l'historique des notifications ; la cloche ne garde que les non lues.
+    path: 'notifications',
+    canActivate: [externeConnecteGuard],
+    data: { espace: 'candidat' },
+    loadComponent: () => import('../externe/notifications-externes').then((m) => m.NotificationsExternes),
+  },
   { path: 'procedures', loadComponent: () => import('./procedures-en-ligne').then((m) => m.ProceduresEnLigne) },
   {
     path: 'procedures/:idDmc',

@@ -32,6 +32,13 @@ export const CAO_ROUTES: Routes = [
     loadComponent: () => import('./receptions-membre').then((m) => m.ReceptionsMembre),
   },
   {
+    // ⚠️ 29/10 (pilote) — l'historique des notifications ; la cloche ne garde que les non lues.
+    path: 'notifications',
+    canActivate: [externeConnecteGuard],
+    data: { espace: 'cao' },
+    loadComponent: () => import('../externe/notifications-externes').then((m) => m.NotificationsExternes),
+  },
+  {
     path: 'procedures/:idDmc',
     canActivate: [externeConnecteGuard],
     loadComponent: () => import('./procedure-cao').then((m) => m.ProcedureCao),

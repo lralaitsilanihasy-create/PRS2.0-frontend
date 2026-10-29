@@ -21,6 +21,13 @@ export const DEPOSITAIRE_ROUTES: Routes = [
     loadComponent: () => import('./mes-procedures-depositaire').then((m) => m.MesProceduresDepositaire),
   },
   {
+    // ⚠️ 29/10 (pilote) — l'historique des notifications ; la cloche ne garde que les non lues.
+    path: 'notifications',
+    canActivate: [externeConnecteGuard],
+    data: { espace: 'depositaire' },
+    loadComponent: () => import('../externe/notifications-externes').then((m) => m.NotificationsExternes),
+  },
+  {
     path: 'procedures/:idDmc',
     canActivate: [externeConnecteGuard],
     loadComponent: () => import('./procedure-depositaire').then((m) => m.ProcedureDepositaireEcran),

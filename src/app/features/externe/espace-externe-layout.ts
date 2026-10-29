@@ -6,6 +6,7 @@ import { libelleRole } from '../../core/auth/libelles-profils';
 import { Role } from '../../models';
 import { Icone } from '../../shared/ui/icone';
 import { ChangerMotDePasseModal } from '../auth/mon-compte/changer-mot-de-passe-modal';
+import { ClocheExterne } from './cloche-externe';
 
 /** Les espaces externes ; la route racine dit lequel par `data.espace`. ⚠️ V71 : le dépositaire de la part de secours. */
 export type CleEspaceExterne = 'candidat' | 'cao' | 'depositaire';
@@ -46,6 +47,7 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
       // ⚠️ Lot MS-3 (16/10) — les bons de commande des contrats-cadres et marchés à commandes.
       { label: 'Bons de commande', path: '/candidat/bons-commande' },
       { label: 'Mon entreprise', path: '/candidat/entreprise' },
+      { label: 'Notifications', path: '/candidat/notifications' },
     ],
     entree: { label: 'Créer un compte', path: '/candidat/inscription' },
     piedLien: { label: "À propos de l'espace candidat", path: '/accueil/candidat' },
@@ -63,6 +65,7 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
       { label: 'Mes procédures', path: '/cao/mes-procedures' },
       { label: 'Remises en concurrence', path: '/cao/remises' },
       { label: 'Réceptions', path: '/cao/receptions' },
+      { label: 'Notifications', path: '/cao/notifications' },
     ],
     entree: { label: 'Activer mon compte', path: '/cao/activation' },
     piedLien: null,
@@ -74,7 +77,10 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
     racine: '/depositaire',
     titre: 'Espace du dépositaire',
     navPublique: [],
-    navConnecte: [{ label: 'Mes procédures', path: '/depositaire/mes-procedures' }],
+    navConnecte: [
+      { label: 'Mes procédures', path: '/depositaire/mes-procedures' },
+      { label: 'Notifications', path: '/depositaire/notifications' },
+    ],
     entree: { label: 'Activer mon compte', path: '/depositaire/activation' },
     piedLien: null,
     apresDeconnexion: '/login',
@@ -92,7 +98,7 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
 @Component({
   selector: 'app-espace-externe-layout',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icone, ChangerMotDePasseModal],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icone, ChangerMotDePasseModal, ClocheExterne],
   template: `
     <a class="cnm-sr-only cl-evitement" href="#cl-contenu">Aller au contenu</a>
     <header class="cl-top" [class.cl-top--sombre]="config.sombre">
@@ -110,6 +116,8 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
               <span class="cl-user__nom">{{ nom() }}</span>
               <span class="cl-user__role">{{ roleLibelle() }}</span>
             </span>
+            <!-- ⚠️ 29/10 (pilote, PRS20 51351b2) — la cloche : le membre, le dépositaire et le candidat lisent leurs notifications. -->
+            <app-cloche-externe [espace]="cle" [sombre]="config.sombre" />
             <button type="button" class="cl-btn" title="Changer mon mot de passe" (click)="motDePasseOuvert.set(true)">
               <app-icone nom="key" [taille]="15" /><span class="cl-btn__txt">Mot de passe</span>
             </button>
@@ -202,7 +210,8 @@ export class EspaceExterneLayout {
   private readonly router = inject(Router);
 
   /** L'espace, lu sur la route racine (`data.espace`) ; à défaut le candidat, l'espace historique. */
-  readonly config: ConfigEspace = ESPACES[(inject(ActivatedRoute).snapshot.data['espace'] as CleEspaceExterne | undefined) ?? 'candidat'];
+  readonly cle: CleEspaceExterne = (inject(ActivatedRoute).snapshot.data['espace'] as CleEspaceExterne | undefined) ?? 'candidat';
+  readonly config: ConfigEspace = ESPACES[this.cle];
 
   /** Connecté EN TANT QUE profil de cet espace : un autre profil est renvoyé ailleurs par `espaceExterneGuard`, il n'arrive pas ici. */
   readonly connecte = computed(() => this.auth.isAuthenticated() && this.auth.role() === this.config.role);
