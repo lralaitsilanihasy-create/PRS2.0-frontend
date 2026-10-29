@@ -31,4 +31,13 @@ export class ContratsVigueurService {
   reconduction(id: number, corps: ReconductionCorps): Observable<ContratVigueur> {
     return this.http.post<ContratVigueur>(`${this.base}/${id}/reconduction`, corps, this.ctx);
   }
+
+  /**
+   * ⚠️ 29/10 (« marche-a-commandes-champs », §B3 ; PRS20 1307a57) — la PRMP relit les termes du contrat depuis la dernière version
+   * validée de la fiche (même lecture qu'à la notification) ; bons, remises et réceptions intacts. 409 `CONTRAT_ECHU`,
+   * `FICHE_NON_VALIDEE`, `FORME_CHANGEE`.
+   */
+  relecture(id: number): Observable<ContratVigueur> {
+    return this.http.post<ContratVigueur>(`${this.base}/${id}/relecture`, null, this.ctx);
+  }
 }

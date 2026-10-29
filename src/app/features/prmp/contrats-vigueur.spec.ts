@@ -94,6 +94,29 @@ describe('Contrats en vigueur (MS-1)', () => {
     expect((racine().querySelector('.cv__details') as HTMLDetailsElement).open).toBe(true);
   });
 
+  it('29/10 (PRS20 1307a57) — la PRMP relit les termes depuis la fiche ; le refus est nommé ; l’UGPM n’a pas le bouton', () => {
+    monter('PRMP', [CONTRAT({ typeMarche: 'A_COMMANDE', titulaires: [], montantMaximum: null, alertes: [] })]);
+    (racine().querySelector('.cv__ligne') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    http.expectOne('/api/fiches-marche/50/articles').flush([]);
+    bouton('Relire depuis la fiche').click();
+    http.expectOne((r) => r.method === 'POST' && r.url === '/api/contrats-en-vigueur/7/relecture')
+      .flush({ code: 'FICHE_NON_VALIDEE', message: 'x' }, { status: 409, statusText: 'Conflict' });
+    fixture.detectChanges();
+    expect(texte()).toContain('revalidez-la avant de relire le contrat');
+    bouton('Relire depuis la fiche').click();
+    http.expectOne('/api/contrats-en-vigueur/7/relecture').flush(CONTRAT({ typeMarche: 'A_COMMANDE', titulaires: [], montantMaximum: 900000000, alertes: [] }));
+    fixture.detectChanges();
+    expect(texte()).toContain('900 000 000 Ar');
+    TestBed.resetTestingModule();
+
+    monter('UGPM', [CONTRAT({ typeMarche: 'A_COMMANDE', titulaires: [], alertes: [] })]);
+    (racine().querySelector('.cv__ligne') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    http.expectOne('/api/fiches-marche/50/articles').flush([]);
+    expect(bouton('Relire depuis la fiche')).toBeUndefined();
+  });
+
   it('la PRMP décide la reconduction (référence et date) ; le contrat revient à jour', () => {
     monter('PRMP', [CONTRAT()]);
     (racine().querySelector('.cv__ligne') as HTMLButtonElement).click();

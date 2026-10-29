@@ -48,6 +48,17 @@ export function refusReconduction(e: ApiError): string {
   return e.message || 'La décision n’a pas abouti.';
 }
 
+/** ⚠️ 29/10 — les refus de la relecture des termes depuis la fiche. */
+export function refusRelecture(e: ApiError): string {
+  switch (codeErreur(e)) {
+    case 'CONTRAT_ECHU': return 'Le contrat est échu : ses termes ne se relisent plus.';
+    case 'FICHE_NON_VALIDEE': return 'La fiche est en révision : revalidez-la avant de relire le contrat.';
+    case 'FORME_CHANGEE': return 'La forme du marché de la fiche n’est plus celle du contrat : il ne se relit pas.';
+  }
+  if (e.status === 403) return 'Les termes du contrat se relisent par la PRMP de la procédure.';
+  return e.message || 'La relecture n’a pas abouti.';
+}
+
 /** Aujourd'hui, au format des champs de date. */
 function aujourdhui(): string {
   const d = maintenantServeur();
@@ -117,6 +128,14 @@ function aujourdhui(): string {
                       <div><dt>Prochaine remise</dt><dd>{{ date(p) }} @if (p < aujourdhui) { <span class="badge badge-danger">En retard</span> }</dd></div>
                     }
                   </dl>
+                  <!-- ⚠️ 29/10 (« marche-a-commandes-champs », §B3) — les termes sont figés à la notification : après une révision de la fiche, la PRMP les relit. -->
+                  @if (prmp() && c.etat === 'EN_VIGUEUR') {
+                    <div class="cv__relecture">
+                      <button type="button" class="btn btn-ghost btn-sm" [disabled]="occupe()" (click)="relire(c)">Relire depuis la fiche</button>
+                      <span class="text-sm text-muted">Reprend la période, les montants et la reconduction de la dernière version validée de la fiche ; les bons, remises et réceptions restent intacts.</span>
+                    </div>
+                    @if (refusRelecture(); as m) { <div class="alert alert-danger" role="alert">{{ m }}</div> }
+                  }
 
                   <h2 class="cv__h2">Titulaires <span class="text-muted text-sm">— liste fermée (décret n° 2019-1064, art. 18)</span></h2>
                   <div class="cnm-table-wrap">
@@ -248,6 +267,7 @@ function aujourdhui(): string {
     .cv__details summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; }
     .cv__form--remise { border: 0; padding: 0.4rem 0 0; }
     .cv__large { flex: 1 1 18rem; }
+    .cv__relecture { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; margin-top: 0.4rem; }
     @media (max-width: 800px) { .cv__ligne { grid-template-columns: 1fr; gap: 0.3rem; } .cv__badges { justify-content: flex-start; } }
   `,
 })
@@ -289,6 +309,7 @@ export class ContratsVigueur implements OnInit {
   readonly dateDecision = signal(aujourdhui());
   readonly occupe = signal(false);
   readonly refus = signal<string | null>(null);
+  readonly refusRelecture = signal<string | null>(null);
 
   /** La PRMP décide ; l'UGPM, la Commission et l'Administrateur lisent (le serveur reste la garde). */
   readonly prmp = computed(() => this.auth.role() === 'PRMP');
@@ -424,6 +445,23 @@ export class ContratsVigueur implements OnInit {
   reconductionOuverte(c: ContratVigueur): boolean {
     return c.etat === 'EN_VIGUEUR' && c.reconductible && (c.reconductionsMax == null || c.reconductions < c.reconductionsMax)
       && (c.alertes.includes('RECONDUCTION_A_DECIDER') || !c.decisions.some((d) => d.finAvant === c.dateFin));
+  }
+
+  relire(c: ContratVigueur): void {
+    this.occupe.set(true);
+    this.refusRelecture.set(null);
+    this.service.relecture(c.id).subscribe({
+      next: (maj) => {
+        this.occupe.set(false);
+        this.contrats.update((l) => l.map((x) => (x.id === maj.id ? maj : x)));
+        this.cleBons.update((n) => n + 1);   // le maximum annuel a pu changer : la consommation se relit
+        this.toast.success(`Les termes du contrat sont relus depuis la fiche : fin le ${dateFr(maj.dateFin)}.`);
+      },
+      error: (e: ApiError) => {
+        this.occupe.set(false);
+        this.refusRelecture.set(refusRelecture(e));
+      },
+    });
   }
 
   decider(c: ContratVigueur): void {
