@@ -81,3 +81,38 @@ Demandé, **si un texte fixe ce délai** :
 Une fois les contrats livrés : le visa dans la frise et le panneau de suivi du lot (entre la signature et l'approbation) ; le bouton
 « Décision d'attribution » à côté du projet de marché ; l'échéance d'information dans le panneau du lot et sa ligne dans « À faire ».
 Rien n'est construit avant la réponse.
+
+## Réponses tirées des textes (front, 2026-10-29 — à valider par le juriste)
+
+Lecture des textes du dossier `D:\TEXTES MP` (loi n° 2016-055, circulaire de régulation des marchés publics LFI 2024, manuel de
+procédures internes des Commissions des Marchés), à la demande du pilote. Ce sont des réponses de lecture, pas un avis juridique.
+
+- **Q1 — Le visa est-il requis ?** Oui, sauf exception. Circulaire 2024 (§ XV) : les contrats « nécessitent un visa du Contrôle
+  Financier, sauf ceux bénéficiant d'une exception de contrôle préalable dans le cadre du CHED ». Le manuel de la CNM place le contrôle
+  de « tout projet de marché et tout projet d'avenant préalablement au visa du Contrôle Financier ». → B1 : le visa est une étape
+  normale ; une case « dispensé (exception CHED) » suffit à couvrir l'exception.
+- **Q2 — L'approbation attend-elle le visa ?** Oui. Circulaire 2024 (p. 31) : « les marchés soumis à enregistrement sont ceux étant déjà
+  signés par les deux parties, visés par le contrôle financier et approuvés par l'Autorité d'approbation ou son représentant », et
+  l'enregistrement est « l'ultime opération avant la notification » (loi, art. 54). → voir **B4** ci-dessous.
+- **Q3 et Q4 — Le document de décision d'attribution.** Il est requis. Circulaire 2024 (§ « documents utilisés en matière d'attribution »,
+  c°) : la « décision d'attribution provisoire » est un « acte réglementaire formel (sous forme de décision) pris par la PRMP, qui
+  consiste à matérialiser son choix sur l'attributaire du marché, après validation du procès-verbal d'évaluation de la CAO » ; elle « ne
+  fait pas nécessairement l'objet de publicité ». Sa date est la date d'attribution du plan de passation. Aucun modèle officiel trouvé
+  dans le dossier : texte provisoire du serveur (Q4).
+- **Q5 — Le délai d'information.** Aucun nombre de jours. Loi, art. 52-I : la PRMP avise les candidats « dès qu'elle a fait son
+  choix » ; les dix jours francs courent de la plus tardive de la lettre et de l'affichage (circulaire 2024, a° et b°), ce que le
+  serveur fait déjà. → **B3 ajusté** : pas de paramètre de délai ; un rappel « à informer » à la PRMP dès la décision d'attribution, et
+  tant que l'information n'est pas faite.
+
+## B4 — L'ordre de fin de chaîne (nouveau, issu des textes)
+
+Aujourd'hui : signature → approbation et enregistrement **dans un ordre libre** → notification (409 `MARCHE_NON_APPROUVE`,
+`NON_ENREGISTRE`). Les textes (circulaire 2024, p. 31 ; loi, art. 54) imposent : **signature → visa du contrôleur financier →
+approbation → enregistrement → notification**. Demandé : refuser l'enregistrement avant l'approbation (par exemple 409
+`MARCHE_NON_APPROUVE` sur `…/enregistrement`), et l'approbation avant le visa une fois B1 livré (409 `NON_VISE`, sauf dispense CHED).
+
+## B5 — Contrat-cadre : l'information des titulaires non retenus d'un marché subséquent (à vérifier)
+
+Décret n° 2019-1064, art. 30 : « Les titulaires du contrat-cadre qui n'ont pas été retenus sont informés, par l'acheteur public, du
+résultat de l'attribution du marché subséquent. » Le front n'a pas vérifié que l'attribution d'une remise (`POST /api/remises/{id}/
+attribution`) notifie les titulaires non retenus : le dire, et l'ajouter s'il manque.
