@@ -75,15 +75,24 @@ const LIBELLES_INTEGRITE: Readonly<Record<string, string>> = {
             @if (o.motif) { <p class="text-sm ls__motif">{{ o.motif }}</p> }
             @if (o.groupement?.length) { <p class="text-sm ls__ligne">Groupement : {{ membres(o) }}</p> }
             @if (o.acteEngagement; as a) {
-              <div class="ls__montants">
-                <div class="ls__montant"><span>Montant HT</span><strong>{{ montant(a.montantHt) }}</strong></div>
-                <div class="ls__montant ls__montant--ttc"><span>Montant TTC</span><strong>{{ montant(a.montantTtc) }}</strong></div>
+              <!-- ⚠️ 29/10 (pilote) — trois cases répétaient le même montant (HT, TTC, bordereau recalculé TTC et HT) : le montant lu à haute
+                   voix en grand, le HT dessous, et la concordance avec le bordereau recalculé par le serveur (lot 5) en une pastille. -->
+              <div class="ls__lu">
+                <div class="ls__lu-montant">
+                  <span class="ls__lu-l">Montant de l’offre, toutes taxes</span>
+                  <strong class="ls__lu-ttc">{{ montant(a.montantTtc) }}</strong>
+                  <span class="ls__lu-ht">{{ montant(a.montantHt) }} hors taxes</span>
+                </div>
                 @if (o.formulaires && o.totaux; as t) {
-                  <!-- Lot 5 : les totaux recalculés par le serveur depuis le bordereau scellé. -->
-                  <div class="ls__montant ls__montant--calc" aria-label="Totaux recalculés depuis le bordereau"><span>Bordereau recalculé</span><strong>{{ montant(t.ttc) }} TTC</strong><small>{{ montant(t.ht) }} HT</small></div>
-                  @if (t.htMin != null) {
-                    <div class="ls__montant ls__montant--calc"><span>Au minimum</span><strong>{{ montant(t.ttcMin) }} TTC</strong><small>{{ montant(t.htMin) }} HT</small></div>
-                  }
+                  <div class="ls__lu-controle">
+                    @if (ecart(a.montantTtc, t.ttc); as e) {
+                      <span class="ls__pastille ls__pastille--ecart">Écart de {{ montant(e) }} avec le bordereau</span>
+                      <span class="ls__lu-ht">Bordereau recalculé : {{ montant(t.ttc) }} TTC · {{ montant(t.ht) }} HT</span>
+                    } @else {
+                      <span class="ls__pastille ls__pastille--ok">✓ Concorde avec le bordereau recalculé</span>
+                    }
+                    @if (t.htMin != null) { <span class="ls__lu-ht">Au minimum : {{ montant(t.ttcMin) }} TTC · {{ montant(t.htMin) }} HT</span> }
+                  </div>
                 }
               </div>
               <dl class="ls__ae">
@@ -162,6 +171,17 @@ const LIBELLES_INTEGRITE: Readonly<Record<string, string>> = {
     .ls__nif-ko { color: var(--danger-text); font-weight: 600; }
     .ls__motif, .ls__manque { margin: 0; color: var(--danger-text); }
     .ls__ligne { margin: 0; }
+    /* ⚠️ 29/10 — le montant lu, et sa concordance avec le bordereau. */
+    .ls__lu { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.6rem 1.5rem; padding: 0.75rem 1rem; border-radius: 10px; background: var(--p-50, #f0f9ff); border: 1px solid var(--p-100); }
+    .ls__lu-montant { display: flex; flex-direction: column; gap: 0.1rem; }
+    .ls__lu-l { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-500); font-weight: 700; }
+    .ls__lu-ttc { font-size: 1.6rem; line-height: 1.15; color: var(--p-800); font-variant-numeric: tabular-nums; }
+    .ls__lu-ht { font-size: var(--text-sm); color: var(--n-500); font-variant-numeric: tabular-nums; }
+    .ls__lu-controle { display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem; text-align: right; }
+    .ls__pastille { display: inline-block; padding: 0.25rem 0.7rem; border-radius: 999px; font-size: var(--text-sm); font-weight: 700; }
+    .ls__pastille--ok { background: var(--success-bg, #ecfdf5); color: var(--success-text, #059669); border: 1px solid var(--success-bdr, #a7f3d0); }
+    .ls__pastille--ecart { background: var(--warning-bg, #fffbeb); color: var(--warning-text, #a16207); border: 1px solid var(--warning-bdr, #fde68a); }
+    .ls--projection .ls__lu-ttc { font-size: 2.2rem; }
     .ls__montants { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.6rem; }
     .ls__montant { display: flex; flex-direction: column; gap: 0.1rem; padding: 0.55rem 0.8rem; border-radius: 8px; background: var(--n-100); }
     .ls__montant span { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-500); }
@@ -272,6 +292,13 @@ export class LectureSeance implements OnInit {
   /** Un rabais texte (offres plus anciennes) ; le rabais structuré se lit dans `OffreLue.rabais.lecture`. */
   isTexte(v: unknown): v is string {
     return typeof v === 'string' && !!v;
+  }
+
+  /** Écart, en ariary, entre le montant de l'acte et le bordereau recalculé ; `null` s'ils concordent (à l'ariary près). */
+  ecart(acte: number | null | undefined, bordereau: number | null | undefined): number | null {
+    if (acte == null || bordereau == null) return null;
+    const e = Math.abs(acte - bordereau);
+    return e < 1 ? null : e;
   }
 
   montant(v: number | null | undefined): string {
