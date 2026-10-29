@@ -70,7 +70,10 @@ export const LIBELLES_ETAT_DEMANDE: Readonly<Record<EtatDemande, string>> = {
 
 /** « 1 700 000 Ar » ; « — » sans valeur. */
 export function ariary(v: number | null | undefined): string {
-  return v == null ? '—' : `${new Intl.NumberFormat('fr-FR').format(v)} Ar`;
+  if (v == null) return '—';
+  // ⚠️ 29/10 (recette des formes) — un montant au centime (TTC d'un bon : 37 771 114,80) garde ses deux décimales ; un entier, aucune.
+  const centimes = Number.isInteger(v) ? 0 : 2;
+  return `${new Intl.NumberFormat('fr-FR', { minimumFractionDigits: centimes, maximumFractionDigits: 2 }).format(v)} Ar`;
 }
 
 /** « +12,5 % » ; « — » sans valeur. */

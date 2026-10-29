@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { ApiError, codeErreur, corpsErreur } from '../../core/errors/api-error';
@@ -259,6 +259,8 @@ export class ReceptionsBonVue implements OnInit {
   readonly signataire = input<string | null>(null);
   /** Membre de la commission : il signe sans connaître son identifiant (`aSigner` de « miennes »). */
   readonly signerSansIdentifiant = input(false);
+  /** ⚠️ 29/10 (recette des formes) — un geste a abouti : le parent relit ce qui dépend de l’état du bon (liste du membre, badges). */
+  readonly gesteFait = output<void>();
 
   readonly service = inject(ReceptionsCommandesService);
   private readonly toast = inject(ToastService);
@@ -392,6 +394,7 @@ export class ReceptionsBonVue implements OnInit {
         this.saisieLivree.set({});
         this.saisieRecue.set({});
         this.toast.success(succes);
+        this.gesteFait.emit();
         this.charger();
       },
       error: (e: ApiError) => {

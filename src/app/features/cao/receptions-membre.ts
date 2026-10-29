@@ -34,7 +34,7 @@ import { ReceptionsBonVue } from '../receptions/receptions-bon';
               @if (m.president) { <span class="badge badge-info">Vous présidez</span> }
             </header>
             <p class="text-sm rm__meta">Titulaire : {{ m.titulaire || '—' }}</p>
-            <app-receptions-bon [idBon]="m.reception.idBon" [president]="m.president" [signerSansIdentifiant]="m.aSigner" />
+            <app-receptions-bon [idBon]="m.reception.idBon" [president]="m.president" [signerSansIdentifiant]="m.aSigner" (gesteFait)="charger(false)" />
           </article>
         } @empty { <p class="text-muted">Aucune réception à traiter.</p> }
       }
@@ -67,8 +67,12 @@ export class ReceptionsMembre implements OnInit {
     this.charger();
   }
 
-  charger(): void {
-    this.chargement.set(true);
+  /**
+   * ⚠️ 29/10 (recette des formes) — relue aussi après chaque geste sur un bon (PV établi, signature) : sans quoi le badge « À signer » et
+   * le compteur du bandeau restaient affichés après la signature. `afficher` faux : relecture sans l'indicateur de chargement.
+   */
+  charger(afficher = true): void {
+    if (afficher) this.chargement.set(true);
     this.erreur.set(null);
     this.service.miennes().subscribe({
       next: (l) => {
