@@ -9,7 +9,20 @@ import type { TypeContratVigueur } from './contrat-vigueur.model';
 
 export type EtatBonCommande = 'EMIS' | 'ANNULE' | (string & {});
 
-export type AlerteConsommation = 'MINIMUM_NON_ATTEINT' | 'MONTANT_ESTIME_DEPASSE' | (string & {});
+/** ⚠️ 29/10 (« bons-reception », §B1 ; V148) — `QUANTITE_MIN_NON_ATTEINTE` n'est servie qu'ici, pas dans les alertes du contrat. */
+export type AlerteConsommation = 'MINIMUM_NON_ATTEINT' | 'MONTANT_ESTIME_DEPASSE' | 'QUANTITE_MIN_NON_ATTEINTE' | (string & {});
+
+/** ⚠️ 29/10 (« bons-reception », §B1 ; V148) — un article du besoin d'un marché à commandes et sa consommation de l'année. */
+export interface ArticleConsomme {
+  idArticle: number;
+  designation: string | null;
+  unite: string | null;
+  quantiteMin: number | null;
+  quantiteMax: number | null;
+  commandeAnnee: number;
+  /** Nul sans `quantiteMax`. */
+  resteQuantite: number | null;
+}
 
 export interface LigneBonCommande {
   rang: number;
@@ -49,6 +62,13 @@ export interface BonCommande {
   annuleLe: string | null;
   annulePar: string | null;
   motifAnnulation: string | null;
+  /**
+   * ⚠️ 29/10 (« bons-reception », §B2 ; V148) — la TVA du bon, figée à l'émission : taux de l'offre du titulaire, à défaut le taux des
+   * bordereaux. Nuls pour un bon émis avant V148, ou sans aucune source.
+   */
+  tauxTva?: number | null;
+  montantTva?: number | null;
+  montantTtc?: number | null;
 }
 
 /** Un marché subséquent attribué et ce que ses bons ont commandé (contrat-cadre). */
@@ -80,6 +100,10 @@ export interface Consommation {
   subsequents: SubsequentConsomme[];
   alertes: AlerteConsommation[];
   bons: BonCommande[];
+  /** ⚠️ V148 — le cumul TTC des seuls bons qui portent un TTC. */
+  cumulTtc?: number | null;
+  /** ⚠️ V148 — marché à commandes : les articles du besoin, dans l'ordre du besoin ; vide pour un contrat-cadre. */
+  articles?: ArticleConsomme[];
 }
 
 /** Corps de `POST /api/contrats-en-vigueur/{id}/bons-commande` (PRMP de la fiche). */

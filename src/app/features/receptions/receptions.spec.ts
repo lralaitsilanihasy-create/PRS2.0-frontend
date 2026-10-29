@@ -95,6 +95,60 @@ describe('Réception des commandes (MS-4)', () => {
       http.expectOne('/api/receptions-commandes/bons/11/definitive').flush(BON());
       http.expectOne('/api/receptions-commandes/bons/11').flush(BON());
     });
+
+    // ⚠️ 29/10 (« bons-reception », §B3 ; V148) — la réception partielle par article.
+    const LIGNES_BON = [
+      { rang: 1, idArticle: 5, designation: 'Cartouches', unite: 'u', commande: 100, livre: 60, recu: 60, reliquat: 40 },
+      { rang: 2, idArticle: 6, designation: 'Ramettes', unite: 'u', commande: 50, livre: 50, recu: 50, reliquat: 0 },
+    ];
+
+    it('V148 — reçu en partie : seules les lignes à reliquat se livrent, préremplies au reliquat ; au-delà, refusé à l’écran', () => {
+      monter(BON({ etatReception: 'RECU_PARTIEL', receptions: [], lignes: LIGNES_BON }), { peutDeclarer: true });
+      expect(texte(racine())).toContain('Reçu en partie');
+      const champs = racine().querySelectorAll<HTMLInputElement>('app-quantites-lignes input');
+      expect(champs.length).toBe(1);
+      expect(champs[0].value).toBe('40');
+      saisir(champs[0], '45');
+      fixture.detectChanges();
+      expect(bouton(racine(), 'Déclarer la livraison').disabled).toBe(true);
+      saisir(champs[0], '25');
+      fixture.detectChanges();
+      bouton(racine(), 'Déclarer la livraison').click();
+      const post = http.expectOne('/api/receptions-commandes/bons/11/livraison');
+      expect(post.request.body).toEqual({ dateLivraison: null, observations: null, lignes: [{ rang: 1, quantiteLivree: 25 }] });
+      post.flush(BON());
+      http.expectOne('/api/receptions-commandes/bons/11').flush(BON());
+    });
+
+    it('V148 — le PV reçoit par ligne (plafond : la quantité livrée) ; un ajournement n’envoie aucune quantité', () => {
+      const r = RECEPTION({ lignes: [{ rang: 1, idArticle: 5, designation: 'Cartouches', unite: 'u', prixUnitaire: 3000, quantiteCommandee: 100, quantiteLivree: 40, quantiteRecue: null }], valeurLivree: 120000 });
+      monter(BON({ receptions: [r], lignes: LIGNES_BON }), { president: true });
+      expect(texte(racine())).toContain('Cartouches : livré 40');
+      choisir(racine().querySelector('.rb__details select')!, 'RECEPTION');
+      fixture.detectChanges();
+      const champ = racine().querySelector<HTMLInputElement>('.rb__details app-quantites-lignes input')!;
+      expect(champ.value).toBe('40');
+      saisir(champ, '35');
+      fixture.detectChanges();
+      bouton(racine(), 'Établir le procès-verbal').click();
+      const post = http.expectOne('/api/receptions-commandes/21/pv');
+      expect(post.request.body).toMatchObject({ decision: 'RECEPTION', lignes: [{ rang: 1, quantiteRecue: 35 }] });
+      post.flush(RECEPTION({ etat: 'PV_ETABLI' }));
+      http.expectOne('/api/receptions-commandes/bons/11').flush(BON());
+      TestBed.resetTestingModule();
+
+      monter(BON({ receptions: [r], lignes: LIGNES_BON }), { president: true });
+      choisir(racine().querySelector('.rb__details select')!, 'AJOURNEMENT');
+      fixture.detectChanges();
+      expect(racine().querySelector('.rb__details app-quantites-lignes')).toBeNull();
+      saisir(Array.from(racine().querySelectorAll('label')).find((l) => l.textContent?.includes('Motif'))!.querySelector('input')!, 'Emballages ouverts');
+      fixture.detectChanges();
+      bouton(racine(), 'Établir le procès-verbal').click();
+      const ajourne = http.expectOne('/api/receptions-commandes/21/pv');
+      expect(ajourne.request.body.lignes).toBeUndefined();
+      ajourne.flush(RECEPTION({ etat: 'PV_ETABLI' }));
+      http.expectOne('/api/receptions-commandes/bons/11').flush(BON());
+    });
   });
 
   describe('commission de réception', () => {

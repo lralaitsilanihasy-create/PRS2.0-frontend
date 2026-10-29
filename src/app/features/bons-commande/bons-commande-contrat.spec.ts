@@ -120,5 +120,24 @@ describe('Bons de commande d’un contrat (MS-3)', () => {
   it('nomme les refus', () => {
     expect(refusBon(api(400, { code: 'PRIX_HORS_BORDEREAU', details: { rang: 2, prixBordereau: 2500 } }))).toContain('article n° 2');
     expect(refusBon(api(409, { code: 'REMISE_NON_ATTRIBUEE' }))).toContain('art. 33');
+    // ⚠️ V148 (« bons-reception », §B1).
+    expect(refusBon(api(409, { code: 'QUANTITE_MAX_DEPASSEE', details: { rang: 1, idArticle: 41, quantiteMax: 500, dejaCommande: 480, demande: 30 } })))
+      .toBe('L’article de la ligne n° 1 dépasse sa quantité maximale de l’année (500 ; déjà commandé 480, demandé 30).');
+  });
+
+  it('V148 — marché à commandes : quantités de l’année par article, reste dans le choix ; le bon dit son TTC', () => {
+    const bon = { ...CONSO().bons[0], typeMarche: 'A_COMMANDE' as const, idRemise: null, numeroRemise: null, tauxTva: 20, montantTva: 60000, montantTtc: 360000 };
+    monter(CONTRAT({ typeMarche: 'A_COMMANDE' }), CONSO({
+      typeMarche: 'A_COMMANDE', subsequents: [], bons: [bon], cumulTtc: 360000, alertes: ['QUANTITE_MIN_NON_ATTEINTE'],
+      articles: [{ idArticle: 41, designation: 'Ramette A4', unite: 'paquet', quantiteMin: 100, quantiteMax: 500, commandeAnnee: 480, resteQuantite: 20 }],
+    }));
+    http.expectOne('/api/fiches-marche/50/articles').flush([{ idArticle: 41, lot: 1, designation: 'Ramette A4', unite: 'paquet', caracteristiques: [] }]);
+    fixture.detectChanges();
+    const quantites = racine().querySelector('table[aria-label="Quantités commandées cette année par article"]')!;
+    expect(Array.from(quantites.querySelectorAll('tbody td')).map((td) => td.textContent?.trim())).toEqual(['Ramette A4', 'paquet', '100', '500', '480', '20']);
+    expect(texte()).toContain('360 000');
+    expect(texte()).toContain('TTC (20 %)');
+    expect(texte()).toContain('quantité minimale');
+    expect((racine().querySelector('.bc__form tbody select') as HTMLSelectElement).options[1].textContent).toBe('Ramette A4 — reste 20');
   });
 });

@@ -37,6 +37,13 @@ Demandé, pour un bon de marché à commandes dont la ligne porte un `idArticle`
 Une ligne saisie sans `idArticle` (offre déposée par pièces, contenu purgé) n'est pas bornée en quantité : le montant reste le seul
 contrôle, comme aujourd'hui.
 
+> ⚠️ **2026-10-29 — livré (PRS20, V148), avec ces précisions.**
+> - Plusieurs lignes du même article dans un bon s'additionnent ; `details.rang` est la **première** ligne de l'article.
+> - `QUANTITE_MAX_DEPASSEE` passe **avant** `MAXIMUM_DEPASSE` : un bon qui dépasse les deux reçoit le premier.
+> - `articles[]` suit l'ordre du besoin ; il est **vide** pour un contrat-cadre ; `resteQuantite` est nul sans `quantiteMax`.
+> - **`QUANTITE_MIN_NON_ATTEINTE` n'est servie que dans `Consommation.alertes`**, pas dans `ContratVigueurDto.alertes` (le contrat en
+>   vigueur ne lit pas le besoin), contrairement à `MINIMUM_NON_ATTEINT` qui est dans les deux.
+
 ## B2 — Le montant TTC du bon (marché à commandes et contrat-cadre)
 
 Le bon ne porte que le hors taxes (`montantHt`). Le titulaire facture TTC, et l'attribution connaît déjà les deux montants
@@ -50,6 +57,15 @@ Demandé :
   contrôlés **en HT**, comme aujourd'hui (voir Q2).
 
 **Q1** décide d'où vient le taux.
+
+> ⚠️ **2026-10-29 — livré (PRS20, V148) sur la proposition de Q1 et Q2.**
+> - Taux = (TTC − HT) / HT de l'offre du titulaire à l'attribution, à deux décimales : sa ligne de titulaire d'un contrat-cadre
+>   (`AttributionTitulaire`), sinon l'attributaire du lot ; à défaut `FICHE_TAUX_TVA`. **Sans aucune source, `tauxTva`, `montantTva`
+>   et `montantTtc` sont nuls** (le document n'imprime alors pas les lignes TVA et TTC).
+> - Les trois champs sont **en fin** de `BonCommandeDto`.
+> - **Un bon émis avant V148 n'a pas de TVA** : rien n'est recalculé ; `cumulTtc` ne compte que les bons qui portent un TTC.
+> - Document : lignes « TVA (n %) » et « Total toutes taxes comprises » dans le tableau, « soit … Ariary toutes taxes comprises » dans
+>   la phrase d'arrêté.
 
 ## B3 — La réception partielle par article
 
@@ -73,6 +89,22 @@ Demandé :
 **Pénalité indicative** : aujourd'hui, montant du bon × taux × jours de retard. Avec des livraisons partielles, elle devrait porter
 sur la **valeur livrée en retard** (chaque livraison avec ses propres jours de retard). Voir **Q4**.
 
+> ⚠️ **2026-10-29 — livré (PRS20, V148 : table `t_reception_ligne`) sur les propositions de Q3 et Q4, avec ces précisions.**
+> - **Livraison** : une ligne **omise** de `lignes` vaut 0 (sans `lignes` du tout : tout le reliquat). Au moins une quantité positive.
+>   `details` de `QUANTITE_LIVREE_INVALIDE` = `{ rang, reliquat }`.
+> - **PV** : une ligne omise vaut sa **quantité livrée** (le front préremplit, mais un oubli ne ramène pas la ligne à 0). Ajournement ou
+>   rejet : rien de reçu, `lignes` ignorées. Réception ou réfaction : au moins une quantité reçue positive. Code d'erreur
+>   **`QUANTITE_RECUE_INVALIDE`** (`details` = `{ rang, quantiteLivree }`), nouveau. La **réfaction** est bornée par la **valeur
+>   reçue**, plus par le montant du bon.
+> - **État** : `RECU_PARTIEL` (le nom proposé). Le délai de garantie part de la dernière réception acceptée.
+> - **`DuBon.lignes[]`** : `{ rang, idArticle, designation, unite, commande, livre, recu, reliquat }` ; `livre` cumule toutes les
+>   livraisons déclarées, **ajournées et rejetées comprises** ; `recu` ne compte que les PV signés qui acceptent.
+> - **`ReceptionCommandeDto`** : `valeurLivree` (base de la pénalité) et `lignes[{ rang, idArticle, designation, unite, prixUnitaire,
+>   quantiteCommandee, quantiteLivree, quantiteRecue }]`, en fin d'objet ; `quantiteRecue` nulle avant le PV.
+> - **Réceptions d'avant V148** (sans lignes) : elles valent tout le bon ; leurs `lignes` sont vides et leurs montants restent ceux
+>   du bon.
+> - PV : tableau N°, désignation, unité, commandé, livré, reçu, **reliquat après ce PV**, puis « Montant réceptionné : … ».
+
 ## Questions au pilote (ou au juriste)
 
 - **Q1 — Taux de TVA du bon.** Trois sources possibles :
@@ -91,6 +123,10 @@ sur la **valeur livrée en retard** (chaque livraison avec ses propres jours de 
   saisis, `BonCommandeService`). Sans articles structurés au marché subséquent, B1 ne vaut que pour le marché à commandes.
   Faut-il structurer le devis du marché subséquent (lot à part), ou s'en tenir au plafond en montant ?
 
+> ⚠️ **2026-10-29 — sur demande de l'utilisateur, le serveur livre sur les propositions du front**, à confirmer par le pilote : Q1 (b)
+> puis (a) ; Q2 plafonds en HT, inchangés ; Q3 un PV par livraison ; Q4 sur la valeur livrée ; Q5 plafond en montant seul pour le
+> contrat-cadre (pas de devis structuré). Une réponse contraire du pilote rouvrira le point concerné.
+
 ## Ce que fera le front
 
 Une fois le contrat livré :
@@ -103,3 +139,17 @@ Une fois le contrat livré :
   nouvel état du bon dans la frise de réception.
 
 Rien n'est construit avant la réponse.
+
+> ⚠️ **Front, 2026-10-29 — livré** (sur PRS20 7b67b12, V148).
+> - **Bons** (`features/bons-commande/bons-commande-contrat.ts`) : le refus `QUANTITE_MAX_DEPASSEE` nomme la ligne, le maximum,
+>   le déjà commandé et la demande ; le choix d'un article dit son reste de l'année (« Ramette A4 — reste 20 ») ; chaque bon montre son
+>   TTC et son taux sous le HT (rien pour un bon d'avant V148) ; le cumul TTC suit le cumul HT.
+> - **Consommation** : tableau des articles du marché à commandes (minimum, maximum, commandé cette année, reste) et alerte
+>   `QUANTITE_MIN_NON_ATTEINTE`.
+> - **Livraison** (PRMP/UGPM dans `receptions/receptions-bon.ts`, titulaire dans `candidat/bons-commande-titulaire.ts`) : un composant
+>   commun, `receptions/quantites-lignes.ts`, ne montre que les lignes à reliquat, préremplies au reliquat ; toutes ces lignes sont
+>   envoyées (une ligne omise vaudrait 0). L'état `RECU_PARTIEL` ouvre une nouvelle livraison.
+> - **PV** : en réception ou réfaction, quantités reçues par ligne, préremplies à la quantité livrée ; ajournement et rejet n'envoient
+>   aucune quantité. Le bon montre commandé, livré, reçu et reliquat par ligne ; chaque réception, ses quantités et sa valeur livrée.
+> - Le libellé de `REFACTION_INVALIDE` dit désormais « inférieur à la valeur reçue ».
+> - Non recetté à l'écran : aucun contrat en vigueur en base depuis le reset du 28/10. Les réponses Q1-Q5 du pilote restent attendues.

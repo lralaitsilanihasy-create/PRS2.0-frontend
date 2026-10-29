@@ -14,7 +14,12 @@ import { ReceptionsBonVue } from '../receptions/receptions-bon';
 export const ALERTES_CONSOMMATION: Readonly<Record<string, string>> = {
   MINIMUM_NON_ATTEINT: 'Le minimum annuel n’est pas atteint à moins de 30 jours de la fin de l’année contractuelle (loi n° 2016-055, art. 30-II).',
   MONTANT_ESTIME_DEPASSE: 'Les commandes dépassent la valeur maximale estimée du contrat-cadre (décret n° 2019-1064, art. 8) : signalé, jamais refusé.',
+  // ⚠️ 29/10 (« bons-reception », §B1 ; V148).
+  QUANTITE_MIN_NON_ATTEINTE: 'Au moins un article n’atteint pas sa quantité minimale à moins de 30 jours de la fin de l’année contractuelle : signalé, jamais refusé.',
 };
+
+/** Une quantité lisible (« 12 », « 2,5 »). */
+const qte = (n: unknown): string => (typeof n === 'number' ? n.toLocaleString('fr-FR') : '?');
 
 /** Les refus des bons de commande, dits à la PRMP. */
 export function refusBon(e: ApiError): string {
@@ -32,6 +37,7 @@ export function refusBon(e: ApiError): string {
     case 'CONTRAT_ECHU': return 'Le contrat est échu : plus aucune commande.';
     case 'SANS_TITULAIRE': return 'Le contrat n’a plus de titulaire.';
     case 'MONTANT_SUBSEQUENT_DEPASSE': return `Le bon dépasse le montant retenu du marché subséquent (${ar('montantRetenu')} ; déjà commandé ${ar('dejaCommande')}).`;
+    case 'QUANTITE_MAX_DEPASSEE': return `L’article${d['rang'] ? ' de la ligne n° ' + d['rang'] : ''} dépasse sa quantité maximale de l’année (${qte(d['quantiteMax'])} ; déjà commandé ${qte(d['dejaCommande'])}, demandé ${qte(d['demande'])}).`;
     case 'MAXIMUM_DEPASSE': return `Le bon dépasse le maximum annuel du marché à commandes (${ar('maximum')} ; déjà commandé cette année ${ar('dejaCommande')}).`;
     case 'MOTIF_OBLIGATOIRE': return 'Le motif de l’annulation est obligatoire.';
     case 'DEJA_ANNULE': return 'Ce bon est déjà annulé.';
@@ -69,7 +75,7 @@ const LIGNE_VIDE = (): LigneSaisie => ({ idArticle: null, designation: '', unite
       <div class="alert alert-danger" role="alert">{{ m }} <button type="button" class="btn btn-ghost btn-sm" (click)="charger()">Réessayer</button></div>
     } @else if (conso(); as k) {
       <dl class="bc__grille">
-        <div><dt>Commandé sur la durée du contrat</dt><dd>{{ ariary(k.cumulHt) }} HT</dd></div>
+        <div><dt>Commandé sur la durée du contrat</dt><dd>{{ ariary(k.cumulHt) }} HT@if (k.cumulTtc) { · {{ ariary(k.cumulTtc) }} TTC }</dd></div>
         @if (commandes()) {
           <div><dt>Année contractuelle</dt><dd>du {{ date(k.anneeDebut) }} au {{ date(k.anneeFin) }}</dd></div>
           <div><dt>Commandé cette année</dt><dd>{{ ariary(k.cumulAnnee) }} HT</dd></div>
@@ -80,6 +86,24 @@ const LIGNE_VIDE = (): LigneSaisie => ({ idArticle: null, designation: '', unite
         }
       </dl>
       @for (a of k.alertes; track a) { <div class="alert alert-warning" role="note"><span>{{ alerte(a) }}</span></div> }
+
+      <!-- ⚠️ 29/10 (« bons-reception », §B1 ; V148) — marché à commandes : les quantités de l'année par article du besoin. -->
+      @if (commandes() && k.articles?.length) {
+        <div class="cnm-table-wrap">
+          <table class="cnm-table bc__table" aria-label="Quantités commandées cette année par article">
+            <thead><tr><th scope="col">Article du besoin</th><th scope="col">Unité</th><th scope="col" class="bc__num">Minimum</th><th scope="col" class="bc__num">Maximum</th><th scope="col" class="bc__num">Commandé cette année</th><th scope="col" class="bc__num">Reste</th></tr></thead>
+            <tbody>
+              @for (a of k.articles; track a.idArticle) {
+                <tr [class.bc__epuise]="a.resteQuantite === 0">
+                  <td>{{ a.designation || '—' }}</td><td>{{ a.unite || '—' }}</td>
+                  <td class="bc__num">{{ quantite(a.quantiteMin) }}</td><td class="bc__num">{{ quantite(a.quantiteMax) }}</td>
+                  <td class="bc__num">{{ quantite(a.commandeAnnee) }}</td><td class="bc__num">{{ quantite(a.resteQuantite) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
 
       @if (!commandes() && k.subsequents.length) {
         <div class="cnm-table-wrap">
@@ -104,7 +128,7 @@ const LIGNE_VIDE = (): LigneSaisie => ({ idArticle: null, designation: '', unite
                   <td>n° {{ b.numero }}{{ b.numeroRemise ? ' (remise n° ' + b.numeroRemise + ')' : '' }}</td>
                   <td>{{ b.titulaire || '—' }}</td>
                   <td>{{ b.objet || '—' }}</td>
-                  <td class="bc__num">{{ ariary(b.montantHt) }}</td>
+                  <td class="bc__num">{{ ariary(b.montantHt) }}@if (b.montantTtc != null) { <br /><span class="text-muted">{{ ariary(b.montantTtc) }} TTC ({{ b.tauxTva }} %)</span> }</td>
                   <td class="text-sm">{{ dateHeure(b.emisLe) }}</td>
                   <td class="text-sm">
                     @if (b.etat === 'ANNULE') { <span class="badge badge-danger">Annulé</span> {{ b.motifAnnulation }} }
@@ -169,7 +193,7 @@ const LIGNE_VIDE = (): LigneSaisie => ({ idArticle: null, designation: '', unite
                         @if (commandes() && articles().length) {
                           <select class="form-control form-control-sm" [attr.aria-label]="'Article de la ligne ' + (i + 1)" (change)="choisirArticle(i, $any($event.target).value)">
                             <option value="">—</option>
-                            @for (a of articles(); track a.idArticle) { <option [value]="a.idArticle" [selected]="l.idArticle === a.idArticle">{{ a.designation }}</option> }
+                            @for (a of articles(); track a.idArticle) { <option [value]="a.idArticle" [selected]="l.idArticle === a.idArticle">{{ a.designation }}{{ resteArticle(a.idArticle) }}</option> }
                           </select>
                         } @else {
                           <input class="form-control form-control-sm" type="text" [attr.aria-label]="'Désignation de la ligne ' + (i + 1)" [value]="l.designation" (input)="poserLigne(i, 'designation', $any($event.target).value)" />
@@ -209,6 +233,7 @@ const LIGNE_VIDE = (): LigneSaisie => ({ idArticle: null, designation: '', unite
     .bc__table thead th { background: var(--p-100); color: var(--p-800); }
     .bc__num { text-align: right; white-space: nowrap; }
     .bc__annule td { color: var(--n-500); }
+    .bc__epuise td { color: var(--n-500); }
     .bc__actions { display: flex; gap: 0.25rem; white-space: nowrap; }
     .bc__details summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; }
     .bc__form { display: flex; flex-direction: column; gap: 0.45rem; padding-top: 0.4rem; }
@@ -289,6 +314,16 @@ export class BonsCommandeContrat implements OnInit {
 
   alerte(a: string): string {
     return ALERTES_CONSOMMATION[a] ?? a;
+  }
+
+  quantite(n: number | null): string {
+    return n == null ? '—' : n.toLocaleString('fr-FR');
+  }
+
+  /** ⚠️ V148 — le reste de l'année d'un article, dit dans la liste de choix (« — reste 40 ») ; rien sans maximum. */
+  resteArticle(idArticle: number): string {
+    const a = this.conso()?.articles?.find((x) => x.idArticle === idArticle);
+    return a?.resteQuantite != null ? ` — reste ${this.quantite(a.resteQuantite)}` : '';
   }
 
   montantLigne(l: LigneSaisie): number | null {

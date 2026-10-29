@@ -11,8 +11,35 @@ export type EtatReceptionCommande = 'A_ETABLIR' | 'PV_ETABLI' | 'SIGNE' | (strin
 export type DecisionReceptionCommande = 'RECEPTION' | 'AJOURNEMENT' | 'REFACTION' | 'REJET';
 
 export type EtatReceptionBon =
-  | 'A_LIVRER' | 'EN_RECEPTION' | 'AJOURNE' | 'REJETE' | 'RECU_PROVISOIRE' | 'EN_RECEPTION_DEFINITIVE' | 'RECU_DEFINITIF' | 'ANNULE'
-  | (string & {});
+  | 'A_LIVRER' | 'EN_RECEPTION' | 'AJOURNE' | 'REJETE' | 'RECU_PARTIEL' | 'RECU_PROVISOIRE' | 'EN_RECEPTION_DEFINITIVE' | 'RECU_DEFINITIF'
+  | 'ANNULE' | (string & {});
+
+/**
+ * ⚠️ 29/10 (« bons-reception », §B3 ; V148) — une ligne d'une réception : ce que la livraison apporte et ce que le PV reçoit
+ * (`quantiteRecue` nulle avant le PV). Vide pour une réception d'avant V148, qui vaut tout le bon.
+ */
+export interface LigneReception {
+  rang: number;
+  idArticle: number | null;
+  designation: string | null;
+  unite: string | null;
+  prixUnitaire: number | null;
+  quantiteCommandee: number;
+  quantiteLivree: number;
+  quantiteRecue: number | null;
+}
+
+/** ⚠️ V148 — une ligne du bon : `livre` cumule toutes les livraisons (ajournées et rejetées comprises), `recu` les PV signés qui acceptent. */
+export interface LigneBonReception {
+  rang: number;
+  idArticle: number | null;
+  designation: string | null;
+  unite: string | null;
+  commande: number;
+  livre: number;
+  recu: number;
+  reliquat: number;
+}
 
 export interface MembreCommissionReception {
   id: number | null;
@@ -84,6 +111,9 @@ export interface ReceptionCommande {
   pvDisponible: boolean;
   attendus: SignataireReception[];
   signeLe: string | null;
+  /** ⚠️ V148 — la valeur de la livraison (base de la pénalité indicative). */
+  valeurLivree?: number | null;
+  lignes?: LigneReception[];
 }
 
 /** `GET /api/receptions-commandes/bons/{idBon}` (et l'espace du titulaire). */
@@ -98,6 +128,8 @@ export interface ReceptionsBon {
   /** `RECEPTION_DEFINITIVE_A_PRONONCER` : le délai de garantie est écoulé. */
   alertes: string[];
   receptions: ReceptionCommande[];
+  /** ⚠️ V148 — commandé, livré, reçu et reliquat par ligne du bon. */
+  lignes?: LigneBonReception[];
 }
 
 /** `GET /api/receptions-commandes/miennes` — une réception à traiter par un membre de la commission. */
@@ -113,6 +145,8 @@ export interface ReceptionAMoi {
 export interface LivraisonCorps {
   dateLivraison: string | null;
   observations: string | null;
+  /** ⚠️ V148 — les quantités livrées ; une ligne omise vaut 0, sans `lignes` : tout le reliquat. */
+  lignes?: { rang: number; quantiteLivree: number }[];
 }
 
 export interface PvReceptionCorps {
@@ -122,4 +156,6 @@ export interface PvReceptionCorps {
   reserves: string | null;
   montantRefaction: number | null;
   tauxJournalier: number | null;
+  /** ⚠️ V148 — les quantités reçues (réception, réfaction) ; une ligne omise vaut sa quantité livrée. */
+  lignes?: { rang: number; quantiteRecue: number }[];
 }

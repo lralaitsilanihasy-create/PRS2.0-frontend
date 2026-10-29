@@ -6,7 +6,8 @@ import { BonCommande, ReceptionsBon } from '../../models';
 import { BonsCommandeTitulaireService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { ariary } from '../evaluation/libelles-evaluation';
-import { DECISIONS_RECEPTION, ETATS_RECEPTION_BON, livraisonAttendue, refusReception } from '../receptions/receptions-bon';
+import { DECISIONS_RECEPTION, ETATS_RECEPTION_BON, lignesALivrer, livraisonAttendue, refusReception } from '../receptions/receptions-bon';
+import { QuantitesLignes, SaisieQuantites, quantiteSaisie, quantitesValides } from '../receptions/quantites-lignes';
 import { dateFr } from '../../core/interim/interim-libelles';
 import { dateHeureFr } from './libelles-candidat';
 import { EtatVideCandidat } from './etat-vide-candidat';
@@ -18,7 +19,7 @@ import { EtatVideCandidat } from './etat-vide-candidat';
  */
 @Component({
   selector: 'app-bons-commande-titulaire',
-  imports: [EtatErreur, EtatVideCandidat],
+  imports: [EtatErreur, EtatVideCandidat, QuantitesLignes],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="bt">
@@ -41,7 +42,7 @@ import { EtatVideCandidat } from './etat-vide-candidat';
               @else if (b.accuseLe) { <span class="badge badge-success">Reçu le {{ dateHeure(b.accuseLe) }}</span> }
               @else { <span class="badge badge-warning">Nouveau</span> }
             </header>
-            <p class="text-sm bt__meta">{{ ariary(b.montantHt) }} HT · {{ b.lignes.length }} article{{ b.lignes.length > 1 ? 's' : '' }} · émis le {{ dateHeure(b.emisLe) }}{{ b.delaiLivraison ? ' · livraison : ' + b.delaiLivraison : '' }}{{ b.lieuLivraison ? ', ' + b.lieuLivraison : '' }}</p>
+            <p class="text-sm bt__meta">{{ ariary(b.montantHt) }} HT{{ b.montantTtc != null ? ' · ' + ariary(b.montantTtc) + ' TTC' : '' }} · {{ b.lignes.length }} article{{ b.lignes.length > 1 ? 's' : '' }} · émis le {{ dateHeure(b.emisLe) }}{{ b.delaiLivraison ? ' · livraison : ' + b.delaiLivraison : '' }}{{ b.lieuLivraison ? ', ' + b.lieuLivraison : '' }}</p>
             @if (b.etat === 'ANNULE') { <p class="text-sm bt__meta">Annulé le {{ dateHeure(b.annuleLe) }} : {{ b.motifAnnulation }}</p> }
             <div class="bt__actions">
               <button type="button" class="btn btn-outline btn-sm" (click)="ouvrir(b)">Ouvrir le bon (PDF)</button>
@@ -65,10 +66,14 @@ import { EtatVideCandidat } from './etat-vide-candidat';
                     </p>
                   }
                   @if (livraisonAttendue(d.etatReception)) {
+                    <!-- ⚠️ 29/10 (« bons-reception », §B3 ; V148) — ce que la livraison apporte, ligne par ligne (prérempli : tout le reliquat). -->
+                    @if (lignesALivrer(d).length) {
+                      <app-quantites-lignes [lignes]="lignesALivrer(d)" [saisie]="saisie()" (saisieChange)="saisie.set($event)" colonne="Quantité livrée" titre="Quantités livrées par article" />
+                    }
                     <div class="bt__ligne">
                       <label class="form-group"><span class="form-label">Livré le</span><input class="form-control" type="date" [value]="dateLivraison()" (input)="dateLivraison.set($any($event.target).value)" /></label>
                       <label class="form-group bt__large"><span class="form-label">Observations (facultatives)</span><input class="form-control" type="text" [value]="observations()" (input)="observations.set($any($event.target).value)" /></label>
-                      <button type="button" class="btn btn-primary btn-sm" [disabled]="occupe()" (click)="declarer(b)">Déclarer la livraison</button>
+                      <button type="button" class="btn btn-primary btn-sm" [disabled]="occupe() || !(lignesALivrer(d).length === 0 || quantitesValides(lignesALivrer(d), saisie()))" (click)="declarer(b, d)">Déclarer la livraison</button>
                     </div>
                   }
                   @if (refus(); as e) { <div class="alert alert-danger" role="alert">{{ e }}</div> }
@@ -116,6 +121,10 @@ export class BonsCommandeTitulaire implements OnInit {
   readonly observations = signal('');
   readonly occupe = signal(false);
   readonly refus = signal<string | null>(null);
+  /** ⚠️ V148 — les quantités livrées saisies. */
+  readonly saisie = signal<SaisieQuantites>({});
+  readonly lignesALivrer = lignesALivrer;
+  readonly quantitesValides = quantitesValides;
 
   etatReception(e: string): { texte: string; classe: string } {
     return ETATS_RECEPTION_BON[e] ?? { texte: e, classe: 'badge-neutral' };
@@ -125,6 +134,7 @@ export class BonsCommandeTitulaire implements OnInit {
     this.ouvert.set(this.ouvert() === id ? null : id);
     this.receptions.set(null);
     this.refus.set(null);
+    this.saisie.set({});
     if (this.ouvert() === id) this.lireReceptions(id);
   }
 
@@ -135,15 +145,21 @@ export class BonsCommandeTitulaire implements OnInit {
     });
   }
 
-  declarer(b: BonCommande): void {
+  declarer(b: BonCommande, d: ReceptionsBon): void {
     this.occupe.set(true);
     this.refus.set(null);
-    this.service.declarerLivraison(b.id, { dateLivraison: this.dateLivraison() || null, observations: this.observations().trim() || null }).subscribe({
-      next: (d) => {
+    const lignes = lignesALivrer(d);
+    this.service.declarerLivraison(b.id, {
+      dateLivraison: this.dateLivraison() || null,
+      observations: this.observations().trim() || null,
+      ...(lignes.length ? { lignes: lignes.map((l) => ({ rang: l.rang, quantiteLivree: quantiteSaisie(l, this.saisie()) })) } : {}),
+    }).subscribe({
+      next: (r) => {
         this.occupe.set(false);
-        this.receptions.set(d);
+        this.receptions.set(r);
         this.dateLivraison.set('');
         this.observations.set('');
+        this.saisie.set({});
       },
       error: (e: ApiError) => {
         this.occupe.set(false);
