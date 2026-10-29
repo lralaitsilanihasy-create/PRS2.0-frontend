@@ -324,8 +324,10 @@ export class NotificationsPage {
         });
       } else if (cible.genre === 'page-dossier') {
         void this.router.navigate(cible.commands, { queryParams: { ...cible.queryParams, returnUrl: this.retour() } });
+      } else if (cible.genre === 'route') {
+        void this.router.navigate(cible.commands, cible.queryParams ? { queryParams: cible.queryParams } : undefined);
       } else {
-        void this.router.navigate(cible.genre === 'route' ? cible.commands : cible.repli);
+        void this.router.navigate(cible.repli);
       }
       return;
     }

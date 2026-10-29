@@ -41,6 +41,15 @@ describe('Routage d’une notification', () => {
     }
   });
 
+  it('29/10 — un contrat en vigueur (reconduction, échéance, remise à lancer) : l’écran des contrats, ce contrat ouvert', () => {
+    for (const type of ['RECONDUCTION_A_DECIDER', 'CONTRAT_RECONDUIT', 'CONTRAT_NON_RECONDUIT', 'CONTRAT_ECHU', 'REMISE_A_LANCER']) {
+      for (const role of ['PRMP', 'UGPM']) {
+        expect(routePourNotification(n({ typeNotif: type, typeObjet: 'PROCEDURE', idObjet: 50 }), role))
+          .toEqual({ genre: 'route', commands: ['/prmp', 'contrats-en-vigueur'], queryParams: { dmc: '50' } });
+      }
+    }
+  });
+
   it('28/10 — DECISION_TRANSMISE_SIGMP : la page du dossier, sans fenêtre ouverte d’office (PRMP et UGPM)', () => {
     for (const role of ['PRMP', 'UGPM']) {
       expect(routePourNotification(n({ typeNotif: 'DECISION_TRANSMISE_SIGMP', idDossier: 100391 }), role))

@@ -5,7 +5,7 @@
  */
 export type EtatContratVigueur = 'EN_VIGUEUR' | 'ECHU' | (string & {});
 
-export type AlerteContrat = 'RECONDUCTION_A_DECIDER' | 'ECHEANCE_PROCHE' | 'ECHU' | (string & {});
+export type AlerteContrat = 'RECONDUCTION_A_DECIDER' | 'ECHEANCE_PROCHE' | 'ECHU' | 'REMISE_A_LANCER' | (string & {});
 
 export type DecisionReconduction = 'RECONDUIRE' | 'NE_PAS_RECONDUIRE';
 
@@ -68,6 +68,18 @@ export interface ContratVigueur {
   titulaires: TitulaireContrat[];
   decisions: DecisionContrat[];
   alertes: AlerteContrat[];
+  /**
+   * ⚠️ 29/10 (demande « contrat-cadre-4a », §B3 ; PRS20 69aa66e, V147) — le calendrier STRUCTURÉ des remises en concurrence, figé
+   * depuis la fiche (`B02-PC-04` périodicité en mois, `B02-PC-05` première remise) quand le rythme est « Selon le calendrier fixé
+   * ci-après » ; `calendrier` reste le texte imprimé. Nuls sans calendrier structuré (contrats antérieurs à V147 compris).
+   */
+  periodiciteMois?: number | null;
+  premiereRemise?: string | null;
+  /**
+   * L'échéance à servir : celle dont la fenêtre (J−15) est ouverte sans remise lancée — elle peut donc être PASSÉE (remise en retard,
+   * l'alerte `REMISE_A_LANCER` reste) —, sinon la suivante ; nulle quand plus aucune échéance ne tombe avant `dateFin`.
+   */
+  prochaineRemise?: string | null;
 }
 
 /** Corps de `POST /api/contrats-en-vigueur/{id}/reconduction` (PRMP de la fiche). */

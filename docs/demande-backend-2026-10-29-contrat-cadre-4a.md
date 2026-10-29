@@ -34,6 +34,20 @@ Demandé :
 Un projet déjà produit se refait par le geste existant (« Refaire », `AttributionService`, l. 1232-1268) tant que le marché n'est pas
 signé : rien à migrer.
 
+> ⚠️ **2026-10-29 — livré (PRS20), avec ces précisions.**
+> - Sans fiche validée, le choix retombe sur les titulaires, comme avant.
+> - **Mono-attributaire** : partie « et le titulaire suivant, ci-après « le Titulaire » » ; l'article 4 s'intitule « Offre du
+>   Titulaire et prix des marchés subséquents » et donne son **offre initiale** (montant HT, délai), puis « À la survenance du
+>   besoin, les marchés subséquents sont attribués au Titulaire après complétude de son offre initiale ». Pas d'article du décret
+>   cité pour la complétude.
+> - La durée et la reconduction forment un **article 5 « Durée et reconduction »** ; la notification devient l'article 6. La lecture
+>   est la **même méthode** que celle du contrat en vigueur (`ContratVigueurService.TermesCadre`). Le préavis s'écrit « prise au
+>   moins n mois avant la fin de la période en cours », omis s'il manque ; une autre donnée manquante s'écrit « …… ».
+> - Modèles : `attributaires` vaut `MONO` / `MULTI` pour un contrat-cadre et **vide** hors contrat-cadre. Clé de plus,
+>   **`reconductible`** (`oui` / `non` / `inconnue` sans fiche), et quatre variables : `MARCHE.CC_PERIODE`,
+>   `MARCHE.CC_RECONDUCTIONS`, `MARCHE.CC_PREAVIS`, `MARCHE.CC_DUREE_MAX` (servies par `GET /variables?nature=PROJET_MARCHE`).
+>   Un modèle de projet déjà enregistré par l'Administrateur garde son texte : seul le départ (`…/versions/depart`) est réécrit.
+
 ## B2 — La reconduction notifiée
 
 `ContratVigueurService.reconduire` (l. 194-262) enregistre la décision de la PRMP (reconduire / ne pas reconduire, référence, date,
@@ -53,6 +67,14 @@ Demandé :
 
 Les espaces externes lisent déjà leurs notifications (PRS20 51351b2) : le titulaire la verra dans sa cloche et son onglet
 « Notifications ».
+
+> ⚠️ **2026-10-29 — livré (PRS20, V147), avec ces précisions.**
+> - Une fois par période : repère `RAPPEL_RECONDUCTION` = la `dateFin` rappelée. Une reconduction reporte `dateFin`, la période
+>   suivante a donc son propre rappel.
+> - Les titres nomment l'objet de la fiche, la procédure et le lot (« Reconduction à décider — « objet » (procédure n, lot n) »,
+>   « Contrat-cadre reconduit — … », « Contrat-cadre non reconduit — … », « Contrat échu — … »).
+> - **`CONTRAT_ECHU` vaut aussi pour le marché à commandes** (même table, même échéance) : « Le marché à commandes … est échu ».
+> - **Rien n'est rejoué** : V147 marque comme notifiés les contrats déjà échus à son passage.
 
 ## B3 — Les remises en concurrence selon le calendrier
 
@@ -77,6 +99,23 @@ PRMP ou l'UGPM (`RemiseConcurrenceService`). Le serveur rappelle, il ne décide 
 Pour les contrats en vigueur déjà créés avec un calendrier en texte libre : `prochaineRemise` reste nulle, sans alerte. Le dire
 dans la documentation.
 
+> ⚠️ **2026-10-29 — livré (PRS20, V147), avec trois écarts.**
+> - **Les rubriques** : `B02-PC-04` (périodicité, mois, `NOMBRE`) et `B02-PC-05` (première remise, `DATE`), document maître
+>   `AUCUN`. Elles sont **facultatives au référentiel** : la grammaire des conditions n'admet ni code de champ ni valeur à
+>   espaces. L'obligation vit dans une règle bloquante du bilan, **`CALENDRIER_REMISES`** (bloc `B02`, champs
+>   `B02-PC-02`, `-04`, `-05`), qui nomme ce qui manque. La copie du référentiel du contrat-cadre est recopiée dans
+>   `docs/referentiel-champs-fiche-marche-contrat-cadre.csv` (non commitée). La base de recette est alignée par
+>   `PRS20/docs/referentiel/2026-10-29-calendrier-remises-contrat-cadre.sql`.
+> - **Le point de départ de « aucune remise lancée »** n'est pas l'échéance précédente mais l'**ouverture de la fenêtre** (J−15)
+>   de l'échéance : une remise lancée en retard pour l'échéance précédente ne satisfait pas la suivante. Toute remise lancée compte
+>   (remise en concurrence ou complétude).
+> - **`prochaineRemise` peut être passée** : c'est l'échéance dont la fenêtre est ouverte et non satisfaite (remise en retard),
+>   et l'alerte reste allumée jusqu'au lancement ; sinon l'échéance suivante. Nulle aussi quand plus aucune échéance ne tombe
+>   avant `dateFin`.
+>
+> Le DTO gagne aussi **`periodiciteMois`** et **`premiereRemise`** (le calendrier figé), en fin d'objet. Notification une fois par
+> échéance (repère `RAPPEL_REMISE`).
+
 ## Ce que fera le front
 
 - **B1** : rien à construire (le projet se lit déjà) ; dans l'éditeur des modèles de projet, la clé `attributaires` rejoint la
@@ -88,3 +127,16 @@ dans la documentation.
   « Lancer une remise » déjà existant.
 
 Rien n'est construit avant la réponse.
+
+> ⚠️ **Front, 2026-10-29 — livré** (sur PRS20 69aa66e, V147).
+> - **B1** : rien à coder. L'éditeur des modèles lit ses variables au serveur (`GET /api/modeles-pv/variables`) : `attributaires`,
+>   `reconductible` et les quatre `MARCHE.CC_*` y paraissent sans livraison du front.
+> - **B2** : les cinq notifications d'un contrat (`RECONDUCTION_A_DECIDER`, `CONTRAT_RECONDUIT`, `CONTRAT_NON_RECONDUIT`,
+>   `CONTRAT_ECHU`, `REMISE_A_LANCER`) mènent la PRMP et l'UGPM à l'écran des contrats en vigueur, **ce contrat ouvert**
+>   (`/prmp/contrats-en-vigueur?dmc=<idDmc>`, `core/notifications/notification-route.ts`). Les titres sont ceux du serveur. Côté
+>   titulaire (espace candidat), le repli existant ouvre la procédure (`/candidat/procedures/<idDmc>`).
+> - **B3** : `ContratVigueur` gagne `periodiciteMois`, `premiereRemise`, `prochaineRemise`. L'écran du contrat affiche « Remises au
+>   calendrier : tous les n mois, à partir du … », « Prochaine remise » (badge « En retard » si elle est passée) et l'alerte
+>   « Remise en concurrence à lancer » ; le formulaire « Lancer une remise en concurrence… » est alors déplié d'office. Les
+>   rubriques `B02-PC-04/05` et la règle `CALENDRIER_REMISES` de la fiche viennent du référentiel et du bilan : aucun code.
+> - Non recetté à l'écran : aucun contrat en vigueur en base depuis le reset du 28/10.

@@ -39,6 +39,13 @@ const MESSAGERIE: ReadonlySet<string> = new Set([
   'ASSISTANT_CONTROLEUR',
 ]);
 
+/**
+ * ⚠️ 29/10 (« contrat-cadre-4a », §B2-B3 ; PRS20 69aa66e, V147) — les notifications d'un contrat en vigueur à la PRMP et à l'UGPM
+ * (objet PROCEDURE = idDmc) : l'écran des contrats en vigueur, ce contrat ouvert (`?dmc=`). `CONTRAT_ECHU` vaut aussi pour le marché
+ * à commandes.
+ */
+const CONTRAT: ReadonlySet<string> = new Set(['RECONDUCTION_A_DECIDER', 'CONTRAT_RECONDUIT', 'CONTRAT_NON_RECONDUIT', 'CONTRAT_ECHU', 'REMISE_A_LANCER']);
+
 /** Les notifications de l'évaluation des offres qui visent la PRMP (contrat V76-V78). */
 const EVALUATION: ReadonlySet<string> = new Set(['EVALUATION_OUVERTE', 'PRECISION_RECUE', 'JUSTIFICATION_RECUE', 'RAPPORT_EVALUATION']);
 
@@ -47,7 +54,7 @@ const EVALUATION: ReadonlySet<string> = new Set(['EVALUATION_OUVERTE', 'PRECISIO
  * route paramétrée par le type du dossier (avec repli).
  */
 export type CibleNotification =
-  | { genre: 'route'; commands: string[] }
+  | { genre: 'route'; commands: string[]; queryParams?: Record<string, string> }
   | { genre: 'page-dossier'; commands: string[]; queryParams?: Record<string, string> }
   | { genre: 'route-type-dossier'; versCommands: (idTypeDossier: string) => string[]; repli: string[] };
 
@@ -107,6 +114,9 @@ export function routePourNotification(n: Notification, role: string | null): Cib
   // (`idObjet` = idDmc). Les membres de la CAO, eux, sont avertis par courriel et décident depuis leur espace.
   if (EVALUATION.has(type) && (role === 'PRMP' || role === 'UGPM') && n.idObjet != null) {
     return { genre: 'route', commands: ['/procedure', String(n.idObjet), 'evaluation'] };
+  }
+  if (CONTRAT.has(type) && (role === 'PRMP' || role === 'UGPM') && n.idObjet != null) {
+    return { genre: 'route', commands: ['/prmp', 'contrats-en-vigueur'], queryParams: { dmc: String(n.idObjet) } };
   }
   if ((type === 'RETRAIT_ACCEPTE' || type === 'RETRAIT_REFUSE') && role === 'PRMP') {
     return { genre: 'route', commands: ['/prmp/retraits'] };

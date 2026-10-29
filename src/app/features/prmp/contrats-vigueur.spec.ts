@@ -2,6 +2,7 @@ import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { vi } from 'vitest';
 
 import { AuthService } from '../../core/auth/auth.service';
@@ -29,9 +30,12 @@ describe('Contrats en vigueur (MS-1)', () => {
   const texte = (): string => (racine().textContent ?? '').replace(/\s+/g, ' ');
   const bouton = (debut: string): HTMLButtonElement => Array.from(racine().querySelectorAll('button')).find((b) => b.textContent?.trim().startsWith(debut)) as HTMLButtonElement;
 
-  function monter(role: string, contrats: ContratVigueur[]): void {
+  function monter(role: string, contrats: ContratVigueur[], query: Record<string, string> = {}): void {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting(), { provide: ToastService, useValue: { success: vi.fn() } }, { provide: AuthService, useValue: { role: signal(role) } }],
+      providers: [
+        provideHttpClient(), provideHttpClientTesting(), { provide: ToastService, useValue: { success: vi.fn() } }, { provide: AuthService, useValue: { role: signal(role) } },
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(query) } } },
+      ],
     });
     http = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(ContratsVigueur);
@@ -73,6 +77,21 @@ describe('Contrats en vigueur (MS-1)', () => {
     http.expectOne('/api/fiches-marche/50/articles').flush([]);
     expect(texte()).not.toContain('Remises en concurrence');
     expect(texte()).toContain('marché à commandes (loi n° 2016-055, art. 30)');
+  });
+
+  it('29/10 (V147) — ouvert depuis une notification (?dmc=) : le contrat s’ouvre ; remise au calendrier en retard, formulaire déplié', () => {
+    monter('PRMP', [
+      CONTRAT({ id: 8, idDmc: 49, objet: 'Autre contrat', alertes: [] }),
+      CONTRAT({ alertes: ['REMISE_A_LANCER'], periodiciteMois: 3, premiereRemise: '2026-01-15', prochaineRemise: '2026-01-15' }),
+    ], { dmc: '50' });
+    http.expectOne('/api/contrats-en-vigueur/7/remises').flush([]);
+    fixture.detectChanges();
+    expect(racine().querySelector('#cv-detail-7')).not.toBeNull();
+    expect(racine().querySelector('#cv-detail-8')).toBeNull();
+    expect(texte()).toContain('Remise en concurrence à lancer');
+    expect(texte()).toContain('tous les 3 mois, à partir du 15/01/2026');
+    expect(texte()).toContain('En retard');
+    expect((racine().querySelector('.cv__details') as HTMLDetailsElement).open).toBe(true);
   });
 
   it('la PRMP décide la reconduction (référence et date) ; le contrat revient à jour', () => {

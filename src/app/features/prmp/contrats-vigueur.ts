@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError, codeErreur, corpsErreur } from '../../core/errors/api-error';
@@ -21,6 +22,8 @@ const ALERTES: Readonly<Record<string, { texte: string; classe: string }>> = {
   // ⚠️ Lot MS-3 (V126) — les alertes de consommation, jamais bloquantes.
   MINIMUM_NON_ATTEINT: { texte: 'Minimum annuel non atteint', classe: 'badge-warning' },
   MONTANT_ESTIME_DEPASSE: { texte: 'Montant estimé dépassé', classe: 'badge-warning' },
+  // ⚠️ 29/10 (« contrat-cadre-4a », §B3 ; V147) — une échéance du calendrier des remises approche (J−15) ou est passée sans remise.
+  REMISE_A_LANCER: { texte: 'Remise en concurrence à lancer', classe: 'badge-warning' },
 };
 
 const TYPES: Readonly<Record<TypeContratVigueur, string>> = {
@@ -107,6 +110,12 @@ function aujourdhui(): string {
                     @if (c.formeSubsequents) { <div><dt>Forme des marchés subséquents</dt><dd>{{ c.formeSubsequents }}</dd></div> }
                     @if (c.rythme) { <div><dt>Rythme</dt><dd>{{ c.rythme }}</dd></div> }
                     @if (c.calendrier) { <div class="cv__large"><dt>Calendrier</dt><dd>{{ c.calendrier }}</dd></div> }
+                    @if (c.periodiciteMois) {
+                      <div><dt>Remises au calendrier</dt><dd>tous les {{ c.periodiciteMois }} mois{{ c.premiereRemise ? ', à partir du ' + date(c.premiereRemise) : '' }}</dd></div>
+                    }
+                    @if (c.prochaineRemise; as p) {
+                      <div><dt>Prochaine remise</dt><dd>{{ date(p) }} @if (p < aujourdhui) { <span class="badge badge-danger">En retard</span> }</dd></div>
+                    }
                   </dl>
 
                   <h2 class="cv__h2">Titulaires <span class="text-muted text-sm">— liste fermée (décret n° 2019-1064, art. 18)</span></h2>
@@ -146,7 +155,7 @@ function aujourdhui(): string {
                       @if (erreurRemises(); as m) { <div class="alert alert-danger" role="alert">{{ m }}</div> }
                     }
                     @if ((prmp() || ugpm()) && c.etat === 'EN_VIGUEUR' && !remiseOuverte()) {
-                      <details class="cv__details">
+                      <details class="cv__details" [open]="c.alertes.includes('REMISE_A_LANCER')">
                         <summary>Lancer une remise en concurrence…</summary>
                         <div class="cv__form cv__form--remise">
                           <p class="text-sm text-muted">Tous les titulaires non retirés sont consultés (art. 21) ; s’il n’en reste qu’un, il est invité à compléter son offre initiale. La lettre d’invitation suit l’annexe 1 du document type.</p>
@@ -247,6 +256,16 @@ export class ContratsVigueur implements OnInit {
   private readonly remisesService = inject(RemisesService);
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
+  /**
+   * ⚠️ 29/10 (« contrat-cadre-4a », §B2-B3) — `?dmc=` (et `&lot=`) : la notification d'un contrat (reconduction, échéance, remise à
+   * lancer ; objet PROCEDURE = idDmc) ouvre ce contrat sur place, une fois, au premier chargement.
+   */
+  private aOuvrir: { idDmc: number; lot: number | null } | null = (() => {
+    const q = inject(ActivatedRoute).snapshot.queryParamMap;
+    const dmc = Number(q.get('dmc'));
+    const lot = Number(q.get('lot'));
+    return dmc > 0 ? { idDmc: dmc, lot: lot > 0 ? lot : null } : null;
+  })();
 
   readonly date = dateFr;
   readonly dateHeure = dateHeureFr;
@@ -307,6 +326,10 @@ export class ContratsVigueur implements OnInit {
       next: (l) => {
         this.contrats.set(l);
         this.chargement.set(false);
+        const cible = this.aOuvrir;
+        this.aOuvrir = null;
+        const c = cible && l.find((x) => x.idDmc === cible.idDmc && (cible.lot == null || x.lot === cible.lot));
+        if (c && this.ouvert() !== c.id) this.basculer(c.id);
       },
       error: (e: ApiError) => {
         this.chargement.set(false);
