@@ -153,3 +153,15 @@ Rien n'est construit avant la réponse.
 >   aucune quantité. Le bon montre commandé, livré, reçu et reliquat par ligne ; chaque réception, ses quantités et sa valeur livrée.
 > - Le libellé de `REFACTION_INVALIDE` dit désormais « inférieur à la valeur reçue ».
 > - Non recetté à l'écran : aucun contrat en vigueur en base depuis le reset du 28/10. Les réponses Q1-Q5 du pilote restent attendues.
+
+> ⚠️ **Front, 2026-10-29 — état des questions après lecture des textes** (`D:\TEXTES MP`, CCAG embarqués par le serveur ; décision du
+> pilote : « suivre les textes en vigueur »).
+> - **Q3 (un PV par livraison)** : **confirmée** par le CCAG fournitures, art. 22.2 (« réception séparée, dite réception partielle » ;
+>   la dernière vaut réception de l'ensemble). La garantie par réception partielle est demandée dans
+>   `demande-backend-2026-10-29-ccag-penalites-reception.md`, B3.
+> - **Q4 (base de la pénalité)** : **décidée** (pilote, 29/10) — la valeur livrée en retard, telle que livrée (V148).
+> - **Q5 (plafond en quantité du contrat-cadre)** : **non** — les quantités d'un contrat-cadre sont indicatives et l'acheteur ne s'engage
+>   sur aucun minimum (décret n° 2019-1064, art. 6, 8, 11, 34) ; le plafond en montant du marché subséquent suffit.
+> - **Q1 (source du taux de TVA)** et **Q2 (plafonds en hors taxes)** : aucun texte lu ne les traite — **décidées** (pilote, 29/10) :
+>   la livraison actuelle est retenue (taux de l'offre, à défaut celui des bordereaux ; plafonds en HT).
+> - Toutes les questions de cette demande sont donc closes.

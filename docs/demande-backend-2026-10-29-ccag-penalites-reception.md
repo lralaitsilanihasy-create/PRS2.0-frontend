@@ -75,3 +75,13 @@ commission à son approche, puis une fois dépassée. Rien de bloquant.
   1 ‰) » dira le taux par défaut servi pour la catégorie, s'il est servi (sinon « vide : taux du CCAG »).
 - B3 : la frise de réception montrera la définitive partielle de chaque livraison.
 - B5 : l'échéance de décision et son alerte dans la réception du bon et dans « Réceptions » du membre.
+
+## ⚠️ Décision du pilote (2026-10-29) sur Q1 et Q2
+
+Aucun texte du dossier ni du portail CNLEGIS (non interrogeable automatiquement) ne tranche ces deux points. Le pilote retient les règles
+d'attente comme **règles définitives** :
+
+- **Q1 (garantie de 6 mois en travaux)** — **12 mois par défaut** en travaux quand `B09-GT-01` n'est pas saisi (B4) ; la PRMP saisit
+  6 mois pour un marché d'entretien ou de terrassement. Aucune reconnaissance automatique de l'objet du marché.
+- **Q2 (base de la pénalité)** — la **règle actuelle** est retenue : la valeur livrée en retard, chaque livraison avec ses propres jours
+  de retard (V148). **B2 est retiré** : rien à changer.

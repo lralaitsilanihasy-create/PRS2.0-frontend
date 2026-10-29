@@ -130,3 +130,9 @@ B1 à B5 deviennent des demandes fermes, selon les réponses ci-dessus :
 - **B4 — Ordre de fin de chaîne** : signature → visa (ou dispense) → approbation → enregistrement → notification, chaque étape refusée
   avant la précédente.
 - **B5 — Titulaires non retenus d'un marché subséquent** : informés à l'attribution de la remise (décret n° 2019-1064, art. 30).
+
+## ⚠️ Décision du pilote (2026-10-29) sur Q4
+
+**Q4 (modèle officiel de la décision d'attribution)** : aucun modèle trouvé dans les textes lus. **Décidée** : le serveur produit son
+propre texte (B2), sur le modèle du projet de marché ; s'il le rend administrable (modèle de document), l'Administrateur pourra le
+remplacer le jour où un modèle officiel sera fourni.

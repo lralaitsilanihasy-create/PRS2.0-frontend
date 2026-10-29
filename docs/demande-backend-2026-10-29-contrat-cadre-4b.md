@@ -58,3 +58,9 @@ rythme « Au fur et à mesure des besoins », la remise reste par lot, comme auj
 - B3 : l'écran de la remise (`remise-detail.ts`, `remises-titulaire.ts`, `remises-cao.ts`) montrera les lots d'une remise commune.
 
 Rien n'est construit avant la réponse.
+
+## ⚠️ Décision du pilote (2026-10-29) : collège restreint
+
+**Composition du collège restreint** (décret n° 2019-1064, art. 28) : aucun texte trouvé (dossier `D:\TEXTES MP`, portail CNLEGIS non
+interrogeable automatiquement, recherche web). Le pilote retient l'hypothèse H1 comme **règle** : le président de la CAO évalue la
+remise. Rien à changer au serveur.
