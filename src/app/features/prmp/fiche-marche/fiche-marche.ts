@@ -741,7 +741,7 @@ export class FicheMarcheEcran {
     if (l.categorieOutillee === false) {
       return `La fiche DAO ne prépare pour l'instant que les marchés de fournitures et services${this.categorieDe(l) ? ` ; celui-ci est de catégorie « ${this.categorieDe(l)} »` : ''}.`;
     }
-    if (l.formeOutillee === false) return 'La fiche DAO ne prend en charge que les marchés à quantité fixe et à commande pour le moment.';
+    if (l.formeOutillee === false) return 'La fiche DAO ne prend pas encore en charge cette forme de marché.';
     return '';
   }
 

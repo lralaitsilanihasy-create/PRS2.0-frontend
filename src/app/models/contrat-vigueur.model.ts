@@ -9,6 +9,13 @@ export type AlerteContrat = 'RECONDUCTION_A_DECIDER' | 'ECHEANCE_PROCHE' | 'ECHU
 
 export type DecisionReconduction = 'RECONDUIRE' | 'NE_PAS_RECONDUIRE';
 
+/**
+ * ⚠️ 29/10 — la forme d'un contrat en vigueur, telle que le serveur l'enregistre (`ContratVigueur.CONTRAT_CADRE` / `A_COMMANDE`,
+ * CHECK de V124). Type fermé : le front a longtemps testé un `MARCHE_A_COMMANDES` que le serveur ne sert pas — un marché à commandes
+ * s'affichait alors comme un contrat-cadre. La quantité fixe n'ouvre pas de contrat en vigueur.
+ */
+export type TypeContratVigueur = 'CONTRAT_CADRE' | 'A_COMMANDE';
+
 /** Un titulaire : la liste est fermée (art. 18), lue sur l'attribution, les retirés exclus. */
 export interface TitulaireContrat {
   idOffre: string;
@@ -37,8 +44,7 @@ export interface ContratVigueur {
   id: number;
   idDmc: number;
   lot: number;
-  /** `CONTRAT_CADRE` ou `MARCHE_A_COMMANDES` (code servi par le référentiel). */
-  typeMarche: string | null;
+  typeMarche: TypeContratVigueur | null;
   objet: string | null;
   acheteur: string | null;
   etat: EtatContratVigueur;

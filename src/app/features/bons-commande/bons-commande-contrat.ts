@@ -251,7 +251,7 @@ export class BonsCommandeContrat implements OnInit {
   readonly entete = signal({ objet: '', delai: '', lieu: '', observations: '' });
   readonly lignes = signal<LigneSaisie[]>([LIGNE_VIDE()]);
 
-  readonly commandes = computed(() => this.contrat().typeMarche === 'MARCHE_A_COMMANDES');
+  readonly commandes = computed(() => this.contrat().typeMarche === 'A_COMMANDE');
   readonly totalSaisi = computed(() => this.lignes().reduce((t, l) => t + (this.montantLigne(l) ?? 0), 0));
   readonly prixManquants = computed(() => this.lignes().some((l) => l.idArticle != null && !l.prix));
   readonly emissionComplete = computed(() => {

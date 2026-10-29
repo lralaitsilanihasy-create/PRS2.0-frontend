@@ -4,7 +4,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ApiError, codeErreur, corpsErreur } from '../../core/errors/api-error';
 import { dateFr } from '../../core/interim/interim-libelles';
 import { ToastService } from '../../core/notifications/toast.service';
-import { AlerteContrat, ContratVigueur, DecisionReconduction, Remise } from '../../models';
+import { AlerteContrat, ContratVigueur, DecisionReconduction, Remise, TypeContratVigueur } from '../../models';
 import { ContratsVigueurService, RemisesService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr } from '../candidat/libelles-candidat';
@@ -23,9 +23,9 @@ const ALERTES: Readonly<Record<string, { texte: string; classe: string }>> = {
   MONTANT_ESTIME_DEPASSE: { texte: 'Montant estimé dépassé', classe: 'badge-warning' },
 };
 
-const TYPES: Readonly<Record<string, string>> = {
+const TYPES: Readonly<Record<TypeContratVigueur, string>> = {
   CONTRAT_CADRE: 'Contrat-cadre',
-  MARCHE_A_COMMANDES: 'Marché à commandes',
+  A_COMMANDE: 'Marché à commandes',
 };
 
 /** Les refus de la reconduction, dits à la PRMP. */
@@ -135,7 +135,7 @@ function aujourdhui(): string {
                   }
 
                   <!-- ⚠️ Lot MS-2 (V125, 16/10) — les remises en concurrence du contrat-cadre et leurs marchés subséquents. -->
-                  @if (c.typeMarche !== 'MARCHE_A_COMMANDES') {
+                  @if (c.typeMarche !== 'A_COMMANDE') {
                     <h2 class="cv__h2">Remises en concurrence <span class="text-muted text-sm">— marchés subséquents (décret n° 2019-1064, art. 20-33)</span></h2>
                     @if (chargementRemises()) {
                       <p class="text-sm text-muted" role="status">Chargement des remises…</p>
@@ -171,7 +171,7 @@ function aujourdhui(): string {
                   }
 
                   <!-- ⚠️ Lot MS-3 (V126, 16/10) — les bons de commande ; relus quand une remise change (une attribution ouvre l'émission). -->
-                  <h2 class="cv__h2">Bons de commande <span class="text-muted text-sm">— {{ c.typeMarche === 'MARCHE_A_COMMANDES' ? 'marché à commandes (loi n° 2016-055, art. 30)' : 'des marchés subséquents attribués (décret n° 2019-1064, art. 33)' }}</span></h2>
+                  <h2 class="cv__h2">Bons de commande <span class="text-muted text-sm">— {{ c.typeMarche === 'A_COMMANDE' ? 'marché à commandes (loi n° 2016-055, art. 30)' : 'des marchés subséquents attribués (décret n° 2019-1064, art. 33)' }}</span></h2>
                   @for (k of [cleBons()]; track k) {
                     <app-bons-commande-contrat [contrat]="c" [prmp]="prmp()" [ugpm]="ugpm()" [presideeParPrmp]="presideeParPrmp()" />
                   }
@@ -325,7 +325,7 @@ export class ContratsVigueur implements OnInit {
     this.presideeParPrmp.set(false);
     this.lancement.set({});
     this.refusLancement.set(null);
-    if (this.ouvert() === id && this.contrats().find((c) => c.id === id)?.typeMarche !== 'MARCHE_A_COMMANDES') this.chargerRemises(id);
+    if (this.ouvert() === id && this.contrats().find((c) => c.id === id)?.typeMarche !== 'A_COMMANDE') this.chargerRemises(id);
     this.decision.set(null);
     this.reference.set('');
     this.dateDecision.set(aujourdhui());
@@ -390,7 +390,7 @@ export class ContratsVigueur implements OnInit {
   }
 
   type(c: ContratVigueur): string {
-    return TYPES[c.typeMarche ?? ''] ?? (c.typeMarche || 'Contrat');
+    return c.typeMarche ? TYPES[c.typeMarche] : 'Contrat';
   }
 
   alerte(a: AlerteContrat): { texte: string; classe: string } {

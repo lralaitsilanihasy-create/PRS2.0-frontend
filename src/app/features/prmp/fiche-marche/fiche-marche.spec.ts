@@ -281,7 +281,7 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
 
   it('forme non prise en charge : page courte — la ligne se lit, aucun formulaire inutile n’est déroulé', () => {
     monter('PRMP', 42);
-    ouvrir(REFERENTIEL, fiche({ typeMarche: 'CONTRAT_CADRE', cadrage: {}, valeurs: {} }));
+    ouvrir(REFERENTIEL, fiche({ typeMarche: 'CONTRAT_CADRE', typeOutille: false, cadrage: {}, valeurs: {} }));
     // ⚠️ 23/09 — le bandeau ne réclame AUCUNE correction : la ligne est bien un contrat-cadre, c'est l'outil qui manque.
     const bandeau = texte(racine().querySelector('.alert-warning'));
     expect(bandeau).toContain('la ligne du plan de passation est bien de ce type');
@@ -391,7 +391,7 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     monter('PRMP', 42);
     // ⚠️ Demande du pilote (23/09) : « le type de marché doit être du plan de passation de marché ».
     // Un brouillon est toujours du type du plan ; le type sous lequel il a commencé n'intéresse personne.
-    ouvrir(REFERENTIEL, fiche({ typeMarche: 'CONTRAT_CADRE', typeChange: true, cadrage: {}, valeurs: {} }));
+    ouvrir(REFERENTIEL, fiche({ typeMarche: 'CONTRAT_CADRE', typeOutille: false, typeChange: true, cadrage: {}, valeurs: {} }));
     const bandeaux = Array.from(racine().querySelectorAll('.alert-warning')).map((e) => texte(e)).join(' ');
     expect(bandeaux).not.toContain('autre type de marché');
     // Le bandeau qui compte reste là : cette forme n'est pas encore prise en charge.

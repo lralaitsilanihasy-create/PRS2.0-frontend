@@ -63,6 +63,18 @@ describe('Contrats en vigueur (MS-1)', () => {
     expect(texte()).toContain('au plus tard le 31/12/2027');
   });
 
+  it('un marché à commandes (code serveur A_COMMANDE) : ni remise en concurrence ni lecture des remises', () => {
+    monter('PRMP', [CONTRAT({ typeMarche: 'A_COMMANDE', titulaires: [], montantEstime: null, montantMinimum: 1000, montantMaximum: 5000000 })]);
+    expect(racine().querySelector('.cv__ligne')?.textContent).toContain('Marché à commandes');
+    (racine().querySelector('.cv__ligne') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    http.expectNone('/api/contrats-en-vigueur/7/remises');
+    // Le bloc des bons suit la branche du marché à commandes : il lit les articles du besoin (prix du bordereau).
+    http.expectOne('/api/fiches-marche/50/articles').flush([]);
+    expect(texte()).not.toContain('Remises en concurrence');
+    expect(texte()).toContain('marché à commandes (loi n° 2016-055, art. 30)');
+  });
+
   it('la PRMP décide la reconduction (référence et date) ; le contrat revient à jour', () => {
     monter('PRMP', [CONTRAT()]);
     (racine().querySelector('.cv__ligne') as HTMLButtonElement).click();

@@ -74,7 +74,7 @@ describe('Bons de commande d’un contrat (MS-3)', () => {
   });
 
   it('marché à commandes : articles du besoin du lot, prix vide = bordereau ; maximum annuel', () => {
-    monter(CONTRAT({ typeMarche: 'MARCHE_A_COMMANDES' }), CONSO({ typeMarche: 'MARCHE_A_COMMANDES', subsequents: [], bons: [], anneeDebut: '2026-01-01', anneeFin: '2026-12-31', cumulAnnee: 0, minimum: 1000, maximum: 5000000, resteMaximum: 5000000, alertes: ['MINIMUM_NON_ATTEINT'] }));
+    monter(CONTRAT({ typeMarche: 'A_COMMANDE' }), CONSO({ typeMarche: 'A_COMMANDE', subsequents: [], bons: [], anneeDebut: '2026-01-01', anneeFin: '2026-12-31', cumulAnnee: 0, minimum: 1000, maximum: 5000000, resteMaximum: 5000000, alertes: ['MINIMUM_NON_ATTEINT'] }));
     http.expectOne('/api/fiches-marche/50/articles').flush([
       { idArticle: 41, lot: 1, designation: 'Ramette A4', unite: 'paquet', caracteristiques: [] },
       { idArticle: 42, lot: 2, designation: 'Autre lot', unite: 'u', caracteristiques: [] },
@@ -97,7 +97,7 @@ describe('Bons de commande d’un contrat (MS-3)', () => {
     expect(post.request.body.lignes).toEqual([{ idArticle: 41, designation: null, unite: null, quantite: 100, prixUnitaire: null }]);
     expect(post.request.body.idRemise).toBeNull();
     post.flush({ id: 12, numero: 1, montantHt: 250000 });
-    http.expectOne('/api/contrats-en-vigueur/7/bons-commande').flush(CONSO({ typeMarche: 'MARCHE_A_COMMANDES', subsequents: [] }));
+    http.expectOne('/api/contrats-en-vigueur/7/bons-commande').flush(CONSO({ typeMarche: 'A_COMMANDE', subsequents: [] }));
   });
 
   it('la PRMP annule un bon avec un motif ; l’UGPM lit sans émettre ni annuler', () => {

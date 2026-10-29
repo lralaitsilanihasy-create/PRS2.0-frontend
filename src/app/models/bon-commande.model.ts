@@ -5,6 +5,8 @@
  * les articles du besoin aux prix du bordereau scellé, le maximum annuel. Le bon est émis par la PRMP ; la première lecture par le
  * titulaire vaut accusé de réception.
  */
+import type { TypeContratVigueur } from './contrat-vigueur.model';
+
 export type EtatBonCommande = 'EMIS' | 'ANNULE' | (string & {});
 
 export type AlerteConsommation = 'MINIMUM_NON_ATTEINT' | 'MONTANT_ESTIME_DEPASSE' | (string & {});
@@ -26,7 +28,7 @@ export interface BonCommande {
   idContrat: number;
   idDmc: number;
   lot: number;
-  typeMarche: string | null;
+  typeMarche: TypeContratVigueur | null;
   numero: number;
   idRemise: number | null;
   numeroRemise: number | null;
@@ -64,7 +66,7 @@ export interface SubsequentConsomme {
 /** `GET /api/contrats-en-vigueur/{id}/bons-commande`. */
 export interface Consommation {
   idContrat: number;
-  typeMarche: string | null;
+  typeMarche: TypeContratVigueur | null;
   /** Les bons émis du contrat, sur toute sa durée. */
   cumulHt: number;
   /** Marché à commandes : l'année contractuelle en cours, son cumul, les minimum et maximum annuels. */

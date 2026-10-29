@@ -172,9 +172,8 @@
         catégorie de dossier préparer. Complétez la <strong>nature du marché</strong> de la ligne dans le plan de passation, ou
         demandez à l'Administrateur de rattacher cette nature à une catégorie.</span>
       } @else if (typeMarche(); as t) {
-        <span><strong>Marché {{ libellesTypes[t].toLowerCase() }}</strong> : la ligne du plan de passation est bien de ce type, et la fiche
-        marché ne prépare pour l'instant que les marchés à <strong>quantité fixe</strong>. Rien n'est à corriger dans le plan :
-        ce type sera outillé à un prochain lot.</span>
+        <span><strong>Marché {{ libellesTypes[t].toLowerCase() }}</strong> : la ligne du plan de passation est bien de ce type, mais la fiche
+        marché ne le prépare pas encore. Rien n'est à corriger dans le plan : ce type sera outillé à un prochain lot.</span>
       } @else {
         <span><strong>Forme du marché absente de cette ligne du plan</strong> : la fiche DAO ne peut pas savoir quel type de
         marché préparer. Complétez la <strong>forme du marché</strong> de la ligne dans le plan de passation.</span>

@@ -342,8 +342,11 @@ export const QUESTIONS_CADRAGE: readonly QuestionCadrage[] = [
   },
 ];
 
-/** Types de marché pris en charge aujourd'hui ; la liste s'allonge aux lots suivants (le serveur fait foi). */
-export const TYPES_OUTILLES: readonly TypeMarche[] = ['QUANTITE_FIXE'];
+/**
+ * Repli quand le serveur ne dit pas si la forme est outillée (`typeOutille` absent) — le serveur fait foi. ⚠️ 29/10 : les trois
+ * formes sont outillées (contrat-cadre et marché à commandes depuis les lots D1-D2) ; la liste ne disait plus que la quantité fixe.
+ */
+export const TYPES_OUTILLES: readonly TypeMarche[] = ['QUANTITE_FIXE', 'A_COMMANDE', 'CONTRAT_CADRE'];
 
 /** Vrai si la fiche d'une ligne de cette forme peut être préparée aujourd'hui. */
 export function typeOutille(t: TypeMarche | null | undefined): boolean {
