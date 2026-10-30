@@ -159,12 +159,12 @@ const LIBELLES_INTEGRITE: Readonly<Record<string, string>> = {
     .ls__table td { padding: 0.5rem 0.75rem; border-top: 1px solid var(--n-100); vertical-align: middle; }
     .ls__table .ls__num { text-align: right; white-space: nowrap; }
     .ls__ancre { display: inline-grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 50%; background: var(--p-100); color: var(--p-800); font-weight: 700; text-decoration: none; }
-    .ls__ancre:hover, .ls__ancre:focus-visible { background: var(--p-600); color: #fff; }
+    .ls__ancre:hover, .ls__ancre:focus-visible { background: var(--bouton-principal); color: #fff; }
     .ls__offre { padding: 1rem 1.15rem; display: flex; flex-direction: column; gap: 0.7rem; border-left: 4px solid var(--success-bdr); scroll-margin-top: 1rem; }
     .ls__offre:focus { outline: none; box-shadow: 0 0 0 3px var(--p-200); }
     .ls__offre--ko { border-left-color: var(--danger-bdr); }
     .ls__tete { display: flex; gap: 0.75rem; align-items: center; }
-    .ls__numero { flex: none; width: 2.4rem; height: 2.4rem; border-radius: 50%; display: grid; place-items: center; background: var(--p-600); color: #fff; font-weight: 700; }
+    .ls__numero { flex: none; width: 2.4rem; height: 2.4rem; border-radius: 50%; display: grid; place-items: center; background: var(--bouton-principal); color: #fff; font-weight: 700; }
     .ls__ident { display: flex; flex-direction: column; flex: 1; min-width: 0; }
     .ls__titre { margin: 0; font-size: 1.05rem; }
     .ls__nif-ok { color: var(--success-text); font-weight: 600; }

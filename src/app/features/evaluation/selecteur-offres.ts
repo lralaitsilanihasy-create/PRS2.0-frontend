@@ -89,7 +89,7 @@ export function offreParDefaut(offres: readonly OffreEvaluee[], etape: EtapeEval
     .so__carte--ko { border-left-color: var(--danger-text); }
     .so__carte--attente { border-left-color: var(--info-text); }
     .so__carte--choisie { border-color: var(--p-500); box-shadow: 0 0 0 3px var(--p-100); background: var(--p-100); }
-    .so__num { flex: none; width: 2rem; height: 2rem; border-radius: 50%; display: grid; place-items: center; background: var(--p-600); color: #fff; font-weight: 700; font-size: 0.85rem; }
+    .so__num { flex: none; width: 2rem; height: 2rem; border-radius: 50%; display: grid; place-items: center; background: var(--bouton-principal); color: #fff; font-weight: 700; font-size: 0.85rem; }
     .so__corps { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
     .so__nom { font-size: var(--text-sm); line-height: 1.3; }
     .so__ligne { font-size: 0.78rem; color: var(--n-500); }

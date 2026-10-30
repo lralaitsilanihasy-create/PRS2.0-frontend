@@ -201,7 +201,7 @@ const LIBELLES_SEANCE: Readonly<Record<string, string>> = {
     .pc__etape--fait::before { background: var(--success-text, #059669); }
     .pc__pt { position: absolute; top: 0; left: 0; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--n-300); background: #fff; z-index: 1; }
     .pc__etape--fait .pc__pt { background: var(--success-text, #059669); border-color: var(--success-text, #059669); }
-    .pc__etape--encours .pc__pt { background: var(--p-600); border-color: var(--p-600); box-shadow: 0 0 0 4px var(--p-100); }
+    .pc__etape--encours .pc__pt { background: var(--bouton-principal); border-color: var(--bouton-principal); box-shadow: 0 0 0 4px var(--p-100); }
     .pc__etape-l { font-weight: 600; color: var(--n-700); }
     .pc__etape--encours .pc__etape-l { color: var(--p-700); }
     .pc__etape-d { font-size: var(--text-xs); color: var(--n-500); }

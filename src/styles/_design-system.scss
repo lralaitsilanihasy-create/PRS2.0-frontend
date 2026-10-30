@@ -1,37 +1,38 @@
 /* ══════════════════════════════════════════
-   TOKENS GLOBAUX — Design system C (violet dégradé, Plus Jakarta Sans)
+   TOKENS GLOBAUX — redirigés vers le design institutionnel (30/10/2026, src/styles.scss)
 ══════════════════════════════════════════ */
 
+/* ⚠️ 30/10/2026 (design institutionnel, pilote) — les jetons de ce fichier ne portent plus de couleur : ils sont REDIRIGÉS
+   vers la palette de `src/styles.scss`, pour que les écrans non encore repris la suivent d'eux-mêmes. Les bleus
+   --p-600/700/800 servent surtout de couleur de TEXTE (144 emplois) : ils passent à --texte (aucun texte en bleu) ; leurs
+   rares emplois en FOND de bouton prennent --bouton-principal dans le composant. Les clairs --p-50/100 (fonds) prennent
+   --onglet-actif-fond, les moyens (bordures, icônes) les neutres. Ne pas réécrire de couleur ici. */
 :root {
   /* Police */
-  --font-base: 'Plus Jakarta Sans', -apple-system,
-               BlinkMacSystemFont, sans-serif;
+  --font-base: var(--police-texte);
 
-  /* Palette principale — azur (inspiration tableau de bord logistique, adaptée CNM) */
-  --p-50 : #f0f9ff;
-  --p-100: #e0f2fe;
-  --p-200: #bae6fd;
-  --p-300: #7dd3fc;
-  --p-400: #38bdf8;
-  --p-600: #0284c7;
-  --p-700: #0369a1;
-  --p-800: #075985;
-  --p-500: #0ea5e9;
-  --p-900: #0c2a3f;
+  --p-50 : var(--onglet-actif-fond);
+  --p-100: var(--onglet-actif-fond);
+  --p-200: var(--bordure);
+  --p-300: var(--bordure);
+  --p-400: var(--texte-secondaire);
+  --p-500: var(--texte-secondaire);
+  --p-600: var(--texte);
+  --p-700: var(--texte);
+  --p-800: var(--texte);
+  --p-900: var(--section-fond);
 
   /* Largeur de la barre latérale — source UNIQUE des trois géométries de la coquille (.sidebar,
      .topbar, .page-content), où elle était écrite trois fois. Le rail compact (lot 5, F4) n'en
      change que la VALEUR, sur l'hôte du layout : les trois la suivent d'elles-mêmes. */
   --sidebar-w: 215px;
 
-  /* Sidebar bleu pétrole (dégradé sombre). */
-  --sidebar-bg: linear-gradient(180deg, #0c4a6e, #082f49);
+  /* Fond du menu — aplat (plus de dégradé). */
+  --sidebar-bg: var(--menu-fond);
 
-  /* Gradient accent */
-  --grad-primary: linear-gradient(135deg, #0ea5e9, #0284c7);
-  --grad-light  : linear-gradient(135deg,
-                    rgba(14,165,233,.14),
-                    rgba(2,132,199,.14));
+  /* Anciens « dégradés d'accent » : aplats. --grad-primary sert de FOND de bouton (20 emplois). */
+  --grad-primary: var(--bouton-principal);
+  --grad-light  : var(--onglet-actif-fond);
 
   /* Neutres
      ⚠️ --n-400 et --n-500 portent le TEXTE (105 et 71 usages) : leurs valeurs sont contraintes par
@@ -40,36 +41,37 @@
      seuil, à 12,5 px et moins (AUDIT.md A2). Teinte et saturation conservées : seule la
      luminosité baisse, juste assez. n-400 reste plus clair que n-500 : la hiérarchie tient.
      --n-300 est laissé intact (bordures et fonds) ; ses usages TEXTE pointent désormais n-400. */
-  --n-50 : #f8f9fe;
-  --n-100: #f0f2f8;
-  --n-200: #e8ecf4;
-  --n-300: #d0d8e8;
-  --n-400: #667299; /* 4,51:1 — texte secondaire, libellés micro */
-  --n-500: #586586; /* 5,52:1 — texte courant du corps de page */
-  --n-600: #4a5578;
-  --n-700: #2e3a58;
-  --n-800: #1a1d2e;
-  --n-900: #0d0f1a;
+  --n-50 : var(--page-fond);
+  --n-100: var(--tableau-entete);
+  --n-200: var(--bordure);
+  --n-300: var(--bordure);
+  --n-400: var(--texte-secondaire); /* 5,62:1 sur --page-fond — texte secondaire, libellés micro */
+  --n-500: var(--texte-secondaire);
+  --n-600: var(--neutre-texte);
+  --n-700: var(--neutre-texte);
+  --n-800: var(--texte);
+  --n-900: var(--texte);
 
   /* Sémantiques */
-  --success-bg  : #ecfdf5;
-  --success-text: #059669;
-  --success-bdr : #a7f3d0;
-  --warning-bg  : #fef9c3;
-  --warning-text: #a16207;
-  --warning-bdr : #fde68a;
-  --danger-bg   : #fee2e2;
-  --danger-text : #b91c1c;
-  --danger-bdr  : #fecaca;
-  --info-bg     : var(--p-50);
-  --info-text   : var(--p-600);
-  --info-bdr    : var(--p-200);
+  /* Les quatre familles d'état : favorable, examen, retard, neutre. « info » (bleu) rejoint « examen » (aucun texte en bleu). */
+  --success-bg  : var(--favorable-fond);
+  --success-text: var(--favorable-texte);
+  --success-bdr : var(--favorable-fond);
+  --warning-bg  : var(--examen-fond);
+  --warning-text: var(--examen-texte);
+  --warning-bdr : var(--examen-fond);
+  --danger-bg   : var(--retard-fond);
+  --danger-text : var(--retard-texte);
+  --danger-bdr  : var(--retard-fond);
+  --info-bg     : var(--examen-fond);
+  --info-text   : var(--examen-texte);
+  --info-bdr    : var(--examen-fond);
 
   /* Typographie */
   --text-xs  : 10px;
-  --text-sm  : 11.5px;
-  --text-base: 12.5px;
-  --text-md  : 13.5px;
+  --text-sm  : 11px;
+  --text-base: 13px;
+  --text-md  : 13px;
   --text-lg  : 15px;
   --text-xl  : 18px;
   --text-2xl : 22px;
@@ -84,32 +86,33 @@
   --radius-full: 100px;
 
   /* Ombres — superposées (ambiance neutre + touche de marque) pour une profondeur douce et sophistiquée. */
-  --shadow-sm: 0 1px 2px rgba(20,35,63,.04), 0 1px 3px rgba(2,132,199,.05);
-  --shadow-md: 0 2px 6px rgba(20,35,63,.05), 0 6px 16px rgba(2,132,199,.09);
-  --shadow-lg: 0 4px 12px rgba(20,35,63,.06), 0 12px 32px rgba(2,132,199,.13);
-  --shadow-xl: 0 8px 24px rgba(20,35,63,.08), 0 24px 56px rgba(2,132,199,.16);
+  /* Plus d'ombre portée (design institutionnel) : les surfaces se séparent par leur filet --bordure. */
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --shadow-xl: none;
 
   /* Transitions — courbe standard « ease-out » douce et moderne (micro-interactions homogènes). */
   --transition: all 170ms cubic-bezier(0.4, 0, 0.2, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Couleurs par profil */
-  --prmp-color   : #667eea;
-  --prmp-bg      : #f0f2ff;
-  --pres-color   : #0369a1;
-  --pres-bg      : #e0f2fe;
-  --cc-color     : #0e7c5a;
-  --cc-bg        : #ecfdf5;
-  --membre-color : #d97706;
-  --membre-bg    : #fef9c3;
-  --verif-color  : #7c3aed;
-  --verif-bg     : #ede9fe;
-  --assist-color : #db2777;
-  --assist-bg    : #fce7f3;
-  --sec-color    : #0891b2;
-  --sec-bg       : #cffafe;
-  --admin-color  : #374151;
-  --admin-bg     : #f3f4f6;
+  --prmp-color : var(--texte-secondaire);
+  --prmp-bg : var(--neutre-fond);
+  --pres-color : var(--texte-secondaire);
+  --pres-bg : var(--neutre-fond);
+  --cc-color : var(--texte-secondaire);
+  --cc-bg : var(--neutre-fond);
+  --membre-color : var(--texte-secondaire);
+  --membre-bg : var(--neutre-fond);
+  --verif-color : var(--texte-secondaire);
+  --verif-bg : var(--neutre-fond);
+  --assist-color : var(--texte-secondaire);
+  --assist-bg : var(--neutre-fond);
+  --sec-color : var(--texte-secondaire);
+  --sec-bg : var(--neutre-fond);
+  --admin-color : var(--texte-secondaire);
+  --admin-bg : var(--neutre-fond);
 
   /* Encres de profil — refonte ergonomique, lot 5 (décision Mathieu du 2026-09-16).
      ⚠️ L'accent de profil QUITTE le texte. `--*-color` reste l'accent de marque ; `--*-ink` porte
@@ -118,20 +121,20 @@
      teinte et saturation conservées, luminosité baissée juste assez pour passer 4,5:1. Quatre
      profils étaient sous le seuil — l'état courant était le moins lisible de tous les états.
      Mesures reproductibles : scripts/contrastes-coquille.mjs. */
-  --prmp-ink     : #4462e5; /* 4,57:1 sur --prmp-bg   (avant #667eea : 3,29:1) */
-  --pres-ink     : #0369a1; /* 5,17:1 sur --pres-bg   — inchangé, déjà conforme */
-  --cc-ink       : #0e7c5a; /* 4,92:1 sur --cc-bg     — inchangé */
-  --membre-ink   : #aa5d05; /* 4,57:1 sur --membre-bg (avant #d97706 : 2,97:1) */
-  --verif-ink    : #7c3aed; /* 4,80:1 sur --verif-bg  — inchangé */
-  --assist-ink   : #c9226c; /* 4,55:1 sur --assist-bg (avant #db2777 : 3,91:1) */
-  --sec-ink      : #077792; /* 4,62:1 sur --sec-bg    (avant #0891b2 : 3,29:1) */
-  --admin-ink    : #374151; /* 9,37:1 sur --admin-bg  — inchangé */
+  --prmp-ink : var(--neutre-texte);
+  --pres-ink : var(--neutre-texte);
+  --cc-ink : var(--neutre-texte);
+  --membre-ink : var(--neutre-texte);
+  --verif-ink : var(--neutre-texte);
+  --assist-ink : var(--neutre-texte);
+  --sec-ink : var(--neutre-texte);
+  --admin-ink : var(--neutre-texte);
 
   /* Pastille de compteur du menu — AMBRE UNIQUE (décision Mathieu du 2026-09-16) : les quatre
      teintes de sévérité ne se distinguaient pas dans une barre sombre et trois passaient sous le
      seuil. Le rouge (`--danger-*`) est désormais réservé à l'ALERTE. */
-  --compteur-bg  : #fbbf24;
-  --compteur-ink : #3b2500; /* 8,67:1 */
+  --compteur-bg  : var(--or);
+  --compteur-ink : var(--texte); /* 8,83:1 */
 }
 
 /* ══════════════════════════════════════════
@@ -149,16 +152,16 @@ html { scroll-behavior: smooth; }
 body {
   font-family: var(--font-base);
   font-size: var(--text-base);
-  color: var(--n-500);
-  background: var(--n-50);
-  line-height: 1.6;
+  color: var(--texte);
+  background: var(--page-fond);
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
 /* Sélection de texte — teinte de marque, cohérente sur toute l'application. */
-::selection { background: rgba(2, 132, 199, 0.2); color: var(--n-900); }
+::selection { background: var(--onglet-actif-fond); color: var(--texte); }
 
 /* Barres de défilement fines et discrètes (WebKit) — touche moderne, partout. */
 ::-webkit-scrollbar { width: 11px; height: 11px; }
@@ -177,26 +180,30 @@ a:focus-visible,
 button:focus-visible,
 [role="button"]:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid var(--p-400);
+  outline: 2px solid var(--bouton-principal);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
 
 h1, h2, h3, h4 {
   font-family: var(--font-base);
-  font-weight: 700;
-  color: var(--n-800);
-  letter-spacing: -.02em;
+  font-weight: 500;
+  color: var(--texte);
+  letter-spacing: 0;
   line-height: 1.2;
 }
 
-h1 { font-size: var(--text-2xl); }
+/* Titre de page : à empattements, 19 px (design institutionnel). */
+h1 { font-size: 19px; font-family: var(--police-titre); }
 h2 { font-size: var(--text-xl); }
 h3 { font-size: var(--text-lg); }
 h4 { font-size: var(--text-md); }
 
 p  { line-height: 1.65; }
-a  { color: var(--p-600); text-decoration: none; }
+/* Liens : couleur du texte (aucun texte en bleu). Un lien DU CONTENU — un <a> sans classe, ou .lien — est souligné d'un
+   filet discret ; un <a> stylé (bouton, carte, entrée de menu, onglet) garde l'apparence de sa classe, sans soulignement. */
+a  { color: var(--texte); text-decoration: none; }
+a:not([class]), .lien { text-decoration: underline; text-decoration-color: var(--lien-soulignement); text-underline-offset: 2px; }
 
 /* ══════════════════════════════════════════
    LAYOUT
@@ -249,20 +256,19 @@ a  { color: var(--p-600); text-decoration: none; }
 .sidebar-logo-mark {
   width: 30px; height: 30px;
   border-radius: var(--radius-md);
-  background: var(--grad-primary);
+  background: var(--menu-fond);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(2,132,199,.3);
 
-  i { font-size: 14px; color: #fff; }
+  i { font-size: 14px; color: var(--texte-menu); }
 }
 
 .sidebar-logo-text {
   .name {
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 500;
     color: var(--n-800);
     letter-spacing: -.01em;
     line-height: 1.2;
@@ -295,12 +301,12 @@ a  { color: var(--p-600); text-decoration: none; }
   .avatar {
     width: 28px; height: 28px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--p-100), var(--p-200));
+    background: var(--onglet-actif-fond);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 10px;
-    font-weight: 700;
+    font-weight: 500;
     color: var(--p-600);
     flex-shrink: 0;
   }
@@ -311,7 +317,7 @@ a  { color: var(--p-600); text-decoration: none; }
 
     .name {
       font-size: 11.5px;
-      font-weight: 600;
+      font-weight: 500;
       color: var(--n-800);
       white-space: nowrap;
       overflow: hidden;
@@ -340,7 +346,7 @@ a  { color: var(--p-600); text-decoration: none; }
 .nav-section-label {
   padding: 6px 9px 3px;
   font-size: var(--text-xs);
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: .1em;
   color: var(--n-400);
@@ -375,15 +381,15 @@ a  { color: var(--p-600); text-decoration: none; }
   &.active {
     background: var(--grad-light);
     color: var(--p-600);
-    font-weight: 600;
-    border-color: rgba(2,132,199,.2);
+    font-weight: 500;
+    border-color: var(--bordure);
   }
 }
 
 .nav-badge {
   margin-left: auto;
   font-size: 9px;
-  font-weight: 700;
+  font-weight: 500;
   padding: 1px 6px;
   border-radius: var(--radius-full);
 
@@ -424,7 +430,7 @@ a  { color: var(--p-600); text-decoration: none; }
 
   &.active {
     color: var(--p-600);
-    font-weight: 600;
+    font-weight: 500;
   }
 }
 
@@ -438,8 +444,8 @@ a  { color: var(--p-600); text-decoration: none; }
    Surcharge les couleurs neutres des règles ci-dessus (spécificité `.sidebar x`). ── */
 .sidebar-logo {
   border-bottom-color: rgba(255, 255, 255, 0.09);
-  color: #fff;
-  font-weight: 800;
+  color: var(--texte-menu);
+  font-weight: 500;
   font-size: 15px;
   letter-spacing: 0.08em;
 }
@@ -447,7 +453,7 @@ a  { color: var(--p-600); text-decoration: none; }
    seuils AA. Mesures compositées sur le HAUT du dégradé (#0c4a6e, le pire cas), reproductibles par
    `scripts/contrastes-coquille.mjs`. Ne pas les rebaisser : ce sont des valeurs calibrées, pas un
    réglage d'ambiance — même règle que --n-400 / --n-500 (AUDIT.md A2). */
-.sidebar-logo-text .name { color: #fff; }
+.sidebar-logo-text .name { color: var(--texte-menu); }
 .sidebar-logo-text .sub { color: rgba(255, 255, 255, 0.72); } /* 5,73:1 */
 .sidebar-profile {
   background: rgba(255, 255, 255, 0.06);
@@ -456,7 +462,7 @@ a  { color: var(--p-600); text-decoration: none; }
   border-color: rgba(255, 255, 255, 0.44); /* 3,16:1 */
 
   &:hover { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.6); }
-  .info .name { color: #fff; }
+  .info .name { color: var(--texte-menu); }
   .info .role { color: rgba(255, 255, 255, 0.72); } /* 5,73:1 — était 0,55 (4,06:1) */
 
   .avatar {
@@ -474,10 +480,10 @@ a.sidebar-profile--action {
 .sidebar .nav-item {
   color: rgba(255, 255, 255, 0.82); /* 6,91:1 — était 0,72 (5,73:1) */
 
-  &:hover { background: rgba(255, 255, 255, 0.09); color: #fff; }
+  &:hover { background: rgba(255, 255, 255, 0.09); color: var(--texte-menu); }
   &.active {
     background: rgba(255, 255, 255, 0.14);
-    color: #fff;
+    color: var(--texte-menu);
     border-color: rgba(255, 255, 255, 0.16);
   }
 }
@@ -485,8 +491,8 @@ a.sidebar-profile--action {
 .sidebar .nav-sub-item {
   color: rgba(255, 255, 255, 0.72); /* 5,73:1 — était 0,60 (4,52:1, conforme de justesse) */
 
-  &:hover { background: rgba(255, 255, 255, 0.09); color: #fff; }
-  &.active { color: #fff; }
+  &:hover { background: rgba(255, 255, 255, 0.09); color: var(--texte-menu); }
+  &.active { color: var(--texte-menu); }
 }
 .sidebar .nav-chevron { color: rgba(255, 255, 255, 0.55); } /* 4,06:1 — était 0,40 (2,85:1) */
 
@@ -495,7 +501,7 @@ a.sidebar-profile--action {
   position: fixed;
   top: 0; left: var(--sidebar-w); right: 0;
   height: 48px;
-  background: #fff;
+  background: var(--carte-fond);
   border-bottom: 0.5px solid var(--n-200);
   padding: 0 26px;
   display: flex;
@@ -520,7 +526,7 @@ a.sidebar-profile--action {
   color: var(--p-800);
   font: inherit;
   font-size: 12.5px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
 
@@ -550,7 +556,7 @@ a.sidebar-profile--action {
 
   .current {
     font-size: 12.5px;
-    font-weight: 600;
+    font-weight: 500;
     color: var(--n-800);
   }
 
@@ -565,7 +571,7 @@ a.sidebar-profile--action {
 
 .topbar-profile-badge {
   font-size: var(--text-xs);
-  font-weight: 700;
+  font-weight: 500;
   padding: 2px 9px;
   border-radius: var(--radius-full);
   letter-spacing: .03em;
@@ -582,7 +588,7 @@ a.sidebar-profile--action {
     top: -2px; right: -2px;
     width: 7px; height: 7px;
     border-radius: 50%;
-    border: 1.5px solid #fff;
+    border: 1.5px solid var(--carte-fond);
   }
 }
 
@@ -591,7 +597,7 @@ a.sidebar-profile--action {
   margin-left: var(--sidebar-w);
   padding-top: 48px;
   min-height: 100vh;
-  background: #eef2f9;
+  background: var(--tableau-entete);
 }
 
 .page-inner {
@@ -634,12 +640,12 @@ a.sidebar-profile--action {
     z-index: 6;
     margin-bottom: 12px;
     padding: 10px 0;
-    background: var(--cnm-bg, #f2f5fa);
+    background: var(--page-fond);
   }
 
   .eyebrow {
     font-size: var(--text-xs);
-    font-weight: 700;
+    font-weight: 500;
     text-transform: uppercase;
     letter-spacing: .1em;
     color: var(--n-400);
@@ -658,21 +664,20 @@ a.sidebar-profile--action {
 /* Bouton retour au hub « Mes dossiers » (PRMP) — volontairement IMPOSANT et remarquable (demande user) :
    même fuchsia brillant que le dispatch groupé, taille généreuse, relief au survol. */
 .btn.btn-retour-hub {
-  background: linear-gradient(135deg, #e935c1, #b31fa0);
-  color: #fff;
+  background: var(--bouton-principal);
+  color: var(--texte-menu);
   border-color: transparent;
-  font-weight: 800;
+  font-weight: 500;
   font-size: var(--text-md);
   padding: 0.65rem 1.4rem;
   border-radius: var(--radius-lg);
   letter-spacing: 0.01em;
-  box-shadow: 0 4px 14px rgba(217, 70, 239, 0.45);
+  box-shadow: none;
 
   &:hover {
-    background: linear-gradient(135deg, #f04fd0, #c62bb2);
-    color: #fff;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 18px rgba(217, 70, 239, 0.55);
+    background: var(--bouton-principal);
+    color: var(--texte-menu);
+    box-shadow: none;
   }
 }
 
@@ -682,7 +687,7 @@ a.sidebar-profile--action {
 
 .profile-badge {
   font-size: var(--text-xs);
-  font-weight: 700;
+  font-weight: 500;
   padding: 2px 9px;
   border-radius: var(--radius-full);
   letter-spacing: .04em;
@@ -705,7 +710,7 @@ a.sidebar-profile--action {
 ══════════════════════════════════════════ */
 
 .card {
-  background: #fff;
+  background: var(--carte-fond);
   border: 0.5px solid var(--n-200);
   border-radius: var(--radius-xl);
   overflow: hidden;
@@ -719,12 +724,12 @@ a.sidebar-profile--action {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  background: linear-gradient(to right, var(--p-50), #fff);
+  background: var(--tableau-entete);
 }
 
 .card-title {
   font-size: var(--text-sm);
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: .09em;
   color: var(--n-500);
@@ -740,7 +745,7 @@ a.sidebar-profile--action {
 ══════════════════════════════════════════ */
 
 .table-card {
-  background: #fff;
+  background: var(--carte-fond);
   border: 0.5px solid var(--n-200);
   border-radius: var(--radius-xl);
   /* Scroll horizontal de secours : aucune colonne (ex. ACTIONS) n'est coupée
@@ -764,10 +769,10 @@ thead tr {
 th {
   padding: 0.65rem 1.1rem;
   font-size: var(--text-xs);
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: .1em;
-  color: #fff;
+  color: var(--texte-menu);
   text-align: left;
   border-bottom: 0;
   white-space: nowrap;
@@ -793,13 +798,13 @@ tbody tr {
 
 .td-ref {
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--n-400);
 }
 
 .td-montant {
   text-align: right;
-  font-weight: 700;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   color: var(--n-800);
   white-space: nowrap;
@@ -825,7 +830,7 @@ tbody tr {
 
 .form-label {
   font-size: var(--text-xs);
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: .09em;
   color: var(--n-400);
@@ -843,7 +848,7 @@ tbody tr {
   font-family: var(--font-base);
   font-weight: 400;
   color: var(--n-800);
-  background: #fff;
+  background: var(--carte-fond);
   border: 1px solid var(--n-200);
   border-radius: var(--radius-md);
   transition: var(--transition);
@@ -853,7 +858,7 @@ tbody tr {
 
   &:focus {
     border-color: var(--p-600);
-    box-shadow: 0 0 0 3.5px rgba(2, 132, 199, 0.14);
+    box-shadow: 0 0 0 2px var(--onglet-actif-fond);
   }
 
   /* Texte de substitution : n-300 le rendait quasi invisible (1,36:1). n-400 est conforme (4,5:1)
@@ -862,7 +867,7 @@ tbody tr {
 
   &.error {
     border-color: var(--danger-text);
-    box-shadow: 0 0 0 3px rgba(185,28,28,.1);
+    box-shadow: 0 0 0 2px var(--retard-fond);
   }
 }
 
@@ -909,7 +914,7 @@ textarea.form-control {
   gap: 5px;
   border-radius: var(--radius-md);
   font-size: var(--text-base);
-  font-weight: 600;
+  font-weight: 500;
   padding: 0.42rem 1rem;
   cursor: pointer;
   border: 1px solid transparent;
@@ -948,11 +953,11 @@ textarea.form-control {
 
   &.btn-primary {
     background: var(--grad-primary);
-    color: #fff;
-    box-shadow: 0 2px 8px rgba(2,132,199,.3);
+    color: var(--texte-menu);
+    box-shadow: none;
 
     &:hover:not(:disabled) {
-      box-shadow: 0 4px 16px rgba(2,132,199,.4);
+      box-shadow: none;
       transform: translateY(-1px);
       filter: brightness(1.05);
     }
@@ -970,7 +975,7 @@ textarea.form-control {
   }
 
   &.btn-outline {
-    background: #fff;
+    background: var(--carte-fond);
     color: var(--n-600);
     border-color: var(--n-200);
 
@@ -987,19 +992,19 @@ textarea.form-control {
     border-color: var(--success-bdr);
 
     &:hover:not(:disabled) {
-      background: #d1fae5;
+      background: var(--favorable-fond);
       transform: translateY(-1px);
     }
   }
 
   /* Vert PLEIN (call-to-action), pendant vert du `.btn-primary` bleu (≠ `.btn-success` doux/pâle). */
   &.btn-vert {
-    background: linear-gradient(135deg, #22c55e, #16a34a);
-    color: #fff;
-    box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
+    background: var(--favorable-texte);
+    color: var(--texte-menu);
+    box-shadow: none;
 
     &:hover:not(:disabled) {
-      box-shadow: 0 4px 16px rgba(22, 163, 74, 0.4);
+      box-shadow: none;
       transform: translateY(-1px);
       filter: brightness(1.05);
     }
@@ -1010,11 +1015,11 @@ textarea.form-control {
     color: var(--warning-text);
     border-color: var(--warning-bdr);
 
-    &:hover:not(:disabled) { background: #fef08a; }
+    &:hover:not(:disabled) { background: var(--examen-fond); }
   }
 
   &.btn-danger {
-    background: #fff;
+    background: var(--carte-fond);
     color: var(--danger-text);
     border-color: var(--danger-bdr);
 
@@ -1047,7 +1052,7 @@ textarea.form-control {
   border-radius: var(--radius-full);
   padding: 0.2rem 0.65rem;
   font-size: var(--text-xs);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: .04em;
   white-space: nowrap;
   /* Cerné discret assorti à la variante → pastilles plus nettes et pro (sans décaler la mise en page). */
@@ -1140,12 +1145,12 @@ textarea.form-control {
 }
 
 .modal {
-  background: #fff;
+  background: var(--carte-fond);
   border-radius: var(--radius-lg);
   /* ⚠️ 2026-08-20 (demande user) — plus de liseré bleu (« 0 0 0 .5px var(--p-200) ») : il se lisait
      comme une bordure de couleur autour du dialogue. Le panneau se détache désormais par l'ombre
      seule — un halo large et un liseré rapproché neutres, qui en dessinent le bord sans teinte. */
-  box-shadow: 0 2px 8px rgb(15 23 42 / 12%), 0 24px 64px rgb(15 23 42 / 32%);
+  box-shadow: none;
   width: 94vw;
   max-width: 680px;
   max-height: 90vh;
@@ -1164,12 +1169,12 @@ textarea.form-control {
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  background: linear-gradient(to right, var(--p-50), #fff);
+  background: var(--tableau-entete);
   flex-shrink: 0;
 }
 
 .modal-header-dark {
-  background: var(--grad-primary);
+  background: var(--menu-fond);
   padding: 18px 20px 0;
   position: relative;
   overflow: hidden;
@@ -1180,8 +1185,7 @@ textarea.form-control {
     position: absolute;
     width: 240px; height: 240px;
     border-radius: 50%;
-    background: radial-gradient(circle,
-      rgba(255,255,255,.12) 0%, transparent 70%);
+    background: none;
     top: -80px; right: 40px;
     pointer-events: none;
   }
@@ -1189,15 +1193,15 @@ textarea.form-control {
 
 .modal-title {
   font-size: var(--text-lg);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--n-800);
   letter-spacing: -.015em;
 }
 
 .modal-title-light {
   font-size: var(--text-2xl);
-  font-weight: 800;
-  color: #fff;
+  font-weight: 500;
+  color: var(--texte-menu);
   letter-spacing: -.02em;
   line-height: 1.1;
   position: relative;
@@ -1248,7 +1252,7 @@ textarea.form-control {
 
   &:hover {
     background: rgba(255,255,255,.25);
-    color: #fff;
+    color: var(--texte-menu);
   }
 }
 
@@ -1282,7 +1286,7 @@ textarea.form-control {
   align-items: center;
   gap: 5px;
 
-  strong { color: var(--p-600); font-weight: 600; }
+  strong { color: var(--p-600); font-weight: 500; }
 }
 
 /* Meta band */
@@ -1306,7 +1310,7 @@ textarea.form-control {
 
 .meta-band-lbl {
   font-size: var(--text-xs);
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: .1em;
   color: rgba(255,255,255,.55);
@@ -1314,8 +1318,8 @@ textarea.form-control {
 
 .meta-band-val {
   font-size: var(--text-base);
-  font-weight: 600;
-  color: #fff;
+  font-weight: 500;
+  color: var(--texte-menu);
 
   &.empty {
     color: rgba(255,255,255,.3);
@@ -1357,14 +1361,14 @@ textarea.form-control {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 2px 6px rgba(2,132,199,.3);
+  box-shadow: none;
 
-  i { font-size: 13px; color: #fff; }
+  i { font-size: 13px; color: var(--texte-menu); }
 }
 
 .section-label {
   font-size: var(--text-xs);
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: .09em;
   color: var(--n-500);
@@ -1374,7 +1378,7 @@ textarea.form-control {
   background: var(--p-50);
   color: var(--p-600);
   font-size: var(--text-xs);
-  font-weight: 700;
+  font-weight: 500;
   padding: 1px 7px;
   border-radius: var(--radius-full);
 }
@@ -1425,7 +1429,7 @@ textarea.form-control {
 ══════════════════════════════════════════ */
 
 .pieces-card {
-  background: #fff;
+  background: var(--carte-fond);
   border: 0.5px solid var(--n-200);
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -1440,13 +1444,13 @@ textarea.form-control {
   align-items: center;
   gap: 8px;
   padding: 8px 14px;
-  background: linear-gradient(to right, var(--p-50), var(--n-50));
+  background: var(--tableau-entete);
   border-bottom: 0.5px solid var(--n-200);
 }
 
 .group-pill {
   font-size: var(--text-xs);
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: .09em;
   padding: 2px 8px;
@@ -1460,9 +1464,9 @@ textarea.form-control {
   }
   /* ⚠️ 2026-08-03 — versions corrigées (rectification sur observations du PV). */
   &.gp-green {
-    background: #DCFCE7;
-    color: #15803D;
-    border: 0.5px solid #BBF7D0;
+    background: var(--favorable-fond);
+    color: var(--favorable-texte);
+    border: 0.5px solid var(--favorable-fond);
   }
 }
 
@@ -1498,7 +1502,7 @@ textarea.form-control {
   width: 22px; height: 22px;
   border-radius: 6px;
   font-size: var(--text-xs);
-  font-weight: 700;
+  font-weight: 500;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1506,7 +1510,7 @@ textarea.form-control {
 
   &.pi-blue   { background: var(--p-50);        color: var(--p-600); }
   &.pi-orange { background: var(--warning-bg);   color: var(--warning-text); }
-  &.pi-green  { background: #DCFCE7;             color: #15803D; }
+  &.pi-green  { background: var(--favorable-fond);             color: var(--favorable-texte); }
 }
 
 .piece-name {
@@ -1524,7 +1528,7 @@ textarea.form-control {
   border: 1px solid var(--warning-bdr);
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
-  font-weight: 700;
+  font-weight: 500;
   padding: 1px 6px;
   white-space: nowrap;
   flex-shrink: 0;
@@ -1534,12 +1538,12 @@ textarea.form-control {
 
 /* ⚠️ 2026-08-03 — étiquette « Corrigée » des versions déposées en rectification (pendant LR = .lr-tag). */
 .vc-tag {
-  background: #DCFCE7;
-  color: #15803D;
-  border: 1px solid #BBF7D0;
+  background: var(--favorable-fond);
+  color: var(--favorable-texte);
+  border: 1px solid var(--favorable-fond);
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
-  font-weight: 700;
+  font-weight: 500;
   padding: 1px 6px;
   white-space: nowrap;
   flex-shrink: 0;
@@ -1548,11 +1552,11 @@ textarea.form-control {
 }
 
 .btn-ouvrir {
-  background: #fff;
+  background: var(--carte-fond);
   border: 0.5px solid var(--p-200);
   color: var(--p-600);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: 500;
   border-radius: var(--radius-md);
   padding: 4px 10px;
   cursor: pointer;
@@ -1609,7 +1613,7 @@ textarea.form-control {
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+  background: none;
   animation: skeleton-shimmer 1.4s ease-in-out infinite;
 }
 .skeleton-text { height: 0.75rem; margin: 0.35rem 0; }
@@ -1639,7 +1643,7 @@ textarea.form-control {
 
 .empty-state-title {
   font-size: var(--text-md);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--n-700);
 }
 
@@ -1658,9 +1662,9 @@ textarea.form-control {
 .text-danger   { color: var(--danger-text); }
 .text-warning  { color: var(--warning-text); }
 .fw-medium     { font-weight: 500; }
-.fw-semibold   { font-weight: 600; }
-.fw-bold       { font-weight: 700; }
-.fw-extrabold  { font-weight: 800; }
+.fw-semibold   { font-weight: 500; }
+.fw-bold       { font-weight: 500; }
+.fw-extrabold  { font-weight: 500; }
 .text-sm       { font-size: var(--text-sm); }
 .text-xs       { font-size: var(--text-xs); }
 .nowrap        { white-space: nowrap; }
@@ -1698,10 +1702,10 @@ textarea.form-control {
   align-items: center;
   gap: 14px;
   padding: 18px 20px;
-  border-radius: var(--radius-2xl);
-  color: #fff;
-  box-shadow: var(--shadow-md);
-  background: var(--grad-primary);
+  border-radius: var(--radius-md);
+  color: var(--texte);
+  border: 1px solid var(--bordure);
+  background: var(--carte-fond);
 }
 .cnm-stat__icon {
   width: 46px;
@@ -1711,21 +1715,22 @@ textarea.form-control {
   align-items: center;
   justify-content: center;
   font-size: 22px;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--neutre-fond);
+  color: var(--neutre-texte);
   flex-shrink: 0;
 }
 .cnm-stat__body { min-width: 0; }
-.cnm-stat__label { font-size: var(--text-sm); font-weight: 600; opacity: 0.92; }
-.cnm-stat__value { font-size: var(--text-3xl); font-weight: 800; line-height: 1.1; }
+.cnm-stat__label { font-size: 11px; font-weight: 400; color: var(--texte-secondaire); }
+.cnm-stat__value { font-size: 21px; font-weight: 500; line-height: 1.1; }
 
-.cnm-stat--blue   { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
-.cnm-stat--indigo { background: linear-gradient(135deg, #6366f1, #4f46e5); }
-.cnm-stat--green  { background: linear-gradient(135deg, #22c55e, #16a34a); }
-.cnm-stat--red    { background: linear-gradient(135deg, #f43f5e, #e11d48); }
-.cnm-stat--orange { background: linear-gradient(135deg, #fb923c, #ea580c); }
-.cnm-stat--amber  { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
-.cnm-stat--purple { background: linear-gradient(135deg, #a855f7, #7c3aed); }
-.cnm-stat--teal   { background: linear-gradient(135deg, #2dd4bf, #0d9488); }
+.cnm-stat--blue { /* aplat : la carte reste blanche */ }
+.cnm-stat--indigo { /* aplat : la carte reste blanche */ }
+.cnm-stat--green  { /* aplat : la carte reste blanche */ }
+.cnm-stat--red    { .cnm-stat__value { color: var(--retard-texte); } }
+.cnm-stat--orange { /* aplat : la carte reste blanche */ }
+.cnm-stat--amber { /* aplat : la carte reste blanche */ }
+.cnm-stat--purple { /* aplat : la carte reste blanche */ }
+.cnm-stat--teal { /* aplat : la carte reste blanche */ }
 
 /* ════════════════════════════════════════════════════════════════
    Anneau de focus des dialogues (2026-08-19)

@@ -14,16 +14,16 @@
  */
 :root {
   --page-bg: var(--n-50);
-  --card-bg: #FFFFFF;
+  --card-bg: var(--carte-fond);
   --border: var(--n-200);
-  --border-control: var(--n-400);
+  --border-control: var(--bordure-champ);
   --text: var(--n-800);
   --text-muted: var(--n-500);
 
   /* Le bleu d'action de l'application, en sa nuance AA pour un texte blanc (--p-600 : 4,10:1 ; --p-700 : 5,93:1). */
-  --primary: var(--p-700);
-  --primary-hover: var(--p-800);
-  --primary-text: #FFFFFF;
+  --primary: var(--bouton-principal);
+  --primary-hover: var(--bouton-principal);
+  --primary-text: var(--texte-menu);
 
   --reco-bg: var(--p-50);
   --reco-border: var(--p-200);
@@ -32,16 +32,16 @@
 
   --miss-bg: var(--danger-bg);
   --miss-border: var(--danger-bdr);
-  --miss-text: #991B1B;
+  --miss-text: var(--retard-texte);
   --miss-accent: var(--danger-text);
 
   --prep-bg: var(--warning-bg);
   --prep-border: var(--warning-bdr);
-  --prep-text: #854D0E;
+  --prep-text: var(--examen-texte);
   --prep-accent: var(--warning-text);
 
   --ok-bg: var(--success-bg);
   --ok-border: var(--success-bdr);
-  --ok-text: #065F46;
+  --ok-text: var(--favorable-texte);
   --ok-accent: var(--success-text);
 }

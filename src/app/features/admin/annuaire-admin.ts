@@ -660,7 +660,7 @@ interface LienEcran {
     .ann-ligne:hover { background: var(--n-50); }
     .ann-ligne--sel,
     .ann-ligne--sel:hover { background: var(--p-50); }
-    .ann-ligne--sel::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--p-600); }
+    .ann-ligne--sel::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--bouton-principal); }
     .ann-ligne__ini {
       position: absolute;
       left: 15px; top: 50%; transform: translateY(-50%);
@@ -709,7 +709,7 @@ interface LienEcran {
     .ann-fh__ini {
       width: 44px; height: 44px; flex: none;
       border-radius: 50%;
-      background: var(--p-600); color: #fff;
+      background: var(--bouton-principal); color: #fff;
       display: grid; place-items: center;
       font-size: var(--text-lg); font-weight: 800;
     }

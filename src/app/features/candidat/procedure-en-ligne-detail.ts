@@ -280,7 +280,7 @@ import { LIBELLES_ETAT_ETAPE, OffreDeposee, etapesParcours, grouperDocuments, ja
       border-radius: var(--radius-full); background: var(--n-100); color: var(--n-600); }
     .ped__etape[data-etat='fait'] .ped__etape-n, .ped__etape[data-etat='fait'] .ped__etape-etat { background: #d1fae5; color: #065f46; }
     .ped__etape[data-etat='a-faire'] { border-color: var(--p-300); }
-    .ped__etape[data-etat='a-faire'] .ped__etape-n { background: var(--p-600); color: #fff; }
+    .ped__etape[data-etat='a-faire'] .ped__etape-n { background: var(--bouton-principal); color: #fff; }
     .ped__etape[data-etat='a-faire'] .ped__etape-etat { background: var(--p-100); color: var(--p-800); }
     .ped__etape[data-etat='en-cours'] .ped__etape-n, .ped__etape[data-etat='en-cours'] .ped__etape-etat { background: #fef3c7; color: #92400e; }
     .ped__invite { margin: 0.6rem 0 0; display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; font-size: var(--text-sm); color: var(--n-600); }
@@ -308,7 +308,7 @@ import { LIBELLES_ETAT_ETAPE, OffreDeposee, etapesParcours, grouperDocuments, ja
     .ped__frise li { position: relative; display: flex; flex-direction: column; }
     .ped__frise li::before { content: ''; position: absolute; left: calc(-1.1rem - 6px); top: 0.3rem; width: 10px; height: 10px; border-radius: 50%;
       background: #fff; border: 2px solid var(--p-400); }
-    .ped__frise li.ped__jalon--passe::before { background: var(--p-600); border-color: var(--p-600); }
+    .ped__frise li.ped__jalon--passe::before { background: var(--bouton-principal); border-color: var(--bouton-principal); }
     .ped__frise li.ped__jalon--fort::before { border-color: var(--p-700); }
     .ped__jalon-lib { font-size: var(--text-xs); color: var(--n-500); }
     .ped__jalon-date { font-size: var(--text-sm); font-weight: 600; color: var(--n-700); }

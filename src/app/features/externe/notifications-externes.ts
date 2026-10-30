@@ -86,7 +86,7 @@ type Filtre = 'toutes' | 'non-lues';
     .ne__texte { display: flex; flex-direction: column; gap: 0.15rem; flex: 1 1 24rem; min-width: 0; }
     .ne__titre { display: inline-flex; align-items: center; gap: 0.45rem; font-weight: 500; color: var(--n-600); }
     .ne__item--non-lu .ne__titre { font-weight: 700; color: var(--n-800); }
-    .ne__point { width: 8px; height: 8px; border-radius: 50%; background: var(--p-600); flex: none; }
+    .ne__point { width: 8px; height: 8px; border-radius: 50%; background: var(--bouton-principal); flex: none; }
     .ne__corps { color: var(--n-500); font-size: var(--text-sm); }
     .ne__date { color: var(--n-500); font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
     .ne__gestes { display: flex; flex-wrap: wrap; gap: 0.4rem; }

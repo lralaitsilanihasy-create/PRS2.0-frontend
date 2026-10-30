@@ -302,7 +302,7 @@ import { SelecteurOffres, offreParDefaut } from './selecteur-offres';
     .ev__etape-b { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; padding: 0.5rem 0.6rem; border: 1px solid var(--n-200); border-radius: 6px; background: var(--n-100); text-align: left; cursor: pointer; }
     .ev__etape-b:disabled { cursor: default; opacity: 0.6; }
     .ev__etape-b[aria-current='step'] { border-color: var(--p-600); box-shadow: inset 0 -3px 0 var(--p-600); }
-    .ev__etape--faite .ev__etape-n { background: var(--p-600); color: #fff; }
+    .ev__etape--faite .ev__etape-n { background: var(--bouton-principal); color: #fff; }
     .ev__etape-n { display: inline-grid; place-items: center; min-width: 1.4rem; height: 1.4rem; border-radius: 50%; border: 1px solid var(--p-600); font-size: 0.75rem; font-weight: 700; }
     .ev__etape-n:empty { display: none; }
     .ev__arret, .ev__aide { margin: 0; }

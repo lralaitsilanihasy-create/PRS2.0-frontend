@@ -327,7 +327,7 @@ import { EtapeCircuitPv, etapesCircuitPv, phraseEtatPv } from './pv-circuit';
     .pv-circuit__pt { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--n-300); background: #fff; flex: none; }
     .pv-circuit__etape--fait .pv-circuit__pt { background: var(--success-text, #059669); border-color: var(--success-text, #059669); }
     .pv-circuit__etape--encours { color: var(--n-800); font-weight: 600; }
-    .pv-circuit__etape--encours .pv-circuit__pt { background: var(--p-600); border-color: var(--p-600); box-shadow: 0 0 0 4px var(--p-100); }
+    .pv-circuit__etape--encours .pv-circuit__pt { background: var(--bouton-principal); border-color: var(--bouton-principal); box-shadow: 0 0 0 4px var(--p-100); }
     .pv-navettes summary { cursor: pointer; font-size: var(--text-xs); font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--n-500); }
     .pv-navettes[open] summary { margin-bottom: 0.5rem; }
     /* Le pied : la phrase d'état à gauche, les gestes à droite ; un panneau ouvert (visa, retour, lettre) prend toute la largeur. */

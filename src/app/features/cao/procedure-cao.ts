@@ -188,7 +188,7 @@ export function etapesParcoursCao(etat: EtatSeance | null, dossierSoumis = false
     .pc__etape--fait { background: var(--success-bg); border-color: var(--success-bdr); }
     .pc__etape--fait .pc__pastille { background: var(--success-text); color: #fff; }
     .pc__etape--cours { border-color: var(--p-500); box-shadow: 0 0 0 3px var(--p-100); }
-    .pc__etape--cours .pc__pastille { background: var(--p-600); color: #fff; }
+    .pc__etape--cours .pc__pastille { background: var(--bouton-principal); color: #fff; }
     .pc__etape--ko { background: var(--danger-bg); border-color: var(--danger-bdr); }
     .pc__etape--ko .pc__pastille { background: var(--danger-text); color: #fff; }
     .pc__grille { display: grid; grid-template-columns: minmax(0, 1fr) 21rem; gap: 1.1rem; align-items: start; }
@@ -202,7 +202,7 @@ export function etapesParcoursCao(etat: EtatSeance | null, dossierSoumis = false
     .pc__membres { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
     .pc__membre { display: flex; gap: 0.6rem; align-items: flex-start; }
     .pc__avatar { flex: none; width: 2.1rem; height: 2.1rem; border-radius: 50%; display: grid; place-items: center; background: var(--n-100); color: var(--n-700); font-weight: 700; font-size: 0.78rem; }
-    .pc__avatar--president { background: var(--p-600); color: #fff; }
+    .pc__avatar--president { background: var(--bouton-principal); color: #fff; }
     .pc__membre-texte { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; font-size: var(--text-sm); }
     .pc__badge { align-self: flex-start; }
     .pc__eval { align-self: flex-start; }

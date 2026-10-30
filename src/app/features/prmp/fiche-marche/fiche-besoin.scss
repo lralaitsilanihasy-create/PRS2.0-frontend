@@ -33,7 +33,7 @@
   /* ⚠️ Recette du 26/09 — c'était `--cnm-primary`, qui N'EXISTE PAS : la déclaration tombait, et
      l'onglet actif s'affichait en blanc sur blanc — le lot 1 était invisible. Les jetons de la
      palette sont `--p-*` (cf. _design-system.scss). */
-  background: var(--p-600);
+  background: var(--bouton-principal);
   border-color: var(--p-600);
   color: #fff;
 }

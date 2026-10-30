@@ -9,6 +9,45 @@
 @use 'styles/palette-institutionnelle';
 
 /* =============================================================================
+   DESIGN INSTITUTIONNEL (pilote, 30/10/2026 — docs/design-institutionnel-inventaire-2026-10-30.md)
+   Source UNIQUE des couleurs de l'application : tout composant emploie ces variables, jamais une couleur écrite.
+   Les anciens jetons (--p-*, --n-*, --success-*…, styles/_design-system.scss) y sont redirigés.
+   Règles : aucun texte en bleu (le bleu n'est qu'un FOND : menu, bouton, onglet actif — et le trait du logo) ;
+   pas de dégradé ni d'ombre portée ; deux graisses, 400 et 500.
+   Contrastes WCAG AA mesurés le 30/10 : deux écarts à la palette demandée, validés par le pilote —
+   --favorable-texte #187547 (5,01:1 sur son fond, au lieu de #1B7F4B à 4,40:1) et --bordure-champ (3,32:1 sur blanc,
+   contour d'un champ, WCAG 1.4.11) ; --bordure (1,35:1) reste réservée aux filets décoratifs.
+   ============================================================================= */
+:root {
+  --menu-fond: #0C3A5B;
+  --menu-survol: #1A527B;
+  --section-fond: #082C47;
+  --onglet-actif-fond: #EAF2FF;
+  --page-fond: #F3F7FB;
+  --carte-fond: #FFFFFF;
+  --tableau-entete: #EEF1F4;
+  --ligne-survol: #F7F8FA;
+  --bordure: #D9DEE3;
+  --bordure-champ: #868E96;
+  --texte: #1F2328;
+  --texte-secondaire: #5F6368;
+  --texte-menu: #FFFFFF;
+  --lien-soulignement: #B0B5BB;
+  --or: #F5B800;
+  --bouton-principal: #2557D6;
+  --logo-trait: #1A2433;
+  --retard-fond: #FDE2E2;    --retard-texte: #C62828;
+  --examen-fond: #FFF1C2;    --examen-texte: #7A5600;
+  --favorable-fond: #E3F4EA; --favorable-texte: #187547;
+  --neutre-fond: #ECEEF1;    --neutre-texte: #3C4043;
+  --bandeau-1: #FFFFFF; --bandeau-2: #C8102E; --bandeau-3: #007A3D;
+
+  /* Typographie — texte courant sans empattement (pile système), titres à empattements. */
+  --police-texte: 'Segoe UI', Roboto, Arial, sans-serif;
+  --police-titre: Georgia, 'Times New Roman', serif;
+}
+
+/* =============================================================================
    COUCHE DE COMPATIBILITÉ — Le design system actif est « C » (violet, Plus Jakarta
    Sans), défini dans styles/_design-system.scss (importé via @use ci-dessus).
    Ce bloc re-mappe les anciens tokens (--cnm-*, --c-*) vers la palette violette/
@@ -19,7 +58,7 @@
 :root {
   /* ---- CNM → palette C (violet/neutre) ---- */
   --cnm-bg: var(--n-50);
-  --cnm-surface: #fff;
+  --cnm-surface: var(--carte-fond);
   --cnm-surface-2: var(--n-100);
   --cnm-surface-3: var(--n-200);
   --cnm-border: var(--n-200);
@@ -48,7 +87,7 @@
   --cnm-profile-publication: var(--assist-color);
   --cnm-profile-admin: var(--admin-color);
 
-  /* Typographie → Plus Jakarta Sans / DM Mono */
+  /* Typographie → pile système (texte), Georgia (titres), DM Mono (références) */
   --cnm-font: var(--font-base);
   --cnm-font-display: var(--font-base);
   --cnm-mono: 'DM Mono', ui-monospace, monospace;
@@ -62,7 +101,7 @@
   --cnm-fw-light: 300;
   --cnm-fw-regular: 400;
   --cnm-fw-medium: 500;
-  --cnm-fw-semibold: 600;
+  --cnm-fw-semibold: 500;
 
   --cnm-radius: var(--radius-md);
   --cnm-radius-lg: var(--radius-lg);
@@ -85,16 +124,17 @@
 /* Compat titres de page (le design system C stylise h1/.eyebrow/.subtitle ;
    les composants utilisent .page-title / .page-subtitle / .topbar-title). */
 .page-title {
-  font-size: var(--text-3xl);
-  font-weight: 800;
-  color: var(--n-800);
-  letter-spacing: -.025em;
-  line-height: 1.15;
+  font-family: var(--police-titre);
+  font-size: 19px;
+  font-weight: 500;
+  color: var(--texte);
+  letter-spacing: 0;
+  line-height: 1.25;
 }
 /* Sur-titre de domaine (« Domaine PRMP »…) : eyebrow de marque, plus professionnel. */
 .page-subtitle {
   font-size: var(--text-xs);
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: .12em;
   color: var(--p-600);
@@ -102,12 +142,12 @@
 }
 .topbar-title {
   font-size: var(--text-md);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--n-800);
 }
 
-a:hover {
-  text-decoration: underline;
+a:not([class]):hover, .lien:hover {
+  text-decoration-color: var(--texte);
 }
 
 /* Étiquette de section : micro, capitales, espacée — motif récurrent de la charte. */
@@ -131,7 +171,7 @@ a:hover {
    2026-09-08). Réservée à la fin RÉELLE ; la projection reste au style neutre. */
 .cnm-fin-cloture {
   color: var(--success-text);
-  font-weight: 600;
+  font-weight: 500;
 }
 /* LIGNE entière d'un dossier CLÔTURÉ (fin de traitement atteinte) — teinte verte « terminé » pour la
    distinguer des dossiers en cours (demande pilote 2026-09-08). Fond sur les cellules (le fond de la
@@ -214,11 +254,11 @@ tr.cnm-row-cloture > td {
 }
 
 .cnm-btn--primary {
-  background: var(--cnm-brand);
-  color: #fff;
+  background: var(--bouton-principal);
+  color: var(--texte-menu);
 }
 .cnm-btn--primary:not(:disabled):hover {
-  background: #5a5df0;
+  filter: brightness(0.92);
 }
 
 .cnm-btn--ghost {
@@ -233,7 +273,7 @@ tr.cnm-row-cloture > td {
 
 .cnm-btn--success {
   background: var(--cnm-success-fg);
-  color: #fff;
+  color: var(--texte-menu);
 }
 .cnm-btn--success:not(:disabled):hover {
   filter: brightness(1.08);
@@ -242,7 +282,7 @@ tr.cnm-row-cloture > td {
 .cnm-btn--danger {
   background: transparent;
   color: var(--cnm-danger-fg);
-  border-color: rgba(252, 129, 129, 0.4);
+  border-color: var(--retard-fond);
 }
 .cnm-btn--danger:not(:disabled):hover {
   background: var(--cnm-danger-bg);
@@ -250,7 +290,7 @@ tr.cnm-row-cloture > td {
 
 .cnm-btn--warning {
   background: var(--cnm-warning-fg);
-  color: #fff;
+  color: var(--texte-menu);
 }
 .cnm-btn--warning:not(:disabled):hover {
   filter: brightness(1.08);
@@ -398,7 +438,7 @@ tr.cnm-row-cloture > td {
   font-family: var(--font-base, var(--cnm-font));
   font-size: var(--cnm-fs-base);
   color: var(--n-800);
-  background: #fff;
+  background: var(--carte-fond);
   border: 1.5px solid var(--n-200);
   border-radius: var(--radius-md);
   padding: 0.5rem 0.65rem;
@@ -415,12 +455,12 @@ tr.cnm-row-cloture > td {
 .cnm-textarea:focus {
   outline: none;
   border-color: var(--c-400);
-  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+  box-shadow: 0 0 0 2px var(--onglet-actif-fond);
 }
 
 .cnm-input--invalid {
   border-color: var(--danger-text);
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+  box-shadow: 0 0 0 2px var(--retard-fond);
 }
 
 .cnm-field__hint {
@@ -449,9 +489,9 @@ tr.cnm-row-cloture > td {
   color: var(--cnm-text);
 }
 .cnm-tab--active {
-  background: linear-gradient(135deg, var(--c-600), var(--c-700));
-  color: #fff;
-  border-color: transparent;
+  background: var(--onglet-actif-fond);
+  color: var(--texte);
+  border-color: var(--bordure);
 }
 
 /* =============================================================================
@@ -501,66 +541,40 @@ tr.cnm-row-cloture > td {
 
 .onglets-dossier__tab {
   appearance: none;
-  border: 0;
-  border-radius: 10px;
-  padding: 0.55rem 1.1rem;
+  border: 1px solid var(--bordure);
+  border-radius: 6px 6px 0 0;
+  padding: 0.5rem 1rem;
   font: inherit;
   font-size: var(--cnm-fs-sm);
-  font-weight: 700;
+  font-weight: 400;
   cursor: pointer;
-  background: #fff7ed;
-  color: #c2410c;
-  transition: background 140ms ease, color 140ms ease;
+  background: var(--carte-fond);
+  color: var(--texte);
+  transition: background 150ms ease;
 }
-.onglets-dossier__tab:hover { background: #ffedd5; }
-.onglets-dossier__tab:focus-visible { outline: 2px solid #c2410c; outline-offset: 2px; }
-.onglets-dossier__tab--on {
-  background: #c2410c;
-  color: #fff;
-  box-shadow: 0 2px 6px rgb(194 65 12 / 32%);
+.onglets-dossier__tab:hover { background: var(--ligne-survol); }
+.onglets-dossier__tab:focus-visible { outline: 2px solid var(--bouton-principal); outline-offset: 2px; }
+.onglets-dossier__tab--on,
+.onglets-dossier__tab--on:hover {
+  background: var(--onglet-actif-fond);
+  font-weight: 500;
 }
-.onglets-dossier__tab--on:hover { background: #9a3412; }
 
 .onglets-dossier__n {
   display: inline-block;
   margin-left: 0.45rem;
   padding: 0.05rem 0.45rem;
-  border-radius: 999px;
-  background: #fff;
-  color: #c2410c;
+  border-radius: 20px;
+  background: var(--neutre-fond);
+  color: var(--neutre-texte);
   font-size: var(--cnm-fs-xs);
 }
-.onglets-dossier__tab--on .onglets-dossier__n {
-  background: rgb(255 255 255 / 25%);
-  color: #fff;
-}
 
-/* ⚠️ Demande pilote (2026-09-06) — la couleur de l'ONGLET suit celle des bandes de SON contenu :
-   fiche de présentation = VERT (#15803D), plan de passation = BLEU (thead global #0284C7),
-   historique des versions = GRIS (table sobre) ; AGPM et pièces gardent l'orange historique. */
-.onglets-dossier__tab--vert { background: #f0fdf4; color: #15803d; }
-.onglets-dossier__tab--vert:hover { background: #dcfce7; }
-.onglets-dossier__tab--vert:focus-visible { outline-color: #15803d; }
-.onglets-dossier__tab--vert .onglets-dossier__n { color: #15803d; }
-.onglets-dossier__tab--vert.onglets-dossier__tab--on { background: #15803d; color: #fff; box-shadow: 0 2px 6px rgb(21 128 61 / 32%); }
-.onglets-dossier__tab--vert.onglets-dossier__tab--on:hover { background: #166534; }
-.onglets-dossier__tab--vert.onglets-dossier__tab--on .onglets-dossier__n { color: #fff; }
-
-.onglets-dossier__tab--bleu { background: #f0f9ff; color: #0284c7; }
-.onglets-dossier__tab--bleu:hover { background: #e0f2fe; }
-.onglets-dossier__tab--bleu:focus-visible { outline-color: #0284c7; }
-.onglets-dossier__tab--bleu .onglets-dossier__n { color: #0284c7; }
-.onglets-dossier__tab--bleu.onglets-dossier__tab--on { background: #0284c7; color: #fff; box-shadow: 0 2px 6px rgb(2 132 199 / 32%); }
-.onglets-dossier__tab--bleu.onglets-dossier__tab--on:hover { background: #075985; }
-.onglets-dossier__tab--bleu.onglets-dossier__tab--on .onglets-dossier__n { color: #fff; }
-
-.onglets-dossier__tab--gris { background: #f1f5f9; color: #475569; }
-.onglets-dossier__tab--gris:hover { background: #e2e8f0; }
-.onglets-dossier__tab--gris:focus-visible { outline-color: #475569; }
-.onglets-dossier__tab--gris .onglets-dossier__n { color: #475569; }
-.onglets-dossier__tab--gris.onglets-dossier__tab--on { background: #475569; color: #fff; box-shadow: 0 2px 6px rgb(71 85 105 / 32%); }
-.onglets-dossier__tab--gris.onglets-dossier__tab--on:hover { background: #334155; }
-.onglets-dossier__tab--gris.onglets-dossier__tab--on .onglets-dossier__n { color: #fff; }
+/* ⚠️ 30/10/2026 (design institutionnel) — les variantes de couleur par contenu (pilote 06/09 : vert, bleu, gris) sont
+   neutralisées : les classes restent posées par les écrans, elles ne changent plus l'apparence. */
+.onglets-dossier__tab--vert,
+.onglets-dossier__tab--bleu,
+.onglets-dossier__tab--gris { /* même apparence que l'onglet commun */ }
 
 /* Grille multi-colonnes auto-responsive (se replie seule selon la largeur). */
 .cnm-form-grid {

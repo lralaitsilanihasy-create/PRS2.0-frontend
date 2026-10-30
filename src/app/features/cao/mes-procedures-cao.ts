@@ -91,7 +91,7 @@ import { LIBELLES_ETAT_CEREMONIE, LIBELLES_ETAT_PART, classeCeremonie, classePar
     .mp__carte--attente { border-top-color: var(--info-text); }
     .mp__carte--attente .mp__pas { background: var(--info-bg); color: var(--info-text); border-top-color: var(--info-bdr); }
     .mp__carte--suite { border-top-color: var(--p-600); }
-    .mp__carte--suite .mp__pas { background: var(--p-600); color: #fff; border-top-color: var(--p-600); }
+    .mp__carte--suite .mp__pas { background: var(--bouton-principal); color: #fff; border-top-color: var(--bouton-principal); }
   `,
 })
 export class MesProceduresCao implements OnInit {

@@ -406,7 +406,7 @@ const GESTES: Readonly<Record<string, string>> = {
     /* Liseré de gauche : bleu par défaut, rouge dès que la file dépasse le préavis de 48 h.
        --p-600 et non le --p-500 de la maquette : 4,10:1 sur blanc contre 2,77:1, au-dessus du
        seuil des objets graphiques (WCAG 1.4.11) même si l'information est aussi portée par le texte. */
-    .acc-file::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--p-600); }
+    .acc-file::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--bouton-principal); }
     .acc-file--retard::before { background: var(--danger-text); }
     .acc-file__tete { display: flex; align-items: baseline; gap: 9px; }
     .acc-file__n { font-size: 30px; font-weight: 800; color: var(--n-800); line-height: 1; }

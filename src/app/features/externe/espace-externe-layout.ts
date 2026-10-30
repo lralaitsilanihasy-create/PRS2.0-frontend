@@ -180,8 +180,8 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
     .cl-user__role { font-size: var(--text-xs); color: var(--n-500); }
     .cl-btn { display: inline-flex; align-items: center; gap: 0.35rem; height: 34px; padding: 0 0.8rem; border: 1px solid var(--n-300); border-radius: var(--radius-md); background: #fff; color: var(--n-800); font: inherit; font-size: var(--text-sm); font-weight: 600; text-decoration: none; cursor: pointer; }
     .cl-btn:hover { background: var(--n-100); }
-    .cl-btn--primaire { background: var(--p-700); border-color: var(--p-700); color: #fff; }
-    .cl-btn--primaire:hover { background: var(--p-800); }
+    .cl-btn--primaire { background: var(--bouton-principal); border-color: var(--p-700); color: #fff; }
+    .cl-btn--primaire:hover { background: var(--bouton-principal); }
     .cl-main { flex: 1; padding-top: 24px; padding-bottom: 32px; }
     .cl-top--sombre { background: var(--sidebar-bg); border-bottom: 0; }
     .cl-top--sombre .cl-marque, .cl-top--sombre .cl-user__nom { color: #fff; }
