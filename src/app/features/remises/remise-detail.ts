@@ -32,14 +32,16 @@ const ALERTES: Readonly<Record<string, string>> = {
 
 /** Les refus de la remise en concurrence, dits à l'utilisateur. */
 export function refusRemise(e: ApiError): string {
-  const details = corpsErreur<{ details?: { champ?: string; offres?: unknown[] } }>(e)?.details ?? {};
+  const details = corpsErreur<{ details?: { champ?: string; offres?: unknown[]; lot?: number } }>(e)?.details ?? {};
+  // ⚠️ V151 (§B3) — une remise commune : le lot qui bloque tout le lancement.
+  const duLot = details.lot != null ? ` du lot ${details.lot}` : '';
   switch (codeErreur(e)) {
     case 'CHAMP_OBLIGATOIRE': return `Un champ obligatoire manque${details.champ ? ' (' + details.champ + ')' : ''} : l’objet, les spécifications et le délai d’exécution.`;
     case 'ECHEANCE_INVALIDE': return 'L’échéance se situe entre maintenant et la fin du contrat.';
     case 'CONTRAT_ECHU': return 'Le contrat est échu : plus aucune remise en concurrence.';
     case 'FORME_SANS_REMISE': return 'Un marché à commandes s’exécute par bons de commande, sans remise en concurrence.';
-    case 'SANS_TITULAIRE': return 'Le contrat n’a plus de titulaire à consulter.';
-    case 'REMISE_EN_COURS': return 'Une remise est déjà en cours sur ce contrat : attribuez-la ou déclarez-la infructueuse d’abord.';
+    case 'SANS_TITULAIRE': return `Le contrat${duLot} n’a plus de titulaire à consulter${duLot ? ' : la remise commune à tous les lots ne part pas' : ''}.`;
+    case 'REMISE_EN_COURS': return `Une remise est déjà en cours sur le contrat${duLot} : attribuez-la ou déclarez-la infructueuse d’abord.`;
     case 'NATURE_INVALIDE': return 'Choisissez la nature de la réponse.';
     case 'MONTANT_INVALIDE': return 'Le montant hors taxes doit être positif.';
     case 'DATE_INVALIDE': return 'La date de réception se situe entre le lancement et l’échéance.';
@@ -94,6 +96,12 @@ export type ProfilRemise = 'PRMP' | 'UGPM' | 'CAO' | 'LECTURE';
         {{ r.lanceeLe ? ' · lancée le ' + dateHeure(r.lanceeLe) + (r.lanceePar ? ' par ' + r.lanceePar : '') : '' }}
       </p>
       @if (r.mode === 'COMPLETUDE') { <p class="text-sm text-muted rd__meta">Un seul titulaire : il complète son offre initiale (décret, art. 18).</p> }
+      <!-- ⚠️ 30/10 (« contrat-cadre-4b », §B3 ; V151) — une remise commune à tous les lots (décret, art. 31) ; chaque lot se décide à part. -->
+      @if (r.lots?.length) {
+        <p class="text-sm rd__meta">Remise commune à tous les lots (décret, art. 31) :
+          @for (g of r.lots; track g.idRemise; let dernier = $last) { lot {{ g.lot ?? '—' }} (n° {{ g.numero }}, {{ etat(g.etat).texte.toLowerCase() }}){{ dernier ? '' : ' · ' }} }
+          — l’évaluation et la décision restent celles de chaque lot.</p>
+      }
       @for (a of r.alertes; track a) { <div class="alert alert-warning" role="note"><span>{{ alerte(a) }}</span></div> }
 
       <div class="rd__actions">

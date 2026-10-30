@@ -445,7 +445,8 @@ export interface SousTypeDossier {
  * gardé pour les dossiers relus d'avant la migration). Un dossier de l'un d'eux porte sa fiche ; la saisie le produit depuis elle.
  */
 // ⚠️ 18/10 (décision du pilote) — + DAOO-CC, le contrat-cadre, produit par sa fiche (demande backend « sous-type-contrat-cadre »).
-export const SOUS_TYPES_FICHE_DAO: ReadonlySet<string> = new Set(['DAOO', 'DAOO-CC', 'DAOOI', 'DAOOPREQUAL', 'DAOR', 'DAORI', 'DC', 'DAO']);
+// ⚠️ 30/10 (« contrat-cadre-4b », §B2 ; V152) — + DAOR-CC, l'appel d'offres restreint en contrat-cadre.
+export const SOUS_TYPES_FICHE_DAO: ReadonlySet<string> = new Set(['DAOO', 'DAOO-CC', 'DAOOI', 'DAOOPREQUAL', 'DAOR', 'DAOR-CC', 'DAORI', 'DC', 'DAO']);
 
 /**
  * ⚠️ 19/10 (pilote, demande « dossier-marche-contrat-cadre ») — les sous-types de **marché** qu'une procédure menée dans
@@ -453,7 +454,11 @@ export const SOUS_TYPES_FICHE_DAO: ReadonlySet<string> = new Set(['DAOO', 'DAOO-
  * appel d'offres (ouvert, international, avec pré-qualification, restreint) et prestations intellectuelles. `MAOO-CC` (contrat-cadre)
  * est demandé (B1) : déclaré d'avance, il n'apparaît que lorsque le référentiel le porte. Le gré à gré n'a pas d'attribution.
  */
-export const SOUS_TYPES_MARCHE_PAR_ATTRIBUTION: ReadonlySet<string> = new Set(['MAOO', 'MAOO-CC', 'MAOOI', 'MAOOPREQUAL', 'MAOR', 'MAORI', 'MPI']);
+// ⚠️ 30/10 (« contrat-cadre-4b », §B2 ; V152) — + MAOR-CC.
+export const SOUS_TYPES_MARCHE_PAR_ATTRIBUTION: ReadonlySet<string> = new Set(['MAOO', 'MAOO-CC', 'MAOOI', 'MAOOPREQUAL', 'MAOR', 'MAOR-CC', 'MAORI', 'MPI']);
+
+/** ⚠️ 30/10 (V152) — les sous-types de marché d'un contrat-cadre : montants par titulaire. */
+export const SOUS_TYPES_MARCHE_CONTRAT_CADRE: ReadonlySet<string> = new Set(['MAOO-CC', 'MAOR-CC']);
 
 /**
  * Paramètre système ADMINISTRABLE : seuil de MONTANT au-delà duquel un marché en appel à

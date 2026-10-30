@@ -180,6 +180,10 @@ function aujourdhui(): string {
                         <summary>Lancer une remise en concurrence…</summary>
                         <div class="cv__form cv__form--remise">
                           <p class="text-sm text-muted">Tous les titulaires non retirés sont consultés (art. 21) ; s’il n’en reste qu’un, il est invité à compléter son offre initiale. La lettre d’invitation suit l’annexe 1 du document type.</p>
+                          @if (c.rythme === selonCalendrier) {
+                            <!-- ⚠️ 30/10 (« contrat-cadre-4b », §B3 ; V151) — au calendrier, la remise porte sur tous les lots de la procédure. -->
+                            <p class="text-sm" role="note">Remises au calendrier : la remise est lancée pour <strong>tous les lots</strong> de la procédure au même calendrier (décret, art. 31), une par lot ; chaque lot s’évalue et se décide à part.</p>
+                          }
                           <label class="form-group"><span class="form-label">Objet du marché subséquent</span><input class="form-control" type="text" [value]="lr('objet')" (input)="poserLr('objet', $any($event.target).value)" /></label>
                           <label class="form-group"><span class="form-label">Spécifications (annexe 2 de la lettre)</span><textarea class="form-control" rows="3" [value]="lr('specifications')" (input)="poserLr('specifications', $any($event.target).value)"></textarea></label>
                           <label class="form-group"><span class="form-label">Critères d’attribution (facultatif)</span><input class="form-control" type="text" [value]="lr('criteres')" (input)="poserLr('criteres', $any($event.target).value)" /></label>
@@ -290,6 +294,8 @@ export class ContratsVigueur implements OnInit {
   })();
 
   readonly date = dateFr;
+  /** ⚠️ 30/10 (V151) — le rythme qui fait une remise commune à tous les lots (texte du serveur, `ContratVigueurService.SELON_CALENDRIER`). */
+  readonly selonCalendrier = 'Selon le calendrier fixé ci-après';
   readonly dateHeure = dateHeureFr;
   readonly ariary = ariary;
   readonly aujourdhui = aujourdhui();
@@ -426,7 +432,9 @@ export class ContratsVigueur implements OnInit {
         this.occupe.set(false);
         this.lancement.set({});
         this.remises.update((l) => [r, ...l]);
-        this.toast.success(`La remise n° ${r.numero} est lancée : les titulaires reçoivent leur lettre d’invitation.`);
+        this.toast.success((r.lots?.length ?? 0) > 1
+          ? `La remise commune est lancée pour ${r.lots!.length} lots : les titulaires de chaque lot reçoivent leur lettre d’invitation.`
+          : `La remise n° ${r.numero} est lancée : les titulaires reçoivent leur lettre d’invitation.`);
       },
       error: (e: ApiError) => {
         this.occupe.set(false);

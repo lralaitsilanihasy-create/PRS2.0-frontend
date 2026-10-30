@@ -212,6 +212,13 @@ describe('Besoin de la fiche DAO (bloc B12, livraison V45 du 25/09)', () => {
     put.flush([{ idArticle: 1, lot: 1, ordre: 1, designation: 'Carburant', unite: 'L', quantiteMin: 1000, quantiteMax: 5000, caracteristiques: [] }]);
   });
 
+  it('⚠️ 30/10 (V151) — contrat-cadre : la quantité se dit « indicative » (décret, art. 6, 8 et 34)', () => {
+    monter({ typeMarche: 'CONTRAT_CADRE' });
+    ouvrir([{ idArticle: 1, lot: 1, ordre: 1, designation: 'Papier', unite: 'rame', quantite: 100, caracteristiques: [] }]);
+    expect(Array.from(racine().querySelectorAll('thead th')).map((th) => texte(th))).toContain('Quantité indicative');
+    expect(racine().querySelector('input[aria-label="Quantité indicative de l’article 1"]')).not.toBeNull();
+  });
+
   it('« Dupliquer depuis le lot n » : les lots répétés se recopient, sans reprendre les identifiants', () => {
     monter({ nbLots: 3 });
     ouvrir(ARTICLES);

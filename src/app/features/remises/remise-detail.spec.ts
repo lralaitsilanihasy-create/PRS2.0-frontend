@@ -5,7 +5,8 @@ import { vi } from 'vitest';
 
 import { ToastService } from '../../core/notifications/toast.service';
 import { Remise, ReponseRemise } from '../../models';
-import { ProfilRemise, RemiseDetail } from './remise-detail';
+import { ApiError } from '../../core/errors/api-error';
+import { ProfilRemise, RemiseDetail, refusRemise } from './remise-detail';
 
 // ⚠️ Lot MS-2 (V125, 16/10) — une remise en concurrence : réponses, évaluation (président de la CAO, H1), décision de la PRMP.
 const REPONSE = (n: number, extra: Partial<ReponseRemise> = {}): ReponseRemise => ({
@@ -51,6 +52,18 @@ describe('Remise en concurrence (MS-2)', () => {
     expect(texte()).toContain('restent fermées jusqu’à l’échéance');
     expect(bouton('Arrêter l’évaluation')).toBeUndefined();
     expect(texte()).toContain('Enregistrer une réponse reçue sur papier');
+  });
+
+  it('⚠️ 30/10 (V151) — une remise commune à tous les lots : la remise de chaque lot, et le lot qui bloque le lancement', () => {
+    monter(REMISE({ idGroupe: 5, lots: [
+      { idRemise: 5, idContrat: 1, lot: 1, numero: 2, mode: 'CONCURRENCE', etat: 'EN_COURS' },
+      { idRemise: 6, idContrat: 2, lot: 2, numero: 1, mode: 'COMPLETUDE', etat: 'ATTRIBUEE' },
+    ] }), 'PRMP');
+    expect(texte()).toContain('Remise commune à tous les lots (décret, art. 31)');
+    expect(texte()).toContain('lot 2 (n° 1, marché subséquent attribué)');
+    const refus = (code: string, lot?: number): ApiError => ({ status: 409, message: '', error: { code, ...(lot ? { details: { lot } } : {}) } }) as unknown as ApiError;
+    expect(refusRemise(refus('SANS_TITULAIRE', 2))).toBe('Le contrat du lot 2 n’a plus de titulaire à consulter : la remise commune à tous les lots ne part pas.');
+    expect(refusRemise(refus('SANS_TITULAIRE'))).toBe('Le contrat n’a plus de titulaire à consulter.');
   });
 
   it('le président de la CAO évalue : conformité de chaque réponse (motif si non conforme), prix moyen, proposition', () => {

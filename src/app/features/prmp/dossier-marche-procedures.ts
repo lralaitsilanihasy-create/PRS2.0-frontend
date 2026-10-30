@@ -24,6 +24,8 @@ export const SOUS_TYPE_MEC_DU_MARCHE: Readonly<Record<string, string>> = {
   MAOOI: 'DAOOI',
   MAOOPREQUAL: 'DAOOPREQUAL',
   MAOR: 'DAOR',
+  // ⚠️ 30/10 (« contrat-cadre-4b », §B2 ; V152).
+  'MAOR-CC': 'DAOR-CC',
   MAORI: 'DAORI',
   MPI: 'DC',
 };

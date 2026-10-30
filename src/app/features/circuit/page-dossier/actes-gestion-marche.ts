@@ -5,7 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ApiError } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
-import { DemandeActe, Dossier, MarcheActes } from '../../../models';
+import { DemandeActe, Dossier, MarcheActes, SOUS_TYPES_MARCHE_CONTRAT_CADRE } from '../../../models';
 import { ActesGestionService } from '../../../services';
 import { ModaleDirective } from '../../../shared/a11y/modale.directive';
 import { ActeFormulaire, demandeVide } from './acte-formulaire';
@@ -29,7 +29,7 @@ import { LienDossier } from './lien-dossier';
         <section class="agm" aria-labelledby="agm-titre">
           <h2 class="agm__titre" id="agm-titre">Actes de gestion du marché</h2>
           <p class="agm__faits">
-            @if (m.montantInitialHt == null && m.sousTypeMarche === 'MAOO-CC') {
+            @if (m.montantInitialHt == null && contratCadre.has(m.sousTypeMarche ?? '')) {
               <span>Contrat-cadre : montants par titulaire</span>
             } @else {
               <span>Montant initial : <strong>{{ ariary(m.montantInitialHt) }}</strong> HT{{ m.sourceMontantInitial === 'DECLARE' ? ' (déclaré)' : m.sourceMontantInitial === 'PROPOSITION' ? ' (offre proposée, pas encore attribuée)' : '' }}</span>
@@ -129,6 +129,8 @@ export class ActesGestionMarche implements OnInit {
   readonly dossier = input.required<Dossier>();
 
   readonly ariary = ariary;
+  /** ⚠️ 30/10 (V152) — MAOO-CC et MAOR-CC : un contrat-cadre n'a pas de montant initial unique. */
+  readonly contratCadre = SOUS_TYPES_MARCHE_CONTRAT_CADRE;
   readonly jj = dateCourte;
   readonly libelle = libelleActe;
   readonly marcheControle = marcheControle;

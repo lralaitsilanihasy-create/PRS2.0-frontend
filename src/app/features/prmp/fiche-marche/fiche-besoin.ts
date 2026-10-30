@@ -79,6 +79,11 @@ export class FicheBesoin implements ListeASauver {
     return this.saisieParLot() && n > 1 ? Array.from({ length: n }, (_, i) => i + 1) : [];
   });
   readonly aCommande = computed(() => this.typeMarche() === 'A_COMMANDE');
+  /**
+   * ⚠️ 30/10 (« contrat-cadre-4b », §B1 ; V151 ; décret n° 2019-1064, art. 6, 8 et 34) — en contrat-cadre, les quantités sont
+   * indicatives, sans engagement ni minimum : la colonne le dit (le serveur titre de même la liste des fournitures et le bordereau).
+   */
+  readonly libelleQuantite = computed(() => (this.typeMarche() === 'CONTRAT_CADRE' ? 'Quantité indicative' : 'Quantité'));
   readonly travaux = computed(() => this.categorie() === 'TRAVAUX');
   /**
    * ⚠️ Le lot **affiché** : celui qu'on a ouvert, ou le premier à défaut. Il est dérivé et non posé au retour

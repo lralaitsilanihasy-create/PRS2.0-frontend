@@ -48,7 +48,7 @@
               <th scope="col">Désignation</th>
               <th scope="col" class="bs__c-b">Libellé au bordereau</th>
               <th scope="col" class="bs__c-u">Unité</th>
-              <th scope="col" class="bs__c-q">Quantité</th>
+              <th scope="col" class="bs__c-q">{{ libelleQuantite() }}</th>
               <th scope="col" class="bs__c-pe">Prix unitaire estimé (HT) <span class="bs__np">non publié</span></th>
               <th scope="col" class="bs__c-pl">Plafond (%)</th>
               <th scope="col" class="bs__c-sd">Sous-détail</th>
@@ -115,7 +115,7 @@
                     @if (lecture()) {
                       <span class="bs__lu">{{ l.quantite }}</span>
                     } @else {
-                      <input class="form-control" type="number" min="0" step="0.01" [value]="l.quantite ?? ''" [attr.aria-label]="'Quantité de l’article ' + (r + 1)" (input)="saisirNombre(l, 'quantite', $event)" />
+                      <input class="form-control" type="number" min="0" step="0.01" [value]="l.quantite ?? ''" [attr.aria-label]="libelleQuantite() + ' de l’article ' + (r + 1)" (input)="saisirNombre(l, 'quantite', $event)" />
                       @if (erreurDe(r, 'quantite'); as msg) { <span class="form-error">{{ msg }}</span> }
                     }
                   </td>
@@ -164,7 +164,7 @@
                 <th scope="col" class="bs__c-q">Quantité min.</th>
                 <th scope="col" class="bs__c-q">Quantité max.</th>
               } @else {
-                <th scope="col" class="bs__c-q">Quantité</th>
+                <th scope="col" class="bs__c-q">{{ libelleQuantite() }}</th>
               }
               <th scope="col" class="bs__c-pe">Prix unitaire estimé (HT) <span class="bs__np">non publié</span></th>
               <th scope="col" class="bs__c-a"><span class="bs__sr">Actions</span></th>
@@ -220,7 +220,7 @@
                     @if (lecture()) {
                       <span class="bs__lu">{{ l.quantite }}</span>
                     } @else {
-                      <input class="form-control" type="number" min="0" [value]="l.quantite ?? ''" [attr.aria-label]="'Quantité de l’article ' + ($index + 1)" (input)="saisirNombre(l, 'quantite', $event)" />
+                      <input class="form-control" type="number" min="0" [value]="l.quantite ?? ''" [attr.aria-label]="libelleQuantite() + ' de l’article ' + ($index + 1)" (input)="saisirNombre(l, 'quantite', $event)" />
                       @if (erreurDe($index, 'quantite'); as msg) { <span class="form-error">{{ msg }}</span> }
                     }
                   </td>

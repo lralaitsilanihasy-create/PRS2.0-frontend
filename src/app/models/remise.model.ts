@@ -78,6 +78,22 @@ export interface Remise {
   decideeLe: string | null;
   decideePar: string | null;
   alertes: AlerteRemise[];
+  /**
+   * ⚠️ 30/10 (« contrat-cadre-4b », §B3 ; V151 ; décret n° 2019-1064, art. 31) — la remise commune à tous les lots : son groupe et la
+   * remise de chaque lot (celle-ci comprise) ; nul et vide pour une remise d'un seul lot. Évaluation et décision restent par lot.
+   */
+  idGroupe?: number | null;
+  lots?: LotGroupeRemise[];
+}
+
+/** ⚠️ V151 — la remise d'un lot dans une remise commune. */
+export interface LotGroupeRemise {
+  idRemise: number;
+  idContrat: number;
+  lot: number | null;
+  numero: number;
+  mode: ModeRemiseConcurrence;
+  etat: EtatRemise;
 }
 
 /** Corps de `POST /api/contrats-en-vigueur/{id}/remises` (PRMP ou UGPM). `echeance` : date-heure ISO locale. */
