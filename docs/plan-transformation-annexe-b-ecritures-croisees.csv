@@ -1,0 +1,54 @@
+﻿domaine_qui_ecrit;domaine_proprietaire;classe;depot;ecritures;phase
+EXECUTION;CONTROLE;ActesGestionService;ActeGestionRepository;2;2 entités replacées
+PASSATION;CONTROLE;AmiPreselectionService;PieceJointeDossierRepository;2;3b pièces du dossier
+PASSATION;EVALUATION;AmiPreselectionService;EvaluationJournalRepository;1;4 événements
+PASSATION;EVALUATION;AmiService;EvaluationJournalRepository;1;4 événements
+EVALUATION;CONTROLE;AttributionService;PieceJointeDossierRepository;2;3b pièces du dossier
+IDENTITE;ACHETEURS;AuthService;PrmpRepository;2;3c organisation
+IDENTITE;ACHETEURS;AuthService;PrmpEntiteDemandeRepository;2;3c organisation
+IDENTITE;ACHETEURS;AuthService;UgpmRepository;1;3c organisation
+CANDIDATS;IDENTITE;CandidatService;CompteAuthRepository;2;3a comptes
+CONTROLE;PLANIFICATION;CircuitCascadeService;SnapshotRectifBeneficiaireRepository;1;4 événements
+CONTROLE;PLANIFICATION;CircuitCascadeService;SnapshotRectifLotRepository;1;4 événements
+CONTROLE;PLANIFICATION;CircuitCascadeService;SnapshotRectifPrevisionRepository;1;4 événements
+CONTROLE;PLANIFICATION;CircuitCascadeService;SnapshotRectifLigneRepository;1;4 événements
+PASSATION;IDENTITE;CompteCaoService;CompteAuthRepository;2;3a comptes
+PASSATION;IDENTITE;CompteDepositaireService;CompteAuthRepository;2;3a comptes
+CONTROLE;IDENTITE;ControleurService;CompteAuthRepository;2;3a comptes
+CONTROLE;IDENTITE;ControleurService;SessionUtilisateurRepository;1;3a comptes
+FICHE_DAO;CONTROLE;DocumentsFicheMarcheService;PieceJointeDossierRepository;3;3b pièces du dossier
+CONTROLE;PLANIFICATION;DossierIntegriteService;PpmRepository;1;3d nœud dossier ↔ plan
+CONTROLE;PLANIFICATION;DossierService;PpmRepository;1;3d nœud dossier ↔ plan
+CONTROLE;PLANIFICATION;DossierService;MarcheRepository;1;3d nœud dossier ↔ plan
+CONTROLE;PLANIFICATION;DossierService;ChangementLigneRepository;1;3d nœud dossier ↔ plan
+CONTROLE;PLANIFICATION;DossierService;LotRepository;1;3d nœud dossier ↔ plan
+FICHE_DAO;CONTROLE;FicheMarcheDossierService;DossierRepository;2;3d nœud dossier ↔ plan
+FICHE_DAO;PLANIFICATION;FicheMarcheService;MarcheRepository;1;3d nœud dossier ↔ plan
+PLANIFICATION;FICHE_DAO;IdentiteImportService;ImportVerdictRepository;1;3d nœud dossier ↔ plan
+IDENTITE;ACHETEURS;InscriptionService;PrmpEntiteDemandeRepository;2;3c organisation
+IDENTITE;ACHETEURS;InscriptionService;PrmpEntiteRepository;1;3c organisation
+IDENTITE;ACHETEURS;InscriptionService;EntiteContractRepository;1;3c organisation
+CONTROLE;EVALUATION;MarchePapierService;AttributionRepository;1;3d nœud dossier ↔ plan
+PLANIFICATION;ACHETEURS;MarcheService;ServiceBeneficiaireRepository;1;3c organisation
+PLANIFICATION;CONTROLE;MarcheService;AnomalieRepository;1;2 entités replacées
+PLANIFICATION;CONTROLE;MiseAJourPpmService;DossierRepository;2;3d nœud dossier ↔ plan
+PLANIFICATION;ACHETEURS;MiseAJourPpmService;ServiceBeneficiaireRepository;1;3c organisation
+PLANIFICATION;CONTROLE;MiseAJourPpmService;PieceJointeDossierRepository;2;3b pièces du dossier
+FICHE_DAO;IDENTITE;ParametresInternesService;ResponsableProcedureRepository;2;3d nœud dossier ↔ plan
+PLANIFICATION;CONTROLE;PpmService;DossierRepository;1;3d nœud dossier ↔ plan
+PLANIFICATION;CONTROLE;PpmService;AnomalieRepository;1;2 entités replacées
+PLANIFICATION;CONTROLE;PreControlePpmService;AnomalieRepository;4;2 entités replacées
+PLANIFICATION;CONTROLE;PreControlePpmService;AnomalieLigneRepository;2;2 entités replacées
+ACHETEURS;IDENTITE;PrmpService;CompteAuthRepository;2;3a comptes
+PLANIFICATION;CONTROLE;PublicationAgpmService;PieceJointeDossierRepository;1;3b pièces du dossier
+PLANIFICATION;CONTROLE;SaisieService;DossierRepository;1;3d nœud dossier ↔ plan
+PLANIFICATION;IDENTITE;SaisieService;CompteRepository;1;3a comptes
+PLANIFICATION;ACHETEURS;SaisieService;ServiceBeneficiaireRepository;2;3c organisation
+PLANIFICATION;ACHETEURS;SaisieService;SoaBeneficiaireRepository;2;3c organisation
+EVALUATION;CONTROLE;SansSuiteService;PieceJointeDossierRepository;1;3b pièces du dossier
+PASSATION;EVALUATION;SeanceFinanciereService;SeanceFinanciereRepository;6;2 entités replacées
+PASSATION;EVALUATION;SeanceFinanciereService;EvaluationJournalRepository;1;4 événements
+ACHETEURS;IDENTITE;UgpmService;CompteAuthRepository;2;3a comptes
+PLANIFICATION;CONTROLE;VersionDossierService;VersionDossierRepository;2;3d nœud dossier ↔ plan
+CONTROLE;IDENTITE;AlerteScheduler;CompteAuthRepository;1;3a comptes
+CONTROLE;PLANIFICATION;AlerteScheduler;EcheanceRepository;1;4 événements
