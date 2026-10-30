@@ -132,6 +132,16 @@ import { DossierContenuStore } from './dossier-contenu.store';
           }
         </div>
       }
+      <!-- ⚠️ 30/10 (pilote) — hors brouillon aussi, les pièces que l'application fournit en données renvoient à leur onglet. -->
+      @if (!exigees().length && renvois().length && !sansEntete()) {
+        <p class="pe-renvoi">
+          <span class="pe-etat" aria-hidden="true">✓</span>
+          Fournies par l’application, dans leurs onglets :
+          @for (r of renvois(); track r.onglet; let dernier = $last) {
+            <button type="button" class="pe-lien" (click)="voir.emit(r.onglet)" [attr.title]="r.pieces">{{ r.libelle }}</button>{{ dernier ? '' : ' · ' }}
+          }
+        </p>
+      }
       @if (piecesInitialesListees().length > 0) {
         <div class="pieces-group">
           <div class="pieces-group-hd">
@@ -311,6 +321,14 @@ export class DossierPieces {
   readonly exigees = signal<TypePieceJointe[]>([]);
   /** ⚠️ 19/10 — hors brouillon : les pièces fournies par l'application (fiche de présentation, PV produits), montrées à tous. */
   readonly fourniesSoumis = signal<TypePieceJointe[]>([]);
+  /**
+   * ⚠️ 30/10 (pilote, « ces pièces ne doivent plus être des pièces jointes mais des données ») — la liste des pièces du dossier, lue
+   * dans tous les états : hors brouillon, elle dit quelles pièces l'application fournit en données, pour ne plus lister un fichier
+   * joint sur l'une d'elles à côté de l'onglet qui la présente.
+   */
+  readonly lues = signal<TypePieceJointe[]>([]);
+  /** ⚠️ 30/10 — les types de pièces que l'application fournit et qu'un onglet du dossier présente : un fichier joint dessus ne se liste plus. */
+  readonly typesEnDonnees = computed(() => new Set(this.lues().filter((t) => this.fournie(t) && this.ongletDe(t)).map((t) => t.idTypePiece)));
   readonly deposees = computed(() => new Set(this.contenu.pieces().map((p) => p.idTypePiece)));
   readonly nbObligatoiresManquantes = computed(() => this.exigees().filter((t) => this.manquante(t)).length);
   private readonly pvService = inject(PvExamenService);
@@ -366,18 +384,22 @@ export class DossierPieces {
       const d = this.contenu.dossier();
       this.exigees.set([]);
       this.fourniesSoumis.set([]);
+      this.lues.set([]);
       // ⚠️ 19/10 (pilote) — hors brouillon, la liste est lue aussi, pour les seules pièces que l'application fournit : sans elle, la
       // fiche de présentation et les PV qu'elle produit disparaissaient de la page à la soumission (403 ou 404 : rien ne s'affiche).
       if (d.statut !== 'BROUILLON') {
         const lecture = this.dossiers.piecesExigees(d.idDossier).subscribe({
-          next: (l) => this.fourniesSoumis.set([...l].filter((t) => this.fournie(t) && !this.ongletDe(t)).sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0))),
+          next: (l) => {
+            this.lues.set(l);
+            this.fourniesSoumis.set([...l].filter((t) => this.fournie(t) && !this.ongletDe(t)).sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0)));
+          },
           error: () => this.fourniesSoumis.set([]),
         });
         nettoyer(() => lecture.unsubscribe());
         return;
       }
       const abonnement = this.dossiers.piecesExigees(d.idDossier).subscribe({
-        next: (l) => this.exigees.set([...l].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0))),
+        next: (l) => { this.lues.set(l); this.exigees.set([...l].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0))); },
         error: () => this.exigees.set([]),
       });
       // Silencieux : 404 sans publication, 403/409 hors plan.
@@ -393,7 +415,8 @@ export class DossierPieces {
   private readonly typesExiges = computed(() => new Set(this.exigees().map((t) => t.idTypePiece)));
   /** ⚠️ 18/10 — le groupe des pièces initiales ne garde que celles qu'aucune pièce exigée n'a déjà montrées. */
   readonly piecesInitialesListees = computed(() => this.piecesInitiales()
-    .filter((p) => !this.typesExiges().has(p.idTypePiece) && !ongletDuFichier(p, avecProcedure(this.contenu.dossier()))));
+    .filter((p) => !this.typesExiges().has(p.idTypePiece) && !this.typesEnDonnees().has(p.idTypePiece)
+      && !ongletDuFichier(p, avecProcedure(this.contenu.dossier()))));
   fichiersDe(t: TypePieceJointe): PieceJointeDossier[] { return this.piecesInitiales().filter((p) => p.idTypePiece === t.idTypePiece); }
 
   /** ⚠️ 18/10 (pilote) — les pièces exigées que n'affiche aucun onglet du dossier : les autres sont remplacées par un renvoi. */
@@ -405,7 +428,7 @@ export class DossierPieces {
       const l = parOnglet.get(o) ?? [];
       if (!l.includes(libelle)) parOnglet.set(o, [...l, libelle]);
     };
-    for (const t of this.exigees()) {
+    for (const t of this.lues()) {
       const o = this.ongletDe(t);
       if (o) ajouter(o, t.libellePiece);
     }

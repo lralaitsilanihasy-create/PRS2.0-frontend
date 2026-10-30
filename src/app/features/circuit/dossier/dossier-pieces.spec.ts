@@ -85,6 +85,15 @@ describe('DossierPieces — pièces exigées par sous-type (manuel de contrôle,
     expect(emis).toEqual(['plan']);
   });
 
+  it('30/10 (pilote) — hors brouillon, un fichier joint sur une pièce que l’application fournit en données n’est plus listé : l’onglet prévaut', () => {
+    // La fiche de présentation est fournie par l'application ; le dossier porte pourtant un fichier déposé sur ce type (fiche.pdf).
+    const { el } = monter('SOUMIS', [
+      { idTypePiece: 3, libellePiece: 'Fiche de présentation signée', obligatoire: true, code: 'FICHE_PRESENTATION', ordre: 1, fourniePar: 'APPLICATION' },
+    ], 5);
+    expect(texte(el)).not.toContain('fiche.pdf');
+    expect(texte(el.querySelector('.pe-renvoi'))).toContain('Fiche de présentation');
+  });
+
   it('hors brouillon : la liste exigée n’est pas montrée ; seules les pièces fournies par l’application restent, et s’ouvrent (19/10)', () => {
     const { el } = monter('SOUMIS', [
       { idTypePiece: 70, libellePiece: 'Fiche de présentation', obligatoire: true, code: 'FICHE_PRESENTATION', ordre: 1, fourniePar: 'APPLICATION', lien: '/api/dossiers/42/fiche-presentation' },

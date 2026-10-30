@@ -69,7 +69,8 @@ export function documentsDuDossier(contenu: DossierContenuStore, manquantes = 0)
   // ⚠️ 18/10 (pilote) — le compteur dit ce que montre « Pièces jointes » : les fichiers produits par la fiche (DAO complet, projet d'avis,
   // bordereau) se lisent dans leur propre élément et n'y comptent pas.
   const avecFiche = avecProcedure(d);
-  const nPieces = contenu.pieces().filter((p) => !ongletDuFichier(p, avecFiche)).length;
+  // ⚠️ 30/10 (pilote) — ni un fichier joint sur une pièce que l'application fournit en données (fiche de présentation, PV…).
+  const nPieces = contenu.pieces().filter((p) => !ongletDuFichier(p, avecFiche) && !contenu.typesEnDonnees().has(p.idTypePiece)).length;
   liste.push({ cle: 'pieces', libelle: 'Pièces jointes', n: nPieces, resume: manquantes
     ? `${manquantes} obligatoire${manquantes > 1 ? 's' : ''} manquante${manquantes > 1 ? 's' : ''}`
     : nPieces ? `${nPieces} fichier${nPieces > 1 ? 's' : ''} joint${nPieces > 1 ? 's' : ''}` : 'Aucun fichier joint' });

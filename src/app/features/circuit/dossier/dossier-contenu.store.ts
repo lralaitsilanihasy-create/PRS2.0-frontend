@@ -2,7 +2,10 @@ import { Injectable, Signal, computed, inject, signal } from '@angular/core';
 import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
-import { ActionDossier, Capm, Chronometrage, ControleResultat, DiffDossier, Dossier, Instantane, Marche, MarchePrevision, ModePassation, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne, VersionArchivee } from '../../../models';
+import { ActionDossier, Capm, Chronometrage, ControleResultat, DiffDossier, Dossier, Instantane, Marche, MarchePrevision, ModePassation, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne, TypePieceJointe, VersionArchivee } from '../../../models';
+
+/** ⚠️ 30/10 — les pièces fournies par l'application qu'un élément du dossier présente en données (voir `ongletDe` de la liste des pièces). */
+const CODES_EN_DONNEES: ReadonlySet<string> = new Set(['FICHE_PRESENTATION', 'PV_CNM_DMC', 'PV_VALIDATION_CAO', 'CANEVAS_RAPPORT', 'CALENDRIER', 'AGPM_CONTROLE', 'PPM_CONTROLE']);
 import {
   CapmService,
   ControleService,
@@ -282,6 +285,12 @@ export class DossierContenuStore {
   readonly marches = signal<Marche[]>([]);
   readonly pieces = signal<PieceJointeDossier[]>([]);
   /**
+   * ⚠️ 30/10 (pilote, « ces pièces ne doivent plus être des pièces jointes mais des données ») — les types de pièces que l'application
+   * fournit et qu'un élément du dossier présente en données (fiche de présentation, PV de la Commission, PV de validation de la CAO,
+   * canevas, plan) : un fichier joint sur l'un d'eux ne compte plus dans « Pièces jointes ». Lu pour un dossier qui porte une procédure.
+   */
+  readonly typesEnDonnees = signal<ReadonlySet<number>>(new Set());
+  /**
    * ⚠️ Manuel révisé, R4 (V104, 13/10) — les écrans figés à la soumission d'un dossier de procédure (DMC, DDM, DGC, DSS), lus dans la
    * vague ; un plan (DDP) n'en a pas (il garde ses versions archivées). Silencieux : sans instantané, l'onglet n'apparaît pas.
    */
@@ -391,7 +400,11 @@ export class DossierContenuStore {
         // Écrans figés (R4) : dans la vague, silencieux — sans instantané (dossier soumis avant V104, ou non soumis), pas d'onglet.
         instantanes: this.instantaneService.liste(id).pipe(catchError(() => of([] as Instantane[]))),
         controles: this.controleService.liste(id).pipe(catchError(() => of([] as ControleResultat[]))),
-      }).subscribe(({ typeMap, localiteMap, entiteMap, pieces, journal, chrono, instantanes, controles }) => {
+        exigees: this.dossier().idDmc || this.dossier().procedure
+          ? this.dossierService.piecesExigees(id).pipe(catchError(() => of([] as TypePieceJointe[])))
+          : of([] as TypePieceJointe[]),
+      }).subscribe(({ typeMap, localiteMap, entiteMap, pieces, journal, chrono, instantanes, controles, exigees }) => {
+        this.typesEnDonnees.set(new Set(exigees.filter((t) => t.fourniePar === 'APPLICATION' && CODES_EN_DONNEES.has(t.code ?? '')).map((t) => t.idTypePiece)));
         this.typeMap.set(typeMap);
         this.localiteMap.set(localiteMap);
         this.entiteMap.set(entiteMap);
