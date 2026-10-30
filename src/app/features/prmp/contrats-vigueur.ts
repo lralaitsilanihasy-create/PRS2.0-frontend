@@ -24,6 +24,8 @@ const ALERTES: Readonly<Record<string, { texte: string; classe: string }>> = {
   MONTANT_ESTIME_DEPASSE: { texte: 'Montant estimé dépassé', classe: 'badge-warning' },
   // ⚠️ 29/10 (« contrat-cadre-4a », §B3 ; V147) — une échéance du calendrier des remises approche (J−15) ou est passée sans remise.
   REMISE_A_LANCER: { texte: 'Remise en concurrence à lancer', classe: 'badge-warning' },
+  // ⚠️ 29/10 (« marche-a-commandes-champs », D3) — la valeur maximale estimée du marché à commandes est dépassée : signalé, jamais refusé.
+  MAXIMUM_ESTIME_DEPASSE: { texte: 'Maximum estimé dépassé', classe: 'badge-warning' },
 };
 
 const TYPES: Readonly<Record<TypeContratVigueur, string>> = {
@@ -454,7 +456,7 @@ export class ContratsVigueur implements OnInit {
       next: (maj) => {
         this.occupe.set(false);
         this.contrats.update((l) => l.map((x) => (x.id === maj.id ? maj : x)));
-        this.cleBons.update((n) => n + 1);   // le maximum annuel a pu changer : la consommation se relit
+        this.cleBons.update((n) => n + 1);   // la durée, les quantités ou le maximum ont pu changer : la consommation se relit
         this.toast.success(`Les termes du contrat sont relus depuis la fiche : fin le ${dateFr(maj.dateFin)}.`);
       },
       error: (e: ApiError) => {

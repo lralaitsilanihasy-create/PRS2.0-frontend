@@ -80,7 +80,7 @@ describe('Bons de commande d’un contrat (MS-3)', () => {
       { idArticle: 42, lot: 2, designation: 'Autre lot', unite: 'u', caracteristiques: [] },
     ]);
     fixture.detectChanges();
-    expect(texte()).toContain('Minimum · maximum annuels');
+    expect(texte()).toContain('Minimum annuel · maximum estimé');
     expect(texte()).toContain('minimum annuel n’est pas atteint');
     const objet = Array.from(racine().querySelectorAll('label')).find((l) => l.textContent?.startsWith('Objet'))!.querySelector('input')!;
     saisir(objet, 'Ramettes d’octobre');
@@ -122,22 +122,25 @@ describe('Bons de commande d’un contrat (MS-3)', () => {
     expect(refusBon(api(409, { code: 'REMISE_NON_ATTRIBUEE' }))).toContain('art. 33');
     // ⚠️ V148 (« bons-reception », §B1).
     expect(refusBon(api(409, { code: 'QUANTITE_MAX_DEPASSEE', details: { rang: 1, idArticle: 41, quantiteMax: 500, dejaCommande: 480, demande: 30 } })))
-      .toBe('L’article de la ligne n° 1 dépasse sa quantité maximale de l’année (500 ; déjà commandé 480, demandé 30).');
+      .toBe('L’article de la ligne n° 1 dépasse sa quantité maximale sur la durée du marché (500 ; déjà commandé 480, demandé 30).');
   });
 
-  it('V148 — marché à commandes : quantités de l’année par article, reste dans le choix ; le bon dit son TTC', () => {
+  it('V148 — marché à commandes : quantités sur la durée par article (D1), reste dans le choix ; le bon dit son TTC', () => {
     const bon = { ...CONSO().bons[0], typeMarche: 'A_COMMANDE' as const, idRemise: null, numeroRemise: null, tauxTva: 20, montantTva: 60000, montantTtc: 360000 };
     monter(CONTRAT({ typeMarche: 'A_COMMANDE' }), CONSO({
-      typeMarche: 'A_COMMANDE', subsequents: [], bons: [bon], cumulTtc: 360000, alertes: ['QUANTITE_MIN_NON_ATTEINTE'],
-      articles: [{ idArticle: 41, designation: 'Ramette A4', unite: 'paquet', quantiteMin: 100, quantiteMax: 500, commandeAnnee: 480, resteQuantite: 20 }],
+      typeMarche: 'A_COMMANDE', subsequents: [], bons: [bon], cumulTtc: 360000, alertes: ['QUANTITE_MIN_NON_ATTEINTE', 'MAXIMUM_ESTIME_DEPASSE'], maximum: 300000, resteMaximum: -60000,
+      articles: [{ idArticle: 41, designation: 'Ramette A4', unite: 'paquet', quantiteMin: 100, quantiteMax: 500, commandeDuree: 480, resteQuantite: 20 }],
     }));
     http.expectOne('/api/fiches-marche/50/articles').flush([{ idArticle: 41, lot: 1, designation: 'Ramette A4', unite: 'paquet', caracteristiques: [] }]);
     fixture.detectChanges();
-    const quantites = racine().querySelector('table[aria-label="Quantités commandées cette année par article"]')!;
+    const quantites = racine().querySelector('table[aria-label="Quantités commandées sur la durée du marché, par article"]')!;
     expect(Array.from(quantites.querySelectorAll('tbody td')).map((td) => td.textContent?.trim())).toEqual(['Ramette A4', 'paquet', '100', '500', '480', '20']);
     expect(texte()).toContain('360 000');
     expect(texte()).toContain('TTC (20 %)');
     expect(texte()).toContain('quantité minimale');
+    // D3 — le maximum estimé n'est plus un plafond : dépassé, il est signalé, et le reste négatif se lit en rouge.
+    expect(texte()).toContain('valeur maximale estimée du marché à commandes');
+    expect(racine().querySelector('.bc__depasse')?.textContent?.replace(/\s/g, ' ')).toContain('-60 000');
     expect((racine().querySelector('.bc__form tbody select') as HTMLSelectElement).options[1].textContent).toBe('Ramette A4 — reste 20');
   });
 });

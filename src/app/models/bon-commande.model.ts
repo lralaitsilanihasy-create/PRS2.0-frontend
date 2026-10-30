@@ -10,16 +10,20 @@ import type { TypeContratVigueur } from './contrat-vigueur.model';
 export type EtatBonCommande = 'EMIS' | 'ANNULE' | (string & {});
 
 /** ⚠️ 29/10 (« bons-reception », §B1 ; V148) — `QUANTITE_MIN_NON_ATTEINTE` n'est servie qu'ici, pas dans les alertes du contrat. */
-export type AlerteConsommation = 'MINIMUM_NON_ATTEINT' | 'MONTANT_ESTIME_DEPASSE' | 'QUANTITE_MIN_NON_ATTEINTE' | (string & {});
+export type AlerteConsommation = 'MINIMUM_NON_ATTEINT' | 'MONTANT_ESTIME_DEPASSE' | 'QUANTITE_MIN_NON_ATTEINTE' | 'MAXIMUM_ESTIME_DEPASSE' | (string & {});
 
-/** ⚠️ 29/10 (« bons-reception », §B1 ; V148) — un article du besoin d'un marché à commandes et sa consommation de l'année. */
+/**
+ * ⚠️ 29/10 (« bons-reception », §B1 ; V148) — un article du besoin d'un marché à commandes et sa consommation. ⚠️ Décision du pilote
+ * (« suivre les textes », loi n° 2016-055, art. 30 ; PRS20 3174215) : le minimum et le maximum valent pour TOUTE la durée du marché.
+ */
 export interface ArticleConsomme {
   idArticle: number;
   designation: string | null;
   unite: string | null;
   quantiteMin: number | null;
   quantiteMax: number | null;
-  commandeAnnee: number;
+  /** Les bons émis depuis la prise d'effet du contrat. */
+  commandeDuree: number;
   /** Nul sans `quantiteMax`. */
   resteQuantite: number | null;
 }
@@ -95,6 +99,7 @@ export interface Consommation {
   cumulAnnee: number | null;
   minimum: number | null;
   maximum: number | null;
+  /** ⚠️ 29/10 (D3) — sur la durée du marché ; négatif au-delà de la valeur maximale estimée (signalé, jamais refusé). */
   resteMaximum: number | null;
   montantEstime: number | null;
   subsequents: SubsequentConsomme[];
