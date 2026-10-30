@@ -151,3 +151,31 @@ servis ne sont pas lus par l'écran : voir Q3.
 >   champs inutiles. La correction est côté front : 7 écrans lisent **toutes** les prévisions (`GET /api/marche-previsions` sans filtre)
 >   alors que le filtre `?marche=` existe ; ils seront réduits au plan ou à la ligne affichés. Un filtre `?dossier=` (toutes les
 >   prévisions d'un plan) éviterait un appel par ligne aux écrans qui montrent un plan entier : **besoin B6**, à servir si possible.
+
+> ⚠️ **2026-10-30 — second chantier livré (PRS20, pas de migration ; aucun contrat ne change hors B6) :**
+> - **B1 — nombre de requêtes constant** pour `en-ligne` et `eligibles` : l'état des fiches et le plan sont préchargés en lot
+>   (`PrechargementFiches` : versions, valeurs, besoin, pièces, avis imprimés, dossier, ligne, lots, bénéficiaires, prévisions,
+>   responsable, CAO, cérémonie), une requête par nature pour toute la liste. Base de test : `en-ligne` 20 requêtes (hors paramètres)
+>   pour 1 comme pour 3 procédures ; `eligibles` 25 pour 1 comme pour 3 lignes. Même préchargement pour `contrats-en-vigueur` et
+>   l'avis à imprimer de `GET /api/dossiers` (B2). `t_marche` relue 10 fois sur `en-ligne` : couverte (ligne et dossier du plan en lot).
+> - **Écart restant** : `eligibles` garde, **par procédure en évaluation**, la lecture de la vue d'évaluation pour le résumé de
+>   l'attribution (offres, entreprises, exclusions) ; `t_evaluation_decision` (24 fois) n'y est plus lue qu'**une fois par procédure**.
+> - **B3** : `GET /api/marche-previsions` lit `t_capm` **une fois** (et non plus une fois par prévision).
+> - **B6 livré** : `GET /api/marche-previsions?dossier={idDossier}` — les prévisions de toutes les lignes du plan, triées par ligne
+>   puis ordre du processus ; 403 hors périmètre ; `?marche=` l'emporte.
+> - **Q2** : en attente du pilote (pagination sans total = un indicateur « page suivante » à servir alors).
+
+> ⚠️ **2026-10-30 (soir) — mesure de contrôle du front sur le second chantier** (même parcours des 8 profils, même base) :
+>
+> | Appel (rejoué seul) | Après V153 | Après le second chantier |
+> |---|---|---|
+> | `GET /api/dmcs/eligibles` (PRMP) | 193 SQL | **147 SQL** — reste la vue d'évaluation par procédure (écart annoncé) : `t_evaluation_demande` 8×, `t_cao_membre` 7×, `t_pv_examen`, `t_entreprise`, `t_piece_entreprise`, `t_exclusion_armp`, `t_rapprochement_candidat` 6× chacune |
+> | `GET /api/fiches-marche/en-ligne` (responsable) | 112 SQL | **60 SQL** — mais **encore une lecture par procédure** (5 procédures → 5×) de `t_parametre_interne_procedure`, `t_cao`, `t_fiche_materiel`, `t_specifications_fiche` : le nombre n'est pas constant sur cette base |
+> | `GET /api/contrats-en-vigueur` (PRMP) | 72 SQL | **52 SQL** — `t_contrat_reconduction` et `t_offre` lues par contrat (4×) |
+> | `GET /api/dossiers` (PRMP) | 88 SQL | **68 SQL** — `t_fiche_marche` 9×, `t_pv_examen` 6× |
+> | `GET /api/marche-previsions` | 35 SQL | **3 SQL** (B3 ✓) |
+>
+> Requêtes SQL de l'ensemble des écrans : 4 841 → **4 392**. Les **temps ne sont pas comparables** : pendant la mesure, une
+> compilation Maven tournait sur le poste (≈ 4 cœurs occupés) ; les appels simultanés d'un écran y prenaient ≈ 400 ms au lieu de
+> ≈ 40. Ils seront remesurés poste au repos. **Demandé (B1, reliquat)** : précharger aussi, pour `en-ligne`, les paramètres internes,
+> la CAO, le matériel et les spécifications de toutes les procédures de la liste.
