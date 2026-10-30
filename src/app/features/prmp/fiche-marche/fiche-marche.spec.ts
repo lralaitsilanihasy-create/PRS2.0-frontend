@@ -7,6 +7,7 @@ import { BehaviorSubject } from 'rxjs';
 import { vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { ProceduresEnLigneStore } from '../../../core/procedures/procedures-en-ligne.store';
 import { ToastService } from '../../../core/notifications/toast.service';
 import { NotificationsStore } from '../../../core/notifications/notifications.store';
 import { DocumentFiche, FicheMarche, LigneEligible, ReferentielFiche, Role, VersionFiche } from '../../../models';
@@ -168,6 +169,8 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
         provideRouter([]),
         { provide: ActivatedRoute, useValue: { paramMap: params.asObservable(), queryParamMap: new BehaviorSubject(convertToParamMap(query)).asObservable(), snapshot: { data: {} } } },
         { provide: AuthService, useValue: { role: signal(role) } },
+        // La liste des procédures en ligne (menu) est relue après la désignation d'un responsable : hors de ce test.
+        { provide: ProceduresEnLigneStore, useValue: { verifier: () => undefined } },
         { provide: NotificationsStore, useValue: { revision } },
         { provide: ToastService, useValue: toast },
       ],
