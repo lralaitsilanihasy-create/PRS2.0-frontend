@@ -36,9 +36,13 @@ export class ReceptionsCommandesService {
     return this.http.post<ReceptionsBon>(`${this.base}/bons/${idBon}/livraison`, corps, this.ctx);
   }
 
-  /** Le président, la garantie écoulée ; 409 `NON_RECU`, `GARANTIE_EN_COURS`, `SANS_GARANTIE`, `RECEPTION_EN_COURS`. */
-  ouvrirDefinitive(idBon: number): Observable<ReceptionsBon> {
-    return this.http.post<ReceptionsBon>(`${this.base}/bons/${idBon}/definitive`, null, this.ctx);
+  /**
+   * Le président, la garantie écoulée ; 409 `NON_RECU`, `GARANTIE_EN_COURS`, `SANS_GARANTIE`, `RECEPTION_EN_COURS`. ⚠️ V150 (§B3) —
+   * `idReception` : la livraison dont la définitive partielle s'ouvre (à défaut la première due) ; 409 `DEJA_RECU`.
+   */
+  ouvrirDefinitive(idBon: number, idReception?: number): Observable<ReceptionsBon> {
+    const params = idReception != null ? new HttpParams().set('idReception', idReception) : new HttpParams();
+    return this.http.post<ReceptionsBon>(`${this.base}/bons/${idBon}/definitive`, null, { ...this.ctx, params });
   }
 
   miennes(): Observable<ReceptionAMoi[]> {

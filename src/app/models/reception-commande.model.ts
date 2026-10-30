@@ -100,7 +100,10 @@ export interface ReceptionCommande {
   montantReceptionne: number | null;
   echeanceLivraison: string | null;
   joursRetard: number | null;
-  /** En pour mille du montant du bon, par jour de retard (⚠️ hypothèse : 1 ‰ à défaut). */
+  /**
+   * En pour mille, par jour de retard. ⚠️ V150 (« ccag-penalites-reception », §B1) — à défaut de taux saisi au PV : celui du CCAP de
+   * la fiche (B09-PE-02), sinon du CCAG de la catégorie (1 ‰ fournitures et services, 0,5 ‰ travaux et PI) ; `penaliteNote` cite la source.
+   */
   tauxPenalite: number | null;
   plafondPenalite: number | null;
   /** Indicative, jamais retenue par l'application. */
@@ -114,6 +117,12 @@ export interface ReceptionCommande {
   /** ⚠️ V148 — la valeur de la livraison (base de la pénalité indicative). */
   valeurLivree?: number | null;
   lignes?: LigneReception[];
+  /** ⚠️ V150 (§B3 ; CCAG fournitures, art. 22.2) — réception définitive : la livraison (réception provisoire) qu'elle prononce. */
+  idProvisoire?: number | null;
+  /** ⚠️ V150 (§B3) — réception provisoire prononcée : le terme de SA garantie (une garantie par livraison). */
+  garantieJusquau?: string | null;
+  /** ⚠️ V150 (§B5 ; art. 22.1) — réception provisoire : la décision de la commission avant cette date (livraison + 15 jours). */
+  decisionAvantLe?: string | null;
 }
 
 /** `GET /api/receptions-commandes/bons/{idBon}` (et l'espace du titulaire). */
@@ -125,7 +134,10 @@ export interface ReceptionsBon {
   etatReception: EtatReceptionBon;
   garantieMois: number | null;
   garantieJusquau: string | null;
-  /** `RECEPTION_DEFINITIVE_A_PRONONCER` : le délai de garantie est écoulé. */
+  /**
+   * `RECEPTION_DEFINITIVE_A_PRONONCER` : la garantie d'une livraison est écoulée (V150 : livraison par livraison, bon reçu en partie
+   * compris) ; ⚠️ V150 (§B5) `DECISION_RECEPTION_PROCHE` (à 3 jours de l'échéance de décision), `DECISION_RECEPTION_DEPASSEE`.
+   */
   alertes: string[];
   receptions: ReceptionCommande[];
   /** ⚠️ V148 — commandé, livré, reçu et reliquat par ligne du bon. */

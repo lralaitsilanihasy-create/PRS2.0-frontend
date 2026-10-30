@@ -13,7 +13,7 @@ const EVALUATION_CAO: ReadonlySet<string> = new Set([
 ]);
 
 /** La réception des commandes (lot MS-4) : son écran propre, l'objet n'est pas une procédure. */
-const RECEPTION_CAO: ReadonlySet<string> = new Set(['COMMISSION_RECEPTION', 'RECEPTION_A_SIGNER', 'LIVRAISON_DECLAREE']);
+const RECEPTION_CAO: ReadonlySet<string> = new Set(['COMMISSION_RECEPTION', 'RECEPTION_A_SIGNER', 'LIVRAISON_DECLAREE', 'DECISION_RECEPTION']);
 
 /**
  * ⚠️ 29/10 (pilote, PRS20 51351b2) — l'écran qu'ouvre une notification dans un espace externe. Le serveur porte

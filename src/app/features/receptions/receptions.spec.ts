@@ -96,6 +96,40 @@ describe('Réception des commandes (MS-4)', () => {
       http.expectOne('/api/receptions-commandes/bons/11').flush(BON());
     });
 
+    // ⚠️ 30/10 (« ccag-penalites-reception », §B3 et §B5 ; V150) — une garantie par livraison, l'échéance de décision.
+    it('V150 — chaque livraison reçue a sa garantie ; garantie écoulée : le président ouvre la définitive DE CETTE livraison', () => {
+      const premiere = RECEPTION({ id: 21, etat: 'SIGNE', decision: 'RECEPTION', dateLivraison: '2026-01-10', garantieJusquau: '2026-07-10' });
+      const seconde = RECEPTION({ id: 22, etat: 'SIGNE', decision: 'RECEPTION', dateLivraison: '2099-01-10', garantieJusquau: '2099-07-10' });
+      const definitive = RECEPTION({ id: 23, type: 'DEFINITIVE', etat: 'SIGNE', decision: 'RECEPTION', dateLivraison: null, idProvisoire: 21 });
+      monter(BON({ etatReception: 'RECU_PARTIEL', receptions: [premiere, seconde, definitive] }), { president: true });
+      expect(texte(racine())).toContain('Réception définitive de la livraison du');
+      expect(texte(racine())).toContain('Réception définitive prononcée.');
+      expect(texte(racine())).toContain('Garantie de cette livraison jusqu’au');
+      // La première a sa définitive, la seconde est sous garantie : rien à ouvrir.
+      expect(bouton(racine(), 'Ouvrir la réception définitive')).toBeUndefined();
+      TestBed.resetTestingModule();
+
+      monter(BON({ etatReception: 'RECU_PARTIEL', receptions: [premiere, seconde] }), { president: true });
+      bouton(racine(), 'Ouvrir la réception définitive de cette livraison').click();
+      const post = http.expectOne((r) => r.url === '/api/receptions-commandes/bons/11/definitive');
+      expect(post.request.params.get('idReception')).toBe('21');
+      post.flush(BON());
+      http.expectOne('/api/receptions-commandes/bons/11').flush(BON());
+    });
+
+    it('V150 — l’échéance de décision de la commission et son alerte ; le taux vide renvoie au CCAP puis au CCAG', () => {
+      monter(BON({ alertes: ['DECISION_RECEPTION_DEPASSEE'], receptions: [RECEPTION({ decisionAvantLe: '2026-11-04' })] }), { president: true });
+      expect(texte(racine())).toContain('Le délai de décision de la commission de réception est dépassé');
+      expect(texte(racine())).toContain('Décision de la commission avant le');
+      choisir(racine().querySelector('.rb__details select')!, 'RECEPTION');
+      fixture.detectChanges();
+      expect(texte(racine())).toContain('vide : taux du CCAP, sinon du CCAG');
+      TestBed.resetTestingModule();
+
+      monter(BON({ alertes: ['DECISION_RECEPTION_PROCHE'] }), {});
+      expect(texte(racine())).toContain('due dans 3 jours au plus');
+    });
+
     // ⚠️ 29/10 (« bons-reception », §B3 ; V148) — la réception partielle par article.
     const LIGNES_BON = [
       { rang: 1, idArticle: 5, designation: 'Cartouches', unite: 'u', commande: 100, livre: 60, recu: 60, reliquat: 40 },

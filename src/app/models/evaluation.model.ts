@@ -449,6 +449,15 @@ export interface LotAttribution {
   titulaires?: TitulairePropose[];
   /** ⚠️ MT-b2 (V123, 16/10) — le suivi de chaque titulaire retenu (ses pièces, sa réception de la notification, son retrait). */
   suiviTitulaires?: SuiviTitulaire[];
+  /**
+   * ⚠️ 29/10 (« chaine-attribution », B1 et B4 ; V149 ; circulaire de régulation 2024) — le visa du contrôleur financier, entre la
+   * signature et l'approbation, ou sa dispense (exception de contrôle préalable, CHED) avec son motif ; nul avant le geste.
+   */
+  visa?: { date: string | null; reference: string | null; dispense: boolean; motif: string | null; le: string; par: string | null; fichier: FichierAttribution | null } | null;
+  /** ⚠️ V149 (B2) — la décision d'attribution provisoire est produite (faux pour un lot attribué avant V149). */
+  decisionDisponible?: boolean;
+  /** ⚠️ V149 (B3) — attribué, candidats pas encore informés (loi n° 2016-055, art. 52-I : « dès qu'elle a fait son choix »). */
+  candidatsAInformer?: boolean;
 }
 
 /** ⚠️ MT-b2 — un titulaire du contrat-cadre : ses pièces (même forme que celles de l'attributaire), sa notification, son retrait. */

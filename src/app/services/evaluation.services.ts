@@ -409,6 +409,25 @@ export class AttributionService {
     return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/approbation`, this.formulaire({ autorite, dateApprobation }, fichier), this.ctx);
   }
 
+  /**
+   * ⚠️ 29/10 (« chaine-attribution », B1 ; PRS20 5bce5d4, V149) — le visa du contrôleur financier (PRMP seule), entre la signature et
+   * l'approbation : `dateVisa`, `reference` facultative et le marché visé ; ou la dispense (exception de contrôle préalable, CHED) avec
+   * son motif, sans fichier. 400 `DATE_INVALIDE`, `FICHIER_OBLIGATOIRE`, `MOTIF_OBLIGATOIRE`, `CHAMP_TROP_LONG` ; 409 `NON_SIGNE`,
+   * `DEJA_VISE`, `DEJA_APPROUVE`.
+   */
+  viser(idDmc: number, lot: number, v: { dateVisa: string | null; reference: string | null; dispense: boolean; motif: string | null }, fichier: File | null): Observable<Attribution> {
+    const champs: Record<string, string> = { dispense: String(v.dispense) };
+    if (v.dateVisa) champs['dateVisa'] = v.dateVisa;
+    if (v.reference) champs['reference'] = v.reference;
+    if (v.motif) champs['motif'] = v.motif;
+    return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/visa`, this.formulaire(champs, fichier), this.ctx);
+  }
+
+  /** ⚠️ V149 (B2) — la décision d'attribution provisoire du lot, PDF ou Word ; 404 avant l'attribution (ou lot attribué avant V149). */
+  decision(idDmc: number, lot: number, format: 'pdf' | 'docx' = 'pdf'): Observable<Blob> {
+    return this.blob(`${this.lotUrl(idDmc, lot)}/decision`, format);
+  }
+
   /** 409 `MARCHE_NON_APPROUVE` (R9a), `NON_ENREGISTRE` : aucune notification sans approbation ni enregistrement (art. 54). */
   notifier(idDmc: number, lot: number, dateNotification: string, dateReception: string | null): Observable<Attribution> {
     return this.http.post<Attribution>(`${this.lotUrl(idDmc, lot)}/notification`, { dateNotification, dateReception }, this.ctx);

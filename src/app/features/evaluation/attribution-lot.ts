@@ -56,7 +56,10 @@ const MESSAGES: Readonly<Record<string, string>> = {
   NON_ENREGISTRE: 'Aucune notification sans enregistrement (art. 54).',
   // ⚠️ R9a (V111, 14/10) — l'approbation du marché, avant la notification (art. 54).
   DEJA_APPROUVE: 'Le marché est déjà approuvé.',
-  MARCHE_NON_APPROUVE: 'Aucune notification sans l’approbation du marché (art. 54).',
+  MARCHE_NON_APPROUVE: 'Le marché doit d’abord être approuvé : ni enregistrement ni notification avant l’approbation.',
+  // ⚠️ 29/10 (« chaine-attribution », B1 et B4 ; V149) — le visa du contrôleur financier.
+  NON_VISE: 'Le marché doit d’abord être visé par le contrôleur financier (ou en être dispensé) : l’approbation suit le visa.',
+  DEJA_VISE: 'Le visa du marché est déjà enregistré.',
   CHAMP_TROP_LONG: 'Un champ dépasse la longueur admise.',
   // ⚠️ R10 (V113, 14/10) — l'original signé de l'acte d'engagement, en remise électronique.
   // ⚠️ R6c (V108, règle 7) — complété par la limite servie (`messagePieceTropAncienne`).
@@ -123,6 +126,13 @@ function aujourdhui(): string {
           } @else {
             <p class="text-sm">Offre n° {{ a.numero }} · <strong>{{ a.candidat }}</strong>{{ a.nif ? ' (NIF ' + a.nif + ')' : '' }} — {{ ariary(a.montant) }} HT · délai {{ a.delai ?? '—' }} — le {{ dateHeure(a.le) }}</p>
           }
+          <!-- ⚠️ 29/10 (« chaine-attribution », B2 ; V149) — la décision d'attribution provisoire, acte formel de la PRMP (circulaire 2024). -->
+          @if (l.decisionDisponible) {
+            <div class="al__actions">
+              <button type="button" class="btn btn-outline btn-sm" (click)="ouvrir(service.decision(idDmc(), l.lot))">Décision d’attribution (PDF)</button>
+              <button type="button" class="btn btn-ghost btn-sm" (click)="enregistrer(service.decision(idDmc(), l.lot, 'docx'), 'decision-attribution-' + idDmc() + '-lot' + l.lot + '.docx')">Word</button>
+            </div>
+          }
         </section>
       } @else if (l.dossierMarche?.avis === 'DEF') {
         <p class="text-sm al__alerte">Avis défavorable de la Commission : le marché ne s’attribue pas. La PRMP reprend l’évaluation ou déclare le lot infructueux (ci-dessous).</p>
@@ -186,6 +196,10 @@ function aujourdhui(): string {
       } @else if (prmp() && l.attributaire) {
         <section class="al__bloc" aria-label="Informer les candidats">
           <h4 class="al__h4">Informer les candidats (art. 52)</h4>
+          @if (l.candidatsAInformer) {
+            <!-- ⚠️ V149 (B3) — la loi veut l'information « dès qu'elle a fait son choix » (art. 52-I) : la PRMP est relancée. -->
+            <p class="text-sm al__alerte" role="note">À faire sans attendre : la loi veut l’information des candidats dès le choix de l’attributaire (art. 52-I).</p>
+          }
           <p class="text-sm">Le serveur produit une lettre par offre évaluée, signée électroniquement par vous : l’attribution à l’attributaire ; aux autres, le rejet et ses motifs tirés du rapport, l’attributaire, le montant, le délai d’attente et le droit de demander des explications.</p>
           <div class="al__ligne">
             <label class="form-group"><span class="form-label">Date d’affichage du résultat au siège</span><input class="form-control" type="date" [value]="dateAffichage()" (input)="dateAffichage.set($any($event.target).value)" /></label>
@@ -355,7 +369,9 @@ function aujourdhui(): string {
           </details>
         }
 
-        <!-- 7. Signature, 8. approbation et enregistrement (indépendants l'un de l'autre), 9. notification, 10. avis -->
+        <!-- 7. Signature, 8. visa du contrôleur financier, 9. approbation, 10. enregistrement, 11. notification, 12. avis — dans cet ordre
+             (⚠️ 29/10, « chaine-attribution » B4 ; circulaire de régulation 2024 : enregistrés, les marchés « signés […], visés par le
+             contrôle financier et approuvés ») ; chaque geste s'ouvre quand le précédent est fait. -->
         @if (l.signature; as sg) {
           <section class="al__bloc al__fait" aria-label="Signature"><h4 class="al__h4">Marché signé le {{ date(sg.dateSignature) }}</h4>
             @if (sg.fichier) { <button type="button" class="btn btn-ghost btn-sm al__btn" (click)="ouvrirFichier(sg.fichier)">{{ sg.fichier.nom }}</button> }
@@ -371,22 +387,56 @@ function aujourdhui(): string {
             <div class="al__ligne">
               <label class="form-group"><span class="form-label">Date de signature</span><input class="form-control" type="date" [value]="champ('sdate')" (input)="poser('sdate', $any($event.target).value)" /></label>
               <label class="form-group al__large"><span class="form-label">Le marché signé (PDF, JPEG, PNG)</span><input class="form-control" type="file" accept="application/pdf,image/jpeg,image/png" (change)="choisir('sfichier', $any($event.target))" /></label>
-              <button type="button" class="btn btn-primary btn-sm" [disabled]="!champ('sdate') || !fichier('sfichier') || occupe()" (click)="geste(service.signer(idDmc(), l.lot, champ('sdate'), fichier('sfichier')!), 'Le marché signé est déposé ; approuvez-le et enregistrez-le avant de le notifier.')">Déposer le marché signé</button>
+              <button type="button" class="btn btn-primary btn-sm" [disabled]="!champ('sdate') || !fichier('sfichier') || occupe()" (click)="geste(service.signer(idDmc(), l.lot, champ('sdate'), fichier('sfichier')!), 'Le marché signé est déposé ; faites-le viser, puis approuvez-le et enregistrez-le avant de le notifier.')">Déposer le marché signé</button>
             </div>
           </section>
         }
-        <!-- ⚠️ R9a (V111, 14/10) — l'approbation du marché par l'autorité compétente (art. 54) : sans elle, pas de notification. -->
+        <!-- ⚠️ 29/10 (« chaine-attribution », B1 ; V149) — le visa du contrôleur financier, ou sa dispense motivée (exception CHED). -->
+        @if (l.visa; as vi) {
+          <section class="al__bloc al__fait" aria-label="Visa du contrôleur financier">
+            @if (vi.dispense) {
+              <h4 class="al__h4">Dispensé du visa du contrôleur financier</h4>
+              <p class="text-sm">{{ vi.motif }}</p>
+            } @else {
+              <h4 class="al__h4">Visé par le contrôleur financier le {{ date(vi.date) }}{{ vi.reference ? ' — ' + vi.reference : '' }}</h4>
+              @if (vi.fichier) { <button type="button" class="btn btn-ghost btn-sm al__btn" (click)="ouvrirFichier(vi.fichier)">{{ vi.fichier.nom }}</button> }
+            }
+          </section>
+        } @else if (prmp() && l.signature && !l.approbation && !l.notification) {
+          <section class="al__bloc" aria-label="Visa du contrôleur financier">
+            <h4 class="al__h4">Visa du contrôleur financier</h4>
+            <p class="text-sm text-muted">Après la signature et avant l’approbation. Un marché qui bénéficie d’une exception de contrôle préalable (CHED) en est dispensé : dites-le, avec le motif.</p>
+            <div class="al__ligne" role="radiogroup" aria-label="Visa ou dispense">
+              <label class="text-sm"><input type="radio" name="visa-mode" [checked]="champ('vmode') !== 'DISPENSE'" (change)="poser('vmode', 'VISA')" /> Visé</label>
+              <label class="text-sm"><input type="radio" name="visa-mode" [checked]="champ('vmode') === 'DISPENSE'" (change)="poser('vmode', 'DISPENSE')" /> Dispensé (exception CHED)</label>
+            </div>
+            @if (champ('vmode') === 'DISPENSE') {
+              <div class="al__ligne">
+                <label class="form-group al__large"><span class="form-label">Motif de la dispense</span><input class="form-control" type="text" maxlength="500" [value]="champ('vmotif')" (input)="poser('vmotif', $any($event.target).value)" /></label>
+                <button type="button" class="btn btn-primary btn-sm" [disabled]="!champ('vmotif').trim() || occupe()" (click)="geste(service.viser(idDmc(), l.lot, { dateVisa: null, reference: null, dispense: true, motif: champ('vmotif').trim() }, null), 'La dispense de visa est enregistrée : le marché peut être approuvé.')">Enregistrer la dispense</button>
+              </div>
+            } @else {
+              <div class="al__ligne">
+                <label class="form-group"><span class="form-label">Date du visa</span><input class="form-control" type="date" [min]="l.signature.dateSignature" [max]="aujourdhui" [value]="champ('vdate')" (input)="poser('vdate', $any($event.target).value)" /></label>
+                <label class="form-group"><span class="form-label">Référence (facultative)</span><input class="form-control" type="text" [value]="champ('vref')" (input)="poser('vref', $any($event.target).value)" /></label>
+                <label class="form-group al__large"><span class="form-label">Le marché visé (PDF, JPEG, PNG)</span><input class="form-control" type="file" accept="application/pdf,image/jpeg,image/png" (change)="choisir('vfichier', $any($event.target))" /></label>
+                <button type="button" class="btn btn-primary btn-sm" [disabled]="!champ('vdate') || !fichier('vfichier') || occupe()" (click)="geste(service.viser(idDmc(), l.lot, { dateVisa: champ('vdate'), reference: champ('vref').trim() || null, dispense: false, motif: null }, fichier('vfichier')), 'Le visa est enregistré : le marché peut être approuvé.')">Déclarer le visa</button>
+              </div>
+            }
+          </section>
+        }
+        <!-- ⚠️ R9a (V111, 14/10) — l'approbation du marché par l'autorité compétente (art. 54) : après le visa, avant l'enregistrement. -->
         @if (l.approbation; as ap) {
           <section class="al__bloc al__fait" aria-label="Approbation"><h4 class="al__h4">Approuvé le {{ date(ap.date) }} — {{ ap.autorite }}</h4>
             @if (ap.fichier) { <button type="button" class="btn btn-ghost btn-sm al__btn" (click)="ouvrirFichier(ap.fichier)">{{ ap.fichier.nom }}</button> }
           </section>
-        } @else if (prmp() && l.signature && !l.notification) {
+        } @else if (prmp() && l.signature && l.visa && !l.notification) {
           <section class="al__bloc" aria-label="Approbation">
             <h4 class="al__h4">Approbation du marché (art. 54)</h4>
-            <p class="text-sm text-muted">Par l’autorité compétente, à une date comprise entre la signature et aujourd’hui ; la décision d’approbation est jointe.</p>
+            <p class="text-sm text-muted">Par l’autorité compétente, après le visa du contrôleur financier (ou sa dispense) ; la décision d’approbation est jointe.</p>
             <div class="al__ligne">
               <label class="form-group al__large"><span class="form-label">Autorité d’approbation</span><input class="form-control" type="text" maxlength="200" [value]="champ('aaut')" (input)="poser('aaut', $any($event.target).value)" /></label>
-              <label class="form-group"><span class="form-label">Date d’approbation</span><input class="form-control" type="date" [min]="l.signature?.dateSignature ?? null" [max]="aujourdhui" [value]="champ('adate')" (input)="poser('adate', $any($event.target).value)" /></label>
+              <label class="form-group"><span class="form-label">Date d’approbation</span><input class="form-control" type="date" [min]="l.visa?.date ?? l.signature?.dateSignature ?? null" [max]="aujourdhui" [value]="champ('adate')" (input)="poser('adate', $any($event.target).value)" /></label>
               <label class="form-group al__large"><span class="form-label">Décision d’approbation (PDF, JPEG, PNG)</span><input class="form-control" type="file" accept="application/pdf,image/jpeg,image/png" (change)="choisir('afichier', $any($event.target))" /></label>
               <button type="button" class="btn btn-primary btn-sm" [disabled]="!champ('aaut').trim() || !champ('adate') || !fichier('afichier') || occupe()" (click)="geste(service.approuver(idDmc(), l.lot, champ('aaut').trim(), champ('adate'), fichier('afichier')!), 'Le marché est approuvé.')">Déclarer l’approbation</button>
             </div>
@@ -397,11 +447,11 @@ function aujourdhui(): string {
             <section class="al__bloc al__fait" aria-label="Enregistrement"><h4 class="al__h4">Enregistré le {{ date(en.date) }}{{ en.reference ? ' — ' + en.reference : '' }}</h4>
               @if (en.fichier) { <button type="button" class="btn btn-ghost btn-sm al__btn" (click)="ouvrirFichier(en.fichier)">{{ en.fichier.nom }}</button> }
             </section>
-          } @else if (prmp()) {
+          } @else if (prmp() && l.approbation) {
             <section class="al__bloc" aria-label="Enregistrement">
               <h4 class="al__h4">Enregistrement (art. 54)</h4>
               <div class="al__ligne">
-                <label class="form-group"><span class="form-label">Date d’enregistrement</span><input class="form-control" type="date" [value]="champ('edate')" (input)="poser('edate', $any($event.target).value)" /></label>
+                <label class="form-group"><span class="form-label">Date d’enregistrement</span><input class="form-control" type="date" [min]="l.approbation.date" [max]="aujourdhui" [value]="champ('edate')" (input)="poser('edate', $any($event.target).value)" /></label>
                 <label class="form-group"><span class="form-label">Référence (facultative)</span><input class="form-control" type="text" [value]="champ('eref')" (input)="poser('eref', $any($event.target).value)" /></label>
                 <label class="form-group al__large"><span class="form-label">Justificatif (quittance)</span><input class="form-control" type="file" accept="application/pdf,image/jpeg,image/png" (change)="choisir('efichier', $any($event.target))" /></label>
                 <button type="button" class="btn btn-primary btn-sm" [disabled]="!champ('edate') || !fichier('efichier') || occupe()" (click)="geste(service.enregistrer(idDmc(), l.lot, champ('edate'), champ('eref').trim() || null, fichier('efichier')!), 'L’enregistrement est déclaré ; le marché peut être notifié.')">Déclarer l’enregistrement</button>
@@ -514,8 +564,8 @@ export class AttributionLot {
 
   /** Ce qui manque encore à la notification (R9a) : l'approbation, l'enregistrement, ou les deux. */
   manqueNotification(l: LotAttribution): string {
-    const manque = [!l.approbation ? 'l’approbation' : null, !l.enregistrement ? 'l’enregistrement' : null].filter(Boolean);
-    return manque.length ? ` — il manque ${manque.join(' et ')}` : '';
+    const manque = [!l.visa ? 'le visa' : null, !l.approbation ? 'l’approbation' : null, !l.enregistrement ? 'l’enregistrement' : null].filter(Boolean);
+    return manque.length ? ` — il manque ${manque.length > 1 ? manque.slice(0, -1).join(', ') + ' et ' + manque.at(-1) : manque[0]}` : '';
   }
   private readonly champs = signal<Record<string, string>>({});
   private readonly fichiers = signal<Record<string, File | null>>({});

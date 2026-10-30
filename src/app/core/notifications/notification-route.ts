@@ -42,12 +42,15 @@ const MESSAGERIE: ReadonlySet<string> = new Set([
 /**
  * ⚠️ 29/10 (« contrat-cadre-4a », §B2-B3 ; PRS20 69aa66e, V147) — les notifications d'un contrat en vigueur à la PRMP et à l'UGPM
  * (objet PROCEDURE = idDmc) : l'écran des contrats en vigueur, ce contrat ouvert (`?dmc=`). `CONTRAT_ECHU` vaut aussi pour le marché
- * à commandes.
+ * à commandes. ⚠️ 30/10 (V150) — `DECISION_RECEPTION` aussi, quand la PRMP préside la commission de réception (les bons du contrat).
  */
-const CONTRAT: ReadonlySet<string> = new Set(['RECONDUCTION_A_DECIDER', 'CONTRAT_RECONDUIT', 'CONTRAT_NON_RECONDUIT', 'CONTRAT_ECHU', 'REMISE_A_LANCER']);
+const CONTRAT: ReadonlySet<string> = new Set(['RECONDUCTION_A_DECIDER', 'CONTRAT_RECONDUIT', 'CONTRAT_NON_RECONDUIT', 'CONTRAT_ECHU', 'REMISE_A_LANCER', 'DECISION_RECEPTION']);
 
-/** Les notifications de l'évaluation des offres qui visent la PRMP (contrat V76-V78). */
-const EVALUATION: ReadonlySet<string> = new Set(['EVALUATION_OUVERTE', 'PRECISION_RECUE', 'JUSTIFICATION_RECUE', 'RAPPORT_EVALUATION']);
+/**
+ * Les notifications de l'évaluation des offres qui visent la PRMP (contrat V76-V78). ⚠️ 29/10 (V149, « chaine-attribution » B3) —
+ * `CANDIDATS_A_INFORMER` : le lot est attribué, les candidats pas encore informés ; même écran (le suivi de l'attribution y vit).
+ */
+const EVALUATION: ReadonlySet<string> = new Set(['EVALUATION_OUVERTE', 'PRECISION_RECUE', 'JUSTIFICATION_RECUE', 'RAPPORT_EVALUATION', 'CANDIDATS_A_INFORMER']);
 
 /**
  * Cible résolue : une route directe, la page d'un dossier (l'appelant y ajoute son `returnUrl`), ou une

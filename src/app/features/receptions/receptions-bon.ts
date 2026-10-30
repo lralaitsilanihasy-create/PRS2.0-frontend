@@ -62,7 +62,7 @@ export function refusReception(e: ApiError): string {
     case 'DATE_INVALIDE': return 'La date se situe entre la livraison (ou l’émission du bon) et aujourd’hui.';
     case 'BON_ANNULE': return 'Ce bon est annulé : il ne se livre plus.';
     case 'RECEPTION_EN_COURS': return 'Une réception est déjà en cours pour ce bon.';
-    case 'DEJA_RECU': return 'Ce bon est déjà reçu.';
+    case 'DEJA_RECU': return 'Déjà reçu : le bon, ou cette livraison pour sa réception définitive.';
     case 'DECISION_INVALIDE': return 'Choisissez la décision (la réception définitive n’admet que la réception ou l’ajournement).';
     case 'MOTIF_OBLIGATOIRE': return 'Toute décision autre que la réception se motive.';
     case 'REFACTION_INVALIDE': return 'La réfaction est un montant positif, inférieur à la valeur reçue.';
@@ -115,9 +115,15 @@ function aujourdhui(): string {
           @if (d.garantieMois) { Garantie de {{ d.garantieMois }} mois{{ d.garantieJusquau ? ', jusqu’au ' + date(d.garantieJusquau) : '' }}. }
           @else { Sans délai de garantie : la réception provisoire vaut définitive. }
         </p>
+        <!-- ⚠️ 30/10 (« ccag-penalites-reception », §B5 ; V150) — la décision de la commission dans les 15 jours de la livraison (CCAG, art. 22.1). -->
+        @if (d.alertes.includes('DECISION_RECEPTION_DEPASSEE')) {
+          <div class="alert alert-danger" role="note">Le délai de décision de la commission de réception est dépassé (15 jours après la livraison, CCAG art. 22.1).</div>
+        } @else if (d.alertes.includes('DECISION_RECEPTION_PROCHE')) {
+          <div class="alert alert-warning" role="note">La décision de la commission de réception est due dans 3 jours au plus (15 jours après la livraison, CCAG art. 22.1).</div>
+        }
         @if (d.alertes.includes('RECEPTION_DEFINITIVE_A_PRONONCER')) {
           <div class="alert alert-warning" role="note">
-            <span>Le délai de garantie est écoulé : la réception définitive est à prononcer.</span>
+            <span>Le délai de garantie d’une livraison est écoulé : sa réception définitive est à prononcer.</span>
             @if (president()) { <button type="button" class="btn btn-primary btn-sm" [disabled]="occupe()" (click)="geste(service.ouvrirDefinitive(d.idBon), 'La réception définitive est ouverte : établissez son procès-verbal.')">Ouvrir la réception définitive</button> }
           </div>
         }
@@ -138,9 +144,10 @@ function aujourdhui(): string {
 
         @for (r of d.receptions; track r.id) {
           <article class="rb__reception" [attr.aria-label]="'Réception ' + (r.type === 'DEFINITIVE' ? 'définitive' : 'provisoire')">
-            <h5 class="rb__h5">Réception {{ r.type === 'DEFINITIVE' ? 'définitive' : 'provisoire' }}
+            <h5 class="rb__h5">Réception {{ r.type === 'DEFINITIVE' ? 'définitive' + deLaLivraison(d, r) : 'provisoire' }}
               — {{ r.etat === 'SIGNE' ? 'PV signé le ' + dateHeure(r.signeLe) : r.etat === 'PV_ETABLI' ? 'PV en signature' : 'PV à établir' }}</h5>
             @if (r.dateLivraison) { <p class="text-sm">Livraison le {{ date(r.dateLivraison) }}{{ r.livraisonObservations ? ' — ' + r.livraisonObservations : '' }}{{ r.declareePar ? ' (déclarée par ' + r.declareePar + ')' : '' }}.</p> }
+            @if (r.decisionAvantLe && r.etat !== 'SIGNE') { <p class="text-sm">Décision de la commission avant le {{ date(r.decisionAvantLe) }} (CCAG, art. 22.1).</p> }
             @if (r.lignes?.length) {
               <p class="text-sm">
                 @for (l of r.lignes; track l.rang; let dernier = $last) {
@@ -161,6 +168,11 @@ function aujourdhui(): string {
                 </p>
               }
             }
+            <!-- ⚠️ V150 (§B3 ; CCAG fournitures, art. 22.2) — chaque livraison reçue a sa garantie, puis sa réception définitive partielle. -->
+            @if (r.type !== 'DEFINITIVE' && r.garantieJusquau) {
+              @let def = definitiveDe(d, r);
+              <p class="text-sm">{{ def ? 'Réception définitive ' + (def.etat === 'SIGNE' ? 'prononcée' : 'en cours') : 'Garantie de cette livraison jusqu’au ' + date(r.garantieJusquau) }}.</p>
+            }
             @if (r.attendus.length) {
               <ul class="rb__signatures" aria-label="Signatures du procès-verbal">
                 @for (a of r.attendus; track a.signataire) {
@@ -172,6 +184,9 @@ function aujourdhui(): string {
               @if (r.pvDisponible) {
                 <button type="button" class="btn btn-outline btn-sm" (click)="ouvrir(service.pv(r.id))">Procès-verbal (PDF)</button>
                 <button type="button" class="btn btn-ghost btn-sm" (click)="enregistrer(service.pv(r.id, 'docx'), 'pv-reception-bon-' + d.numero + '.docx')">Word</button>
+              }
+              @if (president() && definitiveDue(d, r)) {
+                <button type="button" class="btn btn-primary btn-sm" [disabled]="occupe()" (click)="geste(service.ouvrirDefinitive(d.idBon, r.id), 'La réception définitive de cette livraison est ouverte : établissez son procès-verbal.')">Ouvrir la réception définitive de cette livraison</button>
               }
               @if (r.etat === 'PV_ETABLI' && doitSigner(r)) {
                 <button type="button" class="btn btn-primary btn-sm" [disabled]="occupe()" (click)="signer(r)">Signer le procès-verbal</button>
@@ -194,7 +209,7 @@ function aujourdhui(): string {
                       <label class="form-group"><span class="form-label">Montant de la réfaction (HT)</span><input class="form-control" type="number" min="0" step="any" [value]="champ('refaction')" (input)="poser('refaction', $any($event.target).value)" /></label>
                     }
                     @if (champ('decision') === 'RECEPTION' || champ('decision') === 'REFACTION') {
-                      <label class="form-group"><span class="form-label">Taux de pénalité (‰ par jour ; vide : 1 ‰)</span><input class="form-control" type="number" min="0" step="any" [value]="champ('taux')" (input)="poser('taux', $any($event.target).value)" /></label>
+                      <label class="form-group"><span class="form-label">Taux de pénalité (‰ par jour ; vide : taux du CCAP, sinon du CCAG)</span><input class="form-control" type="number" min="0" step="any" [value]="champ('taux')" (input)="poser('taux', $any($event.target).value)" /></label>
                     }
                   </div>
                   @if (accepte() && lignesARecevoir(r).length) {
@@ -337,6 +352,23 @@ export class ReceptionsBonVue implements OnInit {
 
   decisionsPour(r: ReceptionCommande): DecisionReceptionCommande[] {
     return r.type === 'DEFINITIVE' ? ['RECEPTION', 'AJOURNEMENT'] : ['RECEPTION', 'AJOURNEMENT', 'REFACTION', 'REJET'];
+  }
+
+  /** ⚠️ V150 (§B3) — la réception définitive qui prononce cette livraison, s'il y en a une. */
+  definitiveDe(d: ReceptionsBon, r: ReceptionCommande): ReceptionCommande | undefined {
+    return d.receptions.find((x) => x.type === 'DEFINITIVE' && x.idProvisoire === r.id);
+  }
+
+  /** ⚠️ V150 (§B3) — la garantie de cette livraison est écoulée, sa définitive pas ouverte, et aucune réception en cours sur le bon. */
+  definitiveDue(d: ReceptionsBon, r: ReceptionCommande): boolean {
+    return r.type !== 'DEFINITIVE' && r.etat === 'SIGNE' && !!r.garantieJusquau && r.garantieJusquau <= this.aujourdhui
+      && !this.definitiveDe(d, r) && !d.receptions.some((x) => x.etat !== 'SIGNE');
+  }
+
+  /** ⚠️ V150 (§B3) — « de la livraison du … » pour une réception définitive qui nomme sa livraison. */
+  deLaLivraison(d: ReceptionsBon, r: ReceptionCommande): string {
+    const p = d.receptions.find((x) => x.id === r.idProvisoire);
+    return p?.dateLivraison ? ` de la livraison du ${this.date(p.dateLivraison)}` : '';
   }
 
   /** Le connecté est-il un signataire attendu, sans avoir signé ? */

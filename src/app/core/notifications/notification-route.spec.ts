@@ -41,8 +41,15 @@ describe('Routage d’une notification', () => {
     }
   });
 
-  it('29/10 — un contrat en vigueur (reconduction, échéance, remise à lancer) : l’écran des contrats, ce contrat ouvert', () => {
-    for (const type of ['RECONDUCTION_A_DECIDER', 'CONTRAT_RECONDUIT', 'CONTRAT_NON_RECONDUIT', 'CONTRAT_ECHU', 'REMISE_A_LANCER']) {
+  it('29/10 (V149) — CANDIDATS_A_INFORMER : l’écran de l’évaluation et de l’attribution de la procédure', () => {
+    for (const role of ['PRMP', 'UGPM']) {
+      expect(routePourNotification(n({ typeNotif: 'CANDIDATS_A_INFORMER', typeObjet: 'PROCEDURE', idObjet: 44 }), role))
+        .toEqual({ genre: 'route', commands: ['/procedure', '44', 'evaluation'] });
+    }
+  });
+
+  it('29/10 — un contrat en vigueur (reconduction, échéance, remise à lancer ; 30/10 décision de réception due) : l’écran des contrats, ce contrat ouvert', () => {
+    for (const type of ['RECONDUCTION_A_DECIDER', 'CONTRAT_RECONDUIT', 'CONTRAT_NON_RECONDUIT', 'CONTRAT_ECHU', 'REMISE_A_LANCER', 'DECISION_RECEPTION']) {
       for (const role of ['PRMP', 'UGPM']) {
         expect(routePourNotification(n({ typeNotif: type, typeObjet: 'PROCEDURE', idObjet: 50 }), role))
           .toEqual({ genre: 'route', commands: ['/prmp', 'contrats-en-vigueur'], queryParams: { dmc: '50' } });

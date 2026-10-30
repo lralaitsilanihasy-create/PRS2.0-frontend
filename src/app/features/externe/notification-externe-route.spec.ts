@@ -28,6 +28,7 @@ describe('routeNotificationExterne (29/10, PRS20 51351b2)', () => {
 
   it('la réception des commandes mène à l’écran des réceptions', () => {
     expect(routeNotificationExterne(notif('RECEPTION_A_SIGNER', { typeObjet: 'COMMANDE', idObjet: 9 }), 'cao')).toEqual(['/cao/receptions']);
+    expect(routeNotificationExterne(notif('DECISION_RECEPTION', { typeObjet: 'PROCEDURE', idObjet: 50 }), 'cao')).toEqual(['/cao/receptions']);
   });
 
   it('une notification sans procédure ne mène nulle part', () => {

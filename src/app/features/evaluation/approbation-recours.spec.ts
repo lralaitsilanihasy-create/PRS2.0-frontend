@@ -20,8 +20,10 @@ const SIGNE: LotAttribution = {
   piecesAttributaire: { echeance: '2026-10-22', delaiDepasse: false, fiscaleConforme: true, socialeConforme: true, pieces: [] },
   signature: { dateSignature: '2026-10-10', le: '2026-10-10T10:00:00', par: 'PRMP001', fichier: null },
 } as unknown as LotAttribution;
-const ENREGISTRE = { ...SIGNE, enregistrement: { date: '2026-10-11', reference: null, le: '2026-10-11T09:00:00', fichier: null } } as LotAttribution;
-const APPROUVE = { ...ENREGISTRE, approbation: { autorite: 'Le Ministre', date: '2026-10-12', le: '2026-10-12T09:00:00', par: 'PRMP001', fichier: null } } as LotAttribution;
+// ⚠️ 29/10 (« chaine-attribution » B1, B4 ; V149) — signature → visa → approbation → enregistrement → notification.
+const VISE = { ...SIGNE, visa: { date: '2026-10-11', reference: 'CF-2026-118', dispense: false, motif: null, le: '2026-10-11T09:00:00', par: 'PRMP001', fichier: null } } as LotAttribution;
+const APPROUVE = { ...VISE, approbation: { autorite: 'Le Ministre', date: '2026-10-12', le: '2026-10-12T09:00:00', par: 'PRMP001', fichier: null } } as LotAttribution;
+const ENREGISTRE = { ...APPROUVE, enregistrement: { date: '2026-10-13', reference: null, le: '2026-10-13T09:00:00', fichier: null } } as LotAttribution;
 
 describe('R9a — l’approbation du marché avant la notification (art. 54)', () => {
   let fixture: ComponentFixture<AttributionLot>;
@@ -45,18 +47,56 @@ describe('R9a — l’approbation du marché avant la notification (art. 54)', (
     TestBed.resetTestingModule();
   });
 
-  it('enregistré sans approbation : pas de notification, l’écran dit ce qui manque', () => {
-    monter(ENREGISTRE);
+  it('V149 — signé sans visa : ni approbation ni enregistrement ; l’écran dit ce qui manque, dans l’ordre', () => {
+    monter(SIGNE);
     expect(bouton('Notifier')).toBeUndefined();
-    expect(racine().textContent).toContain('il manque l’approbation');
-    expect(bouton('Déclarer l’approbation')).toBeDefined();
+    expect(bouton('Déclarer l’approbation')).toBeUndefined();
+    expect(bouton('Déclarer l’enregistrement')).toBeUndefined();
+    expect(bouton('Déclarer le visa')).toBeDefined();
+    expect(racine().textContent).toContain('il manque le visa, l’approbation et l’enregistrement');
   });
 
-  it('approuver envoie l’autorité, la date et la décision ; la date est bornée par la signature', () => {
+  it('V149 — le visa : marché visé (date, référence, fichier) ou dispense motivée (exception CHED), sans fichier', () => {
     monter(SIGNE);
+    const section = racine().querySelector('[aria-label="Visa du contrôleur financier"]') as HTMLElement;
+    const date = section.querySelector('input[type=date]') as HTMLInputElement;
+    expect(date.min).toBe('2026-10-10');
+    (section.querySelectorAll('input[type=radio]')[1] as HTMLInputElement).dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    const motif = racine().querySelector('[aria-label="Visa du contrôleur financier"] input[type=text]') as HTMLInputElement;
+    motif.value = 'Exception de contrôle préalable (CHED)';
+    motif.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    bouton('Enregistrer la dispense')!.click();
+    const post = http.expectOne('/api/fiches-marche/44/attribution/lots/1/visa');
+    const corps = post.request.body as FormData;
+    expect(corps.get('dispense')).toBe('true');
+    expect(corps.get('motif')).toBe('Exception de contrôle préalable (CHED)');
+    expect(corps.get('fichier')).toBeNull();
+    post.flush({ code: 'DEJA_VISE', message: 'x' }, { status: 409, statusText: 'Conflict' });
+    fixture.detectChanges();
+    expect(racine().querySelector('.alert-danger, [role=alert]')?.textContent).toContain('visa du marché est déjà enregistré');
+  });
+
+  it('V149 — visé : l’approbation s’ouvre, l’enregistrement attend l’approbation', () => {
+    monter(VISE);
+    expect(racine().textContent).toContain('Visé par le contrôleur financier le 11/10/2026 — CF-2026-118');
+    expect(bouton('Déclarer l’approbation')).toBeDefined();
+    expect(bouton('Déclarer l’enregistrement')).toBeUndefined();
+    expect(racine().textContent).toContain('il manque l’approbation et l’enregistrement');
+  });
+
+  it('V149 — la décision d’attribution se lit ; le rappel d’informer les candidats', () => {
+    monter({ ...SIGNE, decisionDisponible: true, information: null, signature: null, candidatsAInformer: true } as unknown as LotAttribution);
+    expect(bouton('Décision d’attribution (PDF)')).toBeDefined();
+    expect(racine().textContent).toContain('dès le choix de l’attributaire (art. 52-I)');
+  });
+
+  it('approuver envoie l’autorité, la date et la décision ; la date est bornée par le visa', () => {
+    monter(VISE);
     const section = racine().querySelector('[aria-label="Approbation"]') as HTMLElement;
     const [autorite, date] = Array.from(section.querySelectorAll('input')) as HTMLInputElement[];
-    expect(date.min).toBe('2026-10-10');
+    expect(date.min).toBe('2026-10-11');
     autorite.value = ' Le Ministre ';
     autorite.dispatchEvent(new Event('input'));
     date.value = '2026-10-12';
@@ -74,8 +114,8 @@ describe('R9a — l’approbation du marché avant la notification (art. 54)', (
     expect(racine().querySelector('.alert-danger, [role=alert]')?.textContent).toContain('déjà approuvé');
   });
 
-  it('approuvé et enregistré : la notification s’ouvre, l’approbation se lit', () => {
-    monter(APPROUVE);
+  it('visé, approuvé et enregistré : la notification s’ouvre, l’approbation se lit', () => {
+    monter(ENREGISTRE);
     expect(racine().textContent).toContain('Approuvé le 12/10/2026 — Le Ministre');
     expect(bouton('Notifier')).toBeDefined();
   });
