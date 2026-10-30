@@ -1,4 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { finalize } from 'rxjs';
 
 import { MandatService } from '../../services/comptes.services';
 import { AuthService } from '../auth/auth.service';
@@ -21,6 +22,9 @@ export class VacanceStore {
   /** `true` = aucun mandat PRMP actif sur le périmètre (poste vacant) — actions de traitement bloquées. */
   readonly vacance = signal(false);
 
+  /** ⚠️ 30/10 (mesure de performance) — un seul appel à la fois : au démarrage, le layout en lançait deux ensemble. */
+  private enCours = false;
+
   /** (Re)vérifie l'état — sans objet hors PRMP/UGPM (le circuit CNM n'est jamais suspendu par la vacance). */
   verifier(): void {
     const role = this.auth.role();
@@ -28,7 +32,9 @@ export class VacanceStore {
       this.vacance.set(false);
       return;
     }
-    this.mandatService.actif().subscribe({
+    if (this.enCours) return;
+    this.enCours = true;
+    this.mandatService.actif().pipe(finalize(() => (this.enCours = false))).subscribe({
       next: () => this.vacance.set(false),
       error: (e: { status?: number }) => this.vacance.set(e?.status === 404),
     });

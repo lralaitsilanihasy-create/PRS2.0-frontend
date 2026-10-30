@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { ActivatedRouteSnapshot, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { filter, skip } from 'rxjs';
+import { filter, finalize, skip } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { libelleRole } from '../../core/auth/libelles-profils';
@@ -100,6 +100,9 @@ export class MainLayout {
   private readonly interimStore = inject(InterimStore);
   /** ⚠️ 06/10 — les procédures en ligne dont le compte est responsable : l'entrée « Mes procédures en ligne » en dépend. */
   private readonly proceduresEnLigne = inject(ProceduresEnLigneStore);
+  /** ⚠️ 30/10 — un seul appel des compteurs du menu à la fois ; une demande reçue entre-temps relit à son terme. */
+  private badgesEnCours = false;
+  private badgesARelire = false;
   /** ⚠️ Intérim désigné (2026-09-21) — je suis suppléé (bannière « Vous êtes suppléé par … »). */
   readonly interimSubi = this.interimStore.subi;
   /** Intérims que j'exerce (bannière « Vous suppléez … », rubrique de menu « Exercé par intérim »). */
@@ -555,7 +558,7 @@ export class MainLayout {
         .subscribe(() => this.rafraichirBadges());
       toObservable(this.dossiersRefresh.revision)
         .pipe(skip(1), takeUntilDestroyed())
-        .subscribe(() => this.rafraichirBadges());
+        .subscribe(() => this.rafraichirBadges(true));
     }
   }
 
@@ -566,8 +569,20 @@ export class MainLayout {
    * ⚠️ 2026-08-06/07 — chez Président/CC, seuls « à dispatcher » est badgé au menu : les autres
    * compteurs vivent sur les cartes des hubs (« Résultat examen », « Mes dossiers »).
    */
-  private rafraichirBadges(): void {
-    this.kpiService.badges().subscribe({
+  private rafraichirBadges(apresGeste = false): void {
+    // ⚠️ 30/10 (mesure de performance) — au démarrage, le constructeur et la première fin de navigation
+    // demandaient les compteurs en même temps : un seul appel à la fois. Une navigation pendant l'appel
+    // n'ajoute rien (la réponse attendue est fraîche) ; un geste signalé, lui, relance une lecture à son terme.
+    if (this.badgesEnCours) {
+      if (apresGeste) this.badgesARelire = true;
+      return;
+    }
+    this.badgesEnCours = true;
+    this.badgesARelire = false;
+    this.kpiService.badges().pipe(finalize(() => {
+      this.badgesEnCours = false;
+      if (this.badgesARelire) this.rafraichirBadges();
+    })).subscribe({
       next: ({ compteurs, aFaire }) => {
         const c: Record<string, number> = {};
         switch (this.auth.role()) {

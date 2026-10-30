@@ -3,7 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, Router, provideRouter } from '@angular/router';
-import { EMPTY, of } from 'rxjs';
+import { EMPTY, Subject, of } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { PermissionsService } from '../../core/auth/permissions.service';
@@ -19,6 +19,7 @@ import { MenuCompactStore } from '../../core/preferences/menu-compact.store';
 import { AssistantIaService } from '../../services/assistant-ia.services';
 import { EtatAssistantIa } from '../../models/assistant-ia.model';
 import { MainLayout, routeEnConcentration } from './main-layout';
+import { DossiersRefreshStore } from '../../features/prmp/dossiers-refresh.store';
 
 @Component({ selector: 'app-ecran-factice', template: '<h1>Écran</h1>' })
 class EcranFactice {}
@@ -141,6 +142,20 @@ describe('Pastille « À faire » du menu (refonte ergonomique, 2026-09-15)', ()
     const entree = await monter({ profil: 'MEMBRE', compteurs: { aExaminer: 2 }, aFaire: 5 });
     expect(entree.getAttribute('href')).toBe('/membre/a-faire');
     expect(entree.querySelector('.nav-badge')?.textContent?.trim()).toBe('5');
+  });
+
+  it('⚠️ 30/10 — un seul appel des compteurs au démarrage ; un geste signalé pendant l’appel relit à son terme', async () => {
+    const reponses: Subject<BadgesMenu>[] = [];
+    TestBed.overrideProvider(KpiService, { useValue: { badges: () => { const r = new Subject<BadgesMenu>(); reponses.push(r); return r; } } });
+    await monter({ profil: 'MEMBRE', compteurs: {} });
+    // Le constructeur et la première fin de navigation : une seule demande.
+    expect(reponses.length).toBe(1);
+    TestBed.inject(DossiersRefreshStore).notifierChangement();
+    TestBed.tick();
+    expect(reponses.length).toBe(1);
+    reponses[0].next({ profil: 'MEMBRE', compteurs: {}, aFaire: 1 });
+    reponses[0].complete();
+    expect(reponses.length).toBe(2);
   });
 
   it('pas de pastille quand le champ est absent (backend qui ne le sert pas), nul ou à zéro', async () => {

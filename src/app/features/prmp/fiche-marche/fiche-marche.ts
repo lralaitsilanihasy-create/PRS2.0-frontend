@@ -6,6 +6,7 @@ import { forkJoin, of } from 'rxjs';
 import { catchError, map, shareReplay, switchMap } from 'rxjs/operators';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { ProceduresEnLigneStore } from '../../../core/procedures/procedures-en-ligne.store';
 import { libelleRole } from '../../../core/auth/libelles-profils';
 import { ouvrirBlobSur, telechargerBlob } from '../../../core/securite/fichiers-surs';
 import { ApiError, codeErreur, corpsErreur, erreursParChamp } from '../../../core/errors/api-error';
@@ -144,6 +145,8 @@ export class FicheMarcheEcran {
   private readonly auth = inject(AuthService);
   private readonly liens = inject(LienDossier);
   private readonly toast = inject(ToastService);
+  /** ⚠️ 30/10 — la liste des procédures en ligne n'est plus relue à chaque navigation : la désignation la relit. */
+  private readonly proceduresEnLigne = inject(ProceduresEnLigneStore);
   private readonly champService = inject(ChampFicheMarcheService);
   private readonly dmcService = inject(DmcService);
   private readonly ficheService = inject(FicheMarcheService);
@@ -980,6 +983,7 @@ export class FicheMarcheEcran {
         this.responsableChoisi.set('');
         this.candidatsResponsable.set(null);
         this.toast.success(`${compte?.nom ?? im} désigné responsable de la procédure.`);
+        this.proceduresEnLigne.verifier(true);
       },
       error: (e: ApiError) => {
         this.saving.set(false);
