@@ -146,3 +146,33 @@ Les réponses ci-dessus deviennent des demandes fermes :
 - **D4 — Travaux** (Q1 : oui). Servir aux travaux `B02-AU-04` (durée, ≤ 36 mois) et `B09-DX-03` (modalités des commandes) ; la
   garantie est déjà lue sur `B09-GT-01`.
 - **D5 — Reconduction** (B5 ci-dessus) : autorisée tant que la durée totale ne dépasse pas trois ans.
+
+> ⚠️ **2026-10-29 — D1 à D5 livrés (PRS20), avec ces précisions.**
+> - **D1** : `Consommation.articles[].commandeAnnee` est **renommé `commandeDuree`** (bons émis depuis la prise d'effet).
+> - **D2** : la saisie du besoin refusait **déjà** un article à commandes sans `quantiteMin` positive (`PUT …/articles`, 400). Règle
+>   bloquante nouvelle **`QUANTITE_MIN_EXIGEE`** (bloc `B12`) pour les articles saisis avant le passage à la forme « à commandes ».
+>   L'alerte `QUANTITE_MIN_NON_ATTEINTE` regarde la **fin du contrat** (période en cours, reconductions comprises).
+> - **D3** : **409 `MAXIMUM_DEPASSE` supprimé** ; alerte **`MAXIMUM_ESTIME_DEPASSE`** (consommation et `ContratVigueurDto.alertes`) ;
+>   `resteMaximum` sur la durée (négatif au-delà). L'avertissement d'écart au plan livré cet après-midi est **retiré** ; reste le
+>   contrôle min ≤ max quand les deux montants sont saisis. `cumulAnnee` et `MINIMUM_NON_ATTEINT` (montant annuel) sont inchangés.
+> - **D4** : `B02-AU-04` servi aux travaux, avec la règle bloquante **`DUREE_MARCHE_A_COMMANDES_MAX`** (≤ 36 mois). **`B09-DX-03` n'est
+>   pas servi aux travaux** : sa rubrique « Délai d'exécution » des fournitures (`B09-DX`) n'admet pas les travaux. À la place, champ
+>   nouveau des travaux **`B09-DL-06`** « Modalités et période de passation des commandes (marché à commandes) », facultatif, que le
+>   contrat lit comme `rythme`. CSV des fournitures et des travaux recopiés dans `docs/` (non commités) ; recette alignée par
+>   `PRS20/docs/referentiel/2026-10-29-marche-a-commandes-travaux.sql`.
+> - **D5** : un marché à commandes est `reconductible`, `dureeMaxMois` = 36, `reconductionsMax` nul, sans préavis (donc sans alerte
+>   ni notification `RECONDUCTION_A_DECIDER`) ; 409 `DUREE_MAX_ATTEINTE` au-delà de 36 mois. Les contrats déjà créés le deviennent par
+>   `POST …/relecture`.
+> - **Procédure 5 (travaux)** : réviser la fiche (durée `B02-AU-04`, quantités minimum de chaque article), la revalider, puis
+>   relire le contrat n° 2.
+
+> ⚠️ **Front, 2026-10-29 — D1 à D5 suivis** (sur PRS20 3174215).
+> - **D1** : `commandeDuree` remplace `commandeAnnee` ; le tableau dit « Commandé sur la durée » ; le refus `QUANTITE_MAX_DEPASSEE` parle
+>   de la quantité maximale « sur la durée du marché ».
+> - **D2** : l'alerte `QUANTITE_MIN_NON_ATTEINTE` se lit à la fin du contrat (art. 30-II cité) ; la règle `QUANTITE_MIN_EXIGEE` vient du
+>   bilan servi.
+> - **D3** : le refus `MAXIMUM_DEPASSE` est retiré des libellés ; alerte `MAXIMUM_ESTIME_DEPASSE` libellée dans la consommation et dans
+>   l'écran des contrats (« Maximum estimé dépassé ») ; « Reste avant le maximum estimé (durée du marché) », en rouge s'il est négatif ;
+>   « Minimum annuel · maximum estimé ».
+> - **D4, D5** : rien à coder (référentiel servi ; la reconduction passe par l'écran existant, sans préavis ni alerte).
+> - La procédure 5 de la recette n'est pas encore révisée ni relue (geste sur des données de recette, en attente de l'accord du pilote).

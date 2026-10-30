@@ -85,3 +85,28 @@ d'attente comme **règles définitives** :
   6 mois pour un marché d'entretien ou de terrassement. Aucune reconnaissance automatique de l'objet du marché.
 - **Q2 (base de la pénalité)** — la **règle actuelle** est retenue : la valeur livrée en retard, chaque livraison avec ses propres jours
   de retard (V148). **B2 est retiré** : rien à changer.
+
+> ⚠️ **2026-10-30 — B1, B3, B4, B5 livrés (PRS20, V150) ; B2 retiré, rien de changé. Précisions :**
+> - **B1** : avant le CCAG, le taux du **CCAP de la fiche** (`B09-PE-02`, « 2 » = 2 ‰, « 1/2000 » = 0,5 ‰) s'il est saisi. `penaliteNote`
+>   cite la source. **Le taux par défaut n'est pas servi à part** (pas de champ) : le libellé du front peut dire « vide : taux du CCAP,
+>   sinon du CCAG de la catégorie ».
+> - **B3** : `POST …/bons/{idBon}/definitive?idReception=` (facultatif : sinon la première livraison due) ; 409 **`DEJA_RECU`** nouveau
+>   ici. `ReceptionCommandeDto` + `idProvisoire` (la définitive), `garantieJusquau` (la provisoire), en fin d'objet. Une définitive
+>   partielle s'ouvre **même bon `RECU_PARTIEL`** ; une seule réception à la fois (`RECEPTION_EN_COURS`). `RECU_DEFINITIF` quand chaque
+>   livraison reçue a sa définitive.
+> - **B4** : 12 mois aussi pour un **contrat-cadre de travaux** sans `B09-GP-03`.
+> - **B5** : `decisionAvantLe` (provisoire, en fin d'objet) ; alertes **`DECISION_RECEPTION_PROCHE`** (à 3 jours) et
+>   **`DECISION_RECEPTION_DEPASSEE`** dans `DuBon.alertes` ; notification **`DECISION_RECEPTION`** au président (PRMP qui préside, ou le
+>   membre président : sa cloche d'espace externe), une fois à l'approche, une fois dépassée. « Réceptions » du membre
+>   (`…/miennes`) porte la réception, donc `decisionAvantLe`.
+
+> ⚠️ **2026-10-30 — front livré** (écran de réception d'un bon, `receptions-bon.ts`) :
+> - **B1** : le champ du PV dit « Taux de pénalité (‰ par jour ; vide : taux du CCAP, sinon du CCAG) » ; la source servie par
+>   `penaliteNote` s'affiche déjà au PV.
+> - **B3** : chaque livraison reçue dit « Garantie de cette livraison jusqu'au … », puis « Réception définitive en cours / prononcée » ;
+>   la définitive se titre « Réception définitive de la livraison du … » (`idProvisoire`) ; le président a un bouton « Ouvrir la
+>   réception définitive de cette livraison » (`?idReception=`) dès que sa garantie est écoulée, le bouton général de l'alerte restant
+>   (première due). Message de `DEJA_RECU` élargi à la livraison.
+> - **B5** : « Décision de la commission avant le … » sur la livraison sans PV signé ; alertes `DECISION_RECEPTION_PROCHE` (orange) et
+>   `DECISION_RECEPTION_DEPASSEE` (rouge) en tête du bon — donc aussi dans « Réceptions » du membre. Notification `DECISION_RECEPTION` :
+>   la PRMP va aux contrats en vigueur, ce contrat ouvert (`?dmc=`) ; le membre président à « Réceptions ».

@@ -64,3 +64,34 @@ Rien n'est construit avant la réponse.
 **Composition du collège restreint** (décret n° 2019-1064, art. 28) : aucun texte trouvé (dossier `D:\TEXTES MP`, portail CNLEGIS non
 interrogeable automatiquement, recherche web). Le pilote retient l'hypothèse H1 comme **règle** : le président de la CAO évalue la
 remise. Rien à changer au serveur.
+
+> ⚠️ **2026-10-30 — B1, B2 (en partie), B3 livrés (PRS20, V151-V152) ; B4 sans changement. Précisions :**
+> - **B1** : le DPAC-CC (art. 1) et l'AE-CC (art. 2) portent une phrase nouvelle : « Les quantités du besoin sont indicatives, sans
+>   engagement de l'acheteur public : le contrat-cadre n'impose aucun minimum de commande (décret n° 2019-1064, art. 6, 8 et 34). »
+>   (modèles `modeles/dao/DPAC-CC.txt` et `AE-CC.txt` : copies du front à resynchroniser). La liste des fournitures (`LF`) et le
+>   bordereau estimatif titrent « Quantité indicative » en contrat-cadre ; la liste le rappelle sous chaque tableau. **Pas de libellé
+>   servi au référentiel du besoin** : les colonnes du besoin sont celles du front (« Quantité » → « Quantité indicative » si
+>   `typeMarche = CONTRAT_CADRE`). Aucune règle n'en fait un minimum ; le total estimé reste comparé au plan.
+> - **B2 — appel d'offres restreint** : sous-types **`DAOR-CC`** (dossier) et **`MAOR-CC`** (marché), sur le modèle de `DAOO-CC` /
+>   `MAOO-CC` : pièces de `DAOR` / `MAOR`, grille de `DAOO` / `MAOO` (avec les variantes contrat-cadre de V133-V135), forme imposée.
+>   Produits d'office par la fiche et l'attribution.
+> - **B2 — consultation : écart.** L'application **n'a pas de sous-type de consultation en fournitures et travaux** (le Manuel ne
+>   l'outille pas ; `DC` est la consultation de prestations intellectuelles) : le mode « consultation » produit `DAOO`, donc `DAOO-CC` en
+>   contrat-cadre, comme avant. Créer `DC…-CC` demande d'abord le sous-type de consultation hors contrat-cadre et sa grille : à trancher
+>   par le pilote (codes, pièces, grille).
+> - **B2 — art. 14 (candidatures puis offres) : n'existe pas** hors prestations intellectuelles (enveloppes technique puis financière)
+>   et AMI (présélection). L'évaluation des fournitures et travaux examine les offres, puis qualifie l'attributaire.
+> - **B3** : au rythme « Selon le calendrier fixé ci-après », `POST /api/contrats-en-vigueur/{id}/remises` lance une remise **par lot**
+>   (chaque contrat en vigueur de la procédure au même rythme), reliées par **`idGroupe`** ; `RemiseDto` + `idGroupe`, `lots[{ idRemise,
+>   idContrat, lot, numero, mode, etat }]` (en fin d'objet). Évaluation, décision et réponses restent **par lot**. Un lot non consultable
+>   bloque le tout (409 `SANS_TITULAIRE` / `REMISE_EN_COURS`, `details.lot`).
+
+> ⚠️ **2026-10-30 — front livré :**
+> - **B1** : la grille du besoin de la fiche titre « Quantité indicative » (colonne et nom accessible du champ) quand
+>   `typeMarche = CONTRAT_CADRE` ; copies `scripts/modeles-dao/modeles/DPAC-CC.txt` et `AE-CC.txt` resynchronisées.
+> - **B2** : `DAOR-CC` rejoint les sous-types produits par la fiche (présentation à la PRMP), `MAOR-CC` ceux produits par
+>   l'attribution (`MAOR-CC` ← `DAOR-CC`) ; les actes de gestion lisent « montants par titulaire » pour `MAOO-CC` comme `MAOR-CC`.
+> - **B3** : au lancement, au rythme « Selon le calendrier fixé ci-après », la PRMP est prévenue que la remise part pour tous les lots ;
+>   la remise affiche « Remise commune à tous les lots » avec la remise de chaque lot (`lots[]`) ; `SANS_TITULAIRE` /
+>   `REMISE_EN_COURS` nomment le lot (`details.lot`).
+> - **Écart consultation** : rien côté front, en attente du pilote.

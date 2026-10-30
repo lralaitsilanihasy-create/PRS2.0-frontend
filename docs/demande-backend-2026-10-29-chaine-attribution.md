@@ -136,3 +136,33 @@ B1 à B5 deviennent des demandes fermes, selon les réponses ci-dessus :
 **Q4 (modèle officiel de la décision d'attribution)** : aucun modèle trouvé dans les textes lus. **Décidée** : le serveur produit son
 propre texte (B2), sur le modèle du projet de marché ; s'il le rend administrable (modèle de document), l'Administrateur pourra le
 remplacer le jour où un modèle officiel sera fourni.
+
+> ⚠️ **2026-10-29 — B1 à B5 livrés (PRS20, V149), avec ces précisions.**
+> - **B1** : `POST …/attribution/lots/{lot}/visa` (multipart, **PRMP seule**, comme l'approbation — pas l'UGPM) : `dateVisa`,
+>   `reference?` (100 caractères), `fichier` (le marché visé, nature `VISA_CF`) ; ou `dispense=true` + `motif` (sans fichier,
+>   `dateVisa` facultative). 400 `DATE_INVALIDE`, `FICHIER_OBLIGATOIRE`, `MOTIF_OBLIGATOIRE`, `CHAMP_TROP_LONG` ; 409 `NON_SIGNE`,
+>   **`DEJA_VISE`**, `DEJA_APPROUVE`. `LotAttribution.visa` = `{ date, reference, dispense, motif, le, par, fichier }` (en fin de lot).
+> - **B4** : approbation sans visa → 409 **`NON_VISE`** ; enregistrement sans approbation → 409 **`MARCHE_NON_APPROUVE`** (le code de la
+>   notification, réutilisé) ; les dates suivent l'ordre (approbation ≥ visa, à défaut la signature ; enregistrement ≥ approbation). Les
+>   lots déjà approuvés ou enregistrés gardent leurs gestes.
+> - **B2 / Q4** : `GET …/attribution/lots/{lot}/decision[?format=docx]` (lecteurs du projet ; 404 avant l'attribution, et pour un lot
+>   attribué avant V149). `LotAttribution.decisionDisponible`. Jointe au dossier de marché (`decision-attribution_{idDmc}_lot{lot}.pdf`,
+>   type `DECISION_ATTRIBUTION`). Titre « DÉCISION D'ATTRIBUTION PROVISOIRE » ; texte du serveur. **Pas encore administrable** (pas de
+>   nature de modèle `DECISION_ATTRIBUTION`) : à faire dans un lot à part si l'Administrateur doit pouvoir la remplacer.
+> - **B3** : notification **`CANDIDATS_A_INFORMER`** à la PRMP au geste « Attribuer » ; `LotAttribution.candidatsAInformer` ; compteur
+>   **`candidatsAInformer`** des badges de la PRMP (`compteurs`, dernier champ). Pas d'entrée dans « À faire » : cet écran ne porte que
+>   les dossiers de la Commission ; le compteur en tient lieu.
+> - **B5** : **déjà fait** depuis MS-2 (16/10) : la décision d'une remise notifie `REMISE_RESULTAT` à chaque titulaire consulté, avec le
+>   motif pour un non-retenu (testé).
+
+> ⚠️ **Front, 2026-10-29 — livré** (sur PRS20 5bce5d4, V149 ; `features/evaluation/attribution-lot.ts`).
+> - **B1** : panneau « Visa du contrôleur financier » entre la signature et l'approbation : « Visé » (date bornée par la signature,
+>   référence facultative, marché visé) ou « Dispensé (exception CHED) » avec son motif, sans fichier ; refus `NON_VISE`, `DEJA_VISE`.
+> - **B4** : l'approbation ne s'ouvre qu'après le visa (date bornée par le visa), l'enregistrement qu'après l'approbation (date bornée
+>   par l'approbation) ; la phrase d'attente dit ce qui manque dans l'ordre (« il manque le visa, l'approbation et l'enregistrement »).
+> - **B2** : boutons « Décision d'attribution (PDF) » et Word sous le bloc « Attribué » quand `decisionDisponible`.
+> - **B3** : rappel « À faire sans attendre » (art. 52-I) dans le bloc « Informer les candidats » quand `candidatsAInformer` ; la
+>   notification `CANDIDATS_A_INFORMER` mène la PRMP et l'UGPM à l'écran de l'évaluation et de l'attribution
+>   (`/procedure/<idDmc>/evaluation`). Le compteur `candidatsAInformer` n'est pas affiché : aucune entrée du menu ne mène à cet écran.
+> - **B5** : rien à coder (déjà fait au serveur).
+> - Non recetté à l'écran (aucun lot entre la signature et la notification en base).
