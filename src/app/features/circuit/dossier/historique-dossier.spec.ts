@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { EvenementHistorique, FiliationDossier, NoeudFiliation } from '../../../models';
-import { HistoriqueDossier, compterDossiers, dateHistorique } from './historique-dossier';
+import { HistoriqueDossier, codeLisible, compterDossiers, dateHistorique, detailLisible } from './historique-dossier';
 
 /** « Historique du dossier » (pilote, 31/10) — filiation (B1) et historique (B2). */
 describe('HistoriqueDossier', () => {
@@ -78,10 +78,19 @@ describe('HistoriqueDossier', () => {
     expect(el.querySelector('app-etat-erreur')).not.toBeNull();
   });
 
-  it('formate les dates et compte les dossiers visibles', () => {
+  it('formate les dates, traduit les codes et compte les dossiers visibles', () => {
     expect(dateHistorique('2026-10-28T11:20:05')).toBe('28/10/2026 11:20');
     expect(dateHistorique('2026-10-28')).toBe('28/10/2026');
+    // Minuit pile = élément sans heure (examen, PV) : pas de « 00:00 ».
+    expect(dateHistorique('2026-10-28T00:00:00')).toBe('28/10/2026');
     expect(dateHistorique(null)).toBe('—');
+    expect(codeLisible('EN_ATTENTE_DECISION_PRMP')).toBe('En attente de la décision de la PRMP');
+    expect(codeLisible('FAVR')).toBe('Favorable avec réserves');
+    expect(codeLisible('A_REEXAMINER')).toBe('A reexaminer');
+    expect(codeLisible('attribué à MEMANT1')).toBe('attribué à MEMANT1');
+    expect(detailLisible('levée le 2026-10-28T14:16:09.394762')).toBe('levée le 28/10/2026 14:16');
+    expect(detailLisible('Passage 1 INITIAL')).toBe('Passage 1 initial');
+    expect(detailLisible('APPROUVE')).toBe('Approuvé');
     expect(compterDossiers(filiation.racine)).toBe(3);
   });
 });

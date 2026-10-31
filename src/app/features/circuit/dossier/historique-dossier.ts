@@ -44,12 +44,60 @@ export const LIBELLES_HISTORIQUE: Readonly<Record<string, string>> = {
 /** Les éléments dont l'`id` désigne un DOSSIER (et mène donc à sa page) : l'attribution (dossier de marché), l'acte de gestion. */
 const ID_EST_UN_DOSSIER = new Set(['ATTRIBUTION', 'ACTE_GESTION']);
 
-/** « 2026-10-28T11:20:05 » → « 28/10/2026 11:20 » ; une date seule → « 28/10/2026 ». */
+/**
+ * « 2026-10-28T11:20:05 » → « 28/10/2026 11:20 » ; une date seule → « 28/10/2026 ». Minuit pile se lit comme une date seule : le
+ * serveur date ainsi les éléments sans heure (examen, PV, publication) — « 00:00 » laisserait croire à une heure réelle.
+ */
 export function dateHistorique(iso: string | null): string {
   if (!iso) return '—';
-  const m = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/.exec(iso);
+  const m = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?/.exec(iso);
   if (!m) return iso;
-  return `${m[3]}/${m[2]}/${m[1]}${m[4] ? ` ${m[4]}:${m[5]}` : ''}`;
+  const date = `${m[3]}/${m[2]}/${m[1]}`;
+  const minuit = m[4] === '00' && m[5] === '00' && (m[6] ?? '00') === '00';
+  return m[4] && !minuit ? `${date} ${m[4]}:${m[5]}` : date;
+}
+
+/** Statuts et avis servis en code (B2) : leur libellé. Un code absent se lit par `codeLisible`. */
+const LIBELLES_CODES: Readonly<Record<string, string>> = {
+  DEFINITIF: 'Définitif',
+  PROJET: 'Projet',
+  SIGNE: 'Signé',
+  COMPLET: 'Complet',
+  INCOMPLET: 'Incomplet',
+  ENREGISTREE: 'Enregistrée',
+  APPROUVE: 'Approuvé',
+  REJETE: 'Rejeté',
+  ACCEPTEE: 'Acceptée',
+  REFUSEE: 'Refusée',
+  EN_ATTENTE: 'En attente',
+  EN_ATTENTE_DECISION_PRMP: 'En attente de la décision de la PRMP',
+  LEVEE: 'Levée',
+  INITIAL: 'initial',
+  FAV: 'Favorable',
+  FAVR: 'Favorable avec réserves',
+  DEF: 'Défavorable',
+};
+/** Sigles qui restent en capitales quand un code inconnu est mis en phrase. */
+const SIGLES = new Set(['PRMP', 'UGPM', 'CNM', 'CC', 'SIGMP', 'AGPM', 'PPM', 'DAO', 'PV', 'CAO', 'AMI']);
+
+/** « EN_ATTENTE_DECISION_PRMP » → son libellé ; un code inconnu → « Code mis en phrase » ; un texte ordinaire passe tel quel. */
+export function codeLisible(code: string | null): string {
+  if (!code) return '';
+  if (LIBELLES_CODES[code]) return LIBELLES_CODES[code];
+  if (!/^[A-Z0-9_]+$/.test(code)) return code;
+  const phrase = code
+    .split('_')
+    .map((m) => (SIGLES.has(m) ? m : m.toLowerCase()))
+    .join(' ');
+  return phrase.charAt(0).toUpperCase() + phrase.slice(1);
+}
+
+/** Le détail servi peut porter des dates techniques (« levée le 2026-10-28T14:16:09.39 ») et des codes : on les rend lisibles. */
+export function detailLisible(detail: string | null): string {
+  if (!detail) return '';
+  return detail
+    .replace(/\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?)?/g, (d) => dateHistorique(d))
+    .replace(/\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b|\b(?:APPROUVE|REJETE|INITIAL|COMPLET|INCOMPLET|SIGNE|DEFINITIF|LEVEE)\b/g, (c) => codeLisible(c));
 }
 
 /** Nombre de dossiers visibles de l'arbre (les nœuds masqués ne comptent pas). */
@@ -111,10 +159,10 @@ type EtatHistorique = { etat: 'chargement' } | { etat: 'erreur' } | { etat: 'pre
                             }
                           }
                           @if (e.statut || e.avis) {
-                            <span class="hd__meta">@if (e.statut) { {{ e.statut }} }@if (e.statut && e.avis) { · }@if (e.avis) { avis {{ e.avis }} }</span>
+                            <span class="hd__meta">@if (e.statut) { {{ code(e.statut) }} }@if (e.statut && e.avis) { · }@if (e.avis) { avis {{ code(e.avis).toLowerCase() }} }</span>
                           }
                           @if (e.acteur || e.detail) {
-                            <span class="hd__meta">@if (e.acteur) { {{ e.acteur }} }@if (e.acteur && e.detail) { — }{{ e.detail }}</span>
+                            <span class="hd__meta">@if (e.acteur) { {{ e.acteur }} }@if (e.acteur && e.detail) { — }{{ detail(e.detail) }}</span>
                           }
                         </span>
                       </li>
@@ -302,6 +350,12 @@ export class HistoriqueDossier {
   }
   date(iso: string | null): string {
     return dateHistorique(iso);
+  }
+  code(c: string | null): string {
+    return codeLisible(c);
+  }
+  detail(d: string | null): string {
+    return detailLisible(d);
   }
 
   private poser(id: number, e: EtatHistorique): void {
