@@ -72,12 +72,12 @@
   --text-2xl : 22px;
   --text-3xl : 26px;
 
-  /* Rayons */
+  /* Rayons — design institutionnel (31/10) : une carte ne dépasse pas 8 px ; lg, xl et 2xl y sont ramenés. */
   --radius-sm  : 6px;
   --radius-md  : 8px;
-  --radius-lg  : 12px;
-  --radius-xl  : 16px;
-  --radius-2xl : 20px;
+  --radius-lg  : 8px;
+  --radius-xl  : 8px;
+  --radius-2xl : 8px;
   --radius-full: 100px;
 
   /* Ombres — superposées (ambiance neutre + touche de marque) pour une profondeur douce et sophistiquée. */

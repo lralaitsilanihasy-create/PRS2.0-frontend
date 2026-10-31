@@ -30,14 +30,14 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
       align-items: center;
       gap: 0.9rem;
       padding: 1rem 1.15rem;
-      background: var(--danger-bg, #fef2f2);
-      border: 1px solid var(--danger-border, #fecaca);
+      background: var(--retard-fond);
+      border: 0;
       border-radius: var(--radius-lg, 12px);
-      color: var(--danger-text, #b91c1c);
+      color: var(--retard-texte);
     }
     .etat-erreur__icone { font-size: 1.3rem; line-height: 1; }
     .etat-erreur__corps { flex: 1 1 auto; min-width: 0; }
-    .etat-erreur__titre { margin: 0; font-weight: 700; }
+    .etat-erreur__titre { margin: 0; font-weight: 500; }
     .etat-erreur__aide { margin: 0.15rem 0 0; font-size: var(--text-sm, 0.8rem); opacity: 0.85; }
   `,
 })

@@ -36,13 +36,13 @@ export interface SectionLink {
     .section__card {
       display: block;
       padding: 1.25rem;
-      background: #fff;
+      background: var(--carte-fond);
       border: 1px solid var(--c-100);
       border-radius: var(--radius-xl);
       box-shadow: var(--shadow-md);
       text-decoration: none;
       color: var(--c-800);
-      font-weight: 600;
+      font-weight: 500;
       transition: var(--transition);
     }
     .section__card:hover {

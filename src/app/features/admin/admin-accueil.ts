@@ -368,7 +368,7 @@ const GESTES: Readonly<Record<string, string>> = {
   `,
   styles: `
     .acc__jour { font-size: var(--text-md); color: var(--n-500); margin: 0; }
-    .acc__jour strong { font-weight: 700; color: var(--n-700); }
+    .acc__jour strong { font-weight: 500; color: var(--n-700); }
     .acc__jour strong.acc__jour--retard { color: var(--danger-text); }
     .acc__attente { color: var(--n-500); }
 
@@ -379,7 +379,7 @@ const GESTES: Readonly<Record<string, string>> = {
 
     .acc__h2 {
       font-size: var(--text-md);
-      font-weight: 800;
+      font-weight: 500;
       color: var(--n-800);
       margin: 18px 0 9px;
       display: flex;
@@ -394,7 +394,7 @@ const GESTES: Readonly<Record<string, string>> = {
     .acc-file {
       position: relative;
       overflow: hidden;
-      background: #fff;
+      background: var(--carte-fond);
       border: 0.5px solid var(--n-200);
       border-radius: var(--radius-xl);
       box-shadow: var(--shadow-sm);
@@ -409,19 +409,19 @@ const GESTES: Readonly<Record<string, string>> = {
     .acc-file::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--bouton-principal); }
     .acc-file--retard::before { background: var(--danger-text); }
     .acc-file__tete { display: flex; align-items: baseline; gap: 9px; }
-    .acc-file__n { font-size: 30px; font-weight: 800; color: var(--n-800); line-height: 1; }
+    .acc-file__n { font-size: 30px; font-weight: 500; color: var(--n-800); line-height: 1; }
     /* ⚠️ --p-700 sur --p-50 : 5,57:1. La paire d'origine (--info-text sur --info-bg) tombe à
        3,84:1 — sous le seuil AA d'un texte de 11,5 px, qui n'est pas un « grand texte ». */
     .acc-file__tag {
       font-size: var(--text-xs);
-      font-weight: 700;
+      font-weight: 500;
       padding: 2px 8px;
       border-radius: var(--radius-full);
       background: var(--p-50);
       color: var(--p-700);
     }
     .acc-file__tag--retard { background: var(--danger-bg); color: var(--danger-text); }
-    .acc-file__titre { font-size: var(--text-md); font-weight: 700; color: var(--n-700); margin: 0; }
+    .acc-file__titre { font-size: var(--text-md); font-weight: 500; color: var(--n-700); margin: 0; }
     .acc-file__attente { font-size: var(--text-sm); color: var(--n-400); margin: 1px 0 0; }
     .acc-file__go { margin-top: 9px; align-self: flex-start; }
 
@@ -439,9 +439,9 @@ const GESTES: Readonly<Record<string, string>> = {
        — et la couleur ne porte rien seule, chaque ligne dit son sujet en toutes lettres. */
     .acc-veille__ic--risque { background: var(--danger-bg); color: var(--danger-text); }
     .acc-veille__corps { display: flex; flex-direction: column; gap: 1px; }
-    .acc-veille__titre { font-size: var(--text-base); font-weight: 700; color: var(--n-700); }
+    .acc-veille__titre { font-size: var(--text-base); font-weight: 500; color: var(--n-700); }
     .acc-veille__aide { font-size: var(--text-sm); color: var(--n-500); }
-    .acc-veille__lien { font-size: var(--text-sm); font-weight: 700; color: var(--p-700); margin-top: 4px; }
+    .acc-veille__lien { font-size: var(--text-sm); font-weight: 500; color: var(--p-700); margin-top: 4px; }
 
     .acc-vide { font-size: var(--text-base); color: var(--n-500); margin: 0; padding: 12px 14px; }
     /* L'état d'erreur porte son propre fond : il lui faut la marge que la carte ne donne pas. */
@@ -462,8 +462,8 @@ const GESTES: Readonly<Record<string, string>> = {
       border-radius: var(--radius-lg);
       overflow: hidden;
     }
-    .acc-tuile { background: #fff; padding: 11px 13px; }
-    .acc-tuile__n { display: block; font-size: var(--text-xl); font-weight: 800; color: var(--n-800); line-height: 1.1; }
+    .acc-tuile { background: var(--carte-fond); padding: 11px 13px; }
+    .acc-tuile__n { display: block; font-size: var(--text-xl); font-weight: 500; color: var(--n-800); line-height: 1.1; }
     .acc-tuile__l { display: block; font-size: var(--text-sm); color: var(--n-500); margin-top: 2px; line-height: 1.3; }
     /* La précision de la mesure (« depuis moins de 12 h », « sur 24 h ») est écrite SOUS le libellé,
        à la même encre AA : ce n'est pas une note de bas de page, c'est ce que le chiffre compte. */
@@ -473,17 +473,14 @@ const GESTES: Readonly<Record<string, string>> = {
     .acc-tuile--alerte .acc-tuile__n { color: var(--danger-text); }
 
     .acc-pied { font-size: var(--text-sm); color: var(--n-500); margin: 7px 0 0; }
-    .acc-pied a { color: var(--p-700); font-weight: 700; }
+    .acc-pied a { color: var(--p-700); font-weight: 500; }
 
     /* ── Actualité ───────────────────────────────────────────────────────── */
     .acc-actu { padding: 12px 14px; }
     .acc-actu .acc-vide { padding: 0 0 8px; }
     .acc-actu__etat { display: flex; align-items: center; gap: 7px; margin: 0; }
-    /* ⚠️ Encre recalibrée, même geste que les jetons --*-ink du lot 5 : --success-text sur
-       --success-bg ne donne que 3,58:1, sous le seuil AA. #047857 y monte à 5,21:1. La forme du
-       badge (fond, cerné, arrondi) reste celle du design system — seule l'encre change, et ici
-       seulement : le jeton global sert des dizaines d'écrans et ne se retouche pas depuis un lot. */
-    .acc-actu__etat .badge-success { color: #047857; }
+    /* Encre favorable de la palette (5,01:1 sur son fond). */
+    .acc-actu__etat .badge-success { color: var(--favorable-texte); }
     .acc-actu__cible { font-size: var(--text-sm); color: var(--n-500); }
     .acc-actu__filet { height: 3px; border-radius: 2px; background: var(--p-200); margin: 9px 0 8px; }
     .acc-actu__titre { font-size: var(--text-base); color: var(--n-700); }

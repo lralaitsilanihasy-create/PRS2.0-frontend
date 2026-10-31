@@ -1,6 +1,5 @@
-/* Aperçu du dossier sélectionné (maquette Main, colonne droite ~380 px). Couleurs de texte vérifiées
-   au contraste AA sur blanc : #152033 15:1, #34405a 10:1, #5b6784 5,6:1, #0369a1 5,9:1,
-   #b91c1c 6,5:1, #b45309 5,0:1, #047857 5,5:1. */
+/* Aperçu du dossier sélectionné (maquette Main, colonne droite ~380 px). Design institutionnel (31/10/2026) :
+   couleurs de la palette de styles.scss, contrastes mesurés par scripts/contrastes-coquille.mjs ; aucun texte bleu. */
 :host {
   display: block;
   min-width: 0;
@@ -11,18 +10,18 @@
   flex-direction: column;
   gap: 0.8rem;
   padding: 1rem 1.05rem 1.1rem;
-  background: #fff;
-  border: 1px solid #e0e6f0;
+  background: var(--carte-fond);
+  border: 1px solid var(--bordure);
   border-radius: 14px;
-  color: #152033;
+  color: var(--texte);
 }
 .ap__lbl {
   margin: 0;
   font-size: 0.6875rem;
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: #5b6784;
+  color: var(--texte-secondaire);
 }
 .ap__ref {
   margin: -0.45rem 0 0;
@@ -31,7 +30,7 @@
   overflow-wrap: anywhere;
 }
 .ap__ref--sans {
-  font: 800 1.0625rem/1.2 var(--font-base);
+  font: 500 1.0625rem/1.2 var(--police-texte);
 }
 /* Lot L4-F6 : la référence mène à la page du dossier — souligné au survol seulement, le titre reste un titre. */
 .ap__lien {
@@ -45,7 +44,7 @@
 .ap__ent {
   margin: -0.55rem 0 0;
   font-size: 0.8125rem;
-  color: #34405a;
+  color: var(--texte-secondaire);
 }
 .ap__puces {
   display: flex;
@@ -57,21 +56,21 @@
   padding: 0.1rem 0.6rem;
   border-radius: 20px;
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.15rem;
 }
-.ap__statut--info { background: #e0f2fe; color: #075985; }
-.ap__statut--warning { background: #fef3c7; color: #92400e; }
-.ap__statut--success { background: #d1fae5; color: #065f46; }
-.ap__statut--danger { background: #fee2e2; color: #b91c1c; }
-.ap__statut--neutral { background: #e8edf5; color: #34405a; }
+.ap__statut--info { background: var(--examen-fond); color: var(--examen-texte); }
+.ap__statut--warning { background: var(--examen-fond); color: var(--examen-texte); }
+.ap__statut--success { background: var(--favorable-fond); color: var(--favorable-texte); }
+.ap__statut--danger { background: var(--retard-fond); color: var(--retard-texte); }
+.ap__statut--neutral { background: var(--neutre-fond); color: var(--neutre-texte); }
 .ap__puce {
   padding: 0 0.4rem;
-  border: 1px solid #e0e6f0;
+  border: 1px solid var(--bordure);
   border-radius: 5px;
   font: 500 0.71875rem/1.15rem var(--cnm-mono);
-  color: #34405a;
-  background: #fff;
+  color: var(--texte-secondaire);
+  background: var(--carte-fond);
 }
 
 /* ── Frise des sept étapes ── */
@@ -92,7 +91,7 @@
   right: 7%;
   top: 0.65rem;
   height: 2px;
-  background: #dbe3ee;
+  background: var(--bordure);
 }
 .frise__e {
   position: relative;
@@ -107,62 +106,62 @@
   width: 0.875rem;
   height: 0.875rem;
   border-radius: 50%;
-  background: #fff;
-  border: 2px solid #c5d0de;
+  background: var(--carte-fond);
+  border: 2px solid var(--bordure-champ);
 }
-.frise__e--faite .frise__pt { background: #0284c7; border-color: #0284c7; }
-.frise__e--courante .frise__pt { border-color: #0284c7; box-shadow: 0 0 0 4px #bae6fd; }
-.frise__e--pause .frise__pt { border-color: #d97706; box-shadow: 0 0 0 4px #fde68a; }
+.frise__e--faite .frise__pt { background: var(--bouton-principal); border-color: var(--bouton-principal); }
+.frise__e--courante .frise__pt { border-color: var(--bouton-principal); box-shadow: 0 0 0 4px var(--onglet-actif-fond); }
+.frise__e--pause .frise__pt { border-color: var(--or); box-shadow: 0 0 0 4px var(--examen-fond); }
 .frise__l {
   font-size: 0.625rem;
   line-height: 1.15;
-  font-weight: 600;
-  color: #34405a;
+  font-weight: 500;
+  color: var(--texte-secondaire);
   white-space: nowrap;
 }
-.frise__e--a-venir .frise__l { font-weight: 500; color: #5b6784; }
+.frise__e--a-venir .frise__l { font-weight: 500; color: var(--texte-secondaire); }
 .frise__d {
   min-height: 0.7rem;
   font: 400 0.65625rem/1 var(--cnm-mono);
-  color: #5b6784;
+  color: var(--texte-secondaire);
 }
 
 /* ── Prochaine action ── */
 .suite {
   padding: 0.7rem 0.75rem;
-  background: #f7f9fc;
-  border: 1px solid #edf1f7;
+  background: var(--ligne-survol);
+  border: 1px solid var(--bordure);
   border-radius: 10px;
 }
 .suite__l {
   margin: 0;
   font-size: 0.75rem;
-  font-weight: 600;
-  color: #5b6784;
+  font-weight: 500;
+  color: var(--texte-secondaire);
 }
 .suite__t {
   margin: 0.1rem 0 0.3rem;
   font-size: 0.96875rem;
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: -0.01em;
 }
 .suite__d {
   margin: 0 0 0.3rem;
   font-size: 0.78125rem;
-  font-weight: 700;
+  font-weight: 500;
 }
-.suite__d--retard { color: #b91c1c; }
-.suite__d--bientot { color: #b45309; }
-.suite__d--ok { color: #047857; }
+.suite__d--retard { color: var(--retard-texte); }
+.suite__d--bientot { color: var(--examen-texte); }
+.suite__d--ok { color: var(--favorable-texte); }
 .suite__d--sans,
-.suite__d--pause { color: #5b6784; }
-.suite__d--suivi { color: #0369a1; }
+.suite__d--pause { color: var(--texte-secondaire); }
+.suite__d--suivi { color: var(--texte); }
 
 .barre {
   display: block;
   height: 6px;
   border-radius: 3px;
-  background: #e6ebf3;
+  background: var(--neutre-fond);
   overflow: hidden;
 }
 .barre__r {
@@ -170,12 +169,12 @@
   height: 100%;
   border-radius: 3px;
 }
-.barre__r--retard { background: #dc2626; }
-.barre__r--bientot { background: #d97706; }
-.barre__r--ok { background: #10b981; }
+.barre__r--retard { background: var(--retard-texte); }
+.barre__r--bientot { background: var(--or); }
+.barre__r--ok { background: var(--favorable-texte); }
 .barre__r--sans,
-.barre__r--pause { background: #cbd5e1; }
-.barre__r--suivi { background: #bae6fd; }
+.barre__r--pause { background: var(--bordure); }
+.barre__r--suivi { background: var(--bordure-champ); }
 
 /* ── Faits ── */
 .faits {
@@ -190,8 +189,8 @@
   gap: 0.6rem;
   font-size: 0.8125rem;
 }
-.faits__f dt { color: #5b6784; }
-.faits__f dd { margin: 0; color: #152033; overflow-wrap: anywhere; }
+.faits__f dt { color: var(--texte-secondaire); }
+.faits__f dd { margin: 0; color: var(--texte); overflow-wrap: anywhere; }
 
 .ap__actions {
   display: flex;
