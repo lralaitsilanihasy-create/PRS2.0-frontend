@@ -43,6 +43,10 @@ const MARCHE: Marche = { idDetail: 5, idDossier: 42, designationMarche: 'Travaux
 /** Requêtes internes CNM : jamais pour la PRMP ni l'UGPM. */
 const INTERNE = /\/(journal|chronometrage|historique-echanges)(\?|$)|\/pv-examens|\/observations-pv|\/navettes/;
 
+// ⚠️ 31/10 — tests lourds (page entière montée) : 15 s. Lancée en entier et en parallèle, la suite les poussait au-delà
+// des 5 s par défaut (7 à 8 s mesurées), alors qu'ils passent seuls.
+vi.setConfig({ testTimeout: 15_000 });
+
 describe('Page dossier', () => {
   let harness: RouterTestingHarness;
   let http: HttpTestingController;

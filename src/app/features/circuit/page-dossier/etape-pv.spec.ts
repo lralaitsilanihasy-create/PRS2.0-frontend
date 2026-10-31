@@ -86,6 +86,10 @@ interface Scenario {
   transition?: PvExamen;
 }
 
+// ⚠️ 31/10 — tests lourds (page entière montée) : 15 s. Lancée en entier et en parallèle, la suite les poussait au-delà
+// des 5 s par défaut (7 à 8 s mesurées), alors qu'ils passent seuls.
+vi.setConfig({ testTimeout: 15_000 });
+
 describe('Page dossier — navette du projet de PV (lot L4-F4)', () => {
   let harness: RouterTestingHarness;
   let http: HttpTestingController;

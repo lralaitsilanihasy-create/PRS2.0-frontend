@@ -82,6 +82,10 @@ const reponse = (profil: Role, taches: AFaireTache[], etapeCourante: EtapeCouran
 /** Gestes servis attendus en boutons : geste et secondaires de chaque ligne, sans VOIR ni SUIVRE. */
 const servis = (g: GestesDossier): string[] => [...new Set(g.taches.flatMap((t) => [t.geste, ...t.gestesSecondaires]).filter((x) => x !== 'VOIR' && x !== 'SUIVRE'))].sort();
 
+// ⚠️ 31/10 — tests lourds (page entière montée) : 15 s. Lancée en entier et en parallèle, la suite les poussait au-delà
+// des 5 s par défaut (7 à 8 s mesurées), alors qu'ils passent seuls.
+vi.setConfig({ testTimeout: 15_000 });
+
 describe('Page dossier — étape en cours et gestes (lot L4-F3)', () => {
   let harness: RouterTestingHarness;
   let http: HttpTestingController;

@@ -24,6 +24,10 @@ class DispatchFormDoublure {
 
 const erreur = (status: number, fieldErrors?: Record<string, string>): ApiError => ({ status, message: 'x', fieldErrors, raw: new HttpErrorResponse({ status }) });
 
+// ⚠️ 31/10 — tests lourds (page entière montée) : 15 s. Lancée en entier et en parallèle, la suite les poussait au-delà
+// des 5 s par défaut (7 à 8 s mesurées), alors qu'ils passent seuls.
+vi.setConfig({ testTimeout: 15_000 });
+
 describe('Accueil « À faire » (écran)', () => {
   let aFaire: ReturnType<typeof vi.fn<(delegations: boolean) => Observable<AFaire>>>;
   let harness: RouterTestingHarness;

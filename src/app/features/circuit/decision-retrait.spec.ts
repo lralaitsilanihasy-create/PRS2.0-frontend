@@ -69,6 +69,10 @@ interface Scenario {
   relectureRefusee?: number;
 }
 
+// ⚠️ 31/10 — tests lourds (page entière montée) : 15 s. Lancée en entier et en parallèle, la suite les poussait au-delà
+// des 5 s par défaut (7 à 8 s mesurées), alors qu'ils passent seuls.
+vi.setConfig({ testTimeout: 15_000 });
+
 describe('Décision de retrait — motif de refus (règle)', () => {
   it('obligatoire : vide ou blanc refusé, avec le message affiché sous le champ', () => {
     for (const vide of ['', '   ', '\n\t', null, undefined]) expect(erreurMotifRefus(vide)).toBe('Indiquez le motif du refus : il est communiqué à la PRMP.');
