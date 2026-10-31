@@ -38,7 +38,7 @@
   padding-right: 1.25rem;
 }
 .pub-top__in {
-  height: 44px;
+  height: 54px;
   display: flex;
   align-items: center;
   gap: 1.5rem;
@@ -53,8 +53,8 @@
 .pub-marque:focus-visible { outline: 2px solid var(--or); outline-offset: 2px; }
 /* Logo du Ministère (design institutionnel, 30/10/2026). */
 .pub-marque__logo {
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
   flex-shrink: 0;
 }
@@ -65,11 +65,11 @@
 }
 .pub-marque__t {
   font-family: var(--police-marque);
-  font-size: 15px;
+  font-size: 19px;
   font-weight: 500;
 }
 .pub-marque__s {
-  font-size: 10.5px;
+  font-size: 12px;
   color: var(--texte-menu-secondaire);
 }
 .pub-audience {

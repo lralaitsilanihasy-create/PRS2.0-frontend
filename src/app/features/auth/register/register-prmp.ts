@@ -64,7 +64,7 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
     <div class="bandeau-tricolore" aria-hidden="true"><span></span><span></span><span></span></div>
     <!-- ⚠️ 31/10 (pilote, Espace de travail, lot 6) — même en-tête que la connexion et la coquille : logo du Ministère, bleu nuit. -->
     <header class="rg-entete">
-      <img class="rg-entete__logo" src="mef-logo.png" alt="" width="30" height="30" />
+      <img class="rg-entete__logo" src="mef-logo.png" alt="" width="40" height="40" />
       <span class="rg-entete__textes">
         <span class="rg-entete__institution">Commission nationale des marchés</span>
         <span class="rg-entete__appli">PRS 2.0</span>
@@ -249,10 +249,10 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
   styles: `
     :host { display: flex; flex-direction: column; min-height: 100dvh; }
     .rg-entete { display: flex; align-items: center; gap: 10px; padding: 6px 14px; background: var(--section-fond); color: var(--texte-menu); }
-    .rg-entete__logo { width: 30px; height: 30px; flex: none; object-fit: contain; }
+    .rg-entete__logo { width: 40px; height: 40px; flex: none; object-fit: contain; }
     .rg-entete__textes { display: flex; flex-direction: column; line-height: 1.2; }
-    .rg-entete__institution { font-size: 10.5px; color: var(--texte-menu-secondaire); }
-    .rg-entete__appli { font-family: var(--police-marque); font-size: 15px; font-weight: 500; color: var(--texte-menu); }
+    .rg-entete__institution { font-size: 12px; color: var(--texte-menu-secondaire); }
+    .rg-entete__appli { font-family: var(--police-marque); font-size: 19px; font-weight: 500; color: var(--texte-menu); }
     .register-page {
       flex: 1;
       display: flex;

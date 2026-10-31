@@ -19,10 +19,10 @@
   background: var(--section-fond);
   color: var(--texte-menu);
 
-  &__logo { width: 30px; height: 30px; flex: none; object-fit: contain; }
+  &__logo { width: 40px; height: 40px; flex: none; object-fit: contain; }
   &__textes { display: flex; flex-direction: column; line-height: 1.2; }
-  &__institution { font-size: 10.5px; color: var(--texte-menu-secondaire); }
-  &__appli { font-family: var(--police-marque); font-size: 15px; font-weight: 500; color: var(--texte-menu); }
+  &__institution { font-size: 12px; color: var(--texte-menu-secondaire); }
+  &__appli { font-family: var(--police-marque); font-size: 19px; font-weight: 500; color: var(--texte-menu); }
 }
 
 .login-page {
