@@ -256,3 +256,6 @@
 @if (motDePasseOuvert()) {
   <app-changer-mot-de-passe-modal (ferme)="motDePasseOuvert.set(false)" />
 }
+@if (aideClavier()) {
+  <app-aide-clavier (ferme)="aideClavier.set(false)" />
+}
