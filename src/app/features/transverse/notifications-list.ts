@@ -41,7 +41,7 @@ import { NotificationService } from '../../services';
     </section>
   `,
   styles: `
-    .notif__interim { font-size: var(--text-xs); color: var(--info-text, #075985); margin-left: 0.5rem; }
+    .notif__interim { font-size: var(--text-xs); color: var(--info-text); margin-left: 0.5rem; }
     .notifs__title {
       margin: 0 0 var(--cnm-space-4);
       font-size: var(--cnm-fs-lg);

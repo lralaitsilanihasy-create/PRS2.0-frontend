@@ -131,12 +131,12 @@ import { MessageService } from '../../services';
       padding: 0.4rem 1rem;
       border-radius: var(--radius-md);
       cursor: pointer;
-      font-weight: 600;
+      font-weight: 500;
       font-size: var(--text-sm);
     }
     .msg__tab--active {
-      background: linear-gradient(135deg, var(--c-600), var(--c-700));
-      color: #fff;
+      background: var(--menu-fond);
+      color: var(--texte-menu);
     }
     .msg__list {
       list-style: none;
@@ -147,7 +147,7 @@ import { MessageService } from '../../services';
       gap: 0.5rem;
     }
     .msg-item {
-      background: #fff;
+      background: var(--carte-fond);
       border: 1px solid var(--c-100);
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-md);
@@ -168,7 +168,7 @@ import { MessageService } from '../../services';
       color: var(--n-500);
     }
     .msg-item__who {
-      font-weight: 600;
+      font-weight: 500;
       color: var(--c-700);
     }
     .msg-item__corps {

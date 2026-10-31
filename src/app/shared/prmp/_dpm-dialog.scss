@@ -11,7 +11,7 @@
   position: fixed;
   inset: 0;
   z-index: 1050;
-  background: rgba(26, 29, 46, 0.58);
+  background: var(--section-fond);
   backdrop-filter: blur(2px);
   display: flex;
   align-items: center;
@@ -25,7 +25,7 @@
   max-width: 52rem;
   max-height: 85vh;
   overflow-y: auto;
-  background: #fff;
+  background: var(--carte-fond);
   border: 0.5px solid var(--n-200);
   box-shadow: var(--shadow-xl);
 }
@@ -40,7 +40,7 @@
   padding: 1.25rem 1.5rem 1rem;
   border-bottom: 0.5px solid var(--n-200);
 }
-.dpm__title { margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--n-800); }
+.dpm__title { margin: 0; font-size: 1.1rem; font-weight: 500; color: var(--n-800); }
 .dpm__close { background: transparent; border: 0; color: var(--n-400); font-size: 1.5rem; line-height: 1; cursor: pointer; }
 .dpm__close:hover { color: var(--n-800); }
 .dpm__body--pad { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: var(--cnm-space-2); }

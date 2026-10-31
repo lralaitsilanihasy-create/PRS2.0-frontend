@@ -34,7 +34,7 @@
      l'onglet actif s'affichait en blanc sur blanc — le lot 1 était invisible. Les jetons de la
      palette sont `--p-*` (cf. _design-system.scss). */
   background: var(--bouton-principal);
-  border-color: var(--p-600);
+  border-color: var(--menu-fond);
   color: var(--texte-menu);
 }
 .bs__lot-n {

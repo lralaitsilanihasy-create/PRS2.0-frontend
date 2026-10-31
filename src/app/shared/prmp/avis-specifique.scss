@@ -7,7 +7,7 @@
   border: 1px solid var(--n-200);
   border-left: 4px solid var(--p-600);
   border-radius: 10px;
-  background: #fff;
+  background: var(--carte-fond);
 }
 .avs__titre { margin: 0; font-size: 0.95rem; }
 .avs__txt, .avs__attente { margin: 0; font-size: 0.86rem; }
@@ -33,17 +33,17 @@
 .avs__champs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.6rem 0.9rem; }
 .avs__large { grid-column: 1 / -1; }
 .avs__vides { margin: 0.3rem 0 0; padding-left: 1.1rem; }
-.avs__journal { font-weight: 600; }
+.avs__journal { font-weight: 500; }
 
 .avs__facultatif { font-weight: 400; color: var(--n-500); }
 // ⚠️ 01/10 (lot AV-4) — lettres d'invitation : une impression = une lettre par candidat, et la liste restreinte saisie.
 .lti__impression { flex-direction: column; align-items: stretch; }
 .lti__lettres { list-style: none; margin: 0.3rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.25rem; }
 .lti__lettre { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.4rem; }
-.lti__dest { font-weight: 600; color: var(--n-700); }
+.lti__dest { font-weight: 500; color: var(--n-700); }
 .lti__liste { border: 1px solid var(--n-200); border-radius: 8px; padding: 0.6rem 0.8rem; margin: 0.8rem 0 0; display: flex; flex-direction: column; gap: 0.6rem; }
 .lti__candidat { display: grid; grid-template-columns: auto minmax(10rem, 1fr) minmax(12rem, 1.4fr) auto; gap: 0.5rem; align-items: start; }
-.lti__rang { padding-top: 1.9rem; font-weight: 700; color: var(--n-600); }
+.lti__rang { padding-top: 1.9rem; font-weight: 500; color: var(--n-600); }
 .lti__retirer { margin-top: 1.6rem; }
 /* ⚠️ 08/10 (PI-a) — l'adresse électronique, facultative, sous le nom et l'adresse postale. */
 .lti__email { grid-column: 2 / 4; grid-row: 2; }

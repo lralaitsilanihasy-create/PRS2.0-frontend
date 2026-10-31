@@ -27,7 +27,7 @@ import { RouterLink } from '@angular/router';
     h1 {
       color: var(--danger-text);
       font-size: var(--text-xl);
-      font-weight: 800;
+      font-weight: 500;
     }
   `,
 })

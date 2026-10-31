@@ -95,7 +95,7 @@ import { StatutBadge } from '../../shared/circuit';
     }
     /* Cartes de statistiques : relief doux, puce d'icône, valeur large — relief au survol. */
     .kpi-card {
-      background: #fff;
+      background: var(--carte-fond);
       border: 1px solid var(--n-200);
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-sm);
@@ -111,32 +111,32 @@ import { StatutBadge } from '../../shared/circuit';
       display: inline-flex; align-items: center; justify-content: center;
       border-radius: var(--radius-md);
       background: var(--p-50); color: var(--p-600);
-      font-size: 1.2rem; font-weight: 800;
+      font-size: 1.2rem; font-weight: 500;
     }
     .kpi-card__ic--ok { background: var(--success-bg); color: var(--success-text); }
-    .kpi-card__value { font-size: 1.95rem; font-weight: 800; color: var(--n-800); letter-spacing: -0.02em; line-height: 1.05; }
-    .kpi-card__label { font-size: var(--text-sm); color: var(--n-500); font-weight: 600; }
+    .kpi-card__value { font-size: 1.95rem; font-weight: 500; color: var(--n-800); letter-spacing: -0.02em; line-height: 1.05; }
+    .kpi-card__label { font-size: var(--text-sm); color: var(--n-500); font-weight: 500; }
     /* Carte « accent » (KPI phare) : dégradé de marque. */
     .kpi-card--accent {
       background: var(--grad-primary);
       border-color: transparent;
-      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.28);
+      box-shadow: none;
       justify-content: center;
     }
-    .kpi-card--accent .kpi-card__value { color: #fff; font-size: 2.2rem; }
-    .kpi-card--accent .kpi-card__label { color: rgba(255, 255, 255, 0.85); }
-    .kpi__subtitle { font-size: var(--text-md); font-weight: 700; color: var(--n-800); margin: 0.9rem 0 0.15rem; }
+    .kpi-card--accent .kpi-card__value { color: var(--texte-menu); font-size: 2.2rem; }
+    .kpi-card--accent .kpi-card__label { color: var(--texte-menu); }
+    .kpi__subtitle { font-size: var(--text-md); font-weight: 500; color: var(--n-800); margin: 0.9rem 0 0.15rem; }
     .kpi__pipeline { display: flex; flex-wrap: wrap; gap: 0.5rem; }
     .kpi-pill {
       display: flex; align-items: center; gap: 0.45rem;
-      background: #fff; border: 1px solid var(--n-200);
+      background: var(--carte-fond); border: 1px solid var(--n-200);
       border-radius: var(--radius-full);
       padding: 0.35rem 0.75rem;
       box-shadow: var(--shadow-sm);
       transition: var(--transition);
     }
     .kpi-pill:hover { border-color: var(--p-200); box-shadow: var(--shadow-md); }
-    .kpi-pill__count { font-weight: 800; color: var(--n-800); }
+    .kpi-pill__count { font-weight: 500; color: var(--n-800); }
   `,
 })
 export class KpiDashboard {

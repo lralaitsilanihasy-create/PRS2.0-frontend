@@ -94,17 +94,17 @@ export interface PipelineEntry {
     </section>
   `,
   styles: `
-    .dash__section { margin: 1.5rem 0 0.5rem; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
+    .dash__section { margin: 1.5rem 0 0.5rem; font-size: var(--text-md); font-weight: 500; color: var(--c-800); }
     .dash__worklist { display: flex; flex-direction: column; gap: 0.5rem; }
     .dash-task { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.1rem; }
-    .dash-task__count { font-weight: 700; }
+    .dash-task__count { font-weight: 500; }
     .dash-task__body { display: flex; flex-direction: column; flex: 1; }
     .dash-task__label { color: var(--n-800); font-weight: 500; }
     .dash-task__hint { font-size: var(--text-sm); }
     .dash__kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: 0.75rem; }
     .dash__pipeline { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
-    .dash-pill { display: flex; align-items: center; gap: 0.5rem; background: #fff; border: 1px solid var(--c-100); border-radius: var(--radius-full); padding: 0.3rem 0.6rem; }
-    .dash-pill__count { font-weight: 800; color: var(--c-800); }
+    .dash-pill { display: flex; align-items: center; gap: 0.5rem; background: var(--carte-fond); border: 1px solid var(--c-100); border-radius: var(--radius-full); padding: 0.3rem 0.6rem; }
+    .dash-pill__count { font-weight: 500; color: var(--c-800); }
   `,
 })
 export class DashboardShell {

@@ -33,14 +33,14 @@ export interface PuceBandeau {
   `,
   styles: `
     :host { display: block; }
-    .be { display: flex; flex-direction: column; gap: 0.45rem; padding: 1.1rem 1.3rem; border-radius: 14px; color: #fff;
-      background: linear-gradient(120deg, var(--p-800), var(--p-600)); }
+    .be { display: flex; flex-direction: column; gap: 0.45rem; padding: 1.1rem 1.3rem; border-radius: 8px; color: var(--texte-menu);
+      background: var(--menu-fond); }
     .be__haut { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; min-height: 1.2rem; }
-    .be__sur { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.06em; opacity: 0.9; }
-    .be__titre { margin: 0; font-size: 1.55rem; line-height: 1.25; color: #fff; }
+    .be__sur { font-size: 0.8rem; font-weight: 500; letter-spacing: 0.06em; opacity: 0.9; }
+    .be__titre { margin: 0; font-size: 1.55rem; line-height: 1.25; color: var(--texte-menu); }
     .be__puces { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-    .be__puce { display: inline-flex; gap: 0.35rem; align-items: baseline; padding: 0.25rem 0.65rem; border-radius: 999px; background: rgba(255, 255, 255, 0.16); font-size: var(--text-sm); }
-    .be__puce--accent { background: rgba(255, 255, 255, 0.95); color: var(--p-800); }
+    .be__puce { display: inline-flex; gap: 0.35rem; align-items: baseline; padding: 0.25rem 0.65rem; border-radius: 999px; background: var(--carte-fond); font-size: var(--text-sm); }
+    .be__puce--accent { background: var(--carte-fond); color: var(--p-800); }
     @media (max-width: 520px) { .be__titre { font-size: 1.25rem; } }
   `,
 })

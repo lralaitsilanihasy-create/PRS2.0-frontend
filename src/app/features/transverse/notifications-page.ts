@@ -159,20 +159,20 @@ interface GroupeJour {
     .np { display: flex; flex-direction: column; gap: 0.5rem; }
     .np__filtres { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
     .np__seg { display: inline-flex; background: var(--n-100); border-radius: 999px; padding: 3px; }
-    .np__seg-btn { border: 0; background: transparent; padding: 0.35rem 1rem; border-radius: 999px; font-weight: 600; color: var(--n-500); cursor: pointer; transition: var(--transition); }
-    .np__seg-btn--actif { background: #fff; color: var(--p-600); box-shadow: var(--shadow-sm); }
+    .np__seg-btn { border: 0; background: transparent; padding: 0.35rem 1rem; border-radius: 999px; font-weight: 500; color: var(--n-500); cursor: pointer; transition: var(--transition); }
+    .np__seg-btn--actif { background: var(--carte-fond); color: var(--p-600); box-shadow: var(--shadow-sm); }
     .np__type { width: auto; min-width: 16rem; }
-    .np__jour { margin: 0.75rem 0 0.25rem; font-size: var(--text-sm); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--n-400); }
+    .np__jour { margin: 0.75rem 0 0.25rem; font-size: var(--text-sm); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--n-400); }
     .np__liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
-    .np__item { display: flex; align-items: center; gap: 0.75rem; background: #fff; border: 1px solid var(--n-200); border-radius: var(--radius-lg); padding: 0.15rem 0.75rem 0.15rem 0; transition: var(--transition); }
+    .np__item { display: flex; align-items: center; gap: 0.75rem; background: var(--carte-fond); border: 1px solid var(--n-200); border-radius: var(--radius-lg); padding: 0.15rem 0.75rem 0.15rem 0; transition: var(--transition); }
     .np__item:hover { border-color: var(--p-200); box-shadow: var(--shadow-sm); }
-    .np__item--nonlu { background: var(--p-50, #eff6ff); border-left: 4px solid var(--p-500, #3b82f6); }
+    .np__item--nonlu { background: var(--p-50); border-left: 4px solid var(--p-500); }
     .np__corps { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; text-align: left; background: transparent; border: 0; cursor: pointer; padding: 0.6rem 0 0.6rem 0.9rem; font: inherit; color: inherit; }
     /* Ligne sans destination : même gabarit, mais rien n'y invite au clic (lot L5-F6). */
     .np__corps--inerte { cursor: default; }
     .np__note { color: var(--n-500); font-size: var(--text-sm); font-style: italic; }
-    .np__titre { font-weight: 700; color: var(--n-800); display: inline-flex; align-items: center; gap: 0.45rem; }
-    .np__point { width: 0.55rem; height: 0.55rem; border-radius: 999px; background: var(--p-500, #3b82f6); flex: none; }
+    .np__titre { font-weight: 500; color: var(--n-800); display: inline-flex; align-items: center; gap: 0.45rem; }
+    .np__point { width: 0.55rem; height: 0.55rem; border-radius: 999px; background: var(--p-500); flex: none; }
     .np__texte { color: var(--n-600); font-size: var(--text-sm); }
     .np__meta { color: var(--n-400); font-size: var(--text-xs); }
     .np__actions { flex: none; }

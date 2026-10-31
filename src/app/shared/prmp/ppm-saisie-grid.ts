@@ -379,40 +379,40 @@ export const OBJET_MARCHE_MAX = 4000;
   styles: `
     :host { display: block; }
     .sd__soa { display: flex; flex-direction: column; gap: 0.4rem; }
-    .sd__warn-title { font-weight: 600; margin-bottom: 4px; }
+    .sd__warn-title { font-weight: 500; margin-bottom: 4px; }
     .sd__warn-list { margin: 0; padding-left: 1rem; font-size: var(--text-sm); }
     /* Revue de transcription : surlignage des lignes/cellules signalées + badge. */
-    .sd__row-warn td { background: rgba(245, 158, 11, 0.06); }
-    .sd__row-ok td { background: rgba(34, 197, 94, 0.05); }
-    .sd__cell-warn { background: #FFFBEB !important; }
-    .sd__cell-err { background: #FEF2F2 !important; }
+    .sd__row-warn td { background: var(--or); }
+    .sd__row-ok td { background: var(--favorable-texte); }
+    .sd__cell-warn { background: var(--examen-fond) !important; }
+    .sd__cell-err { background: var(--retard-fond) !important; }
     /* Rectification : cellule dont la valeur importée diffère du dossier examiné (ambre du diff). */
-    .sd__cell-modif { background: #FEF3C7 !important; box-shadow: inset 3px 0 0 #F59E0B; }
-    .sd__capm-modif { border-color: #F59E0B !important; color: #B45309 !important; background: #FEF3C7 !important; }
-    .sd__cell-ok { background: #F0FDF4 !important; }
-    .sd__badge-warn { display: inline-block; font-size: var(--text-xs); font-weight: 700; color: #B45309; background: #FFFBEB; border: 1px solid #F59E0B; border-radius: 999px; padding: 0.1rem 0.45rem; cursor: help; }
-    .sd__badge-ok { display: inline-block; font-size: var(--text-xs); font-weight: 700; color: #15803D; background: #F0FDF4; border: 1px solid #22C55E; border-radius: 999px; padding: 0.1rem 0.45rem; cursor: help; }
-    .sd__alert-ok { background: #F0FDF4; border: 1px solid #BBF7D0; color: #15803D; }
-    .sd__lien-ligne { background: none; border: none; padding: 0; color: var(--info-text, #2563eb); font-weight: 700; text-decoration: underline; cursor: pointer; font: inherit; }
+    .sd__cell-modif { background: var(--examen-fond) !important; box-shadow:  inset 3px 0 0 var(--or); }
+    .sd__capm-modif { border-color: var(--examen-texte) !important; color: var(--examen-texte) !important; background: var(--examen-fond) !important; }
+    .sd__cell-ok { background: var(--favorable-fond) !important; }
+    .sd__badge-warn { display: inline-block; font-size: var(--text-xs); font-weight: 500; color: var(--examen-texte); background: var(--examen-fond); border: 1px solid var(--examen-texte); border-radius: 999px; padding: 0.1rem 0.45rem; cursor: help; }
+    .sd__badge-ok { display: inline-block; font-size: var(--text-xs); font-weight: 500; color: var(--favorable-texte); background: var(--favorable-fond); border: 1px solid var(--favorable-texte); border-radius: 999px; padding: 0.1rem 0.45rem; cursor: help; }
+    .sd__alert-ok { background: var(--favorable-fond); border: 1px solid var(--favorable-fond); color: var(--favorable-texte); }
+    .sd__lien-ligne { background: none; border: none; padding: 0; color: var(--info-text); font-weight: 500; text-decoration: underline; cursor: pointer; font: inherit; }
     /* Validation par ligne : ligne/badge « validé » (vert) + barre de progression. */
-    .sd__row-valide td { background: rgba(34, 197, 94, 0.12); }
-    .sd__badge-valide { display: inline-block; font-size: var(--text-xs); font-weight: 700; color: #fff; background: #22C55E; border: 1px solid #16A34A; border-radius: 999px; padding: 0.1rem 0.45rem; cursor: help; }
+    .sd__row-valide td { background: var(--favorable-texte); }
+    .sd__badge-valide { display: inline-block; font-size: var(--text-xs); font-weight: 500; color: var(--texte-menu); background: var(--favorable-texte); border: 1px solid var(--favorable-texte); border-radius: 999px; padding: 0.1rem 0.45rem; cursor: help; }
     /* Justifications de la fiche de présentation (2026-09-01) : sous la grille, une entrée par justification due. */
-    .psg-justifs { margin-top: 1rem; padding: 0.9rem 1rem; background: var(--warning-bg, #fef3c7); border: 1px solid var(--warning-bdr, #fcd34d); border-radius: var(--radius-lg); display: flex; flex-direction: column; gap: 0.6rem; }
-    .psg-justifs__titre { margin: 0; font-size: var(--text-md); font-weight: 700; }
+    .psg-justifs { margin-top: 1rem; padding: 0.9rem 1rem; background: var(--warning-bg); border: 1px solid var(--warning-bdr); border-radius: var(--radius-lg); display: flex; flex-direction: column; gap: 0.6rem; }
+    .psg-justifs__titre { margin: 0; font-size: var(--text-md); font-weight: 500; }
     .psg-justifs__hint { margin: 0; font-size: var(--text-sm); color: var(--n-500); }
     .psg-justifs__item { display: flex; flex-direction: column; gap: 0.25rem; }
-    .psg-justifs__item--manquante .psg-justifs__lbl { color: var(--danger-text, #b91c1c); }
+    .psg-justifs__item--manquante .psg-justifs__lbl { color: var(--danger-text); }
     .psg-justifs__lbl { font-size: var(--text-sm); }
-    .psg-justifs__item textarea { resize: vertical; background: #fff; }
-    .sd__validation { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; font-size: var(--text-sm); font-weight: 600; color: var(--n-600, #475569); margin-top: 0.75rem; }
-    .sd__validation--ok { color: #15803D; }
+    .psg-justifs__item textarea { resize: vertical; background: var(--carte-fond); }
+    .sd__validation { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; font-size: var(--text-sm); font-weight: 500; color: var(--n-600); margin-top: 0.75rem; }
+    .sd__validation--ok { color: var(--favorable-texte); }
     /* Bouton « Valider » remarquable : vert plein, léger relief. */
-    .sd__valider-btn { color: #fff !important; border: none !important; font-weight: 700; background: linear-gradient(135deg, #16A34A, #22C55E); box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4); }
-    .sd__valider-btn:hover { color: #fff !important; filter: brightness(1.06); }
+    .sd__valider-btn { color: var(--texte-menu) !important; border: none !important; font-weight: 500; background: var(--favorable-texte); box-shadow: none; }
+    .sd__valider-btn:hover { color: var(--texte-menu) !important; filter: brightness(1.06); }
     /* Message de cohérence inline : s'enroule proprement dans la cellule Actions (jamais coupé). */
     .sd__marche-actions .form-error { white-space: normal; overflow-wrap: anywhere; font-size: var(--text-xs); }
-    .sd__lot-warn { border-color: #F59E0B !important; color: #B45309 !important; background: #FFFBEB !important; }
+    .sd__lot-warn { border-color: var(--examen-texte) !important; color: var(--examen-texte) !important; background: var(--examen-fond) !important; }
     .sd__lignes-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
     /* Tableau éditable des marchés (mise en forme façon PPM) */
     /* ⚠️ 2026-08-06 — cadre, largeurs et retours à la ligne viennent de « .ppm-table »
@@ -433,32 +433,32 @@ export const OBJET_MARCHE_MAX = 4000;
     .sd__benef-cell .form-control { flex: 1; }
     .sd__marche-actions { display: flex; flex-direction: column; gap: 0.35rem; align-items: stretch; }
     .sd__marche-actions .btn { white-space: normal; }
-    .sd__dates-manq { color: var(--warning-text); font-size: var(--text-sm); font-weight: 700; }
-    .sd__num { text-align: center; font-weight: 700; color: var(--n-400); font-variant-numeric: tabular-nums; }
+    .sd__dates-manq { color: var(--warning-text); font-size: var(--text-sm); font-weight: 500; }
+    .sd__num { text-align: center; font-weight: 500; color: var(--n-400); font-variant-numeric: tabular-nums; }
     /* Dates prévisionnelles (lecture, dérivées des processus CAPM) — demande pilote 2026-09-07. */
     .sd__c-date { text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--n-600); }
     /* Statut de version (colonne optionnelle) — même code couleur que l'aperçu du diff. */
     .psg-statut {
-      display: inline-block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+      display: inline-block; font-size: 0.7rem; font-weight: 500; text-transform: uppercase;
       letter-spacing: 0.03em; padding: 0.1rem 0.4rem; border-radius: var(--radius-sm);
       background: var(--n-100); color: var(--n-600); white-space: nowrap;
     }
-    .psg-statut--modifiee { background: #FEF3C7; color: #92400E; }
-    .psg-statut--nouvelle { background: #DCFCE7; color: #15803D; }
-    .psg-statut--supprimee { background: #FEE2E2; color: #B91C1C; }
-    .psg-statut--restauree { background: #DBEAFE; color: #1D4ED8; }
+    .psg-statut--modifiee { background: var(--examen-fond); color: var(--examen-texte); }
+    .psg-statut--nouvelle { background: var(--favorable-fond); color: var(--favorable-texte); }
+    .psg-statut--supprimee { background: var(--retard-fond); color: var(--retard-texte); }
+    .psg-statut--restauree { background: var(--onglet-actif-fond); color: var(--texte); }
     /* Modal CAPM : colonnes ALIGNÉES sur toutes les lignes (libellé fluide | Début | Fin | ✕ fixes) —
        même gabarit de grille pour l'en-tête et chaque ligne, chaque date reste en face de son processus. */
     .sd-proc-head, .sd-proc-row { display: grid; grid-template-columns: minmax(0, 1fr) 9.5rem 9.5rem 5rem 2.4rem; gap: 0.5rem; align-items: center; }
     .sd-proc-so { justify-self: center; width: 1.1rem; height: 1.1rem; }
     .sd-proc-motif { padding: 0 0 0.3rem 1rem; }
-    .sd-proc-restants { color: var(--warning-text, #8a5a00); font-weight: 600; }
-    .sd-proc-head { margin-top: 0.6rem; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--n-400); }
+    .sd-proc-restants { color: var(--warning-text); font-weight: 500; }
+    .sd-proc-head { margin-top: 0.6rem; font-size: var(--text-xs); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--n-400); }
     .sd-proc-head-date { text-align: center; }
     .sd-proc-row { padding: 0.15rem 0; }
     .sd-proc-row .form-control { width: 100%; min-width: 0; }
     .sd-proc-lib { min-width: 0; font-size: var(--text-sm); color: var(--n-700); line-height: 1.25; }
-    .sd-proc-phase { margin: 0.8rem 0 0.3rem; font-weight: 700; color: var(--p-600); font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 0.03em; border-bottom: 1px solid var(--n-200); padding-bottom: 0.2rem; }
+    .sd-proc-phase { margin: 0.8rem 0 0.3rem; font-weight: 500; color: var(--p-600); font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 0.03em; border-bottom: 1px solid var(--n-200); padding-bottom: 0.2rem; }
     .sd-proc-err-globale { margin-right: auto; }
     .sd__dates-modal .modal-body { overflow-y: auto; }
     .sd-proc-clear:disabled { opacity: 0.35; cursor: default; }

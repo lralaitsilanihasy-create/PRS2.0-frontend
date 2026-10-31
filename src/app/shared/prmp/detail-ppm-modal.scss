@@ -52,7 +52,7 @@
 
 .dpm-chip {
   font-size: 9.5px;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: .1em;
   text-transform: uppercase;
   padding: 2px 9px;
@@ -117,11 +117,11 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-weight: 700;
+  font-weight: 500;
   padding: 8px 16px;
-  box-shadow: 0 3px 10px rgba(102, 126, 234, 0.35);
+  box-shadow: none;
 
-  &:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(102, 126, 234, 0.45); }
+  &:hover { transform: translateY(-1px); box-shadow: none; }
   &--busy { opacity: 0.75; pointer-events: none; }
 }
 
@@ -141,12 +141,12 @@
   margin-top: 10px;
 }
 /* Lignes incohérentes de l'aperçu (Σ bénéficiaires ≠ montant) : surlignées, détail en tooltip + liste. */
-.dpm-row-err td { background: var(--danger-bg, #fde8e8); }
+.dpm-row-err td { background: var(--danger-bg); }
 .dpm-err-list { margin: 6px 0 0; padding-left: 18px; }
 
 .dpm-title {
   font-size: 20px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--n-800);
   letter-spacing: -.025em;
   line-height: 1.1;
@@ -193,7 +193,7 @@
 
 .dpm-meta-label {
   font-size: 9.5px;
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: .08em;
   color: var(--n-400);
@@ -203,7 +203,7 @@
 
 .dpm-meta-value {
   font-size: 12.5px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--n-800);
 }
 
@@ -215,9 +215,9 @@
 
 /* Services bénéficiaires (sous-ligne lecture seule d'un marché) */
 .dpm-benef-row td { background: var(--n-50); padding: 8px 14px 10px; }
-.dpm-benef-title { display: block; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--n-400); margin-bottom: 4px; }
+.dpm-benef-title { display: block; font-size: 9.5px; font-weight: 500; text-transform: uppercase; letter-spacing: .08em; color: var(--n-400); margin-bottom: 4px; }
 .dpm-benef-line { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--n-600); padding: 2px 0; }
-.dpm-benef-soa { font-weight: 600; color: var(--n-800); }
+.dpm-benef-soa { font-weight: 500; color: var(--n-800); }
 .dpm-benef-cell { color: var(--n-500); }
 
 /* ── Corps ── */
@@ -265,7 +265,7 @@
   align-items: center;
   gap: 6px;
 
-  strong { color: var(--p-600); font-weight: 600; }
+  strong { color: var(--p-600); font-weight: 500; }
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -279,7 +279,7 @@
   position: fixed;
   inset: 0;
   z-index: 1050;
-  background: rgba(26, 29, 46, 0.58);
+  background: var(--section-fond);
   backdrop-filter: blur(2px);
   display: flex;
   align-items: center;
@@ -293,7 +293,7 @@
   max-width: 52rem;
   max-height: 85vh;
   overflow-y: auto;
-  background: #fff;
+  background: var(--carte-fond);
   border: 0.5px solid var(--n-200);
   box-shadow: var(--shadow-xl);
 }
@@ -308,7 +308,7 @@
   padding: 1.25rem 1.5rem 1rem;
   border-bottom: 0.5px solid var(--n-200);
 }
-.dpm__title { margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--n-800); }
+.dpm__title { margin: 0; font-size: 1.1rem; font-weight: 500; color: var(--n-800); }
 .dpm__close { background: transparent; border: 0; color: var(--n-400); font-size: 1.5rem; line-height: 1; cursor: pointer; }
 .dpm__close:hover { color: var(--n-800); }
 .dpm__body--pad { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: var(--cnm-space-2); }
@@ -393,7 +393,7 @@
    garde que le padding et le fond propres au modal. */
 .dpm-tabs {
   padding: 1rem 1.5rem 0.9rem;
-  background: #fff;
+  background: var(--carte-fond);
   margin-bottom: 0;
 }
 /* Fiches d'identité de l'onglet 1 */
@@ -407,17 +407,17 @@
 .dpm-fiche {
   border: 1px solid var(--n-200);
   border-radius: var(--radius-md);
-  background: #fff;
+  background: var(--carte-fond);
   padding: 1rem 1.1rem;
 }
 
 /* Titres des fiches en orange (demande user 2026-08-19) : ils tranchent sur l'indigo des onglets
    et sur le bleu du reste du modal, ce qui structure la lecture de l'onglet.
-   Nuance choisie pour le contraste : #C2410C donne 5,18:1 sur le fond blanc des fiches, quand
-   l'orange 600 (#EA580C) tombe à 3,56:1 — sous le seuil AA. */
+   Nuance choisie pour le contraste : var(--examen-texte) donne 5,18:1 sur le fond blanc des fiches, quand
+   l'orange 600 (var(--or)) tombe à 3,56:1 — sous le seuil AA. */
 .dpm-fiche__titre {
-  font-weight: 700;
-  color: #C2410C;
+  font-weight: 500;
+  color: var(--examen-texte);
   margin-bottom: 0.75rem;
   font-size: var(--text-base);
 }
@@ -458,20 +458,20 @@
 .dpm-justif-globale { margin: 10px 0 4px; textarea { resize: vertical; } }
 
 /* Sélecteur de version des onglets « PPM/AGPM antérieures » (pilote 2026-09-10). Couleur DIFFÉRENCIÉE
-   par contenu, reprise des onglets : PPM = bleu (#0284c7), AGPM = orange (#c2410c). */
+   par contenu, reprise des onglets : PPM = bleu (var(--bouton-principal)), AGPM = orange (var(--examen-texte)). */
 .dpm-vsel {
   display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.85rem;
-  padding: 0.4rem 0.6rem; border-left: 3px solid var(--n-300, #d4d4d8); border-radius: var(--radius-md, 6px);
-  label { font-weight: 700; white-space: nowrap; }
+  padding: 0.4rem 0.6rem; border-left: 3px solid var(--n-300); border-radius: var(--radius-md, 6px);
+  label { font-weight: 500; white-space: nowrap; }
   select { max-width: 32rem; border-width: 2px; }
 }
 .dpm-vsel--ppm {
-  background: #f0f9ff; border-left-color: #0284c7;
-  label { color: #0284c7; }
-  select { border-color: #0284c7; }
+  background: var(--onglet-actif-fond); border-left-color: var(--bouton-principal);
+  label { color: var(--texte); }
+  select { border-color: var(--bouton-principal); }
 }
 .dpm-vsel--agpm {
-  background: #fff7ed; border-left-color: #c2410c;
-  label { color: #c2410c; }
-  select { border-color: #c2410c; }
+  background: var(--examen-fond); border-left-color: var(--examen-texte);
+  label { color: var(--examen-texte); }
+  select { border-color: var(--examen-texte); }
 }

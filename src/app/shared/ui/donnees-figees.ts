@@ -307,8 +307,8 @@ export function formeDe(v: unknown): FormeFigee {
     .df__dl dt { color: var(--n-500); font-weight: 500; }
     .df__dl dd { margin: 0; overflow-wrap: anywhere; }
     .df__bloc { margin-top: 0.6rem; }
-    .df__h { margin: 0.8rem 0 0.3rem; font-size: var(--text-sm); font-weight: 600; color: var(--n-700, #334155); text-transform: uppercase; letter-spacing: 0.02em; }
-    .df__sous { margin: 0.3rem 0 0.15rem; font-weight: 600; color: var(--n-500); }
+    .df__h { margin: 0.8rem 0 0.3rem; font-size: var(--text-sm); font-weight: 500; color: var(--n-700); text-transform: uppercase; letter-spacing: 0.02em; }
+    .df__sous { margin: 0.3rem 0 0.15rem; font-weight: 500; color: var(--n-500); }
     .df__table { width: 100%; }
     .df__table td { vertical-align: top; white-space: normal; overflow-wrap: anywhere; }
     .df__json { display: block; white-space: pre-wrap; font-size: var(--text-xs); color: var(--n-500); }

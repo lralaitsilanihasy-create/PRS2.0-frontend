@@ -87,7 +87,7 @@ export function decomposerObservation(lib: string): {
     .opv--levee { background: var(--favorable-fond); border-color: var(--favorable-fond); border-left-color: var(--favorable-texte); }
     .opv--maintenue { border-left-color: var(--warning-text); }
     .opv__head { display: flex; align-items: center; gap: 0.5rem; }
-    .opv__num { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; min-width: 1.4rem; height: 1.4rem; border-radius: 999px; background: var(--c-600); color: var(--texte-menu); font-size: var(--text-xs); font-weight: 500; }
+    .opv__num { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; min-width: 1.4rem; height: 1.4rem; border-radius: 999px; background: var(--menu-fond); color: var(--texte-menu); font-size: var(--text-xs); font-weight: 500; }
     .opv__src { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--n-400); font-weight: 500; }
     .opv__statut { margin-left: auto; font-size: var(--text-xs); font-weight: 500; padding: 0.1rem 0.55rem; border-radius: 999px; background: var(--c-50); color: var(--n-500); border: 1px solid var(--c-100); }
     .opv__statut--levee { background: var(--favorable-fond); color: var(--favorable-texte); border-color: var(--favorable-fond); }

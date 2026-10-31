@@ -101,12 +101,12 @@ import { CIRCUIT_ETAPES } from './circuit-workflow';
     }
     /* Étapes franchies */
     .ct__step--done .ct__name { color: var(--n-500); }
-    .ct__step--done .ct__dot { background: var(--c-600); border-color: var(--c-600); }
-    .ct__step--done .ct__node::before { background: var(--c-600); }
+    .ct__step--done .ct__dot { background: var(--menu-fond); border-color: var(--menu-fond); }
+    .ct__step--done .ct__node::before { background: var(--menu-fond); }
     /* Étape en cours */
     .ct__step--current .ct__name { color: var(--n-800); font-weight: 500; }
-    .ct__step--current .ct__dot { background: var(--c-600); border-color: var(--c-600); box-shadow: 0 0 0 4px var(--c-100); }
-    .ct__step--current .ct__node::before { background: var(--c-600); }
+    .ct__step--current .ct__dot { background: var(--menu-fond); border-color: var(--menu-fond); box-shadow: 0 0 0 4px var(--c-100); }
+    .ct__step--current .ct__node::before { background: var(--menu-fond); }
   `,
 })
 export class CircuitTimeline {

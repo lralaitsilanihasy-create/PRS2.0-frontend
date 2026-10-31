@@ -22,7 +22,7 @@
     gap: 0.75rem;
     padding: 0.5rem 1rem;
     margin-bottom: 0.75rem;
-    background: #fff;
+    background: var(--carte-fond);
     border: 1px solid var(--c-100);
     border-left: 3px solid var(--c-600);
     border-radius: var(--radius-md);
@@ -63,7 +63,7 @@
   }
 
   &__form {
-    background: #fff;
+    background: var(--carte-fond);
     /* Rayon aligné sur les modals du design system (cohérence globale). */
     border-radius: var(--radius-lg);
     box-shadow: 0 0 0 0.5px var(--p-200), var(--shadow-xl);
@@ -80,7 +80,7 @@
   &__form-title {
     margin: 0 0 0.5rem;
     font-size: var(--text-lg);
-    font-weight: 800;
+    font-weight: 500;
     letter-spacing: -0.01em;
     color: var(--n-800);
   }

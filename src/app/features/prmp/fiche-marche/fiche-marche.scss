@@ -35,7 +35,7 @@
 .fm__etape-n { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 0.72rem; font-weight: 500; border: 2px solid var(--n-300); color: var(--n-500); flex: none; }
 .fm__etape--faite .fm__etape-n { background: var(--success-text); border-color: var(--success-text); color: var(--texte-menu); }
 .fm__etape--courante .fm__etape-b { background: var(--p-50); }
-.fm__etape--courante .fm__etape-n { border-color: var(--p-600); color: var(--p-800); }
+.fm__etape--courante .fm__etape-n { border-color: var(--menu-fond); color: var(--p-800); }
 .fm__etape-t { font-weight: 500; font-size: 0.84rem; display: block; }
 .fm__etape-s { display: block; }
 
@@ -184,7 +184,7 @@
 .fm__q-opts { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .fm__opt { display: flex; flex-direction: column; gap: 0.1rem; padding: 0.45rem 0.7rem; border: 1px solid var(--n-300); border-radius: 9px; background: var(--carte-fond); cursor: pointer; min-width: 10rem; max-width: 22rem; }
 .fm__opt input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.fm__opt--on { border-color: var(--p-600); background: var(--p-50); }
+.fm__opt--on { border-color: var(--menu-fond); background: var(--p-50); }
 .fm__opt:has(input:focus-visible) { outline: 2px solid var(--p-600); outline-offset: 2px; }
 .fm__opt--off { opacity: 0.6; cursor: not-allowed; }
 .fm__opt-ind, .fm__forme--ko { color: var(--examen-texte); font-weight: 500; }

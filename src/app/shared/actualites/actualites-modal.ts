@@ -88,10 +88,10 @@ import { MarkdownVue } from './markdown-vue';
          visuel manquerait d'ampleur. Bornée par la fenêtre pour rester ouvrable sur petit écran. */
       min-height: min(32rem, 78vh);
       max-height: 90vh;
-      background: #fff;
+      background: var(--carte-fond);
       /* Ombre en deux couches : un halo large qui détache le panneau du fond, et un liseré
          rapproché qui en dessine le bord — sans bordure, donc sans trait de couleur. */
-      box-shadow: 0 2px 8px rgb(15 23 42 / 12%), 0 32px 80px rgb(15 23 42 / 38%);
+      box-shadow: 0 2px 8px var(--menu-fond), 0 32px 80px var(--menu-fond);
       overflow: hidden;
     }
     /* Colonnes déséquilibrées au profit du texte : l'annonce a plus à dire que l'image à montrer. */
@@ -120,7 +120,7 @@ import { MarkdownVue } from './markdown-vue';
     .act__visuel {
       display: flex;
       padding: 1.5rem;
-      background: #fff;
+      background: var(--carte-fond);
       overflow: hidden;
     }
     .act__visuel img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 2px; }
@@ -133,7 +133,7 @@ import { MarkdownVue } from './markdown-vue';
       text-align: center;
     }
 
-    .act__kicker { margin: 0 0 0.4rem; font-size: var(--text-xs); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--n-500); }
+    .act__kicker { margin: 0 0 0.4rem; font-size: var(--text-xs); font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: var(--n-500); }
 
     /* ⚠️ Serif SYSTÈME et non une fonte web : le projet auto-héberge ses polices (Plus Jakarta Sans,
        DM Mono) et n'en compte aucune à empattements. En ajouter une alourdirait le chargement de
@@ -143,7 +143,7 @@ import { MarkdownVue } from './markdown-vue';
       font-family: Georgia, 'Times New Roman', 'Liberation Serif', serif;
       font-size: clamp(1.9rem, 3.4vw, 2.5rem);
       line-height: 1.15;
-      font-weight: 700;
+      font-weight: 500;
       color: var(--n-900);
     }
 
@@ -159,7 +159,7 @@ import { MarkdownVue } from './markdown-vue';
     .act__fleche {
       appearance: none;
       border: 1px solid var(--n-300);
-      background: #fff;
+      background: var(--carte-fond);
       width: 2rem;
       height: 2rem;
       border-radius: 50%;

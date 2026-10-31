@@ -155,7 +155,7 @@ export interface ObservationCelluleFiche {
   styles: [`
     .doc-dao { padding: 0.25rem 0 1rem; }
     .doc-entete { margin-bottom: 0.8rem; }
-    .doc-titre { margin: 0; font-weight: 700; font-size: 1.02rem; }
+    .doc-titre { margin: 0; font-weight: 500; font-size: 1.02rem; }
     .doc-sous-titre { margin: 0.15rem 0 0; color: var(--n-500); font-size: 0.86rem; }
     .doc-bloc { margin-top: 1rem; }
     .doc-bloc-titre { font-size: 0.92rem; margin: 0 0 0.35rem; }
@@ -163,45 +163,45 @@ export interface ObservationCelluleFiche {
     .doc-rub { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-500); margin: 0.6rem 0 0.2rem; }
     /* ⚠️ 18/10 — le style « feuille officielle » (Arial, bordures noires) cède ici au style de l'application, comme B12 ; les règles
        d'observation de _document-officiel (cellule observable, pastilles) restent en vigueur. */
-    .doc-cadre { background: #fff; }
+    .doc-cadre { background: var(--carte-fond); }
     /* ⚠️ 18/10 (pilote, lot A) — en-tête de document et blocs en cartes. */
     .fd-tete { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding-bottom: 0.9rem; border-bottom: 1px solid var(--n-200); }
-    .fd-tete__sur { margin: 0; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: #0369a1; }
-    .fd-tete__titre { text-transform: none; text-align: left; margin: 0.15rem 0 0; font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em; color: #152033; }
+    .fd-tete__sur { margin: 0; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; color: var(--texte); }
+    .fd-tete__titre { text-transform: none; text-align: left; margin: 0.15rem 0 0; font-size: 1.15rem; font-weight: 500; letter-spacing: -0.01em; color: var(--texte); }
     .fd-tete__puces { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.55rem 0 0; }
-    .fd-puce { padding: 0.1rem 0.55rem; border: 1px solid var(--n-300); border-radius: 999px; background: #fff; font-size: 0.75rem; font-weight: 600; color: #34405a; }
-    .fd-puce--ok { border-color: #86efac; background: #f0fdf4; color: #15803d; }
-    .fd-puce--discret { border-style: dashed; font-weight: 500; color: #5b6784; }
+    .fd-puce { padding: 0.1rem 0.55rem; border: 1px solid var(--n-300); border-radius: 999px; background: var(--carte-fond); font-size: 0.75rem; font-weight: 500; color: var(--texte); }
+    .fd-puce--ok { border-color: var(--favorable-texte); background: var(--favorable-fond); color: var(--favorable-texte); }
+    .fd-puce--discret { border-style: dashed; font-weight: 500; color: var(--texte-secondaire); }
     .fd-tete__actions { flex: none; display: flex; gap: 0.5rem; }
-    .fd-carte { margin-top: 1rem; border: 1px solid var(--n-200); border-radius: 10px; background: #fff; overflow: hidden; }
-    .fd-carte__tete { display: flex; align-items: center; gap: 0.6rem; margin: 0; padding: 0.6rem 0.9rem; background: #f8fafc; border-bottom: 1px solid var(--n-200); font-size: 0.95rem; color: #152033; }
-    .fd-code { padding: 0.05rem 0.45rem; border-radius: 6px; background: #152033; color: #fff !important; font-size: 0.72rem !important; margin-right: 0 !important; }
-    .fd-carte__libelle { flex: 1; font-weight: 700; }
-    .fd-carte__compte { font-size: 0.75rem; font-weight: 500; color: #5b6784; }
-    .fd-carte__obs { color: #b45309; }
+    .fd-carte { margin-top: 1rem; border: 1px solid var(--n-200); border-radius: 10px; background: var(--carte-fond); overflow: hidden; }
+    .fd-carte__tete { display: flex; align-items: center; gap: 0.6rem; margin: 0; padding: 0.6rem 0.9rem; background: var(--carte-fond); border-bottom: 1px solid var(--n-200); font-size: 0.95rem; color: var(--texte); }
+    .fd-code { padding: 0.05rem 0.45rem; border-radius: 6px; background: var(--section-fond); color: var(--texte-menu) !important; font-size: 0.72rem !important; margin-right: 0 !important; }
+    .fd-carte__libelle { flex: 1; font-weight: 500; }
+    .fd-carte__compte { font-size: 0.75rem; font-weight: 500; color: var(--texte-secondaire); }
+    .fd-carte__obs { color: var(--examen-texte); }
     .fd-carte .doc-rub { margin: 0; padding: 0.55rem 0.9rem 0.25rem; }
-    .doc-val--vide { color: #5b6784; font-style: italic; }
+    .doc-val--vide { color: var(--texte-secondaire); font-style: italic; }
     /* ⚠️ 18/10 (pilote, lot B) — sommaire collant, informations citées par le point ouvert, information visée surlignée. */
-    .fd-sommaire { position: sticky; top: 0; z-index: 3; display: flex; gap: 0.3rem; margin: 0.6rem -0.25rem 0; padding: 0.45rem 0.25rem; background: #fff; border-bottom: 1px solid var(--n-200); overflow-x: auto; }
-    .fd-chip { flex: none; display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.55rem; border: 1px solid var(--n-300); border-radius: 999px; background: #fff; font: 600 0.74rem var(--font-base); color: #34405a; cursor: pointer; white-space: nowrap; }
-    .fd-chip b { font-family: var(--font-mono, monospace); font-size: 0.68rem; color: #152033; }
-    .fd-chip:hover { border-color: #0369a1; color: #0369a1; }
-    .fd-chip__obs { min-width: 1.05rem; padding: 0 0.3rem; border-radius: 999px; background: #b45309; color: #fff; font-size: 0.64rem; text-align: center; }
+    .fd-sommaire { position: sticky; top: 0; z-index: 3; display: flex; gap: 0.3rem; margin: 0.6rem -0.25rem 0; padding: 0.45rem 0.25rem; background: var(--carte-fond); border-bottom: 1px solid var(--n-200); overflow-x: auto; }
+    .fd-chip { flex: none; display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.55rem; border: 1px solid var(--n-300); border-radius: 999px; background: var(--carte-fond); font: 500 0.74rem var(--font-base); color: var(--texte); cursor: pointer; white-space: nowrap; }
+    .fd-chip b { font-family: var(--font-mono, monospace); font-size: 0.68rem; color: var(--texte); }
+    .fd-chip:hover { border-color: var(--bouton-principal); color: var(--texte); }
+    .fd-chip__obs { min-width: 1.05rem; padding: 0 0.3rem; border-radius: 999px; background: var(--examen-texte); color: var(--texte-menu); font-size: 0.64rem; text-align: center; }
     .fd-carte { scroll-margin-top: 3rem; }
     /* ⚠️ 18/10 (pilote) — la ligne citée par le point ouvert, en ORANGE et bien visible : barre épaisse, fond orangé sur toute la
        ligne (libellé compris), libellé en gras. Distincte de l'observation (pastille ambre numérotée). */
-    .doc-table--fiche td.doc-cellule--citee { box-shadow: inset 5px 0 0 #ea580c; background: #ffedd5; font-weight: 600; }
-    .doc-table--fiche tr:has(> td.doc-cellule--citee) > th.doc-lib { background: #fed7aa; color: #7c2d12; font-weight: 700; }
-    .doc-table--fiche td.doc-flash, .fd-carte.doc-flash { background: #fef3c7 !important; transition: background 0.4s; }
-    .doc-table--fiche { font: 0.84rem/1.45 var(--font-base); color: #152033; }
-    .doc-table--fiche th, .doc-table--fiche td { border: 0; border-top: 1px solid var(--n-100); padding: 0.45rem 0.7rem; font-family: var(--font-base); color: #152033; background: #fff; }
+    .doc-table--fiche td.doc-cellule--citee { box-shadow:  inset 5px 0 0 var(--or); background: var(--examen-fond); font-weight: 500; }
+    .doc-table--fiche tr:has(> td.doc-cellule--citee) > th.doc-lib { background: var(--or); color: var(--examen-texte); font-weight: 500; }
+    .doc-table--fiche td.doc-flash, .fd-carte.doc-flash { background: var(--examen-fond) !important; transition: background 0.4s; }
+    .doc-table--fiche { font: 0.84rem/1.45 var(--font-base); color: var(--texte); }
+    .doc-table--fiche th, .doc-table--fiche td { border: 0; border-top: 1px solid var(--n-100); padding: 0.45rem 0.7rem; font-family: var(--font-base); color: var(--texte); background: var(--carte-fond); }
     .doc-table--fiche tbody tr:last-child > th, .doc-table--fiche tbody tr:last-child > td { border-bottom: 0; }
     .doc-table--fiche th.doc-lib { padding-left: 0.9rem; }
-    .doc-table--fiche th.doc-lib { width: 38%; font-weight: 500; font-size: 0.8rem; text-align: left; vertical-align: top; color: #5b6784; background: #f8fafc; border-right: 1px solid var(--n-200); }
-    .doc-rub { color: #0369a1; font-weight: 700; }
+    .doc-table--fiche th.doc-lib { width: 38%; font-weight: 500; font-size: 0.8rem; text-align: left; vertical-align: top; color: var(--texte-secondaire); background: var(--carte-fond); border-right: 1px solid var(--n-200); }
+    .doc-rub { color: var(--texte); font-weight: 500; }
     .doc-lot { margin-left: 0.4rem; font-size: 0.74rem; color: var(--n-500); border: 1px solid var(--n-300); border-radius: 999px; padding: 0 0.4rem; }
     .doc-val { white-space: pre-wrap; }
-    .doc-cellule--modifiee { background: #eff6ff; box-shadow: inset 3px 0 0 var(--p-600); }
+    .doc-cellule--modifiee { background: var(--onglet-actif-fond); box-shadow: inset 3px 0 0 var(--p-600); }
     .doc-modif { display: block; margin-top: 0.15rem; font-size: 0.74rem; color: var(--p-700); }
     .doc-etat { color: var(--n-500); font-size: 0.9rem; }
     .doc-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }

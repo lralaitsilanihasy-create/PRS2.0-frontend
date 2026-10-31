@@ -309,7 +309,7 @@ import { LIBELLES_ETAT_ETAPE, OffreDeposee, etapesParcours, grouperDocuments, ja
     .ped__frise li::before { content: ''; position: absolute; left: calc(-1.1rem - 6px); top: 0.3rem; width: 10px; height: 10px; border-radius: 50%;
       background: #fff; border: 2px solid var(--p-400); }
     .ped__frise li.ped__jalon--passe::before { background: var(--bouton-principal); border-color: var(--bouton-principal); }
-    .ped__frise li.ped__jalon--fort::before { border-color: var(--p-700); }
+    .ped__frise li.ped__jalon--fort::before { border-color: var(--menu-fond); }
     .ped__jalon-lib { font-size: var(--text-xs); color: var(--n-500); }
     .ped__jalon-date { font-size: var(--text-sm); font-weight: 600; color: var(--n-700); }
     .ped__jalon--fort .ped__jalon-date { color: var(--p-800); font-weight: 700; }

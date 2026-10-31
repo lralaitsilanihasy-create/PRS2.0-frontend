@@ -309,7 +309,7 @@ import { DossierModificationStore } from './dossier-modification.store';
     .rd-form { padding: 1.25rem 1.5rem; margin-bottom: 0.75rem; }
     .rd-section { display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.75rem; font-size: var(--text-md); font-weight: 500; color: var(--c-800); }
     /* Numéro d'étape du parcours de rectification (1 observations → 2 pièces → 3 PPM). */
-    .rd-step { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 1.6rem; height: 1.6rem; border-radius: 999px; background: var(--c-600); color: var(--texte-menu); font-size: var(--text-sm); font-weight: 500; }
+    .rd-step { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 1.6rem; height: 1.6rem; border-radius: 999px; background: var(--menu-fond); color: var(--texte-menu); font-size: var(--text-sm); font-weight: 500; }
     .rd-chip { margin-left: auto; font-size: var(--text-xs); font-weight: 500; padding: 0.15rem 0.6rem; border-radius: 999px; }
     .rd-chip--warn { background: var(--warning-bg); color: var(--warning-text); }
     .rd-chip--ok { background: var(--favorable-fond); color: var(--favorable-texte); }
@@ -317,7 +317,7 @@ import { DossierModificationStore } from './dossier-modification.store';
     .rd-corps--verrouille { pointer-events: none; opacity: 0.45; }
     /* Zone d'import du PPM rectifié (étape 3) — appel à l'action central. */
     .rd-drop { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 1.75rem 1.5rem; border: 2px dashed var(--c-300); border-radius: var(--radius-lg); background: var(--c-50); cursor: pointer; text-align: center; transition: border-color 0.15s, background 0.15s; }
-    .rd-drop:hover { border-color: var(--c-600); background: var(--c-100); }
+    .rd-drop:hover { border-color: var(--menu-fond); background: var(--c-100); }
     .rd-drop--busy { opacity: 0.7; pointer-events: none; }
     .rd-drop__icone { font-size: 2rem; line-height: 1; }
     .rd-drop__titre { font-weight: 500; color: var(--c-800); }

@@ -63,7 +63,7 @@ import { messageIndisponible } from './avis-specifique-modele';
     .md__table th:nth-child(3) { width: 14%; }
     .md__table td { vertical-align: top; white-space: normal; overflow-wrap: anywhere; }
     .md__code { font-size: var(--text-xs); color: var(--n-400); margin-left: 0.35rem; }
-    .md__ko td:nth-child(2), .md__ko td:nth-child(3) { color: var(--danger-700, #b42318); font-weight: 600; }
+    .md__ko td:nth-child(2), .md__ko td:nth-child(3) { color: var(--danger-700, var(--retard-texte)); font-weight: 500; }
   `,
 })
 export class MentionsDocumentVue {

@@ -13,7 +13,7 @@
 }
 .maj__filiation-main { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
 .maj__badge {
-  background: var(--c-600); color: var(--texte-menu); font-weight: 500; font-size: var(--text-sm);
+  background: var(--menu-fond); color: var(--texte-menu); font-weight: 500; font-size: var(--text-sm);
   padding: 0.2rem 0.6rem; border-radius: var(--radius-sm);
 }
 .maj__version { font-weight: 500; color: var(--c-800); }

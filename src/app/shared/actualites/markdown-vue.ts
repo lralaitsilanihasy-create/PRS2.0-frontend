@@ -78,9 +78,9 @@ import { blocsMd } from './markdown';
   `,
   styles: `
     :host { display: block; color: var(--n-700); }
-    .md__h1 { margin: 0 0 0.5rem; font-size: var(--text-lg); font-weight: 700; color: var(--c-800); }
-    .md__h2 { margin: 1rem 0 0.4rem; font-size: var(--text-base); font-weight: 700; color: var(--c-800); }
-    .md__h3 { margin: 0.8rem 0 0.3rem; font-size: var(--text-base); font-weight: 600; color: var(--n-800); }
+    .md__h1 { margin: 0 0 0.5rem; font-size: var(--text-lg); font-weight: 500; color: var(--c-800); }
+    .md__h2 { margin: 1rem 0 0.4rem; font-size: var(--text-base); font-weight: 500; color: var(--c-800); }
+    .md__h3 { margin: 0.8rem 0 0.3rem; font-size: var(--text-base); font-weight: 500; color: var(--n-800); }
     .md__p { margin: 0 0 0.7rem; line-height: 1.6; }
     .md__list { margin: 0 0 0.7rem; padding-left: 1.3rem; line-height: 1.6; }
     .md__list li { margin-bottom: 0.25rem; }

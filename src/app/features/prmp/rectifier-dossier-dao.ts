@@ -169,7 +169,7 @@ type EtatRevision = 'a-ouvrir' | 'en-cours' | 'validee';
     .rd-ref__sep { margin: 0 0.4rem; }
     .rd-form { padding: 1rem 1.25rem; margin-top: 1rem; }
     .rd-section { display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.75rem; font-size: var(--text-md); font-weight: 500; color: var(--c-800); }
-    .rd-step { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 1.6rem; height: 1.6rem; border-radius: 999px; background: var(--c-600); color: var(--texte-menu); font-size: var(--text-sm); font-weight: 500; }
+    .rd-step { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 1.6rem; height: 1.6rem; border-radius: 999px; background: var(--menu-fond); color: var(--texte-menu); font-size: var(--text-sm); font-weight: 500; }
     .rd-chip { margin-left: 0.4rem; padding: 0.1rem 0.55rem; border-radius: 999px; font-size: var(--text-xs); font-weight: 500; }
     .rd-chip--warn { background: var(--warning-bg); color: var(--warning-text); }
     .rd-chip--ok { background: var(--favorable-fond); color: var(--favorable-texte); }
