@@ -20,6 +20,7 @@ import {
 } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
 import { DetailPvModal } from './detail-pv-modal';
+import { DeuxVolets } from '../../shared/ui/deux-volets';
 
 /**
  * « PV définitifs » (MEMBRE / PRESIDENT / CHEF_COMMISSION / **PRMP** ⚠️ 2026-08-02) — **LECTURE SEULE**.
@@ -32,7 +33,7 @@ import { DetailPvModal } from './detail-pv-modal';
 @Component({
   selector: 'app-pv-definitifs',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ModaleDirective, StatutBadge, DetailPvModal],
+  imports: [ModaleDirective, StatutBadge, DetailPvModal, DeuxVolets],
   template: `
     <section class="pvd">
       <header class="page-header">
@@ -42,58 +43,55 @@ import { DetailPvModal } from './detail-pv-modal';
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
       } @else if (pvs().length) {
-        <!-- ⚠️ Demande user (2026-08-15) — tableau : référence, entité contractante, date du PV,
-             co-signataires, et l'action (le bouton varie selon le profil, comme avant). -->
-        <div class="table-card">
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">Référence</th>
-                <th scope="col">Entité contractante</th>
-                <th scope="col">Date du PV</th>
-                <th scope="col">Co-signataires</th>
-                <th scope="col" class="r">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (pv of pvs(); track pv.idPv) {
-                <tr>
-                  <td>
-                    <span class="pvd__ref">{{ pv.refePv || pv.referencePv || ('PV #' + pv.idPv) }}</span>
+        <!-- ⚠️ 31/10 (pilote, Espace de travail, lot 3d) — deux volets : les PV à gauche (référence, entité, date), le PV choisi à
+             droite ; le premier est choisi d'office. La PRMP ne reçoit que le document officiel signé (règle du 2026-08-02) :
+             son volet porte l'identité du PV et « Afficher le PV » ; les autres profils y lisent le détail complet. -->
+        <app-deux-volets [ouvert]="!!selection()" [cle]="selection()?.idPv ?? null" libelleListe="PV définitifs" libelleDetail="Détail du PV"
+                         invite="Choisissez un PV : son détail s’affiche ici.">
+          <ul liste class="pvd__liste">
+            @for (pv of pvs(); track pv.idPv) {
+              <li class="pvd__item" [class.pvd__item--on]="selection()?.idPv === pv.idPv">
+                <button type="button" class="pvd__ligne" [attr.aria-pressed]="selection()?.idPv === pv.idPv" (click)="choisi.set(pv.idPv)">
+                  <span class="pvd__ref">{{ pv.refePv || pv.referencePv || ('PV #' + pv.idPv) }}</span>
+                  <span class="pvd__ent">{{ entiteDe(pv) }}</span>
+                  <span class="pvd__date">{{ datePvDe(pv) || '—' }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+          <div detail>
+            @for (pv of selectionListe(); track pv.idPv) {
+              @if (estPrmp()) {
+                <div class="pvd__fiche">
+                  <header class="pvd__fiche-tete">
+                    <h2 class="pvd__fiche-titre">{{ pv.refePv || pv.referencePv || ('PV #' + pv.idPv) }}</h2>
                     <app-statut-badge [statut]="pv.statutPv" [label]="'Définitif'" />
-                  </td>
-                  <td>{{ entiteDe(pv) }}</td>
-                  <td style="white-space:nowrap;">{{ datePvDe(pv) || '—' }}</td>
-                  <td>{{ coSignataires(pv) }}</td>
-                  <td>
-                    <div class="td-actions pvd__actions">
-                      @if (estPrmp()) {
-                        <!-- ⚠️ 2026-08-02 (demande user) — la PRMP ne reçoit QUE le document officiel
-                             signé (PDF), AFFICHÉ directement au clic (pas de modal interne). -->
-                        @if (pv.documentDisponible) {
-                          <button type="button" class="btn btn-primary btn-sm" [disabled]="chargementPdf() === pv.idPv"
-                            (click)="afficherPdf(pv)">
-                            {{ chargementPdf() === pv.idPv ? 'Chargement…' : '📄 Afficher le PV' }}
-                          </button>
-                        } @else {
-                          <!-- ⚠️ 2026-08-19 — « indisponible » et non « inexistant » : le document est
-                               produit après la signature, donc absent pendant sa fenêtre d'édition. -->
-                          <button type="button" class="btn btn-primary btn-sm" disabled
-                            title="Document indisponible pour l'instant — s'il vient d'être signé, l'édition est en cours ; rechargez dans un instant.">📄 Afficher le PV</button>
-                        }
-                      } @else if (estReferenceComplete(pv.refePv || pv.referencePv)) {
-                        <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirDetailPv(pv)">Voir détails</button>
-                      } @else {
-                        <button type="button" class="btn btn-secondary btn-sm" disabled
-                          title="Référence incomplète — contactez l'administrateur">Voir détails</button>
-                      }
-                    </div>
-                  </td>
-                </tr>
+                  </header>
+                  <dl class="pvd__champs">
+                    <div><dt>Entité contractante</dt><dd>{{ entiteDe(pv) }}</dd></div>
+                    <div><dt>Date du PV</dt><dd>{{ datePvDe(pv) || '—' }}</dd></div>
+                    <div><dt>Co-signataires</dt><dd>{{ coSignataires(pv) }}</dd></div>
+                  </dl>
+                  <div>
+                    @if (pv.documentDisponible) {
+                      <button type="button" class="btn btn-primary btn-sm" [disabled]="chargementPdf() === pv.idPv" (click)="afficherPdf(pv)">
+                        {{ chargementPdf() === pv.idPv ? 'Chargement…' : '📄 Afficher le PV' }}
+                      </button>
+                    } @else {
+                      <!-- ⚠️ 2026-08-19 — « indisponible » et non « inexistant » : le document est produit après la signature. -->
+                      <button type="button" class="btn btn-primary btn-sm" disabled
+                        title="Document indisponible pour l'instant — s'il vient d'être signé, l'édition est en cours ; rechargez dans un instant.">📄 Afficher le PV</button>
+                    }
+                  </div>
+                </div>
+              } @else if (estReferenceComplete(pv.refePv || pv.referencePv)) {
+                <app-detail-pv-modal [pv]="pv" [integre]="true" />
+              } @else {
+                <p class="text-sm text-muted">Référence incomplète : le détail de ce PV n’est pas consultable. Contactez l’administrateur.</p>
               }
-            </tbody>
-          </table>
-        </div>
+            }
+          </div>
+        </app-deux-volets>
       } @else {
         <p class="text-muted">Aucun PV définitif.</p>
       }
@@ -125,6 +123,23 @@ import { DetailPvModal } from './detail-pv-modal';
     }
   `,
   styles: `
+    /* ⚠️ 31/10 (Espace de travail, lot 3d) — volet de gauche et fiche de la PRMP. */
+    .pvd__liste { list-style: none; margin: 0; padding: 0; }
+    .pvd__item { border-bottom: 1px solid var(--bordure); }
+    .pvd__item--on { background: var(--onglet-actif-fond); box-shadow: inset 3px 0 0 var(--menu-fond); }
+    .pvd__ligne { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: flex; flex-direction: column; gap: 0.15rem; padding: 0.55rem 0.8rem; }
+    .pvd__ligne:hover { background: var(--ligne-survol); }
+    .pvd__item--on .pvd__ligne:hover { background: transparent; }
+    .pvd__ligne:focus-visible { outline: 2px solid var(--bouton-principal); outline-offset: -2px; }
+    .pvd__ent, .pvd__date { font-size: var(--text-sm); color: var(--texte-secondaire); }
+    .pvd__fiche { display: flex; flex-direction: column; gap: 10px; }
+    .pvd__fiche-tete { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding-bottom: 8px; border-bottom: 1px solid var(--bordure); }
+    .pvd__fiche-titre { margin: 0; font-size: 16px; font-weight: 500; }
+    .pvd__champs { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); margin: 0; border: 1px solid var(--bordure); border-radius: 4px; }
+    .pvd__champs > div { padding: 6px 10px; }
+    .pvd__champs > div + div { border-left: 1px solid var(--bordure); }
+    .pvd__champs dt { font-size: 11px; color: var(--texte-secondaire); }
+    .pvd__champs dd { margin: 0; font-weight: 500; }
     .pvd__ref { font-weight: 500; color: var(--c-800); margin-right: 0.5rem; }
     .pvd__actions { justify-content: flex-end; }
     .pvd__info { display: flex; flex-direction: column; gap: 0.35rem; margin: 0.5rem 0 0; }
@@ -182,6 +197,14 @@ export class PvDefinitifs {
   });
   /** PV ouvert dans le modal de détail (null = fermé). */
   readonly detail = signal<PvExamen | null>(null);
+  /** ⚠️ 31/10 (deux volets) — le PV choisi (le premier tant que rien n'est choisi). */
+  readonly choisi = signal<number | null>(null);
+  readonly selection = computed(() => this.pvs().find((p) => p.idPv === this.choisi()) ?? this.pvs()[0] ?? null);
+  /** Le PV choisi en liste d'un élément : le détail est recréé (et relu) quand il change. */
+  readonly selectionListe = computed(() => {
+    const p = this.selection();
+    return p ? [p] : [];
+  });
   /**
    * ⚠️ 2026-08-02 (demande user) — la PRMP (et l'UGPM sous tutelle) ne reçoit que la VERSION PDF du
    * PV signé (document officiel), AFFICHÉE directement : pas de modal de détail (reconstruction interne).

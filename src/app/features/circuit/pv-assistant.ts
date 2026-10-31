@@ -7,6 +7,7 @@ import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { Dispatch, Dossier, Examen, PvExamen, Reception } from '../../models';
 import { ChronometrageDossier } from '../../shared/circuit';
+import { DeuxVolets } from '../../shared/ui/deux-volets';
 import {
   AvisService,
   DispatchService,
@@ -28,7 +29,7 @@ import {
 @Component({
   selector: 'app-pv-assistant',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ChronometrageDossier],
+  imports: [ChronometrageDossier, DeuxVolets],
   template: `
     <section class="pva">
       <header class="page-header">
@@ -43,32 +44,30 @@ import {
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
       } @else {
-        <div class="table-card">
-        <table>
-          <thead>
-            <tr><th scope="col">Référence PV</th><th scope="col">Dossier</th><th scope="col">Avis</th><th scope="col">Date signature</th><th scope="col">Archivage</th></tr>
-          </thead>
-          <tbody>
+        <!-- ⚠️ 31/10 (pilote, Espace de travail, lot 3d) — deux volets : les PV reçus à gauche, le PV choisi à droite (archivage,
+             détail, chronométrage) ; le premier est choisi d'office. -->
+        @if (!pvs().length) {
+          <p class="text-muted">Aucun PV reçu.</p>
+        } @else {
+        <app-deux-volets [ouvert]="!!selection()" [cle]="selection()?.idPv ?? null" libelleListe="PV reçus" libelleDetail="Détail du PV"
+                         invite="Choisissez un PV : son détail s’affiche ici.">
+          <ul liste class="pva__liste">
             @for (pv of pvs(); track pv.idPv) {
-              <tr>
-                <td>
-                  <!-- <button> et non <tr (click)> : le dépliage du détail doit être atteignable au
-                       clavier (AUDIT.md A4 — la règle ESLint ignore les <tr>). -->
-                  <button
-                    type="button"
-                    class="pva__toggle"
-                    [attr.aria-expanded]="ouvert() === pv.idPv"
-                    [attr.aria-controls]="'pva-detail-' + pv.idPv"
-                    (click)="basculer(pv)"
-                  >
-                    <span class="pva__chev" [class.is-open]="ouvert() === pv.idPv" aria-hidden="true">▾</span>
-                    <span class="cnm-mono">{{ pv.refePv || pv.referencePv || ('PV #' + pv.idPv) }}</span>
-                  </button>
-                </td>
-                <td>{{ dossierRef(pv) }}</td>
-                <td><span [class]="avisClasse(pv.idAvis)">{{ avisLabel(pv.idAvis) }}</span></td>
-                <td class="cnm-mono">{{ dateSignature(pv) || '—' }}</td>
-                <td>
+              <li class="pva__item" [class.pva__item--on]="selection()?.idPv === pv.idPv">
+                <button type="button" class="pva__ligne" [attr.aria-pressed]="selection()?.idPv === pv.idPv" (click)="ouvert.set(pv.idPv)">
+                  <span class="pva__ref">{{ pv.refePv || pv.referencePv || ('PV #' + pv.idPv) }}</span>
+                  <span class="pva__meta">{{ dossierRef(pv) }} · {{ dateSignature(pv) || '—' }}</span>
+                  <span class="pva__meta"><span [class]="avisClasse(pv.idAvis)">{{ avisLabel(pv.idAvis) }}</span>@if (pv.dateArchivage) { · archivé }</span>
+                </button>
+              </li>
+            }
+          </ul>
+          <div detail>
+            @for (pv of selectionListe(); track pv.idPv) {
+              <div class="pva__volet" [id]="'pva-detail-' + pv.idPv">
+                <header class="pva__volet-tete">
+                  <h2 class="pva__volet-titre">{{ pv.refePv || pv.referencePv || ('PV #' + pv.idPv) }}</h2>
+                  <div class="pva__archivage">
                   <!-- ⚠️ Spec navette : archivage par l'Assistant (après transmission SIGMP) — clôt le dossier. -->
                   @if (pv.dateArchivage) {
                     <span class="badge badge-success">Archivé le {{ pv.dateArchivage }}</span>
@@ -85,44 +84,51 @@ import {
                       {{ archivage() === pv.idPv ? 'Archivage…' : 'Archiver' }}
                     </button>
                   }
-                </td>
-              </tr>
-              @if (ouvert() === pv.idPv) {
-                <tr class="pva__detail">
-                  <td colspan="5" [id]="'pva-detail-' + pv.idPv">
-                    <dl class="pva__dl">
-                      <div><dt>Référence</dt><dd class="cnm-mono">{{ pv.refePv || pv.referencePv || '—' }}</dd></div>
-                      <div><dt>Dossier</dt><dd>{{ dossierRef(pv) }}</dd></div>
-                      <div><dt>Avis</dt><dd>{{ avisLabel(pv.idAvis) }}</dd></div>
-                      <div><dt>Date du PV</dt><dd class="cnm-mono">{{ pv.datePv || '—' }}</dd></div>
-                      <div><dt>Signature membre</dt><dd class="cnm-mono">{{ pv.dateSignatureMembre || '—' }}</dd></div>
-                      <div><dt>Signature CC</dt><dd class="cnm-mono">{{ pv.dateSignatureCc || '—' }}</dd></div>
-                      <div><dt>Signature président</dt><dd class="cnm-mono">{{ pv.dateSignaturePresident || '—' }}</dd></div>
-                      <!-- Notion retirée du cycle le 02/09 : ligne réservée aux PV historiques qui en portent un. -->
-                      @if (pv.nomSecretaireSeance || pv.idSecretaireSeance) {
-                        <div><dt>Secrétaire de séance</dt><dd>{{ pv.nomSecretaireSeance || pv.idSecretaireSeance }}</dd></div>
-                      }
-                      @if (pv.syntheseObservations) {
-                        <div><dt>Synthèse</dt><dd class="pva__synthese">{{ pv.syntheseObservations }}</dd></div>
-                      }
-                    </dl>
-                    <!-- Chronométrage (2026-09-01) : prise en charge de l'étape ARCHIVAGE (hors compteur global). -->
-                    @if (idDossierDe(pv); as idDos) {
-                      <app-chronometrage-dossier [idDossier]="idDos" [compact]="true" />
-                    }
-                  </td>
-                </tr>
-              }
-            } @empty {
-              <tr><td colspan="5" class="text-muted">Aucun PV reçu.</td></tr>
+                  </div>
+                </header>
+                <dl class="pva__dl">
+                  <div><dt>Référence</dt><dd class="cnm-mono">{{ pv.refePv || pv.referencePv || '—' }}</dd></div>
+                  <div><dt>Dossier</dt><dd>{{ dossierRef(pv) }}</dd></div>
+                  <div><dt>Avis</dt><dd>{{ avisLabel(pv.idAvis) }}</dd></div>
+                  <div><dt>Date du PV</dt><dd class="cnm-mono">{{ pv.datePv || '—' }}</dd></div>
+                  <div><dt>Signature membre</dt><dd class="cnm-mono">{{ pv.dateSignatureMembre || '—' }}</dd></div>
+                  <div><dt>Signature CC</dt><dd class="cnm-mono">{{ pv.dateSignatureCc || '—' }}</dd></div>
+                  <div><dt>Signature président</dt><dd class="cnm-mono">{{ pv.dateSignaturePresident || '—' }}</dd></div>
+                  <!-- Notion retirée du cycle le 02/09 : ligne réservée aux PV historiques qui en portent un. -->
+                  @if (pv.nomSecretaireSeance || pv.idSecretaireSeance) {
+                    <div><dt>Secrétaire de séance</dt><dd>{{ pv.nomSecretaireSeance || pv.idSecretaireSeance }}</dd></div>
+                  }
+                  @if (pv.syntheseObservations) {
+                    <div><dt>Synthèse</dt><dd class="pva__synthese">{{ pv.syntheseObservations }}</dd></div>
+                  }
+                </dl>
+                <!-- Chronométrage (2026-09-01) : prise en charge de l'étape ARCHIVAGE (hors compteur global). -->
+                @if (idDossierDe(pv); as idDos) {
+                  <app-chronometrage-dossier [idDossier]="idDos" [compact]="true" />
+                }
+              </div>
             }
-          </tbody>
-        </table>
-        </div>
+          </div>
+        </app-deux-volets>
+        }
       }
     </section>
   `,
   styles: `
+    /* ⚠️ 31/10 (Espace de travail, lot 3d) — volet de gauche et en-tête du détail. */
+    .pva__liste { list-style: none; margin: 0; padding: 0; }
+    .pva__item { border-bottom: 1px solid var(--bordure); }
+    .pva__item--on { background: var(--onglet-actif-fond); box-shadow: inset 3px 0 0 var(--menu-fond); }
+    .pva__ligne { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: flex; flex-direction: column; gap: 0.2rem; padding: 0.55rem 0.8rem; }
+    .pva__ligne:hover { background: var(--ligne-survol); }
+    .pva__item--on .pva__ligne:hover { background: transparent; }
+    .pva__ligne:focus-visible { outline: 2px solid var(--bouton-principal); outline-offset: -2px; }
+    .pva__ref { font-weight: 500; }
+    .pva__meta { font-size: var(--text-sm); color: var(--texte-secondaire); }
+    .pva__volet { display: flex; flex-direction: column; gap: 10px; }
+    .pva__volet-tete { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding-bottom: 8px; border-bottom: 1px solid var(--bordure); }
+    .pva__volet-titre { margin: 0; font-size: 16px; font-weight: 500; }
+    .pva__archivage { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
     .pva__toggle { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0; background: none; border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
     .pva__chev { flex: none; color: var(--n-400); transition: transform 0.15s; }
     .pva__chev.is-open { transform: rotate(180deg); }
@@ -166,6 +172,13 @@ export class PvAssistant {
   readonly loading = signal(true);
   readonly pvs = signal<PvExamen[]>([]);
   readonly ouvert = signal<number | null>(null);
+  /** ⚠️ 31/10 (deux volets) — le PV affiché à droite : le premier tant que rien n'est choisi. */
+  readonly selection = computed(() => this.pvs().find((p) => p.idPv === this.ouvert()) ?? this.pvs()[0] ?? null);
+  /** Le PV choisi en liste d'un élément : le chronométrage est recréé (et relu) quand il change. */
+  readonly selectionListe = computed(() => {
+    const p = this.selection();
+    return p ? [p] : [];
+  });
   /** idPv en cours d'archivage (bouton désactivé), null sinon. */
   readonly archivage = signal<number | null>(null);
   private readonly avisMap = signal<Map<string, string>>(new Map());

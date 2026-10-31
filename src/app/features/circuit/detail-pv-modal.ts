@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -33,10 +34,27 @@ import { PV_STATUT_LABELS, StatutBadge } from '../../shared/circuit';
 @Component({
   selector: 'app-detail-pv-modal',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ModaleDirective, StatutBadge],
+  imports: [NgTemplateOutlet, ModaleDirective, StatutBadge],
   template: `
+    <!-- ⚠️ 31/10 (pilote, Espace de travail, lot 3d) — deux formes : la MODALE (inchangée), et le mode INTÉGRÉ du volet de
+         droite d'une liste (même en-tête, même corps, même pied ; ni voile, ni croix, ni piège de focus). -->
+    @if (integre()) {
+      <section class="dpv-integre" [attr.aria-label]="definitif() ? 'Détail du PV' : 'Détail du projet de PV'">
+        <ng-container [ngTemplateOutlet]="dpvEntete" />
+        <ng-container [ngTemplateOutlet]="dpvCorps" />
+        <ng-container [ngTemplateOutlet]="dpvPied" />
+      </section>
+    } @else {
     <div class="modal-backdrop" [class.closing]="closing()">
       <div class="modal modal-lg" role="dialog" aria-modal="true" [attr.aria-label]="definitif() ? 'Détail du PV' : 'Détail du projet de PV'" appModale (appModaleFermer)="fermerModal()">
+        <ng-container [ngTemplateOutlet]="dpvEntete" />
+        <ng-container [ngTemplateOutlet]="dpvCorps" />
+        <ng-container [ngTemplateOutlet]="dpvPied" />
+      </div>
+    </div>
+    }
+
+    <ng-template #dpvEntete>
         <!-- En-tête -->
         <div class="modal-header">
           <div>
@@ -46,9 +64,13 @@ import { PV_STATUT_LABELS, StatutBadge } from '../../shared/circuit';
             </div>
             <h2 class="modal-title">{{ pv().refePv || pv().referencePv || ('PV #' + pv().idPv) }}</h2>
           </div>
-          <button type="button" class="btn-close" aria-label="Fermer" (click)="fermerModal()">✕</button>
+          @if (!integre()) {
+            <button type="button" class="btn-close" aria-label="Fermer" (click)="fermerModal()">✕</button>
+          }
         </div>
 
+    </ng-template>
+    <ng-template #dpvCorps>
         <div class="modal-body">
           <!-- Métadonnées en tuiles (même modèle que l'en-tête des Projets de PV). -->
           <div class="section-block">
@@ -197,6 +219,8 @@ import { PV_STATUT_LABELS, StatutBadge } from '../../shared/circuit';
           </div>
         </div>
 
+    </ng-template>
+    <ng-template #dpvPied>
         <!-- Pied -->
         <div class="modal-footer modal-footer-spaced">
           @if (pv().documentDisponible === false && !definitif()) {
@@ -218,8 +242,7 @@ import { PV_STATUT_LABELS, StatutBadge } from '../../shared/circuit';
             </button>
           }
         </div>
-      </div>
-    </div>
+    </ng-template>
 
     <!-- Visionneuse du PDF officiel signé (même modèle que « PV définitifs » PRMP) : le lecteur du
          navigateur offre déjà impression / enregistrement. -->
@@ -244,6 +267,11 @@ import { PV_STATUT_LABELS, StatutBadge } from '../../shared/circuit';
     }
   `,
   styles: `
+    /* ⚠️ 31/10 (Espace de travail) — mode intégré : les blocs de la modale, posés dans le volet de droite. */
+    .dpv-integre { display: flex; flex-direction: column; gap: 10px; }
+    .dpv-integre .modal-header { padding: 0 0 8px; border-bottom: 1px solid var(--bordure); background: transparent; }
+    .dpv-integre .modal-body { padding: 0; max-height: none; overflow: visible; }
+    .dpv-integre .modal-footer { padding: 8px 0 0; border-top: 1px solid var(--bordure); background: transparent; }
     .dpv-head-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
     .dpv-sub { margin: 0 0 8px; font-size: var(--text-md); font-weight: 500; color: var(--n-800); }
     /* Tuiles de métadonnées (même langage que l'en-tête des Projets de PV). */
@@ -289,6 +317,8 @@ export class DetailPvModal implements OnInit {
   readonly pv = input.required<PvExamen>();
   /** Fermeture demandée (× / backdrop). */
   readonly fermer = output<void>();
+  /** ⚠️ 31/10 (Espace de travail) — rendu dans le volet de droite d'une liste : sans voile ni croix (la liste garde la main). */
+  readonly integre = input(false);
 
   /**
    * Page dossier (lot L4-F4) — « Voir le projet de PV » ouvre aussi cette modale sur un PROJET en navette :

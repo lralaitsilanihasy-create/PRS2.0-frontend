@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, computed } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
@@ -9,6 +9,7 @@ import { ouvrirBlobSur, telechargerBlob, validerFichier } from '../../core/secur
 import { Dossier, LettreRenvoi, PieceJointeDossier, TypePieceJointe } from '../../models';
 import { DossierService, LettreRenvoiService, PieceJointeDossierService, TypePieceJointeService } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
+import { DeuxVolets } from '../../shared/ui/deux-volets';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
 import { LienDossier } from './page-dossier/lien-dossier';
 
@@ -28,7 +29,7 @@ import { LienDossier } from './page-dossier/lien-dossier';
 @Component({
   selector: 'app-lettre-renvoi-consultation',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, RouterLink],
+  imports: [StatutBadge, RouterLink, DeuxVolets],
   template: `
     <section class="lrc">
       <header class="page-header">
@@ -38,178 +39,190 @@ import { LienDossier } from './page-dossier/lien-dossier';
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
       } @else {
-        <div class="table-card">
-        <table>
-          <thead>
-            <tr><th scope="col">Référence lettre</th><th scope="col">Dossier</th><th scope="col">Date lettre</th><th scope="col">Statut</th><th scope="col"></th></tr>
-          </thead>
-          <tbody>
+        <!-- ⚠️ 31/10 (pilote, Espace de travail, lot 3d) — deux volets : les lettres à gauche, la lettre choisie à droite (ses
+             gestes, son détail). Aucune n'est choisie d'office : ouvrir une lettre la marque lue côté serveur. -->
+        @if (!lettres().length) {
+          <p class="text-muted">Aucune lettre de renvoi.</p>
+        } @else {
+        <app-deux-volets [ouvert]="!!lettreOuverte()" [cle]="lettreOuverte()?.idLettre ?? null" libelleListe="Lettres de renvoi" libelleDetail="Détail de la lettre"
+                         invite="Choisissez une lettre : son détail s’affiche ici.">
+          <ul liste class="lrc__liste">
             @for (l of lettres(); track l.idLettre) {
-              <tr [class.lrc__unread]="afficherLue && l.lue === false">
-                <td class="cnm-mono">
+              <li class="lrc__item" [class.lrc__item--on]="ouvert() === l.idLettre" [class.lrc__unread]="afficherLue && l.lue === false">
+                <button type="button" class="lrc__ligne" [attr.aria-pressed]="ouvert() === l.idLettre" (click)="choisir(l)">
                   <span class="lrc__ref">
                     @if (afficherLue && l.lue === false) { <span class="lrc__unread-dot" aria-hidden="true"></span> }
                     {{ l.refLettre || ('#' + l.idLettre) }}
                     @if (afficherLue && l.lue === false) { <span class="badge badge-danger lrc__nouveau">Non lue</span> }
                   </span>
-                </td>
-                <!-- Lot L4-F6 : la référence du dossier mène à sa PAGE (Ctrl+clic = nouvel onglet). -->
-                <td>
-                  @if (l.idDossier != null) {
-                    <a class="lrc__lien-dossier" [routerLink]="lien.commandes(l.idDossier)" [queryParams]="lien.params(retour())">{{ refDossier(l) }}</a>
-                  } @else {
-                    {{ refDossier(l) }}
-                  }
-                </td>
-                <td class="cnm-mono">{{ l.dateLettre || '—' }}</td>
-                <td><app-statut-badge [statut]="l.statut" /></td>
-                <td class="lrc__actions">
-                  <button type="button" class="btn btn-secondary btn-sm" (click)="basculer(l)">
-                    {{ ouvert() === l.idLettre ? 'Masquer' : 'Détails' }}
+                  <span class="lrc__meta">{{ refDossier(l) }} · {{ l.dateLettre || '—' }}</span>
+                  <span><app-statut-badge [statut]="l.statut" /></span>
+                </button>
+              </li>
+            }
+          </ul>
+          <div detail>
+            @if (lettreOuverte(); as l) {
+              <div class="lrc__volet">
+                <header class="lrc__volet-tete">
+                  <div>
+                    <h2 class="lrc__volet-titre">{{ l.refLettre || ('Lettre #' + l.idLettre) }}</h2>
+                    @if (l.idDossier != null) {
+                      <a class="lrc__lien-dossier" [routerLink]="lien.commandes(l.idDossier)" [queryParams]="lien.params(retour())">{{ refDossier(l) }}</a>
+                    } @else {
+                      <span>{{ refDossier(l) }}</span>
+                    }
+                  </div>
+                  <app-statut-badge [statut]="l.statut" />
+                </header>
+                <div class="lrc__actions">
+                @if (peutSigner(l)) {
+                  <button type="button" class="btn btn-primary btn-sm" [disabled]="signature() === l.idLettre" (click)="signer(l)">
+                    {{ signature() === l.idLettre ? 'Signature…' : 'Signer' }}
                   </button>
-                  @if (peutSigner(l)) {
-                    <button type="button" class="btn btn-primary btn-sm" [disabled]="signature() === l.idLettre" (click)="signer(l)">
-                      {{ signature() === l.idLettre ? 'Signature…' : 'Signer' }}
+                }
+                <!-- ⚠️ Spec navette : archivage des lettres signées par l'Assistant (même circuit que les PV). -->
+                @if (archivable && l.statut === 'SIGNE' && !l.dateArchivage) {
+                  <button type="button" class="btn btn-primary btn-sm" [disabled]="archivage() === l.idLettre" (click)="archiver(l)">
+                    {{ archivage() === l.idLettre ? 'Archivage…' : 'Archiver' }}
+                  </button>
+                }
+                @if (l.dateArchivage) {
+                  <span class="badge badge-success">Archivée le {{ l.dateArchivage }}</span>
+                }
+                @if (l.statut === 'SIGNE') {
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="telechargerDocument(l)">⬇ PDF</button>
+                }
+                </div>
+                <dl class="lrc__dl">
+                  <div><dt>Référence</dt><dd class="cnm-mono">{{ l.refLettre || '—' }}</dd></div>
+                  <div>
+                    <dt>Dossier</dt>
+                    <dd class="lrc__dossier">
+                      <span>{{ refDossier(l) }}</span>
+                      @if (l.idDossier != null) {
+                        <a class="btn btn-secondary btn-sm" [routerLink]="lien.commandes(l.idDossier)" [queryParams]="lien.params(retour())">Voir le dossier</a>
+                      }
+                    </dd>
+                  </div>
+                  <div><dt>Corps</dt><dd class="lrc__corps">{{ l.corpsLettre || '—' }}</dd></div>
+                  <div><dt>Date d'examen</dt><dd class="cnm-mono">{{ l.dateExamen || '—' }}</dd></div>
+                  <div><dt>Date lettre</dt><dd class="cnm-mono">{{ l.dateLettre || '—' }}</dd></div>
+                  <div><dt>Statut</dt><dd><app-statut-badge [statut]="l.statut" /></dd></div>
+                  <div><dt>Signataire</dt><dd>{{ l.nomSignataire || '—' }}</dd></div>
+                </dl>
+                @if (peutSigner(l)) {
+                  <div class="lrc__detail-foot">
+                    <button type="button" class="btn btn-primary" [disabled]="signature() === l.idLettre" (click)="signer(l)">
+                      {{ signature() === l.idLettre ? 'Signature…' : 'Signer la lettre' }}
                     </button>
-                  }
-                  <!-- ⚠️ Spec navette : archivage des lettres signées par l'Assistant (même circuit que les PV). -->
-                  @if (archivable && l.statut === 'SIGNE' && !l.dateArchivage) {
-                    <button type="button" class="btn btn-primary btn-sm" [disabled]="archivage() === l.idLettre" (click)="archiver(l)">
-                      {{ archivage() === l.idLettre ? 'Archivage…' : 'Archiver' }}
-                    </button>
-                  }
-                  @if (l.dateArchivage) {
-                    <span class="badge badge-success">Archivée le {{ l.dateArchivage }}</span>
-                  }
-                  @if (l.statut === 'SIGNE') {
-                    <button type="button" class="btn btn-secondary btn-sm" (click)="telechargerDocument(l)">⬇ PDF</button>
-                  }
-                </td>
-              </tr>
-              @if (ouvert() === l.idLettre) {
-                <tr class="lrc__detail">
-                  <td colspan="5">
-                    <dl class="lrc__dl">
-                      <div><dt>Référence</dt><dd class="cnm-mono">{{ l.refLettre || '—' }}</dd></div>
-                      <div>
-                        <dt>Dossier</dt>
-                        <dd class="lrc__dossier">
-                          <span>{{ refDossier(l) }}</span>
-                          @if (l.idDossier != null) {
-                            <a class="btn btn-secondary btn-sm" [routerLink]="lien.commandes(l.idDossier)" [queryParams]="lien.params(retour())">Voir le dossier</a>
-                          }
-                        </dd>
+                  </div>
+                }
+                @if (signatureRegionaleBloquee(l)) {
+                  <p class="text-muted text-sm lrc__regional">
+                    Seul le Chef de Commission peut signer une lettre de renvoi pour une localité régionale.
+                  </p>
+                }
+                @if (l.statut === 'SIGNE') {
+                  <div class="lrc__detail-foot">
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="telechargerDocument(l)">⬇ Télécharger le PDF</button>
+                  </div>
+                }
+
+                @if (piecesUpload && l.statut === 'SIGNE') {
+                  <div class="lrc__pieces">
+                    <h3 class="lrc__pieces-title">Pièces initiales du dossier</h3>
+                    @for (p of piecesInitiales(); track p.idPiece) {
+                      <div class="lrc__piece">
+                        <span>📎 {{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
+                        <button type="button" class="btn btn-secondary btn-sm" (click)="telecharger(p)">Télécharger</button>
                       </div>
-                      <div><dt>Corps</dt><dd class="lrc__corps">{{ l.corpsLettre || '—' }}</dd></div>
-                      <div><dt>Date d'examen</dt><dd class="cnm-mono">{{ l.dateExamen || '—' }}</dd></div>
-                      <div><dt>Date lettre</dt><dd class="cnm-mono">{{ l.dateLettre || '—' }}</dd></div>
-                      <div><dt>Statut</dt><dd><app-statut-badge [statut]="l.statut" /></dd></div>
-                      <div><dt>Signataire</dt><dd>{{ l.nomSignataire || '—' }}</dd></div>
-                    </dl>
-                    @if (peutSigner(l)) {
-                      <div class="lrc__detail-foot">
-                        <button type="button" class="btn btn-primary" [disabled]="signature() === l.idLettre" (click)="signer(l)">
-                          {{ signature() === l.idLettre ? 'Signature…' : 'Signer la lettre' }}
+                    } @empty {
+                      <p class="text-muted">Aucune pièce initiale.</p>
+                    }
+
+                    <h3 class="lrc__pieces-title">Pièces ajoutées suite à cette lettre</h3>
+                    @for (p of piecesApres(l); track p.idPiece) {
+                      <div class="lrc__piece">
+                        <span>📎 {{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
+                        <span class="badge badge-warning">Ajoutée après lettre</span>
+                        <button type="button" class="btn btn-secondary btn-sm" (click)="telecharger(p)">Télécharger</button>
+                      </div>
+                    } @empty {
+                      <p class="text-muted">Aucune pièce ajoutée après cette lettre.</p>
+                    }
+
+                    @if (typesPour(l).length) {
+                      <div class="lrc__upload">
+                        <select class="form-control" [value]="uploadType() ?? ''" (change)="uploadType.set($any($event.target).value ? +$any($event.target).value : null)">
+                          <option value="">— Type de pièce —</option>
+                          @for (t of typesPour(l); track t.idTypePiece) {
+                            <option [value]="t.idTypePiece">{{ t.libellePiece }}</option>
+                          }
+                        </select>
+                        <input type="file" accept=".pdf,.jpeg,.jpg,.png" (change)="onUploadFile($event)" />
+                        <button type="button" class="btn btn-primary btn-sm" [disabled]="uploading() || uploadType() == null || !uploadFile()" (click)="ajouterPiece(l)">
+                          {{ uploading() ? 'Ajout…' : '+ Ajouter une pièce' }}
+                        </button>
+                      </div>
+                      <p class="text-muted text-sm lrc__upload-hint">
+                        Choisissez un <strong>type de pièce</strong> et un fichier (PDF, JPEG ou PNG), puis « Ajouter une pièce ».
+                      </p>
+                    } @else {
+                      <p class="text-muted">Aucun type de pièce disponible pour ce dossier — ajout impossible.</p>
+                    }
+
+                    <!-- ⚠️ Spec navette (cas 3) : reprise de l'examen — action EXPLICITE de la PRMP
+                         quand toutes les pièces demandées ont été déposées. -->
+                    @if (dossierDe(l)?.statut === 'EN_ATTENTE_PIECES') {
+                      <div class="lrc__complements">
+                        @if (dossierDe(l)?.idDmc; as idDmc) {
+                          <!-- ⚠️ Lot C4 (V49, §B3) — pour un dossier d'appel d'offres, le complément est la FICHE RÉVISÉE
+                               et validée (ses documents rejoignent le dossier) ; le serveur refuse la transmission sans elle. -->
+                          <p class="text-muted text-sm">
+                            L'examen du dossier est <strong>suspendu</strong>. Pour un dossier d'appel d'offres, le complément est
+                            la <strong>fiche DAO révisée et validée</strong> : ouvrez-la, corrigez ce que la lettre relève, validez
+                            la nouvelle version — ses documents rejoignent le dossier — puis transmettez : le dossier repartira en
+                            <strong>réexamen</strong> chez le Membre attributaire, qui verra ce qui a changé.
+                          </p>
+                          <a class="btn btn-secondary btn-sm lrc__reviser" [routerLink]="['/prmp/dao', idDmc]" [queryParams]="{ reviser: 1 }">Réviser la fiche →</a>
+                        } @else {
+                          <p class="text-muted text-sm">
+                            L'examen du dossier est <strong>suspendu</strong> (en attente de pièces). Une fois toutes les
+                            pièces demandées déposées ci-dessus, transmettez-les : le dossier repartira en
+                            <strong>réexamen</strong> chez le Membre attributaire, qui le réexaminera à la lumière des
+                            pièces reçues (la transmission est refusée tant qu'aucune pièce n'a été déposée).
+                          </p>
+                        }
+                        <button type="button" class="btn btn-primary" [disabled]="transmissionComplements()" (click)="transmettreComplements(l)">
+                          {{ transmissionComplements() ? 'Transmission…' : 'Transmettre les compléments' }}
                         </button>
                       </div>
                     }
-                    @if (signatureRegionaleBloquee(l)) {
-                      <p class="text-muted text-sm lrc__regional">
-                        Seul le Chef de Commission peut signer une lettre de renvoi pour une localité régionale.
-                      </p>
-                    }
-                    @if (l.statut === 'SIGNE') {
-                      <div class="lrc__detail-foot">
-                        <button type="button" class="btn btn-secondary btn-sm" (click)="telechargerDocument(l)">⬇ Télécharger le PDF</button>
-                      </div>
-                    }
-
-                    @if (piecesUpload && l.statut === 'SIGNE') {
-                      <div class="lrc__pieces">
-                        <h3 class="lrc__pieces-title">Pièces initiales du dossier</h3>
-                        @for (p of piecesInitiales(); track p.idPiece) {
-                          <div class="lrc__piece">
-                            <span>📎 {{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
-                            <button type="button" class="btn btn-secondary btn-sm" (click)="telecharger(p)">Télécharger</button>
-                          </div>
-                        } @empty {
-                          <p class="text-muted">Aucune pièce initiale.</p>
-                        }
-
-                        <h3 class="lrc__pieces-title">Pièces ajoutées suite à cette lettre</h3>
-                        @for (p of piecesApres(l); track p.idPiece) {
-                          <div class="lrc__piece">
-                            <span>📎 {{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
-                            <span class="badge badge-warning">Ajoutée après lettre</span>
-                            <button type="button" class="btn btn-secondary btn-sm" (click)="telecharger(p)">Télécharger</button>
-                          </div>
-                        } @empty {
-                          <p class="text-muted">Aucune pièce ajoutée après cette lettre.</p>
-                        }
-
-                        @if (typesPour(l).length) {
-                          <div class="lrc__upload">
-                            <select class="form-control" [value]="uploadType() ?? ''" (change)="uploadType.set($any($event.target).value ? +$any($event.target).value : null)">
-                              <option value="">— Type de pièce —</option>
-                              @for (t of typesPour(l); track t.idTypePiece) {
-                                <option [value]="t.idTypePiece">{{ t.libellePiece }}</option>
-                              }
-                            </select>
-                            <input type="file" accept=".pdf,.jpeg,.jpg,.png" (change)="onUploadFile($event)" />
-                            <button type="button" class="btn btn-primary btn-sm" [disabled]="uploading() || uploadType() == null || !uploadFile()" (click)="ajouterPiece(l)">
-                              {{ uploading() ? 'Ajout…' : '+ Ajouter une pièce' }}
-                            </button>
-                          </div>
-                          <p class="text-muted text-sm lrc__upload-hint">
-                            Choisissez un <strong>type de pièce</strong> et un fichier (PDF, JPEG ou PNG), puis « Ajouter une pièce ».
-                          </p>
-                        } @else {
-                          <p class="text-muted">Aucun type de pièce disponible pour ce dossier — ajout impossible.</p>
-                        }
-
-                        <!-- ⚠️ Spec navette (cas 3) : reprise de l'examen — action EXPLICITE de la PRMP
-                             quand toutes les pièces demandées ont été déposées. -->
-                        @if (dossierDe(l)?.statut === 'EN_ATTENTE_PIECES') {
-                          <div class="lrc__complements">
-                            @if (dossierDe(l)?.idDmc; as idDmc) {
-                              <!-- ⚠️ Lot C4 (V49, §B3) — pour un dossier d'appel d'offres, le complément est la FICHE RÉVISÉE
-                                   et validée (ses documents rejoignent le dossier) ; le serveur refuse la transmission sans elle. -->
-                              <p class="text-muted text-sm">
-                                L'examen du dossier est <strong>suspendu</strong>. Pour un dossier d'appel d'offres, le complément est
-                                la <strong>fiche DAO révisée et validée</strong> : ouvrez-la, corrigez ce que la lettre relève, validez
-                                la nouvelle version — ses documents rejoignent le dossier — puis transmettez : le dossier repartira en
-                                <strong>réexamen</strong> chez le Membre attributaire, qui verra ce qui a changé.
-                              </p>
-                              <a class="btn btn-secondary btn-sm lrc__reviser" [routerLink]="['/prmp/dao', idDmc]" [queryParams]="{ reviser: 1 }">Réviser la fiche →</a>
-                            } @else {
-                              <p class="text-muted text-sm">
-                                L'examen du dossier est <strong>suspendu</strong> (en attente de pièces). Une fois toutes les
-                                pièces demandées déposées ci-dessus, transmettez-les : le dossier repartira en
-                                <strong>réexamen</strong> chez le Membre attributaire, qui le réexaminera à la lumière des
-                                pièces reçues (la transmission est refusée tant qu'aucune pièce n'a été déposée).
-                              </p>
-                            }
-                            <button type="button" class="btn btn-primary" [disabled]="transmissionComplements()" (click)="transmettreComplements(l)">
-                              {{ transmissionComplements() ? 'Transmission…' : 'Transmettre les compléments' }}
-                            </button>
-                          </div>
-                        }
-                      </div>
-                    }
-                  </td>
-                </tr>
-              }
-            } @empty {
-              <tr><td colspan="5" class="text-muted">Aucune lettre de renvoi.</td></tr>
+                  </div>
+                }
+              </div>
             }
-          </tbody>
-        </table>
-        </div>
+          </div>
+        </app-deux-volets>
+        }
       }
     </section>
 
   `,
   styles: `
+    /* ⚠️ 31/10 (Espace de travail, lot 3d) — volet de gauche et en-tête du détail. */
+    .lrc__liste { list-style: none; margin: 0; padding: 0; }
+    .lrc__item { border-bottom: 1px solid var(--bordure); }
+    .lrc__item--on { background: var(--onglet-actif-fond); box-shadow: inset 3px 0 0 var(--menu-fond); }
+    .lrc__ligne { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: flex; flex-direction: column; gap: 0.2rem; padding: 0.55rem 0.8rem; }
+    .lrc__ligne:hover { background: var(--ligne-survol); }
+    .lrc__item--on .lrc__ligne:hover { background: transparent; }
+    .lrc__ligne:focus-visible { outline: 2px solid var(--bouton-principal); outline-offset: -2px; }
+    .lrc__meta { font-size: var(--text-sm); color: var(--texte-secondaire); }
+    .lrc__volet { display: flex; flex-direction: column; gap: 10px; }
+    .lrc__volet-tete { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding-bottom: 8px; border-bottom: 1px solid var(--bordure); }
+    .lrc__volet-titre { margin: 0 0 2px; font-size: 16px; font-weight: 500; }
     .lrc__actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
     .lrc__detail-foot { display: flex; justify-content: flex-end; margin-top: 0.5rem; }
     .lrc__regional { margin: 0.5rem 0 0; text-align: right; }
@@ -270,6 +283,13 @@ export class LettreRenvoiConsultation {
   readonly loading = signal(true);
   readonly lettres = signal<LettreRenvoi[]>([]);
   readonly ouvert = signal<number | null>(null);
+  /** ⚠️ 31/10 (deux volets) — la lettre affichée à droite. */
+  readonly lettreOuverte = computed(() => this.lettres().find((l) => l.idLettre === this.ouvert()) ?? null);
+
+  /** Choisir une lettre l'affiche à droite (et la marque lue, comme l'ouvrait le détail) ; la choisir à nouveau ne la replie pas. */
+  choisir(l: LettreRenvoi): void {
+    if (this.ouvert() !== l.idLettre) this.basculer(l);
+  }
   /** idLettre en cours de signature (désactive le bouton). */
   readonly signature = signal<number | null>(null);
   private readonly dossierRefs = signal<Map<number, string>>(new Map());
