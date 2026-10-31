@@ -250,8 +250,8 @@ interface LigneControleur {
   `,
   styles: `
     /* Accent corail de la maquette (nom, bouton) — barres de types en palette assortie. */
-    .dpc { --dpc-accent: #e8687e; display: flex; flex-direction: column; gap: 1.15rem; margin-top: 1rem; padding-top: 1.25rem; border-top: 1px solid var(--n-200); }
-    .dpc__titre { margin: 0; font-size: var(--text-lg); font-weight: 700; color: var(--n-800); }
+    .dpc { --dpc-accent: var(--texte); display: flex; flex-direction: column; gap: 1.15rem; margin-top: 1rem; padding-top: 1.25rem; border-top: 1px solid var(--n-200); }
+    .dpc__titre { margin: 0; font-size: var(--text-lg); font-weight: 500; color: var(--n-800); }
     .dpc__intro { margin: -0.4rem 0 0; color: var(--n-500); }
     .dpc__kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.9rem; }
 
@@ -259,59 +259,59 @@ interface LigneControleur {
     .dpc__grid { display: grid; grid-template-columns: repeat(auto-fit, 15rem); gap: 1.15rem; justify-content: center; }
     @media (max-width: 40rem) { .dpc__grid { grid-template-columns: 1fr; } }
 
-    .dpc__card { position: relative; display: flex; flex-direction: column; gap: 0.45rem; background: #fff; border: 1px solid var(--n-100); border-radius: 16px; box-shadow: 0 10px 28px rgba(30, 41, 59, 0.08); padding: 1.1rem 1.1rem 1.25rem; transition: var(--transition); }
-    .dpc__card:hover { transform: translateY(-3px); box-shadow: 0 14px 34px rgba(30, 41, 59, 0.12); }
+    .dpc__card { position: relative; display: flex; flex-direction: column; gap: 0.45rem; background: var(--carte-fond); border: 1px solid var(--n-100); border-radius: 16px; box-shadow: none; padding: 1.1rem 1.1rem 1.25rem; transition: var(--transition); }
+    .dpc__card:hover { transform: translateY(-3px); box-shadow: none; }
 
     /* Photo du membre : cercle à anneau (couleur de la palette), centré — carte compacte. */
-    .dpc__avatar { width: 8.5rem; height: 8.5rem; margin: 0.85rem auto 0.35rem; border-radius: 50%; border: 4px solid #fff; display: flex; align-items: center; justify-content: center; color: #fff; overflow: hidden; }
-    .dpc__avatar--0 { background: linear-gradient(160deg, #e8687e, #f29cab); box-shadow: 0 0 0 5px #e8687e, 0 8px 18px rgba(30, 41, 59, 0.14); }
-    .dpc__avatar--1 { background: linear-gradient(160deg, #f0a05a, #f6c489); box-shadow: 0 0 0 5px #f0a05a, 0 8px 18px rgba(30, 41, 59, 0.14); }
-    .dpc__avatar--2 { background: linear-gradient(160deg, #7b85d4, #a3abe8); box-shadow: 0 0 0 5px #7b85d4, 0 8px 18px rgba(30, 41, 59, 0.14); }
-    .dpc__avatar--3 { background: linear-gradient(160deg, #38b2a0, #7bd4c6); box-shadow: 0 0 0 5px #38b2a0, 0 8px 18px rgba(30, 41, 59, 0.14); }
-    .dpc__initiales { font-size: 2.4rem; font-weight: 800; letter-spacing: 0.04em; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.14); }
+    .dpc__avatar { width: 8.5rem; height: 8.5rem; margin: 0.85rem auto 0.35rem; border-radius: 50%; border: 4px solid var(--bordure); display: flex; align-items: center; justify-content: center; color: var(--texte-menu); overflow: hidden; }
+    .dpc__avatar--0 { background: var(--menu-fond); }
+    .dpc__avatar--1 { background: var(--menu-fond); }
+    .dpc__avatar--2 { background: var(--menu-fond); }
+    .dpc__avatar--3 { background: var(--menu-fond); }
+    .dpc__initiales { font-size: 2.4rem; font-weight: 500; letter-spacing: 0.04em; text-shadow: none; }
     .dpc__photo { display: block; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-    .dpc__rank { position: absolute; top: 0.75rem; left: 0.75rem; z-index: 1; background: #fff; color: var(--n-700); font-size: 0.72rem; font-weight: 800; padding: 0.16rem 0.55rem; border-radius: var(--radius-full); border: 1px solid var(--n-100); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12); }
+    .dpc__rank { position: absolute; top: 0.75rem; left: 0.75rem; z-index: 1; background: var(--carte-fond); color: var(--n-700); font-size: 0.72rem; font-weight: 500; padding: 0.16rem 0.55rem; border-radius: var(--radius-full); border: 1px solid var(--n-100); box-shadow: none; }
 
-    .dpc__role { margin-top: 0.4rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--n-400); text-align: center; }
-    .dpc__nom { margin: 0; font-size: 1.3rem; font-weight: 800; line-height: 1.15; color: var(--dpc-accent); text-align: center; }
+    .dpc__role { margin-top: 0.4rem; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--n-400); text-align: center; }
+    .dpc__nom { margin: 0; font-size: 1.3rem; font-weight: 500; line-height: 1.15; color: var(--dpc-accent); text-align: center; }
     .dpc__total { display: flex; align-items: baseline; justify-content: center; gap: 0.4rem; }
-    .dpc__total-nb { font-size: 1.9rem; font-weight: 800; color: var(--n-800); font-variant-numeric: tabular-nums; }
+    .dpc__total-nb { font-size: 1.9rem; font-weight: 500; color: var(--n-800); font-variant-numeric: tabular-nums; }
     .dpc__total-lbl { font-size: var(--text-sm); color: var(--n-400); }
 
     .dpc__types { list-style: none; margin: 0.15rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
     .dpc__type-head { display: flex; justify-content: space-between; gap: 0.5rem; font-size: var(--text-sm); color: var(--n-700); }
-    .dpc__type-nb { font-weight: 800; font-variant-numeric: tabular-nums; }
+    .dpc__type-nb { font-weight: 500; font-variant-numeric: tabular-nums; }
     .dpc__tbar { margin-top: 0.28rem; height: 5px; border-radius: var(--radius-full); background: var(--n-100); overflow: hidden; }
     .dpc__tbar-fill { display: block; height: 100%; border-radius: var(--radius-full); transition: width 300ms var(--ease-out); }
-    .dpc__tbar--0 { background: #e8687e; }
-    .dpc__tbar--1 { background: #f0a05a; }
-    .dpc__tbar--2 { background: #7b85d4; }
-    .dpc__tbar--3 { background: #38b2a0; }
-    .dpc__tbar--4 { background: #b187c9; }
+    .dpc__tbar--0 { background: var(--bouton-principal); }
+    .dpc__tbar--1 { background: var(--bouton-principal); }
+    .dpc__tbar--2 { background: var(--bouton-principal); }
+    .dpc__tbar--3 { background: var(--bouton-principal); }
+    .dpc__tbar--4 { background: var(--bouton-principal); }
 
     /* ⚠️ 2026-09-13 — présentation en TABLEAU : avatar compact, ligne cliquable (overlay), chips par type. */
     .dpc__table td { vertical-align: middle; }
     .dpc__row { position: relative; cursor: pointer; }
     .dpc__row:hover td { background: var(--n-50); }
-    .dpc__row--ouvert td { background: var(--c-50, #eef2ff); }
-    .dpc__ava { width: 2.6rem; height: 2.6rem; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #fff; overflow: hidden; font-size: 0.82rem; font-weight: 800; flex: none; }
+    .dpc__row--ouvert td { background: var(--c-50); }
+    .dpc__ava { width: 2.6rem; height: 2.6rem; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: var(--texte-menu); overflow: hidden; font-size: 0.82rem; font-weight: 500; flex: none; }
     .dpc__ava img { width: 100%; height: 100%; object-fit: cover; }
-    .dpc__ava--0 { background: linear-gradient(160deg, #e8687e, #f29cab); }
-    .dpc__ava--1 { background: linear-gradient(160deg, #f0a05a, #f6c489); }
-    .dpc__ava--2 { background: linear-gradient(160deg, #7b85d4, #a3abe8); }
-    .dpc__ava--3 { background: linear-gradient(160deg, #38b2a0, #7bd4c6); }
-    .dpc__lien { background: none; border: 0; padding: 0; margin: 0; font: inherit; font-weight: 700; color: var(--n-800); text-align: left; cursor: pointer; }
+    .dpc__ava--0 { background: var(--menu-fond); }
+    .dpc__ava--1 { background: var(--menu-fond); }
+    .dpc__ava--2 { background: var(--menu-fond); }
+    .dpc__ava--3 { background: var(--menu-fond); }
+    .dpc__lien { background: none; border: 0; padding: 0; margin: 0; font: inherit; font-weight: 500; color: var(--n-800); text-align: left; cursor: pointer; }
     .dpc__lien::after { content: ''; position: absolute; inset: 0; }
     .dpc__role-cell { font-size: var(--text-sm); color: var(--n-500); }
     /* Lot L4-F6 : la référence d'un dossier est un LIEN vers sa page. */
     .dpc__ref { color: var(--c-600); text-decoration: underline; }
     .dpc__chips { display: inline-flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
-    .dpc__chip { padding: 0.15rem 0.6rem; border-radius: var(--radius-full); font-size: var(--text-sm); font-weight: 600; white-space: nowrap; }
-    .dpc__chip--0 { background: #fce7ec; color: #b03a52; }
-    .dpc__chip--1 { background: #e8eafc; color: #4b53a8; }
-    .dpc__chip--2 { background: #e3f5f0; color: #1f8a76; }
-    .dpc__chip--3 { background: #fdefe0; color: #a5642a; }
-    .dpc__chip--4 { background: #f2e9f8; color: #7a4ba0; }
+    .dpc__chip { padding: 0.15rem 0.6rem; border-radius: var(--radius-full); font-size: var(--text-sm); font-weight: 500; white-space: nowrap; }
+    .dpc__chip--0 { background: var(--neutre-fond); color: var(--neutre-texte); }
+    .dpc__chip--1 { background: var(--neutre-fond); color: var(--neutre-texte); }
+    .dpc__chip--2 { background: var(--neutre-fond); color: var(--neutre-texte); }
+    .dpc__chip--3 { background: var(--neutre-fond); color: var(--neutre-texte); }
+    .dpc__chip--4 { background: var(--neutre-fond); color: var(--neutre-texte); }
     .dpc__chip-total { color: var(--n-500); font-size: var(--text-sm); }
     .empty-cell { text-align: center; color: var(--n-400); padding: 1.5rem; }
     /* Modal « Dossiers d'un contrôleur » : large (8 colonnes), corps défilable, table à défilement horizontal. */
@@ -322,18 +322,18 @@ interface LigneControleur {
     .dpc__modal .table-card { overflow-x: auto; }
     .dpc__modal .dpc__instructions { white-space: normal; word-break: break-word; }
 
-    .dpc__voir { margin-top: 0.6rem; padding: 0.5rem 0.75rem; border-radius: var(--radius-full); border: 1.5px solid var(--dpc-accent); background: #fff; color: var(--dpc-accent); font-weight: 700; cursor: pointer; transition: var(--transition); }
-    .dpc__voir:hover { background: var(--dpc-accent); color: #fff; }
+    .dpc__voir { margin-top: 0.6rem; padding: 0.5rem 0.75rem; border-radius: var(--radius-full); border: 1.5px solid var(--dpc-accent); background: var(--carte-fond); color: var(--dpc-accent); font-weight: 500; cursor: pointer; transition: var(--transition); }
+    .dpc__voir:hover { background: var(--dpc-accent); color: var(--texte-menu); }
 
-    .dpc__detail-titre { padding: 0.85rem 1rem 0; font-weight: 700; color: var(--n-800); }
+    .dpc__detail-titre { padding: 0.85rem 1rem 0; font-weight: 500; color: var(--n-800); }
     .dpc__actions-end { justify-content: flex-end; }
     .dpc__confirm { max-width: 28rem; }
     .dpc__confirm-hint { margin: 0.5rem 0 0; color: var(--n-500); font-size: var(--text-sm); }
     /* Brouillon d'examen (couleur « en cours » de l'examen : indigo). */
-    .dpc__brouillon { margin-left: 0.4rem; background: #E0E7FF; color: #4338CA; border: 1px solid #C7D2FE; }
+    .dpc__brouillon { margin-left: 0.4rem; background: var(--onglet-actif-fond); color: var(--texte); border: 1px solid var(--bordure); }
     /* Consignes du dispatcheur : texte long possible — retour à la ligne, largeur bornée. */
     .dpc__instructions { max-width: 22rem; white-space: normal; overflow-wrap: break-word; color: var(--n-500); }
-    .dpc__empty { grid-column: 1 / -1; text-align: center; color: var(--n-400); padding: 1.5rem; background: #fff; border: 1px dashed var(--n-200); border-radius: 16px; }
+    .dpc__empty { grid-column: 1 / -1; text-align: center; color: var(--n-400); padding: 1.5rem; background: var(--carte-fond); border: 1px dashed var(--n-200); border-radius: 16px; }
   `,
 })
 export class DispatchsControleurs implements OnDestroy {

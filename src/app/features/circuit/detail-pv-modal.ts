@@ -245,22 +245,22 @@ import { PV_STATUT_LABELS, StatutBadge } from '../../shared/circuit';
   `,
   styles: `
     .dpv-head-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-    .dpv-sub { margin: 0 0 8px; font-size: var(--text-md); font-weight: 700; color: var(--n-800); }
+    .dpv-sub { margin: 0 0 8px; font-size: var(--text-md); font-weight: 500; color: var(--n-800); }
     /* Tuiles de métadonnées (même langage que l'en-tête des Projets de PV). */
     .dpv-tuiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.75rem 1rem; background: var(--c-50); border: 1px solid var(--c-100); border-radius: var(--radius-lg); padding: 0.875rem 1rem; }
     .dpv-tuile { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
     .dpv-tuile__lbl { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--n-400); }
-    .dpv-tuile__val { font-weight: 600; color: var(--n-700); overflow-wrap: anywhere; }
-    .dpv-tuile__val .badge { font-weight: 700; }
+    .dpv-tuile__val { font-weight: 500; color: var(--n-700); overflow-wrap: anywhere; }
+    .dpv-tuile__val .badge { font-weight: 500; }
     .dpv-attente { font-weight: 500; font-style: italic; color: var(--n-400); }
     /* Synthèse : panneau à liseré accent. */
-    .dpv-synthese-box { display: flex; flex-direction: column; gap: 0.3rem; background: var(--c-50); border: 1px solid var(--c-100); border-left: 3px solid var(--c-500, #4f46e5); border-radius: var(--radius-md); padding: 0.75rem 1rem; }
-    .dpv-synthese-box__lbl { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: var(--c-800); }
+    .dpv-synthese-box { display: flex; flex-direction: column; gap: 0.3rem; background: var(--c-50); border: 1px solid var(--c-100); border-left: 3px solid var(--c-500); border-radius: var(--radius-md); padding: 0.75rem 1rem; }
+    .dpv-synthese-box__lbl { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; color: var(--c-800); }
     .dpv-synthese-box__texte { margin: 0; font-size: var(--text-sm); color: var(--n-700); white-space: pre-wrap; }
     /* Titre + bascule ; constat « tout conforme ». */
     .dpv-grille-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 8px; }
     .dpv-grille-head .dpv-sub { margin: 0; }
-    .dpv-ok { margin: 0; padding: 0.5rem 0.75rem; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: var(--radius-md); color: #15803D; font-size: var(--text-sm); font-weight: 600; }
+    .dpv-ok { margin: 0; padding: 0.5rem 0.75rem; background: var(--favorable-fond); border: 1px solid var(--favorable-fond); border-radius: var(--radius-md); color: var(--favorable-texte); font-size: var(--text-sm); font-weight: 500; }
     .dpv-detail-table { width: 100%; font-size: var(--text-base); border-collapse: collapse; }
     .dpv-detail-table td { padding: 5px 0; vertical-align: top; }
     .dpv-detail-table td:first-child { color: var(--n-400); width: 160px; }
@@ -274,13 +274,13 @@ import { PV_STATUT_LABELS, StatutBadge } from '../../shared/circuit';
     .dpv-grille-table th:nth-child(1) { width: 45%; }
     .dpv-grille-table th:nth-child(2) { width: 15%; }
     .dpv-grille-table th:nth-child(3) { width: 40%; }
-    .dpv-grille-table th { text-align: left; padding: 8px 10px; background: var(--n-50); border-bottom: 0.5px solid var(--n-200); font-weight: 600; color: var(--n-500); }
+    .dpv-grille-table th { text-align: left; padding: 8px 10px; background: var(--n-50); border-bottom: 0.5px solid var(--n-200); font-weight: 500; color: var(--n-500); }
     /* white-space normal : le design system pose nowrap sur les td/th nus — sans lui, un libellé
        long ne se coupe jamais et déborde sur la colonne voisine. */
     .dpv-grille-table th, .dpv-grille-table td { white-space: normal; }
     .dpv-grille-table td { padding: 8px 10px; border-bottom: 0.5px solid var(--n-100); vertical-align: top; word-wrap: break-word; }
     /* Rangée d'en-tête de groupe (ligne de marché / dossier). */
-    .dpv-grp td { background: var(--c-50); color: var(--c-800); font-weight: 700; font-size: var(--text-sm); border-top: 2px solid var(--c-100); }
+    .dpv-grp td { background: var(--c-50); color: var(--c-800); font-weight: 500; font-size: var(--text-sm); border-top: 2px solid var(--c-100); }
     .dpv-obs-box { background: var(--n-50); border-radius: var(--radius-md); padding: 8px 10px; font-size: var(--text-sm); display: flex; flex-direction: column; gap: 6px; }
   `,
 })

@@ -232,7 +232,7 @@ import { LienDossier } from './page-dossier/lien-dossier';
     .lrc__detail > td { background: var(--c-50); }
     .lrc__ref { display: inline-flex; align-items: center; gap: 7px; }
     .lrc__unread { background: var(--p-50); }
-    .lrc__unread td { font-weight: 600; }
+    .lrc__unread td { font-weight: 500; }
     .lrc__unread-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--danger-text); flex-shrink: 0; display: inline-block; }
     .lrc__nouveau { font-size: 9px; }
   `,

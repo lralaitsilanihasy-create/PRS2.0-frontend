@@ -282,9 +282,9 @@ import { EtapeCircuitPv, etapesCircuitPv, phraseEtatPv } from './pv-circuit';
   styles: `
     .pv__info { color: var(--n-500); padding: 0.5rem 0; }
     /* « Aucune action sans prise en charge » (2026-09-04) : actions du PV inertes avant la prise en charge. */
-    .pv__verrou { margin: 0.5rem 0; padding: 0.6rem 0.9rem; border: 1px solid #FDE68A; background: #FFFBEB; color: #92400E; border-radius: 8px; font-size: var(--text-sm); }
+    .pv__verrou { margin: 0.5rem 0; padding: 0.6rem 0.9rem; border: 1px solid var(--examen-texte); background: var(--examen-fond); color: var(--examen-texte); border-radius: 8px; font-size: var(--text-sm); }
     /* Tableau de liste (demande pilote 2026-09-04) : même style que « PV définitifs ». */
-    .pv-row__ref { font-weight: 700; color: var(--c-800); }
+    .pv-row__ref { font-weight: 500; color: var(--c-800); }
     .pv-row__actions { justify-content: flex-end; }
     /* ⚠️ 28/10 (maquette validée) — la fenêtre du PV simplifiée : en-tête en trois lignes, contenu d'abord, gestes dans le pied. */
     .pv-modal { width: min(1080px, 96vw); max-width: 96vw; }
@@ -292,43 +292,43 @@ import { EtapeCircuitPv, etapesCircuitPv, phraseEtatPv } from './pv-circuit';
     .pv-tete__txt { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
     .pv-tete__titre { margin: 0; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; font-size: var(--text-lg, 1.1rem); }
     .pv-tete__ligne { margin: 0; color: var(--n-500); font-size: var(--text-sm); }
-    .pv-tete__ligne b { color: var(--n-700); font-weight: 600; }
+    .pv-tete__ligne b { color: var(--n-700); font-weight: 500; }
     .pv-tete__chrono { margin-top: 0.2rem; font-size: var(--text-sm); }
     .pv-content { display: flex; flex-direction: column; gap: 1.3rem; }
     .pv-content td { white-space: normal; }
-    .pv-sub, .pv-sub h3 { margin: 0 0 0.5rem; font-size: var(--text-xs); font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--n-500); }
+    .pv-sub, .pv-sub h3 { margin: 0 0 0.5rem; font-size: var(--text-xs); font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--n-500); }
     div.pv-sub { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
     div.pv-sub h3 { margin: 0; }
-    .pv-lien { background: none; border: 0; padding: 0; font: 600 var(--text-sm) var(--font-base); color: var(--p-700); cursor: pointer; }
+    .pv-lien { background: none; border: 0; padding: 0; font: 500 var(--text-sm) var(--font-base); color: var(--p-700); cursor: pointer; }
     .pv-lien:hover { text-decoration: underline; }
     .pv-lien:focus-visible { outline: 2px solid var(--p-600); outline-offset: 2px; }
-    .pv-synthese { margin: 0; padding: 0.6rem 0.9rem; border-left: 3px solid var(--p-600); background: var(--p-50, #f0f9ff); border-radius: 0 8px 8px 0; color: var(--n-700); white-space: pre-wrap; }
+    .pv-synthese { margin: 0; padding: 0.6rem 0.9rem; border-left: 3px solid var(--p-600); background: var(--p-50); border-radius: 0 8px 8px 0; color: var(--n-700); white-space: pre-wrap; }
     /* Tableaux sobres : pas de bande sombre, des filets fins. */
     .pv-table { width: 100%; border-collapse: collapse; }
     .pv-table thead tr { background: none; }
-    .pv-table th { text-align: left; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--n-400); background: none; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--n-200); }
+    .pv-table th { text-align: left; font-size: var(--text-xs); font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; color: var(--n-400); background: none; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--n-200); }
     .pv-table td { padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--n-100); vertical-align: top; }
     .pv-table__point { width: 34%; }
     .pv-table__res { width: 14%; white-space: nowrap; }
-    .pv-ko { color: var(--danger-text, #b42318); font-weight: 600; }
-    .pv-bon { color: var(--success-text, #059669); }
-    .pv-grp td { background: var(--n-50, #f8f9fc); color: var(--n-500); font-weight: 600; font-size: var(--text-xs); padding: 0.35rem 0.6rem; }
-    .pv-obs__avant { color: var(--n-500); text-decoration: line-through; text-decoration-color: rgb(180 35 24 / 50%); }
-    .pv-obs__apres { color: var(--n-800); font-weight: 600; }
+    .pv-ko { color: var(--danger-text); font-weight: 500; }
+    .pv-bon { color: var(--success-text); }
+    .pv-grp td { background: var(--n-50); color: var(--n-500); font-weight: 500; font-size: var(--text-xs); padding: 0.35rem 0.6rem; }
+    .pv-obs__avant { color: var(--n-500); text-decoration: line-through; text-decoration-color: var(--retard-texte); }
+    .pv-obs__apres { color: var(--n-800); font-weight: 500; }
     .pv-obs__fiche { font-size: var(--text-xs); color: var(--n-500); margin-top: 0.15rem; }
     .pv-vide { color: var(--n-400); }
-    .pv-ok { margin: 0; color: var(--success-text, #059669); font-weight: 600; }
+    .pv-ok { margin: 0; color: var(--success-text); font-weight: 500; }
     .pv-ok::before { content: '✓ '; }
     /* La frise du circuit : examen, soumission, visa, signature. */
     .pv-circuit { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0; margin: 0; padding: 0; list-style: none; }
     .pv-circuit__etape { display: flex; align-items: center; gap: 0.5rem; font-size: var(--text-sm); color: var(--n-500); }
     .pv-circuit__etape + .pv-circuit__etape::before { content: ''; width: 2rem; height: 2px; background: var(--n-300); margin: 0 0.6rem; }
     .pv-circuit__etape small { display: block; font-size: var(--text-xs); color: var(--n-400); }
-    .pv-circuit__pt { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--n-300); background: #fff; flex: none; }
-    .pv-circuit__etape--fait .pv-circuit__pt { background: var(--success-text, #059669); border-color: var(--success-text, #059669); }
-    .pv-circuit__etape--encours { color: var(--n-800); font-weight: 600; }
+    .pv-circuit__pt { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--n-300); background: var(--carte-fond); flex: none; }
+    .pv-circuit__etape--fait .pv-circuit__pt { background: var(--success-text); border-color: var(--success-text); }
+    .pv-circuit__etape--encours { color: var(--n-800); font-weight: 500; }
     .pv-circuit__etape--encours .pv-circuit__pt { background: var(--bouton-principal); border-color: var(--bouton-principal); box-shadow: 0 0 0 4px var(--p-100); }
-    .pv-navettes summary { cursor: pointer; font-size: var(--text-xs); font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--n-500); }
+    .pv-navettes summary { cursor: pointer; font-size: var(--text-xs); font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--n-500); }
     .pv-navettes[open] summary { margin-bottom: 0.5rem; }
     /* Le pied : la phrase d'état à gauche, les gestes à droite ; un panneau ouvert (visa, retour, lettre) prend toute la largeur. */
     .pv-pied { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.6rem 0.75rem; max-height: 55vh; overflow: auto; }
@@ -341,24 +341,24 @@ import { EtapeCircuitPv, etapesCircuitPv, phraseEtatPv } from './pv-circuit';
     .pv-retour .btn { flex-shrink: 0; text-decoration: none; }
     .pv-retour__aide { margin: 0.4rem 0 0; font-size: var(--text-sm); color: var(--n-500); }
     /*
-     * Action attendue du Membre : elle doit se voir sur le jaune pâle du bandeau (#fef9c3).
+     * Action attendue du Membre : elle doit se voir sur le jaune pâle du bandeau (var(--examen-fond)).
      * « btn-warning » y est invisible (même fond que l'alerte) et le bleu primaire s'y fond ;
      * d'où cet orange soutenu. Blanc sur #C2410C = 5,2:1 — au-dessus du seuil AA, comme
      * l'exige le design system pour tout texte.
      */
     .pv-retour .pv-retour__cta {
-      background: linear-gradient(135deg, #C2410C, #9A3412);
-      border-color: #9A3412;
-      color: #fff;
-      font-weight: 700;
-      box-shadow: 0 2px 6px rgb(154 52 18 / 35%);
+      background: var(--examen-texte);
+      border-color: var(--examen-texte);
+      color: var(--texte-menu);
+      font-weight: 500;
+      box-shadow: none;
     }
     .pv-retour .pv-retour__cta:hover {
-      background: linear-gradient(135deg, #9A3412, #7C2D12);
-      box-shadow: 0 4px 10px rgb(154 52 18 / 45%);
+      background: var(--examen-texte);
+      box-shadow: none;
       transform: translateY(-1px);
     }
-    .pv-retour .pv-retour__cta:focus-visible { outline: 3px solid #7C2D12; outline-offset: 2px; }
+    .pv-retour .pv-retour__cta:focus-visible { outline: 3px solid var(--examen-texte); outline-offset: 2px; }
     @media (prefers-reduced-motion: reduce) {
       .pv-retour .pv-retour__cta:hover { transform: none; }
     }

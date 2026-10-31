@@ -139,10 +139,10 @@ import {
       white-space: nowrap;
     }
     .pva__cible--moi {
-      color: var(--p-700, #1d4ed8);
-      background: var(--p-50, #eff6ff);
-      border-color: var(--p-200, #bfdbfe);
-      font-weight: 600;
+      color: var(--p-700);
+      background: var(--p-50);
+      border-color: var(--p-200);
+      font-weight: 500;
     }
     .pva__dl { display: flex; flex-direction: column; gap: 0.35rem; margin: 0; }
     .pva__dl > div { display: flex; gap: 0.5rem; align-items: baseline; }

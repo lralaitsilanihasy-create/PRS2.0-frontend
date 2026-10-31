@@ -186,7 +186,7 @@ const CARTES_MEMBRE: CarteResultat[] = [
     .re { display: flex; flex-direction: column; gap: 1.15rem; }
     .re__intro { margin: -0.4rem 0 0; color: var(--n-500); max-width: 60rem; }
     /* Mots-clés = liens vers la liste concernée (proposition 2026-09-22, lot B). */
-    .re__mot { font-weight: 600; color: var(--p-700); text-decoration: none; }
+    .re__mot { font-weight: 500; color: var(--p-700); text-decoration: none; }
     .re__mot:hover, .re__mot:focus-visible { text-decoration: underline; }
     /* Cartes centrées, comme les cartes de types de « Mes dossiers » (même convention UX). */
     .re__grid {
@@ -197,7 +197,7 @@ const CARTES_MEMBRE: CarteResultat[] = [
     /* Même carte que « Mes dossiers » : liseré dégradé, élévation au survol. */
     .re__card {
       position: relative; display: flex; flex-direction: column; gap: 0.7rem;
-      padding: 1.15rem 1.1rem 0.95rem; background: #fff; border: 1px solid var(--n-200);
+      padding: 1.15rem 1.1rem 0.95rem; background: var(--carte-fond); border: 1px solid var(--n-200);
       border-radius: var(--radius-xl); box-shadow: var(--shadow-sm); overflow: hidden;
       text-decoration: none; color: inherit; transition: var(--transition);
     }
@@ -218,14 +218,14 @@ const CARTES_MEMBRE: CarteResultat[] = [
       border-radius: var(--radius-md); border: 1px solid var(--p-200);
     }
     .re__card--action .re__chip {
-      background: var(--grad-primary); color: #fff; border-color: transparent;
-      box-shadow: 0 3px 10px rgba(102, 126, 234, 0.35);
+      background: var(--grad-primary); color: var(--texte-menu); border-color: transparent;
+      box-shadow: none;
     }
     .re__titles { min-width: 0; flex: 1; display: flex; flex-direction: column; }
-    .re__title { margin: 0; font-size: var(--text-md); font-weight: 700; color: var(--n-800); }
+    .re__title { margin: 0; font-size: var(--text-md); font-weight: 500; color: var(--n-800); }
     .re__count { font-size: var(--text-sm); color: var(--n-500); font-variant-numeric: tabular-nums; }
     .re__desc { margin: 0; font-size: var(--text-sm); color: var(--n-500); line-height: 1.45; flex: 1; }
-    .re__go { font-size: var(--text-sm); font-weight: 700; color: var(--p-600); }
+    .re__go { font-size: var(--text-sm); font-weight: 500; color: var(--p-600); }
     .re__sk { display: inline-block; width: 5rem; height: 0.8rem; border-radius: var(--radius-full); }
   `,
 })

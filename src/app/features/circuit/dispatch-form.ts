@@ -177,7 +177,7 @@ export interface DispatchItem {
     }
     .modal-title-centered {
       font-size: var(--text-lg);
-      font-weight: 700;
+      font-weight: 500;
       color: var(--n-800);
       letter-spacing: -.015em;
       text-align: center;
@@ -185,7 +185,7 @@ export interface DispatchItem {
     .df__contexte { margin-top: 0.35rem; text-align: center; color: var(--n-500); font-size: var(--text-sm); }
     .df__deux-cols { display: grid; grid-template-columns: minmax(0, 14rem); }
     .df__lot { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-    .df__lot-ref { padding: 0.18rem 0.6rem; background: var(--p-50); color: var(--p-600); border: 1px solid var(--p-200); border-radius: var(--radius-full); font-size: var(--text-sm); font-weight: 600; }
+    .df__lot-ref { padding: 0.18rem 0.6rem; background: var(--p-50); color: var(--p-600); border: 1px solid var(--p-200); border-radius: var(--radius-full); font-size: var(--text-sm); font-weight: 500; }
     .df__lot-hint { margin: 0.5rem 0 0.75rem; color: var(--n-500); font-size: var(--text-sm); }
   `,
 })

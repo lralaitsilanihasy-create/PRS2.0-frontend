@@ -25,23 +25,23 @@
   flex-direction: column;
   gap: 0.25rem;
   padding: 0.4rem 0.6rem 0.45rem;
-  border: 1px solid #e0e6f0;
+  border: 1px solid var(--bordure);
   border-radius: 10px;
-  background: #fff;
-  color: #152033;
+  background: var(--carte-fond);
+  color: var(--texte);
   font: inherit;
   text-align: left;
   cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 button.pc:hover {
-  border-color: #7dd3fc;
+  border-color: var(--bouton-principal);
 }
 button.pc[aria-disabled='true'] {
   cursor: not-allowed;
 }
 button.pc[aria-disabled='true']:hover {
-  border-color: #e0e6f0;
+  border-color: var(--bordure);
 }
 
 .pc__t {
@@ -50,7 +50,7 @@ button.pc[aria-disabled='true']:hover {
   gap: 0.45rem;
   min-width: 0;
   font-size: 0.8125rem;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.2;
 }
 .pc__l {
@@ -66,13 +66,13 @@ button.pc[aria-disabled='true']:hover {
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: #e8edf5;
-  color: #34405a; /* 9,1:1 */
-  font: 600 0.6875rem/1 var(--cnm-mono);
+  background: var(--neutre-fond);
+  color: var(--texte); /* 9,1:1 */
+  font: 500 0.6875rem/1 var(--cnm-mono);
 }
 .pc__s {
   font-size: 0.75rem;
-  color: #5b6784; /* 5,6:1 sur blanc */
+  color: var(--texte-secondaire); /* 5,6:1 sur blanc */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -81,42 +81,42 @@ button.pc[aria-disabled='true']:hover {
   display: block;
   height: 4px;
   border-radius: 2px;
-  background: #e6ebf3;
+  background: var(--neutre-fond);
   overflow: hidden;
 }
 .pc__b i {
   display: block;
   height: 100%;
   border-radius: 2px;
-  background: #0284c7;
+  background: var(--bouton-principal);
 }
 
 /* Terminée : pastille verte cochée, barre verte. */
 .pc--terminee .pc__n {
-  background: #047857; /* blanc 5,5:1 */
-  color: #fff;
+  background: var(--favorable-texte); /* blanc 5,5:1 */
+  color: var(--texte-menu);
 }
 .pc--terminee .pc__b i {
-  background: #10b981;
+  background: var(--favorable-texte);
 }
 
 /* Courante : cadre et halo bleus. */
 .pc--courante {
-  border-color: #0284c7;
-  box-shadow: 0 0 0 3px #e0f2fe;
+  border-color: var(--bouton-principal);
+  box-shadow: 0 0 0 3px var(--onglet-actif-fond);
 }
 .pc--courante .pc__n {
-  background: #0369a1; /* blanc 5,9:1 */
-  color: #fff;
+  background: var(--bouton-principal); /* blanc 5,9:1 */
+  color: var(--texte-menu);
 }
 
 /* Sans objet : carte grisée, non interactive. */
 .pc--sans-objet {
-  background: #f5f7fa;
+  background: var(--carte-fond);
   cursor: default;
 }
 .pc--sans-objet .pc__t {
-  color: #5b6784;
+  color: var(--texte-secondaire);
 }
 
 @media (max-width: 60rem) {

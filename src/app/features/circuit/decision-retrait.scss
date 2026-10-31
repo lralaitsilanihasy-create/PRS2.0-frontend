@@ -2,7 +2,7 @@
    L'hôte s'efface (`display: contents`) : le formulaire et le volet deviennent des cellules de la grille du
    panneau (`.ec`, deux colonnes) — le formulaire sous le titre, le volet dans la colonne de droite, comme la
    navette du projet de PV (lot F4). En suite d'un autre geste, la décision prend sa propre rangée.
-   Textes au contraste AA sur blanc : #152033 15:1, #34405a 10:1, #5b6784 5,6:1, #0369a1 5,9:1 ;
+   Textes au contraste AA sur blanc : var(--section-fond) 15:1, var(--section-fond) 10:1, var(--bordure-champ) 5,6:1, var(--bouton-principal) 5,9:1 ;
    #991b1b 8,3:1 sur #fef2f2. */
 :host {
   display: contents;
@@ -18,27 +18,27 @@
   outline: none;
 }
 .dr:focus-visible {
-  outline: 2px solid #0369a1;
+  outline: 2px solid var(--bouton-principal);
   outline-offset: 4px;
   border-radius: 6px;
 }
 .dr__titre {
   margin: 0;
   font-size: 0.75rem;
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: #0369a1;
+  color: var(--texte);
 }
 .dr__aide {
   margin: 0;
   max-width: 64ch;
   font-size: 0.875rem;
   line-height: 1.45;
-  color: #34405a;
+  color: var(--texte);
 }
 .dr__aide b {
-  color: #152033;
+  color: var(--texte);
 }
 .dr__actions {
   display: flex;
@@ -52,7 +52,7 @@
 }
 .dr__refuser,
 .dr__accepter.btn-outline {
-  background: #fff;
+  background: var(--carte-fond);
 }
 .dr__refus {
   display: flex;
@@ -63,12 +63,12 @@
 }
 .dr__label {
   font-size: 0.875rem;
-  font-weight: 700;
-  color: #152033;
+  font-weight: 500;
+  color: var(--texte);
 }
 .dr__label-aide {
   font-weight: 500;
-  color: #5b6784;
+  color: var(--texte-secondaire);
 }
 .dr__motif {
   width: 100%;
@@ -81,12 +81,12 @@
   gap: 0.4rem;
   margin: 0;
   padding: 0.45rem 0.7rem;
-  border: 1px solid #fecaca;
+  border: 1px solid var(--retard-fond);
   border-radius: 8px;
-  background: #fef2f2;
+  background: var(--retard-fond);
   font-size: 0.875rem;
-  font-weight: 600;
-  color: #991b1b;
+  font-weight: 500;
+  color: var(--retard-texte);
 }
 .dr__erreur app-icone {
   margin-top: 0.1rem;
@@ -97,11 +97,11 @@
   gap: 0.6rem;
   margin: 0;
   padding: 0.6rem 1rem;
-  border: 1px dashed #bfdcef;
+  border: 1px dashed var(--bouton-principal);
   border-radius: 10px;
-  background: #f8fbfe;
+  background: var(--onglet-actif-fond);
   font-size: 0.875rem;
-  color: #34405a;
+  color: var(--texte);
 }
 .dr__attente .spinner {
   width: 1.1rem;
@@ -119,15 +119,15 @@
   gap: 0.55rem;
   min-width: 0;
   padding-left: 1.5rem;
-  border-left: 1px solid #e5ebf3;
+  border-left: 1px solid var(--bordure);
 }
 .dr-volet__titre {
   margin: 0;
   font-size: 0.75rem;
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: #0369a1;
+  color: var(--texte);
 }
 .dr-volet__faits {
   display: grid;
@@ -143,12 +143,12 @@
   align-items: baseline;
 }
 .dr-volet__fait dt {
-  color: #5b6784;
+  color: var(--texte-secondaire);
 }
 .dr-volet__fait dd {
   margin: 0;
-  font-weight: 600;
-  color: #152033;
+  font-weight: 500;
+  color: var(--texte);
   overflow-wrap: anywhere;
 }
 /* Le motif est du texte libre : il ne doit pas allonger le panneau au point de chasser les boutons. */
@@ -163,7 +163,7 @@
 }
 .dr-volet__discret {
   font-weight: 500;
-  color: #5b6784;
+  color: var(--texte-secondaire);
 }
 .dr-volet__lien {
   margin-left: 0.5rem;
@@ -171,8 +171,8 @@
   border: 0;
   background: none;
   font: inherit;
-  font-weight: 700;
-  color: #0369a1;
+  font-weight: 500;
+  color: var(--texte);
   text-decoration: underline;
   cursor: pointer;
 }
@@ -180,7 +180,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  background: #fff;
+  background: var(--carte-fond);
 }
 
 /* En suite d'un autre geste : sa rangée à lui, séparée de ce qui précède. Le volet reste en face. */
@@ -188,7 +188,7 @@
 :host(.dr-hote--suite) .dr-volet {
   grid-row: auto;
   padding-top: 0.9rem;
-  border-top: 1px solid #e5ebf3;
+  border-top: 1px solid var(--bordure);
 }
 
 /* ── Confirmations (acceptation, refus) ── */
@@ -197,7 +197,7 @@
 }
 .dr-conf__texte {
   margin: 0 0 0.6rem;
-  color: #34405a;
+  color: var(--texte);
 }
 /* Les suites de l'acceptation : une par ligne, ce qui compte en gras — le lecteur doit pouvoir les compter. */
 .dr-conf__suites {
@@ -207,19 +207,19 @@
   padding-left: 1.2rem;
   font-size: 0.875rem;
   line-height: 1.45;
-  color: #34405a;
+  color: var(--texte);
 }
 .dr-conf__suites b {
-  color: #152033;
+  color: var(--texte);
 }
 .dr-conf__motif {
   margin: 0;
   padding: 0.6rem 0.9rem;
-  border-left: 3px solid #fecaca;
+  border-left: 3px solid var(--retard-fond);
   border-radius: 0 8px 8px 0;
-  background: #fef2f2;
-  font-weight: 600;
-  color: #152033;
+  background: var(--retard-fond);
+  font-weight: 500;
+  color: var(--texte);
   white-space: pre-line;
   overflow-wrap: anywhere;
 }
@@ -231,6 +231,6 @@
     grid-row: auto;
     padding: 0.75rem 0 0;
     border-left: 0;
-    border-top: 1px solid #e5ebf3;
+    border-top: 1px solid var(--bordure);
   }
 }

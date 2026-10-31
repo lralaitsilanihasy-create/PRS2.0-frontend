@@ -125,7 +125,7 @@ import { DetailPvModal } from './detail-pv-modal';
     }
   `,
   styles: `
-    .pvd__ref { font-weight: 700; color: var(--c-800); margin-right: 0.5rem; }
+    .pvd__ref { font-weight: 500; color: var(--c-800); margin-right: 0.5rem; }
     .pvd__actions { justify-content: flex-end; }
     .pvd__info { display: flex; flex-direction: column; gap: 0.35rem; margin: 0.5rem 0 0; }
     .pvd__info > div { display: flex; gap: 0.5rem; align-items: baseline; }

@@ -348,17 +348,17 @@ interface Echange {
     .vf__info dd { margin: 0; color: var(--n-700); }
     .vf__synthese { margin: 0; font-size: var(--text-sm); }
     .vf__voir-pv { margin-top: 0.5rem; }
-    .vf__sub { margin: 0.5rem 0 0; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
+    .vf__sub { margin: 0.5rem 0 0; font-size: var(--text-md); font-weight: 500; color: var(--c-800); }
     .vf__ech { list-style: none; margin: 0.35rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
     .vf__ech-item { display: flex; flex-direction: column; gap: 2px; padding: 0.25rem 0.5rem; border-left: 2px solid var(--c-100); }
-    .vf__ech-item--latest { border-left-color: var(--c-600); font-weight: 600; color: var(--c-700); }
+    .vf__ech-item--latest { border-left-color: var(--c-600); font-weight: 500; color: var(--c-700); }
     .vf__ech-item--rectif { border-left-color: var(--warning-text); }
     .vf__ech-meta { color: var(--n-400); font-size: var(--text-xs); }
     .vf__ech-text { font-size: var(--text-sm); }
     /* ⚠️ Demande pilote (2026-09-07, revu 2026-09-08) — le pied d'action reste TOUJOURS visible. Il
        n'est PLUS sticky (il masquait la dernière observation) : la LISTE défile dans vf__scroll et le
        pied est un bloc FIXE hors défilement, au bas de la carte de passage (flex: none). */
-    .vf__foot { display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 0.75rem; background: #fff; flex: none; margin-top: 0.5rem; }
+    .vf__foot { display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 0.75rem; background: var(--carte-fond); flex: none; margin-top: 0.5rem; }
     .vf__alert { margin: 0; font-size: var(--text-sm); background: var(--warning-bg); color: var(--warning-text); padding: 0.5rem 0.75rem; border-radius: var(--radius-md); }
     /* ⚠️ 2026-09-08 — explication du grisage de « Enregistrer le passage » (observations à statuer). */
     .vf__hint-statuer { margin: 0.5rem 0 0; font-size: var(--text-sm); background: var(--warning-bg); color: var(--warning-text); padding: 0.5rem 0.75rem; border-radius: var(--radius-md); }
@@ -366,16 +366,16 @@ interface Echange {
     .vf__obs { list-style: none; margin: 0.5rem 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
     .vf__obs-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; border-top: 1px dashed var(--c-100); padding-top: 0.4rem; }
     /* ⚠️ 2026-09-08 — observation encore sans décision : liseré ambre + pastille « À statuer ». */
-    .vf__obs-item--todo > app-observation-pv-card { display: block; border-left: 3px solid var(--warning-text, #b45309); border-radius: var(--radius-md); background: var(--warning-bg, #fffbeb); }
-    .vf__obs-todo { font-size: var(--text-xs); font-weight: 700; color: var(--warning-text); background: #fff; border: 1px solid var(--warning-bdr, #fde68a); border-radius: var(--radius-full); padding: 0.05rem 0.5rem; }
+    .vf__obs-item--todo > app-observation-pv-card { display: block; border-left: 3px solid var(--warning-text); border-radius: var(--radius-md); background: var(--warning-bg); }
+    .vf__obs-todo { font-size: var(--text-xs); font-weight: 500; color: var(--warning-text); background: var(--carte-fond); border: 1px solid var(--warning-bdr); border-radius: var(--radius-full); padding: 0.05rem 0.5rem; }
     .vf__obs-opt { display: inline-flex; gap: 0.3rem; align-items: center; font-size: var(--text-sm); cursor: pointer; }
-    .vf__obs-opt--ok { color: #15803D; }
+    .vf__obs-opt--ok { color: var(--favorable-texte); }
     /* Levée indisponible (premier passage = rappel) : grisée, l'infobulle explique la règle. */
     .vf__obs-opt--off { opacity: 0.45; cursor: not-allowed; }
     .vf__obs-opt--ko { color: var(--warning-text); }
     .vf__obs-precision { flex: 1 1 16rem; }
     /* Décision transmise à SIGMP : constat vert (spec navette). */
-    .vf__sigmp-ok { margin: 0 0 0.5rem; padding: 0.5rem 0.75rem; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: var(--radius-md); color: #15803D; font-size: var(--text-sm); font-weight: 600; }
+    .vf__sigmp-ok { margin: 0 0 0.5rem; padding: 0.5rem 0.75rem; background: var(--favorable-fond); border: 1px solid var(--favorable-fond); border-radius: var(--radius-md); color: var(--favorable-texte); font-size: var(--text-sm); font-weight: 500; }
     .confirm-modal { max-width: 30rem; }
     @media (max-width: 60rem) {
       .vf__grid { grid-template-columns: 1fr; }
