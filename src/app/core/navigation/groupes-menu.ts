@@ -32,6 +32,9 @@ import { NavItem, separerParDelegation } from './navigation';
 export type CleGroupe =
   | 'accueil'
   | 'travail'
+  | 'dossiers'
+  | 'passation'
+  | 'execution'
   | 'decisions'
   | 'acces'
   | 'pilotage'
@@ -62,11 +65,17 @@ export const TITRES_GROUPES: Readonly<Record<CleGroupe, string | null>> = {
    */
   accueil: null,
   travail: 'Mon travail',
+  // ⚠️ 31/10/2026 (pilote) — les rubriques suivent le cycle du marché : Dossiers, Passation, Exécution (« Mon travail »
+  // mêlait six écrans de trois phases). Une rubrique d'une seule entrée devient un lien direct (barre-menu.ts).
+  dossiers: 'Dossiers',
+  passation: 'Passation',
+  execution: 'Exécution',
   decisions: 'Décisions',
   acces: 'Accès',
   pilotage: 'Pilotage',
   planification: 'Planification',
-  archivage: 'Archivage',
+  // ⚠️ 31/10 (pilote) — « Reçus » : les PV et lettres de renvoi reçus par l'Assistant contrôleur.
+  archivage: 'Reçus',
   regles: 'Règles du contrôle',
   referentiels: 'Référentiels',
   traces: 'Traces',
@@ -86,11 +95,14 @@ export const TITRES_GROUPES: Readonly<Record<CleGroupe, string | null>> = {
 export const ORDRE_GROUPES: readonly CleGroupe[] = [
   'accueil',
   'travail',
+  'dossiers',
+  'passation',
+  'execution',
   'decisions',
-  'acces',
-  'pilotage',
   'planification',
   'archivage',
+  'acces',
+  'pilotage',
   'regles',
   'referentiels',
   'traces',
@@ -106,21 +118,24 @@ export const ORDRE_GROUPES: readonly CleGroupe[] = [
 export const GROUPES_PAR_CHEMIN: Readonly<Record<string, { groupe: CleGroupe }>> = {
   // ── Mon travail : ce que le profil traite au quotidien ──
   'a-faire': { groupe: 'travail' },
-  'tableau-de-bord': { groupe: 'travail' },
-  'soumettre-dossier': { groupe: 'travail' },
-  'dossiers-verifies': { groupe: 'travail' },
-  'mes-brouillons': { groupe: 'travail' },
+  // ── Dossiers (31/10) : la liste de tous les dossiers du périmètre, sa création et ses mises à jour ──
+  'tableau-de-bord': { groupe: 'dossiers' },
+  'soumettre-dossier': { groupe: 'dossiers' },
+  'dossiers-verifies': { groupe: 'dossiers' },
+  'mes-brouillons': { groupe: 'dossiers' },
   'a-verifier': { groupe: 'travail' },
   verifies: { groupe: 'travail' },
   publications: { groupe: 'travail' },
   documents: { groupe: 'travail' },
   // ⚠️ 2026-10-06 — les fiches DAO et la soumission en ligne (PRMP, UGPM).
-  dao: { groupe: 'travail' },
-  recus: { groupe: 'travail' },
+  // ── Passation (31/10) ──
+  dao: { groupe: 'passation' },
+  recus: { groupe: 'passation' },
   // ⚠️ 06/10 — entrée DYNAMIQUE (main-layout) : le responsable d'au moins une procédure en ligne.
   '/procedures-en-ligne': { groupe: 'travail' },
   // ⚠️ Lot MS-1 (V124, 16/10) — les contrats-cadres et marchés à commandes notifiés (PRMP, UGPM).
-  'contrats-en-vigueur': { groupe: 'travail' },
+  // ── Exécution (31/10) ──
+  'contrats-en-vigueur': { groupe: 'execution' },
 
   // ── Décisions : les productions de l'examen et les demandes à statuer ──
   'resultat-examen': { groupe: 'decisions' },
@@ -131,6 +146,11 @@ export const GROUPES_PAR_CHEMIN: Readonly<Record<string, { groupe: CleGroupe }>>
   'chaines-controle': { groupe: 'pilotage' },
   // ⚠️ Intérim désigné (2026-09-21) — « Intérim » du Président / CC : qui agit à sa place pendant son absence.
   interim: { groupe: 'pilotage' },
+  // ⚠️ 31/10 (pilote) — remis au menu du Président et du Chef de commission.
+  rapports: { groupe: 'pilotage' },
+  statistiques: { groupe: 'pilotage' },
+  // Messagerie : à droite, près des notifications.
+  messagerie: { groupe: 'pied' },
 
   // ── Planification (PRMP) ──
   calendrier: { groupe: 'planification' },
@@ -151,6 +171,11 @@ export const GROUPES_PAR_CHEMIN: Readonly<Record<string, { groupe: CleGroupe }>>
   '/admin/tableau-de-bord': { groupe: 'accueil' },
   inscriptions: { groupe: 'acces' },
   comptes: { groupe: 'acces' },
+  // ⚠️ 31/10 (pilote) — remontés dans « Accès » (atteints jusqu'ici par l'accueil et la page des comptes).
+  rattachements: { groupe: 'acces' },
+  'comptes/mandats': { groupe: 'acces' },
+  'comptes/interims': { groupe: 'acces' },
+  entreprises: { groupe: 'acces' },
   '/admin/chaines-controle': { groupe: 'regles' },
   'delais-standards': { groupe: 'regles' },
   // Deux écrans de référentiel promus en entrées de menu : leur chemin garde le segment
@@ -160,6 +185,38 @@ export const GROUPES_PAR_CHEMIN: Readonly<Record<string, { groupe: CleGroupe }>>
   'agpm-seuil': { groupe: 'regles' },
   'referentiels/regle-alertes': { groupe: 'regles' },
   referentiels: { groupe: 'referentiels' },
+  // ⚠️ 31/10 (pilote) — les nomenclatures et écrans de réglage, remontés du carrefour « Nomenclatures » dans le menu en
+  // colonnes (`colonne` de chaque entrée, navigation.ts).
+  'referentiels/ministeres': { groupe: 'referentiels' },
+  'referentiels/entite-contracts': { groupe: 'referentiels' },
+  'referentiels/localites': { groupe: 'referentiels' },
+  'referentiels/profiles': { groupe: 'referentiels' },
+  'referentiels/delegation-profils': { groupe: 'referentiels' },
+  'referentiels/comptes': { groupe: 'referentiels' },
+  'referentiels/cat-comptes': { groupe: 'referentiels' },
+  'referentiels/soa-beneficiaires': { groupe: 'referentiels' },
+  'referentiels/categorie-entites': { groupe: 'referentiels' },
+  'referentiels/type-dossiers': { groupe: 'referentiels' },
+  'referentiels/sous-type-dossiers': { groupe: 'referentiels' },
+  'referentiels/natures': { groupe: 'referentiels' },
+  'referentiels/mode-passations': { groupe: 'referentiels' },
+  'referentiels/statut-marches': { groupe: 'referentiels' },
+  'referentiels/capm': { groupe: 'referentiels' },
+  'referentiels/aviss': { groupe: 'referentiels' },
+  'referentiels/modeles-pv': { groupe: 'referentiels' },
+  'referentiels/type-piece-jointes': { groupe: 'referentiels' },
+  'referentiels/type-dmc': { groupe: 'referentiels' },
+  'referentiels/dmc-mapping': { groupe: 'referentiels' },
+  'referentiels/champs-fiche-marche': { groupe: 'referentiels' },
+  'referentiels/motifs-types': { groupe: 'referentiels' },
+  'referentiels/regle-anomalies': { groupe: 'referentiels' },
+  'referentiels/remise-electronique': { groupe: 'referentiels' },
+  'referentiels/candidats': { groupe: 'referentiels' },
+  'referentiels/exclusions-armp': { groupe: 'referentiels' },
+  'referentiels/cao-quorum': { groupe: 'referentiels' },
+  'referentiels/compte-dao': { groupe: 'referentiels' },
+  'referentiels/recours-suspensifs': { groupe: 'referentiels' },
+  'referentiels/sigmp-transition': { groupe: 'referentiels' },
   audit: { groupe: 'traces' },
   actualites: { groupe: 'traces' },
 

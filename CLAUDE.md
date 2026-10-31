@@ -150,8 +150,13 @@ Inventaire, décisions du pilote (Q1-Q6) et plan : `docs/design-institutionnel-i
   lui donner sa rubrique dans `GROUPES_PAR_CHEMIN` (`core/navigation/groupes-menu.ts`) — sinon
   `groupes-menu.spec.ts` (« Garde-fou de dérive ») devient rouge, avec la ligne exacte à ajouter. Les rubriques
   deviennent les **menus déroulants** de la barre (`core/navigation/barre-menu.ts`, `barreDuMenu`) : un menu de
-  7 entrées ou moins reste à plat ; « À faire » et l'accueil de l'Administrateur restent directs, comme une
+  4 entrées ou moins reste à plat ; « À faire » et l'accueil de l'Administrateur restent directs, comme une
   rubrique d'une seule entrée ; délégation et intérim sont toujours des déroulants à leur nom.
+- **Rangement des menus (pilote, 31/10)** : la barre suit la journée de travail — « À faire », Dossiers, puis le cycle
+  du marché (Passation, Exécution), Décisions, Pilotage ; Messagerie et Notifications à droite. La liste de tous les
+  dossiers du périmètre s'appelle « Dossiers » chez tous les profils (« Tous mes dossiers » chez la PRMP et l'UGPM).
+  Un menu long se range en **colonnes titrées** : `NavItem.colonne` (Accès et Référentiels de l'Administrateur) ; une
+  rubrique de plus de trois colonnes s'ouvre sur toute la largeur de la barre.
 - **Composants partagés** (`shared/ui/`) : `app-titre-page`, `app-bloc`, `app-carte-indicateurs`,
   `app-bandeau-section` ; badge de statut = `app-statut-badge` / classes `.badge-*` (4 familles, via
   `statutSeverity()`).

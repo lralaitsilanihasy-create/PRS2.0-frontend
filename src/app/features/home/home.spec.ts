@@ -74,9 +74,10 @@ describe("Accueil — atterrissage sur « À faire », avec repli", () => {
     const { fixture } = monter('ADMINISTRATEUR', () => of(exempleAFairePresident()));
     const page = fixture.nativeElement as HTMLElement;
     const cartes = Array.from(page.querySelectorAll('.home-card'));
-    // ⚠️ Lot 6 F1 (2026-09-17) — le menu de l'Administrateur passe de 14 à 12 entrées, et les
-    // cartes « Vos modules » le suivent (elles sont dérivées de `navFlat`).
-    expect(cartes.length).toBe(12);
+    // ⚠️ Lot 6 F1 (2026-09-17) — les cartes « Vos modules » suivent le menu (`navFlat`). ⚠️ 31/10 — le menu compte
+    // 45 entrées, dont 30 référentiels réunis en UNE carte « Référentiels » : 16 cartes.
+    expect(cartes.length).toBe(16);
+    expect(cartes.filter((c) => c.textContent?.includes('Référentiels')).length).toBe(1);
     expect(cartes.every((c) => c.querySelector('app-icone svg path'))).toBe(true);
     expect(page.querySelector('.portail-banner app-icone svg')).not.toBeNull();
     expect(/\p{Extended_Pictographic}/u.test(page.textContent ?? '')).toBe(false);

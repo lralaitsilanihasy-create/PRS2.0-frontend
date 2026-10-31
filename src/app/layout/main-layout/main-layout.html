@@ -93,7 +93,7 @@
       } @else {
         <!-- Rubrique en menu déroulant (« Mon travail », « Décisions »…) : un vrai bouton, l'état ouvert est annoncé.
              Il reste surligné quand l'une de ses pages est ouverte, et porte la somme des pastilles de ses entrées. -->
-        <li class="menu__entree menu__entree--rubrique">
+        <li class="menu__entree menu__entree--rubrique" [class.menu__entree--large]="(e.colonnes?.length ?? 0) > 3">
           <button
             type="button"
             class="nav-item nav-rubrique"
@@ -109,34 +109,52 @@
             <app-icone class="nav-chevron" [class.nav-chevron--ouvert]="rubriqueOuverte() === e.cle" nom="chev" [taille]="14" />
           </button>
           @if (rubriqueOuverte() === e.cle) {
-            <div class="menu__deroulant" [id]="'rubrique-' + e.cle">
+            <div class="menu__deroulant" [class.menu__deroulant--colonnes]="!!e.colonnes" [id]="'rubrique-' + e.cle">
               <div class="menu__deroulant-titre">{{ e.titre }}</div>
-              <ul>
-                @for (item of e.items; track item.path) {
-                  <li>
-                    <a
-                      class="menu__deroulant-lien"
-                      [class.active]="estActif(item)"
-                      [attr.aria-current]="estActif(item) ? 'page' : null"
-                      [routerLink]="item.path"
-                      [queryParams]="item.queryParams ?? null"
-                      [title]="infobulle(item)"
-                    >
-                      @if (item.icon) { <app-icone class="nav-icon" [nom]="item.icon" [taille]="16" /> }
-                      <span class="nav-label">{{ item.label }}</span>
-                      @if (item.delegation) { <app-icone class="nav-deleg" nom="deleg" [taille]="14" /> }
-                      @if (item.interimDe) { <app-icone class="nav-deleg" nom="users" [taille]="14" /> }
-                      @if (countFor(item.path) !== undefined) { <span class="nav-badge">{{ countFor(item.path) }}</span> }
-                      @if (alertFor(item.path)) { <span class="nav-badge nav-badge--alert">{{ alertFor(item.path) }}</span> }
-                    </a>
-                  </li>
-                }
-              </ul>
+              @if (e.colonnes; as colonnes) {
+                <!-- ⚠️ 31/10 (pilote) — menu en colonnes titrées (Accès, Référentiels de l'Administrateur). -->
+                <div class="menu__colonnes">
+                  @for (col of colonnes; track col.titre) {
+                    <div class="menu__colonne">
+                      @if (col.titre) { <div class="menu__colonne-titre" [id]="'col-' + e.cle + '-' + $index">{{ col.titre }}</div> }
+                      <ul [attr.aria-labelledby]="col.titre ? 'col-' + e.cle + '-' + $index : null">
+                        @for (item of col.items; track item.path) {
+                          <li><ng-container *ngTemplateOutlet="lienDeroulant; context: { $implicit: item }" /></li>
+                        }
+                      </ul>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <ul>
+                  @for (item of e.items; track item.path) {
+                    <li><ng-container *ngTemplateOutlet="lienDeroulant; context: { $implicit: item }" /></li>
+                  }
+                </ul>
+              }
             </div>
           }
         </li>
       }
     }
+    <!-- Lien d'un menu déroulant, en liste ou en colonne. -->
+    <ng-template #lienDeroulant let-item>
+      <a
+        class="menu__deroulant-lien"
+        [class.active]="estActif(item)"
+        [attr.aria-current]="estActif(item) ? 'page' : null"
+        [routerLink]="item.path"
+        [queryParams]="item.queryParams ?? null"
+        [title]="infobulle(item)"
+      >
+        @if (item.icon) { <app-icone class="nav-icon" [nom]="item.icon" [taille]="16" /> }
+        <span class="nav-label">{{ item.label }}</span>
+        @if (item.delegation) { <app-icone class="nav-deleg" nom="deleg" [taille]="14" /> }
+        @if (item.interimDe) { <app-icone class="nav-deleg" nom="users" [taille]="14" /> }
+        @if (countFor(item.path) !== undefined) { <span class="nav-badge">{{ countFor(item.path) }}</span> }
+        @if (alertFor(item.path)) { <span class="nav-badge nav-badge--alert">{{ alertFor(item.path) }}</span> }
+      </a>
+    </ng-template>
     <!-- « Notifications », l'entrée transverse commune aux dix menus (pied de l'ancienne barre) : à droite de la barre. -->
     @for (item of navPied(); track item.path) {
       <li class="menu__entree menu__entree--pied">

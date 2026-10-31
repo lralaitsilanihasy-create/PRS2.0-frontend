@@ -12,10 +12,19 @@ export interface EntreeBarre {
   items: NavItem[];
   /** Marque de la rubrique « Exercé par délégation » / « Exercé par intérim ». */
   marque?: NomIcone;
+  /**
+   * ⚠️ 31/10 (pilote) — colonnes titrées du menu déroulant, quand ses entrées portent un intitulé de colonne
+   * (`NavItem.colonne` : Accès, Référentiels de l'Administrateur). Absent = une simple liste.
+   */
+  colonnes?: { titre: string; items: NavItem[] }[];
 }
 
-/** Au-delà de ce nombre d'entrées de premier niveau, les rubriques se regroupent en menus déroulants. */
-export const ENTREES_A_PLAT_MAX = 7;
+/**
+ * Au-delà de ce nombre d'entrées de premier niveau, les rubriques se regroupent en menus déroulants.
+ * ⚠️ 31/10 (pilote) — abaissé de 7 à 4 : un menu déroulant dès deux entrées liées (« Reçus » de l'Assistant contrôleur) ;
+ * les menus de 4 entrées ou moins (Membre, Vérificateur, Secrétaire, publication) restent à plat.
+ */
+export const ENTREES_A_PLAT_MAX = 4;
 
 /**
  * Barre du menu principal, à partir des sections du menu (`sectionsMenu`) :
@@ -26,6 +35,19 @@ export const ENTREES_A_PLAT_MAX = 7;
  *    à la place d'un autre ne se mêle jamais à ses propres entrées.
  * Les sous-entrées éventuelles d'une entrée (`children`) sont rangées à sa suite dans le déroulant.
  */
+/** Colonnes titrées d'un déroulant : les entrées consécutives de même `colonne` ; aucune si aucune entrée n'en porte. */
+function colonnesDe(items: NavItem[]): { colonnes?: { titre: string; items: NavItem[] }[] } {
+  if (!items.some((i) => i.colonne)) return {};
+  const colonnes: { titre: string; items: NavItem[] }[] = [];
+  for (const i of items) {
+    const titre = i.colonne ?? '';
+    const derniere = colonnes[colonnes.length - 1];
+    if (derniere && derniere.titre === titre) derniere.items.push(i);
+    else colonnes.push({ titre, items: [i] });
+  }
+  return { colonnes };
+}
+
 export function barreDuMenu(sections: { cle: string; titre: string | null; items: NavItem[] }[], nbPied = 0): EntreeBarre[] {
   const aPlat = (items: NavItem[]) => items.flatMap((i) => (i.children?.length ? [i, ...i.children] : [i]));
   const total = sections.reduce((n, sec) => n + sec.items.length, nbPied);
@@ -39,7 +61,7 @@ export function barreDuMenu(sections: { cle: string; titre: string | null; items
     const marque: NomIcone | undefined = sec.cle === 'delegation' ? 'deleg' : sec.cle === 'interim' ? 'users' : undefined;
     const direct = !marque && (total <= ENTREES_A_PLAT_MAX || sec.cle === 'accueil' || items.length === 1 || !sec.titre);
     if (direct) for (const i of items) barre.push({ cle: i.path, lien: i, items: [i] });
-    else barre.push({ cle: sec.cle, titre: sec.titre ?? '', items, marque });
+    else barre.push({ cle: sec.cle, titre: sec.titre ?? '', items, marque, ...colonnesDe(items) });
   }
   return barre;
 }

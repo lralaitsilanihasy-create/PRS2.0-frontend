@@ -293,20 +293,65 @@ describe('Entrée active du menu (lot 5 F3 ; 30/10 : sous-pages et retour)', () 
  * ce qui se déroule, et que rien n'est perdu, ajouté ni doublé.
  */
 describe('Menu horizontal par rubriques (design institutionnel, 30/10/2026)', () => {
-  it('Président : À faire et Tous les dossiers en direct, puis Décisions, Pilotage, Exercé par délégation, et Notifications à droite', async () => {
+  it('Président : À faire et Dossiers en direct, puis Décisions, Pilotage, Exercé par délégation, et Messagerie, Notifications à droite', async () => {
     const { hote } = await monter({ role: 'PRESIDENT', login: 'PRESID1', delegation: true });
-    expect(barre(hote)).toEqual(['À faire', 'Tous les dossiers', 'Décisions', 'Pilotage', 'Exercé par délégation', 'Notifications']);
+    expect(barre(hote)).toEqual(['À faire', 'Dossiers', 'Décisions', 'Pilotage', 'Exercé par délégation', 'Messagerie', 'Notifications']);
     expect(hote.querySelector('.menu__liste > li:last-child')?.classList).toContain('menu__entree--pied');
   });
 
-  it('PRMP : À faire, Mon travail, Décisions, puis Calendrier en direct (rubrique d’une seule entrée)', async () => {
+  it('PRMP : À faire, Dossiers, Passation, Contrats en vigueur en direct, Décisions, Calendrier en direct (31/10)', async () => {
     const { hote } = await monter({ role: 'PRMP', login: 'PRMP001' });
-    expect(barre(hote)).toEqual(['À faire', 'Mon travail', 'Décisions', 'Calendrier', 'Notifications']);
+    expect(barre(hote)).toEqual(['À faire', 'Dossiers', 'Passation', 'Contrats en vigueur', 'Décisions', 'Calendrier', 'Notifications']);
   });
 
-  it('Administrateur : son accueil en direct, Accès, Règles du contrôle, Nomenclatures en direct, Traces', async () => {
+  it('Assistant contrôleur : les PV et lettres reçus forment la rubrique « Reçus » (31/10)', async () => {
+    const { hote } = await monter({ role: 'ASSISTANT_CONTROLEUR', login: 'ASSANT1' });
+    expect(barre(hote)).toEqual(['À faire', 'Dossiers', 'Reçus', 'Notifications']);
+  });
+
+  it('Administrateur : son accueil en direct, Accès, Règles du contrôle, Référentiels, Traces', async () => {
     const { hote } = await monter({ role: 'ADMINISTRATEUR', login: 'ADMIN01' });
-    expect(barre(hote)).toEqual(['Poste d’administration', 'Accès', 'Règles du contrôle', 'Nomenclatures', 'Traces', 'Notifications']);
+    expect(barre(hote)).toEqual(['Poste d’administration', 'Accès', 'Règles du contrôle', 'Référentiels', 'Traces', 'Notifications']);
+  });
+
+  it('Référentiels : un menu en colonnes titrées, sur toute la largeur de la barre (31/10)', async () => {
+    const { fixture, hote } = await monter({ role: 'ADMINISTRATEUR', login: 'ADMIN01' });
+    const bouton = Array.from(hote.querySelectorAll<HTMLButtonElement>('.nav-rubrique')).find((b) => texte(b).startsWith('Référentiels'))!;
+    expect(bouton.closest('li')?.classList).toContain('menu__entree--large');
+    bouton.click();
+    fixture.detectChanges();
+    const panneau = hote.querySelector('.menu__deroulant') as HTMLElement;
+    expect(panneau.classList).toContain('menu__deroulant--colonnes');
+    const colonnes = Array.from(panneau.querySelectorAll('.menu__colonne'));
+    expect(colonnes.map((c) => texte(c.querySelector('.menu__colonne-titre')))).toEqual([
+      'Organisation',
+      'Budget',
+      'Dossiers et marchés',
+      'Documents',
+      'Passation en ligne',
+    ]);
+    // Chaque colonne est une liste nommée par son intitulé.
+    const liste = colonnes[0].querySelector('ul') as HTMLElement;
+    expect(hote.querySelector('#' + liste.getAttribute('aria-labelledby'))?.textContent?.trim()).toBe('Organisation');
+    expect(panneau.querySelectorAll('a').length).toBe(30);
+  });
+
+  it('Accès : deux colonnes (Demandes, Comptes), posées sous leur bouton (31/10)', async () => {
+    const { fixture, hote } = await monter({ role: 'ADMINISTRATEUR', login: 'ADMIN01' });
+    const bouton = Array.from(hote.querySelectorAll<HTMLButtonElement>('.nav-rubrique')).find((b) => texte(b).startsWith('Accès'))!;
+    expect(bouton.closest('li')?.classList).not.toContain('menu__entree--large');
+    bouton.click();
+    fixture.detectChanges();
+    const panneau = hote.querySelector('.menu__deroulant') as HTMLElement;
+    expect(Array.from(panneau.querySelectorAll('.menu__colonne-titre')).map((t) => texte(t))).toEqual(['Demandes', 'Comptes']);
+    expect(Array.from(panneau.querySelectorAll('a')).map((a) => a.getAttribute('href'))).toEqual([
+      '/admin/inscriptions',
+      '/admin/rattachements',
+      '/admin/comptes',
+      '/admin/comptes/mandats',
+      '/admin/comptes/interims',
+      '/admin/entreprises',
+    ]);
   });
 
   it(`un menu de ${ENTREES_A_PLAT_MAX} entrées ou moins reste à plat : aucun déroulant`, async () => {
@@ -343,8 +388,10 @@ describe('Menu horizontal par rubriques (design institutionnel, 30/10/2026)', ()
     expect(texte(panneau.querySelector('.menu__deroulant-titre'))).toBe('Pilotage');
     expect(Array.from(panneau.querySelectorAll('a')).map((a) => a.getAttribute('href'))).toEqual([
       '/president/repartition-dispatch',
-      '/president/chaines-controle',
       '/president/interim',
+      '/president/chaines-controle',
+      '/president/rapports',
+      '/president/statistiques',
     ]);
 
     panneau.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
@@ -383,10 +430,13 @@ describe('Menu horizontal par rubriques (design institutionnel, 30/10/2026)', ()
       '/prmp/recus',
     );
     const rubrique = (t: string) => Array.from(hote.querySelectorAll<HTMLButtonElement>('.nav-rubrique')).find((b) => texte(b).startsWith(t))!;
-    expect(texte(rubrique('Mon travail').querySelector('.nav-badge'))).toBe('3');
+    // ⚠️ 31/10 — les reçus sont dans « Passation » ; « Contrats en vigueur », seul de sa rubrique, est un lien direct qui porte sa pastille.
+    expect(texte(rubrique('Passation').querySelector('.nav-badge'))).toBe('2');
     expect(texte(rubrique('Décisions').querySelector('.nav-badge'))).toBe('4');
-    expect(rubrique('Mon travail').classList).toContain('active');
+    expect(rubrique('Passation').classList).toContain('active');
     expect(rubrique('Décisions').classList).not.toContain('active');
+    const contrats = Array.from(hote.querySelectorAll<HTMLAnchorElement>('.menu__liste > li > a.nav-item')).find((a) => texte(a).startsWith('Contrats en vigueur'))!;
+    expect(texte(contrats.querySelector('.nav-badge'))).toBe('1');
   });
 });
 

@@ -27,6 +27,11 @@ export interface NavItem {
    */
   interimDe?: string;
   interimProfil?: Role;
+  /**
+   * ⚠️ 31/10/2026 (pilote) — intitulé de COLONNE dans le menu déroulant de sa rubrique (Accès, Référentiels de
+   * l'Administrateur) : les entrées consécutives qui portent le même intitulé forment une colonne titrée.
+   */
+  colonne?: string;
 }
 
 /**
@@ -95,17 +100,20 @@ function menuCommission(base: '/president' | '/cc'): NavItem[] {
     entreeAFaire(base.slice(1)),
     // ⚠️ Demande pilote (2026-09-12) — « Tableau de bord » renommé « Tous les dossiers » (le pipeline
     // liste les dossiers du périmètre) ; route inchangée. S'applique à Président ET CC (menu partagé).
-    { label: 'Tous les dossiers', path: `${base}/tableau-de-bord`, icon: 'folder' },
+    // ⚠️ 31/10 (pilote) — « Dossiers » chez tous les profils : la liste de tous les dossiers du périmètre.
+    { label: 'Dossiers', path: `${base}/tableau-de-bord`, icon: 'folder' },
     // ⚠️ Demande pilote (2026-09-12) — « Mes dossiers » RETIRÉ (P/CC) : « Tous les dossiers » porte
     // désormais toute action par dossier dans sa colonne Actions (dispatch, examen — délégation Membre
     // comprise) ; le classement par type et les compteurs faisaient double emploi.
     // ⚠️ Demande pilote (2026-09-12) — la section « Dispatchs par contrôleur » quitte « Mes dossiers »
     // pour sa propre entrée de menu « Répartition de dispatch » (écran dédié, composant autonome).
-    { label: 'Répartition de dispatch', path: `${base}/repartition-dispatch`, icon: 'board' },
+    { label: 'Répartition du dispatch', path: `${base}/repartition-dispatch`, icon: 'board' },
     // ⚠️ 2026-08-06 (demande user) — « Projets de PV », « PV définitifs » et « Lettres de renvoi »
     // sont regroupés dans un écran-hub à cartes : ce sont les trois productions d'un même examen.
     // Les trois écrans et leurs routes sont inchangés, seul le chemin d'accès l'est.
-    { label: 'Examen de dossiers', path: `${base}/resultat-examen`, icon: 'file' },
+    // ⚠️ 31/10 (pilote) — « Examen de dossiers » devient « PV et lettres de renvoi », le nom de ce même hub chez le Membre
+    // et la PRMP : c'est ce que l'écran contient (projets de PV, PV définitifs, lettres).
+    { label: 'PV et lettres de renvoi', path: `${base}/resultat-examen`, icon: 'file' },
     // ⚠️ Demande pilote (2026-09-12) — « Demandes de retrait » REMISE au menu latéral (elle reste aussi
     // en ligne dans les cartes de « Mes dossiers » via `retraitsPath`). Sans `?type=`, l'écran liste TOUS
     // les types (bandeau « Voir tous les types »).
@@ -122,21 +130,21 @@ function menuCommission(base: '/president' | '/cc'): NavItem[] {
     { label: 'Archivage des PV', path: `${base}/pv-examens`, icon: 'archive', delegation: 'ASSISTANT_CONTROLEUR' },
     // ⚠️ Rattachements (2026-09-01) — chaînes Membre→Vérificateur→Assistant, administrées par
     // Admin + Président (partout) + CC (sa localité) : droit PROPRE du P/CC, pas une délégation.
-    { label: 'Chaînes de contrôle', path: `${base}/chaines-controle`, icon: 'layers' },
     // ⚠️ Intérim désigné (2026-09-21, demande `docs/demande-backend-2026-09-21-gestion-interim.md`) — le titulaire
     // désigne LUI-MÊME qui agit à sa place pendant son absence (Président ← tout CC ; CC ← CC ou Membre de sa
     // localité), sur pièce ; historique, révocation. Droit PROPRE du P/CC (l'Admin a le sien en repli).
     { label: 'Intérim', path: `${base}/interim`, icon: 'users' },
+    { label: 'Chaînes de contrôle', path: `${base}/chaines-controle`, icon: 'layers' },
     // « PPM & marchés » et « Marchés & dates prév. » : retirés du menu des DEUX profils
     // (demande user 2026-08-04). Routes conservées de part et d'autre — cf. president.routes.ts / cc.routes.ts.
     // ⚠️ 2026-08-07 « Demandes de retrait » avait quitté le menu (accès en ligne dans les cartes de
     // « Mes dossiers » via `retraitsPath`, `?type=`) — REMISE au menu le 2026-09-12 (demande pilote,
     // entrée ajoutée plus haut) ; les deux accès coexistent.
-    // ⚠️ Demande pilote (2026-09-04) — « Rapports », « Statistiques » et « Messagerie » retirés du
-    // menu POUR LE MOMENT (routes et écrans conservés) : ré-activer en décommentant.
-    // { label: 'Rapports', path: `${base}/rapports`, icon: 'board' },
-    // { label: 'Statistiques', path: `${base}/statistiques`, icon: 'board' },
-    // { label: 'Messagerie', path: `${base}/messagerie`, icon: 'message' },
+    // ⚠️ Demande pilote (2026-09-04) — « Rapports », « Statistiques » et « Messagerie » avaient été retirés du menu ;
+    // ⚠️ 31/10 (pilote) — REMIS : Rapports et Statistiques dans Pilotage, Messagerie à droite près des notifications.
+    { label: 'Rapports', path: `${base}/rapports`, icon: 'board' },
+    { label: 'Statistiques', path: `${base}/statistiques`, icon: 'board' },
+    { label: 'Messagerie', path: `${base}/messagerie`, icon: 'message' },
     // ⚠️ Spec notifications (2026-08-02) — écran transverse, chemin absolu commun à tous les profils.
     { label: 'Notifications', path: '/notifications', icon: 'bell' },
   ];
@@ -161,7 +169,8 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
   PRMP: [
     entreeAFaire('prmp'),
     // ⚠️ Demande pilote (2026-09-06) — l'entrée du tableau de bord devient le suivi des délais.
-    { label: 'Suivi des dossiers CNM', path: '/prmp/tableau-de-bord', icon: 'clock' },
+    // ⚠️ 31/10 (pilote) — « Tous mes dossiers », en tête de la rubrique Dossiers (naguère « Suivi des dossiers CNM »).
+    { label: 'Tous mes dossiers', path: '/prmp/tableau-de-bord', icon: 'clock' },
     // ⚠️ Demande pilote (2026-09-13) — « Mes dossiers » (cartes type × statut) RETIRÉ du menu : « Suivi
     // des dossiers CNM » liste désormais TOUS les dossiers (brouillons, à-rectifier compris) avec colonne
     // Type et actions inline (Soumettre / Rectifier). La route `/prmp/dossiers` reste montée (elle sert
@@ -170,7 +179,7 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     // ⚠️ Demande pilote (2026-09-13) — REMIS au menu (ils vivaient dans les cartes de « Mes dossiers ») :
     // la saisie d'un dossier et la mise à jour d'un PPM (liste des vérifiés en mode `?maj=1`). « Soumettre
     // un dossier » avait été retiré le 2026-08-02 ; le pilote le réintroduit comme raccourci d'entrée.
-    { label: 'Créer dossier', path: '/prmp/soumettre-dossier', icon: 'plus' },
+    { label: 'Créer un dossier', path: '/prmp/soumettre-dossier', icon: 'plus' },
     // ⚠️ Route AUTONOME `dossiers-verifies` (pas l'enfant `dossiers/verifies` qui s'affiche SOUS les
     // cartes de « Mes dossiers ») : l'écran ne montre QUE le tableau des vérifiés en mode mise à jour.
     { label: 'Mettre à jour un PPM', path: '/prmp/dossiers-verifies', queryParams: { maj: 1 }, icon: 'edit' },
@@ -179,7 +188,7 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     // les dépôts, les retraits, les reçus des frais et la séance.
     { label: 'Appels d’offres', path: '/prmp/dao', icon: 'clip' },
     // ⚠️ 18/10 (pilote) — les reçus des frais de dossier n'étaient atteignables que par la fiche : entrée propre, pastille propre.
-    { label: 'Reçus des frais', path: '/prmp/recus', icon: 'hash' },
+    { label: 'Reçus des frais de dossier', path: '/prmp/recus', icon: 'hash' },
     // ⚠️ Lot MS-1 (V124, 16/10) — les contrats-cadres et marchés à commandes notifiés (titulaires, échéances, reconductions).
     { label: 'Contrats en vigueur', path: '/prmp/contrats-en-vigueur', icon: 'history' },
     // « Créer compte UGPM » : déplacé dans le PIED de la barre latérale (à la place de la carte profil,
@@ -204,13 +213,13 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     // ⚠️ Demande pilote (2026-09-13) — écran partagé du PRMP ouvert à l'UGPM en VUE SEULE (actions
     // Soumettre/Rectifier/Compléter masquées, cf. `estPrmp` dans suivi-delais). Libellé « Tous les
     // dossiers » côté UGPM (le PRMP garde « Suivi des dossiers CNM », son cadrage délais).
-    { label: 'Tous les dossiers', path: '/prmp/tableau-de-bord', icon: 'folder' },
-    { label: 'Créer dossier', path: '/prmp/soumettre-dossier', icon: 'plus' },
+    { label: 'Tous mes dossiers', path: '/prmp/tableau-de-bord', icon: 'folder' },
+    { label: 'Créer un dossier', path: '/prmp/soumettre-dossier', icon: 'plus' },
     { label: 'Mes brouillons', path: '/prmp/mes-brouillons', icon: 'edit' },
     // ⚠️ 2026-10-06 — comme la PRMP : l'UGPM saisit la fiche, la commission et valide les reçus des frais.
     { label: 'Appels d’offres', path: '/prmp/dao', icon: 'clip' },
     // ⚠️ 18/10 (pilote) — les reçus des frais de dossier n'étaient atteignables que par la fiche : entrée propre, pastille propre.
-    { label: 'Reçus des frais', path: '/prmp/recus', icon: 'hash' },
+    { label: 'Reçus des frais de dossier', path: '/prmp/recus', icon: 'hash' },
     // ⚠️ Lot MS-1 (16/10) — en lecture : la reconduction se décide par la PRMP.
     { label: 'Contrats en vigueur', path: '/prmp/contrats-en-vigueur', icon: 'history' },
     // ⚠️ Demande pilote (2026-09-13) — « Dossiers vérifiés » RETIRÉ du menu UGPM : les dossiers vérifiés
@@ -228,7 +237,7 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     // du Secrétaire (réceptions + enregistrés), action « Numéroter » inline sur les réceptions.
     // ⚠️ Demande pilote (2026-09-13) — « Mes dossiers » (cartes) RETIRÉ : « Tous les dossiers » (pipeline)
     // porte réceptions + enregistrés à plat avec « Numéroter » inline.
-    { label: 'Tous les dossiers', path: '/secretaire/tableau-de-bord', icon: 'folder' },
+    { label: 'Dossiers', path: '/secretaire/tableau-de-bord', icon: 'folder' },
     // Messagerie retirée du menu pour le moment (demande pilote 2026-09-04) — route conservée.
     // { label: 'Messagerie', path: '/secretaire/messagerie', icon: 'message' },
     { label: 'Notifications', path: '/notifications', icon: 'bell' },
@@ -237,7 +246,7 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     entreeAFaire('membre'),
     // ⚠️ Demande pilote (2026-09-12) — même libellé que le P/CC (« Tous les dossiers »), même écran (le
     // pipeline `tableau-de-bord`) ; route inchangée.
-    { label: 'Tous les dossiers', path: '/membre/tableau-de-bord', icon: 'folder' },
+    { label: 'Dossiers', path: '/membre/tableau-de-bord', icon: 'folder' },
     // ⚠️ Demande pilote (2026-09-13) — « Mes dossiers » (cartes type × statut) RETIRÉ : « Tous les
     // dossiers » (pipeline) porte déjà les dossiers à examiner/examinés avec les actions inline
     // (Examiner / Réexaminer / Modifier l'examen) et la pastille « à examiner ». Route conservée.
@@ -265,9 +274,10 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     entreeAFaire('assistant'),
     // ⚠️ Demande pilote (2026-09-12) — même libellé que P/CC/Membre (« Tous les dossiers »), même écran
     // (pipeline `tableau-de-bord`) ; route inchangée.
-    { label: 'Tous les dossiers', path: '/assistant/tableau-de-bord', icon: 'folder' },
-    { label: 'Lettres de renvoi reçues', path: '/assistant/lettre-renvois', icon: 'mail' },
+    { label: 'Dossiers', path: '/assistant/tableau-de-bord', icon: 'folder' },
+    // ⚠️ 31/10 (pilote) — rubrique « Reçus » : les PV d'abord, dans l'ordre du circuit.
     { label: 'PV reçus', path: '/assistant/pv-examens', icon: 'file' },
+    { label: 'Lettres de renvoi reçues', path: '/assistant/lettre-renvois', icon: 'mail' },
     // Messagerie retirée du menu pour le moment (demande pilote 2026-09-04) — route conservée.
     // { label: 'Messagerie', path: '/assistant/messagerie', icon: 'message' },
     { label: 'Notifications', path: '/notifications', icon: 'bell' },
@@ -290,27 +300,56 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     // ⚠️ Lot 6 F2 — l'accueil de l'Administrateur n'est plus le tableau de bord du CONTRÔLE : son
     // libellé dit désormais ce que la page montre (« Poste d'administration », maquette A). Route inchangée.
     { label: 'Poste d’administration', path: '/admin/tableau-de-bord', icon: 'board' },
-    // ⚠️ Lot 6 F1 — « Inscriptions en attente » et « Rattachements en attente » ne font plus qu'UNE
-    // entrée : ce sont deux files de la même demande, « accéder à l'application ». L'écran à deux
-    // onglets est le lot F3 ; d'ici là l'entrée ouvre les inscriptions, et les deux écrans se
-    // renvoient l'un à l'autre par un lien en tête de page — la route `/admin/rattachements` est
-    // inchangée et reste atteignable.
-    { label: 'Demandes d’accès', path: '/admin/inscriptions', icon: 'inbox' },
-    { label: 'Comptes & personnes', path: '/admin/comptes', icon: 'users' },
+    // ⚠️ 31/10/2026 (pilote) — menu en COLONNES : les écrans atteints jusqu'ici par un carrefour (« Nomenclatures », trente
+    // tuiles) ou par la page des comptes remontent dans la barre, rangés par thème (`colonne`). Aucun droit nouveau : ce sont
+    // les routes de l'espace d'administration. Lot 6 F1 : « Demandes d'accès » ouvre les inscriptions ; les rattachements ont
+    // désormais leur propre entrée.
+    { label: 'Demandes d’accès', path: '/admin/inscriptions', icon: 'inbox', colonne: 'Demandes' },
+    { label: 'Rattachements PRMP ⇄ entité', path: '/admin/rattachements', icon: 'link', colonne: 'Demandes' },
+    { label: 'Comptes & personnes', path: '/admin/comptes', icon: 'users', colonne: 'Comptes' },
+    { label: 'Mandats PRMP', path: '/admin/comptes/mandats', icon: 'calendar', colonne: 'Comptes' },
+    { label: 'Intérims', path: '/admin/comptes/interims', icon: 'users', colonne: 'Comptes' },
+    { label: 'Entreprises candidates', path: '/admin/entreprises', icon: 'folder', colonne: 'Comptes' },
+    // Règles du contrôle — les points de contrôle d'abord, le réglage le plus consulté. (Lot 6 F1 : « Points de contrôle »
+    // et « Règles d'alerte » sont sortis des nomenclatures : ils changent le comportement du contrôle pour tout le monde.)
+    { label: 'Points de contrôle', path: '/admin/referentiels/points-ctrls', icon: 'check' },
     { label: 'Chaînes de contrôle', path: '/admin/chaines-controle', icon: 'layers' },
     { label: 'Délais standards', path: '/admin/delais-standards', icon: 'clock' },
-    // ⚠️ Lot 6 F1 — « Points de contrôle » et « Règles d'alerte » sortent des 20 nomenclatures :
-    // ce sont les réglages qui changent le comportement du contrôle pour tout le monde, pas du
-    // vocabulaire. Les écrans (CRUD générique) et leurs routes sont inchangés.
-    { label: 'Points de contrôle', path: '/admin/referentiels/points-ctrls', icon: 'check' },
-    { label: 'Seuil AGPM (AMI)', path: '/admin/agpm-seuil', icon: 'filter' },
     { label: 'Règles d’alerte', path: '/admin/referentiels/regle-alertes', icon: 'alert' },
-    { label: 'Nomenclatures', path: '/admin/referentiels', icon: 'table' },
-    // ⚠️ Lot 6 F5 — « Journal d’audit » devient « Journal » : l’écran porte désormais DEUX journaux
-    // en onglets, les écritures et les connexions. Le laisser dire « d’audit » enverrait chercher
-    // les connexions ailleurs, et il n’y a plus d’ailleurs. Route inchangée, légende du rail
-    // inchangée (« Journal », `groupes-menu.ts`). Aucune entrée ajoutée ni retirée.
-    { label: 'Journal', path: '/admin/audit', icon: 'history' },
+    { label: 'Seuil AGPM (AMI)', path: '/admin/agpm-seuil', icon: 'filter' },
+    // Référentiels (naguère le carrefour « Nomenclatures », /admin/referentiels — route conservée) : cinq colonnes.
+    { label: 'Ministères', path: '/admin/referentiels/ministeres', icon: 'table', colonne: 'Organisation' },
+    { label: 'Entités contractantes', path: '/admin/referentiels/entite-contracts', icon: 'table', colonne: 'Organisation' },
+    { label: 'Localités', path: '/admin/referentiels/localites', icon: 'table', colonne: 'Organisation' },
+    { label: 'Profils', path: '/admin/referentiels/profiles', icon: 'table', colonne: 'Organisation' },
+    { label: 'Délégations de profil', path: '/admin/referentiels/delegation-profils', icon: 'table', colonne: 'Organisation' },
+    { label: 'Comptes budgétaires', path: '/admin/referentiels/comptes', icon: 'table', colonne: 'Budget' },
+    { label: 'Catégories de compte', path: '/admin/referentiels/cat-comptes', icon: 'table', colonne: 'Budget' },
+    { label: 'SOA bénéficiaires', path: '/admin/referentiels/soa-beneficiaires', icon: 'table', colonne: 'Budget' },
+    { label: 'Catégories d’entité', path: '/admin/referentiels/categorie-entites', icon: 'table', colonne: 'Budget' },
+    { label: 'Types de dossier', path: '/admin/referentiels/type-dossiers', icon: 'table', colonne: 'Dossiers et marchés' },
+    { label: 'Sous-types de dossier', path: '/admin/referentiels/sous-type-dossiers', icon: 'table', colonne: 'Dossiers et marchés' },
+    { label: 'Natures', path: '/admin/referentiels/natures', icon: 'table', colonne: 'Dossiers et marchés' },
+    { label: 'Modes de passation', path: '/admin/referentiels/mode-passations', icon: 'table', colonne: 'Dossiers et marchés' },
+    { label: 'Statuts de marché', path: '/admin/referentiels/statut-marches', icon: 'table', colonne: 'Dossiers et marchés' },
+    { label: 'Processus de marché (CAPM)', path: '/admin/referentiels/capm', icon: 'table', colonne: 'Dossiers et marchés' },
+    { label: 'Avis', path: '/admin/referentiels/aviss', icon: 'table', colonne: 'Dossiers et marchés' },
+    { label: 'Modèles de documents', path: '/admin/referentiels/modeles-pv', icon: 'table', colonne: 'Documents' },
+    { label: 'Types de pièces jointes', path: '/admin/referentiels/type-piece-jointes', icon: 'table', colonne: 'Documents' },
+    { label: 'Types de document DMC', path: '/admin/referentiels/type-dmc', icon: 'table', colonne: 'Documents' },
+    { label: 'Mapping mode → document DMC', path: '/admin/referentiels/dmc-mapping', icon: 'table', colonne: 'Documents' },
+    { label: 'Champs de la fiche DAO', path: '/admin/referentiels/champs-fiche-marche', icon: 'table', colonne: 'Documents' },
+    { label: 'Motifs-types de la conclusion', path: '/admin/referentiels/motifs-types', icon: 'table', colonne: 'Documents' },
+    { label: 'Règles d’anomalie', path: '/admin/referentiels/regle-anomalies', icon: 'table', colonne: 'Documents' },
+    { label: 'Remise électronique', path: '/admin/referentiels/remise-electronique', icon: 'table', colonne: 'Passation en ligne' },
+    { label: 'Candidats — espace en ligne', path: '/admin/referentiels/candidats', icon: 'table', colonne: 'Passation en ligne' },
+    { label: 'Entreprises exclues par l’ARMP', path: '/admin/referentiels/exclusions-armp', icon: 'table', colonne: 'Passation en ligne' },
+    { label: 'Quorum de la CAO', path: '/admin/referentiels/cao-quorum', icon: 'table', colonne: 'Passation en ligne' },
+    { label: 'Compte bancaire de l’ARMP', path: '/admin/referentiels/compte-dao', icon: 'table', colonne: 'Passation en ligne' },
+    { label: 'Recours suspensifs', path: '/admin/referentiels/recours-suspensifs', icon: 'table', colonne: 'Passation en ligne' },
+    { label: 'Transition SIGMP', path: '/admin/referentiels/sigmp-transition', icon: 'table', colonne: 'Passation en ligne' },
+    // ⚠️ Lot 6 F5 — l'écran porte DEUX journaux en onglets, les écritures et les connexions ; ⚠️ 31/10 le libellé le dit.
+    { label: 'Journal (écritures et connexions)', path: '/admin/audit', icon: 'history' },
     { label: 'Actualités', path: '/admin/actualites', icon: 'message' },
     // Rapports retirés du menu pour le moment (demande pilote 2026-09-04) — route conservée.
     // { label: 'Rapports', path: '/admin/rapports', icon: 'board' },

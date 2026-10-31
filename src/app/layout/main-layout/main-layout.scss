@@ -159,6 +159,8 @@
 .menu__entree { position: relative; }
 /* « Notifications » se range à droite de la barre. */
 .menu__entree--pied { margin-left: auto; }
+/* Plusieurs entrées à droite (Messagerie, Notifications) : seule la première pousse, les suivantes la suivent. */
+.menu__entree--pied + .menu__entree--pied { margin-left: 0; }
 
 /* Entrée de premier niveau : coins arrondis en haut seulement, texte blanc, jamais souligné ; le survol éclaircit le fond. */
 .nav-item {
@@ -259,6 +261,45 @@
 
   .nav-label { flex: 1; }
   .nav-icon { color: var(--texte-secondaire); flex-shrink: 0; }
+}
+
+/* Menu en colonnes titrées (31/10, pilote) : Accès et Référentiels de l'Administrateur. Une rubrique de plus de trois
+   colonnes (Référentiels) ouvre son menu sur toute la largeur de la barre (`.menu`, collante donc positionnée) : posé sous
+   son bouton, il déborderait à droite de l'écran. */
+.menu__entree--large { position: static; }
+/* Posé sous un bouton étroit, un menu en colonnes prend la largeur de son contenu (sans quoi il se réduit à sa largeur minimale). */
+.menu__deroulant--colonnes { width: max-content; max-width: calc(100vw - 2rem); }
+.menu__entree--large .menu__deroulant--colonnes { width: auto; max-width: none; }
+.menu__entree--large .menu__deroulant {
+  left: 12px;
+  right: 12px;
+  max-height: calc(100vh - var(--hauteur-menu) - 7rem);
+  overflow-y: auto;
+}
+.menu__colonnes {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(12rem, max-content);
+  padding: 2px 4px 4px;
+}
+.menu__entree--large .menu__colonnes {
+  grid-auto-flow: row;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+.menu__entree--large .menu__colonne { min-width: 0; }
+/* Les trente référentiels partagent la même icône : dans le grand menu, elle n’apprend rien. */
+.menu__entree--large .nav-icon { display: none; }
+.menu__colonne + .menu__colonne { border-left: 1px solid var(--bordure); }
+.menu__colonne-titre {
+  padding: 8px 12px 2px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--texte-secondaire);
+}
+/* Sous 768 px, les colonnes s'empilent. */
+@media (max-width: 48rem) {
+  .menu__colonnes { grid-auto-flow: row; grid-template-columns: minmax(0, 1fr); }
+  .menu__colonne + .menu__colonne { border-left: 0; border-top: 1px solid var(--bordure); }
 }
 
 /* ── Contenu ── */
