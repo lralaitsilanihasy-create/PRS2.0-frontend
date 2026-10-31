@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { forkJoin } from 'rxjs';
+import { NgTemplateOutlet } from '@angular/common';
 
 import { Capm, Echeance, Marche, MarchePrevision, Ppm, RegleAlerte } from '../../models';
 import {
@@ -30,6 +31,7 @@ interface AlerteJalon {
  */
 @Component({
   selector: 'app-calendrier-marches',
+  imports: [NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="cj">
@@ -73,16 +75,26 @@ interface AlerteJalon {
                       }
                     </td>
                   }
-                  <td class="cj__c cj__alertes">
-                    @for (a of l.alertes; track a.processus + a.genre) {
-                      <span class="badge cj__badge" [class.cj__badge--retard]="a.genre === 'retard'" [class.cj__badge--imminent]="a.genre === 'imminent'">
-                        @if (a.genre === 'retard') { ⏰ {{ a.processus }} — en retard de {{ a.jours }} j }
-                        @else if (a.jours === 0) { ⚠ {{ a.processus }} — aujourd'hui }
-                        @else { ⚠ {{ a.processus }} — dans {{ a.jours }} j }
-                      </span>
-                    } @empty {
-                      <span class="cj__vide">—</span>
-                    }
+                  <!-- Deux alertes visibles, les suivantes repliées (design institutionnel, 31/10) : une ligne peut en porter une
+                       par processus, et la colonne empilée étirait toute la ligne. Aucune alerte n'est retirée. -->
+                  <td class="cj__c">
+                    <div class="cj__alertes">
+                      @for (a of l.alertes.slice(0, 2); track a.processus + a.genre) {
+                        <ng-container *ngTemplateOutlet="badgeAlerte; context: { $implicit: a }" />
+                      } @empty {
+                        <span class="cj__vide">—</span>
+                      }
+                      @if (l.alertes.length > 2) {
+                        <details class="cj__autres">
+                          <summary>+ {{ l.alertes.length - 2 }} autre{{ l.alertes.length > 3 ? 's' : '' }} alerte{{ l.alertes.length > 3 ? 's' : '' }}</summary>
+                          <div class="cj__alertes">
+                            @for (a of l.alertes.slice(2); track a.processus + a.genre) {
+                              <ng-container *ngTemplateOutlet="badgeAlerte; context: { $implicit: a }" />
+                            }
+                          </div>
+                        </details>
+                      }
+                    </div>
                   </td>
                 </tr>
               } @empty {
@@ -90,6 +102,13 @@ interface AlerteJalon {
               }
             </tbody>
           </table>
+          <ng-template #badgeAlerte let-a>
+            <span class="badge cj__badge" [class.cj__badge--retard]="a.genre === 'retard'" [class.cj__badge--imminent]="a.genre === 'imminent'">
+              @if (a.genre === 'retard') { ⏰ {{ a.processus }} — en retard de {{ a.jours }} j }
+              @else if (a.jours === 0) { ⚠ {{ a.processus }} — aujourd'hui }
+              @else { ⚠ {{ a.processus }} — dans {{ a.jours }} j }
+            </span>
+          </ng-template>
         </div>
       }
     </section>
@@ -107,7 +126,10 @@ interface AlerteJalon {
     .cj__date { font-variant-numeric: tabular-nums; }
     .cj__reel { color: var(--success-text); font-weight: 500; }
     .cj__vide { color: var(--n-300); }
-    .cj__alertes { display: flex; flex-direction: column; gap: 0.3rem; align-items: center; }
+    .cj__alertes { display: flex; flex-direction: column; gap: 0.3rem; align-items: center; min-width: 14rem; }
+    .cj__autres { margin-top: 0.1rem; }
+    .cj__autres summary { cursor: pointer; font-size: var(--text-sm); color: var(--texte); text-decoration: underline; text-decoration-color: var(--lien-soulignement); }
+    .cj__autres[open] summary { margin-bottom: 0.3rem; }
     .cj__badge { white-space: nowrap; }
     .cj__badge--imminent { background: var(--warning-bg); color: var(--warning-text); }
     .cj__badge--retard { background: var(--danger-bg); color: var(--danger-text); }
