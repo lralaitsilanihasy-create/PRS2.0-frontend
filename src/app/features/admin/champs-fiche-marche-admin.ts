@@ -225,10 +225,10 @@ function vide(): ChampFiche {
     .cfm__table { font-size: 0.84rem; }
     .cfm__table td, .cfm__table th { padding: 0.4rem 0.5rem; vertical-align: middle; }
     .cfm__code { white-space: nowrap; font-size: 0.8rem; }
-    .cfm__bloc th { text-align: left; background: var(--p-50); color: var(--p-800); font-weight: 700; padding: 0.5rem 0.6rem; }
+    .cfm__bloc th { text-align: left; background: var(--p-50); color: var(--p-800); font-weight: 500; padding: 0.5rem 0.6rem; }
     .cfm__rub td { background: var(--n-50); padding: 0.3rem 0.6rem; }
     .cfm__rub-in { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
-    .cfm__rub-l { font-weight: 600; }
+    .cfm__rub-l { font-weight: 500; }
     .cfm__rub-c { color: var(--n-500); font-size: 0.78rem; }
     .cfm__cond { font-size: 0.76rem; max-width: 16rem; overflow-wrap: anywhere; }
     .cfm__etat { color: var(--n-500); white-space: nowrap; }

@@ -559,7 +559,7 @@ interface LienEcran {
       gap: 9px;
       height: 36px;
       padding: 0 13px;
-      background: #fff;
+      background: var(--carte-fond);
       border: 1px solid var(--n-300);
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-sm);
@@ -584,23 +584,23 @@ interface LienEcran {
       align-items: center;
       gap: 6px;
       padding: 3px 5px 3px 11px;
-      background: #fff;
+      background: var(--carte-fond);
       border: 1px solid var(--n-300);
       border-radius: var(--radius-full);
     }
-    .ann-f__l { font-size: var(--text-sm); font-weight: 600; color: var(--n-500); }
+    .ann-f__l { font-size: var(--text-sm); font-weight: 500; color: var(--n-500); }
     .ann-f__s {
       border: 0;
       background: transparent;
       font-family: var(--font-base);
       font-size: var(--text-sm);
-      font-weight: 800;
+      font-weight: 500;
       color: var(--n-800);
       padding: 2px 4px;
       max-width: 12rem;
     }
     .ann__raz { margin-left: 2px; }
-    .ann__compte { margin: 0 0 0 auto; font-size: var(--text-sm); color: var(--n-500); font-weight: 600; }
+    .ann__compte { margin: 0 0 0 auto; font-size: var(--text-sm); color: var(--n-500); font-weight: 500; }
     .ann__note { margin: 7px 0 0; font-size: var(--text-sm); color: var(--n-500); }
 
     /* ── Deux panneaux ────────────────────────────────────────────────────── */
@@ -618,7 +618,7 @@ interface LienEcran {
     .ann__vide--fiche { text-align: center; }
     .ann__vide-lien {
       border: 0; background: none; padding: 0;
-      font: inherit; color: var(--p-700); font-weight: 700; text-decoration: underline; cursor: pointer;
+      font: inherit; color: var(--p-700); font-weight: 500; text-decoration: underline; cursor: pointer;
     }
     /* L'état d'erreur porte son propre fond : il lui faut la marge que la carte ne donne pas. */
     .ann__encart { padding: 14px; }
@@ -631,16 +631,13 @@ interface LienEcran {
       gap: 10px;
       align-items: center;
     }
-    /* ⚠️ --grad-primary (p-500 → p-600), le fond d'en-tête de tableau du design system, ne donne
-       que 2,77:1 à 4,10:1 sous du blanc — sous AA pour ces 10 px. Le dégradé est repris ici deux
-       crans plus bas (p-700 → p-800) : 5,93:1 à 7,56:1, même identité, contraste tenu. Le jeton
-       global n'est pas touché (il sert tous les tableaux de l'application) ; le défaut est signalé. */
+    /* En-tête de tableau du design institutionnel (31/10) : fond --tableau-entete, texte --texte. */
     .ann-tab__entete {
       padding: 8px 15px;
-      background: linear-gradient(to right, var(--p-700), var(--p-800));
-      color: #fff;
+      background: var(--tableau-entete);
+      color: var(--texte);
       font-size: var(--text-xs);
-      font-weight: 700;
+      font-weight: 500;
       letter-spacing: 0.09em;
       text-transform: uppercase;
     }
@@ -652,7 +649,7 @@ interface LienEcran {
       padding: 8px 15px;
       border: 0;
       border-top: 1px solid var(--n-100);
-      background: #fff;
+      background: var(--carte-fond);
       font-family: var(--font-base);
       cursor: pointer;
     }
@@ -668,10 +665,10 @@ interface LienEcran {
       border-radius: 50%;
       background: var(--n-100); color: var(--n-600);
       display: grid; place-items: center;
-      font-size: var(--text-sm); font-weight: 800;
+      font-size: var(--text-sm); font-weight: 500;
     }
     .ann-ligne__qui { min-width: 0; padding-left: 35px; }
-    .ann-ligne__qui b { display: block; font-size: var(--text-base); font-weight: 700; color: var(--n-700); }
+    .ann-ligne__qui b { display: block; font-size: var(--text-base); font-weight: 500; color: var(--n-700); }
     /* --n-500 et non --n-400 : sur la ligne SÉLECTIONNÉE (fond --p-50) n-400 tombe à 4,44:1,
        juste sous le seuil AA. n-500 y tient 5,44:1 et 5,80:1 sur blanc. */
     .ann-ligne__ref { display: block; font-size: var(--text-xs); color: var(--n-500); }
@@ -692,41 +689,41 @@ interface LienEcran {
       border-radius: var(--radius-full);
       border: 1px solid transparent;
       font-size: var(--text-xs);
-      font-weight: 700;
+      font-weight: 500;
       white-space: nowrap;
     }
-    .ann-st--ACTIF { background: var(--success-bg); color: #047857; border-color: var(--success-bdr); }
+    .ann-st--ACTIF { background: var(--success-bg); color: var(--favorable-texte); border-color: var(--success-bdr); }
     .ann-st--SUSPENDU { background: var(--danger-bg); color: var(--danger-text); border-color: var(--danger-bdr); }
     .ann-st--EN_ATTENTE { background: var(--warning-bg); color: var(--warning-text); border-color: var(--warning-bdr); }
     .ann-st--REFUSE,
     .ann-st--SANS_COMPTE { background: var(--n-100); color: var(--n-600); border-color: var(--n-200); }
 
     .ann__pager { display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 11px; border-top: 1px solid var(--n-100); }
-    .ann__pager-i { font-size: var(--text-sm); color: var(--n-500); font-weight: 600; }
+    .ann__pager-i { font-size: var(--text-sm); color: var(--n-500); font-weight: 500; }
 
     /* ── Fiche ────────────────────────────────────────────────────────────── */
     .ann-fh__hd { display: flex; align-items: center; gap: 12px; padding: 14px 15px; background: var(--p-50); border-bottom: 1px solid var(--n-200); }
     .ann-fh__ini {
       width: 44px; height: 44px; flex: none;
       border-radius: 50%;
-      background: var(--bouton-principal); color: #fff;
+      background: var(--bouton-principal); color: var(--texte-menu);
       display: grid; place-items: center;
-      font-size: var(--text-lg); font-weight: 800;
+      font-size: var(--text-lg); font-weight: 500;
     }
     .ann-fh__id { min-width: 0; }
-    .ann-fh__id b { display: block; font-size: var(--text-lg); font-weight: 800; color: var(--n-800); line-height: 1.2; }
+    .ann-fh__id b { display: block; font-size: var(--text-lg); font-weight: 500; color: var(--n-800); line-height: 1.2; }
     .ann-fh__id span { font-size: var(--text-sm); color: var(--n-500); }
 
     .ann-blk { padding: 10px 15px; border-bottom: 1px solid var(--n-100); }
-    .ann-blk__h { font-size: var(--text-xs); font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: var(--n-500); margin: 0 0 6px; }
+    .ann-blk__h { font-size: var(--text-xs); font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase; color: var(--n-500); margin: 0 0 6px; }
     .ann-blk__st { font-size: var(--text-xs); color: var(--n-500); margin: 8px 0 5px; }
     .ann-blk__aide { margin: 6px 0 0; font-size: var(--text-sm); color: var(--n-500); line-height: 1.5; }
-    .ann-blk__aide a { color: var(--p-700); font-weight: 700; }
+    .ann-blk__aide a { color: var(--p-700); font-weight: 500; }
 
     .ann-kv { margin: 0; }
     .ann-kv__l { display: flex; gap: 10px; padding: 3px 0; font-size: var(--text-base); }
     .ann-kv__l dt { flex: none; width: 7.6rem; color: var(--n-500); }
-    .ann-kv__l dd { margin: 0; min-width: 0; color: var(--n-700); font-weight: 600; overflow-wrap: anywhere; }
+    .ann-kv__l dd { margin: 0; min-width: 0; color: var(--n-700); font-weight: 500; overflow-wrap: anywhere; }
     .ann-kv__note { font-weight: 400; color: var(--n-500); margin-left: 5px; }
     .ann-kv__rien { font-weight: 400; color: var(--n-500); font-style: italic; }
     /* --danger-text sur le fond blanc de la fiche : 7,22:1. La couleur ne porte rien seule — le
@@ -736,8 +733,8 @@ interface LienEcran {
 
     .ann-chaine { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; counter-reset: maillon; }
     .ann-chaine li { display: flex; align-items: center; gap: 6px; }
-    .ann-chaine li + li::before { content: '→'; color: var(--n-400); font-weight: 800; }
-    .ann-chaine__m { background: var(--n-100); color: var(--n-600); border-radius: var(--radius-sm); padding: 3px 8px; font-size: var(--text-sm); font-weight: 700; }
+    .ann-chaine li + li::before { content: '→'; color: var(--n-400); font-weight: 500; }
+    .ann-chaine__m { background: var(--n-100); color: var(--n-600); border-radius: var(--radius-sm); padding: 3px 8px; font-size: var(--text-sm); font-weight: 500; }
     .ann-chaine__m--lui { background: var(--p-100); color: var(--p-800); }
 
     .ann-acts { margin-top: auto; padding: 12px 15px; border-top: 1px solid var(--n-200); display: flex; flex-wrap: wrap; gap: 8px; }
@@ -745,12 +742,12 @@ interface LienEcran {
     .ann-acts__note { margin: 0; padding: 0 15px 12px; font-size: var(--text-sm); color: var(--n-500); line-height: 1.5; }
 
     /* ── Les huit écrans que le sommaire portait ──────────────────────────── */
-    .ann-ecrans { margin-top: 14px; padding: 10px 14px; background: #fff; border: 0.5px solid var(--n-200); border-radius: var(--radius-xl); box-shadow: var(--shadow-sm); }
-    .ann-ecrans__t { font-size: var(--text-sm); font-weight: 700; color: var(--n-600); cursor: pointer; }
+    .ann-ecrans { margin-top: 14px; padding: 10px 14px; background: var(--carte-fond); border: 0.5px solid var(--n-200); border-radius: var(--radius-xl); box-shadow: var(--shadow-sm); }
+    .ann-ecrans__t { font-size: var(--text-sm); font-weight: 500; color: var(--n-600); cursor: pointer; }
     .ann-ecrans__aide { margin: 8px 0 0; font-size: var(--text-sm); color: var(--n-500); }
     .ann-ecrans__l { list-style: none; margin: 8px 0 2px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 6px 16px; }
     .ann-ecrans__l li { display: flex; flex-direction: column; padding: 4px 0; }
-    .ann-ecrans__l a { font-size: var(--text-base); font-weight: 700; color: var(--p-700); }
+    .ann-ecrans__l a { font-size: var(--text-base); font-weight: 500; color: var(--p-700); }
     .ann-ecrans__l span { font-size: var(--text-xs); color: var(--n-500); }
   `,
 })

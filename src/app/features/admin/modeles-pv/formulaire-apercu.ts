@@ -69,16 +69,16 @@ const AVIS: readonly { code: AvisApercu; libelle: string }[] = [
     </section>
   `,
   styles: `
-    .fap { border: 1px solid var(--n-200); border-radius: 10px; padding: 0.9rem 1rem; display: flex; flex-direction: column; gap: 0.6rem; background: var(--n-50, #f8f9fe); }
+    .fap { border: 1px solid var(--n-200); border-radius: 10px; padding: 0.9rem 1rem; display: flex; flex-direction: column; gap: 0.6rem; background: var(--n-50); }
     .fap__tete { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-    .fap__titre { margin: 0; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--p-700); }
+    .fap__titre { margin: 0; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--p-700); }
     .fap__avis { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--n-700); }
     .fap__avis select { width: auto; }
     .fap__aide, .fap__note { margin: 0; font-size: 0.8rem; color: var(--n-500); }
     .fap__vide { margin: 0; color: var(--n-500); }
     .fap__champs { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 0.75rem; }
-    .fap__champ { display: flex; flex-direction: column; gap: 0.3rem; background: #fff; border: 1px solid var(--n-200); border-radius: 8px; padding: 0.6rem 0.7rem; }
-    .fap__libelle { font-size: 0.88rem; font-weight: 600; color: var(--n-800); }
+    .fap__champ { display: flex; flex-direction: column; gap: 0.3rem; background: var(--carte-fond); border: 1px solid var(--n-200); border-radius: 8px; padding: 0.6rem 0.7rem; }
+    .fap__libelle { font-size: 0.88rem; font-weight: 500; color: var(--n-800); }
     .fap__oblig { color: var(--danger-text); }
     .fap__case { display: inline-flex; gap: 0.4rem; align-items: center; font-size: 0.88rem; }
     .fap__bilan { margin: 0; font-size: 0.85rem; color: var(--n-700); }

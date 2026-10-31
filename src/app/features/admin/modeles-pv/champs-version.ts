@@ -123,7 +123,7 @@ const options = (c: ChampSaisie): string[] => c.options.split('\n').map((x) => x
     .chv { display: flex; flex-direction: column; gap: 0.75rem; }
     .chv__ligne { display: grid; grid-template-columns: 1.6fr 1fr 0.7fr 0.8fr 6rem; gap: 0.6rem; align-items: center; padding: 0.5rem 0;
       border-top: 1px solid var(--n-100); font-size: 0.88rem; color: var(--n-700); }
-    .chv__ligne--tete { font-size: 0.75rem; font-weight: 700; color: var(--n-500); border-top: 0; padding-bottom: 0.2rem; }
+    .chv__ligne--tete { font-size: 0.75rem; font-weight: 500; color: var(--n-500); border-top: 0; padding-bottom: 0.2rem; }
     .chv__var { display: block; color: var(--n-500); }
     .chv__champ { border: 1px solid var(--n-200); border-radius: 10px; padding: 0.75rem 0.9rem;
       display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr auto auto; gap: 0.6rem; align-items: end; }

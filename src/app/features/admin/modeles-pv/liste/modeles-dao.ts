@@ -83,12 +83,12 @@ const FAMILLES: readonly { cle: string; titre: string; detail: string; types: re
     .mdo { display: flex; flex-direction: column; gap: 12px; }
     .mdo__tete { display: flex; gap: 12px 24px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 2px 2px 0; }
     .mdo__tete-texte { flex: 1 1 24rem; min-width: 0; }
-    .mdo__titre { margin: 0; font-size: 16px; font-weight: 600; color: var(--text); }
+    .mdo__titre { margin: 0; font-size: 16px; font-weight: 500; color: var(--text); }
     .mdo__sous { margin: 2px 0 0; font-size: 13px; color: var(--text-muted); }
     .mdo__chiffres { display: flex; gap: 8px; margin: 0; }
     .mdo__chiffres div { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 6px 14px; min-width: 6.5rem; }
     .mdo__chiffres dt { font-size: 11.5px; color: var(--text-muted); }
-    .mdo__chiffres dd { margin: 0; font-size: 20px; font-weight: 600; color: var(--text); line-height: 1.2; }
+    .mdo__chiffres dd { margin: 0; font-size: 20px; font-weight: 500; color: var(--text); line-height: 1.2; }
     .mdo__chiffres dd small { font-size: 13px; font-weight: 400; color: var(--text-muted); }
     .mdo__chiffre--ok { color: var(--ok-text) !important; }
 
@@ -96,9 +96,9 @@ const FAMILLES: readonly { cle: string; titre: string; detail: string; types: re
     .mdo__ligne { display: grid; grid-template-columns: 11rem repeat(var(--mdo-cols, 4), minmax(0, 1fr)); border-top: 1px solid var(--border); }
     .mdo__ligne--entete { border-top: 0; }
     .mdo__ligne--entete > div { padding: 10px 12px 8px; }
-    .mdo__col { font-size: 11.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); }
+    .mdo__col { font-size: 11.5px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); }
     .mdo__famille { padding: 12px 14px; display: flex; flex-direction: column; gap: 1px; }
-    .mdo__famille strong { font-size: 13.5px; font-weight: 600; color: var(--text); }
+    .mdo__famille strong { font-size: 13.5px; font-weight: 500; color: var(--text); }
     .mdo__famille span { font-size: 11.5px; color: var(--text-muted); }
     .mdo__case { padding: 6px; display: flex; flex-direction: column; }
 
@@ -107,27 +107,27 @@ const FAMILLES: readonly { cle: string; titre: string; detail: string; types: re
       border: 1px solid transparent; border-radius: 8px; background: var(--page-bg); font: inherit; color: var(--text); cursor: pointer;
       transition: border-color 0.12s, background 0.12s, box-shadow 0.12s; }
     .mdo__tuile--ok .mdo__ouvrir { background: var(--ok-bg); }
-    .mdo__ouvrir:hover:not(:disabled) { border-color: var(--reco-border); background: var(--card-bg); box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08); }
+    .mdo__ouvrir:hover:not(:disabled) { border-color: var(--reco-border); background: var(--card-bg); box-shadow: none; }
     .mdo__ouvrir:focus-visible, .mdo__oeil:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .mdo__ouvrir:disabled, .mdo__oeil:disabled { opacity: 0.6; cursor: default; }
-    .mdo__sigle { font-family: Consolas, monospace; font-size: 13px; font-weight: 700; color: var(--primary); letter-spacing: 0.02em; }
+    .mdo__sigle { font-family: Consolas, monospace; font-size: 13px; font-weight: 500; color: var(--texte); letter-spacing: 0.02em; }
     .mdo__nom { font-size: 13px; line-height: 1.3; color: var(--text); }
     .mdo__bas { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: auto; padding-top: 4px; font-size: 12px; }
     .mdo__etat { display: inline-flex; align-items: center; gap: 5px; color: var(--text-muted); }
-    .mdo__point { width: 7px; height: 7px; border-radius: 50%; background: var(--n-300, #cbd5e1); }
+    .mdo__point { width: 7px; height: 7px; border-radius: 50%; background: var(--n-300); }
     .mdo__etat--prep .mdo__point { background: var(--prep-accent); }
-    .mdo__etat--ok { color: var(--ok-text); font-weight: 600; }
+    .mdo__etat--ok { color: var(--ok-text); font-weight: 500; }
     .mdo__etat--ok .mdo__point { background: var(--ok-accent); }
-    .mdo__ecarts { color: var(--prep-text); font-weight: 600; }
+    .mdo__ecarts { color: var(--prep-text); font-weight: 500; }
     .mdo__ecarts::before, .mdo__conforme::before { content: '·'; margin-right: 8px; color: var(--text-muted); font-weight: 400; }
     .mdo__conforme { color: var(--text-muted); }
-    .mdo__chev { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: var(--n-300, #cbd5e1); }
-    .mdo__ouvrir:hover .mdo__chev { color: var(--primary); }
+    .mdo__chev { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: var(--n-300); }
+    .mdo__ouvrir:hover .mdo__chev { color: var(--texte); }
     .mdo__oeil { position: absolute; top: 5px; right: 5px; width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--border);
       background: var(--card-bg); color: var(--text-muted); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; opacity: 0;
       transition: opacity 0.12s; }
     .mdo__tuile:hover .mdo__oeil, .mdo__oeil:focus-visible { opacity: 1; }
-    .mdo__oeil:hover:not(:disabled) { color: var(--primary); }
+    .mdo__oeil:hover:not(:disabled) { color: var(--texte); }
     .mdo__note { margin: 0; font-size: 12px; color: var(--text-muted); }
 
     @media (hover: none) { .mdo__oeil { opacity: 1; } }

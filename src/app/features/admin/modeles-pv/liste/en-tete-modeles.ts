@@ -26,7 +26,7 @@ import { Icone } from '../../../../shared/ui/icone';
   `,
   styles: `
     .etm { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-    .etm__icone { width: 44px; height: 44px; border-radius: 8px; background: var(--reco-bg); color: var(--primary);
+    .etm__icone { width: 44px; height: 44px; border-radius: 8px; background: var(--reco-bg); color: var(--texte);
       display: inline-flex; align-items: center; justify-content: center; flex: none; }
     .etm__titres { flex: 1 1 18rem; min-width: 0; }
     .etm__titre { margin: 0; font-size: 22px; font-weight: 500; color: var(--text); }

@@ -92,8 +92,8 @@ import { Couverture, CouvertureLettres, EtatLigne, FiltreEtat, LIBELLES_ETAT, OR
     .ccv__lettres--manque .ccv__lettres-titre { color: var(--miss-text); }
     .ccv__lettres--manque .ccv__lettres-titre app-icone { color: var(--miss-accent); }
     .ccv__lettres-texte { color: var(--text-muted); flex: 1; }
-    .ccv__lettres-voir { border: 1px solid var(--border); background: var(--card-bg); color: var(--primary); border-radius: 6px; padding: 3px 10px;
-      font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .ccv__lettres-voir { border: 1px solid var(--border); background: var(--card-bg); color: var(--texte); border-radius: 6px; padding: 3px 10px;
+      font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; }
     .ccv__lettres-voir:hover { background: var(--reco-bg); }
     .ccv__lettres-voir:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     @media (max-width: 640px) { .ccv__compteurs { grid-template-columns: 1fr; } }

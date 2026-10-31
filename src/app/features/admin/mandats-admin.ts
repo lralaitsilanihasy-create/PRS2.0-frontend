@@ -170,16 +170,16 @@ const STATUT_LABELS: Record<string, string> = {
     .ma__intro { margin: -0.4rem 0 0; color: var(--n-500); max-width: 62rem; }
     .ma__filtre { display: flex; align-items: center; gap: 0.6rem; }
     .ma__filtre .form-control { max-width: 26rem; }
-    .ma__id { font-weight: 600; color: var(--c-800); white-space: nowrap; }
+    .ma__id { font-weight: 500; color: var(--c-800); white-space: nowrap; }
     .ma__c { text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; }
     .ma__actions { justify-content: flex-end; }
     .ma__empty { text-align: center; color: var(--n-400); padding: 1.5rem; }
     .ma__implicite { background: var(--n-100); color: var(--n-500); font-style: italic; }
     .ma__motif { font-size: var(--text-xs); color: var(--n-400); max-width: 14rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .ma__statut--actif { background: var(--success-bg, #dcfce7); color: var(--success-text, #16a34a); }
-    .ma__statut--en_transition { background: var(--warning-bg, #fef3c7); color: var(--warning-text, #b45309); }
+    .ma__statut--actif { background: var(--success-bg); color: var(--success-text); }
+    .ma__statut--en_transition { background: var(--warning-bg); color: var(--warning-text); }
     .ma__statut--acheve { background: var(--n-100); color: var(--n-500); }
-    .ma__statut--abroge { background: var(--danger-bg, #fee2e2); color: var(--danger-text, #dc2626); }
+    .ma__statut--abroge { background: var(--danger-bg); color: var(--danger-text); }
   `,
 })
 export class MandatsAdmin implements OnInit {

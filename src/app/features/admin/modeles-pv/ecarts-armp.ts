@@ -72,28 +72,28 @@ const LIBELLE: Readonly<Record<EcartArmp['type'], string>> = { MODIFIE: 'Modifi�
   `,
   styles: `
     .ear { display: flex; flex-direction: column; gap: 0.5rem; }
-    .ear__titre { margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--p-700); text-transform: uppercase; letter-spacing: 0.04em; }
+    .ear__titre { margin: 0; font-size: 0.95rem; font-weight: 500; color: var(--p-700); text-transform: uppercase; letter-spacing: 0.04em; }
     .ear__conforme, .ear__resume { margin: 0; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; color: var(--n-700); font-size: 0.9rem; }
     .ear__liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
-    .ear__ecart { background: var(--card-bg, #fff); border: 1px solid var(--n-200, #e2e8f0); border-left: 3px solid var(--prep-accent, #ca8a04); border-radius: 0 8px 8px 0; padding: 0.4rem 0.6rem;
+    .ear__ecart { background: var(--card-bg); border: 1px solid var(--n-200); border-left: 3px solid var(--prep-accent); border-radius: 0 8px 8px 0; padding: 0.4rem 0.6rem;
       display: flex; flex-direction: column; gap: 0.15rem; font-size: 0.85rem; }
-    .ear__ecart--AJOUTE { border-left-color: var(--ok-accent, #059669); }
-    .ear__ecart--RETIRE { border-left-color: var(--miss-accent, #dc2626); }
+    .ear__ecart--AJOUTE { border-left-color: var(--ok-accent); }
+    .ear__ecart--RETIRE { border-left-color: var(--miss-accent); }
     /* ⚠️ 23/10 — la forme en gris, le fond en ambre : seul le fond demande le juriste. */
-    .ear__ecart--FORME { border-left-color: var(--n-300, #cbd5e1); }
-    .ear__ecart--FOND { border-left-color: var(--prep-accent, #ca8a04); }
-    .ear__nature { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; border-radius: 999px; padding: 0 7px; margin-right: 4px; border: 1px solid; }
-    .ear__nature--FORME { color: var(--n-600, #475569); background: var(--n-50, #f8fafc); border-color: var(--n-200, #e2e8f0); }
-    .ear__nature--FOND { color: var(--prep-text, #854d0e); background: var(--prep-bg, #fef9c3); border-color: var(--prep-border, #fde047); }
-    .ear__compte { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 1px 9px; border: 1px solid; }
-    .ear__compte--forme { color: var(--n-600, #475569); background: var(--n-50, #f8fafc); border-color: var(--n-200, #e2e8f0); }
-    .ear__compte--fond { color: var(--prep-text, #854d0e); background: var(--prep-bg, #fef9c3); border-color: var(--prep-border, #fde047); }
+    .ear__ecart--FORME { border-left-color: var(--n-300); }
+    .ear__ecart--FOND { border-left-color: var(--prep-accent); }
+    .ear__nature { font-size: 10.5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; border-radius: 999px; padding: 0 7px; margin-right: 4px; border: 1px solid; }
+    .ear__nature--FORME { color: var(--n-600); background: var(--n-50); border-color: var(--n-200); }
+    .ear__nature--FOND { color: var(--prep-text); background: var(--prep-bg); border-color: var(--prep-border); }
+    .ear__compte { font-size: 12px; font-weight: 500; border-radius: 999px; padding: 1px 9px; border: 1px solid; }
+    .ear__compte--forme { color: var(--n-600); background: var(--n-50); border-color: var(--n-200); }
+    .ear__compte--fond { color: var(--prep-text); background: var(--prep-bg); border-color: var(--prep-border); }
     .ear__filtre { display: inline-flex; gap: 5px; align-items: center; font-size: 12.5px; color: var(--n-700); margin-left: auto; cursor: pointer; }
-    .ear__type { font-weight: 700; color: var(--n-800); }
+    .ear__type { font-weight: 500; color: var(--n-800); }
     .ear__type small { font-weight: 400; color: var(--n-500); }
     .ear__texte { margin: 0; color: var(--n-700); line-height: 1.5; white-space: pre-wrap; }
-    del { color: var(--miss-text, #991b1b); background: #fee2e2; border-radius: 3px; padding: 0 2px; }
-    ins { color: var(--ok-text, #065f46); background: #d1fae5; text-decoration: none; font-weight: 600; border-radius: 3px; padding: 0 2px; }
+    del { color: var(--miss-text); background: var(--retard-fond); border-radius: 3px; padding: 0 2px; }
+    ins { color: var(--ok-text); background: var(--favorable-fond); text-decoration: none; font-weight: 500; border-radius: 3px; padding: 0 2px; }
     .ear__coupure { color: var(--n-500); }
     .ear__aller { margin-left: 0.5rem; border: 0; background: none; padding: 0; color: var(--p-700); text-decoration: underline; cursor: pointer; font: inherit; font-size: 0.85em; font-weight: 400; }
     .ear__aller:focus-visible { outline: 2px solid var(--p-700); outline-offset: 2px; }

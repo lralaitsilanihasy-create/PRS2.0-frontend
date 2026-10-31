@@ -21,7 +21,7 @@ import { Recommandation } from './modeles-pv-vue';
   styles: `
     .brc { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 0 12px 12px 0; background: var(--reco-bg);
       border: 1px solid var(--reco-border); border-left: 3px solid var(--reco-accent); color: var(--reco-text); flex-wrap: wrap; }
-    .brc__icone { color: var(--reco-accent); display: inline-flex; }
+    .brc__icone { color: var(--texte); display: inline-flex; }
     .brc__texte { flex: 1 1 20rem; min-width: 0; }
     .brc__titre { margin: 0; font-size: 14px; font-weight: 500; color: var(--reco-text); }
     .brc__phrase { margin: 2px 0 0; font-size: 13px; color: var(--reco-text); }

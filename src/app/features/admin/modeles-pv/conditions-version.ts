@@ -167,28 +167,28 @@ const VALEURS_LISIBLES: Readonly<Record<string, string>> = {
     .cv__entete { display: flex; gap: 1rem; align-items: baseline; justify-content: space-between; flex-wrap: wrap; }
     .cv__intro { margin: 0; font-size: 0.85rem; color: var(--text-muted); max-width: 46rem; }
     .cv__compte { margin: 0; font-size: 0.85rem; color: var(--text); }
-    .cv__compte-alerte { color: var(--prep-text); font-weight: 600; }
+    .cv__compte-alerte { color: var(--prep-text); font-weight: 500; }
 
     .cv__liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
     .cv__regle { border: 1px solid var(--border); border-left: 4px solid var(--ok-accent); border-radius: 10px; background: var(--card-bg); }
     .cv__regle--inutile { border-left-color: var(--prep-accent); }
     .cv__regle--incomplete { border-left-color: var(--miss-accent); }
-    .cv__regle--ouverte { box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08); border-color: var(--reco-border); }
+    .cv__regle--ouverte { box-shadow: none; border-color: var(--reco-border); }
 
     .cv__ligne { display: grid; grid-template-columns: 9.5rem 1fr auto auto auto; gap: 0.75rem; align-items: center; padding: 0.6rem 0.75rem; }
-    .cv__nom-puce { font-family: Consolas, monospace; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.02em; color: var(--primary);
+    .cv__nom-puce { font-family: Consolas, monospace; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.02em; color: var(--texte);
       background: var(--reco-bg); border: 1px solid var(--reco-border); border-radius: 6px; padding: 0.15rem 0.5rem; white-space: nowrap;
       justify-self: start; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
     .cv__resume { display: flex; flex-direction: column; min-width: 0; }
-    .cv__libelle { font-weight: 600; color: var(--text); font-size: 0.9rem; }
+    .cv__libelle { font-weight: 500; color: var(--text); font-size: 0.9rem; }
     .cv__phrase { color: var(--text); font-size: 0.9rem; }
     .cv__libelle + .cv__phrase { color: var(--text-muted); font-size: 0.82rem; }
-    .cv__etat { font-size: 0.75rem; font-weight: 600; border-radius: 999px; padding: 0.1rem 0.6rem; white-space: nowrap; border: 1px solid; }
+    .cv__etat { font-size: 0.75rem; font-weight: 500; border-radius: 999px; padding: 0.1rem 0.6rem; white-space: nowrap; border: 1px solid; }
     .cv__etat--ok { color: var(--ok-text); background: var(--ok-bg); border-color: var(--ok-border); }
     .cv__etat--inutile { color: var(--prep-text); background: var(--prep-bg); border-color: var(--prep-border); }
     .cv__etat--incomplete { color: var(--miss-text); background: var(--miss-bg); border-color: var(--miss-border); }
-    .cv__btn { border: 1px solid var(--border); background: var(--card-bg); color: var(--primary); border-radius: 6px; padding: 0.2rem 0.65rem;
-      font: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+    .cv__btn { border: 1px solid var(--border); background: var(--card-bg); color: var(--texte); border-radius: 6px; padding: 0.2rem 0.65rem;
+      font: inherit; font-size: 0.8rem; font-weight: 500; cursor: pointer; }
     .cv__btn:hover { background: var(--reco-bg); }
     .cv__btn--retirer { color: var(--text-muted); padding: 0.2rem 0.5rem; }
     .cv__btn--retirer:hover { color: var(--miss-text); background: var(--miss-bg); }
@@ -196,25 +196,25 @@ const VALEURS_LISIBLES: Readonly<Record<string, string>> = {
 
     .cv__edition { border-top: 1px dashed var(--border); padding: 0.75rem; display: flex; flex-direction: column; gap: 0.7rem; background: var(--page-bg); border-radius: 0 0 10px 10px; }
     .cv__ident { display: grid; grid-template-columns: minmax(10rem, 16rem) 1fr; gap: 0.6rem; }
-    .cv__champ { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.78rem; font-weight: 600; color: var(--text-muted); }
+    .cv__champ { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.78rem; font-weight: 500; color: var(--text-muted); }
     .cv__champ em { font-weight: 400; }
     .cv__criteres { display: flex; flex-direction: column; gap: 0.45rem; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.6rem; }
     .cv__terme { display: grid; grid-template-columns: 6rem minmax(10rem, 1.3fr) minmax(8rem, 0.7fr) minmax(9rem, 1fr) 2rem; gap: 0.5rem; align-items: center; }
-    .cv__si { font-size: 0.85rem; font-weight: 600; color: var(--primary); }
+    .cv__si { font-size: 0.85rem; font-weight: 500; color: var(--texte); }
     .cv__lien { font-size: 0.85rem; }
-    .cv__ajout-critere { align-self: flex-start; border: 0; background: none; color: var(--primary); font: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer; padding: 0.2rem 0; }
+    .cv__ajout-critere { align-self: flex-start; border: 0; background: none; color: var(--texte); font: inherit; font-size: 0.82rem; font-weight: 500; cursor: pointer; padding: 0.2rem 0; }
     .cv__ajout-critere:hover { text-decoration: underline; }
     .cv__code { margin: 0; font-size: 0.75rem; color: var(--text-muted); }
     .cv__mono, code { font-family: Consolas, monospace; font-size: 0.85em; }
-    .cv__probleme { margin: 0; font-size: 0.82rem; color: var(--miss-text); font-weight: 600; }
+    .cv__probleme { margin: 0; font-size: 0.82rem; color: var(--miss-text); font-weight: 500; }
     .cv__probleme--info { color: var(--prep-text); font-weight: 500; }
     .cv__vide { padding: 1rem; border: 1px dashed var(--border); border-radius: 10px; color: var(--text-muted); font-size: 0.9rem; text-align: center; }
 
     .cv__barre { position: sticky; bottom: 0; z-index: 2; display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;
       padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: 10px; background: var(--card-bg); }
     .cv__barre--modifiee { border-color: var(--prep-border); background: var(--prep-bg); }
-    .cv__barre-etat { font-size: 0.82rem; font-weight: 600; color: var(--prep-text); }
-    .cv__barre-alerte { font-size: 0.82rem; font-weight: 600; color: var(--miss-text); }
+    .cv__barre-etat { font-size: 0.82rem; font-weight: 500; color: var(--prep-text); }
+    .cv__barre-alerte { font-size: 0.82rem; font-weight: 500; color: var(--miss-text); }
     .cv__espace { flex: 1; }
     @media (max-width: 760px) {
       .cv__ligne { grid-template-columns: 1fr auto; }

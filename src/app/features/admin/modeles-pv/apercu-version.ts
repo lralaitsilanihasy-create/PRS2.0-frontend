@@ -134,16 +134,16 @@ const AVIS: readonly { code: AvisApercu | ''; libelle: string }[] = [
     .apv__dossier { width: 13rem; }
     .apv__avis { width: auto; max-width: 20rem; }
     .apv__rien { margin: 0; }
-    .apv__cadre { width: 100%; height: 75vh; min-height: 32rem; border: 1px solid var(--n-300); border-radius: 8px; background: #fff; }
-    .apv__vide { border: 1px dashed var(--n-300); border-radius: 8px; padding: 2.5rem 1rem; text-align: center; color: var(--n-500); background: #fff; }
+    .apv__cadre { width: 100%; height: 75vh; min-height: 32rem; border: 1px solid var(--n-300); border-radius: 8px; background: var(--carte-fond); }
+    .apv__vide { border: 1px dashed var(--n-300); border-radius: 8px; padding: 2.5rem 1rem; text-align: center; color: var(--n-500); background: var(--carte-fond); }
     .apv__dossier-lu { margin: 0; color: var(--n-700); }
     .apv__procedure { width: 10rem; }
     .apv__lot { width: 5rem; }
     .apv__ou { font-size: 0.8rem; color: var(--text-muted); }
     .apv__exemples { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
-    .apv__exemples-titre { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
-    .apv__exemple { border: 1px solid var(--border); background: var(--card-bg); color: var(--primary); border-radius: 999px; padding: 0.15rem 0.7rem;
-      font: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+    .apv__exemples-titre { font-size: 0.8rem; font-weight: 500; color: var(--text-muted); }
+    .apv__exemple { border: 1px solid var(--border); background: var(--card-bg); color: var(--texte); border-radius: 999px; padding: 0.15rem 0.7rem;
+      font: inherit; font-size: 0.8rem; font-weight: 500; cursor: pointer; }
     .apv__exemple span { color: var(--text-muted); font-weight: 400; }
     .apv__exemple:hover:not(:disabled) { background: var(--reco-bg); }
     .apv__exemple--on { background: var(--reco-bg); border-color: var(--primary); }

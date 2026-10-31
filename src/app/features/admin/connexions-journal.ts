@@ -244,7 +244,7 @@ const SYSTEMES: readonly (readonly [string, string])[] = [
     .cx__aide { margin: 0 0 1rem; font-size: var(--text-sm); color: var(--n-500); }
 
     .cx__etat { color: var(--n-500); }
-    .cx__compte { margin: 0 0 0.35rem; font-size: var(--text-sm); color: var(--n-500); font-weight: 600; }
+    .cx__compte { margin: 0 0 0.35rem; font-size: var(--text-sm); color: var(--n-500); font-weight: 500; }
     /* Hauteur réservée : le tableau ne bouge pas quand l'attente s'affiche puis disparaît. */
     .cx__etat-en-ligne { display: inline-block; min-width: 11rem; font-weight: 400; }
 
@@ -254,17 +254,17 @@ const SYSTEMES: readonly (readonly [string, string])[] = [
        (p-700 → p-800) : 5,93:1 à 7,56:1, même identité, contraste tenu. Même geste que F3 sur
        l'annuaire. Le jeton global n'est pas touché (il sert tous les tableaux de l'application) ;
        le défaut reste signalé, et l'onglet « Actions » le porte encore. */
-    .cx__table thead tr { background: linear-gradient(to right, var(--p-700), var(--p-800)); }
+    .cx__table thead tr { background: var(--tableau-entete); }
     .cx__table td { vertical-align: top; }
     /* Un échec se voit sans lire : fond teinté ET liseré rouge en tête de ligne. Ni l'un ni l'autre
        ne portent seuls l'information — le mot « Refusée » est dans la première cellule. */
-    .cx__ligne--echec { background: #fef6f6; }
+    .cx__ligne--echec { background: var(--retard-fond); }
     .cx__ligne--echec td:first-child { box-shadow: inset 3px 0 0 0 var(--danger-text); }
 
     .cx__res {
       display: inline-block;
       font-size: var(--text-xs);
-      font-weight: 700;
+      font-weight: 500;
       padding: 2px 8px;
       border-radius: var(--radius-full);
       white-space: nowrap;
@@ -272,13 +272,13 @@ const SYSTEMES: readonly (readonly [string, string])[] = [
       /* ⚠️ Encre recalibrée localement, même geste que F2 : --success-text (#059669) sur
          --success-bg ne donne que 3,58:1, sous le seuil AA d'un texte de 11 px. #047857 y monte à
          5,21:1. Le jeton global sert des dizaines d'écrans et ne se retouche pas depuis un lot. */
-      color: #047857;
+      color: var(--favorable-texte);
     }
     /* --danger-text sur --danger-bg : 5,80:1, au-dessus du seuil — la paire globale convient ici. */
     .cx__res--echec { background: var(--danger-bg); color: var(--danger-text); }
 
     .cx__sous { display: block; font-size: var(--text-xs); color: var(--n-500); margin-top: 1px; }
-    .cx__sous--alerte { color: var(--danger-text); font-weight: 600; }
+    .cx__sous--alerte { color: var(--danger-text); font-weight: 500; }
     .cx__rien { color: var(--n-500); font-style: italic; }
     .cx__poste { max-width: 14rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -307,7 +307,7 @@ const SYSTEMES: readonly (readonly [string, string])[] = [
       justify-content: center;
       margin-top: 1rem;
     }
-    .cx__pager-info { font-size: var(--text-sm); color: var(--n-500); font-weight: 600; }
+    .cx__pager-info { font-size: var(--text-sm); color: var(--n-500); font-weight: 500; }
   `,
 })
 export class ConnexionsJournal implements OnInit {

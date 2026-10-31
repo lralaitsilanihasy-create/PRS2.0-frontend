@@ -208,7 +208,7 @@ type Onglet = 'actions' | 'connexions';
     </section>
   `,
   styles: `
-    .al__compte { font-size: var(--text-sm); color: var(--n-500); font-weight: 600; margin: 0 0 0.6rem; }
+    .al__compte { font-size: var(--text-sm); color: var(--n-500); font-weight: 500; margin: 0 0 0.6rem; }
 
     /* ── Onglets ─────────────────────────────────────────────────────────── */
     /* Langage local plutôt que les onglets globaux « onglets-dossier » : ceux-là sont orangés et
@@ -228,7 +228,7 @@ type Onglet = 'actions' | 'connexions';
       cursor: pointer;
       text-align: left;
       font-size: var(--text-base);
-      font-weight: 700;
+      font-weight: 500;
       /* --n-500 est calibré AA sur le fond de page : un onglet au repos reste LISIBLE, il n'est
          pas estompé — c'est le seul moyen de savoir que l'autre journal existe. */
       color: var(--n-500);
@@ -269,7 +269,7 @@ type Onglet = 'actions' | 'connexions';
       justify-content: center;
       margin-top: 1rem;
     }
-    .al__pager-info { font-size: var(--text-sm); color: var(--n-500); font-weight: 600; }
+    .al__pager-info { font-size: var(--text-sm); color: var(--n-500); font-weight: 500; }
   `,
 })
 export class AuditLogsAdmin {

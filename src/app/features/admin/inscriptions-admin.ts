@@ -150,19 +150,19 @@ type PieceType = 'ARRETE_NOMIN' | 'CIN' | 'PHOTO';
   styles: `
     .ia-wrap { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
     .ia { flex: 1 1 40rem; display: flex; flex-direction: column; gap: 1rem; }
-    .ia__badge { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: var(--text-xs); font-weight: 700; background: var(--c-100); color: var(--c-800); }
-    .ia__badge--ugpm { background: #e7f0ff; color: #1a56db; }
+    .ia__badge { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: var(--text-xs); font-weight: 500; background: var(--c-100); color: var(--c-800); }
+    .ia__badge--ugpm { background: var(--onglet-actif-fond); color: var(--texte); }
     .ia__email { color: var(--n-400); font-size: var(--text-xs); }
     .ia__pieces, .ia__actions { display: flex; gap: 0.35rem; flex-wrap: wrap; }
     .ia-detail { flex: 1 1 24rem; position: sticky; top: 1rem; padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
     .ia-detail__head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
-    .ia-detail__title { margin: 0; font-size: var(--text-md); font-weight: 700; color: var(--c-800); display: flex; align-items: center; gap: 0.5rem; }
+    .ia-detail__title { margin: 0; font-size: var(--text-md); font-weight: 500; color: var(--c-800); display: flex; align-items: center; gap: 0.5rem; }
     .ia-detail__photo { display: flex; justify-content: center; }
     .ia-detail__img { width: 100%; max-width: 24rem; border-radius: var(--radius-md); border: 1px solid var(--c-100); }
     .ia-detail__no-photo { width: 100%; max-width: 24rem; aspect-ratio: 4 / 3; display: flex; align-items: center; justify-content: center; border: 1px dashed var(--c-100); border-radius: var(--radius-md); color: var(--n-400); font-size: var(--text-sm); }
     .ia-detail__pdf { width: 100%; height: 30rem; border: 1px solid var(--c-100); border-radius: var(--radius-md); }
     .ia-detail__dl { display: grid; grid-template-columns: auto 1fr; gap: 0.4rem 1rem; margin: 0; font-size: var(--text-sm); }
-    .ia-detail__dl dt { color: var(--n-500); font-weight: 600; }
+    .ia-detail__dl dt { color: var(--n-500); font-weight: 500; }
     .ia-detail__dl dd { margin: 0; color: var(--c-800); word-break: break-word; }
     .ia-detail__entites { margin: 0; padding-left: 1.1rem; font-size: var(--text-sm); color: var(--c-800); display: flex; flex-direction: column; gap: 0.15rem; }
     .ia-detail__pris { color: var(--n-400); font-size: var(--text-xs); }

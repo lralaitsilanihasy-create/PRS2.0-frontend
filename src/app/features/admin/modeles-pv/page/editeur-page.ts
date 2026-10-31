@@ -311,9 +311,9 @@ const REGLES_USUELLES: Readonly<Record<string, string>> = {
     .edp { display: flex; flex-direction: column; gap: 0.6rem; }
     /* La barre reste visible pendant qu'on descend dans la feuille : collée sous la barre de l'application (48 px). */
     .edp__barre { position: sticky; top: var(--hauteur-menu); z-index: 5; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 10px;
-      background: #fff; border: 1px solid var(--n-200); border-radius: 10px; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06); }
-    .edp__grp { display: inline-flex; gap: 2px; align-items: center; border: 1px solid var(--n-200); border-radius: 8px; padding: 2px 4px; background: #fff; }
-    .edp__grp-t { font: 600 10px 'Segoe UI', sans-serif; letter-spacing: 0.04em; text-transform: uppercase; color: var(--n-500); padding: 0 4px 0 2px; }
+      background: var(--carte-fond); border: 1px solid var(--n-200); border-radius: 10px; box-shadow: none; }
+    .edp__grp { display: inline-flex; gap: 2px; align-items: center; border: 1px solid var(--n-200); border-radius: 8px; padding: 2px 4px; background: var(--carte-fond); }
+    .edp__grp-t { font: 500 10px 'Segoe UI', sans-serif; letter-spacing: 0.04em; text-transform: uppercase; color: var(--n-500); padding: 0 4px 0 2px; }
     .edp__grp select.edp__etroit { max-width: 6.5rem; }
     .edp__grp select.edp__moyen { max-width: 9rem; }
     .edp__grp sup { font-size: 9px; }
@@ -329,34 +329,34 @@ const REGLES_USUELLES: Readonly<Record<string, string>> = {
     /* Tout s'affiche, sans défilement interne (demande du pilote, 21/10) : la page défile comme le reste de l'application.
        Seule une fenêtre plus étroite que la feuille A4 la fait défiler en largeur. */
     .edp__defile { overflow-x: auto; background: var(--n-100); border-radius: 10px; padding: 16px; }
-    .edp__feuille { width: 210mm; min-height: 297mm; margin: 0 auto; background: #fff; box-shadow: 0 1px 4px rgba(15, 23, 42, 0.15); color: #000; line-height: 1.25; display: flex; flex-direction: column; }
+    .edp__feuille { width: 210mm; min-height: 297mm; margin: 0 auto; background: var(--carte-fond); box-shadow: none; color: var(--texte); line-height: 1.25; display: flex; flex-direction: column; }
     .edp__feuille--paysage { width: 297mm; min-height: 210mm; }
     .edp__zone { position: relative; border: 1px dashed transparent; border-radius: 4px; }
     .edp__zone--entete, .edp__zone--pied { border-color: var(--n-200); min-height: 14mm; margin: 0 0 6mm; }
     .edp__zone--pied { margin: auto 0 0; }
-    .edp__zone--active { border-color: var(--p-300, #7dd3fc); }
-    .edp__zone-t { position: absolute; top: -9px; right: 6px; background: #fff; padding: 0 4px; font: 600 10.5px 'Segoe UI', sans-serif; color: var(--n-500); }
+    .edp__zone--active { border-color: var(--p-300); }
+    .edp__zone-t { position: absolute; top: -9px; right: 6px; background: var(--carte-fond); padding: 0 4px; font: 500 10.5px 'Segoe UI', sans-serif; color: var(--n-500); }
     .edp .ProseMirror { outline: none; min-height: 1.5em; }
     .edp .ProseMirror p { margin: 0 0 4pt; }
     .edp .ProseMirror table { border-collapse: collapse; width: 100%; margin: 4pt 0; table-layout: fixed; }
     /* Les tableaux de l'application ne coupent pas les lignes (« nowrap ») : la feuille, si, comme le PDF. */
-    .edp .ProseMirror td, .edp .ProseMirror th { border: 1px solid #000; padding: 3pt 5pt; vertical-align: top; white-space: break-spaces; }
+    .edp .ProseMirror td, .edp .ProseMirror th { border: 1px solid var(--bordure-champ); padding: 3pt 5pt; vertical-align: top; white-space: break-spaces; }
     .edp .ProseMirror td .pg-var, .edp .ProseMirror td .pg-champ { white-space: normal; max-width: 100%; }
     .edp .ProseMirror table[data-sans-bordures] td, .edp .ProseMirror table[data-sans-bordures] th,
-    .edp .ProseMirror td[data-sans-bordures], .edp .ProseMirror th[data-sans-bordures] { border: 1px dotted #d0d8e8; }
-    .edp .ProseMirror .selectedCell { background: #e0f2fe; }
+    .edp .ProseMirror td[data-sans-bordures], .edp .ProseMirror th[data-sans-bordures] { border: 1px dotted var(--bordure); }
+    .edp .ProseMirror .selectedCell { background: var(--onglet-actif-fond); }
     .edp .pg-var, .edp .pg-champ { display: inline-block; padding: 0 5px; border-radius: 9px; font: 11px/16px 'Segoe UI', sans-serif; white-space: nowrap; vertical-align: 1px; }
-    .edp .pg-var { background: #e0f2fe; color: #075985; border: 1px solid #7dd3fc; }
-    .edp .pg-champ { background: #fef9c3; color: #854d0e; border: 1px solid #fde68a; }
-    .edp .ProseMirror-selectednode.pg-var, .edp .ProseMirror-selectednode.pg-champ { outline: 2px solid #0369a1; }
-    .edp .pg-bloc { position: relative; border: 1.5px dashed #7dd3fc; border-radius: 5px; padding: 14px 6px 2px; margin: 8px 0 6px; }
-    .edp .pg-bloc::before { content: attr(data-libelle); position: absolute; top: -9px; left: 8px; background: #fff; padding: 0 5px; font: 600 10.5px 'Segoe UI', sans-serif; color: #0369a1; }
-    .edp .pg-bloc[data-bloc='DEFAVORABLE'] { border-color: #fecaca; } .edp .pg-bloc[data-bloc='DEFAVORABLE']::before { color: #991b1b; }
-    .edp .pg-bloc[data-bloc='AVEC_RESERVES'] { border-color: #fde68a; } .edp .pg-bloc[data-bloc='AVEC_RESERVES']::before { color: #854d0e; }
-    .edp .pg-bloc[data-bloc='FAVORABLE'] { border-color: #a7f3d0; } .edp .pg-bloc[data-bloc='FAVORABLE']::before { color: #065f46; }
-    .edp .pg-bloc-ligne { border-bottom: 2px dashed #0369a1; background: #f0f9ff; }
-    .edp .pg-saut { margin: 8px 0; border-top: 2px dashed #94a3b8; text-align: center; font: 600 10.5px 'Segoe UI', sans-serif; color: #586586; padding-top: 2px; }
-    .edp tr.pg-repetee { outline: 1.5px dashed #0369a1; outline-offset: -2px; }
+    .edp .pg-var { background: var(--onglet-actif-fond); color: var(--texte); border: 1px solid var(--bouton-principal); }
+    .edp .pg-champ { background: var(--examen-fond); color: var(--examen-texte); border: 1px solid var(--examen-texte); }
+    .edp .ProseMirror-selectednode.pg-var, .edp .ProseMirror-selectednode.pg-champ { outline: 2px solid var(--bouton-principal); }
+    .edp .pg-bloc { position: relative; border: 1.5px dashed var(--bouton-principal); border-radius: 5px; padding: 14px 6px 2px; margin: 8px 0 6px; }
+    .edp .pg-bloc::before { content: attr(data-libelle); position: absolute; top: -9px; left: 8px; background: var(--carte-fond); padding: 0 5px; font: 500 10.5px 'Segoe UI', sans-serif; color: var(--texte); }
+    .edp .pg-bloc[data-bloc='DEFAVORABLE'] { border-color: var(--retard-fond); } .edp .pg-bloc[data-bloc='DEFAVORABLE']::before { color: var(--retard-texte); }
+    .edp .pg-bloc[data-bloc='AVEC_RESERVES'] { border-color: var(--examen-texte); } .edp .pg-bloc[data-bloc='AVEC_RESERVES']::before { color: var(--examen-texte); }
+    .edp .pg-bloc[data-bloc='FAVORABLE'] { border-color: var(--favorable-texte); } .edp .pg-bloc[data-bloc='FAVORABLE']::before { color: var(--favorable-texte); }
+    .edp .pg-bloc-ligne { border-bottom: 2px dashed var(--bouton-principal); background: var(--onglet-actif-fond); }
+    .edp .pg-saut { margin: 8px 0; border-top: 2px dashed var(--bordure-champ); text-align: center; font: 500 10.5px 'Segoe UI', sans-serif; color: var(--texte-secondaire); padding-top: 2px; }
+    .edp tr.pg-repetee { outline: 1.5px dashed var(--bouton-principal); outline-offset: -2px; }
     /* ⚠️ 22/10 (W2) — numéro indicatif d'un titre numéroté : compteur par niveau, remis à zéro par un titre de niveau supérieur et par
        chaque passage de premier rang (deux variantes d'un même document se numérotent chacune). Le vrai numéro est calculé à la production. */
     .edp .ProseMirror, .edp .ProseMirror > .pg-bloc { counter-reset: n1 n2 n3; }
@@ -366,23 +366,23 @@ const REGLES_USUELLES: Readonly<Record<string, string>> = {
     .edp h1[data-numerotation]::before { content: attr(data-num-avant) counter(n1) attr(data-num-apres); }
     .edp h2[data-numerotation]::before { content: attr(data-num-avant) counter(n2) attr(data-num-apres); }
     .edp h3[data-numerotation]::before { content: attr(data-num-avant) counter(n3) attr(data-num-apres); }
-    .edp h1[data-numerotation]::before, .edp h2[data-numerotation]::before, .edp h3[data-numerotation]::before { color: #0369a1; white-space: pre; }
-    .edp .pg-repetition { position: relative; border: 1.5px dashed #a78bfa; border-radius: 5px; padding: 14px 6px 2px; margin: 8px 0 6px; }
-    .edp .pg-repetition::before { content: '↻ répété pour chaque élément de ' attr(data-repetition); position: absolute; top: -9px; left: 8px; background: #fff; padding: 0 5px; font: 600 10.5px 'Segoe UI', sans-serif; color: #6d28d9; }
-    .edp tr.pg-repetee > :first-child::before { content: '↻ une ligne par élément de ' attr(data-liste); display: block; font: 600 10px 'Segoe UI', sans-serif; color: #0369a1; }
+    .edp h1[data-numerotation]::before, .edp h2[data-numerotation]::before, .edp h3[data-numerotation]::before { color: var(--texte); white-space: pre; }
+    .edp .pg-repetition { position: relative; border: 1.5px dashed var(--bouton-principal); border-radius: 5px; padding: 14px 6px 2px; margin: 8px 0 6px; }
+    .edp .pg-repetition::before { content: '↻ répété pour chaque élément de ' attr(data-repetition); position: absolute; top: -9px; left: 8px; background: var(--carte-fond); padding: 0 5px; font: 500 10.5px 'Segoe UI', sans-serif; color: var(--texte); }
+    .edp tr.pg-repetee > :first-child::before { content: '↻ une ligne par élément de ' attr(data-liste); display: block; font: 500 10px 'Segoe UI', sans-serif; color: var(--texte); }
     .edp .pg-image img { max-width: 100%; }
     /* Le panneau reste à côté de la feuille pendant qu'on la parcourt (sous la barre d'outils). */
     /* Sous la barre d’outils, quelle que soit sa hauteur (une ou deux lignes selon la largeur) : --edp-barre la suit. */
-    .edp__panneau { position: sticky; top: calc(var(--hauteur-menu) + var(--edp-barre, 52px) + 12px); display: flex; flex-direction: column; gap: 0.8rem; font-size: 13px; background: #fff;
+    .edp__panneau { position: sticky; top: calc(var(--hauteur-menu) + var(--edp-barre, 52px) + 12px); display: flex; flex-direction: column; gap: 0.8rem; font-size: 13px; background: var(--carte-fond);
       border: 1px solid var(--n-200); border-radius: 10px; padding: 10px 12px; }
     .edp__ongl { display: flex; gap: 4px; border-bottom: 1px solid var(--n-200); padding-bottom: 8px; }
-    .edp__ongl button { flex: 1; border: 1px solid var(--n-200); background: #fff; border-radius: 999px; padding: 4px 8px; font: 600 12px 'Segoe UI', sans-serif; color: var(--n-700); cursor: pointer; }
-    .edp__ongl button.on { background: var(--n-800); border-color: var(--n-800); color: #fff; }
+    .edp__ongl button { flex: 1; border: 1px solid var(--n-200); background: var(--carte-fond); border-radius: 999px; padding: 4px 8px; font: 500 12px 'Segoe UI', sans-serif; color: var(--n-700); cursor: pointer; }
+    .edp__ongl button.on { background: var(--n-800); border-color: var(--n-800); color: var(--texte-menu); }
     .edp__ongl button:focus-visible { outline: 2px solid var(--p-700); outline-offset: 1px; }
     .edp__titre-ligne { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
     .edp__det { margin: 4px 0; }
     /* ⚠️ 23/10 — recherche, blocs et rubriques du catalogue d'un document du DAO. */
-    .edp__recherche { width: 100%; box-sizing: border-box; margin: 4px 0 6px; padding: 5px 9px; border: 1px solid var(--n-300, #cbd5e1); border-radius: 8px; font: 12.5px 'Segoe UI', sans-serif; }
+    .edp__recherche { width: 100%; box-sizing: border-box; margin: 4px 0 6px; padding: 5px 9px; border: 1px solid var(--n-300); border-radius: 8px; font: 12.5px 'Segoe UI', sans-serif; }
     .edp__recherche:focus-visible { outline: 2px solid var(--p-700); outline-offset: 1px; }
     .edp__res-nb { margin: 0 0 4px; font-size: 11.5px; color: var(--n-500); }
     .edp__res { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
@@ -390,35 +390,35 @@ const REGLES_USUELLES: Readonly<Record<string, string>> = {
     .edp__res span { font-size: 10.5px; color: var(--n-500); padding-left: 4px; }
     /* ⚠️ 23/10 — le menu en cascade du panneau : chaque sous-menu s'ouvre à gauche de son entrée, par-dessus la page. */
     .edp__casc, .edp__flyout { list-style: none; margin: 0; padding: 3px; display: flex; flex-direction: column; gap: 1px; }
-    .edp__casc { border: 1px solid var(--n-200, #e2e8f0); border-radius: 8px; background: var(--n-50, #f8fafc); }
+    .edp__casc { border: 1px solid var(--n-200); border-radius: 8px; background: var(--n-50); }
     .edp__casc-li { position: relative; }
     .edp__casc-item { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; border: 0; background: none;
       border-radius: 6px; padding: 6px 8px; cursor: pointer; font: 12.5px 'Segoe UI', sans-serif; color: var(--n-800); line-height: 1.3; }
     .edp__casc-item small { color: var(--n-500); font-size: 11px; flex: none; }
-    .edp__casc-item[aria-haspopup]::before { content: '‹'; color: var(--n-400, #94a3b8); font-size: 15px; line-height: 1; order: -1; margin-right: -2px; }
+    .edp__casc-item[aria-haspopup]::before { content: '‹'; color: var(--n-400); font-size: 15px; line-height: 1; order: -1; margin-right: -2px; }
     .edp__casc-item[aria-haspopup] span { flex: 1; }
-    .edp__casc-item:hover, .edp__casc-item.on { background: var(--p-50); color: var(--p-800, #075985); }
-    .edp__casc-item.on { font-weight: 600; }
+    .edp__casc-item:hover, .edp__casc-item.on { background: var(--p-50); color: var(--p-800); }
+    .edp__casc-item.on { font-weight: 500; }
     .edp__casc-item:focus-visible { outline: 2px solid var(--p-700); outline-offset: -2px; }
-    .edp__flyout { position: absolute; top: -4px; right: 100%; z-index: 40; width: 17rem; background: #fff; border: 1px solid var(--n-200, #e2e8f0);
-      border-radius: 8px; box-shadow: 0 10px 28px rgba(15, 23, 42, 0.18); }
+    .edp__flyout { position: absolute; top: -4px; right: 100%; z-index: 40; width: 17rem; background: var(--carte-fond); border: 1px solid var(--n-200);
+      border-radius: 8px; box-shadow: none; }
     @media (max-width: 1100px) { .edp__flyout { position: static; width: auto; box-shadow: none; margin: 2px 0 4px 12px; } }
-    .edp__det summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--n-700); padding: 2px 0; }
+    .edp__det summary { cursor: pointer; font-size: 12px; font-weight: 500; color: var(--n-700); padding: 2px 0; }
     .edp__nb { font-weight: 400; color: var(--n-500); }
     .edp__puces--col { flex-direction: column; align-items: flex-start; }
     .edp__large { grid-column: 1 / -1; }
-    .edp__panneau h4 { margin: 0 0 4px; font-size: 11.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--p-700); }
-    .edp__groupe { margin: 6px 0 3px; font-size: 11.5px; font-weight: 600; color: var(--n-700); }
+    .edp__panneau h4 { margin: 0 0 4px; font-size: 11.5px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: var(--p-700); }
+    .edp__groupe { margin: 6px 0 3px; font-size: 11.5px; font-weight: 500; color: var(--n-700); }
     .edp__puces { display: flex; flex-wrap: wrap; gap: 4px; }
-    .edp__puce { text-align: left; border: 1px solid #7dd3fc; background: var(--p-50); color: var(--p-800, #075985); border-radius: 10px; font: 12px 'Segoe UI', sans-serif; padding: 1px 8px; cursor: pointer; }
-    .edp__puce--champ { border-color: #fde68a; background: #fef9c3; color: #854d0e; }
-    .edp__puce--bloc { border-style: dashed; background: #fff; }
+    .edp__puce { text-align: left; border: 1px solid var(--bouton-principal); background: var(--p-50); color: var(--p-800); border-radius: 10px; font: 12px 'Segoe UI', sans-serif; padding: 1px 8px; cursor: pointer; }
+    .edp__puce--champ { border-color: var(--examen-texte); background: var(--examen-fond); color: var(--examen-texte); }
+    .edp__puce--bloc { border-style: dashed; background: var(--carte-fond); }
     .edp__aide { margin: 4px 0; font-size: 12px; color: var(--n-500); }
     .edp__lien { border: 0; background: none; padding: 0; margin-top: 4px; color: var(--p-700); text-decoration: underline; cursor: pointer; font: inherit; font-size: 12px; }
     .edp__format { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--n-700); }
     .edp__reglages { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
     .edp__reglages label { display: flex; flex-direction: column; gap: 2px; font-size: 11.5px; color: var(--n-700); }
-    .edp__reglages input, .edp__reglages select { font: inherit; font-size: 12.5px; padding: 3px 5px; border: 1px solid var(--n-400, #667299); border-radius: 6px; }
+    .edp__reglages input, .edp__reglages select { font: inherit; font-size: 12.5px; padding: 3px 5px; border: 1px solid var(--n-400); border-radius: 6px; }
     .edp__reglages .edp__case { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 6px; }
     .edp__etat { font-size: 12.5px; color: var(--n-500); }
     @media (max-width: 1100px) { .edp__plan { grid-template-columns: 1fr; } .edp__panneau { position: static; } }

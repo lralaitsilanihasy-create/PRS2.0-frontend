@@ -71,7 +71,7 @@ import { CatalogueModelePv } from '../../../models';
     .cat { display: flex; flex-direction: column; gap: 0.5rem; }
     .cat__copie { margin: 0; font-size: 0.8rem; color: var(--n-500); min-height: 1.2em; }
     .cat__groupe { border: 1px solid var(--n-200); border-radius: 10px; padding: 0.4rem 0.75rem; }
-    .cat__groupe summary { cursor: pointer; font-weight: 600; color: var(--p-700); padding: 0.25rem 0; }
+    .cat__groupe summary { cursor: pointer; font-weight: 500; color: var(--p-700); padding: 0.25rem 0; }
     .cat__groupe table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
     .cat__groupe td { padding: 0.35rem 0.25rem; border-top: 1px solid var(--n-100); vertical-align: top; }
     .cat__groupe ul { margin: 0.25rem 0; padding-left: 1rem; font-size: 0.85rem; }

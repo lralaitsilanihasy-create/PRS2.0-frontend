@@ -175,7 +175,7 @@ type Confirmation = 'suspendre' | 'reinitialiser';
     .ac__corps { display: flex; flex-direction: column; gap: 0.75rem; }
     .ac__qui { margin: 0; color: var(--n-500); }
     .ac__statut { margin: 0; }
-    .ac__statut--suspendu { color: var(--warning-text, #92400e); }
+    .ac__statut--suspendu { color: var(--warning-text); }
     .ac__login { margin: 0; }
     .ac__saisie { margin: 0; }
     .ac__confirmation { margin: 0; }
@@ -185,14 +185,14 @@ type Confirmation = 'suspendre' | 'reinitialiser';
       flex-direction: column;
       gap: 0.35rem;
       padding: 0.85rem 1rem;
-      border: 1px solid var(--warning-border, #fde68a);
+      border: 1px solid var(--warning-border, var(--examen-texte));
       border-radius: var(--radius-md);
-      background: var(--warning-bg, #fffbeb);
-      color: var(--warning-text, #92400e);
+      background: var(--warning-bg);
+      color: var(--warning-text);
     }
-    .ac__secret-titre { margin: 0; font-weight: 700; }
+    .ac__secret-titre { margin: 0; font-weight: 500; }
     .ac__secret-valeur { margin: 0; }
-    .ac__secret-valeur code { font-size: var(--text-lg); font-weight: 700; letter-spacing: 0.06em; word-break: break-all; }
+    .ac__secret-valeur code { font-size: var(--text-lg); font-weight: 500; letter-spacing: 0.06em; word-break: break-all; }
     .ac__secret-aide { margin: 0; font-size: var(--text-sm); }
     .ac__pied { flex-wrap: wrap; }
   `,

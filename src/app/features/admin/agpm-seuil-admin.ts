@@ -67,7 +67,7 @@ import { EtatErreur } from '../../shared/ui/etat-erreur';
     .asa__input { text-align: right; font-variant-numeric: tabular-nums; }
     .asa__actions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
     .asa__actuel { color: var(--n-600); font-size: var(--text-sm); }
-    .asa__zero { color: var(--warning-text); font-weight: 600; }
+    .asa__zero { color: var(--warning-text); font-weight: 500; }
   `,
 })
 export class AgpmSeuilAdmin implements OnInit {

@@ -87,19 +87,19 @@ import { LIBELLES_NATURE, grilleFichiers, phrasesRegle } from './modeles-pv-libe
   `,
   styles: `
     .itd__tete { align-items: flex-start; }
-    .itd__sur { margin: 0 0 0.2rem; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.06em; color: var(--primary); }
+    .itd__sur { margin: 0 0 0.2rem; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.06em; color: var(--texte); }
     .itd__puces { margin: 0.4rem 0 0; display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
     .itd__puce { padding: 0.05rem 0.55rem; border-radius: 999px; background: var(--page-bg); color: var(--text-muted); font-size: 0.78rem; }
     .itd__corps { display: flex; flex-direction: column; gap: 1.1rem; }
     .itd__bloc { display: flex; flex-direction: column; gap: 0.5rem; }
-    .itd__titre { margin: 0; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--primary); }
+    .itd__titre { margin: 0; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texte); }
     .itd__regle { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.25rem; color: var(--text); font-size: 0.9rem; }
     .itd__grille-cadre { overflow-x: auto; }
     .itd__grille { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
     .itd__grille th, .itd__grille td { border: 1px solid var(--border); padding: 0.45rem 0.6rem; text-align: center; white-space: nowrap; }
-    .itd__grille thead th { background: var(--reco-bg); color: var(--primary); font-size: 0.75rem; }
+    .itd__grille thead th { background: var(--reco-bg); color: var(--texte); font-size: 0.75rem; }
     .itd__grille tbody th { text-align: left; color: var(--text); background: var(--page-bg); }
-    .itd__fichier { border: 1px solid var(--reco-border); background: var(--card-bg); color: var(--primary); border-radius: 6px; padding: 0.15rem 0.55rem;
+    .itd__fichier { border: 1px solid var(--reco-border); background: var(--card-bg); color: var(--texte); border-radius: 6px; padding: 0.15rem 0.55rem;
       font-size: 0.8rem; font-weight: 500; cursor: pointer; }
     .itd__fichier:hover { background: var(--reco-bg); }
     .itd__fichier:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }

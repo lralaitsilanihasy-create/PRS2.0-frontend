@@ -261,29 +261,29 @@ import { UgpmPiecesAdmin } from './ugpm-pieces-admin';
     .ua-wrap { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
     .ua-detail { flex: 1 1 26rem; position: sticky; top: 1rem; padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
     .ua-detail__head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
-    .ua-detail__title { margin: 0; font-size: var(--text-lg); font-weight: 700; color: var(--c-800); }
+    .ua-detail__title { margin: 0; font-size: var(--text-lg); font-weight: 500; color: var(--c-800); }
     .ua-detail__photo { display: flex; justify-content: center; }
     .ua-detail__img { width: 100%; max-width: 28rem; border-radius: var(--radius-md); border: 1px solid var(--c-100); }
     .ua-detail__no-photo { width: 100%; max-width: 28rem; aspect-ratio: 4 / 3; display: flex; align-items: center; justify-content: center; border: 1px dashed var(--c-100); border-radius: var(--radius-md); color: var(--n-400); font-size: var(--text-md); }
     .ua-detail__list { display: grid; grid-template-columns: auto 1fr; gap: 0.5rem 1.25rem; margin: 0; font-size: var(--text-md); }
-    .ua-detail__list dt { color: var(--n-500); font-weight: 600; }
+    .ua-detail__list dt { color: var(--n-500); font-weight: 500; }
     .ua-detail__list dd { margin: 0; color: var(--c-800); word-break: break-word; }
     .ua-detail__foot { display: flex; justify-content: flex-end; gap: 0.5rem; }
     /* Pleine largeur : la carte occupe tout l'espace disponible (le panneau Détail partage via flex). */
     .ua { flex: 1 1 38rem; padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
     .ua__head { display: flex; flex-direction: column; gap: 0.35rem; }
-    .ua__title { margin: 0; font-size: var(--text-lg); font-weight: 700; color: var(--c-800); }
+    .ua__title { margin: 0; font-size: var(--text-lg); font-weight: 500; color: var(--c-800); }
     .ua__form { display: flex; flex-direction: column; gap: 1rem; }
     .ua__foot { display: flex; justify-content: flex-end; gap: 0.5rem; }
-    .ua__sub { margin: 0.5rem 0 0; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
+    .ua__sub { margin: 0.5rem 0 0; font-size: var(--text-md); font-weight: 500; color: var(--c-800); }
     .ua__row-actions { display: flex; gap: 0.4rem; flex-wrap: nowrap; white-space: nowrap; }
     .ua__pieces { border: 1px solid var(--c-100); border-radius: var(--radius-md); padding: 0.75rem 1rem 1rem; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
-    .ua__pieces-legend { font-size: var(--text-sm); font-weight: 600; color: var(--c-800); padding: 0 0.35rem; }
+    .ua__pieces-legend { font-size: var(--text-sm); font-weight: 500; color: var(--c-800); padding: 0 0.35rem; }
     .ua__hint { font-weight: 400; color: var(--n-400); }
     .ua__photo-choices { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
     .ua__photo-cam, .ua__photo-preview { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; }
     .ua__photo-video, .ua__photo-img { width: 100%; max-width: 12rem; border-radius: var(--radius-sm); border: 1px solid var(--c-100); }
-    .ua__photo-video { background: #000; }
+    .ua__photo-video { background: var(--section-fond); }
     .ua__photo-actions, .ua__photo-meta { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
   `,
 })

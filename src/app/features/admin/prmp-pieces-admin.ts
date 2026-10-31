@@ -88,13 +88,13 @@ const PIECES: PieceDef[] = [
     :host(.pp--embedded) { flex: 1 1 26rem; align-self: flex-start; position: sticky; top: 1rem; }
     .pp { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; max-width: min(56rem, 96vw); }
     .pp__head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-    .pp__title { margin: 0; font-size: var(--text-lg); font-weight: 700; color: var(--c-800); }
+    .pp__title { margin: 0; font-size: var(--text-lg); font-weight: 500; color: var(--c-800); }
     .pp__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; }
     .pp__card {
       display: flex; flex-direction: column; gap: 0.5rem;
-      padding: 0.85rem 1rem; border: 1px solid var(--c-100); border-radius: var(--radius-md); background: #fff;
+      padding: 0.85rem 1rem; border: 1px solid var(--c-100); border-radius: var(--radius-md); background: var(--carte-fond);
     }
-    .pp__label { font-weight: 600; color: var(--c-800); }
+    .pp__label { font-weight: 500; color: var(--c-800); }
     .pp__hint { font-weight: 400; color: var(--n-400); }
     .pp__actions { display: flex; gap: 0.4rem; margin-top: 0.25rem; }
   `,

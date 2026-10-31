@@ -71,7 +71,7 @@ interface TreeNode {
       gap: 0.75rem;
       padding: 0.5rem 1rem;
       margin-bottom: 0.75rem;
-      background: #fff;
+      background: var(--carte-fond);
       border: 1px solid var(--c-100);
       border-left: 3px solid var(--c-600);
       border-radius: var(--radius-md);

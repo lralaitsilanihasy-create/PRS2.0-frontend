@@ -505,21 +505,21 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
   `,
   styles: `
     .mpf { display: flex; flex-direction: column; gap: 1rem; }
-    .mpf__retour { align-self: flex-start; font-size: 0.85rem; font-weight: 600; color: var(--p-700); text-decoration: none; }
+    .mpf__retour { align-self: flex-start; font-size: 0.85rem; font-weight: 500; color: var(--p-700); text-decoration: none; }
     .mpf__retour:hover { text-decoration: underline; }
-    .mpf__bandeau { position: relative; background: linear-gradient(120deg, #075985, var(--p-600)); color: #fff; border-radius: 14px; padding: 1rem 1.25rem; }
-    .mpf__bandeau small { opacity: 0.9; font-weight: 700; letter-spacing: 0.06em; }
-    .mpf__bandeau h1 { margin: 0.25rem 0 0.5rem; font-size: 1.3rem; color: #fff; }
+    .mpf__bandeau { position: relative; background: var(--menu-fond); color: var(--texte-menu); border-radius: 8px; padding: 1rem 1.25rem; }
+    .mpf__bandeau small { opacity: 0.9; font-weight: 500; letter-spacing: 0.06em; }
+    .mpf__bandeau h1 { margin: 0.25rem 0 0.5rem; font-size: 1.3rem; color: var(--texte-menu); }
     .mpf__puces { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-    .mpf__puce { padding: 0.1rem 0.6rem; border-radius: 999px; background: rgba(255, 255, 255, 0.18); font-size: 0.8rem; }
-    .mpf__puce--claire { background: #fff; color: var(--p-700); font-weight: 600; }
+    .mpf__puce { padding: 0.1rem 0.6rem; border-radius: 999px; background: var(--carte-fond); font-size: 0.8rem; }
+    .mpf__puce--claire { background: var(--carte-fond); color: var(--p-700); font-weight: 500; }
     .mpf__archiver { position: absolute; top: 1rem; right: 1.25rem; display: flex; gap: 0.4rem; }
-    .mpf__supprimer { color: var(--danger-text, #991b1b); }
+    .mpf__supprimer { color: var(--danger-text); }
     .mpf__grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr)); gap: 1rem; align-items: start; }
     /* « overflow: visible » : la carte de l'application coupe ce qui déborde, ce qui empêcherait la barre de l'éditeur de rester visible. */
     .mpf__carte { overflow: visible; padding: 1rem 1.15rem; display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
     .mpf__titre-ligne { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-    .mpf__titre { margin: 0; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--p-700); }
+    .mpf__titre { margin: 0; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--p-700); }
     .mpf__titre--histo { margin-top: 0.6rem; }
     .mpf__table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
     .mpf__table th { text-align: left; background: var(--p-50); color: var(--p-700); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.5rem 0.6rem; }
@@ -539,20 +539,20 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
     .mpf__enreg { align-self: flex-start; }
     .mpf__histo { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem; color: var(--n-700); max-height: 16rem; overflow: auto; }
     .mpf__onglets { display: flex; gap: 0.45rem; flex-wrap: wrap; border-bottom: 1px solid var(--n-200); padding-bottom: 0.7rem; }
-    .mpf__onglet { font: inherit; font-size: 0.88rem; font-weight: 600; padding: 0.35rem 0.9rem; border: 1.5px solid #152033; border-radius: 999px;
-      background: #fff; color: #152033; cursor: pointer; display: inline-flex; gap: 0.35rem; align-items: center; }
-    .mpf__onglet--on { background: #152033; color: #fff; }
+    .mpf__onglet { font: inherit; font-size: 0.88rem; font-weight: 500; padding: 0.35rem 0.9rem; border: 1.5px solid var(--bordure-champ); border-radius: 999px;
+      background: var(--carte-fond); color: var(--texte); cursor: pointer; display: inline-flex; gap: 0.35rem; align-items: center; }
+    .mpf__onglet--on { background: var(--section-fond); color: var(--texte-menu); }
     .mpf__panneau { padding-top: 0.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
-    .mpf__depart { border: 1px dashed var(--p-300, #7dd3fc); background: var(--p-50); border-radius: 10px; padding: 0.7rem 0.9rem;
+    .mpf__depart { border: 1px dashed var(--p-300); background: var(--p-50); border-radius: 10px; padding: 0.7rem 0.9rem;
       display: flex; flex-direction: column; gap: 0.4rem; }
-    .mpf__depart-titre { margin: 0; font-weight: 600; color: var(--p-700); font-size: 0.9rem; }
+    .mpf__depart-titre { margin: 0; font-weight: 500; color: var(--p-700); font-size: 0.9rem; }
     .mpf__depart-ligne { display: flex; gap: 0.6rem; align-items: flex-end; flex-wrap: wrap; }
     .mpf__depart-portee { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.8rem; color: var(--n-700); }
     .mpf__depart-portee select { width: auto; min-width: 16rem; }
     .mpf__a-valider { margin: 0; }
     .mpf__declarer { border: 1px solid var(--warning-bdr); background: var(--warning-bg); border-radius: 10px; padding: 0.7rem 0.9rem;
       display: flex; flex-direction: column; gap: 0.45rem; align-items: flex-start; }
-    .mpf__declarer-titre { margin: 0; font-weight: 600; color: #854D0E; font-size: 0.9rem; }
+    .mpf__declarer-titre { margin: 0; font-weight: 500; color: var(--examen-texte); font-size: 0.9rem; }
     .mpf__declarer-liste { margin: 0; padding-left: 1.1rem; font-size: 0.85rem; color: var(--n-800); display: flex; flex-direction: column; gap: 0.2rem; }
     .mpf__aide { background: var(--p-50); border-left: 3px solid var(--p-600); padding: 0.6rem 0.75rem; border-radius: 6px; font-size: 0.85rem; color: var(--n-700); }
     .mpf__deux { display: grid; grid-template-columns: repeat(auto-fit, minmax(24rem, 1fr)); gap: 1.25rem; align-items: start; }

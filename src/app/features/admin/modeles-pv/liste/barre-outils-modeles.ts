@@ -34,7 +34,7 @@ import { FiltreEtat, LIBELLES_ETAT, Tri } from './modeles-pv-vue';
     .bom__recherche input { border: 0; outline: 0; flex: 1; min-width: 0; font: inherit; font-size: 14px; color: var(--text); background: transparent; }
     .bom__recherche input::placeholder { color: var(--text-muted); }
     .bom__loupe { display: inline-flex; }
-    .bom__filtre { height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--primary); background: var(--reco-bg); color: var(--primary);
+    .bom__filtre { height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--primary); background: var(--reco-bg); color: var(--texte);
       font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
     .bom__filtre:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .bom__segments { display: inline-flex; border: 1px solid var(--border-control); border-radius: 8px; overflow: hidden; background: var(--card-bg); }
@@ -42,7 +42,7 @@ import { FiltreEtat, LIBELLES_ETAT, Tri } from './modeles-pv-vue';
     .bom__segment + .bom__segment { border-left: 1px solid var(--border); }
     .bom__segment:hover { background: var(--page-bg); color: var(--text); }
     .bom__segment:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
-    .bom__segment--actif, .bom__segment--actif:hover { background: var(--reco-bg); color: var(--primary); font-weight: 500; }
+    .bom__segment--actif, .bom__segment--actif:hover { background: var(--reco-bg); color: var(--texte); font-weight: 500; }
     .bom__tri { height: 36px; border: 1px solid var(--border-control); border-radius: 8px; padding: 0 10px; font: inherit; font-size: 13px;
       background: var(--card-bg); color: var(--text); }
     .bom__tri:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-color: var(--primary); }

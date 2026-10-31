@@ -57,7 +57,7 @@ const PUCES_VISIBLES = 3;
     .lgm__deplier:focus-visible { outline: none; }
     .lgm:has(.lgm__deplier:focus-visible) { outline: 2px solid var(--primary); outline-offset: -2px; }
     .lgm__sous { font-size: 12px; color: var(--text-muted); }
-    .lgm__sous--remplace { color: var(--primary); display: inline-flex; align-items: center; gap: 4px; }
+    .lgm__sous--remplace { color: var(--texte); display: inline-flex; align-items: center; gap: 4px; }
     .lgm__puces { display: flex; flex-wrap: wrap; gap: 4px; }
     .lgm__code { font-family: Consolas, 'Courier New', monospace; font-size: 11px; padding: 2px 6px; border-radius: 6px; border: 1px solid; }
     /* Les codes sont des données, pas un état : neutres. La couleur d'état reste au carré d'icône et au badge. */
@@ -73,7 +73,7 @@ const PUCES_VISIBLES = 3;
     /* Les actions parlent la couleur d'action de la page (bleu), pas celle de l'état : le rouge n'invite pas à agir. */
     .lgm__action--miss { background: var(--primary); border: 1px solid var(--primary); color: var(--primary-text); }
     .lgm__action--miss:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
-    .lgm__action--prep { background: var(--card-bg); border: 1px solid var(--primary); color: var(--primary); }
+    .lgm__action--prep { background: var(--card-bg); border: 1px solid var(--primary); color: var(--texte); }
     .lgm__action--prep:hover { background: var(--reco-bg); }
     .lgm__action--ok { background: var(--card-bg); border: 1px solid var(--border); color: var(--text); }
     .lgm__action--ok:hover { background: var(--page-bg); }

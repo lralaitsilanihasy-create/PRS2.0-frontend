@@ -257,12 +257,12 @@ const TAILLE_MAX_IMAGE_MO = 10;
   styles: `
     .act-global { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; padding: 1rem 1.2rem; }
     .act-global__aide { margin: 0.25rem 0 0; font-size: var(--text-sm); color: var(--n-500); }
-    .act-switch { display: flex; align-items: center; gap: 0.6rem; font-weight: 600; }
+    .act-switch { display: flex; align-items: center; gap: 0.6rem; font-weight: 500; }
     .act-switch input { width: 1.2rem; height: 1.2rem; }
     .act-switch__etat { font-size: var(--text-sm); color: var(--n-600); }
     .act-tabs { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; align-items: center; }
     .act-tabs__new { margin-left: auto; }
-    .act-titre { white-space: normal; max-width: 26rem; font-weight: 600; color: var(--n-800); }
+    .act-titre { white-space: normal; max-width: 26rem; font-weight: 500; color: var(--n-800); }
     .act-profils { white-space: normal; max-width: 22rem; font-size: var(--text-sm); color: var(--n-600); }
     .act-actions { display: flex; gap: 0.4rem; justify-content: flex-end; }
     .act-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.75rem; }
@@ -271,7 +271,7 @@ const TAILLE_MAX_IMAGE_MO = 10;
     .act-profil { display: flex; align-items: center; gap: 0.4rem; font-size: var(--text-sm); }
     .act-md { font-family: var(--font-mono, monospace); min-height: 12rem; }
     .act-apercu { margin-top: 0.75rem; padding: 0.9rem; border: 1px dashed var(--n-300); border-radius: var(--radius-md); background: var(--n-50); }
-    .act-apercu__lbl { display: block; margin-bottom: 0.5rem; font-size: var(--text-xs); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--n-500); }
+    .act-apercu__lbl { display: block; margin-bottom: 0.5rem; font-size: var(--text-xs); font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--n-500); }
     .act-images-champ { margin-top: 1rem; }
     .act-image-ligne { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.4rem 0; border-bottom: 1px solid var(--n-100); font-size: var(--text-sm); }
     .act-images-apres { margin-top: 1rem; }
