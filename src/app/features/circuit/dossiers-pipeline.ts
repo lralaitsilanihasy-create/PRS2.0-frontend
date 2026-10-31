@@ -35,6 +35,11 @@ import { LienDossier } from './page-dossier/lien-dossier';
 import { DetailPvModal } from './detail-pv-modal';
 import { DispatchForm, DispatchItem } from './dispatch-form';
 import { ReceptionForm } from './reception-form';
+import { ApercuDossier } from './dossier/apercu-dossier';
+import { DeuxVolets } from '../../shared/ui/deux-volets';
+
+/** Affichage de la liste : deux volets (par défaut), frise ou tableau. */
+type VuePipeline = 'volets' | 'frise' | 'tableau';
 
 /**
  * Pipeline des dossiers (lecture seule) : liste filtrée par le backend selon le
@@ -48,12 +53,13 @@ import { ReceptionForm } from './reception-form';
 @Component({
   selector: 'app-dossiers-pipeline',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, NgTemplateOutlet, StatutBadge, ReputeApprouve, CircuitTimeline, DetailPvModal, EtatErreur, DispatchForm, ReceptionForm],
+  imports: [RouterLink, NgTemplateOutlet, StatutBadge, ReputeApprouve, CircuitTimeline, DetailPvModal, EtatErreur, DispatchForm, ReceptionForm, DeuxVolets, ApercuDossier],
   template: `
     <section class="pipeline">
       <header class="page-header pipeline__header">
         <h1 class="page-title">{{ title }}</h1>
         <div class="pipeline__vue" role="group" aria-label="Choix de l'affichage">
+          <button type="button" class="btn btn-sm" [class.btn-primary]="vue() === 'volets'" [class.btn-outline]="vue() !== 'volets'" [attr.aria-pressed]="vue() === 'volets'" (click)="setVue('volets')">Deux volets</button>
           <button type="button" class="btn btn-sm" [class.btn-primary]="vue() === 'frise'" [class.btn-outline]="vue() !== 'frise'" [attr.aria-pressed]="vue() === 'frise'" (click)="setVue('frise')">Frise</button>
           <button type="button" class="btn btn-sm" [class.btn-primary]="vue() === 'tableau'" [class.btn-outline]="vue() !== 'tableau'" [attr.aria-pressed]="vue() === 'tableau'" (click)="setVue('tableau')">Tableau</button>
         </div>
@@ -66,7 +72,38 @@ import { ReceptionForm } from './reception-form';
       } @else if (visibleDossiers().length === 0) {
         <p class="text-muted">{{ messageVide }}</p>
       } @else {
-        @if (vue() === 'tableau') {
+        @if (vue() === 'volets') {
+        <!-- ⚠️ 31/10 (pilote, Espace de travail, lot 3c) — deux volets : les dossiers à gauche, l'aperçu du dossier choisi à
+             droite (ses gestes, sa frise, son identité), sans changer de page ; le premier est choisi d'office. -->
+        <app-deux-volets [ouvert]="!!selection()" [cle]="selection()?.idDossier ?? null" libelleListe="Dossiers" libelleDetail="Aperçu du dossier"
+                         invite="Choisissez un dossier : son aperçu s’affiche ici.">
+          <ul liste class="pipeline__volet">
+            @for (d of visibleDossiers(); track d.idDossier) {
+              <li class="pv-item" [class.pv-item--on]="selection()?.idDossier === d.idDossier">
+                <button type="button" class="pv-ligne" [attr.aria-pressed]="selection()?.idDossier === d.idDossier" (click)="choisi.set(d.idDossier)">
+                  <span class="pv-ligne__ref">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</span>
+                  <span class="pv-ligne__ent">{{ entiteLabel(d) }}</span>
+                  <span class="pv-ligne__bas">
+                    <app-statut-badge [statut]="d.statut" [label]="badgeLabel(d.statut)" />
+                    @if (cibleVerif(d); as c) { <span class="pipeline__cible" [class.pipeline__cible--moi]="c.moi">{{ c.moi ? 'À vérifier par vous' : 'À vérifier par ' + c.nom }}</span> }
+                  </span>
+                </button>
+              </li>
+            }
+          </ul>
+          <div detail>
+            @for (d of selectionListe(); track d.idDossier) {
+              @let info = etapeInfo(d);
+              <app-apercu-dossier [dossier]="d" [lien]="lien.commandes(d.idDossier)" [params]="lien.params(retour())">
+                <span gestes class="pv-gestes"><ng-container [ngTemplateOutlet]="actionsTpl" [ngTemplateOutletContext]="{ $implicit: d, info }" /></span>
+                @if (showTimeline) {
+                  <div frise class="pv-frise"><app-circuit-timeline [active]="etape(d)" [sublabels]="sublabels(d)" [acteurs]="acteurs(d)" /></div>
+                }
+              </app-apercu-dossier>
+            }
+          </div>
+        </app-deux-volets>
+        } @else if (vue() === 'tableau') {
         <div class="pipeline__search">
           <input
             type="search"
@@ -242,6 +279,19 @@ import { ReceptionForm } from './reception-form';
     }
   `,
   styles: `
+    /* ⚠️ 31/10 (Espace de travail, lot 3c) — volet de gauche : des lignes compactes ; la ligne choisie porte l'onglet actif. */
+    .pipeline__volet { list-style: none; margin: 0; padding: 0; }
+    .pv-item { border-bottom: 1px solid var(--bordure); }
+    .pv-item--on { background: var(--onglet-actif-fond); box-shadow: inset 3px 0 0 var(--menu-fond); }
+    .pv-ligne { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: flex; flex-direction: column; gap: 0.2rem; padding: 0.55rem 0.8rem; }
+    .pv-ligne:hover { background: var(--ligne-survol); }
+    .pv-item--on .pv-ligne:hover { background: transparent; }
+    .pv-ligne:focus-visible { outline: 2px solid var(--bouton-principal); outline-offset: -2px; }
+    .pv-ligne__ref { font-weight: 500; }
+    .pv-ligne__ent { font-size: var(--text-sm); color: var(--texte-secondaire); overflow-wrap: anywhere; }
+    .pv-ligne__bas { display: flex; flex-wrap: wrap; gap: 0.3rem 0.5rem; align-items: center; }
+    .pv-gestes { display: contents; }
+    .pv-frise { padding: 6px 0 2px; }
     .pipeline__header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
     .pipeline__vue { display: inline-flex; gap: 0.35rem; }
     .pipeline__search { margin-bottom: 0.75rem; }
@@ -358,8 +408,22 @@ export class DossiersPipeline {
   private readonly localiteMap = signal<Map<string, string>>(new Map());
   /** Matricule → « nom prénoms » (référentiel des contrôleurs, en cache) : acteurs de la frise. */
   private readonly controleurMap = signal<Map<string, string>>(new Map());
-  /** Affichage : frise (cartes) ou tableau ; choix mémorisé par navigateur (localStorage). */
-  readonly vue = signal<'frise' | 'tableau'>(this.lireVue());
+  /**
+   * Affichage : deux volets (liste + aperçu, par défaut depuis le 31/10 — Espace de travail), frise (cartes) ou tableau ; choix
+   * mémorisé par navigateur (localStorage).
+   */
+  readonly vue = signal<VuePipeline>(this.lireVue());
+  /** Deux volets : le dossier choisi (le premier de la liste tant que rien n'est choisi, ou si le choisi n'y est plus). */
+  readonly choisi = signal<number | null>(null);
+  readonly selection = computed(() => {
+    const liste = this.visibleDossiers();
+    return liste.find((d) => d.idDossier === this.choisi()) ?? liste[0] ?? null;
+  });
+  /** Le dossier choisi en liste d'un élément : l'aperçu est recréé (et son contenu relu) quand il change. */
+  readonly selectionListe = computed(() => {
+    const d = this.selection();
+    return d ? [d] : [];
+  });
   /** Recherche par mot-clé du tableau (filtre client sur les colonnes affichées). */
   readonly recherche = signal(this.route.snapshot.queryParamMap.get('q') ?? '');
   /**
@@ -921,15 +985,16 @@ export class DossiersPipeline {
   });
 
   /** Lecture du choix d'affichage mémorisé (tolère un localStorage indisponible/bloqué). */
-  private lireVue(): 'frise' | 'tableau' {
+  private lireVue(): VuePipeline {
     try {
-      return localStorage.getItem('cnm-pipeline-vue') === 'tableau' ? 'tableau' : 'frise';
+      const v = localStorage.getItem('cnm-pipeline-vue');
+      return v === 'tableau' || v === 'frise' ? v : 'volets';
     } catch {
-      return 'frise';
+      return 'volets';
     }
   }
   /** Bascule l'affichage et mémorise le choix (best-effort). */
-  setVue(v: 'frise' | 'tableau'): void {
+  setVue(v: VuePipeline): void {
     this.vue.set(v);
     try {
       localStorage.setItem('cnm-pipeline-vue', v);

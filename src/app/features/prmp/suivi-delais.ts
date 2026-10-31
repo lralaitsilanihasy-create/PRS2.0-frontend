@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
@@ -14,6 +14,8 @@ import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { ReputeApprouve, StatutBadge } from '../../shared/circuit';
 import { LienDossier } from '../circuit/page-dossier/lien-dossier';
 import { CompleterPiecesDepotModal } from './completer-pieces-depot-modal';
+import { ApercuDossier } from '../circuit/dossier/apercu-dossier';
+import { DeuxVolets } from '../../shared/ui/deux-volets';
 import { DossiersRefreshStore } from './dossiers-refresh.store';
 
 /**
@@ -31,7 +33,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
 @Component({
   selector: 'app-suivi-delais',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, RouterLink, EtatErreur, StatutBadge, ReputeApprouve, CompleterPiecesDepotModal],
+  imports: [DatePipe, NgTemplateOutlet, RouterLink, EtatErreur, StatutBadge, ReputeApprouve, CompleterPiecesDepotModal, DeuxVolets, ApercuDossier],
   template: `
     <section>
       <header class="page-header">
@@ -40,6 +42,10 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
           <!-- ⚠️ Demande pilote (2026-09-13) — titre « Tous les dossiers » pour l'UGPM (aligné sur les autres
                profils) ; la PRMP garde « Suivi des dossiers CNM » (nom choisi le 2026-09-06, cadrage délais). -->
           <h1 class="page-title">Tous mes dossiers</h1>
+        </div>
+        <div class="sdl-vue" role="group" aria-label="Choix de l'affichage">
+          <button type="button" class="btn btn-sm" [class.btn-primary]="vue() === 'volets'" [class.btn-outline]="vue() !== 'volets'" [attr.aria-pressed]="vue() === 'volets'" (click)="setVue('volets')">Deux volets</button>
+          <button type="button" class="btn btn-sm" [class.btn-primary]="vue() === 'tableau'" [class.btn-outline]="vue() !== 'tableau'" [attr.aria-pressed]="vue() === 'tableau'" (click)="setVue('tableau')">Tableau</button>
         </div>
       </header>
       <!-- Phrase de rôle (proposition 2026-09-22, lot B) : à quoi sert l'écran, pour qui. -->
@@ -50,6 +56,48 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
         <p class="text-muted" role="status">Chargement…</p>
       } @else if (erreur()) {
         <app-etat-erreur message="Impossible de charger le suivi des délais." (reessayer)="charger()" />
+      } @else if (vue() === 'volets') {
+        <!-- ⚠️ 31/10 (pilote, Espace de travail, lot 3c) — deux volets : les dossiers à gauche, l'aperçu du dossier choisi à
+             droite (ses gestes, son dépôt et sa fin de traitement, son identité) ; le premier est choisi d'office. -->
+        @if (!dossiers().length) {
+          <p class="text-muted">Aucun dossier à la CNM.</p>
+        } @else {
+        <app-deux-volets [ouvert]="!!selection()" [cle]="selection()?.idDossier ?? null" libelleListe="Mes dossiers" libelleDetail="Aperçu du dossier"
+                         invite="Choisissez un dossier : son aperçu s’affiche ici.">
+          <ul liste class="sdl-volet">
+            @for (d of dossiers(); track d.idDossier) {
+              <li class="sdl-item" [class.sdl-item--on]="selection()?.idDossier === d.idDossier">
+                <button type="button" class="sdl-ligne" [attr.aria-pressed]="selection()?.idDossier === d.idDossier" (click)="choisi.set(d.idDossier)">
+                  <span class="sdl-ligne__ref">{{ d.refeDossier || ('Dossier #' + d.idDossier) }} <span class="sdl-ligne__type">{{ typeDossierLabel(d) }}</span></span>
+                  <span class="sdl-ligne__ent">{{ entiteLabel(d) }}</span>
+                  <span class="sdl-ligne__bas">
+                    <app-statut-badge [statut]="d.statut" />
+                    @if (d.attentePrmp) { <span class="sdl-attente">⏸ à vous</span> }
+                  </span>
+                </button>
+              </li>
+            }
+          </ul>
+          <div detail>
+            @for (d of selectionListe(); track d.idDossier) {
+              <app-apercu-dossier [dossier]="d" [lien]="lien.commandes(d.idDossier)" [params]="lien.params()">
+                <span gestes class="sdl-gestes"><ng-container [ngTemplateOutlet]="gestesTpl" [ngTemplateOutletContext]="{ $implicit: d }" /></span>
+                <dl frise class="sdl-dates">
+                  <div><dt>Dépôt du dossier</dt><dd>{{ d.dateSoumission ? (d.dateSoumission | date: 'dd/MM/yyyy') : '—' }}</dd></div>
+                  <div><dt>Fin traitement CNM</dt><dd>
+                    @if (enregistrement(d)) {
+                      @if (d.datesEtapes?.['CLOTURE']; as clot) { {{ clot | date: 'dd/MM/yyyy HH:mm' }} }
+                      @else if (d.datePrevisionnelleFin) { {{ d.datePrevisionnelleFin | date: 'dd/MM/yyyy' }} }
+                      @else { — }
+                    } @else { — }
+                  </dd></div>
+                  <div><dt>Localité</dt><dd>{{ localiteLabel(d) }}</dd></div>
+                </dl>
+              </app-apercu-dossier>
+            }
+          </div>
+        </app-deux-volets>
+        }
       } @else {
         <div class="table-card sdl-table">
           <table>
@@ -106,33 +154,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                   <!-- Actions contextuelles (le clic-ligne reste pour le détail) : Rectifier, Soumettre un
                        brouillon, Compléter les pièces d'un dépôt — chacune affichée seulement si elle s'applique. -->
                   <td>
-                    <div class="td-actions actions-end">
-                      @if (estPrmp() && d.statut === 'EN_ATTENTE_DECISION_PRMP') {
-                        <!-- Lot C1 (26/09) — un dossier DAO (idDmc) se rectifie par la révision de sa fiche : écran propre. -->
-                        <a class="btn btn-primary btn-sm" [routerLink]="[d.idDmc != null ? '/prmp/rectifier-dao' : '/prmp/rectifier', d.idDossier]" [queryParams]="{ returnUrl: '/prmp/tableau-de-bord' }">Rectifier</a>
-                      }
-                      @if (estPrmp() && d.statut === 'BROUILLON') {
-                        <button
-                          type="button"
-                          class="btn btn-success btn-sm"
-                          [disabled]="submittingId() === d.idDossier || vacance()"
-                          [title]="vacance() ? 'Poste PRMP vacant — soumission suspendue en attente de nomination.' : ''"
-                          (click)="soumettre(d)"
-                        >Soumettre</button>
-                      }
-                      @if (estPrmp() && d.statut === 'EN_ATTENTE_COMPLEMENTS_DEPOT') {
-                        <button type="button" class="btn btn-warning btn-sm" (click)="completer.set(d)">Compléter les pièces</button>
-                      }
-                      <!-- ⚠️ 18/10 (pilote) — l'avis spécifique (ou les lettres d'invitation) est imprimable : la page du dossier,
-                           fenêtre d'impression ouverte d'emblée. Servi par le backend (« impressionAvis », demande du 18/10) aux
-                           seules PRMP et UGPM : l'UGPM, qui partage cet écran, imprime aussi. -->
-                      @if (d.impressionAvis?.disponible) {
-                        <a class="btn btn-primary btn-sm"
-                          [routerLink]="lien.commandes(d.idDossier)"
-                          [queryParams]="paramsImpression()"
-                        >{{ libelleImpression(d) }}</a>
-                      }
-                    </div>
+                    <div class="td-actions actions-end"><ng-container [ngTemplateOutlet]="gestesTpl" [ngTemplateOutletContext]="{ $implicit: d }" /></div>
                   </td>
                 </tr>
               } @empty {
@@ -144,11 +166,60 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
       }
     </section>
 
+    <!-- Gestes d'un dossier — partagés par le tableau (colonne Actions) et le volet de droite. -->
+    <ng-template #gestesTpl let-d>
+                @if (estPrmp() && d.statut === 'EN_ATTENTE_DECISION_PRMP') {
+                  <!-- Lot C1 (26/09) — un dossier DAO (idDmc) se rectifie par la révision de sa fiche : écran propre. -->
+                  <a class="btn btn-primary btn-sm" [routerLink]="[d.idDmc != null ? '/prmp/rectifier-dao' : '/prmp/rectifier', d.idDossier]" [queryParams]="{ returnUrl: '/prmp/tableau-de-bord' }">Rectifier</a>
+                }
+                @if (estPrmp() && d.statut === 'BROUILLON') {
+                  <button
+                    type="button"
+                    class="btn btn-success btn-sm"
+                    [disabled]="submittingId() === d.idDossier || vacance()"
+                    [title]="vacance() ? 'Poste PRMP vacant — soumission suspendue en attente de nomination.' : ''"
+                    (click)="soumettre(d)"
+                  >Soumettre</button>
+                }
+                @if (estPrmp() && d.statut === 'EN_ATTENTE_COMPLEMENTS_DEPOT') {
+                  <button type="button" class="btn btn-warning btn-sm" (click)="completer.set(d)">Compléter les pièces</button>
+                }
+                <!-- ⚠️ 18/10 (pilote) — l'avis spécifique (ou les lettres d'invitation) est imprimable : la page du dossier,
+                     fenêtre d'impression ouverte d'emblée. Servi par le backend (« impressionAvis », demande du 18/10) aux
+                     seules PRMP et UGPM : l'UGPM, qui partage cet écran, imprime aussi. -->
+                @if (d.impressionAvis?.disponible) {
+                  <a class="btn btn-primary btn-sm"
+                    [routerLink]="lien.commandes(d.idDossier)"
+                    [queryParams]="paramsImpression()"
+                  >{{ libelleImpression(d) }}</a>
+                }
+    </ng-template>
+
     @if (completer(); as d) {
       <app-completer-pieces-depot-modal [dossier]="d" (transmis)="onComplementsTransmis()" (fermer)="completer.set(null)" />
     }
   `,
   styles: `
+    /* ⚠️ 31/10 (Espace de travail, lot 3c) — bascule de vue et volet de gauche. */
+    .page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .sdl-vue { display: flex; gap: 6px; }
+    .sdl-volet { list-style: none; margin: 0; padding: 0; }
+    .sdl-item { border-bottom: 1px solid var(--bordure); }
+    .sdl-item--on { background: var(--onglet-actif-fond); box-shadow: inset 3px 0 0 var(--menu-fond); }
+    .sdl-ligne { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: flex; flex-direction: column; gap: 0.2rem; padding: 0.55rem 0.8rem; }
+    .sdl-ligne:hover { background: var(--ligne-survol); }
+    .sdl-item--on .sdl-ligne:hover { background: transparent; }
+    .sdl-ligne:focus-visible { outline: 2px solid var(--bouton-principal); outline-offset: -2px; }
+    .sdl-ligne__ref { font-weight: 500; }
+    .sdl-ligne__type { margin-left: 4px; font-weight: 400; font-size: var(--text-sm); color: var(--texte-secondaire); }
+    .sdl-ligne__ent { font-size: var(--text-sm); color: var(--texte-secondaire); overflow-wrap: anywhere; }
+    .sdl-ligne__bas { display: flex; flex-wrap: wrap; gap: 0.3rem 0.5rem; align-items: center; }
+    .sdl-gestes { display: contents; }
+    .sdl-dates { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0; margin: 0; border: 1px solid var(--bordure); border-radius: 4px; }
+    .sdl-dates > div { padding: 6px 10px; }
+    .sdl-dates > div + div { border-left: 1px solid var(--bordure); }
+    .sdl-dates dt { font-size: 11px; color: var(--texte-secondaire); }
+    .sdl-dates dd { margin: 0; font-weight: 500; }
     .sdl-attente { display: inline-block; margin-left: 0.35rem; padding: 0.05rem 0.4rem; border-radius: var(--radius-full); background: var(--warning-bg); border: 1px solid var(--warning-bdr); color: var(--warning-text); font-size: var(--text-xs); white-space: nowrap; }
     /* Ligne cliquable : la référence est un vrai bouton (nom accessible + clavier) dont la zone
        cliquable est ÉTENDUE à toute la ligne via un overlay ::after ; pas de (click) sur <tr>. */
@@ -212,6 +283,35 @@ export class SuiviDelais {
   private readonly receptions = signal<Map<number, Reception>>(new Map());
   /** Dossier ouvert dans le modal « Compléter les pièces » (EN_ATTENTE_COMPLEMENTS_DEPOT ; null = fermé). */
   readonly completer = signal<Dossier | null>(null);
+  /** ⚠️ 31/10 (Espace de travail, lot 3c) — affichage : deux volets (par défaut) ou tableau ; choix mémorisé par navigateur. */
+  readonly vue = signal<'volets' | 'tableau'>(this.lireVue());
+  /** Deux volets : le dossier choisi (le premier tant que rien n'est choisi, ou si le choisi a quitté la liste). */
+  readonly choisi = signal<number | null>(null);
+  readonly selection = computed(() => {
+    const liste = this.dossiers();
+    return liste.find((d) => d.idDossier === this.choisi()) ?? liste[0] ?? null;
+  });
+  /** Le dossier choisi en liste d'un élément : l'aperçu est recréé (et son contenu relu) quand il change. */
+  readonly selectionListe = computed(() => {
+    const d = this.selection();
+    return d ? [d] : [];
+  });
+
+  private lireVue(): 'volets' | 'tableau' {
+    try {
+      return localStorage.getItem('cnm-suivi-vue') === 'tableau' ? 'tableau' : 'volets';
+    } catch {
+      return 'volets';
+    }
+  }
+  setVue(v: 'volets' | 'tableau'): void {
+    this.vue.set(v);
+    try {
+      localStorage.setItem('cnm-suivi-vue', v);
+    } catch {
+      /* localStorage indisponible : le choix ne persiste pas, sans conséquence. */
+    }
+  }
 
   /**
    * Tous les dossiers de la PRMP, plus récents d'abord. ⚠️ 2026-09-13 (demande pilote) : les BROUILLONS
