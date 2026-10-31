@@ -8,9 +8,10 @@ export interface Indicateur {
 }
 
 /**
- * Ligne de chiffres clés (design institutionnel, 30/10/2026) — 2 à 4 indicateurs, fond blanc, filet --bordure, rayon 8 px,
- * séparateurs verticaux ; libellé 11 px secondaire, valeur 21 px graisse 500 (rouge si c'est une alerte). Sous 768 px, les
- * indicateurs passent deux par ligne.
+ * Ligne de chiffres clés (design institutionnel, 30/10/2026). ⚠️ 31/10 (pilote, Espace de travail) — forme COMPACTE : les
+ * indicateurs tiennent sur une ligne, le chiffre (16 px, graisse 500) devant son libellé (12 px, secondaire), séparés par
+ * un filet ; ils passent à la ligne quand la place manque. Le balisage (dt libellé, dd valeur) ne change pas : seul
+ * l'ordre visuel met le chiffre en tête.
  */
 @Component({
   selector: 'app-carte-indicateurs',
@@ -26,19 +27,14 @@ export interface Indicateur {
     </dl>
   `,
   styles: `
-    :host { display: block; margin-bottom: 12px; }
-    .ci { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; margin: 0; background: var(--carte-fond); border: 1px solid var(--bordure); border-radius: 8px; }
-    .ci__case { padding: 10px 14px; min-width: 0; }
+    :host { display: block; margin-bottom: 10px; }
+    .ci { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 0; margin: 0; padding: 6px 4px; }
+    .ci__case { display: flex; align-items: baseline; gap: 6px; min-width: 0; padding: 0 14px; }
+    .ci__case:first-child { padding-left: 0; }
     .ci__case + .ci__case { border-left: 1px solid var(--bordure); }
-    .ci__libelle { font-size: 11px; color: var(--texte-secondaire); }
-    .ci__valeur { margin: 2px 0 0; font-size: 21px; font-weight: 500; line-height: 1.2; color: var(--texte); font-variant-numeric: tabular-nums; }
+    .ci__libelle { order: 2; font-size: 12px; color: var(--texte-secondaire); }
+    .ci__valeur { order: 1; margin: 0; font-size: 16px; font-weight: 500; line-height: 1.2; color: var(--texte); font-variant-numeric: tabular-nums; }
     .ci__valeur--alerte { color: var(--retard-texte); }
-    @media (max-width: 48rem) {
-      .ci { grid-auto-flow: row; grid-template-columns: 1fr 1fr; }
-      .ci__case + .ci__case { border-left: 0; }
-      .ci__case:nth-child(even) { border-left: 1px solid var(--bordure); }
-      .ci__case:nth-child(n + 3) { border-top: 1px solid var(--bordure); }
-    }
   `,
 })
 export class CarteIndicateurs {

@@ -564,6 +564,12 @@ interface LienEcran {
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-sm);
     }
+    /* ⚠️ 31/10 (Espace de travail, lot 2) — sur téléphone l’en-tête passe en colonne : titre puis recherche pleine largeur
+       (la largeur de base de 22rem devenait la HAUTEUR du champ). */
+    @media (max-width: 48rem) {
+      .ann__tete { flex-direction: column; align-items: stretch; gap: 10px; }
+      .ann__chercher { flex: 0 0 auto; max-width: none; width: 100%; }
+    }
     .ann__chercher-ic { color: var(--n-500); display: grid; place-items: center; flex: none; }
     .ann__chercher-champ {
       flex: 1;

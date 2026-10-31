@@ -37,11 +37,15 @@ $bp-mobile : 480px;
 
   .page-header {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 10px;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 
     h1 { font-size: var(--text-xl); }
+
+    /* ⚠️ 31/10 (Espace de travail, lot 2) — en colonne, la largeur de base d’un élément deviendrait sa HAUTEUR (champ de
+       recherche de l’annuaire haut de 22rem) : chaque élément garde sa taille naturelle et prend toute la largeur. */
+    > * { flex: 0 0 auto; max-width: none; }
   }
 }
 
@@ -376,3 +380,47 @@ $bp-mobile : 480px;
 /* Espacement */
 .p-mobile { @include mobile { padding: 14px !important; } }
 .mt-mobile { @include mobile { margin-top: 12px !important; } }
+
+/* ══════════════════════════════════════════
+   TABLEAUX EN FICHES SUR TÉLÉPHONE (pilote, 31/10/2026, Espace de travail, lot 2)
+   Les tableaux simples sont étiquetés par `core/affichage/tableaux-en-fiches.ts` (`data-fiches`, `data-label` sur chaque
+   cellule) : sous 768 px, chaque ligne devient une fiche, chaque valeur précédée de l'intitulé de sa colonne. Les tableaux
+   complexes (documents officiels, plan de passation) ne sont pas étiquetés et gardent leur défilement.
+══════════════════════════════════════════ */
+@media (max-width: 48rem) {
+  table[data-fiches] { display: block; width: 100% !important; min-width: 0 !important; border: 0; background: transparent; }
+  table[data-fiches] thead { display: none; }
+  table[data-fiches] tbody,
+  table[data-fiches] tfoot { display: block; }
+  table[data-fiches] tr {
+    display: block;
+    margin-bottom: 8px;
+    padding: 8px 12px;
+    background: var(--carte-fond);
+    border: 1px solid var(--bordure);
+    border-radius: 4px;
+  }
+  table[data-fiches] td {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    padding: 3px 0;
+    border: 0;
+    white-space: normal;
+    text-align: right;
+    /* Un fond propre à l'écran (ligne colorée par son état, cellule blanche) ne fait pas de tache dans la fiche. */
+    background: transparent !important;
+  }
+  table[data-fiches] td::before {
+    content: attr(data-label);
+    flex: none;
+    max-width: 45%;
+    font-size: 11px;
+    color: var(--texte-secondaire);
+    text-align: left;
+  }
+  table[data-fiches] td[data-label='']::before { content: none; }
+  table[data-fiches] td[data-label=''] { justify-content: flex-end; }
+  table[data-fiches] tr[data-ligne-pleine] td { display: block; text-align: left; }
+}

@@ -236,7 +236,8 @@ a:not([class]), .lien { text-decoration: underline; text-decoration-color: var(-
 }
 
 .page-header {
-  margin-bottom: 24px;
+  /* ⚠️ 31/10 (Espace de travail) — en-tête de page resserré. */
+  margin-bottom: 14px;
 
   /* Variante avec action(s) à droite (ex. « ← Mes dossiers » sur les écrans atteints depuis les cartes). */
   &.page-header--actions {
