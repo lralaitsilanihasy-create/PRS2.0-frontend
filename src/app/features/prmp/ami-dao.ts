@@ -137,7 +137,7 @@ interface LignePublication {
             </div>
 
             @if (refusPrep(); as r) { <div class="alert alert-danger" role="alert"><span>{{ r }}</span></div> }
-            <div class="ami__actions">
+            <div class="ami__actions barre-actions">
               <button type="button" class="btn btn-primary" [disabled]="occupe() || !prepComplete()" (click)="enregistrer()">{{ occupe() ? 'Enregistrement…' : 'Enregistrer' }}</button>
               @if (!prepComplete()) { <span class="text-sm text-muted">Date limite, critères nommés totalisant 100 : tout est requis.</span> }
             </div>

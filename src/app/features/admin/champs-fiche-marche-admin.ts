@@ -160,7 +160,7 @@ function vide(): ChampFiche {
                 <label class="cfm__case"><input type="checkbox" [checked]="c.actif !== false" (change)="poser('actif', $any($event.target).checked)" /> Actif</label>
               </div>
             </div>
-            <div class="cfm__pied">
+            <div class="cfm__pied barre-actions">
               <button type="submit" class="btn btn-primary" [disabled]="saving() || !c.code || !c.libelle">{{ saving() ? 'Enregistrement…' : creation() ? 'Créer le champ' : 'Enregistrer' }}</button>
               <button type="button" class="btn btn-outline" (click)="annuler()" [disabled]="saving()">Annuler</button>
             </div>

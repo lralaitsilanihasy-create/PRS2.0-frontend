@@ -186,7 +186,7 @@ import { CeremonieResponsable } from './ceremonie-responsable';
             @if (erreurDe('depositaire'); as m) { <span class="form-error">{{ m }}</span> }
           </fieldset>
 
-          <div class="pi__pied">
+          <div class="pi__pied barre-actions">
             <button type="submit" class="btn btn-primary" [disabled]="saving()">{{ saving() ? 'Enregistrement…' : 'Enregistrer' }}</button>
           </div>
         </form>

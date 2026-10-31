@@ -324,7 +324,7 @@ function motifDepot(e: unknown, enveloppe: EnveloppeOffre | null = null): string
               <p role="status" class="do__progres"><strong>{{ libellePhase() }}</strong>@if (total()) { — {{ fait() }} / {{ total() }} }</p>
               <progress [max]="total() || 1" [value]="fait()"></progress>
             }
-            <div class="do__actions">
+            <div class="do__actions barre-actions">
               <button type="submit" class="btn btn-primary" [disabled]="occupe() || manques().length > 0">{{ occupe() ? 'Dépôt en cours…' : libelleBouton() }}</button>
               <a class="btn btn-outline" [routerLink]="['/candidat', 'procedures', idDmc]">Annuler</a>
             </div>

@@ -78,7 +78,7 @@ const NIVEAUX = ['Simple', 'Avancée', 'Qualifiée'] as const;
               <textarea class="form-control" rows="2" id="rea-assistance" [value]="v.assistance ?? ''" (input)="poser('assistance', $any($event.target).value || null)"></textarea>
             </label>
           </div>
-          <div class="rea__pied">
+          <div class="rea__pied barre-actions">
             <button type="submit" class="btn btn-primary" [disabled]="saving()">{{ saving() ? 'Enregistrement…' : 'Enregistrer' }}</button>
           </div>
         </form>

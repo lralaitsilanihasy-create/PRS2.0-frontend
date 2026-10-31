@@ -669,7 +669,7 @@ interface ApercuDossier {
                 <!-- ⚠️ 15/10 — un dossier produit par la fiche DAO n'avait nulle part où joindre les pièces qui ne sortent pas de la fiche
                      (descriptif technique et plans des travaux, V119…) : la liste exigée par le serveur, pièce par pièce. -->
                 <app-pieces-a-joindre [idDossier]="d.idDossier" />
-                <footer class="sd__foot sd__foot--main">
+                <footer class="sd__foot sd__foot--main barre-actions">
                   <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
                   <!-- Soumission réservée à la PRMP ; l'UGPM édite le brouillon mais ne soumet pas (backend 403). -->
                   @if (estPrmp()) {

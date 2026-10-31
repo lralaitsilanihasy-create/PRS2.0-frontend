@@ -79,7 +79,7 @@ function memeMotDePasse(groupe: AbstractControl): ValidationErrors | null {
           </label>
         </div>
 
-        <div class="ic__pied">
+        <div class="ic__pied barre-actions">
           <button type="submit" class="btn btn-primary" [disabled]="envoi()">{{ envoi() ? 'Création…' : 'Créer mon compte' }}</button>
           <span class="text-sm text-muted">Déjà inscrit ? <a routerLink="/login" [queryParams]="{ returnUrl: '/candidat' }">Se connecter</a> · Code reçu ? <a routerLink="/candidat/confirmation">Confirmer mon compte</a></span>
         </div>

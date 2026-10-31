@@ -406,7 +406,7 @@
                   }
                 </div>
               }
-              <div class="fm__pied">
+              <div class="fm__pied barre-actions">
                 @if (enLecture()) {
                   <button type="button" class="btn btn-primary" (click)="allerA(2)">Voir les blocs ›</button>
                 } @else {
@@ -624,7 +624,7 @@
                 @if (bloc.code === 'B06' && categorie() === 'PRESTATIONS_INTELLECTUELLES' && criteresTechniques().length) {
                   <app-fiche-sous-criteres [idDmc]="idDmc()!" [criteres]="criteresTechniques()" [lecture]="figee() || enLecture()" (enregistre)="besoinEnregistre()" />
                 }
-                <div class="fm__pied">
+                <div class="fm__pied barre-actions">
                   <button type="button" class="btn btn-outline" [disabled]="saving()" (click)="blocPrecedent()">‹ Précédent</button>
                   <!-- ⚠️ Correctif du 26/09 — quand il n'y a RIEN à enregistrer (lecture, fiche figée, forme non
                        outillée), le bouton d'avance fait AVANCER. Sans cela la PRMP qui relit sa propre fiche
@@ -665,7 +665,7 @@
                   <p class="fm__attendus">Aucune reprise à montrer tant que le référentiel n'a pas ses champs.</p>
                 }
               </div>
-              <div class="fm__pied">
+              <div class="fm__pied barre-actions">
                 <button type="button" class="btn btn-outline" (click)="etape.set(2)">‹ Retour aux blocs</button>
                 @if (enLecture()) {
                   <button type="button" class="btn btn-primary" (click)="etape.set(4)">Voir les contrôles ›</button>
@@ -733,7 +733,7 @@
                   </details>
                 }
               </div>
-              <div class="fm__pied">
+              <div class="fm__pied barre-actions">
                 <button type="button" class="btn btn-outline" (click)="etape.set(3)">‹ Reprises</button>
                 @if (!enLecture()) { <button type="button" class="btn btn-outline" [disabled]="saving() || ecritureBloquee()" (click)="controler()">Recontrôler</button> }
                 <button type="button" class="btn btn-primary" [disabled]="!!bilan().bloquants.length || saving() || ecritureBloquee()" (click)="etape.set(5)">Passer à la validation ›</button>
@@ -814,7 +814,7 @@
                   </table>
                 </div>
               }
-              <div class="fm__pied">
+              <div class="fm__pied barre-actions">
                 <button type="button" class="btn btn-outline" (click)="etape.set(4)">‹ Contrôles</button>
                 @if (enLecture()) {
                   <button type="button" class="btn btn-primary" (click)="etape.set(6)">Voir les documents ›</button>

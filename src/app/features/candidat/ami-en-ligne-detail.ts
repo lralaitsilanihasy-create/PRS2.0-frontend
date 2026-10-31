@@ -198,7 +198,7 @@ interface LigneMembre {
               }
 
               @if (refus(); as r) { <div class="alert alert-danger" role="alert"><span>{{ r }}</span></div> }
-              <div class="aed__actions">
+              <div class="aed__actions barre-actions">
                 <button type="button" class="btn btn-primary" [disabled]="occupe() || !complet()" (click)="deposer()">{{ occupe() ? 'Dépôt…' : 'Déposer l’expression d’intérêt' }}</button>
                 @if (!complet()) { <span class="text-sm text-muted">La lettre et chaque pièce attendue sont requises.</span> }
               </div>

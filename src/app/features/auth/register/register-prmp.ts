@@ -228,7 +228,7 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
               </div>
             </div>
 
-            <div class="reg-footer">
+            <div class="reg-footer barre-actions">
               <button type="submit" class="btn btn-primary register-card__submit" [disabled]="submitting()">
                 {{ submitting() ? 'Envoi…' : "S'inscrire" }}
               </button>

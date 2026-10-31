@@ -88,7 +88,7 @@ import { ConservationOffresAdmin } from './conservation-offres-admin';
               @if (erreurChamp('offreConservationAnnees'); as m) { <span class="form-error">{{ m }}</span> }
             </label>
           </div>
-          <div class="pca__pied">
+          <div class="pca__pied barre-actions">
             <button type="submit" class="btn btn-primary" [disabled]="saving()">{{ saving() ? 'Enregistrement…' : 'Enregistrer' }}</button>
           </div>
         </form>

@@ -235,6 +235,23 @@ a:not([class]), .lien { text-decoration: underline; text-decoration-color: var(-
   line-height: 1.5;
 }
 
+/* ⚠️ 31/10 (pilote, Espace de travail, lot 4) — barre d'actions d'un formulaire de page : collée au bas de la fenêtre
+   tant que le formulaire défile, elle reprend sa place à la fin du formulaire. Jamais dans une modale (son pied est déjà
+   fixe), jamais pour les actions d'une ligne. */
+.barre-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--carte-fond);
+  border-top: 1px solid var(--bordure);
+}
+.barre-actions > .barre-actions__pousse { margin-left: auto; }
+
 .page-header {
   /* ⚠️ 31/10 (Espace de travail) — en-tête de page resserré. */
   margin-bottom: 14px;

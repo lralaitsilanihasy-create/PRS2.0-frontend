@@ -113,7 +113,7 @@ const CHAMP_DU_409: Readonly<Record<string, 'nif' | 'stat' | 'rcs'>> = {
               <input class="form-control" type="text" formControlName="representantFonction" />
             </label>
           </div>
-          <div class="ec__pied">
+          <div class="ec__pied barre-actions">
             <button type="submit" class="btn btn-primary" [disabled]="envoi()">{{ envoi() ? 'Enregistrement…' : entreprise() ? 'Enregistrer' : 'Déclarer mon entreprise' }}</button>
             @if (entreprise()) { <span class="text-sm text-muted">Un NIF changé remet la vérification à zéro.</span> }
           </div>

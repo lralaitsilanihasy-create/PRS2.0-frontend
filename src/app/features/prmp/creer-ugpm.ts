@@ -126,7 +126,7 @@ const IMG_OK = ['image/jpeg', 'image/png'];
             </section>
           </div>
 
-          <footer class="cu__footer">
+          <footer class="cu__footer barre-actions">
             <button type="submit" class="btn btn-primary" [disabled]="submitting()">
               {{ submitting() ? 'Envoi…' : 'Créer le compte UGPM' }}
             </button>

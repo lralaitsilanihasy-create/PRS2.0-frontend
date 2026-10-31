@@ -220,7 +220,7 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
           </section>
 
           @if (!fige()) {
-            <div class="card cao__pied">
+            <div class="card cao__pied barre-actions">
               <button type="button" class="btn btn-secondary btn-sm" (click)="ajouter()">Ajouter un membre</button>
               <span class="text-sm text-muted">Au moins deux membres, un seul président ; un expert de l'objet au plus{{ nbExperts() ? ' (' + nbExperts() + ' saisi' + (nbExperts() > 1 ? 's' : '') + ')' : '' }}. Un membre nouveau reçoit son invitation à l'enregistrement ; un membre retiré l'est à l'enregistrement.</span>
               <button type="submit" class="btn btn-primary cao__enregistrer" [disabled]="saving()">{{ saving() ? 'Enregistrement…' : 'Enregistrer la commission' }}</button>
