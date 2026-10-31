@@ -117,19 +117,24 @@ const HAUT_TOPBAR = 48;
         }
       </div>
 
+      <!-- ⚠️ 31/10 (pilote) — UNE carte : identité du dossier puis frise, sous un filet. Mêmes informations qu'avant ;
+           les renseignements sont du texte séparé par « · » au lieu de pastilles encadrées. -->
+      <section class="pd-carte" aria-label="Le dossier">
       <header class="pd-tete">
         <div class="pd-id">
-          <!-- Point de reprise du focus (recette L4-Q2, défaut (e)) : le titre de l'étape quand il existe,
-               sinon celui de la page — un seul data-focus-repli à l'écran, cf. ModaleDirective. -->
-          <h1 class="pd-ref" tabindex="-1" [attr.data-focus-repli]="vue() ? null : ''" [class.pd-ref--sans]="!dossier().refeDossier">{{ reference() }}</h1>
+          <div class="pd-titre-ligne">
+            <!-- Point de reprise du focus (recette L4-Q2, défaut (e)) : le titre de l'étape quand il existe,
+                 sinon celui de la page — un seul data-focus-repli à l'écran, cf. ModaleDirective. -->
+            <h1 class="pd-ref" tabindex="-1" [attr.data-focus-repli]="vue() ? null : ''" [class.pd-ref--sans]="!dossier().refeDossier">{{ reference() }}</h1>
+            <app-statut-badge [statut]="dossier().statut" />
+            <app-repute-approuve [le]="dossier().reputeApprouveLe" />
+          </div>
           <p class="pd-ent">
             @if (!contenu.loading()) {
               {{ ligneEntite() }}
             }
           </p>
           <div class="pd-puces">
-            <app-statut-badge [statut]="dossier().statut" />
-            <app-repute-approuve [le]="dossier().reputeApprouveLe" />
             @if (sousType()) {
               <span class="pd-puce">{{ sousType() }}</span>
             }
@@ -175,6 +180,7 @@ const HAUT_TOPBAR = 48;
           </li>
         }
       </ol>
+      </section>
 
       <!-- Assistant IA, lot 2 : la synthèse du dossier, À LA DEMANDE. Sous la frise, avant l'étape en
            cours : elle répond à « où en est ce dossier », c'est-à-dire à la question qu'on se pose en

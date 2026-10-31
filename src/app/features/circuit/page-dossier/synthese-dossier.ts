@@ -63,7 +63,7 @@ export function titrer(bloc: Bloc): BlocAffiche {
   imports: [Icone],
   template: `
     @if (!absent()) {
-      <section class="sd" aria-labelledby="sd-titre">
+      <section class="sd" [class.sd--repos]="!demarree()" aria-labelledby="sd-titre">
         <header class="sd__tete">
           <h2 class="sd__titre" id="sd-titre">Synthèse de l'assistant</h2>
           @if (!demarree()) {
@@ -165,6 +165,20 @@ export function titrer(bloc: Bloc): BlocAffiche {
     }
   `,
   styles: `
+    /* ⚠️ 31/10 (pilote) — au repos, une ligne fine sur toute la largeur ; la carte n'apparaît qu'avec le résultat. */
+    .sd.sd--repos {
+      flex-direction: row;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 4px 12px;
+      padding: 6px 4px;
+      border: 0;
+      background: transparent;
+    }
+    .sd.sd--repos .sd__tete { display: contents; }
+    .sd.sd--repos .sd__titre { font-size: var(--text-sm); }
+    .sd.sd--repos .sd__invite { flex: 1 1 24rem; order: 1; }
+    .sd.sd--repos .sd__tete button { order: 2; margin-left: auto; }
     .sd {
       border: 1px solid var(--n-200);
       border-radius: var(--radius-lg);

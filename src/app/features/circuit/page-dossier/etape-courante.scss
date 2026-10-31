@@ -22,8 +22,9 @@
 .ec--seul {
   grid-template-columns: minmax(0, 1fr);
 }
-/* Pointe vers l'étape courante de la frise (même grille de sept colonnes, même largeur). */
+/* Pointe vers l'étape courante de la frise — ⚠️ 31/10 (pilote) : retirée, la frise est dans la carte du dossier. */
 .ec::before {
+  display: none;
   content: '';
   position: absolute;
   top: -9px;
