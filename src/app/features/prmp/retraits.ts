@@ -225,28 +225,28 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
       padding: 0.5rem 1rem;
       border-radius: var(--radius-md);
       background: var(--grad-primary);
-      color: #fff;
-      font-weight: 700;
+      color: var(--texte-menu);
+      font-weight: 500;
       box-shadow: var(--shadow-sm);
     }
     .rt-fichier__aide { color: var(--n-500); font-size: var(--text-sm); }
     /* Fichier choisi : bandeau vert, le nom du document au premier plan. */
     .rt-fichier--ok { border: 1px solid var(--success-bdr); background: var(--success-bg); flex-wrap: wrap; }
     .rt-fichier__icone { font-size: 1.15rem; }
-    .rt-fichier__nom { font-weight: 700; color: var(--n-800); flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
-    .rt-fichier__taille { color: var(--success-text); font-weight: 600; font-size: var(--text-sm); white-space: nowrap; }
+    .rt-fichier__nom { font-weight: 500; color: var(--n-800); flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+    .rt-fichier__taille { color: var(--success-text); font-weight: 500; font-size: var(--text-sm); white-space: nowrap; }
     .rt-fichier__remplacer { cursor: pointer; }
     /* Confirmation du dossier choisi : compacte, informative, sans bloquer la saisie. */
     .rt-choisi { margin: 0 0 1rem; padding: 0.85rem 1rem; border: 1px solid var(--info-bdr); background: var(--info-bg); border-radius: var(--radius-lg); }
     .rt-choisi__tete { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
-    .rt-choisi__ref { font-weight: 700; color: var(--n-800); font-size: var(--text-md); }
+    .rt-choisi__ref { font-weight: 500; color: var(--n-800); font-size: var(--text-md); }
     .rt-choisi__faits { display: flex; flex-wrap: wrap; gap: 0.35rem 1.75rem; margin: 0; }
     .rt-choisi__faits dt { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .07em; color: var(--n-400); }
-    .rt-choisi__faits dd { margin: 0; font-weight: 600; color: var(--n-700); }
-    .rt-choisi__lien { margin-top: 0.6rem; background: transparent; border: 0; padding: 0; cursor: pointer; color: var(--p-600); font: inherit; font-weight: 700; }
+    .rt-choisi__faits dd { margin: 0; font-weight: 500; color: var(--n-700); }
+    .rt-choisi__lien { margin-top: 0.6rem; background: transparent; border: 0; padding: 0; cursor: pointer; color: var(--p-600); font: inherit; font-weight: 500; }
     .rt-choisi__lien:hover { text-decoration: underline; }
     .rt-choisi__elements { display: block; margin-top: 1rem; }
-    .rt-sub { margin: 1.75rem 0 0.75rem; font-size: var(--text-lg); font-weight: 700; color: var(--c-800); }
+    .rt-sub { margin: 1.75rem 0 0.75rem; font-size: var(--text-lg); font-weight: 500; color: var(--c-800); }
     .table-card td { white-space: normal; }
   `,
 })

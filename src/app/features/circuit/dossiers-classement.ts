@@ -204,16 +204,16 @@ export * from './classement-config';
     .md__intro { margin: -0.4rem 0 0; color: var(--n-500); }
     .md__kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.9rem; }
     .md__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(18.5rem, 22rem)); gap: 1.1rem; justify-content: center; }
-    .md__card { position: relative; background: #fff; border: 1px solid var(--n-200); border-radius: var(--radius-xl); box-shadow: var(--shadow-sm); overflow: hidden; transition: var(--transition); }
+    .md__card { position: relative; background: var(--carte-fond); border: 1px solid var(--n-200); border-radius: var(--radius-xl); box-shadow: var(--shadow-sm); overflow: hidden; transition: var(--transition); }
     .md__card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--grad-primary); }
     .md__card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--p-200); }
     .md__inner { padding: 1.15rem 1.1rem 0.85rem; display: flex; flex-direction: column; gap: 0.7rem; }
     .md__head { display: flex; align-items: center; gap: 0.75rem; }
-    .md__chip { flex-shrink: 0; width: 2.6rem; height: 2.6rem; display: inline-flex; align-items: center; justify-content: center; background: var(--grad-primary); color: #fff; font-weight: 800; font-size: 0.8rem; letter-spacing: 0.02em; border-radius: var(--radius-md); box-shadow: 0 3px 10px rgba(102, 126, 234, 0.35); }
+    .md__chip { flex-shrink: 0; width: 2.6rem; height: 2.6rem; display: inline-flex; align-items: center; justify-content: center; background: var(--grad-primary); color: var(--texte-menu); font-weight: 500; font-size: 0.8rem; letter-spacing: 0.02em; border-radius: var(--radius-md); box-shadow: none; }
     .md__titles { min-width: 0; flex: 1; display: flex; flex-direction: column; }
-    .md__title { margin: 0; font-size: var(--text-md); font-weight: 700; color: var(--n-800); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .md__title { margin: 0; font-size: var(--text-md); font-weight: 500; color: var(--n-800); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .md__code { font-size: var(--text-xs); color: var(--n-400); letter-spacing: 0.04em; text-transform: uppercase; }
-    .md__total { flex-shrink: 0; min-width: 1.7rem; padding: 0.12rem 0.55rem; background: var(--p-50); color: var(--p-600); border: 1px solid var(--p-200); border-radius: var(--radius-full); font-weight: 800; font-size: var(--text-sm); text-align: center; font-variant-numeric: tabular-nums; }
+    .md__total { flex-shrink: 0; min-width: 1.7rem; padding: 0.12rem 0.55rem; background: var(--p-50); color: var(--p-600); border: 1px solid var(--p-200); border-radius: var(--radius-full); font-weight: 500; font-size: var(--text-sm); text-align: center; font-variant-numeric: tabular-nums; }
     .md__bar { display: flex; height: 6px; border-radius: var(--radius-full); background: var(--n-100); overflow: hidden; }
     .md__bar-seg { height: 100%; transition: width 300ms var(--ease-out); }
     .md__bar-seg--a { background: var(--warning-text); }
@@ -230,25 +230,25 @@ export * from './classement-config';
     .md__row--lien { margin-top: 0.25rem; padding-top: 0.6rem; border-top: 1px solid var(--n-100); border-radius: 0 0 var(--radius-md) var(--radius-md); }
     .md__row-ic--r { background: var(--danger-bg); color: var(--danger-text); }
     .md__row-count--alerte { background: var(--danger-bg); color: var(--danger-text); }
-    .md__row:hover .md__row-count--alerte { background: var(--danger-text); color: #fff; }
-    .md__row-label { font-weight: 600; }
+    .md__row:hover .md__row-count--alerte { background: var(--danger-text); color: var(--texte-menu); }
+    .md__row-label { font-weight: 500; }
     /* Badge « tâche exercée par délégation » (spec 2026-08-14) — discret, absent chez le titulaire. */
-    .md__deleg { display: inline-block; margin-left: 0.4rem; padding: 0.05rem 0.45rem; border-radius: var(--radius-full); font-size: 0.62rem; font-weight: 700; letter-spacing: 0.03em; background: var(--c-50); color: var(--c-800); border: 1px solid var(--c-100); vertical-align: middle; }
+    .md__deleg { display: inline-block; margin-left: 0.4rem; padding: 0.05rem 0.45rem; border-radius: var(--radius-full); font-size: 0.62rem; font-weight: 500; letter-spacing: 0.03em; background: var(--c-50); color: var(--c-800); border: 1px solid var(--c-100); vertical-align: middle; }
     .md__deleg--tuile { margin-left: 0; margin-top: 0.15rem; align-self: flex-start; }
     /* Note explicative du total (demande user 2026-08-28) : dit pourquoi la somme des tuiles ne
        tombe pas sur le total. Petite, mais du texte réel — et sur fond coloré de la tuile bleue,
        donc en blanc légèrement voilé plutôt qu'en gris (le contraste doit tenir). */
-    .md__note-total { margin: 0.25rem 0 0; max-width: 22rem; font-size: 0.66rem; line-height: 1.35; font-weight: 500; color: rgba(255, 255, 255, 0.92); }
+    .md__note-total { margin: 0.25rem 0 0; max-width: 22rem; font-size: 0.66rem; line-height: 1.35; font-weight: 500; color: var(--texte-menu); }
     /* Intitulé de section des lignes (demande user 2026-08-28) : sépare les tâches du profil de
        celles exercées par délégation. Étiquette de rubrique, jamais cliquable — un filet et une
        capitale espacée, rien qui puisse se confondre avec une ligne de la carte. */
-    .md__rows-sep { display: flex; align-items: center; gap: 0.35rem; width: 100%; margin: 0.55rem 0 0.15rem; padding: 0.55rem 0 0.1rem; border: 0; border-top: 1px solid var(--n-100); background: transparent; font: inherit; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; text-align: left; color: var(--n-500); cursor: pointer; transition: var(--transition); }
+    .md__rows-sep { display: flex; align-items: center; gap: 0.35rem; width: 100%; margin: 0.55rem 0 0.15rem; padding: 0.55rem 0 0.1rem; border: 0; border-top: 1px solid var(--n-100); background: transparent; font: inherit; font-size: 0.62rem; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase; text-align: left; color: var(--n-500); cursor: pointer; transition: var(--transition); }
     .md__rows-sep:hover { color: var(--n-700); }
     .md__rows-sep-marque { font-size: 0.72rem; }
     /* Chevron : pointe à droite replié, vers le bas déplié. */
     .md__rows-sep-chevron { margin-left: auto; font-size: 0.9rem; line-height: 1; transition: transform 0.15s ease; }
     .md__rows-sep-chevron--ouvert { transform: rotate(90deg); }
-    .md__row-count { margin-left: auto; min-width: 1.5rem; padding: 0 0.45rem; background: var(--n-100); color: var(--n-600); border-radius: var(--radius-full); font-weight: 700; font-size: var(--text-sm); text-align: center; font-variant-numeric: tabular-nums; }
+    .md__row-count { margin-left: auto; min-width: 1.5rem; padding: 0 0.45rem; background: var(--n-100); color: var(--n-600); border-radius: var(--radius-full); font-weight: 500; font-size: var(--text-sm); text-align: center; font-variant-numeric: tabular-nums; }
     .md__row:hover .md__row-count { background: var(--p-100); color: var(--p-600); }
     .md__row-arrow { color: var(--n-400); font-size: 1.1rem; line-height: 1; transition: transform 130ms var(--ease-out), color 130ms var(--ease-out); }
     .md__row:hover .md__row-arrow { color: var(--p-500); transform: translateX(3px); }

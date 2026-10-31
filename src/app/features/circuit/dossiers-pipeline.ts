@@ -274,7 +274,7 @@ import { ReceptionForm } from './reception-form';
        position:relative ancre l'overlay du bouton-référence (clic n'importe où sur la carte ouvre le détail). */
     .dossier-card {
       position: relative;
-      background: #fff;
+      background: var(--carte-fond);
       border: 1px solid var(--n-200);
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-sm);
@@ -302,7 +302,7 @@ import { ReceptionForm } from './reception-form';
       flex-wrap: wrap;
     }
     .dossier-card__ref {
-      font-weight: 700;
+      font-weight: 500;
       color: var(--n-800);
       font-size: var(--text-md);
     }
@@ -317,10 +317,10 @@ import { ReceptionForm } from './reception-form';
       white-space: nowrap;
     }
     .pipeline__cible--moi {
-      color: var(--p-700, #1d4ed8);
-      background: var(--p-50, #eff6ff);
-      border-color: var(--p-200, #bfdbfe);
-      font-weight: 600;
+      color: var(--p-700);
+      background: var(--p-50);
+      border-color: var(--p-200);
+      font-weight: 500;
     }
     .pipeline__pager {
       display: flex;
@@ -329,7 +329,7 @@ import { ReceptionForm } from './reception-form';
       justify-content: center;
       margin-top: 1rem;
     }
-    .pipeline__pager-info { font-size: var(--text-sm); color: var(--n-500); font-weight: 600; }
+    .pipeline__pager-info { font-size: var(--text-sm); color: var(--n-500); font-weight: 500; }
   `,
 
 })

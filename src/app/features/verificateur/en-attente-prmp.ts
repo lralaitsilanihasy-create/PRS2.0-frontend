@@ -129,9 +129,9 @@ interface CarteAttente {
       white-space: nowrap;
     }
     .ep__cible--moi {
-      color: var(--p-700, #1d4ed8);
-      background: var(--p-50, #eff6ff);
-      border-color: var(--p-200, #bfdbfe);
+      color: var(--p-700);
+      background: var(--p-50);
+      border-color: var(--p-200);
       font-weight: var(--cnm-fw-semibold);
     }
     .ep__details { margin-left: auto; }

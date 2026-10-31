@@ -222,7 +222,7 @@ import { LienDossier } from './page-dossier/lien-dossier';
     .lien-ligne::after { content: ''; position: absolute; inset: 0; }
     /* Les boutons d'action passent AU-DESSUS de l'overlay → cliquables indépendamment du clic-ligne. */
     .table-card table tr.ligne-clic .btn { position: relative; z-index: 1; }
-    .dc__attente { display: inline-block; margin-left: 0.35rem; padding: 0.05rem 0.4rem; border-radius: var(--radius-full); background: var(--warning-bg, #fffbeb); border: 1px solid var(--warning-bdr, #fde68a); color: var(--warning-text, #92400e); font-size: var(--text-xs); white-space: nowrap; }
+    .dc__attente { display: inline-block; margin-left: 0.35rem; padding: 0.05rem 0.4rem; border-radius: var(--radius-full); background: var(--warning-bg); border: 1px solid var(--warning-bdr); color: var(--warning-text); font-size: var(--text-xs); white-space: nowrap; }
     .dc__hist { padding: 0.25rem 0.35rem; }
     .dc__hist-title { margin: 0 0 0.4rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); }
     .dc__ech { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
@@ -235,8 +235,8 @@ import { LienDossier } from './page-dossier/lien-dossier';
     .dc__pager { display: flex; align-items: center; gap: 0.75rem; justify-content: flex-end; margin-top: 0.75rem; }
     /* ⚠️ 2026-08-05 — ouverture d'une mise à jour de PPM (versionnement) : le motif est saisi en ligne. */
     .dc__maj { padding: 0 1.1rem 0.75rem; display: flex; flex-direction: column; gap: 0.4rem; align-items: flex-start; }
-    .dc__maj-label { font-size: var(--text-sm); font-weight: 600; color: var(--n-600); }
-    .dc__maj-requis { font-size: 0.7rem; color: #B91C1C; text-transform: uppercase; letter-spacing: 0.04em; }
+    .dc__maj-label { font-size: var(--text-sm); font-weight: 500; color: var(--n-600); }
+    .dc__maj-requis { font-size: 0.7rem; color: var(--retard-texte); text-transform: uppercase; letter-spacing: 0.04em; }
     .dc__maj textarea { width: min(40rem, 100%); }
     .dc__maj-actions { display: flex; gap: 0.4rem; }
     .dc__maj-reprise { margin: 0; color: var(--n-500); font-size: var(--text-sm); }

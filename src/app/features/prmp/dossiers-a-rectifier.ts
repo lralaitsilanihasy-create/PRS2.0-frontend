@@ -108,8 +108,8 @@ interface CarteRectif {
 
   `,
   styles: `
-    .ar-item__nb { color: var(--warning-text); font-size: var(--text-xs); font-weight: 700; white-space: nowrap; }
-    .ar-attente { display: inline-block; margin-left: 0.35rem; padding: 0.05rem 0.4rem; border-radius: var(--radius-full); background: var(--warning-bg, #fffbeb); border: 1px solid var(--warning-bdr, #fde68a); color: var(--warning-text, #92400e); font-size: var(--text-xs); white-space: nowrap; }
+    .ar-item__nb { color: var(--warning-text); font-size: var(--text-xs); font-weight: 500; white-space: nowrap; }
+    .ar-attente { display: inline-block; margin-left: 0.35rem; padding: 0.05rem 0.4rem; border-radius: var(--radius-full); background: var(--warning-bg); border: 1px solid var(--warning-bdr); color: var(--warning-text); font-size: var(--text-xs); white-space: nowrap; }
   `,
 })
 export class DossiersARectifier {

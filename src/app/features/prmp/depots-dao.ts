@@ -100,7 +100,7 @@ const LIBELLES_ENVELOPPE: Readonly<Record<EnveloppeOffre, string>> = { TECHNIQUE
     .dd__table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
     .dd__table th, .dd__table td { text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--n-200); }
     /* 06/10 — pas de couleur ici : l’en-tête global est bleu à texte blanc (gris sur bleu < AA). */
-    .dd__table th { font-weight: 600; }
+    .dd__table th { font-weight: 500; }
   `,
 })
 export class DepotsDao implements OnInit {

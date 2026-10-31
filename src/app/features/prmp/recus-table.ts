@@ -93,7 +93,7 @@ export const LIBELLES_ETAT_RECU: Readonly<Record<RecuDao['etat'], string>> = {
     /* Le td global du design system ne replie pas : un motif de refus pousserait les actions hors de l'écran. */
     .rc__table td { white-space: normal; vertical-align: top; }
     .rc__table td.nowrap, .rc__table td > .cnm-mono { white-space: nowrap; }
-    .rc__attente td { background: var(--warning-bg, #fff8e6); }
+    .rc__attente td { background: var(--warning-bg); }
     .rc__bas { color: var(--danger-text); }
     .rc__actions { text-align: right; }
     .rc__boutons { display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: flex-end; }

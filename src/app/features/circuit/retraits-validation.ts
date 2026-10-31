@@ -167,10 +167,10 @@ import { LienDossier } from './page-dossier/lien-dossier';
     .rv__grid { display: grid; grid-template-columns: 1fr; gap: 0.75rem; align-items: start; }
     .rv__actions, .rv__refus-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
     .rv__refus { display: flex; flex-direction: column; gap: 0.5rem; min-width: 14rem; }
-    .rv__embed-head { font-weight: 700; color: var(--n-700); margin-bottom: 0.25rem; }
+    .rv__embed-head { font-weight: 500; color: var(--n-700); margin-bottom: 0.25rem; }
     .rv__info { margin-bottom: 0.75rem; }
     .rv__filtre { margin: -0.4rem 0 0; color: var(--n-500); font-size: var(--text-sm); }
-    .rv__filtre a { margin-left: 0.4rem; color: var(--p-600); font-weight: 600; }
+    .rv__filtre a { margin-left: 0.4rem; color: var(--p-600); font-weight: 500; }
     /* Lot L4-F6 : la référence est un LIEN vers la page du dossier (Ctrl+clic = nouvel onglet). */
     .rv__link { color: var(--c-600); text-decoration: underline; }
     /* Le motif est du texte libre : sans cela, le « white-space: nowrap » global des cellules

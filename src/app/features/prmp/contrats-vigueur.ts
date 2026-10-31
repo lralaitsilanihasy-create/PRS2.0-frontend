@@ -252,7 +252,7 @@ function aujourdhui(): string {
     .cv__ligne { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: grid; grid-template-columns: 9rem 1fr auto auto; gap: 0.8rem; align-items: center; padding: 0.7rem 1rem; }
     .cv__ligne:focus-visible { outline: 2px solid var(--p-600); outline-offset: -2px; }
     .cv__ligne:hover { background: var(--n-100); }
-    .cv__type { font-size: 0.78rem; font-weight: 700; color: var(--p-700); text-transform: uppercase; letter-spacing: 0.03em; }
+    .cv__type { font-size: 0.78rem; font-weight: 500; color: var(--p-700); text-transform: uppercase; letter-spacing: 0.03em; }
     .cv__objet { min-width: 0; overflow-wrap: anywhere; }
     .cv__echeance { font-size: var(--text-sm); white-space: nowrap; }
     .cv__badges { display: flex; gap: 0.3rem; flex-wrap: wrap; justify-content: flex-end; }
@@ -270,7 +270,7 @@ function aujourdhui(): string {
     .cv__radios { display: flex; gap: 1.2rem; font-size: var(--text-sm); }
     .cv__champs { display: flex; gap: 0.6rem; flex-wrap: wrap; }
     .cv__alerte { margin: 0; color: var(--warning-text); }
-    .cv__details summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; }
+    .cv__details summary { cursor: pointer; font-size: var(--text-sm); font-weight: 500; }
     .cv__form--remise { border: 0; padding: 0.4rem 0 0; }
     .cv__large { flex: 1 1 18rem; }
     .cv__relecture { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; margin-top: 0.4rem; }

@@ -183,7 +183,7 @@ import { DossierService, TypeDossierService } from '../../services';
       flex-direction: column;
       gap: 0.15rem;
       padding: 0.9rem 1.1rem 0.9rem 1.25rem;
-      background: #fff;
+      background: var(--carte-fond);
       border: 1px solid var(--n-200);
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-sm);
@@ -200,7 +200,7 @@ import { DossierService, TypeDossierService } from '../../services';
     .md__kpi--sent::before { background: var(--success-text); }
     .md__kpi-val {
       font-size: var(--text-3xl);
-      font-weight: 800;
+      font-weight: 500;
       line-height: 1;
       color: var(--n-800);
       font-variant-numeric: tabular-nums;
@@ -209,7 +209,7 @@ import { DossierService, TypeDossierService } from '../../services';
     .md__kpi--total .md__kpi-val { color: var(--p-600); }
     .md__kpi-lbl {
       font-size: var(--text-xs);
-      font-weight: 700;
+      font-weight: 500;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: var(--n-400);
@@ -224,7 +224,7 @@ import { DossierService, TypeDossierService } from '../../services';
     }
     .md__card {
       position: relative;
-      background: #fff;
+      background: var(--carte-fond);
       border: 1px solid var(--n-200);
       border-radius: var(--radius-xl);
       box-shadow: var(--shadow-sm);
@@ -257,14 +257,14 @@ import { DossierService, TypeDossierService } from '../../services';
       width: 2.6rem; height: 2.6rem;
       display: inline-flex; align-items: center; justify-content: center;
       background: var(--grad-primary);
-      color: #fff; font-weight: 800; font-size: 0.8rem; letter-spacing: 0.02em;
+      color: var(--texte-menu); font-weight: 500; font-size: 0.8rem; letter-spacing: 0.02em;
       border-radius: var(--radius-md);
-      box-shadow: 0 3px 10px rgba(102, 126, 234, 0.35);
+      box-shadow: none;
     }
     .md__titles { min-width: 0; flex: 1; display: flex; flex-direction: column; }
     .md__title {
       margin: 0;
-      font-size: var(--text-md); font-weight: 700; color: var(--n-800);
+      font-size: var(--text-md); font-weight: 500; color: var(--n-800);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .md__code {
@@ -277,7 +277,7 @@ import { DossierService, TypeDossierService } from '../../services';
       background: var(--p-50); color: var(--p-600);
       border: 1px solid var(--p-200);
       border-radius: var(--radius-full);
-      font-weight: 800; font-size: var(--text-sm); text-align: center;
+      font-weight: 500; font-size: var(--text-sm); text-align: center;
       font-variant-numeric: tabular-nums;
     }
 
@@ -311,23 +311,23 @@ import { DossierService, TypeDossierService } from '../../services';
     }
     .md__row-ic--draft { background: var(--warning-bg); color: var(--warning-text); }
     .md__row-ic--sent { background: var(--success-bg); color: var(--success-text); }
-    .md__row-ic--rectif { background: #FEF2F2; color: #B91C1C; }
-    .md__row-ic--verif { background: var(--c-50); color: var(--c-600, #4f46e5); }
+    .md__row-ic--rectif { background: var(--retard-fond); color: var(--retard-texte); }
+    .md__row-ic--verif { background: var(--c-50); color: var(--c-600); }
     .md__row-ic--creer { background: var(--p-50); color: var(--p-600); }
     /* « Créer » : action d'entrée mise en avant (gras + accent), séparée des lignes de consultation. */
-    .md__row--creer { font-weight: 700; color: var(--p-600); border-bottom: 1px solid var(--n-100); border-radius: 0; margin-bottom: 2px; }
+    .md__row--creer { font-weight: 500; color: var(--p-600); border-bottom: 1px solid var(--n-100); border-radius: 0; margin-bottom: 2px; }
     .md__row--creer:hover { background: var(--p-50); color: var(--p-700, var(--p-600)); }
     /* « Mettre à jour un PPM » : seconde action d'entrée de la carte, détachée des lignes de consultation. */
-    .md__row-ic--maj { background: var(--c-50); color: var(--c-700, #3730a3); }
-    .md__row--maj { font-weight: 700; color: var(--c-700, #3730a3); border-top: 1px solid var(--n-100); border-radius: 0; margin-top: 2px; }
+    .md__row-ic--maj { background: var(--c-50); color: var(--c-700); }
+    .md__row--maj { font-weight: 500; color: var(--c-700); border-top: 1px solid var(--n-100); border-radius: 0; margin-top: 2px; }
     .md__row--maj:hover { background: var(--c-50); }
-    .md__row-label { font-weight: 600; }
+    .md__row-label { font-weight: 500; }
     .md__row-count {
       margin-left: auto;
       min-width: 1.5rem; padding: 0 0.45rem;
       background: var(--n-100); color: var(--n-600);
       border-radius: var(--radius-full);
-      font-weight: 700; font-size: var(--text-sm); text-align: center;
+      font-weight: 500; font-size: var(--text-sm); text-align: center;
       font-variant-numeric: tabular-nums;
     }
     .md__row:hover .md__row-count { background: var(--p-100); color: var(--p-600); }

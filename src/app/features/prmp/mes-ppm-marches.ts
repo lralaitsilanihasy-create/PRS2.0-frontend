@@ -75,9 +75,9 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
       padding: 0.85rem 1.25rem;
       margin-bottom: 0.75rem;
     }
-    .ppm-row--soumis { background: var(--c-50); }
+    .ppm-row--soumis { border-left: 3px solid var(--or); }
     .ppm-row__head { display: flex; align-items: center; gap: 0.75rem; flex: 1; min-width: 0; }
-    .ppm-row__ref { font-weight: 700; color: var(--c-800); }
+    .ppm-row__ref { font-weight: 500; color: var(--c-800); }
     .ppm-row__sub { color: var(--n-400); font-size: var(--text-sm); flex: 1; min-width: 0; }
   `,
 })

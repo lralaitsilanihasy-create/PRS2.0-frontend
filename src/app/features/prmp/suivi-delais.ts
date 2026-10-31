@@ -149,7 +149,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
     }
   `,
   styles: `
-    .sdl-attente { display: inline-block; margin-left: 0.35rem; padding: 0.05rem 0.4rem; border-radius: var(--radius-full); background: var(--warning-bg, #fffbeb); border: 1px solid var(--warning-bdr, #fde68a); color: var(--warning-text, #92400e); font-size: var(--text-xs); white-space: nowrap; }
+    .sdl-attente { display: inline-block; margin-left: 0.35rem; padding: 0.05rem 0.4rem; border-radius: var(--radius-full); background: var(--warning-bg); border: 1px solid var(--warning-bdr); color: var(--warning-text); font-size: var(--text-xs); white-space: nowrap; }
     /* Ligne cliquable : la référence est un vrai bouton (nom accessible + clavier) dont la zone
        cliquable est ÉTENDUE à toute la ligne via un overlay ::after ; pas de (click) sur <tr>. */
     .table-card table tr.ligne-clic { position: relative; cursor: pointer; }

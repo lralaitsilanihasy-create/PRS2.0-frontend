@@ -252,7 +252,7 @@ import { ClassementConfig, ColonneCircuit, dossierAttribueAMoi, dossierExcluDuGr
   styles: `
     .actions-end { justify-content: flex-end; }
     .empty-cell { text-align: center; color: var(--n-400); padding: 1.5rem; }
-    .dcl__embed-titre { padding: 0.85rem 1rem 0; font-weight: 700; color: var(--n-800); }
+    .dcl__embed-titre { padding: 0.85rem 1rem 0; font-weight: 500; color: var(--n-800); }
     /* Lot L4-F6 : la référence est un LIEN vers la page du dossier. */
     .dcl__lien-ref { color: var(--c-600); text-decoration: underline; }
     .dcl__ref { justify-content: space-between; align-items: center; }
@@ -261,15 +261,15 @@ import { ClassementConfig, ColonneCircuit, dossierAttribueAMoi, dossierExcluDuGr
     .dcl__lot { justify-content: space-between; align-items: center; }
     .dcl__lot-actions { display: flex; align-items: center; gap: 0.5rem; }
     /* Fuchsia vif demandé par le user (dérogation assumée aux tokens, comme l'accent corail des cartes contrôleurs). */
-    .dcl__btn-lot { background: linear-gradient(135deg, #e935c1, #b31fa0); color: #fff; border-color: transparent; box-shadow: 0 3px 10px rgba(217, 70, 239, 0.45); }
-    .dcl__btn-lot:hover:not(:disabled) { background: linear-gradient(135deg, #f04fd0, #c62bb2); transform: translateY(-1px); box-shadow: 0 5px 14px rgba(217, 70, 239, 0.55); }
+    .dcl__btn-lot { background: var(--bouton-principal); color: var(--texte-menu); border-color: transparent; box-shadow: none; }
+    .dcl__btn-lot:hover:not(:disabled) { background: var(--bouton-principal); box-shadow: none; }
     .dcl__check-col { width: 2.2rem; text-align: center; }
     .dcl__check-col input { cursor: pointer; }
     .dcl__check-col input:disabled { cursor: not-allowed; }
     .dcl__confirm { max-width: 28rem; }
     .dcl__confirm-hint { margin: 0.5rem 0 0; color: var(--n-500); font-size: var(--text-sm); }
     /* Brouillon d'examen (couleur « en cours » de l'examen : indigo). */
-    .dcl__brouillon { margin-left: 0.4rem; background: #E0E7FF; color: #4338CA; border: 1px solid #C7D2FE; }
+    .dcl__brouillon { margin-left: 0.4rem; background: var(--onglet-actif-fond); color: var(--texte); border: 1px solid var(--bordure); }
     /* Consignes du dispatcheur : texte long possible — retour à la ligne, largeur bornée. */
     .dcl__instructions { max-width: 22rem; white-space: normal; overflow-wrap: break-word; color: var(--n-500); }
   `,

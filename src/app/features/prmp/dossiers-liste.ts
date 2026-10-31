@@ -208,9 +208,9 @@ type Groupe = 'brouillon' | 'soumis';
       padding: 0.05rem 0.4rem;
       border-radius: 999px;
       font-size: var(--text-xs);
-      color: var(--warning-700, #92400e);
-      background: var(--warning-50, #fffbeb);
-      border: 1px solid var(--warning-200, #fde68a);
+      color: var(--warning-700, var(--examen-texte));
+      background: var(--warning-50, var(--examen-fond));
+      border: 1px solid var(--warning-200, var(--examen-texte));
       white-space: nowrap;
     }
     .dl-etat {
@@ -226,7 +226,7 @@ type Groupe = 'brouillon' | 'soumis';
       justify-content: center;
       margin-top: 1rem;
     }
-    .dl-pager__info { font-size: var(--text-sm); color: var(--n-500); font-weight: 600; }
+    .dl-pager__info { font-size: var(--text-sm); color: var(--n-500); font-weight: 500; }
     .dl-pager__limite {
       margin: 0.4rem 0 0;
       text-align: center;
@@ -234,10 +234,10 @@ type Groupe = 'brouillon' | 'soumis';
       color: var(--n-500);
     }
     /* Ligne ciblée par la recherche topbar : flash bleu puis surlignage doux persistant. */
-    .dl-row-focus > td { animation: dl-flash 1.8s ease; background: rgba(2, 132, 199, 0.06); }
+    .dl-row-focus > td { animation: dl-flash 1.8s ease; background: var(--onglet-actif-fond); }
     @keyframes dl-flash {
-      0%, 30% { background: rgba(2, 132, 199, 0.28); }
-      100% { background: rgba(2, 132, 199, 0.06); }
+      0%, 30% { background: var(--examen-fond); }
+      100% { background: var(--onglet-actif-fond); }
     }
   `,
 })
