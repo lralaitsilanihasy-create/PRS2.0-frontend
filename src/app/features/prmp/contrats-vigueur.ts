@@ -8,6 +8,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { AlerteContrat, ContratVigueur, DecisionReconduction, Remise, TypeContratVigueur } from '../../models';
 import { ContratsVigueurService, RemisesService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
+import { DeuxVolets } from '../../shared/ui/deux-volets';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 import { ariary } from '../evaluation/libelles-evaluation';
 import { ProfilRemise, RemiseDetail, refusRemise } from '../remises/remise-detail';
@@ -75,7 +76,7 @@ function aujourdhui(): string {
  */
 @Component({
   selector: 'app-contrats-vigueur',
-  imports: [EtatErreur, RemiseDetail, BonsCommandeContrat, CommissionReceptionPanneau],
+  imports: [EtatErreur, DeuxVolets, RemiseDetail, BonsCommandeContrat, CommissionReceptionPanneau],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="cv">
@@ -96,10 +97,14 @@ function aujourdhui(): string {
       } @else if (!visibles().length) {
         <p class="text-muted">{{ contrats().length ? 'Aucun contrat dans ce filtre.' : 'Aucun contrat en vigueur : un contrat se crée à la notification d’un lot de contrat-cadre ou de marché à commandes.' }}</p>
       } @else {
-        <ul class="cv__liste">
+        <!-- ⚠️ 31/10 (pilote, Espace de travail, lot 3) — deux volets : la liste à gauche, le détail du contrat choisi à droite,
+             sans changer de page. Le premier contrat est choisi d'office. -->
+        <app-deux-volets [ouvert]="!!selection()" [cle]="selection()?.id ?? null" libelleListe="Contrats" libelleDetail="Détail du contrat"
+                         invite="Choisissez un contrat : son détail s’affiche ici.">
+        <ul liste class="cv__liste">
           @for (c of visibles(); track c.id) {
-            <li class="card cv__carte" [class.cv__carte--echu]="c.etat === 'ECHU'">
-              <button type="button" class="cv__ligne" [attr.aria-expanded]="ouvert() === c.id" [attr.aria-controls]="'cv-detail-' + c.id" (click)="basculer(c.id)">
+            <li class="cv__carte" [class.cv__carte--echu]="c.etat === 'ECHU'" [class.cv__carte--on]="ouvert() === c.id">
+              <button type="button" class="cv__ligne" [attr.aria-pressed]="ouvert() === c.id" [attr.aria-controls]="'cv-detail-' + c.id" (click)="choisir(c.id)">
                 <span class="cv__type">{{ type(c) }}</span>
                 <span class="cv__objet"><strong>{{ c.objet || 'Objet non renseigné' }}</strong>@if (c.acheteur) { <span class="text-muted"> · {{ c.acheteur }}</span> }<span class="text-muted"> · fiche {{ c.idDmc }}, lot {{ c.lot }}</span></span>
                 <span class="cv__echeance">Fin le <strong>{{ date(c.dateFin) }}</strong></span>
@@ -108,9 +113,17 @@ function aujourdhui(): string {
                   @if (!c.alertes.length) { <span class="badge badge-success">En vigueur</span> }
                 </span>
               </button>
-
-              @if (ouvert() === c.id) {
+            </li>
+          }
+        </ul>
+        <div detail>
+              @if (selection(); as c) {
                 <div class="cv__detail" [id]="'cv-detail-' + c.id">
+                  <div class="cv__detail-tete">
+                    <span class="cv__type">{{ type(c) }} · fiche {{ c.idDmc }}, lot {{ c.lot }}</span>
+                    <h2 class="cv__detail-titre">{{ c.objet || 'Objet non renseigné' }}</h2>
+                    @if (c.acheteur) { <span class="text-sm text-muted">{{ c.acheteur }}</span> }
+                  </div>
                   <dl class="cv__grille">
                     <div><dt>Prise d’effet</dt><dd>{{ date(c.dateEffet) }} (notification)</dd></div>
                     <div><dt>Période</dt><dd>{{ c.periodeMois ?? '—' }} mois · fin le {{ date(c.dateFin) }}</dd></div>
@@ -234,9 +247,8 @@ function aujourdhui(): string {
                   }
                 </div>
               }
-            </li>
-          }
-        </ul>
+        </div>
+        </app-deux-volets>
       }
     </section>
   `,
@@ -246,17 +258,22 @@ function aujourdhui(): string {
     .cv__h1 { margin: 0; font-size: 1.3rem; }
     .cv__intro { margin: 0; }
     .cv__filtres { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-    .cv__liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
-    .cv__carte { padding: 0; overflow: hidden; }
+    /* ⚠️ 31/10 (Espace de travail) — volet de gauche : des lignes compactes ; la ligne choisie porte l'onglet actif et un filet. */
+    .cv__liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+    .cv__carte { padding: 0; overflow: hidden; border-bottom: 1px solid var(--bordure); }
+    .cv__carte--on { background: var(--onglet-actif-fond); box-shadow: inset 3px 0 0 var(--menu-fond); }
+    .cv__detail-tete { display: flex; flex-direction: column; gap: 2px; padding-bottom: 8px; border-bottom: 1px solid var(--bordure); }
+    .cv__detail-titre { margin: 2px 0 0; font-size: 15px; font-weight: 500; line-height: 1.35; }
     .cv__carte--echu { opacity: 0.85; }
-    .cv__ligne { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: grid; grid-template-columns: 9rem 1fr auto auto; gap: 0.8rem; align-items: center; padding: 0.7rem 1rem; }
+    .cv__ligne { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'type type' 'objet objet' 'echeance badges'; gap: 0.25rem 0.6rem; align-items: center; padding: 0.6rem 0.8rem; }
+    .cv__ligne .cv__type { grid-area: type; } .cv__ligne .cv__objet { grid-area: objet; } .cv__ligne .cv__echeance { grid-area: echeance; } .cv__ligne .cv__badges { grid-area: badges; }
     .cv__ligne:focus-visible { outline: 2px solid var(--p-600); outline-offset: -2px; }
     .cv__ligne:hover { background: var(--n-100); }
     .cv__type { font-size: 0.78rem; font-weight: 500; color: var(--p-700); text-transform: uppercase; letter-spacing: 0.03em; }
     .cv__objet { min-width: 0; overflow-wrap: anywhere; }
     .cv__echeance { font-size: var(--text-sm); white-space: nowrap; }
     .cv__badges { display: flex; gap: 0.3rem; flex-wrap: wrap; justify-content: flex-end; }
-    .cv__detail { border-top: 1px solid var(--n-200); padding: 0.8rem 1rem; display: flex; flex-direction: column; gap: 0.6rem; }
+    .cv__detail { display: flex; flex-direction: column; gap: 0.6rem; }
     .cv__grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: 0.5rem 1.2rem; margin: 0; }
     .cv__grille dt { font-size: 0.74rem; color: var(--n-500); }
     .cv__grille dd { margin: 0; font-size: 0.88rem; }
@@ -274,7 +291,7 @@ function aujourdhui(): string {
     .cv__form--remise { border: 0; padding: 0.4rem 0 0; }
     .cv__large { flex: 1 1 18rem; }
     .cv__relecture { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; margin-top: 0.4rem; }
-    @media (max-width: 800px) { .cv__ligne { grid-template-columns: 1fr; gap: 0.3rem; } .cv__badges { justify-content: flex-start; } }
+    @media (max-width: 800px) { .cv__badges { justify-content: flex-end; } }
   `,
 })
 export class ContratsVigueur implements OnInit {
@@ -359,6 +376,8 @@ export class ContratsVigueur implements OnInit {
         this.aOuvrir = null;
         const c = cible && l.find((x) => x.idDmc === cible.idDmc && (cible.lot == null || x.lot === cible.lot));
         if (c && this.ouvert() !== c.id) this.basculer(c.id);
+        // ⚠️ 31/10 (deux volets) — sans contrat demandé, le premier de la liste est choisi d'office.
+        else if (!c && this.ouvert() == null && this.visibles().length) this.basculer(this.visibles()[0].id);
       },
       error: (e: ApiError) => {
         this.chargement.set(false);
@@ -369,6 +388,14 @@ export class ContratsVigueur implements OnInit {
 
   compte(cle: string): number {
     return this.contrats().filter((c) => cle === 'TOUS' || (cle === 'ALERTES' ? c.alertes.length > 0 : c.etat === cle)).length;
+  }
+
+  /** Le contrat choisi dans le volet de gauche, s'il est dans le filtre courant. */
+  readonly selection = computed(() => this.visibles().find((c) => c.id === this.ouvert()) ?? null);
+
+  /** ⚠️ 31/10 (deux volets) — choisir un contrat l'affiche à droite ; le choisir à nouveau ne le replie pas. */
+  choisir(id: number): void {
+    if (this.ouvert() !== id) this.basculer(id);
   }
 
   basculer(id: number): void {
