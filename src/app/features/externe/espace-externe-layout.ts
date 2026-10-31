@@ -165,10 +165,10 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
     .cl-top__in { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; padding-top: 6px; padding-bottom: 6px; }
     .cl-marque { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--texte-menu); }
     .cl-marque:focus-visible { outline: 2px solid var(--or); outline-offset: 2px; }
-    .cl-marque__logo { width: 40px; height: 40px; object-fit: contain; flex-shrink: 0; }
+    .cl-marque__logo { width: 64px; height: 64px; object-fit: contain; flex-shrink: 0; }
     .cl-marque__texte { display: flex; flex-direction: column; line-height: 1.2; }
-    .cl-marque__s { font-size: 12px; color: var(--texte-menu-secondaire); }
-    .cl-marque__t { font-family: var(--police-marque); font-size: 19px; font-weight: 500; color: var(--texte-menu); }
+    .cl-marque__s { font-size: 16px; color: var(--texte-menu-secondaire); }
+    .cl-marque__t { font-family: var(--police-marque); font-size: 30px; font-weight: 500; color: var(--texte-menu); }
     .cl-onglets { background: var(--menu-fond); }
     .cl-nav { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 12px; box-sizing: border-box; display: flex; align-items: flex-end; gap: 2px; overflow-x: auto; scrollbar-width: thin; }
     .cl-nav a { flex: none; white-space: nowrap; margin-top: 4px; padding: 7px 12px; border-radius: 4px 4px 0 0; color: var(--texte-menu); text-decoration: none; font-size: 13px; transition: background 0.15s ease; }

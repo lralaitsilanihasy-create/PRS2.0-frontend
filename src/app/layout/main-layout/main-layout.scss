@@ -31,15 +31,15 @@
 
 /* Logo du Ministère (image existante) en lieu et place du cercle au bâtiment, comme le prévoit la demande. */
 .entete__logo {
-  width: 40px;
-  height: 40px;
+  width: 64px;
+  height: 64px;
   object-fit: contain;
   flex-shrink: 0;
 }
 
 .entete__noms { line-height: 1.2; min-width: 0; }
-.entete__institution { font-size: 12px; color: var(--texte-menu-secondaire); }
-.entete__appli { font-family: var(--police-marque); font-size: 19px; font-weight: 500; color: var(--texte-menu); }
+.entete__institution { font-size: 16px; color: var(--texte-menu-secondaire); }
+.entete__appli { font-family: var(--police-marque); font-size: 30px; font-weight: 500; color: var(--texte-menu); }
 
 /* Recherche « aller à un dossier par référence » : un champ de la palette, focus visible. */
 .entete__recherche {
