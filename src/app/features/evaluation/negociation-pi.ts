@@ -115,7 +115,7 @@ export function manquesConclusion(c: { resultat: 'REUSSIE' | 'ECHOUEE' | null; d
     .ng__aide { margin: 0; }
     .ng__item { border: 1px solid var(--n-200); border-radius: 8px; padding: 0.6rem 0.8rem; display: flex; flex-direction: column; gap: 0.4rem; }
     .ng__tete, .ng__ligne { margin: 0; display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
-    .ng__echec { color: var(--danger-700, #b42318); }
+    .ng__echec { color: var(--danger-700, var(--retard-texte)); }
     .ng__actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
     .ng__bloc { display: flex; flex-direction: column; gap: 0.5rem; border-top: 1px dashed var(--n-200); padding-top: 0.5rem; }
     .ng__conclure { border: 1px solid var(--n-200); border-radius: 8px; padding: 0.6rem 0.8rem; margin: 0; display: flex; flex-direction: column; gap: 0.4rem; }

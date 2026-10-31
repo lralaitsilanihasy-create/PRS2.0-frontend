@@ -126,7 +126,7 @@ export function refus2d(e: ApiError): string {
   styles: `
     :host { display: flex; flex-direction: column; gap: 0.5rem; }
     .dl__bloc { border: 1px solid var(--n-200); border-radius: 6px; padding: 0.6rem 0.8rem; display: flex; flex-direction: column; gap: 0.4rem; }
-    .dl__fait { background: var(--n-50, #f8fafc); }
+    .dl__fait { background: var(--n-50); }
     .dl__h4 { margin: 0; font-size: 0.92rem; }
     .dl__bloc p { margin: 0; }
     .dl__grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: 0.5rem; }

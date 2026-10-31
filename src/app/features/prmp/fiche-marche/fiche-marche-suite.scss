@@ -3,7 +3,7 @@
 // l'ordre (styleUrls [principale, suite]) — la cascade est la même qu'avant.
 
 .fm__ppm { margin-top: 0.9rem; padding: 0.6rem 1rem; }
-.fm__ppm summary { cursor: pointer; font-weight: 600; font-size: 0.88rem; }
+.fm__ppm summary { cursor: pointer; font-weight: 500; font-size: 0.88rem; }
 
 
 .fm__etape-s, .fm__opt-aide, .fm__forme { font-size: 0.74rem; color: var(--n-500); }
@@ -16,13 +16,13 @@
 .fm__ctrls li { display: flex; gap: 0.5rem; align-items: flex-start; }
 .fm__pt { width: 8px; height: 8px; border-radius: 50%; margin-top: 0.4rem; flex: none; }
 // Rouge bloquant, ambre avertissement : même paire pour le texte d'un contrôle et sa pastille.
-.fm__ctrl--r { color: #b91c1c; }
-.fm__ctrl--a { color: #b45309; }
-.fm__pt--r { background: #b91c1c; }
-.fm__pt--a { background: #b45309; }
+.fm__ctrl--r { color: var(--retard-texte); }
+.fm__ctrl--a { color: var(--examen-texte); }
+.fm__pt--r { background: var(--retard-texte); }
+.fm__pt--a { background: var(--examen-texte); }
 // ⚠️ 17/10 — une information du bilan (SPECIFICATIONS_DU_BESOIN) : bleu, ni bloquante ni à corriger.
-.fm__ctrl--i { color: var(--p-700, #1d4ed8); }
-.fm__pt--i { background: var(--p-600, #2563eb); }
+.fm__ctrl--i { color: var(--p-700); }
+.fm__pt--i { background: var(--p-600); }
 .fm__ctrls-vide { margin: 0; padding: 0 1rem 0.8rem; }
 .fm__total { padding: 0.6rem 1rem 0.9rem; border-top: 1px solid var(--n-200); }
 .fm__total b { color: var(--n-700); }
@@ -50,9 +50,9 @@
 .fm__versions th { text-align: left; letter-spacing: 0.06em; padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--n-200); }
 .fm__versions td { padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--n-100); }
 .fm__versions .r { text-align: right; }
-.fm__versions--courante td { background: var(--p-50); font-weight: 600; }
+.fm__versions--courante td { background: var(--p-50); font-weight: 500; }
 .fm__filtre { margin: 0; display: flex; gap: 0.6rem; align-items: baseline; flex-wrap: wrap; font-size: 0.88rem; color: var(--n-500); }
-.fm__filtre a { color: var(--p-700); font-weight: 600; }
+.fm__filtre a { color: var(--p-700); font-weight: 500; }
 
 @media (max-width: 1100px) {
   .fm__cols { grid-template-columns: 1fr; }
@@ -62,7 +62,7 @@
 // Lot 1c : la forme du marché, reprise du plan — sur la ligne éligible et dans le résumé du cadrage.
 .fm__mode { white-space: normal; }
 .fm__forme { display: block; }
-.fm__rep--plan { background: #ecfdf5; color: #047857; }
+.fm__rep--plan { background: var(--favorable-fond); color: var(--favorable-texte); }
 
 // Lot 2 : documents générés par la validation.
 .fm__docs { list-style: none; margin: 0 0 1rem; padding: 0; display: grid; gap: 0.5rem; }
@@ -72,10 +72,10 @@
 
 // Demande du 23/09 : une réponse de cadrage reprise du plan de passation, verrouillée.
 .fm__q--plan .fm__q-opts { opacity: 0.75; }
-.fm__q-plan { padding: 0.1rem 0.5rem; border-radius: 8px; background: #ecfdf5; color: #047857; font-size: 0.72rem; font-weight: 600; }
+.fm__q-plan { padding: 0.1rem 0.5rem; border-radius: 8px; background: var(--favorable-fond); color: var(--favorable-texte); font-size: 0.72rem; font-weight: 500; }
 // ⚠️ 17/10 (pilote) — une question encore sans réponse : liseré et marque, pour la retrouver d'un coup d'œil après un import.
-.fm__q--manque { box-shadow: inset 3px 0 0 var(--warning-text, #b45309); background: var(--warning-bg, #fffbeb); }
-.fm__q-manque { padding: 0.1rem 0.5rem; border-radius: 8px; background: #fef3c7; color: #92400e; font-size: 0.72rem; font-weight: 600; }
+.fm__q--manque { box-shadow: inset 3px 0 0 var(--warning-text); background: var(--warning-bg); }
+.fm__q-manque { padding: 0.1rem 0.5rem; border-radius: 8px; background: var(--examen-fond); color: var(--examen-texte); font-size: 0.72rem; font-weight: 500; }
 
 .fm__docs-f { display: block; font-size: 0.78rem; color: var(--n-500); }
 
@@ -83,7 +83,7 @@
 .fm__versions-docs .fm__docs { margin: 0.4rem 0; }
 
 // Forme de marché pas encore outillée : page courte, sans formulaire inutile.
-.fm__attente { background: #fff; border: 1px solid var(--n-200); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+.fm__attente { background: var(--carte-fond); border: 1px solid var(--n-200); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
 .fm__attente p { margin: 0 0 0.5rem; }
 .fm__attente p:last-child { margin-bottom: 0; }
 
@@ -128,11 +128,11 @@
 
 // ⚠️ 03/10 — accès direct aux blocs : une rangée de boutons sous l'en-tête du bloc.
 .fm__blocs { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; padding: 0.6rem 1.1rem; border-bottom: 1px solid var(--n-200); }
-.fm__bloc-lien { font: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; background: #fff; border: 1px solid var(--n-300); border-radius: 999px; padding: 0.2rem 0.7rem; color: var(--n-600); display: inline-flex; align-items: center; gap: 0.35rem; }
-.fm__bloc-lien--actif { background: var(--bouton-principal); border-color: var(--bouton-principal); color: #fff; }
+.fm__bloc-lien { font: inherit; font-size: 0.8rem; font-weight: 500; cursor: pointer; background: var(--carte-fond); border: 1px solid var(--n-300); border-radius: 999px; padding: 0.2rem 0.7rem; color: var(--n-600); display: inline-flex; align-items: center; gap: 0.35rem; }
+.fm__bloc-lien--actif { background: var(--bouton-principal); border-color: var(--bouton-principal); color: var(--texte-menu); }
 .fm__bloc-lien:disabled { opacity: 0.6; cursor: default; }
 .fm__bloc-n { font-size: 0.7rem; min-width: 1.1rem; padding: 0 0.3rem; border-radius: 999px; background: var(--danger-bg); color: var(--danger-text); text-align: center; }
-.fm__bloc-lien--actif .fm__bloc-n { background: #fff; }
+.fm__bloc-lien--actif .fm__bloc-n { background: var(--carte-fond); }
 .fm__bloc-modif { margin-left: auto; font-size: 0.78rem; color: var(--n-500); }
 
 /* 09/10 (attribution 2d-3) — l'encart « Sans suite » sous les documents de l'étape 7. */
@@ -144,20 +144,20 @@
 /* auto-fit : les cartes présentes s étirent sur toute la largeur, quel que soit leur nombre. */
 .fm__suivi-grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.6rem; }
 .fm__suivi-carte { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; gap: 0.1rem 0.6rem; align-items: center; padding: 0.7rem 0.85rem;
-  background: #fff; border: 1px solid var(--n-200); border-left: 4px solid var(--success-text, #047857); border-radius: 10px; text-decoration: none; color: inherit;
+  background: var(--carte-fond); border: 1px solid var(--n-200); border-left: 4px solid var(--success-text); border-radius: 10px; text-decoration: none; color: inherit;
   box-shadow: var(--shadow-sm); transition: border-color .15s, box-shadow .15s; }
 .fm__suivi-carte app-icone { grid-row: 1 / 3; color: var(--p-600); }
 a.fm__suivi-carte:hover, a.fm__suivi-carte:focus-visible { border-color: var(--p-400); box-shadow: var(--shadow-md); }
-.fm__suivi-carte--ko { border-left-color: var(--warning-text, #a16207); }
+.fm__suivi-carte--ko { border-left-color: var(--warning-text); }
 .fm__suivi-carte--fort { border-left-color: var(--p-600); }
 .fm__suivi-carte--lecture { border-left-color: var(--n-300); }
-.fm__suivi-nom { font-weight: 700; font-size: 0.9rem; color: var(--n-800); }
+.fm__suivi-nom { font-weight: 500; font-size: 0.9rem; color: var(--n-800); }
 .fm__suivi-etat { font-size: 0.8rem; color: var(--n-500); }
 .fm__ctrls-avert { padding: 0 1rem 0.5rem; }
-.fm__ctrls-avert summary { cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--n-600); }
+.fm__ctrls-avert summary { cursor: pointer; font-size: 0.85rem; font-weight: 500; color: var(--n-600); }
 
 /* ⚠️ 19/10 (« etat-fiche-liste ») — le repère d'état d'une ligne, sous son bouton. */
-.fm__etat-ligne { margin-top: 0.3rem; font-size: 0.72rem; font-weight: 600; color: var(--n-500); white-space: normal; }
+.fm__etat-ligne { margin-top: 0.3rem; font-size: 0.72rem; font-weight: 500; color: var(--n-500); white-space: normal; }
 .fm__etat-ligne[data-genre='saisie'] { color: var(--p-700); }
-.fm__etat-ligne[data-genre='prmp'] { color: var(--warning-text, #a16207); }
+.fm__etat-ligne[data-genre='prmp'] { color: var(--warning-text); }
 .fm__etat-ligne[data-genre='clos'] { color: var(--n-500); }

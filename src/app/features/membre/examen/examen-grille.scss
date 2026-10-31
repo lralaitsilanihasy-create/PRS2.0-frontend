@@ -361,7 +361,7 @@
 .pt__refs { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.35rem; }
 /* ⚠️ 18/10 (pilote) — même orange que les lignes citées dans la fiche : le lien se voit d'un coup d'oeil. */
 .pt__ref { padding: 0.02rem 0.45rem; border: 1px solid var(--examen-texte); border-radius: 6px; background: var(--examen-fond); color: var(--examen-texte); font: 500 0.68rem var(--font-mono, monospace); cursor: pointer; }
-.pt__ref:hover { background: var(--or); color: var(--texte-menu); }
+.pt__ref:hover { background: var(--or); color: var(--texte); }
 .pt__nav { display: flex; justify-content: space-between; gap: 0.4rem; margin-top: 0.5rem; }
 .pt__navbtn { display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.2rem 0.55rem; border: 1px solid var(--bordure); border-radius: 7px; background: var(--carte-fond); font: inherit; font-size: 0.75rem; font-weight: 500; color: var(--texte); cursor: pointer; }
 .pt__navbtn:hover:not(:disabled) { border-color: var(--bouton-principal); color: var(--texte); }

@@ -218,7 +218,7 @@ import { CeremonieResponsable } from './ceremonie-responsable';
   styles: `
     .pi { display: flex; flex-direction: column; gap: 1rem; }
     .pi__etat { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; font-size: 0.9rem; }
-    .pi__manque { color: var(--warning-text, #8a5a00); font-weight: 600; }
+    .pi__manque { color: var(--warning-text); font-weight: 500; }
     .pi__anomalies { margin: 0; padding-left: 1.2rem; color: var(--n-700); font-size: 0.88rem; }
     .pi__form { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
     .pi fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }

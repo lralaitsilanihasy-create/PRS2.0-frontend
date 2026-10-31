@@ -883,7 +883,7 @@ interface ApercuDossier {
     .sd__choix-card {
       position: relative; overflow: hidden;
       text-align: left; cursor: pointer; font: inherit;
-      background: #fff; border: 1px solid var(--n-200); border-radius: var(--radius-lg);
+      background: var(--carte-fond); border: 1px solid var(--n-200); border-radius: var(--radius-lg);
       box-shadow: var(--shadow-sm);
       padding: 1.4rem 1.5rem 1.15rem;
       display: flex; flex-direction: column; gap: 0.65rem; min-height: 11rem;
@@ -891,56 +891,50 @@ interface ApercuDossier {
     }
     /* Bandeau d'accent coloré en haut de carte (distinct par type). */
     .sd__choix-card::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 4px; background: var(--grad-primary); }
-    .sd__choix-card--concurrence::before { background: linear-gradient(135deg, #0ea5e9, #14b8a6); }
-    .sd__choix-card--marche::before { background: linear-gradient(135deg, #f59e0b, #f97316); }
+    .sd__choix-card--concurrence::before { background: var(--bouton-principal); }
+    .sd__choix-card--marche::before { background: var(--or); }
     .sd__choix-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--c-300); }
     .sd__choix-head { display: flex; align-items: center; gap: 0.8rem; }
     .sd__choix-ic {
       width: 2.75rem; height: 2.75rem; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
       border-radius: var(--radius-md); font-size: 1.3rem;
-      background: var(--grad-primary); color: #fff;
-      box-shadow: 0 3px 10px rgba(102, 126, 234, 0.35);
+      background: var(--grad-primary); color: var(--texte-menu);
+      box-shadow: none;
     }
-    .sd__choix-card--concurrence .sd__choix-ic { background: linear-gradient(135deg, #0ea5e9, #14b8a6); box-shadow: 0 3px 10px rgba(20, 184, 166, 0.35); }
-    .sd__choix-card--marche .sd__choix-ic { background: linear-gradient(135deg, #f59e0b, #f97316); box-shadow: 0 3px 10px rgba(249, 115, 22, 0.32); }
-    .sd__choix-titre { font-size: var(--text-lg); font-weight: 700; color: var(--n-800); }
+    .sd__choix-card--concurrence .sd__choix-ic { background: var(--bouton-principal); box-shadow: none; }
+    .sd__choix-card--marche .sd__choix-ic { background: var(--or); box-shadow: none; }
+    .sd__choix-titre { font-size: var(--text-lg); font-weight: 500; color: var(--n-800); }
     .sd__choix-desc { color: var(--n-500); font-size: var(--text-sm); line-height: 1.5; }
-    .sd__choix-go { margin-top: auto; display: inline-flex; align-items: center; gap: 0.3rem; font-weight: 700; font-size: var(--text-sm); color: var(--c-600); }
-    .sd__choix-card--concurrence .sd__choix-go { color: #0d9488; }
-    .sd__choix-card--marche .sd__choix-go { color: #c2620c; }
+    .sd__choix-go { margin-top: auto; display: inline-flex; align-items: center; gap: 0.3rem; font-weight: 500; font-size: var(--text-sm); color: var(--c-600); }
+    .sd__choix-card--concurrence .sd__choix-go { color: var(--texte); }
+    .sd__choix-card--marche .sd__choix-go { color: var(--examen-texte); }
     .sd__choix-arrow { font-size: 1.15rem; line-height: 1; transition: transform 0.16s ease; }
     .sd__choix-card:hover .sd__choix-arrow { transform: translateX(4px); }
     @media (max-width: 40rem) { .sd__choix { grid-template-columns: 1fr; } }
     .sd__form { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; max-width: min(64rem, 96vw); }
     .sd__form--wide { max-width: min(100rem, 98vw); }
     .sd__import { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; padding-bottom: 0.75rem; border-bottom: 1px solid var(--c-100); }
-    /* Bouton d'import mis en avant : dégradé chaud distinct du primaire (violet), lueur douce + relief au survol. */
+    /* Bouton d’import mis en avant : bouton principal plein (design institutionnel, 31/10 — plus de dégradé ni de lueur). */
     .sd__import-btn {
       cursor: pointer;
-      color: #fff;
+      color: var(--texte-menu);
       border: none;
-      font-weight: 700;
+      font-weight: 500;
       letter-spacing: 0.01em;
-      background: linear-gradient(135deg, #f59e0b, #f97316 55%, #ef4444);
-      box-shadow: 0 4px 14px rgba(249, 115, 22, 0.45);
+      background: var(--bouton-principal);
+      box-shadow: none;
       transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
-      animation: sd-import-glow 2.6s ease-in-out infinite;
     }
     .sd__import-btn:hover {
-      color: #fff;
+      color: var(--texte-menu);
       filter: brightness(1.06);
       transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(249, 115, 22, 0.58);
+      box-shadow: none;
     }
-    @keyframes sd-import-glow {
-      0%, 100% { box-shadow: 0 4px 14px rgba(249, 115, 22, 0.38); }
-      50% { box-shadow: 0 4px 22px rgba(249, 115, 22, 0.62); }
-    }
-    @media (prefers-reduced-motion: reduce) { .sd__import-btn { animation: none; } }
     /* Bouton « Réinitialiser l'import » : vert. */
-    .sd__reset-btn { cursor: pointer; color: #fff; border: none; font-weight: 700; background: linear-gradient(135deg, #059669, #10b981); box-shadow: 0 3px 10px rgba(16, 185, 129, 0.35); transition: filter 0.15s ease, transform 0.15s ease; }
-    .sd__reset-btn:hover { color: #fff; filter: brightness(1.06); transform: translateY(-1px); }
+    .sd__reset-btn { cursor: pointer; color: var(--texte-menu); border: none; font-weight: 500; background: var(--favorable-texte); box-shadow: none; transition: filter 0.15s ease, transform 0.15s ease; }
+    .sd__reset-btn:hover { color: var(--texte-menu); filter: brightness(1.06); transform: translateY(-1px); }
     .sd__hint { margin: 0; }
     .sd__pieces { display: flex; flex-direction: column; gap: 0.5rem; }
     .sd__piece { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
@@ -949,36 +943,36 @@ interface ApercuDossier {
     .sd__piece-file { font-size: var(--text-sm); color: var(--n-500); }
     .sd__piece-choisir { cursor: pointer; }
     .sd__piece-err { color: var(--danger-text); flex-basis: 100%; }
-    .sd__piece--manquante { background: #fff8f8; border-left: 2.5px solid var(--danger-text); padding-left: 8px; border-radius: var(--radius-sm); }
-    .sd__warn-title { font-weight: 600; margin-bottom: 4px; }
+    .sd__piece--manquante { background: var(--retard-fond); border-left: 2.5px solid var(--danger-text); padding-left: 8px; border-radius: var(--radius-sm); }
+    .sd__warn-title { font-weight: 500; margin-bottom: 4px; }
     .sd__warn-list { margin: 0; padding-left: 1rem; font-size: var(--text-sm); }
     /* Panneau des SOA inconnus : une ligne par code (code + libellé + enregistrer au référentiel). */
     .sd__soa { display: flex; flex-direction: column; gap: 0.4rem; }
     .sd__soa-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-    .sd__soa-code { font-weight: 700; flex: 0 0 auto; min-width: 11rem; }
+    .sd__soa-code { font-weight: 500; flex: 0 0 auto; min-width: 11rem; }
     .sd__soa-row .form-control { flex: 1 1 14rem; min-width: 10rem; }
     .sd__soa-actions { margin-top: 0.5rem; display: flex; justify-content: flex-end; gap: 0.5rem; }
-    .sd__nouv-entite { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(0, 0, 0, 0.08); }
+    .sd__nouv-entite { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--bordure-champ); }
     .sd__ou { text-align: center; color: var(--n-400); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
     /* Appel d'offres (lot 1b) : le chemin de la fiche est mis en avant, le formulaire manuel se replie derrière. */
     .sd__fiche { border: 1px solid var(--c-200); border-left: 4px solid var(--c-600); border-radius: var(--radius-lg, 10px); background: var(--c-50); padding: 1rem 1.15rem; display: flex; flex-direction: column; gap: 0.6rem; align-items: flex-start; }
     .sd__fiche-p { margin: 0; font-size: var(--text-sm); color: var(--n-600); max-width: 60ch; }
-    .sd__reste > summary { cursor: pointer; font-weight: 600; font-size: var(--text-sm); color: var(--c-800); padding: 0.5rem 0; }
+    .sd__reste > summary { cursor: pointer; font-weight: 500; font-size: var(--text-sm); color: var(--c-800); padding: 0.5rem 0; }
     .sd__reste[open] > summary { margin-bottom: 0.5rem; }
     .sd__foot { display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 1rem; }
     .sd__foot--main { margin-top: 1rem; }
     .sd__soumettre-hint { margin-right: auto; align-self: center; }
     .sd__brouillon-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.5rem; }
-    .sd__brouillon-id { margin-left: 0.5rem; font-weight: 700; }
+    .sd__brouillon-id { margin-left: 0.5rem; font-weight: 500; }
     .sd__warn { margin: 0 0 1rem; }
-    .sd__sub { margin: 0; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
+    .sd__sub { margin: 0; font-size: var(--text-md); font-weight: 500; color: var(--c-800); }
     .sd__apercu { max-width: min(112rem, 98vw); max-height: 92vh; display: flex; flex-direction: column; }
     .sd__apercu .modal-body { overflow-y: auto; }
     /* Documents de l'aperçu : feuille officielle partagée (styles/_document-officiel.scss, 2026-09-14). */
     .sd__fiche-justif { margin-top: 1rem; }
     /* Justification globale de la fiche (2026-09-01) — signalée tant qu'elle manque. */
     .sd__justif-globale { margin-top: 0.9rem; }
-    .sd__justif-globale--manquante .form-label { color: var(--danger-text, #b91c1c); }
+    .sd__justif-globale--manquante .form-label { color: var(--danger-text); }
     .sd__justif-globale textarea { resize: vertical; }
     .sd__ap-alertes { margin-top: 1rem; }
     /* Titre de l'aperçu décalé du coin du modal (demande pilote 03/09). */

@@ -526,7 +526,7 @@ function aujourdhui(): string {
     .al__actions { display: flex; gap: 0.3rem; }
     .al__alerte { margin: 0; color: var(--warning-text); }
     .al__ok { color: var(--success-text); }
-    .al__details summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; }
+    .al__details summary { cursor: pointer; font-size: var(--text-sm); font-weight: 500; }
   `,
 })
 export class AttributionLot {

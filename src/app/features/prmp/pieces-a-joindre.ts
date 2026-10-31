@@ -89,14 +89,14 @@ export function piecesAJoindre(exigees: TypePieceJointe[], deposees: PieceJointe
     .paj { margin: 1rem 0; }
     .paj__titre { font-size: 1rem; margin: 0 0 0.25rem; }
     .paj__aide { font-size: var(--text-sm); margin: 0 0 0.5rem; }
-    .paj__aide--manque { color: var(--danger-text); font-weight: 600; }
+    .paj__aide--manque { color: var(--danger-text); font-weight: 500; }
     .paj__liste { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem; }
     .paj__piece { border: 1px solid var(--n-300); border-radius: 6px; padding: 0.5rem 0.75rem; }
     .paj__piece--manque { border-left: 4px solid var(--danger-text); }
     .paj__tete { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-    .paj__nom { font-weight: 600; flex: 1 1 auto; }
+    .paj__nom { font-weight: 500; flex: 1 1 auto; }
     .paj__etat, .paj__meta { font-size: var(--text-sm); color: var(--n-500); }
-    .paj__etat--app { color: var(--success-text, #15803d); font-weight: 600; }
+    .paj__etat--app { color: var(--success-text); font-weight: 500; }
     .paj__note { margin: 0.25rem 0 0; font-size: var(--text-sm); color: var(--n-500); }
     .paj__fichier { display: flex; align-items: center; gap: 0.5rem; font-size: var(--text-sm); margin-top: 0.25rem; padding-left: 0.5rem; }
     .paj__refus { color: var(--danger-text); font-size: var(--text-sm); }

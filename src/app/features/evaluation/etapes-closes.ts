@@ -23,7 +23,7 @@ import { DossierSoumis } from '../../models';
       </div>
     }
   `,
-  styles: [`.ec { margin-bottom: 1rem; } .ec__lien { margin-left: 0.35rem; font-weight: 600; }`],
+  styles: [`.ec { margin-bottom: 1rem; } .ec__lien { margin-left: 0.35rem; font-weight: 500; }`],
 })
 export class EtapeClose {
   readonly dossier = input<DossierSoumis | null>(null);

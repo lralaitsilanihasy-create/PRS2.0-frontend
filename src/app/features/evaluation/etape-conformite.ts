@@ -169,7 +169,7 @@ export function coteInitiale(v: VerificationConformite): Choix {
     /* Le style global des en-têtes de tableau (texte blanc sur fond sombre) ne vaut que pour thead : l'en-tête de ligne reste lisible. */
     .co__grille { table-layout: fixed; width: 100%; }
     .co__grille th, .co__grille td { white-space: normal; vertical-align: top; }
-    .co__grille tbody th[scope='row'] { font-weight: 600; text-align: left; color: var(--n-800); background: transparent; text-transform: none; letter-spacing: normal; font-size: var(--text-sm); }
+    .co__grille tbody th[scope='row'] { font-weight: 500; text-align: left; color: var(--n-800); background: transparent; text-transform: none; letter-spacing: normal; font-size: var(--text-sm); }
     .co__grille thead th:nth-child(1) { width: 24%; }
     .co__grille thead th:nth-child(2) { width: 28%; }
     .co__grille thead th:nth-child(3) { width: 13%; }
@@ -177,13 +177,13 @@ export function coteInitiale(v: VerificationConformite): Choix {
     .co__grille thead th:nth-child(5) { width: 20%; }
     .co__non td, .co__non th { background: var(--n-100); }
     .co__legende { margin: 0; }
-    .co__specs summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; }
+    .co__specs summary { cursor: pointer; font-size: var(--text-sm); font-weight: 500; }
     .co__grille--specs thead th { width: auto !important; }
     .co__decision { border: 1px solid var(--n-200); border-radius: 6px; padding: 0.6rem 0.8rem; display: flex; flex-direction: column; gap: 0.5rem; }
     .co__radios { display: flex; flex-direction: column; gap: 0.25rem; font-size: var(--text-sm); }
     .co__ecart { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 0.5rem; }
     .co__actions { display: flex; justify-content: flex-end; }
-    .co__precisions summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; }
+    .co__precisions summary { cursor: pointer; font-size: var(--text-sm); font-weight: 500; }
     .co__precisions-corps { display: flex; flex-direction: column; gap: 0.5rem; padding-top: 0.5rem; }
     .co__demande { display: grid; grid-template-columns: 3fr 1fr auto; gap: 0.5rem; align-items: end; }
     .co__regle { grid-column: 1 / -1; }

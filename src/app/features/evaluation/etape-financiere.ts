@@ -128,7 +128,7 @@ export function deplacer<T>(liste: T[], i: number, sens: -1 | 1): T[] {
     .ef__methode, .ef__aide, .ef__arret { margin: 0; }
     .ef__table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
     .ef__table th, .ef__table td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--n-200); }
-    .ef__egal td { background: #fffbeb; }
+    .ef__egal td { background: var(--examen-fond); }
     .ef__departage { border: 1px solid var(--n-200); border-radius: 8px; padding: 0.6rem 0.8rem; margin: 0; display: flex; flex-direction: column; gap: 0.4rem; }
     .ef__ordre { margin: 0; padding-left: 1.4rem; display: flex; flex-direction: column; gap: 0.25rem; font-size: var(--text-sm); }
     .ef__ordre li span { margin-right: 0.4rem; }

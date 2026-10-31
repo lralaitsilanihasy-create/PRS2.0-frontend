@@ -153,34 +153,34 @@ const LIBELLES_INTEGRITE: Readonly<Record<string, string>> = {
   `,
   styles: `
     .ls { display: flex; flex-direction: column; gap: 0.8rem; }
-    .ls__synthese { overflow-x: auto; border: 1px solid var(--n-200); border-radius: 10px; background: #fff; }
+    .ls__synthese { overflow-x: auto; border: 1px solid var(--n-200); border-radius: 10px; background: var(--carte-fond); }
     .ls__table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
     .ls__table th { text-align: left; padding: 0.5rem 0.75rem; background: var(--p-100); color: var(--p-800); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
     .ls__table td { padding: 0.5rem 0.75rem; border-top: 1px solid var(--n-100); vertical-align: middle; }
     .ls__table .ls__num { text-align: right; white-space: nowrap; }
-    .ls__ancre { display: inline-grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 50%; background: var(--p-100); color: var(--p-800); font-weight: 700; text-decoration: none; }
-    .ls__ancre:hover, .ls__ancre:focus-visible { background: var(--bouton-principal); color: #fff; }
+    .ls__ancre { display: inline-grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 50%; background: var(--p-100); color: var(--p-800); font-weight: 500; text-decoration: none; }
+    .ls__ancre:hover, .ls__ancre:focus-visible { background: var(--bouton-principal); color: var(--texte-menu); }
     .ls__offre { padding: 1rem 1.15rem; display: flex; flex-direction: column; gap: 0.7rem; border-left: 4px solid var(--success-bdr); scroll-margin-top: 1rem; }
     .ls__offre:focus { outline: none; box-shadow: 0 0 0 3px var(--p-200); }
     .ls__offre--ko { border-left-color: var(--danger-bdr); }
     .ls__tete { display: flex; gap: 0.75rem; align-items: center; }
-    .ls__numero { flex: none; width: 2.4rem; height: 2.4rem; border-radius: 50%; display: grid; place-items: center; background: var(--bouton-principal); color: #fff; font-weight: 700; }
+    .ls__numero { flex: none; width: 2.4rem; height: 2.4rem; border-radius: 50%; display: grid; place-items: center; background: var(--bouton-principal); color: var(--texte-menu); font-weight: 500; }
     .ls__ident { display: flex; flex-direction: column; flex: 1; min-width: 0; }
     .ls__titre { margin: 0; font-size: 1.05rem; }
-    .ls__nif-ok { color: var(--success-text); font-weight: 600; }
-    .ls__nif-ko { color: var(--danger-text); font-weight: 600; }
+    .ls__nif-ok { color: var(--success-text); font-weight: 500; }
+    .ls__nif-ko { color: var(--danger-text); font-weight: 500; }
     .ls__motif, .ls__manque { margin: 0; color: var(--danger-text); }
     .ls__ligne { margin: 0; }
     /* ⚠️ 29/10 — le montant lu, et sa concordance avec le bordereau. */
-    .ls__lu { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.6rem 1.5rem; padding: 0.75rem 1rem; border-radius: 10px; background: var(--p-50, #f0f9ff); border: 1px solid var(--p-100); }
+    .ls__lu { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.6rem 1.5rem; padding: 0.75rem 1rem; border-radius: 10px; background: var(--p-50); border: 1px solid var(--p-100); }
     .ls__lu-montant { display: flex; flex-direction: column; gap: 0.1rem; }
-    .ls__lu-l { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-500); font-weight: 700; }
+    .ls__lu-l { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-500); font-weight: 500; }
     .ls__lu-ttc { font-size: 1.6rem; line-height: 1.15; color: var(--p-800); font-variant-numeric: tabular-nums; }
     .ls__lu-ht { font-size: var(--text-sm); color: var(--n-500); font-variant-numeric: tabular-nums; }
     .ls__lu-controle { display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem; text-align: right; }
-    .ls__pastille { display: inline-block; padding: 0.25rem 0.7rem; border-radius: 999px; font-size: var(--text-sm); font-weight: 700; }
-    .ls__pastille--ok { background: var(--success-bg, #ecfdf5); color: var(--success-text, #059669); border: 1px solid var(--success-bdr, #a7f3d0); }
-    .ls__pastille--ecart { background: var(--warning-bg, #fffbeb); color: var(--warning-text, #a16207); border: 1px solid var(--warning-bdr, #fde68a); }
+    .ls__pastille { display: inline-block; padding: 0.25rem 0.7rem; border-radius: 999px; font-size: var(--text-sm); font-weight: 500; }
+    .ls__pastille--ok { background: var(--success-bg); color: var(--success-text); border: 1px solid var(--success-bdr); }
+    .ls__pastille--ecart { background: var(--warning-bg); color: var(--warning-text); border: 1px solid var(--warning-bdr); }
     .ls--projection .ls__lu-ttc { font-size: 2.2rem; }
     .ls__montants { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.6rem; }
     .ls__montant { display: flex; flex-direction: column; gap: 0.1rem; padding: 0.55rem 0.8rem; border-radius: 8px; background: var(--n-100); }
@@ -198,7 +198,7 @@ const LIBELLES_INTEGRITE: Readonly<Record<string, string>> = {
     .ls__alerte { margin: 0; }
     .ls__docs { display: flex; flex-wrap: wrap; gap: 0.75rem 1.5rem; padding-top: 0.7rem; border-top: 1px solid var(--n-200); }
     .ls__groupe { display: flex; flex-direction: column; gap: 0.35rem; }
-    .ls__groupe-titre { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-500); font-weight: 600; }
+    .ls__groupe-titre { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-500); font-weight: 500; }
     .ls__pieces { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
     .ls__h3 { margin: 0.5rem 0 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-500); }
     .ls__non { margin: 0; padding-left: 1.2rem; font-size: var(--text-sm); }

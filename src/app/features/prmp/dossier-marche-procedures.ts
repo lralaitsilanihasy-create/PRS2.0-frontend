@@ -183,13 +183,13 @@ export function lotsPapierACreer(l: Pick<LigneEligible, 'lots' | 'dossiersMarche
   styles: `
     :host { display: flex; flex-direction: column; gap: 1rem; }
     .dm__fil { display: flex; gap: 0.4rem; align-items: center; font-size: var(--text-sm); color: var(--n-500); }
-    .dm__fil a { display: inline-flex; gap: 0.2rem; align-items: center; color: var(--p-700); font-weight: 600; }
+    .dm__fil a { display: inline-flex; gap: 0.2rem; align-items: center; color: var(--p-700); font-weight: 500; }
     .dm__filtre { margin: 0; font-size: var(--text-sm); display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: baseline; }
     .dm__table { width: 100%; border-collapse: collapse; }
     .dm__table .r { text-align: right; }
-    .dm__dossier { display: block; font-size: var(--text-sm); font-weight: 600; color: var(--p-700); }
+    .dm__dossier { display: block; font-size: var(--text-sm); font-weight: 500; color: var(--p-700); }
     .dm__etat { display: block; font-size: 0.8rem; color: var(--n-500); }
-    .dm__objet { display: block; font-weight: 600; color: var(--n-800); }
+    .dm__objet { display: block; font-weight: 500; color: var(--n-800); }
     .dm__sous { display: block; font-size: 0.8rem; color: var(--n-500); }
     .dm__mt { white-space: nowrap; font-variant-numeric: tabular-nums; }
     .dm__table td { vertical-align: top; }
@@ -200,11 +200,11 @@ export function lotsPapierACreer(l: Pick<LigneEligible, 'lots' | 'dossiersMarche
     .dm__table th:nth-child(4), .dm__table td:nth-child(4) { width: 15rem; }
     .dm__table th:nth-child(5), .dm__table td:nth-child(5) { width: 14rem; }
     .dm__table th:nth-child(6), .dm__table td:nth-child(6) { width: 12rem; }
-    .dm__num { display: block; font-size: 0.78rem; font-weight: 700; color: var(--p-700); }
+    .dm__num { display: block; font-size: 0.78rem; font-weight: 500; color: var(--p-700); }
     .dm__dossier--texte { color: var(--n-800); }
     .dm__table td { overflow-wrap: anywhere; white-space: normal; }
     .dm__vide { padding: 1rem; color: var(--n-500); font-size: var(--text-sm); }
-    .dm__papier { display: inline-block; margin: 0.1rem 0; padding: 0 0.45rem; border-radius: 999px; background: var(--warning-bg, #fef3c7); color: var(--warning-text, #92400e); font-size: 0.72rem; font-weight: 700; }
+    .dm__papier { display: inline-block; margin: 0.1rem 0; padding: 0 0.45rem; border-radius: 999px; background: var(--warning-bg); color: var(--warning-text); font-size: 0.72rem; font-weight: 500; }
     .dm__creer { display: block; margin-left: auto; margin-bottom: 0.3rem; }
   `,
 })

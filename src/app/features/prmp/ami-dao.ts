@@ -263,7 +263,7 @@ interface LignePublication {
     .ami__bloc { padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.6rem; }
     .ami__h2 { margin: 0; font-size: 1.05rem; }
     .ami__h3 { margin: 0.6rem 0 0; font-size: 0.95rem; }
-    .ami__ko { color: var(--danger-700, #b42318); font-weight: 600; }
+    .ami__ko { color: var(--danger-700, var(--retard-texte)); font-weight: 500; }
     .ami__court { max-width: 16rem; }
     .ami__table { table-layout: fixed; }
     .ami__table th:nth-child(1) { width: 40%; } .ami__table th:nth-child(2) { width: 7rem; } .ami__table th:nth-child(4) { width: 3rem; }

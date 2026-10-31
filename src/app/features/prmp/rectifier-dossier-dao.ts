@@ -168,21 +168,21 @@ type EtatRevision = 'a-ouvrir' | 'en-cours' | 'validee';
     .rd-ref { margin: 0.25rem 0 0; color: var(--n-500); font-size: var(--text-sm); }
     .rd-ref__sep { margin: 0 0.4rem; }
     .rd-form { padding: 1rem 1.25rem; margin-top: 1rem; }
-    .rd-section { display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.75rem; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
-    .rd-step { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 1.6rem; height: 1.6rem; border-radius: 999px; background: var(--c-600); color: #fff; font-size: var(--text-sm); font-weight: 800; }
-    .rd-chip { margin-left: 0.4rem; padding: 0.1rem 0.55rem; border-radius: 999px; font-size: var(--text-xs); font-weight: 700; }
+    .rd-section { display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.75rem; font-size: var(--text-md); font-weight: 500; color: var(--c-800); }
+    .rd-step { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 1.6rem; height: 1.6rem; border-radius: 999px; background: var(--c-600); color: var(--texte-menu); font-size: var(--text-sm); font-weight: 500; }
+    .rd-chip { margin-left: 0.4rem; padding: 0.1rem 0.55rem; border-radius: 999px; font-size: var(--text-xs); font-weight: 500; }
     .rd-chip--warn { background: var(--warning-bg); color: var(--warning-text); }
-    .rd-chip--ok { background: #dcfce7; color: #15803d; }
+    .rd-chip--ok { background: var(--favorable-fond); color: var(--favorable-texte); }
     .rd-obs { display: flex; flex-direction: column; gap: 0.6rem; }
     .rd-corriger { margin-top: 0.4rem; align-self: flex-start; }
-    .rd-ok { color: #15803d; }
+    .rd-ok { color: var(--favorable-texte); }
     /* ⚠️ 28/10 — révision sans changement, et les gestes de la révision validée. */
-    .rd-alerte { color: var(--warning-text); font-weight: 600; }
+    .rd-alerte { color: var(--warning-text); font-weight: 500; }
     .rd-gestes { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
     .rd-diff { margin: 0.5rem 0; }
     .rd-diff__t td { vertical-align: top; overflow-wrap: anywhere; }
-    .rd-diff__avant { color: #b91c1c; text-decoration: line-through; }
-    .rd-diff__apres { color: #15803d; font-weight: 600; }
+    .rd-diff__avant { color: var(--retard-texte); text-decoration: line-through; }
+    .rd-diff__apres { color: var(--favorable-texte); font-weight: 500; }
     .rd-garde { margin: 0.25rem 0 0.6rem; color: var(--n-500); font-size: var(--text-sm); }
     .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
   `,

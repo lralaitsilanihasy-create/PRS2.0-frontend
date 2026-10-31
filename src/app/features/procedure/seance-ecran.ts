@@ -164,7 +164,7 @@ export function quorumLibelle(s: Seance): string {
           <section class="card se__bloc" aria-labelledby="se-pv">
             <h2 id="se-pv" class="se__h2">Procès-verbal d'ouverture</h2>
             <label class="form-group"><span class="form-label">Observations de la séance (facultatif)</span><textarea class="form-control" rows="3" [value]="observations()" (input)="observations.set($any($event.target).value)"></textarea></label>
-            <!-- ⚠️ 29/10 (pilote) — le geste qui clôt la lecture, en couleur remarquable : orange soutenu (blanc sur #C2410C = 5,2:1). -->
+            <!-- ⚠️ 29/10 (pilote) — le geste qui clôt la lecture, en couleur remarquable : brun « examen » de la palette (blanc sur --examen-texte, design institutionnel 31/10). -->
             <div class="se__pv-geste">
               <p class="se__pv-aide">Toutes les offres sont lues. Le PV d’ouverture se produit ici, puis les membres présents le signent depuis leur espace.</p>
               <button type="button" class="btn se__pv-cta" [disabled]="travail()" (click)="produirePv()">{{ travail() ? 'Production…' : 'Produire le PV d’ouverture' }}</button>
@@ -189,11 +189,11 @@ export function quorumLibelle(s: Seance): string {
   `,
   styles: `
     /* ⚠️ 29/10 — le bouton du PV d'ouverture : remarquable, sans dégradé d'animation (mouvement réduit respecté). */
-    .se__pv-geste { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem 1.25rem; padding: 0.85rem 1rem; border-radius: 10px; background: #fff7ed; border: 1px solid #fed7aa; }
-    .se__pv-aide { margin: 0; flex: 1 1 20rem; color: #7c2d12; font-size: var(--text-sm); }
-    .se__pv-cta { background: linear-gradient(135deg, #C2410C, #9A3412); border: 1px solid #9A3412; color: #fff; font-weight: 700; padding: 0.65rem 1.4rem; box-shadow: 0 3px 10px rgb(154 52 18 / 35%); }
-    .se__pv-cta:hover:not(:disabled) { background: linear-gradient(135deg, #9A3412, #7C2D12); box-shadow: 0 5px 14px rgb(154 52 18 / 45%); transform: translateY(-1px); }
-    .se__pv-cta:focus-visible { outline: 3px solid #7C2D12; outline-offset: 2px; }
+    .se__pv-geste { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem 1.25rem; padding: 0.85rem 1rem; border-radius: 10px; background: var(--examen-fond); border: 1px solid var(--examen-texte); }
+    .se__pv-aide { margin: 0; flex: 1 1 20rem; color: var(--examen-texte); font-size: var(--text-sm); }
+    .se__pv-cta { background: var(--examen-texte); border: 1px solid var(--examen-texte); color: var(--texte-menu); font-weight: 500; padding: 0.65rem 1.4rem; box-shadow: none; }
+    .se__pv-cta:hover:not(:disabled) { background: var(--examen-texte); box-shadow: none; transform: translateY(-1px); }
+    .se__pv-cta:focus-visible { outline: 3px solid var(--examen-texte); outline-offset: 2px; }
     .se__pv-cta:disabled { opacity: 0.6; }
     @media (prefers-reduced-motion: reduce) { .se__pv-cta:hover:not(:disabled) { transform: none; } }
 

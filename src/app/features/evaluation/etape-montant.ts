@@ -166,7 +166,7 @@ interface CorrectionEditee extends Correction {
     .mo__resultat dt { color: var(--n-500); }
     .mo__resultat dd { margin: 0; }
     .mo__auteur, .mo__aide { margin: 0; }
-    .mo__saisie summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; }
+    .mo__saisie summary { cursor: pointer; font-size: var(--text-sm); font-weight: 500; }
     .mo__corps { display: flex; flex-direction: column; gap: 0.6rem; padding-top: 0.5rem; }
     .mo__h4 { margin: 0; font-size: 0.9rem; }
     .mo__num { text-align: right; white-space: nowrap; }

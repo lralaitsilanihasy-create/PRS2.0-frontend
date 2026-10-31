@@ -109,7 +109,7 @@ import { TitulairesProposes } from './titulaires-proposes';
     .eq__auteur { margin: 0; }
     .eq table { table-layout: fixed; width: 100%; }
     .eq th, .eq td { white-space: normal; vertical-align: top; }
-    .eq tbody th[scope='row'] { text-align: left; font-weight: 600; color: var(--n-800); background: transparent; text-transform: none; letter-spacing: normal; font-size: var(--text-sm); }
+    .eq tbody th[scope='row'] { text-align: left; font-weight: 500; color: var(--n-800); background: transparent; text-transform: none; letter-spacing: normal; font-size: var(--text-sm); }
     .eq__decision { border: 1px solid var(--n-200); border-radius: 6px; padding: 0.6rem 0.8rem; display: flex; flex-direction: column; gap: 0.4rem; }
     .eq__radios { display: flex; flex-direction: column; gap: 0.25rem; font-size: var(--text-sm); }
     .eq__ecart { display: grid; grid-template-columns: 2fr 1fr; gap: 0.5rem; }

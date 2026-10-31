@@ -241,7 +241,7 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
     .cao__decision-grille { display: grid; grid-template-columns: minmax(0, 2fr) minmax(10rem, 1fr) minmax(0, 2fr); gap: 0.9rem 1.2rem; align-items: start; }
     .cao__lu { display: flex; flex-direction: column; gap: 0.25rem; }
     .cao__pdf { display: flex; flex-direction: column; gap: 0.3rem; }
-    .cao__pdf-ok { font-size: var(--text-sm); color: var(--success-text); font-weight: 600; }
+    .cao__pdf-ok { font-size: var(--text-sm); color: var(--success-text); font-weight: 500; }
     .cao__pdf-ko { font-size: var(--text-sm); color: var(--warning-text); }
     .cao__pdf-choix { display: flex; gap: 0.5rem; align-items: center; }
     .cao__pdf-choix .form-control { flex: 1; min-width: 0; }
@@ -249,9 +249,9 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
     .cao__membres { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 26rem), 1fr)); gap: 0.8rem; }
     .cao__membre { padding: 0.9rem 1rem; display: flex; flex-direction: column; gap: 0.7rem; border-top: 3px solid var(--n-300); }
     .cao__membre--president { border-top-color: var(--p-600); }
-    .cao__membre--ancien { background: var(--warning-bg, #fffbeb); }
+    .cao__membre--ancien { background: var(--warning-bg); }
     .cao__membre-tete { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
-    .cao__avatar { width: 2.4rem; height: 2.4rem; border-radius: 50%; display: grid; place-items: center; background: var(--p-100); color: var(--p-800); font-weight: 700; font-size: 0.85rem; flex: none; }
+    .cao__avatar { width: 2.4rem; height: 2.4rem; border-radius: 50%; display: grid; place-items: center; background: var(--p-100); color: var(--p-800); font-weight: 500; font-size: 0.85rem; flex: none; }
     .cao__membre-nom { display: flex; flex-direction: column; flex: 1 1 10rem; min-width: 0; }
     .cao__dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 0.3rem 0.9rem; font-size: var(--text-sm); }
     .cao__dl dt { color: var(--n-500); }
@@ -261,7 +261,7 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
     .cao__champs .form-group { margin: 0; }
     .cao__large { grid-column: 1 / -1; }
     .cao__membre-pied { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; padding-top: 0.6rem; border-top: 1px solid var(--n-200); }
-    .cao__case { display: inline-flex; gap: 0.4rem; align-items: center; font-size: var(--text-sm); font-weight: 600; margin-right: auto; }
+    .cao__case { display: inline-flex; gap: 0.4rem; align-items: center; font-size: var(--text-sm); font-weight: 500; margin-right: auto; }
     .cao__pied { padding: 0.8rem 1rem; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
     .cao__pied .text-sm { flex: 1 1 20rem; }
     @media (max-width: 900px) { .cao__decision-grille { grid-template-columns: 1fr; } }

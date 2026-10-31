@@ -104,11 +104,11 @@ export function refusSansSuite(e: ApiError): string {
     .ss p { margin: 0; }
     .ss__demande { display: flex; flex-direction: column; gap: 0.4rem; }
     .ss__ligne { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
-    .ss__retard { color: var(--danger-700, #b42318); font-weight: 600; }
+    .ss__retard { color: var(--danger-700, var(--retard-texte)); font-weight: 500; }
     .ss__actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
     .ss__form { border-top: 1px dashed var(--n-200); padding-top: 0.5rem; display: flex; flex-direction: column; gap: 0.4rem; }
     .ss__grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: 0.5rem; }
-    .ss__nouvelle summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; }
+    .ss__nouvelle summary { cursor: pointer; font-size: var(--text-sm); font-weight: 500; }
     .ss__nouvelle { display: flex; flex-direction: column; gap: 0.4rem; }
     .ss__liste { margin: 0.3rem 0 0; padding-left: 1.2rem; font-size: var(--text-sm); }
   `,

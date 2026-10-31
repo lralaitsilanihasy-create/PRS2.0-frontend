@@ -76,24 +76,24 @@ export function offreParDefaut(offres: readonly OffreEvaluee[], etape: EtapeEval
   styles: `
     :host { display: flex; flex-direction: column; gap: 0.5rem; }
     .so__tete { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; }
-    .so__titre { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-500); font-weight: 700; }
-    .so__reste { color: var(--warning-text); font-weight: 700; }
-    .so__fini { color: var(--success-text); font-weight: 700; }
+    .so__titre { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-500); font-weight: 500; }
+    .so__reste { color: var(--warning-text); font-weight: 500; }
+    .so__fini { color: var(--success-text); font-weight: 500; }
     .so { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: 0.6rem; }
     .so__carte { width: 100%; height: 100%; display: flex; gap: 0.65rem; align-items: flex-start; text-align: left; padding: 0.7rem 0.8rem; border-radius: 10px;
-      border: 1px solid var(--n-200); border-left: 4px solid var(--n-300); background: #fff; font: inherit; color: inherit; cursor: pointer; transition: box-shadow 0.15s, border-color 0.15s; }
-    .so__carte:hover { box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08); }
+      border: 1px solid var(--n-200); border-left: 4px solid var(--n-300); background: var(--carte-fond); font: inherit; color: inherit; cursor: pointer; transition: box-shadow 0.15s, border-color 0.15s; }
+    .so__carte:hover { box-shadow: none; }
     .so__carte:focus-visible { outline: 3px solid var(--p-200); outline-offset: 1px; }
     .so__carte--afaire { border-left-color: var(--warning-text); }
     .so__carte--ok { border-left-color: var(--success-text); }
     .so__carte--ko { border-left-color: var(--danger-text); }
     .so__carte--attente { border-left-color: var(--info-text); }
     .so__carte--choisie { border-color: var(--p-500); box-shadow: 0 0 0 3px var(--p-100); background: var(--p-100); }
-    .so__num { flex: none; width: 2rem; height: 2rem; border-radius: 50%; display: grid; place-items: center; background: var(--bouton-principal); color: #fff; font-weight: 700; font-size: 0.85rem; }
+    .so__num { flex: none; width: 2rem; height: 2rem; border-radius: 50%; display: grid; place-items: center; background: var(--bouton-principal); color: var(--texte-menu); font-weight: 500; font-size: 0.85rem; }
     .so__corps { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
     .so__nom { font-size: var(--text-sm); line-height: 1.3; }
     .so__ligne { font-size: 0.78rem; color: var(--n-500); }
-    .so__etat { margin-top: 0.2rem; font-size: 0.78rem; font-weight: 700; }
+    .so__etat { margin-top: 0.2rem; font-size: 0.78rem; font-weight: 500; }
     .so__carte--afaire .so__etat { color: var(--warning-text); }
     .so__carte--ok .so__etat { color: var(--success-text); }
     .so__carte--ko .so__etat { color: var(--danger-text); }

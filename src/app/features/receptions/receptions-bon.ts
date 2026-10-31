@@ -248,7 +248,7 @@ function aujourdhui(): string {
     }
   `,
   styles: `
-    .rb { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.5rem 0.7rem; border-left: 3px solid var(--p-300); background: var(--n-50, #f8fafc); }
+    .rb { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.5rem 0.7rem; border-left: 3px solid var(--p-300); background: var(--n-50); }
     .rb__tete { margin: 0; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
     .rb__reception { display: flex; flex-direction: column; gap: 0.25rem; padding: 0.4rem 0; border-top: 1px solid var(--n-200); }
     .rb__reception p { margin: 0; }
@@ -256,7 +256,7 @@ function aujourdhui(): string {
     .rb__penalite { color: var(--n-700); }
     .rb__signatures { margin: 0; padding-left: 1.1rem; }
     .rb__actions { display: flex; gap: 0.3rem; flex-wrap: wrap; }
-    .rb__details summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; }
+    .rb__details summary { cursor: pointer; font-size: var(--text-sm); font-weight: 500; }
     .rb__form { display: flex; flex-direction: column; gap: 0.4rem; padding-top: 0.35rem; }
     .rb__ligne { display: flex; gap: 0.5rem; align-items: flex-end; flex-wrap: wrap; flex-direction: row; }
     .rb__large { flex: 1 1 16rem; }

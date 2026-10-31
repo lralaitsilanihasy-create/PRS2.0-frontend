@@ -90,7 +90,7 @@ function aujourdhui(): string {
     :host { display: flex; flex-direction: column; gap: 0.4rem; }
     .cr__meta { margin: 0; }
     .cr__membres { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.15rem; }
-    .cr__details summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; }
+    .cr__details summary { cursor: pointer; font-size: var(--text-sm); font-weight: 500; }
     .cr__form { display: flex; flex-direction: column; gap: 0.45rem; padding-top: 0.4rem; }
     .cr__ligne { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: flex-end; }
     .cr__table { font-size: 0.82rem; }

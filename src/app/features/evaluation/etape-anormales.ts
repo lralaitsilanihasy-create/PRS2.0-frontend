@@ -71,7 +71,7 @@ import { LIBELLES_ANORMALE, ariary, ecartPourCent, refusEvaluation } from './lib
     .ip__h3 { margin: 0; font-size: 0.95rem; }
     .ip__methode { margin: 0; }
     .ip__num { text-align: right; white-space: nowrap; }
-    .ip__estim summary { cursor: pointer; font-weight: 600; font-size: 0.88rem; }
+    .ip__estim summary { cursor: pointer; font-weight: 500; font-size: 0.88rem; }
   `,
 })
 export class IndicateursPrixVue implements OnInit {

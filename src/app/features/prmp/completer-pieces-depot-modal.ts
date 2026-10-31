@@ -89,9 +89,9 @@ import {
   `,
   styles: `
     .cpd-modal { max-width: 40rem; }
-    .cpd-sub { margin: 0.75rem 0 0.35rem; font-size: var(--text-sm); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); }
-    .cpd-defaut { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; padding: 0.45rem 0.6rem; background: #FEF2F2; border: 1px solid #FEE2E2; border-left: 3px solid #DC2626; border-radius: var(--radius-md); margin-bottom: 0.35rem; }
-    .cpd-defaut__lbl { font-weight: 600; }
+    .cpd-sub { margin: 0.75rem 0 0.35rem; font-size: var(--text-sm); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); }
+    .cpd-defaut { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; padding: 0.45rem 0.6rem; background: var(--retard-fond); border: 1px solid var(--retard-fond); border-left: 3px solid var(--retard-texte); border-radius: var(--radius-md); margin-bottom: 0.35rem; }
+    .cpd-defaut__lbl { font-weight: 500; }
     .cpd-defaut__obs { color: var(--n-500); font-size: var(--text-sm); font-style: italic; }
     .cpd-upload { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
     .cpd-piece { padding: 0.3rem 0.5rem; font-size: var(--text-sm); }

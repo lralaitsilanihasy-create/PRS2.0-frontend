@@ -102,10 +102,10 @@ export function lireCalendrier(v: string | number | null | undefined): { process
     :host { display: flex; flex-direction: column; gap: 0.9rem; margin-top: 0.7rem; }
     /* ⚠️ 15/10 (demande du pilote) — titres de rubrique et en-têtes de colonnes en couleur : bleu de la charte (--p-700 sur blanc,
        --p-800 sur --p-100 : contraste AA largement tenu). */
-    .pi__titre { margin: 0 0 0.55rem; padding: 0.3rem 0.6rem; font-size: 0.8rem; font-weight: 700; color: var(--p-700); background: var(--p-50, #f0f9ff);
+    .pi__titre { margin: 0 0 0.55rem; padding: 0.3rem 0.6rem; font-size: 0.8rem; font-weight: 500; color: var(--p-700); background: var(--p-50);
       border-left: 3px solid var(--p-600); border-radius: 0 6px 6px 0; text-transform: uppercase; letter-spacing: 0.04em; }
-    .pi__nb { font-weight: 600; color: var(--p-800); text-transform: none; letter-spacing: 0; margin-left: 0.3rem; }
-    .pi__table thead th { background: var(--p-100); color: var(--p-800); font-weight: 700; border-bottom: 2px solid var(--p-300); }
+    .pi__nb { font-weight: 500; color: var(--p-800); text-transform: none; letter-spacing: 0; margin-left: 0.3rem; }
+    .pi__table thead th { background: var(--p-100); color: var(--p-800); font-weight: 500; border-bottom: 2px solid var(--p-300); }
     .pi__grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.55rem 1.25rem; margin: 0; }
     .pi__item { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
     .pi__item--large { grid-column: 1 / -1; }

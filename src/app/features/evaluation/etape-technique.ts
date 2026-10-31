@@ -182,19 +182,19 @@ export function chargeGrille(elements: ElementTechnique[], saisie: (code: string
   styles: `
     :host { display: flex; flex-direction: column; gap: 0.75rem; }
     .et__aide, .et__arret, .et__elim { margin: 0; }
-    .et__elim { color: var(--danger-700, #b42318); font-weight: 600; }
+    .et__elim { color: var(--danger-700, var(--retard-texte)); font-weight: 500; }
     .et__table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
     .et__table th, .et__table td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--n-200); vertical-align: middle; }
     /* Recette du 09/10 : le style global des en-têtes (texte blanc sur bleu) rendait l’intitulé du critère invisible sur ce fond clair. */
-    .et__critere th { background: var(--n-50, #f8fafc); color: var(--n-700, #334155); font-weight: 700; text-transform: none; letter-spacing: normal; }
-    .et__ligne--ecart td { background: #fffbeb; }
+    .et__critere th { background: var(--n-50); color: var(--n-700); font-weight: 500; text-transform: none; letter-spacing: normal; }
+    .et__ligne--ecart td { background: var(--examen-fond); }
     .et__note { width: 6rem; }
     .et__ecart { margin-left: 0.35rem; }
     .et__offre { padding: 0.6rem 0.9rem; display: flex; flex-direction: column; gap: 0.5rem; }
     .et__entete { cursor: pointer; display: flex; gap: 0.4rem; align-items: baseline; flex-wrap: wrap; }
     .et__actions { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; margin-top: 0.5rem; }
     .et__membres { margin-top: 0.5rem; }
-    .et__membres summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; }
+    .et__membres summary { cursor: pointer; font-size: var(--text-sm); font-weight: 500; }
     .et__president { padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
     .et__president > .btn { align-self: flex-start; }
     .et__rouvrir { display: flex; gap: 0.5rem; align-items: flex-end; flex-wrap: wrap; margin-top: 0.4rem; }

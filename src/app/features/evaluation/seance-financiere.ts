@@ -196,7 +196,7 @@ export function refusSeanceFinanciere(e: ApiError): string {
     .sf__case { display: flex; gap: 0.4rem; align-items: center; font-size: var(--text-sm); }
     .sf__autre { display: flex; gap: 0.4rem; flex-wrap: wrap; }
     .sf__autre .form-control { flex: 1 1 12rem; }
-    .sf__secours summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; }
+    .sf__secours summary { cursor: pointer; font-size: var(--text-sm); font-weight: 500; }
     .sf__pv { display: flex; gap: 0.5rem; flex-wrap: wrap; }
     .sf__rondes { margin: 0; padding-left: 1.2rem; font-size: var(--text-sm); display: flex; flex-direction: column; gap: 0.2rem; }
     .sf__complementaire { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.4rem; }

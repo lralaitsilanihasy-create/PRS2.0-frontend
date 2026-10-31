@@ -307,12 +307,12 @@ import { DossierModificationStore } from './dossier-modification.store';
     .rd-ref { margin: 0.2rem 0 0; color: var(--n-500); font-size: var(--text-sm); }
     .rd-ref__sep { margin: 0 0.25rem; color: var(--n-300); }
     .rd-form { padding: 1.25rem 1.5rem; margin-bottom: 0.75rem; }
-    .rd-section { display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.75rem; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
+    .rd-section { display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.75rem; font-size: var(--text-md); font-weight: 500; color: var(--c-800); }
     /* Numéro d'étape du parcours de rectification (1 observations → 2 pièces → 3 PPM). */
-    .rd-step { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 1.6rem; height: 1.6rem; border-radius: 999px; background: var(--c-600); color: #fff; font-size: var(--text-sm); font-weight: 800; }
-    .rd-chip { margin-left: auto; font-size: var(--text-xs); font-weight: 700; padding: 0.15rem 0.6rem; border-radius: 999px; }
+    .rd-step { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 1.6rem; height: 1.6rem; border-radius: 999px; background: var(--c-600); color: var(--texte-menu); font-size: var(--text-sm); font-weight: 500; }
+    .rd-chip { margin-left: auto; font-size: var(--text-xs); font-weight: 500; padding: 0.15rem 0.6rem; border-radius: 999px; }
     .rd-chip--warn { background: var(--warning-bg); color: var(--warning-text); }
-    .rd-chip--ok { background: #DCFCE7; color: #15803D; }
+    .rd-chip--ok { background: var(--favorable-fond); color: var(--favorable-texte); }
     .rd-foot { display: flex; justify-content: flex-end; gap: 0.5rem; }
     .rd-corps--verrouille { pointer-events: none; opacity: 0.45; }
     /* Zone d'import du PPM rectifié (étape 3) — appel à l'action central. */
@@ -320,7 +320,7 @@ import { DossierModificationStore } from './dossier-modification.store';
     .rd-drop:hover { border-color: var(--c-600); background: var(--c-100); }
     .rd-drop--busy { opacity: 0.7; pointer-events: none; }
     .rd-drop__icone { font-size: 2rem; line-height: 1; }
-    .rd-drop__titre { font-weight: 700; color: var(--c-800); }
+    .rd-drop__titre { font-weight: 500; color: var(--c-800); }
     .rd-drop__hint { max-width: 46rem; font-size: var(--text-xs); color: var(--n-500); }
     .rd-drop__btn { margin-top: 0.25rem; }
     /* ⚠️ Spec observations FAVR — rectifications demandées (cartes partagées, lecture seule). */
@@ -328,12 +328,12 @@ import { DossierModificationStore } from './dossier-modification.store';
     /* Pièces jointes — versions corrigées. */
     .rd-pieces { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
     .rd-piece { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; padding: 0.5rem 0.65rem; border: 1px solid var(--c-100); border-radius: var(--radius-md); }
-    .rd-piece--obs { border-color: var(--warning-bdr, #FDE68A); background: var(--warning-bg); }
+    .rd-piece--obs { border-color: var(--warning-bdr); background: var(--warning-bg); }
     .rd-piece__info { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; }
-    .rd-piece__type { font-weight: 600; color: var(--n-700); font-size: var(--text-sm); }
+    .rd-piece__type { font-weight: 500; color: var(--n-700); font-size: var(--text-sm); }
     .rd-piece__fichier { color: var(--n-500); font-size: var(--text-xs); }
     .rd-piece__date { color: var(--n-400); font-size: var(--text-xs); }
-    .rd-piece__badge { font-size: var(--text-xs); font-weight: 700; color: var(--warning-text); }
+    .rd-piece__badge { font-size: var(--text-xs); font-weight: 500; color: var(--warning-text); }
     .rd-piece__upload { margin-left: auto; cursor: pointer; }
     .rd-piece__upload--busy { opacity: 0.7; pointer-events: none; }
     .rd-piece__note { margin-left: auto; font-size: var(--text-xs); color: var(--n-400); font-style: italic; }

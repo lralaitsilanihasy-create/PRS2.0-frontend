@@ -132,12 +132,12 @@ export function montantCompareIndicatif(prixCorrige: number | null, remboursable
     .sfi { padding: 0.8rem 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
     .sfi__tete { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
     .sfi__titre { margin: 0; font-size: 1rem; flex: 1 1 auto; }
-    .sfi__motif { margin: 0; color: var(--danger-700, #b42318); }
+    .sfi__motif { margin: 0; color: var(--danger-700, var(--retard-texte)); }
     .sfi__resultat { display: grid; grid-template-columns: repeat(4, auto); gap: 0.15rem 0.8rem; margin: 0; font-size: var(--text-sm); }
     .sfi__resultat dt { color: var(--n-500); }
     .sfi__resultat dd { margin: 0; }
     .sfi__auteur, .sfi__aide { margin: 0; }
-    .sfi__saisie summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; }
+    .sfi__saisie summary { cursor: pointer; font-size: var(--text-sm); font-weight: 500; }
     .sfi__corps { display: flex; flex-direction: column; gap: 0.6rem; padding-top: 0.5rem; }
     .sfi__h4 { margin: 0; font-size: 0.9rem; }
     .sfi__num { text-align: right; white-space: nowrap; }

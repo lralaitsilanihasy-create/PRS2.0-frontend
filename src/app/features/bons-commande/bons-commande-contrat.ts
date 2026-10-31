@@ -229,15 +229,15 @@ const LIGNE_VIDE = (): LigneSaisie => ({ idArticle: null, designation: '', unite
     :host { display: flex; flex-direction: column; gap: 0.5rem; }
     .bc__grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 0.4rem 1.2rem; margin: 0; }
     .bc__grille dt { font-size: 0.74rem; color: var(--n-500); }
-    .bc__grille dd { margin: 0; font-size: 0.88rem; font-weight: 600; }
+    .bc__grille dd { margin: 0; font-size: 0.88rem; font-weight: 500; }
     .bc__table { font-size: 0.82rem; }
     .bc__table thead th { background: var(--p-100); color: var(--p-800); }
     .bc__num { text-align: right; white-space: nowrap; }
     .bc__annule td { color: var(--n-500); }
     .bc__epuise td { color: var(--n-500); }
-    .bc__depasse { color: var(--danger-text, #b91c1c); }
+    .bc__depasse { color: var(--danger-text); }
     .bc__actions { display: flex; gap: 0.25rem; white-space: nowrap; }
-    .bc__details summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; }
+    .bc__details summary { cursor: pointer; font-size: var(--text-sm); font-weight: 500; }
     .bc__form { display: flex; flex-direction: column; gap: 0.45rem; padding-top: 0.4rem; }
     .bc__ligne { display: flex; gap: 0.5rem; align-items: flex-end; flex-wrap: wrap; }
     .bc__large { flex: 1 1 16rem; }

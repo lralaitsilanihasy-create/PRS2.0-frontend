@@ -260,7 +260,7 @@ export type ProfilRemise = 'PRMP' | 'UGPM' | 'CAO' | 'LECTURE';
     </article>
   `,
   styles: `
-    .rd { display: flex; flex-direction: column; gap: 0.45rem; padding: 0.7rem 0.9rem; border-left: 3px solid var(--p-600); background: var(--n-50, #f8fafc); border-radius: 0 6px 6px 0; }
+    .rd { display: flex; flex-direction: column; gap: 0.45rem; padding: 0.7rem 0.9rem; border-left: 3px solid var(--p-600); background: var(--n-50); border-radius: 0 6px 6px 0; }
     .rd__tete { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
     .rd__h3 { margin: 0; font-size: 0.95rem; flex: 1 1 auto; }
     .rd__h4 { margin: 0.3rem 0 0; font-size: 0.85rem; color: var(--p-700); }
@@ -269,17 +269,17 @@ export type ProfilRemise = 'PRMP' | 'UGPM' | 'CAO' | 'LECTURE';
     .rd__table { font-size: 0.82rem; }
     .rd__table thead th { background: var(--p-100); color: var(--p-800); }
     .rd__num { text-align: right; white-space: nowrap; }
-    .rd__ecart { color: var(--warning-text); font-weight: 600; }
-    .rd__retenue td { background: var(--success-bg, #f0fdf4); }
-    .rd__details summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; }
+    .rd__ecart { color: var(--warning-text); font-weight: 500; }
+    .rd__retenue td { background: var(--success-bg); }
+    .rd__details summary { cursor: pointer; font-size: var(--text-sm); font-weight: 500; }
     .rd__form { display: flex; flex-direction: column; gap: 0.45rem; padding-top: 0.4rem; margin: 0; }
-    .rd__cadre { border: 1px solid var(--n-200); border-radius: 6px; padding: 0.6rem 0.8rem; background: var(--n-0, #fff); }
+    .rd__cadre { border: 1px solid var(--n-200); border-radius: 6px; padding: 0.6rem 0.8rem; background: var(--n-0, var(--carte-fond)); }
     .rd__ligne { display: flex; gap: 0.5rem; align-items: flex-end; flex-wrap: wrap; }
     .rd__large { flex: 1 1 18rem; }
     .rd__court { max-width: 22rem; }
     .rd__decision { display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap; }
     .rd__motif { max-width: 18rem; }
-    .rd__fin { margin: 0; font-weight: 600; }
+    .rd__fin { margin: 0; font-weight: 500; }
   `,
 })
 export class RemiseDetail {

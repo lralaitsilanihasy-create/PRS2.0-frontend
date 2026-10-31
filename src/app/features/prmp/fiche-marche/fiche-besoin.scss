@@ -35,7 +35,7 @@
      palette sont `--p-*` (cf. _design-system.scss). */
   background: var(--bouton-principal);
   border-color: var(--p-600);
-  color: #fff;
+  color: var(--texte-menu);
 }
 .bs__lot-n {
   font-size: 0.78rem;
@@ -75,7 +75,7 @@
   vertical-align: top;
 }
 .bs tbody tr:last-child td { border-bottom: 0; }
-.bs__ko td { background: #fef3f2; }
+.bs__ko td { background: var(--retard-fond); }
 .bs__c-n { width: 3rem; font-variant-numeric: tabular-nums; color: var(--n-500); }
 .bs__c-u { width: 7rem; }
 .bs__c-q { width: 9rem; }
@@ -121,7 +121,7 @@
   color: var(--n-600);
 }
 .bs__ic:disabled { opacity: 0.35; cursor: default; }
-.bs__ic--ko { color: #b42318; border-color: #f0c2bd; }
+.bs__ic--ko { color: var(--retard-texte); border-color: var(--retard-texte); }
 
 .bs__pied {
   display: flex;
@@ -165,11 +165,11 @@
 .bs__c-pl { width: 6.5rem; }
 .bs__c-sd { width: 6rem; text-align: center; }
 .bs__serie-t { margin-right: 0.4rem; }
-.bs__serie-lib { display: inline-block; width: min(28rem, 60%); font-weight: 600; }
+.bs__serie-lib { display: inline-block; width: min(28rem, 60%); font-weight: 500; }
 .bs__serie th {
   text-align: left;
   font-size: 0.84rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--n-700);
   background: var(--n-100);
   padding: 0.45rem 0.8rem;
@@ -231,5 +231,5 @@
   background: var(--warning-bg);
   font-size: 0.86rem;
 }
-.bs__estim--ok { border-color: var(--success-bdr, #bbf7d0); background: var(--success-bg, #f0fdf4); }
-.bs__estim-ecart { color: var(--warning-text); font-weight: 600; }
+.bs__estim--ok { border-color: var(--success-bdr); background: var(--success-bg); }
+.bs__estim-ecart { color: var(--warning-text); font-weight: 500; }

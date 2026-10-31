@@ -10,14 +10,14 @@
   white-space: nowrap;
 }
 // Bouton d'import en orange (demande du pilote du 29/09). #c2410c : texte blanc à 5,2:1 (AA) — l'orange plus clair
-// des cartes (#ea580c) ne donnerait que 3,6:1.
+// des cartes (var(--or)) ne donnerait que 3,6:1.
 .btn.idao__btn {
-  background: #c2410c;
-  border-color: #c2410c;
-  color: #fff;
+  background: var(--examen-texte);
+  border-color: var(--examen-texte);
+  color: var(--texte-menu);
 
-  &:hover:not(:disabled) { background: #9a3412; border-color: #9a3412; }
-  &:focus-visible { outline: 2px solid #9a3412; outline-offset: 2px; }
+  &:hover:not(:disabled) { background: var(--examen-texte); border-color: var(--examen-texte); }
+  &:focus-visible { outline: 2px solid var(--examen-texte); outline-offset: 2px; }
 }
 .idao__cache {
   position: absolute;
@@ -83,9 +83,9 @@
   font-size: 13px;
   color: var(--n-700);
 }
-.idao__identite--conforme { border-color: var(--success-border, #86efac); border-left-color: var(--success-text, #15803d); background: var(--success-bg, #f0fdf4); }
-.idao__identite--douteux { border-color: var(--warning-border, #fcd34d); border-left-color: var(--warning-text, #b45309); background: var(--warning-bg, #fffbeb); }
-.idao__identite--etranger { border-color: var(--danger-border, #fca5a5); border-left-color: var(--danger-text, #b91c1c); background: var(--danger-bg, #fef2f2); }
+.idao__identite--conforme { border-color: var(--success-border, var(--favorable-texte)); border-left-color: var(--success-text); background: var(--success-bg); }
+.idao__identite--douteux { border-color: var(--warning-border, var(--examen-texte)); border-left-color: var(--warning-text); background: var(--warning-bg); }
+.idao__identite--etranger { border-color: var(--danger-border, var(--retard-texte)); border-left-color: var(--danger-text); background: var(--danger-bg); }
 .idao__identite-titre {
   display: flex;
   align-items: center;
@@ -110,19 +110,19 @@
   padding: 8px 10px;
   border: 1px solid var(--n-200);
   border-radius: var(--radius-md, 8px);
-  background: #fff;
+  background: var(--carte-fond);
 }
 .idao__pastille {
   align-self: flex-start;
   padding: 1px 8px;
   border-radius: 999px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   background: var(--n-100);
   color: var(--n-700);
 }
-.idao__critere--ok .idao__pastille { background: var(--success-bg, #dcfce7); color: var(--success-text, #15803d); }
-.idao__critere--ko .idao__pastille { background: var(--danger-bg, #fee2e2); color: var(--danger-text, #b91c1c); }
+.idao__critere--ok .idao__pastille { background: var(--success-bg); color: var(--success-text); }
+.idao__critere--ko .idao__pastille { background: var(--danger-bg); color: var(--danger-text); }
 .idao__critere-plan,
 .idao__critere-extrait {
   font-size: 12px;
@@ -135,17 +135,17 @@
   gap: 8px;
   margin-top: 10px;
   padding: 8px 10px;
-  border: 1px dashed var(--warning-text, #b45309);
+  border: 1px dashed var(--warning-text);
   border-radius: var(--radius-md, 8px);
-  background: #fff;
-  font-weight: 600;
+  background: var(--carte-fond);
+  font-weight: 500;
   cursor: pointer;
 
   input { width: 16px; height: 16px; margin-top: 2px; }
 }
 .idao__perime { margin: 10px 0 0; }
 .idao__tout { margin-left: auto; }
-.idao__titre-nom { font-weight: 600; color: var(--n-600); }
+.idao__titre-nom { font-weight: 500; color: var(--n-600); }
 .idao__origine { display: inline-block; margin-left: 6px; }
 .idao__resume {
   display: flex;
@@ -157,7 +157,7 @@
 .idao__titre {
   margin: 18px 0 6px;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--n-700);
 }
 // Largeurs fixes : une valeur longue (un texte de clause) passe à la ligne au lieu de pousser les colonnes hors de la
@@ -181,7 +181,7 @@
     padding: 9px 12px;
     font-size: 11px;
     letter-spacing: 0.06em;
-    color: #fff;
+    color: var(--texte-menu);
     vertical-align: bottom;
   }
   // La feuille globale met toute cellule en « white-space: nowrap » : ici, une valeur longue doit passer à la ligne.
@@ -242,7 +242,7 @@
   }
 }
 .idao__carac-lib {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--n-800);
 }
 .idao__terne td {
@@ -252,7 +252,7 @@
   background: var(--danger-bg);
 }
 .idao__libelle {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--n-800);
 }
 .idao__code {

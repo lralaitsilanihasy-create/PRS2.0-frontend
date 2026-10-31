@@ -90,7 +90,7 @@ export function bilanCritere(c: CritereTechnique, lignes: SousCritere[]): { somm
     .fsc__tete { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.6rem; }
     .fsc__code { font-size: var(--text-sm); color: var(--n-500); }
     .fsc__pts, .fsc__somme { font-size: var(--text-sm); color: var(--n-500); }
-    .fsc__ko { color: var(--danger-700, #b42318); font-weight: 600; }
+    .fsc__ko { color: var(--danger-700, var(--retard-texte)); font-weight: 500; }
     .fsc__ligne { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
     .fsc__ligne .form-control { flex: 1 1 18rem; }
     .fsc__ligne .fsc__points { flex: 0 0 7rem; }

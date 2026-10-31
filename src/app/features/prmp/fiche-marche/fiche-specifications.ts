@@ -72,7 +72,7 @@ function motif(e: unknown): string {
     .sp__fichier { margin: 0; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
     .sp__meta { font-size: 0.8rem; color: var(--n-500); }
     .sp__actions { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
-    .sp__retirer { color: #b42318; }
+    .sp__retirer { color: var(--retard-texte); }
   `,
 })
 export class FicheSpecifications {

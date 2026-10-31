@@ -98,18 +98,19 @@ interface AlerteJalon {
     .cj { display: flex; flex-direction: column; gap: 1rem; }
     .cj__intro { margin: -0.4rem 0 0; color: var(--n-500); max-width: 62rem; }
     .cj__wrap { overflow-x: auto; }
-    .cj__ref { white-space: nowrap; font-weight: 600; color: var(--c-800); }
+    .cj__ref { white-space: nowrap; font-weight: 500; color: var(--c-800); }
     .cj__objet { white-space: normal; min-width: 16rem; max-width: 26rem; }
     .cj__c { text-align: center; }
+    th.cj__c { white-space: normal; min-width: 7.5rem; max-width: 12rem; }
     .cj__paire { display: flex; align-items: baseline; justify-content: center; gap: 0.35rem; white-space: nowrap; }
     .cj__k { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); width: 2.9rem; text-align: right; }
     .cj__date { font-variant-numeric: tabular-nums; }
-    .cj__reel { color: var(--success-text, #16a34a); font-weight: 600; }
+    .cj__reel { color: var(--success-text); font-weight: 500; }
     .cj__vide { color: var(--n-300); }
     .cj__alertes { display: flex; flex-direction: column; gap: 0.3rem; align-items: center; }
     .cj__badge { white-space: nowrap; }
-    .cj__badge--imminent { background: var(--warning-bg, #fef3c7); color: var(--warning-text, #b45309); }
-    .cj__badge--retard { background: var(--danger-bg, #fee2e2); color: var(--danger-text, #dc2626); }
+    .cj__badge--imminent { background: var(--warning-bg); color: var(--warning-text); }
+    .cj__badge--retard { background: var(--danger-bg); color: var(--danger-text); }
     .cj__empty { text-align: center; color: var(--n-400); padding: 1.5rem; }
   `,
 })

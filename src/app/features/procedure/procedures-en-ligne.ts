@@ -180,17 +180,17 @@ const LIBELLES_SEANCE: Readonly<Record<string, string>> = {
     .pl { display: flex; flex-direction: column; gap: 0.75rem; }
     .pl__table td { white-space: normal; vertical-align: top; }
     .pl__ref { font-size: var(--text-xs); color: var(--p-700); }
-    .pl__a-traiter td { background: var(--warning-bg, #fff8e6); }
+    .pl__a-traiter td { background: var(--warning-bg); }
     .pl__manque { color: var(--danger-text); }
     .pl__actions { display: flex; flex-direction: column; gap: 0.35rem; align-items: flex-end; }
     .pl__actions .btn { white-space: nowrap; }
     /* ⚠️ 28/10 — la carte du responsable. */
     .pc { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.9rem; }
-    .pc__carte { background: #fff; border: 1px solid var(--n-200); border-radius: 12px; padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: 1rem; }
+    .pc__carte { background: var(--carte-fond); border: 1px solid var(--n-200); border-radius: 12px; padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: 1rem; }
     .pc__carte--a-traiter { border-left: 4px solid var(--warning-text); }
     .pc__tete { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: flex-start; }
     .pc__id { min-width: 0; flex: 1 1 28rem; }
-    .pc__objet { margin: 0; font-size: var(--text-base, 1rem); font-weight: 700; color: var(--n-800); line-height: 1.35; }
+    .pc__objet { margin: 0; font-size: var(--text-base, 1rem); font-weight: 500; color: var(--n-800); line-height: 1.35; }
     .pc__ref { margin: 0.25rem 0 0; font-size: var(--text-sm); color: var(--n-500); }
     .pc__ref .cnm-mono { color: var(--p-700); }
     .pc__badges { display: flex; gap: 0.4rem; flex-wrap: wrap; }
@@ -198,16 +198,16 @@ const LIBELLES_SEANCE: Readonly<Record<string, string>> = {
     .pc__etape { position: relative; display: flex; flex-direction: column; gap: 0.15rem; padding-top: 1.1rem; font-size: var(--text-sm); color: var(--n-500); }
     .pc__etape::before { content: ''; position: absolute; top: 5px; left: 14px; right: -0.5rem; height: 2px; background: var(--n-200); }
     .pc__etape:last-child::before { display: none; }
-    .pc__etape--fait::before { background: var(--success-text, #059669); }
-    .pc__pt { position: absolute; top: 0; left: 0; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--n-300); background: #fff; z-index: 1; }
-    .pc__etape--fait .pc__pt { background: var(--success-text, #059669); border-color: var(--success-text, #059669); }
+    .pc__etape--fait::before { background: var(--success-text); }
+    .pc__pt { position: absolute; top: 0; left: 0; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--n-300); background: var(--carte-fond); z-index: 1; }
+    .pc__etape--fait .pc__pt { background: var(--success-text); border-color: var(--success-text); }
     .pc__etape--encours .pc__pt { background: var(--bouton-principal); border-color: var(--bouton-principal); box-shadow: 0 0 0 4px var(--p-100); }
-    .pc__etape-l { font-weight: 600; color: var(--n-700); }
+    .pc__etape-l { font-weight: 500; color: var(--n-700); }
     .pc__etape--encours .pc__etape-l { color: var(--p-700); }
     .pc__etape-d { font-size: var(--text-xs); color: var(--n-500); }
     .pc__pied { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem 1rem; flex-wrap: wrap; border-top: 1px solid var(--n-100); padding-top: 0.8rem; }
     .pc__suite { margin: 0; flex: 1 1 22rem; color: var(--n-700); font-size: var(--text-sm); }
-    .pc__qui { display: block; font-size: var(--text-xs); font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: var(--n-500); margin-bottom: 0.15rem; }
+    .pc__qui { display: block; font-size: var(--text-xs); font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; color: var(--n-500); margin-bottom: 0.15rem; }
     .pc__gestes { display: flex; gap: 0.5rem; flex-wrap: wrap; }
     @media (max-width: 48rem) {
       .pc__frise { grid-template-columns: 1fr; }

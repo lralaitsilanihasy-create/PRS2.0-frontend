@@ -33,7 +33,7 @@
   font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: #fff;
+  color: var(--texte-menu);
   background: var(--bouton-principal);
   padding: 0.5rem 0.6rem;
 }
@@ -50,7 +50,7 @@
   font: inherit;
   cursor: pointer;
   border: 1px solid var(--n-300);
-  background: #fff;
+  background: var(--carte-fond);
   border-radius: 4px;
   width: 1.8rem;
   height: 1.8rem;
