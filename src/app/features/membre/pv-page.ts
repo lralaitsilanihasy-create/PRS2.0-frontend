@@ -343,8 +343,7 @@ import { EtapeCircuitPv, etapesCircuitPv, phraseEtatPv } from './pv-circuit';
     /*
      * Action attendue du Membre : elle doit se voir sur le jaune pâle du bandeau (var(--examen-fond)).
      * « btn-warning » y est invisible (même fond que l'alerte) et le bleu primaire s'y fond ;
-     * d'où cet orange soutenu. Blanc sur #C2410C = 5,2:1 — au-dessus du seuil AA, comme
-     * l'exige le design system pour tout texte.
+     * d'où le brun « examen » de la palette, où le blanc reste lisible (design institutionnel, 31/10).
      */
     .pv-retour .pv-retour__cta {
       background: var(--examen-texte);

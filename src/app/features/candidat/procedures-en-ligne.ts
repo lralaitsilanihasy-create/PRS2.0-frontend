@@ -111,7 +111,7 @@ import { FiltreProcedures, compteursProcedures, filtrerProcedures, lignesProcedu
   styles: `
     :host { display: block; }
     .pel__compteurs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; margin-bottom: 1rem; }
-    .pel__compteur { background: #fff; border: 1px solid var(--n-200); border-radius: var(--radius-lg); padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.15rem; box-shadow: var(--shadow-sm); }
+    .pel__compteur { background: var(--carte-fond); border: 1px solid var(--n-200); border-radius: var(--radius-lg); padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.15rem; box-shadow: var(--shadow-sm); }
     .pel__compteur-lib { font-size: var(--text-sm); color: var(--n-500); }
     .pel__compteur-val { font-size: 1.6rem; line-height: 1.1; color: var(--n-800); }
     .pel__compteur-val--ok { color: var(--success-text); }
@@ -122,23 +122,23 @@ import { FiltreProcedures, compteursProcedures, filtrerProcedures, lignesProcedu
     .pel__recherche app-icone { position: absolute; left: 0.75rem; color: var(--n-400); pointer-events: none; }
     .pel__recherche input { padding-left: 2.2rem; }
     .pel__filtres { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-    .pel__filtre { font: inherit; font-size: var(--text-sm); font-weight: 600; padding: 0.45rem 0.95rem; border-radius: var(--radius-md); border: 1px solid var(--n-300); background: #fff; color: var(--n-700); cursor: pointer; }
+    .pel__filtre { font: inherit; font-size: var(--text-sm); font-weight: 500; padding: 0.45rem 0.95rem; border-radius: var(--radius-md); border: 1px solid var(--n-300); background: var(--carte-fond); color: var(--n-700); cursor: pointer; }
     .pel__filtre:hover { background: var(--n-100); }
     .pel__filtre--actif { background: var(--p-100); border-color: var(--p-400); color: var(--p-800); }
     .pel__aucune { display: flex; gap: 0.6rem; align-items: center; color: var(--n-600); font-size: var(--text-sm); }
 
     .pel { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.75rem; }
     .pel__ligne { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; align-items: center; padding: 1rem 1.2rem 1rem 1.5rem;
-      background: #fff; border: 1px solid var(--n-200); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); transition: border-color .15s, box-shadow .15s; }
+      background: var(--carte-fond); border: 1px solid var(--n-200); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); transition: border-color .15s, box-shadow .15s; }
     .pel__ligne::before { content: ''; position: absolute; left: 0.6rem; top: 0.9rem; bottom: 0.9rem; width: 4px; border-radius: 2px; background: var(--success-text); }
-    .pel__ligne[data-etat='A_VENIR']::before { background: #f59e0b; }
+    .pel__ligne[data-etat='A_VENIR']::before { background: var(--or); }
     .pel__ligne[data-etat='CLOSE']::before { background: var(--n-300); }
     .pel__ligne:hover, .pel__ligne:focus-within { border-color: var(--p-300); box-shadow: var(--shadow-md); }
     .pel__corps { display: flex; flex-direction: column; gap: 0.4rem; min-width: 0; }
     .pel__haut { margin: 0; display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
     .pel__ref { font-size: var(--text-sm); color: var(--n-500); }
-    .pel__badge { font-size: var(--text-xs); font-weight: 700; padding: 0.1rem 0.6rem; border-radius: var(--radius-full); background: #d1fae5; color: #065f46; }
-    .pel__badge[data-etat='A_VENIR'] { background: #fef3c7; color: #92400e; }
+    .pel__badge { font-size: var(--text-xs); font-weight: 500; padding: 0.1rem 0.6rem; border-radius: var(--radius-full); background: var(--favorable-fond); color: var(--favorable-texte); }
+    .pel__badge[data-etat='A_VENIR'] { background: var(--examen-fond); color: var(--examen-texte); }
     .pel__badge[data-etat='CLOSE'] { background: var(--n-100); color: var(--n-600); }
     .pel__objet { margin: 0; font-size: 1.05rem; line-height: 1.35; }
     .pel__objet a { color: var(--n-800); text-decoration: none; }

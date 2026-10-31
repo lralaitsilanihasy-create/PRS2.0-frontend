@@ -75,17 +75,17 @@ type Filtre = 'toutes' | 'non-lues';
   styles: `
     .ne__barre { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1rem; }
     .ne__filtres { display: inline-flex; gap: 0.25rem; padding: 0.2rem; border-radius: 999px; background: var(--n-100); }
-    .ne__filtre { display: inline-flex; align-items: center; gap: 0.4rem; border: 0; border-radius: 999px; padding: 0.4rem 0.9rem; background: transparent; color: var(--n-600); font: inherit; font-size: var(--text-sm); font-weight: 600; cursor: pointer; }
-    .ne__filtre--actif { background: #fff; color: var(--p-800); box-shadow: 0 1px 3px rgb(15 23 42 / 12%); }
+    .ne__filtre { display: inline-flex; align-items: center; gap: 0.4rem; border: 0; border-radius: 999px; padding: 0.4rem 0.9rem; background: transparent; color: var(--n-600); font: inherit; font-size: var(--text-sm); font-weight: 500; cursor: pointer; }
+    .ne__filtre--actif { background: var(--carte-fond); color: var(--p-800); box-shadow: none; }
     .ne__nb { min-width: 1.4rem; padding: 0 0.35rem; border-radius: 999px; background: var(--n-200); color: var(--n-800); font-size: var(--text-xs); text-align: center; }
     .ne__filtre--actif .ne__nb { background: var(--p-100); }
-    .ne__liste { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid var(--n-200); border-radius: 10px; overflow: hidden; }
+    .ne__liste { list-style: none; margin: 0; padding: 0; background: var(--carte-fond); border: 1px solid var(--n-200); border-radius: 10px; overflow: hidden; }
     .ne__item { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem 1.25rem; padding: 0.85rem 1rem; border-bottom: 1px solid var(--n-200); }
     .ne__item:last-child { border-bottom: 0; }
-    .ne__item--non-lu { background: var(--p-50, #f0f9ff); box-shadow: inset 3px 0 0 var(--p-600); }
+    .ne__item--non-lu { background: var(--p-50); box-shadow: inset 3px 0 0 var(--p-600); }
     .ne__texte { display: flex; flex-direction: column; gap: 0.15rem; flex: 1 1 24rem; min-width: 0; }
     .ne__titre { display: inline-flex; align-items: center; gap: 0.45rem; font-weight: 500; color: var(--n-600); }
-    .ne__item--non-lu .ne__titre { font-weight: 700; color: var(--n-800); }
+    .ne__item--non-lu .ne__titre { font-weight: 500; color: var(--n-800); }
     .ne__point { width: 8px; height: 8px; border-radius: 50%; background: var(--bouton-principal); flex: none; }
     .ne__corps { color: var(--n-500); font-size: var(--text-sm); }
     .ne__date { color: var(--n-500); font-size: var(--text-xs); font-variant-numeric: tabular-nums; }

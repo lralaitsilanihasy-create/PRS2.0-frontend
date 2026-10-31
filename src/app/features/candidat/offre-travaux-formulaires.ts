@@ -160,7 +160,7 @@ import {
     :host { display: flex; flex-direction: column; gap: 0.6rem; }
     .ot__h3 { margin: 0.6rem 0 0; font-size: 0.9rem; color: var(--n-700); }
     /* Les en-têtes de ligne : le th global du design system est blanc, en capitales (prévu pour un thead coloré). */
-    tbody th { color: var(--n-700); font-size: var(--text-sm); font-weight: 600; text-transform: none; letter-spacing: normal; white-space: normal; border-bottom: 1px solid var(--cnm-border); }
+    tbody th { color: var(--n-700); font-size: var(--text-sm); font-weight: 500; text-transform: none; letter-spacing: normal; white-space: normal; border-bottom: 1px solid var(--cnm-border); }
     .ot__num { width: 8rem; text-align: right; margin-left: auto; }
     .ot__unite { width: 5rem; }
     .ot__radios { border: 0; margin: 0; padding: 0; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; font-size: var(--text-sm); }
@@ -172,7 +172,7 @@ import {
     .ot__reference { display: grid; grid-template-columns: 2fr 1.5fr 9rem 11rem auto; gap: 0.5rem; align-items: end; }
     .ot__retirer { margin-bottom: 0.2rem; }
     .ot__bloc { border: 1px solid var(--n-200); border-radius: var(--radius-md); padding: 0.6rem 0.8rem; display: flex; flex-direction: column; gap: 0.4rem; }
-    .ot__bloc legend { font-weight: 600; padding: 0 0.3rem; }
+    .ot__bloc legend { font-weight: 500; padding: 0 0.3rem; }
     @media (max-width: 700px) { .ot__reference { grid-template-columns: 1fr; } }
   `,
 })

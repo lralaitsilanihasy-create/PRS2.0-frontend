@@ -176,7 +176,7 @@ import { LIBELLES_ETAT_CEREMONIE, LIBELLES_ETAT_PART, classeCeremonie, classePar
     .mc__liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
     .mc__det { display: grid; grid-template-columns: 1fr auto auto; gap: 0.75rem; align-items: center; padding: 0.4rem 0.6rem; border: 1px solid var(--n-200); border-radius: var(--radius-md); font-size: var(--text-sm); }
     .mc__det--moi { border-color: var(--p-300); background: var(--p-50); }
-    .mc__det-nom { font-weight: 600; }
+    .mc__det-nom { font-weight: 500; }
     .mc__det-emp { font-size: var(--text-xs); }
     @media (max-width: 600px) { .mc__det { grid-template-columns: 1fr; } }
   `,

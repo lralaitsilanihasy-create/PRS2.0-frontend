@@ -336,15 +336,15 @@ function motifDepot(e: unknown, enveloppe: EnveloppeOffre | null = null): string
   styles: `
     :host { display: flex; flex-direction: column; gap: 1rem; }
     .do__ariane { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; font-size: var(--text-sm); color: var(--n-500); }
-    .do__ariane a { color: var(--p-700); font-weight: 600; }
+    .do__ariane a { color: var(--p-700); font-weight: 500; }
     .do__sous { margin: 0.25rem 0 0; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; font-size: var(--text-sm); color: var(--n-500); }
     .do__form { display: flex; flex-direction: column; gap: 1rem; }
     .do__bloc, .do__accuse { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.6rem; }
-    .do__copie-choix { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.6rem 0.75rem; border: 1px solid var(--n-200); border-radius: var(--radius-md); background: var(--n-50, #f8fafc); }
+    .do__copie-choix { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.6rem 0.75rem; border: 1px solid var(--n-200); border-radius: var(--radius-md); background: var(--n-50); }
     .do__copie-choix p { margin: 0; }
     .do__phrases { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: 0.6rem; }
-    .do__copie-etat { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; padding: 0.5rem 0.7rem; border-radius: var(--radius-md); background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; font-size: var(--text-sm); }
-    .do__copie-etat--ko { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+    .do__copie-etat { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; padding: 0.5rem 0.7rem; border-radius: var(--radius-md); background: var(--favorable-fond); border: 1px solid var(--favorable-texte); color: var(--favorable-texte); font-size: var(--text-sm); }
+    .do__copie-etat--ko { background: var(--examen-fond); border-color: var(--examen-texte); color: var(--examen-texte); }
     .do__h2 { margin: 0; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-500); }
     .do__court { max-width: 22rem; }
     .do__garantie { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: 0.5rem; }
@@ -360,7 +360,7 @@ function motifDepot(e: unknown, enveloppe: EnveloppeOffre | null = null): string
     .do__actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
     .do__emp { margin: 0; word-break: break-all; font-size: var(--text-sm); }
     .do__avert { margin: 0; padding-left: 1.2rem; }
-    .do__lien-frais { margin-left: 0.4rem; font-weight: 600; }
+    .do__lien-frais { margin-left: 0.4rem; font-weight: 500; }
     .do__brouillon { display: flex; gap: 0.75rem; align-items: center; justify-content: space-between; flex-wrap: wrap; }
     .do__remplie { align-self: flex-start; }
     .do__enveloppes { border: 1px solid var(--n-200); border-radius: var(--radius-md); padding: 0.5rem 0.75rem; margin: 0; display: flex; flex-direction: column; gap: 0.35rem; }

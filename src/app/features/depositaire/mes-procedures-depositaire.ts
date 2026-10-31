@@ -61,12 +61,12 @@ import { LIBELLES_ETAT_SEANCE } from '../procedure/seance-ecran';
   styles: `
     :host { display: block; }
     .mpd { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); gap: 0.9rem; }
-    .mpd__carte { display: flex; flex-direction: column; gap: 0.35rem; height: 100%; box-sizing: border-box; padding: 0.9rem 1rem; background: #fff; border: 1px solid var(--n-200); border-radius: var(--radius-lg); text-decoration: none; color: inherit; }
-    .mpd__carte:hover, .mpd__carte:focus-visible { border-color: var(--p-400); box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06); }
+    .mpd__carte { display: flex; flex-direction: column; gap: 0.35rem; height: 100%; box-sizing: border-box; padding: 0.9rem 1rem; background: var(--carte-fond); border: 1px solid var(--n-200); border-radius: var(--radius-lg); text-decoration: none; color: inherit; }
+    .mpd__carte:hover, .mpd__carte:focus-visible { border-color: var(--p-400); box-shadow: none; }
     .mpd__ref { font-size: var(--text-sm); color: var(--n-500); }
     .mpd__objet { margin: 0; font-size: 1rem; line-height: 1.35; }
     .mpd__etats { margin: 0.2rem 0 0; display: flex; gap: 0.4rem; flex-wrap: wrap; }
-    .mpd__alerte { margin: 0.2rem 0 0; font-size: var(--text-sm); font-weight: 700; color: var(--p-800); }
+    .mpd__alerte { margin: 0.2rem 0 0; font-size: var(--text-sm); font-weight: 500; color: var(--p-800); }
   `,
 })
 export class MesProceduresDepositaire implements OnInit {

@@ -104,7 +104,7 @@ const MAX_LONGUEUR = 72;
   `,
   styles: `
     .cmp-modal { max-width: 28rem; }
-    .cmp-erreur { background: #FEF2F2; color: #9B1C1C; border: 1px solid #FEE2E2; border-radius: var(--radius-md); padding: 0.5rem 0.75rem; font-size: var(--text-sm); margin-bottom: 0.5rem; }
+    .cmp-erreur { background: var(--retard-fond); color: var(--retard-texte); border: 1px solid var(--retard-fond); border-radius: var(--radius-md); padding: 0.5rem 0.75rem; font-size: var(--text-sm); margin-bottom: 0.5rem; }
   `,
 })
 export class ChangerMotDePasseModal {

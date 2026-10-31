@@ -99,7 +99,7 @@ const RESULTATS: Readonly<Record<string, { texte: string; classe: string }>> = {
     .rt__meta { margin: 0; }
     .rt__alerte { margin: 0; color: var(--warning-text); }
     .rt__actions { display: flex; gap: 0.3rem; flex-wrap: wrap; }
-    .rt__details summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; }
+    .rt__details summary { cursor: pointer; font-size: var(--text-sm); font-weight: 500; }
     .rt__form { display: flex; flex-direction: column; gap: 0.45rem; padding-top: 0.4rem; }
     .rt__ligne { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: flex-end; }
   `,

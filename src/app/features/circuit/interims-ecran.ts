@@ -266,13 +266,13 @@ const MOTIFS: readonly MotifInterim[] = ['CONGE', 'MISSION', 'MALADIE', 'VACANCE
     .it { display: flex; flex-direction: column; gap: 1rem; }
     .it__intro { margin: -0.4rem 0 0; color: var(--n-500); max-width: 62rem; }
     .it__cartes { display: flex; flex-wrap: wrap; gap: 0.75rem; }
-    .it__carte { display: flex; gap: 0.6rem; align-items: flex-start; padding: 0.7rem 0.9rem; border-radius: 10px; border: 1px solid var(--n-200, #e0e6f0); background: #fff; min-width: 18rem; }
+    .it__carte { display: flex; gap: 0.6rem; align-items: flex-start; padding: 0.7rem 0.9rem; border-radius: 10px; border: 1px solid var(--n-200); background: var(--carte-fond); min-width: 18rem; }
     .it__carte div { display: flex; flex-direction: column; gap: 0.15rem; }
     .it__carte span { font-size: var(--text-sm, 0.85rem); color: var(--n-500); }
-    .it__carte--subi { border-color: var(--warning-text, #b45309); }
-    .it__carte--exerce { border-color: var(--c-600, #0284c7); }
+    .it__carte--subi { border-color: var(--warning-text); }
+    .it__carte--exerce { border-color: var(--c-600); }
     .it__aucun { margin: 0; color: var(--n-500); }
-    .it__nom { display: block; font-weight: 600; color: var(--c-800); }
+    .it__nom { display: block; font-weight: 500; color: var(--c-800); }
     .it__sous { display: block; font-size: var(--text-xs); color: var(--n-500); max-width: 16rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .it__c { white-space: nowrap; font-variant-numeric: tabular-nums; }
     .it__piece { margin-left: 0.4rem; display: inline-flex; align-items: center; gap: 0.25rem; }
@@ -280,10 +280,10 @@ const MOTIFS: readonly MotifInterim[] = ['CONGE', 'MISSION', 'MALADIE', 'VACANCE
     .it__empty { text-align: center; color: var(--n-400); padding: 1.5rem; }
     .it__moi { margin: 0 0 0.75rem; }
     .it__dates { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-    .it__statut--actif { background: var(--success-bg, #dcfce7); color: var(--success-text, #16a34a); }
-    .it__statut--a_venir { background: var(--info-bg, #e0f2fe); color: var(--info-text, #075985); }
+    .it__statut--actif { background: var(--success-bg); color: var(--success-text); }
+    .it__statut--a_venir { background: var(--info-bg); color: var(--info-text); }
     .it__statut--acheve { background: var(--n-100); color: var(--n-500); }
-    .it__statut--revoque { background: var(--danger-bg, #fee2e2); color: var(--danger-text, #dc2626); }
+    .it__statut--revoque { background: var(--danger-bg); color: var(--danger-text); }
     @media (max-width: 640px) { .it__dates { grid-template-columns: 1fr; } }
   `,
 })

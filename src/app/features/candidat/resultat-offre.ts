@@ -118,7 +118,7 @@ const MESSAGES: Readonly<Record<string, string>> = {
     .ro__large { flex: 1 1 16rem; }
     .ro__btn { align-self: flex-start; }
     .ro__fil, .ro__pieces, .ro__marche { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.4rem 0.6rem; background: var(--n-100); border-left: 3px solid var(--n-300); }
-    .ro__details summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; }
+    .ro__details summary { cursor: pointer; font-size: var(--text-sm); font-weight: 500; }
   `,
 })
 export class ResultatOffreCandidat implements OnInit {

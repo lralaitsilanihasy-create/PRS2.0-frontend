@@ -294,7 +294,7 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
     .reg-photo__choices { display: flex; gap: var(--cnm-space-2); align-items: center; flex-wrap: wrap; }
     .reg-photo__cam, .reg-photo__preview { display: flex; flex-direction: column; gap: var(--cnm-space-2); align-items: flex-start; }
     .reg-photo__video, .reg-photo__img { width: 100%; max-width: 14rem; border-radius: var(--cnm-radius-sm); border: 1px solid var(--cnm-border); }
-    .reg-photo__video { background: #000; }
+    .reg-photo__video { background: var(--section-fond); }
     .reg-photo__img { background: var(--cnm-surface-2); }
     .reg-photo__actions, .reg-photo__meta { display: flex; gap: var(--cnm-space-2); align-items: center; flex-wrap: wrap; }
 
@@ -311,7 +311,7 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
     .register-card__error {
       background: var(--cnm-danger-bg);
       color: var(--cnm-danger-fg);
-      border: 1px solid rgba(252, 129, 129, 0.4);
+      border: 1px solid var(--retard-texte);
       border-radius: var(--cnm-radius-sm);
       padding: var(--cnm-space-2) var(--cnm-space-3);
       font-size: var(--cnm-fs-sm);

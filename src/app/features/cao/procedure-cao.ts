@@ -179,18 +179,18 @@ export function etapesParcoursCao(etat: EtatSeance | null, dossierSoumis = false
   styles: `
     :host { display: flex; flex-direction: column; gap: 1.1rem; }
     .pc__ariane { display: flex; gap: 0.4rem; align-items: center; font-size: var(--text-sm); color: var(--n-500); }
-    .pc__ariane a { color: var(--p-700); font-weight: 600; }
+    .pc__ariane a { color: var(--p-700); font-weight: 500; }
     .pc__parcours { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 0.6rem; }
-    .pc__etape { display: flex; gap: 0.6rem; align-items: center; padding: 0.65rem 0.8rem; border-radius: 10px; background: #fff; border: 1px solid var(--n-200); }
-    .pc__pastille { flex: none; width: 1.9rem; height: 1.9rem; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 0.85rem; background: var(--n-100); color: var(--n-500); }
+    .pc__etape { display: flex; gap: 0.6rem; align-items: center; padding: 0.65rem 0.8rem; border-radius: 10px; background: var(--carte-fond); border: 1px solid var(--n-200); }
+    .pc__pastille { flex: none; width: 1.9rem; height: 1.9rem; border-radius: 50%; display: grid; place-items: center; font-weight: 500; font-size: 0.85rem; background: var(--n-100); color: var(--n-500); }
     .pc__etape-texte { display: flex; flex-direction: column; min-width: 0; font-size: var(--text-sm); }
     .pc__etape-texte span { color: var(--n-500); font-size: 0.78rem; }
     .pc__etape--fait { background: var(--success-bg); border-color: var(--success-bdr); }
-    .pc__etape--fait .pc__pastille { background: var(--success-text); color: #fff; }
+    .pc__etape--fait .pc__pastille { background: var(--success-text); color: var(--texte-menu); }
     .pc__etape--cours { border-color: var(--p-500); box-shadow: 0 0 0 3px var(--p-100); }
-    .pc__etape--cours .pc__pastille { background: var(--bouton-principal); color: #fff; }
+    .pc__etape--cours .pc__pastille { background: var(--bouton-principal); color: var(--texte-menu); }
     .pc__etape--ko { background: var(--danger-bg); border-color: var(--danger-bdr); }
-    .pc__etape--ko .pc__pastille { background: var(--danger-text); color: #fff; }
+    .pc__etape--ko .pc__pastille { background: var(--danger-text); color: var(--texte-menu); }
     .pc__grille { display: grid; grid-template-columns: minmax(0, 1fr) 21rem; gap: 1.1rem; align-items: start; }
     .pc__principal, .pc__cote { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
     .pc__cote { position: sticky; top: 1rem; }
@@ -201,16 +201,16 @@ export function etapesParcoursCao(etat: EtatSeance | null, dossierSoumis = false
     .pc__decision { margin: 0; }
     .pc__membres { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
     .pc__membre { display: flex; gap: 0.6rem; align-items: flex-start; }
-    .pc__avatar { flex: none; width: 2.1rem; height: 2.1rem; border-radius: 50%; display: grid; place-items: center; background: var(--n-100); color: var(--n-700); font-weight: 700; font-size: 0.78rem; }
-    .pc__avatar--president { background: var(--bouton-principal); color: #fff; }
+    .pc__avatar { flex: none; width: 2.1rem; height: 2.1rem; border-radius: 50%; display: grid; place-items: center; background: var(--n-100); color: var(--n-700); font-weight: 500; font-size: 0.78rem; }
+    .pc__avatar--president { background: var(--bouton-principal); color: var(--texte-menu); }
     .pc__membre-texte { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; font-size: var(--text-sm); }
     .pc__badge { align-self: flex-start; }
     .pc__eval { align-self: flex-start; }
-    .pc__representant summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; color: var(--p-700); }
+    .pc__representant summary { cursor: pointer; font-size: var(--text-sm); font-weight: 500; color: var(--p-700); }
     .pc__representant-form { display: flex; flex-direction: column; gap: 0.5rem; padding-top: 0.4rem; }
     .pc__representant-form .btn { align-self: flex-start; }
     .pc__cle { padding: 0; }
-    .pc__cle-titre { cursor: pointer; display: flex; gap: 0.75rem; align-items: baseline; flex-wrap: wrap; padding: 0.9rem 1.1rem; font-weight: 700; }
+    .pc__cle-titre { cursor: pointer; display: flex; gap: 0.75rem; align-items: baseline; flex-wrap: wrap; padding: 0.9rem 1.1rem; font-weight: 500; }
     .pc__cle[open] .pc__cle-titre { border-bottom: 1px solid var(--n-200); }
     .pc__cle app-ma-cle { display: block; padding: 0.4rem 1.1rem 1rem; }
     @media (max-width: 1100px) { .pc__grille { grid-template-columns: 1fr; } .pc__cote { position: static; } }

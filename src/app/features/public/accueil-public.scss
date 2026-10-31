@@ -1,5 +1,5 @@
-/* Entrée publique (proposition 2026-09-22) — jetons du design system, or des rubriques (#f5c542) en accent.
-   Contrastes mesurés par scripts/contrastes-coquille.mjs, section « Entrée publique ». */
+/* Entrée publique (proposition 2026-09-22) — design institutionnel (31/10/2026) : couleurs de la palette de styles.scss,
+   l’or (--or) en accent sur la bande du menu ; contrastes mesurés par scripts/contrastes-coquille.mjs. */
 :host {
   display: block;
   min-height: 100vh;
@@ -15,7 +15,7 @@
   height: auto;
   clip: auto;
   padding: 0.5rem 0.9rem;
-  background: #fff;
+  background: var(--carte-fond);
   color: var(--p-800);
   border-radius: var(--radius-md);
   z-index: 10;
@@ -23,7 +23,7 @@
 
 /* ── Barre du haut ── */
 .pub-top {
-  background: #fff;
+  background: var(--carte-fond);
   border-bottom: 1px solid var(--n-200);
 }
 .pub-top__in,
@@ -81,7 +81,7 @@
   padding: 0 1.25rem;
   text-decoration: none;
   color: var(--n-500);
-  font-weight: 600;
+  font-weight: 500;
   border-top: 3px solid transparent;
   border-bottom: 3px solid transparent;
 }
@@ -103,22 +103,22 @@
   height: 40px;
   padding: 0 1.05rem;
   border-radius: var(--radius-md);
-  font: 600 0.92rem var(--font-base);
+  font: 500 0.92rem var(--font-base);
   text-decoration: none;
   border: 1px solid transparent;
 }
 .pub-btn--primaire {
   background: var(--bouton-principal);
-  color: #fff;
+  color: var(--texte-menu);
 }
 .pub-btn--blanc {
-  background: #fff;
+  background: var(--carte-fond);
   color: var(--p-800);
 }
 .pub-btn--contour {
   background: transparent;
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.7);
+  color: var(--texte-menu);
+  border-color: var(--bordure);
 }
 
 /* ── Barre secondaire : ce que l'audience peut faire ici ── */
@@ -135,40 +135,31 @@
   padding-bottom: 0.25rem;
 }
 .pub-nav a {
-  color: rgba(255, 255, 255, 0.9); /* 8,4:1 sur #0c4a6e */
+  color: var(--texte-menu);
   text-decoration: none;
   padding: 0.45rem 0.8rem;
   border-radius: 8px;
   font-size: 0.92rem;
 }
 .pub-nav a:hover {
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
+  background: var(--carte-fond);
+  color: var(--texte-menu);
 }
 .pub-nav__cta {
   margin-left: auto;
-  background: #fff;
+  background: var(--carte-fond);
   color: var(--p-800) !important;
-  font-weight: 700;
-  border: 1px solid #f5c542;
+  font-weight: 500;
+  border: 1px solid var(--examen-texte);
 }
 
 /* ── Bannière : dégradé de la barre latérale, prolongé vers le clair ── */
 .pub-hero {
-  /* Bout clair borné à #0d5578 : l'or des repères (#f5c542) y tient 5,0:1 — #0f6a94 ne donnait que 3,69:1. */
-  background: linear-gradient(120deg, #082f49 0%, #0c4a6e 55%, #0d5578 100%);
-  color: #fff;
+  /* Bande du menu (design institutionnel, 31/10) : l’or des repères y tient son contraste (scripts/contrastes-coquille.mjs). */
+  background: var(--menu-fond);
+  color: var(--texte-menu);
   position: relative;
   overflow: hidden;
-}
-.pub-hero::after {
-  content: '';
-  position: absolute;
-  inset: auto -10% -60% auto;
-  width: 60%;
-  height: 140%;
-  background: radial-gradient(closest-side, rgba(245, 197, 66, 0.18), transparent 70%);
-  pointer-events: none;
 }
 .pub-hero__in {
   padding-top: 2.2rem;
@@ -180,17 +171,17 @@
   align-items: center;
   gap: 0.3rem;
   font-size: 0.78rem;
-  color: rgba(255, 255, 255, 0.86);
+  color: var(--texte-menu);
   margin-bottom: 1.1rem;
 }
 .pub-ariane a {
   color: inherit;
 }
 .pub-hero h1 {
-  color: #fff; /* la règle globale h1 (encre sombre) l'emportait sur l'héritage du blanc de la bannière */
+  color: var(--texte-menu); /* la règle globale h1 (encre sombre) l'emportait sur l'héritage du blanc de la bannière */
   margin: 0 0 0.5rem;
   font-size: clamp(1.6rem, 3vw, 2.4rem);
-  font-weight: 800;
+  font-weight: 500;
   line-height: 1.15; /* sur deux lignes (mobile), les lignes se chevauchaient avec l'interligne hérité */
   letter-spacing: -0.02em;
   max-width: 30ch;
@@ -198,7 +189,7 @@
 .pub-hero__promesse {
   margin: 0 0 1.4rem;
   font-size: 1.08rem;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--texte-menu);
   max-width: 60ch;
 }
 .pub-hero__actions {
@@ -218,12 +209,12 @@
 }
 .pub-repere__v {
   font: 500 1.35rem/1.2 var(--cnm-mono);
-  color: #f5c542; /* ≥ 5,0:1 sur #0d5578, bout clair du dégradé (mesuré) */
+  color: var(--or); /* or sur la bande du menu (contrastes-coquille.mjs) */
 }
 .pub-repere__l {
   margin: 0;
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.86);
+  color: var(--texte-menu);
 }
 
 /* ── Section : titre + trois cartes ── */
@@ -235,7 +226,7 @@
   margin: 0 0 0.35rem;
   font-size: 1.45rem;
   color: var(--p-800);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.01em;
 }
 .pub-section__texte {
@@ -249,11 +240,11 @@
   gap: 1.1rem;
 }
 .pub-carte {
-  background: #fff;
+  background: var(--carte-fond);
   border: 1px solid var(--n-200);
   border-radius: 14px;
   padding: 1.15rem 1.25rem 1.3rem;
-  box-shadow: 0 1px 2px rgba(12, 42, 63, 0.05), 0 12px 32px -18px rgba(12, 42, 63, 0.25);
+  box-shadow: none;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -272,7 +263,7 @@
 .pub-carte h3 {
   margin: 0.2rem 0 0;
   font-size: 1.05rem;
-  font-weight: 700;
+  font-weight: 500;
 }
 .pub-carte p {
   margin: 0;
@@ -281,7 +272,7 @@
 }
 /* Mots-clés : des LIENS (bleu, gras) vers l'écran concerné ; en gras seul quand l'écran dépend du profil. */
 .pub-mot {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--p-700);
   text-decoration: none;
 }
@@ -295,7 +286,7 @@
 /* ── Pied ── */
 .pub-pied {
   border-top: 1px solid var(--n-200);
-  background: #fff;
+  background: var(--carte-fond);
 }
 .pub-pied__in {
   padding-top: 1.2rem;

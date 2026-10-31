@@ -211,13 +211,13 @@ export function imprimerRecapitulatif(document: Document, r: RecapitulatifOffre)
   styles: `
     .ro { display: flex; flex-direction: column; gap: 0.45rem; font-size: var(--text-sm); }
     .ro p { margin: 0; }
-    .ro__avert { padding: 0.5rem 0.7rem; border-radius: var(--radius-md); background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+    .ro__avert { padding: 0.5rem 0.7rem; border-radius: var(--radius-md); background: var(--examen-fond); border: 1px solid var(--examen-texte); color: var(--examen-texte); }
     .ro__h3 { margin: 0.5rem 0 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-600); }
     .ro__dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 0.2rem 0.9rem; }
     .ro__dl dt { color: var(--n-500); }
-    .ro__dl dd { margin: 0; font-weight: 600; }
+    .ro__dl dd { margin: 0; font-weight: 500; }
     .ro__table td { white-space: normal; vertical-align: top; }
-    .ro__article summary { cursor: pointer; font-weight: 600; padding: 0.3rem 0; }
+    .ro__article summary { cursor: pointer; font-weight: 500; padding: 0.3rem 0; }
     .ro__fichiers { margin: 0; padding-left: 1.1rem; }
     .ro__sha { font-size: var(--text-xs); word-break: break-all; }
   `,

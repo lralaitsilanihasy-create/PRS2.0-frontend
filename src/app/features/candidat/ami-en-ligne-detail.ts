@@ -218,7 +218,7 @@ interface LigneMembre {
     .aed__sous span { display: inline-flex; gap: 0.35rem; align-items: center; }
     .aed__echeance { display: flex; flex-direction: column; align-items: flex-end; gap: 0.15rem; padding: 0.8rem 1.1rem; border-radius: var(--radius-md); background: var(--p-100); color: var(--p-800); text-align: right; min-width: 13rem; }
     .aed__echeance--close { background: var(--n-100); color: var(--n-600); }
-    .aed__echeance-lib { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }
+    .aed__echeance-lib { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500; }
     .aed__echeance-date { font-size: 1.2rem; }
     .aed__echeance-reste { font-size: var(--text-sm); }
     @media (max-width: 640px) { .aed__tete { grid-template-columns: 1fr; } .aed__echeance { align-items: flex-start; text-align: left; min-width: 0; } }

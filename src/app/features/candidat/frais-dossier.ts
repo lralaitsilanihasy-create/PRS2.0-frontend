@@ -114,7 +114,7 @@ function motifRefus(e: unknown): string {
     .fd__dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 0.3rem 1rem; font-size: var(--text-sm); }
     .fd__dl dt { color: var(--n-500); }
     .fd__dl dd { margin: 0; }
-    .fd__sans-compte { margin: 0; padding: 0.5rem 0.7rem; border-radius: var(--radius-md); background: #fffbeb; border: 1px solid #fde68a; color: #92400e; font-size: var(--text-sm); }
+    .fd__sans-compte { margin: 0; padding: 0.5rem 0.7rem; border-radius: var(--radius-md); background: var(--examen-fond); border: 1px solid var(--examen-texte); color: var(--examen-texte); font-size: var(--text-sm); }
     .fd__etat { display: flex; flex-wrap: wrap; gap: 0.4rem 0.75rem; align-items: center; padding: 0.6rem 0.75rem; border: 1px solid var(--n-200); border-left: 4px solid var(--warning-text); border-radius: var(--radius-md); }
     .fd__etat--ok { border-left-color: var(--success-text); }
     .fd__etat--ko { border-left-color: var(--danger-text); }

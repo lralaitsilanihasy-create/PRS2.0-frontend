@@ -89,9 +89,8 @@ import { MarkdownVue } from './markdown-vue';
       min-height: min(32rem, 78vh);
       max-height: 90vh;
       background: var(--carte-fond);
-      /* Ombre en deux couches : un halo large qui détache le panneau du fond, et un liseré
-         rapproché qui en dessine le bord — sans bordure, donc sans trait de couleur. */
-      box-shadow: 0 2px 8px var(--menu-fond), 0 32px 80px var(--menu-fond);
+      /* Design institutionnel (31/10) : pas d'ombre portée, un filet détache le panneau du voile. */
+      border: 1px solid var(--bordure);
       overflow: hidden;
     }
     /* Colonnes déséquilibrées au profit du texte : l'annonce a plus à dire que l'image à montrer. */

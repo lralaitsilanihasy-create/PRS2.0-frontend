@@ -72,18 +72,18 @@ import { LIBELLES_ETAT_CEREMONIE, LIBELLES_ETAT_PART, classeCeremonie, classePar
     .mp__role { margin: 0; }
     .mp__compteurs { margin: 0; }
     .mp { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); gap: 0.9rem; }
-    .mp__carte { display: flex; flex-direction: column; gap: 0.4rem; height: 100%; box-sizing: border-box; padding: 1rem 1.1rem 0; background: #fff;
+    .mp__carte { display: flex; flex-direction: column; gap: 0.4rem; height: 100%; box-sizing: border-box; padding: 1rem 1.1rem 0; background: var(--carte-fond);
       border: 1px solid var(--n-200); border-top: 4px solid var(--n-300); border-radius: var(--radius-lg); text-decoration: none; color: inherit; overflow: hidden;
       transition: box-shadow 0.15s, transform 0.15s; }
-    .mp__carte:hover, .mp__carte:focus-visible { box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08); transform: translateY(-1px); }
+    .mp__carte:hover, .mp__carte:focus-visible { box-shadow: none; transform: translateY(-1px); }
     .mp__haut { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
-    .mp__ref { font-size: var(--text-sm); color: var(--p-700); font-weight: 700; }
+    .mp__ref { font-size: var(--text-sm); color: var(--p-700); font-weight: 500; }
     .mp__objet { margin: 0; font-size: 1.02rem; line-height: 1.35; }
     .mp__meta { margin: 0; font-size: var(--text-sm); color: var(--n-500); }
     .mp__etats { margin: 0.2rem 0 0; display: flex; gap: 0.4rem; flex-wrap: wrap; }
     .mp__limite { margin: 0.1rem 0 0; display: flex; gap: 0.35rem; align-items: center; font-size: var(--text-sm); color: var(--n-600); }
     .mp__pas { margin: auto -1.1rem 0; padding: 0.6rem 1.1rem; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;
-      font-size: var(--text-sm); font-weight: 700; border-top: 1px solid var(--n-200); background: var(--n-100); color: var(--n-700); }
+      font-size: var(--text-sm); font-weight: 500; border-top: 1px solid var(--n-200); background: var(--n-100); color: var(--n-700); }
     .mp__carte--action { border-top-color: var(--warning-text); }
     .mp__carte--action .mp__pas { background: var(--warning-bg); color: var(--warning-text); border-top-color: var(--warning-bdr); }
     .mp__carte--alerte { border-top-color: var(--danger-text); }
@@ -91,7 +91,7 @@ import { LIBELLES_ETAT_CEREMONIE, LIBELLES_ETAT_PART, classeCeremonie, classePar
     .mp__carte--attente { border-top-color: var(--info-text); }
     .mp__carte--attente .mp__pas { background: var(--info-bg); color: var(--info-text); border-top-color: var(--info-bdr); }
     .mp__carte--suite { border-top-color: var(--p-600); }
-    .mp__carte--suite .mp__pas { background: var(--bouton-principal); color: #fff; border-top-color: var(--bouton-principal); }
+    .mp__carte--suite .mp__pas { background: var(--bouton-principal); color: var(--texte-menu); border-top-color: var(--bouton-principal); }
   `,
 })
 export class MesProceduresCao implements OnInit {

@@ -96,7 +96,7 @@ import { EtatVideCandidat } from './etat-vide-candidat';
     .bt__h2 { margin: 0; font-size: 1rem; flex: 1 1 auto; }
     .bt__meta { margin: 0; }
     .bt__actions { display: flex; gap: 0.3rem; flex-wrap: wrap; }
-    .bt__reception { display: flex; flex-direction: column; gap: 0.35rem; padding: 0.5rem 0.7rem; border-left: 3px solid var(--p-300); background: var(--n-50, #f8fafc); }
+    .bt__reception { display: flex; flex-direction: column; gap: 0.35rem; padding: 0.5rem 0.7rem; border-left: 3px solid var(--p-300); background: var(--n-50); }
     .bt__ligne { display: flex; gap: 0.5rem; align-items: flex-end; flex-wrap: wrap; }
     .bt__large { flex: 1 1 16rem; }
   `,

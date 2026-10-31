@@ -135,14 +135,14 @@ import { ConformiteSaisie, SaisieOffre, aCommande, calculerTotaux, enLettres, es
     .of__pu { width: 9rem; text-align: right; margin-left: auto; }
     .of__lettres { color: var(--n-500); margin-top: 0.2rem; }
     /* Les en-têtes de ligne : le th global du design system est blanc, en capitales (prévu pour un thead coloré). */
-    tbody th { color: var(--n-700); font-size: var(--text-sm); font-weight: 600; text-transform: none; letter-spacing: normal; white-space: normal; border-bottom: 1px solid var(--cnm-border); }
-    .of__serie th { background: var(--n-50); text-align: left; font-weight: 700; }
-    .of__sous-total td { font-weight: 600; }
+    tbody th { color: var(--n-700); font-size: var(--text-sm); font-weight: 500; text-transform: none; letter-spacing: normal; white-space: normal; border-bottom: 1px solid var(--cnm-border); }
+    .of__serie th { background: var(--n-50); text-align: left; font-weight: 500; }
+    .of__sous-total td { font-weight: 500; }
     .of__totaux { margin: 0; display: grid; grid-template-columns: max-content max-content; gap: 0.2rem 1.25rem; justify-content: end; font-size: var(--text-sm); }
     .of__totaux dt { color: var(--n-500); }
     .of__totaux dd { margin: 0; text-align: right; }
     .of__article { border: 1px solid var(--n-200); border-radius: var(--radius-md); padding: 0.6rem 0.8rem; display: flex; flex-direction: column; gap: 0.5rem; }
-    .of__article legend { font-weight: 600; padding: 0 0.3rem; }
+    .of__article legend { font-weight: 500; padding: 0 0.3rem; }
     .of__mm { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: 0.5rem; }
   `,
 })

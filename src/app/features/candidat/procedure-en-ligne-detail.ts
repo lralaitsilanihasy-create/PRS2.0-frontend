@@ -247,7 +247,7 @@ import { LIBELLES_ETAT_ETAPE, OffreDeposee, etapesParcours, grouperDocuments, ja
   styles: `
     :host { display: block; }
     .ped__ariane { display: flex; gap: 0.4rem; align-items: center; font-size: var(--text-sm); color: var(--n-500); margin-bottom: 0.75rem; flex-wrap: wrap; }
-    .ped__ariane a { color: var(--p-700); font-weight: 600; }
+    .ped__ariane a { color: var(--p-700); font-weight: 500; }
 
     /* En-tête */
     .ped__tete { display: grid; grid-template-columns: 1fr auto; gap: 1.25rem; align-items: center; padding: 1.25rem 1.4rem; margin-bottom: 1rem;
@@ -259,7 +259,7 @@ import { LIBELLES_ETAT_ETAPE, OffreDeposee, etapesParcours, grouperDocuments, ja
     .ped__echeance { display: flex; flex-direction: column; align-items: flex-end; gap: 0.15rem; padding: 0.8rem 1.1rem; border-radius: var(--radius-md);
       background: var(--p-100); color: var(--p-800); text-align: right; min-width: 14rem; }
     .ped__echeance--close { background: var(--n-100); color: var(--n-600); }
-    .ped__echeance-lib { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }
+    .ped__echeance-lib { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500; }
     .ped__echeance-date { font-size: 1.2rem; }
     .ped__echeance-reste { font-size: var(--text-sm); }
 
@@ -268,23 +268,23 @@ import { LIBELLES_ETAT_ETAPE, OffreDeposee, etapesParcours, grouperDocuments, ja
     .ped__h2.ped__parcours-titre { margin-bottom: 0.55rem; }
     .ped__etapes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: 0.6rem; }
     .ped__etape { width: 100%; height: 100%; display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; gap: 0.15rem 0.65rem; text-align: left;
-      padding: 0.75rem 0.85rem; border: 1px solid var(--n-200); border-radius: var(--radius-md); background: #fff; font: inherit; color: inherit; cursor: pointer;
+      padding: 0.75rem 0.85rem; border: 1px solid var(--n-200); border-radius: var(--radius-md); background: var(--carte-fond); font: inherit; color: inherit; cursor: pointer;
       box-shadow: var(--shadow-sm); transition: border-color .15s, box-shadow .15s; }
     .ped__etape:hover, .ped__etape:focus-visible { border-color: var(--p-400); box-shadow: var(--shadow-md); }
-    .ped__etape-n { grid-row: 1 / 3; width: 1.8rem; height: 1.8rem; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: var(--text-sm);
+    .ped__etape-n { grid-row: 1 / 3; width: 1.8rem; height: 1.8rem; border-radius: 50%; display: grid; place-items: center; font-weight: 500; font-size: var(--text-sm);
       background: var(--n-100); color: var(--n-600); }
     .ped__etape-corps { display: flex; flex-direction: column; gap: 0.1rem; }
-    .ped__etape-titre { font-weight: 700; font-size: var(--text-sm); color: var(--n-800); }
+    .ped__etape-titre { font-weight: 500; font-size: var(--text-sm); color: var(--n-800); }
     .ped__etape-detail { font-size: var(--text-xs); color: var(--n-500); }
-    .ped__etape-etat { grid-column: 2; justify-self: start; margin-top: 0.3rem; font-size: var(--text-xs); font-weight: 700; padding: 0.05rem 0.5rem;
+    .ped__etape-etat { grid-column: 2; justify-self: start; margin-top: 0.3rem; font-size: var(--text-xs); font-weight: 500; padding: 0.05rem 0.5rem;
       border-radius: var(--radius-full); background: var(--n-100); color: var(--n-600); }
-    .ped__etape[data-etat='fait'] .ped__etape-n, .ped__etape[data-etat='fait'] .ped__etape-etat { background: #d1fae5; color: #065f46; }
+    .ped__etape[data-etat='fait'] .ped__etape-n, .ped__etape[data-etat='fait'] .ped__etape-etat { background: var(--favorable-fond); color: var(--favorable-texte); }
     .ped__etape[data-etat='a-faire'] { border-color: var(--p-300); }
-    .ped__etape[data-etat='a-faire'] .ped__etape-n { background: var(--bouton-principal); color: #fff; }
+    .ped__etape[data-etat='a-faire'] .ped__etape-n { background: var(--bouton-principal); color: var(--texte-menu); }
     .ped__etape[data-etat='a-faire'] .ped__etape-etat { background: var(--p-100); color: var(--p-800); }
-    .ped__etape[data-etat='en-cours'] .ped__etape-n, .ped__etape[data-etat='en-cours'] .ped__etape-etat { background: #fef3c7; color: #92400e; }
+    .ped__etape[data-etat='en-cours'] .ped__etape-n, .ped__etape[data-etat='en-cours'] .ped__etape-etat { background: var(--examen-fond); color: var(--examen-texte); }
     .ped__invite { margin: 0.6rem 0 0; display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; font-size: var(--text-sm); color: var(--n-600); }
-    .ped__invite a { font-weight: 600; }
+    .ped__invite a { font-weight: 500; }
 
     /* Corps : deux colonnes */
     .ped__corps { display: grid; grid-template-columns: minmax(0, 1fr) minmax(17rem, 22rem); gap: 1rem; align-items: start; }
@@ -296,39 +296,39 @@ import { LIBELLES_ETAT_ETAPE, OffreDeposee, etapesParcours, grouperDocuments, ja
     .ped__h2:focus { outline: none; }
     .ped__dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 0.35rem 0.9rem; font-size: var(--text-sm); }
     .ped__dl dt { color: var(--n-500); }
-    .ped__dl dd { margin: 0; font-weight: 600; color: var(--n-700); }
+    .ped__dl dd { margin: 0; font-weight: 500; color: var(--n-700); }
     .ped__note { margin: 0; display: flex; gap: 0.4rem; align-items: center; font-size: var(--text-sm); color: var(--n-600); background: var(--n-100);
       padding: 0.5rem 0.65rem; border-radius: var(--radius-md); }
     .ped__deposer { align-self: flex-start; }
-    .ped__depose { margin: 0; display: flex; gap: 0.4rem; align-items: center; padding: 0.5rem 0.65rem; border-radius: var(--radius-md); background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; font-size: var(--text-sm); font-weight: 600; }
+    .ped__depose { margin: 0; display: flex; gap: 0.4rem; align-items: center; padding: 0.5rem 0.65rem; border-radius: var(--radius-md); background: var(--favorable-fond); border: 1px solid var(--favorable-texte); color: var(--favorable-texte); font-size: var(--text-sm); font-weight: 500; }
     .ped__depose-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
 
     /* Frise du calendrier */
     .ped__frise { list-style: none; margin: 0 0 0 0.4rem; padding: 0 0 0 1.1rem; display: flex; flex-direction: column; gap: 0.75rem; border-left: 2px solid var(--p-200); }
     .ped__frise li { position: relative; display: flex; flex-direction: column; }
     .ped__frise li::before { content: ''; position: absolute; left: calc(-1.1rem - 6px); top: 0.3rem; width: 10px; height: 10px; border-radius: 50%;
-      background: #fff; border: 2px solid var(--p-400); }
+      background: var(--carte-fond); border: 2px solid var(--p-400); }
     .ped__frise li.ped__jalon--passe::before { background: var(--bouton-principal); border-color: var(--bouton-principal); }
     .ped__frise li.ped__jalon--fort::before { border-color: var(--menu-fond); }
     .ped__jalon-lib { font-size: var(--text-xs); color: var(--n-500); }
-    .ped__jalon-date { font-size: var(--text-sm); font-weight: 600; color: var(--n-700); }
-    .ped__jalon--fort .ped__jalon-date { color: var(--p-800); font-weight: 700; }
+    .ped__jalon-date { font-size: var(--text-sm); font-weight: 500; color: var(--n-700); }
+    .ped__jalon--fort .ped__jalon-date { color: var(--p-800); font-weight: 500; }
 
     /* Documents */
     .ped__verrou { margin: 0; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; padding: 0.6rem 0.75rem; border-radius: var(--radius-md);
-      background: #fffbeb; border: 1px solid #fde68a; color: #92400e; font-size: var(--text-sm); }
+      background: var(--examen-fond); border: 1px solid var(--examen-texte); color: var(--examen-texte); font-size: var(--text-sm); }
     .ped__verrou span { flex: 1 1 14rem; }
     .ped__docs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
     .ped__doc { display: grid; grid-template-columns: auto 1fr auto; gap: 0.75rem; align-items: center; padding: 0.65rem 0.8rem; border: 1px solid var(--n-200);
       border-radius: var(--radius-md); background: var(--n-100); }
-    .ped__doc-icone { width: 2.2rem; height: 2.2rem; border-radius: var(--radius-md); display: grid; place-items: center; background: #fff; color: var(--p-600); }
-    .ped__doc-nom { font-weight: 600; color: var(--n-800); display: flex; flex-direction: column; }
+    .ped__doc-icone { width: 2.2rem; height: 2.2rem; border-radius: var(--radius-md); display: grid; place-items: center; background: var(--carte-fond); color: var(--p-600); }
+    .ped__doc-nom { font-weight: 500; color: var(--n-800); display: flex; flex-direction: column; }
     .ped__doc-version { font-weight: 400; font-size: var(--text-xs); color: var(--n-500); }
     .ped__doc-formats { display: flex; gap: 0.4rem; flex-wrap: wrap; justify-content: flex-end; }
     .ped__doc-formats .btn { display: inline-flex; gap: 0.35rem; align-items: center; }
 
     .ped__lots { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.25rem; font-size: var(--text-sm); }
-    .ped__lot-n { font-weight: 700; margin-right: 0.3rem; }
+    .ped__lot-n { font-weight: 500; margin-right: 0.3rem; }
     .ped__assist p { margin: 0; white-space: pre-line; }
 
     @media (max-width: 960px) {
