@@ -78,21 +78,21 @@ import { LettresInvitation } from '../../../shared/prmp/lettres-invitation';
     </section>
   `,
   styles: `
-    .fmd { background: #fff; border: 1px solid var(--n-200); border-radius: 12px; padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.4rem; }
+    .fmd { background: var(--carte-fond); border: 1px solid var(--n-200); border-radius: 12px; padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.4rem; }
     .fmd--modale { border: none; padding: 0 0 0.75rem; margin-bottom: 0.75rem; border-bottom: 1px solid var(--n-200); border-radius: 0; }
     .fmd__titre { display: flex; align-items: center; gap: 0.4rem; margin: 0; font-size: 0.95rem; }
     .fmd__ligne { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; margin: 0; font-size: 0.84rem; color: var(--n-600); }
-    .fmd__etat { padding: 0.05rem 0.5rem; border-radius: 999px; background: var(--n-100); color: var(--n-600); font-weight: 700; font-size: 0.74rem; }
-    .fmd__etat--ok { background: #d1fae5; color: #047857; }
+    .fmd__etat { padding: 0.05rem 0.5rem; border-radius: 999px; background: var(--n-100); color: var(--n-600); font-weight: 500; font-size: 0.74rem; }
+    .fmd__etat--ok { background: var(--favorable-fond); color: var(--favorable-texte); }
     .fmd__ppm { color: var(--n-500); font-size: 0.8rem; }
-    .fmd__obj { margin: 0; font-weight: 600; font-size: 0.88rem; }
+    .fmd__obj { margin: 0; font-weight: 500; font-size: 0.88rem; }
     .fmd__vide { margin: 0; font-size: 0.84rem; color: var(--n-500); }
     .fmd__actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.15rem; }
     .fmd__choix { border-top: 1px dashed var(--n-200); padding-top: 0.5rem; display: flex; flex-direction: column; gap: 0.4rem; }
     .fmd__liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
     .fmd__liste li { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; font-size: 0.84rem; }
-    .fmd__liste-obj { font-weight: 600; flex: 1; min-width: 12rem; }
-    .fmd__annuler { align-self: flex-start; background: none; border: 0; color: var(--p-700); font: 600 0.82rem var(--font-base); cursor: pointer; text-decoration: underline; }
+    .fmd__liste-obj { font-weight: 500; flex: 1; min-width: 12rem; }
+    .fmd__annuler { align-self: flex-start; background: none; border: 0; color: var(--p-700); font: 500 0.82rem var(--font-base); cursor: pointer; text-decoration: underline; }
   `,
 })
 export class FicheMarcheDossier {

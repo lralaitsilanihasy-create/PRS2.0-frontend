@@ -168,7 +168,7 @@ export function titrer(bloc: Bloc): BlocAffiche {
     .sd {
       border: 1px solid var(--n-200);
       border-radius: var(--radius-lg);
-      background: #fff;
+      background: var(--carte-fond);
       padding: 14px 16px;
       display: flex;
       flex-direction: column;
@@ -184,7 +184,7 @@ export function titrer(bloc: Bloc): BlocAffiche {
     .sd__titre {
       margin: 0;
       font-size: var(--text-md, 15px);
-      font-weight: 700;
+      font-weight: 500;
       color: var(--n-700);
     }
     .sd__invite,
@@ -220,7 +220,7 @@ export function titrer(bloc: Bloc): BlocAffiche {
     }
     .sd__faits-titre {
       cursor: pointer;
-      font-weight: 600;
+      font-weight: 500;
       color: var(--n-600, var(--n-500));
       display: flex;
       align-items: center;
@@ -255,7 +255,7 @@ export function titrer(bloc: Bloc): BlocAffiche {
     .sd__soustitre {
       margin: 10px 0 2px;
       font-size: var(--text-sm);
-      font-weight: 700;
+      font-weight: 500;
       color: var(--n-700);
     }
     .sd__texte > :first-child.sd__soustitre {

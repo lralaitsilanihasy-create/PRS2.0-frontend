@@ -114,15 +114,15 @@ import { tacheChronoVisiblePour } from './circuit-workflow';
       color: var(--n-500);
     }
     .chrono__attente {
-      color: var(--warning-700, #92400e);
-      background: var(--warning-50, #fffbeb);
-      border: 1px solid var(--warning-200, #fde68a);
+      color: var(--warning-700, var(--examen-texte));
+      background: var(--warning-50, var(--examen-fond));
+      border: 1px solid var(--warning-200, var(--examen-texte));
       border-radius: 6px;
       padding: 0.35rem 0.6rem;
     }
     .chrono__prevision {
       margin-left: auto;
-      font-weight: 600;
+      font-weight: 500;
     }
     /* La date — l'information que tout le bloc sert — en couleur vive (demande pilote 02/09). */
     .chrono__prevision strong {
@@ -180,13 +180,13 @@ import { tacheChronoVisiblePour } from './circuit-workflow';
     .chrono__table th {
       font-size: var(--text-xs);
       color: var(--n-400);
-      font-weight: 600;
+      font-weight: 500;
       background: transparent;
       text-transform: none;
       letter-spacing: normal;
     }
     .chrono__row--encours td {
-      background: var(--primary-50, #eff6ff);
+      background: var(--primary-50, var(--onglet-actif-fond));
     }
     .chrono__vide {
       font-size: var(--text-sm);

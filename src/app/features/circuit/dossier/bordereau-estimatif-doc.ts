@@ -81,10 +81,10 @@ interface LotBordereau {
     .be__cadre { overflow-x: auto; }
     .be__table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
     .be__table th, .be__table td { border: 1px solid var(--n-300); padding: 0.35rem 0.55rem; text-align: left; vertical-align: top; }
-    .be__table thead th { background: var(--n-50, #f8fafc); color: var(--n-700); font-weight: 600; }
-    .be__table tfoot th { text-align: right; font-weight: 600; }
+    .be__table thead th { background: var(--n-50); color: var(--n-700); font-weight: 500; }
+    .be__table tfoot th { text-align: right; font-weight: 500; }
     .be__num { text-align: right !important; white-space: nowrap; font-variant-numeric: tabular-nums; }
-    .be__ecart td { color: var(--danger-text); font-weight: 600; }
+    .be__ecart td { color: var(--danger-text); font-weight: 500; }
     .be__aide { margin: 0; font-size: 0.8rem; color: var(--n-500); }
     .be__refus { margin: 0; color: var(--danger-text); }
   `,

@@ -1,7 +1,7 @@
 /* Barre collante de la page dossier (lot L4-F3). Fixe sous la barre du haut (48 px, z-index 99), au-dessus
    de l'en-tête collant du plan (z-index 3) ; la page décale d'autant cet en-tête quand la barre est
    dépliée (--pd-barre-h). Mode concentration : la barre latérale est en tiroir, la barre prend toute la
-   largeur. Couleurs de texte au contraste AA : #152033 15:1, #34405a 10:1 sur blanc. */
+   largeur. Couleurs de texte au contraste AA : var(--section-fond) 15:1, var(--section-fond) 10:1 sur blanc. */
 :host {
   position: fixed;
   top: var(--hauteur-menu);
@@ -34,10 +34,10 @@
   gap: 0.5rem 1rem;
   height: 3.25rem;
   padding: 0 1.25rem;
-  border-bottom: 1px solid #bfdcef;
-  background: #fff;
-  box-shadow: 0 10px 24px -18px rgba(3, 105, 161, 0.55);
-  color: #152033;
+  border-bottom: 1px solid var(--bouton-principal);
+  background: var(--carte-fond);
+  box-shadow: none;
+  color: var(--texte);
   min-width: 0;
 }
 .bc__ref {
@@ -56,18 +56,18 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 0.75rem;
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #0369a1;
+  color: var(--texte);
 }
 .bc__titre {
   margin-left: 0.6rem;
   font-size: 0.875rem;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0;
   text-transform: none;
-  color: #34405a;
+  color: var(--texte);
 }
 .bc__delai {
   flex: none;
@@ -78,15 +78,15 @@
   border: 1px solid;
   border-radius: 7px;
   font-size: 0.78125rem;
-  font-weight: 700;
+  font-weight: 500;
   white-space: nowrap;
 }
-.bc__delai--retard { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
-.bc__delai--bientot { background: #fffbeb; border-color: #fde68a; color: #92400e; }
-.bc__delai--ok { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
-.bc__delai--sans { background: #f4f7fb; border-color: #dbe3ee; color: #34405a; }
-.bc__delai--pause { background: #fff7ed; border-color: #fed7aa; color: #9a3412; }
-.bc__delai--suivi { background: #f0f9ff; border-color: #bae6fd; color: #075985; }
+.bc__delai--retard { background: var(--retard-fond); border-color: var(--retard-fond); color: var(--retard-texte); }
+.bc__delai--bientot { background: var(--examen-fond); border-color: var(--examen-texte); color: var(--examen-texte); }
+.bc__delai--ok { background: var(--favorable-fond); border-color: var(--favorable-texte); color: var(--favorable-texte); }
+.bc__delai--sans { background: var(--carte-fond); border-color: var(--bordure); color: var(--texte); }
+.bc__delai--pause { background: var(--examen-fond); border-color: var(--examen-texte); color: var(--examen-texte); }
+.bc__delai--suivi { background: var(--onglet-actif-fond); border-color: var(--bordure); color: var(--texte); }
 .bc__geste {
   flex: none;
   display: inline-flex;

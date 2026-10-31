@@ -40,15 +40,15 @@ import { actionLabel } from './journal-libelles';
   styles: `
     :host { display: contents; }
     /* Journal des actions (spec « Mandats PRMP »). */
-    .dc-journal { width: 100%; border-collapse: collapse; font-size: 12.5px; background: #fff; border: 0.5px solid var(--n-200); border-radius: 10px; overflow: hidden; }
-    .dc-journal th { text-align: left; padding: 7px 12px; background: var(--n-50); border-bottom: 0.5px solid var(--n-200); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--n-400); white-space: nowrap; }
+    .dc-journal { width: 100%; border-collapse: collapse; font-size: 12.5px; background: var(--carte-fond); border: 0.5px solid var(--n-200); border-radius: 10px; overflow: hidden; }
+    .dc-journal th { text-align: left; padding: 7px 12px; background: var(--n-50); border-bottom: 0.5px solid var(--n-200); font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; color: var(--n-400); white-space: nowrap; }
     .dc-journal td { padding: 7px 12px; border-bottom: 0.5px solid var(--n-100); vertical-align: top; white-space: normal; }
     .dc-journal tr:last-child td { border-bottom: none; }
     /* Jour et heure sur LA MÊME LIGNE (demande pilote 2026-09-06) : le sélecteur bat le
        « white-space: normal » générique des cellules du journal. */
     .dc-journal td.dc-journal__date { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--n-500); }
     .dc-journal__detail { color: var(--n-500); }
-    .dc-journal__succ { background: var(--warning-bg, #fef3c7); color: var(--warning-text, #b45309); margin-left: 6px; font-size: 10px; }
+    .dc-journal__succ { background: var(--warning-bg); color: var(--warning-text); margin-left: 6px; font-size: 10px; }
   `,
 })
 export class DossierJournal {

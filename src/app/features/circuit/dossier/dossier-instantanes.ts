@@ -101,19 +101,19 @@ export function libelleEcranInstantane(ecran: string): string {
     .di__select { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.6rem; font-size: var(--text-sm); }
     .di__select .form-control { width: auto; }
     .di__tete { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.9rem; }
-    .di__cadenas { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 8px; background: #e0f2fe; font-size: 0.95rem; }
-    .di__tete .di__intro { margin: 0; font-size: 0.9rem; color: #34405a; }
-    .di__compte { margin-left: 0.4rem; padding: 0.05rem 0.5rem; border-radius: 999px; background: #e0f2fe; color: #0369a1; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+    .di__cadenas { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 8px; background: var(--onglet-actif-fond); font-size: 0.95rem; }
+    .di__tete .di__intro { margin: 0; font-size: 0.9rem; color: var(--texte); }
+    .di__compte { margin-left: 0.4rem; padding: 0.05rem 0.5rem; border-radius: 999px; background: var(--onglet-actif-fond); color: var(--texte); font-size: 0.75rem; font-weight: 500; white-space: nowrap; }
     /* Les écrans : un sélecteur segmenté, dans la police de l'application (un bouton n'en hérite pas sans « font: inherit »). */
     .di__ecrans { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; margin-bottom: 1rem; padding-bottom: 0.85rem; border-bottom: 1px solid var(--n-200); }
     .di__onglet {
-      font: inherit; font-size: 0.9rem; font-weight: 600;
-      padding: 0.45rem 1rem; border: 1.5px solid #152033; border-radius: 999px;
-      background: #fff; color: #152033; cursor: pointer; transition: background 0.15s, color 0.15s;
+      font: inherit; font-size: 0.9rem; font-weight: 500;
+      padding: 0.45rem 1rem; border: 1.5px solid var(--bordure-champ); border-radius: 999px;
+      background: var(--carte-fond); color: var(--texte); cursor: pointer; transition: background 0.15s, color 0.15s;
     }
-    .di__onglet:hover { background: #eef6fd; }
-    .di__onglet:focus-visible { outline: 3px solid #0369a1; outline-offset: 2px; }
-    .di__onglet--on, .di__onglet--on:hover { background: #152033; color: #fff; }
+    .di__onglet:hover { background: var(--onglet-actif-fond); }
+    .di__onglet:focus-visible { outline: 3px solid var(--bouton-principal); outline-offset: 2px; }
+    .di__onglet--on, .di__onglet--on:hover { background: var(--section-fond); color: var(--texte-menu); }
     .di__vue { padding: 0.25rem 0; }
   `,
 })

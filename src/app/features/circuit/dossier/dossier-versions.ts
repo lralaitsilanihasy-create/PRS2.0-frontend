@@ -131,7 +131,7 @@ import { DossierContenuStore } from './dossier-contenu.store';
        bandeau d'identité au-dessus du tableau partagé. Tokens du design system uniquement. */
     .dc-hist-intro { margin: 0 0 12px; font-size: 12.5px; color: var(--n-500); }
     .dc-hist__select { display: flex; align-items: center; gap: 0.6rem; margin: 0 0 16px; flex-wrap: wrap; }
-    .dc-hist__select label { font-weight: 600; color: var(--n-700); }
+    .dc-hist__select label { font-weight: 500; color: var(--n-700); }
     .dc-hist__select select { max-width: 44rem; }
     .dc-hist__courante { background: var(--success-bg); color: var(--success-text); }
     .dc-hist__archivee { background: var(--n-100); color: var(--n-500); }

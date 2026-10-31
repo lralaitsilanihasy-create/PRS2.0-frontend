@@ -15,14 +15,14 @@
 .pmd__faits dt { color: var(--n-500); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
 .pmd__faits dd { margin: 0; }
 // ⚠️ 27/10 — les compléments de la cohérence avec la grille : sous-titres, détail par offre, projet de marché.
-.pmd__sous-titre { margin: 0.5rem 0 0; font-size: 0.78rem; font-weight: 700; color: var(--n-700); }
-.pmd__etiquette { margin: 0.5rem 0 0.2rem; font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-500); }
+.pmd__sous-titre { margin: 0.5rem 0 0; font-size: 0.78rem; font-weight: 500; color: var(--n-700); }
+.pmd__etiquette { margin: 0.5rem 0 0.2rem; font-size: 0.74rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-500); }
 .pmd__note { display: block; font-size: 0.8rem; color: var(--n-700); }
-.pmd__detail { border: 1px solid var(--n-200); border-radius: 8px; padding: 0.4rem 0.75rem; background: #fff; }
-.pmd__detail > summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; color: var(--p-800); }
+.pmd__detail { border: 1px solid var(--n-200); border-radius: 8px; padding: 0.4rem 0.75rem; background: var(--carte-fond); }
+.pmd__detail > summary { cursor: pointer; font-size: var(--text-sm); font-weight: 500; color: var(--p-800); }
 .pmd__detail[open] > summary { margin-bottom: 0.4rem; }
-.pmd__cadre { width: 100%; min-height: 70vh; border: 1px solid var(--n-200); border-radius: 8px; background: #fff; }
+.pmd__cadre { width: 100%; min-height: 70vh; border: 1px solid var(--n-200); border-radius: 8px; background: var(--carte-fond); }
 // Les constats sont des phrases : ils passent à la ligne dans le détail (les cellules des tableaux de l'application sont en nowrap).
 .pmd__detail .pmd__table { width: 100%; table-layout: auto; }
 .pmd__detail .pmd__table td, .pmd__detail .pmd__table th { white-space: normal; vertical-align: top; }
-.pmd__ko td { color: var(--danger-text, #b91c1c); }
+.pmd__ko td { color: var(--danger-text); }

@@ -83,29 +83,29 @@ export function decomposerObservation(lib: string): {
     </div>
   `,
   styles: `
-    .opv { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.6rem 0.75rem; border: 1px solid var(--c-100); border-left: 3px solid var(--c-300); border-radius: var(--radius-md); background: var(--surface, #fff); }
-    .opv--levee { background: #F0FDF4; border-color: #BBF7D0; border-left-color: #16A34A; }
+    .opv { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.6rem 0.75rem; border: 1px solid var(--c-100); border-left: 3px solid var(--c-300); border-radius: var(--radius-md); background: var(--surface, var(--carte-fond)); }
+    .opv--levee { background: var(--favorable-fond); border-color: var(--favorable-fond); border-left-color: var(--favorable-texte); }
     .opv--maintenue { border-left-color: var(--warning-text); }
     .opv__head { display: flex; align-items: center; gap: 0.5rem; }
-    .opv__num { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; min-width: 1.4rem; height: 1.4rem; border-radius: 999px; background: var(--c-600); color: #fff; font-size: var(--text-xs); font-weight: 700; }
-    .opv__src { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--n-400); font-weight: 700; }
-    .opv__statut { margin-left: auto; font-size: var(--text-xs); font-weight: 700; padding: 0.1rem 0.55rem; border-radius: 999px; background: var(--c-50); color: var(--n-500); border: 1px solid var(--c-100); }
-    .opv__statut--levee { background: #DCFCE7; color: #15803D; border-color: #BBF7D0; }
+    .opv__num { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; min-width: 1.4rem; height: 1.4rem; border-radius: 999px; background: var(--c-600); color: var(--texte-menu); font-size: var(--text-xs); font-weight: 500; }
+    .opv__src { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--n-400); font-weight: 500; }
+    .opv__statut { margin-left: auto; font-size: var(--text-xs); font-weight: 500; padding: 0.1rem 0.55rem; border-radius: 999px; background: var(--c-50); color: var(--n-500); border: 1px solid var(--c-100); }
+    .opv__statut--levee { background: var(--favorable-fond); color: var(--favorable-texte); border-color: var(--favorable-fond); }
     .opv__statut--maintenue { background: var(--warning-bg); color: var(--warning-text); border-color: transparent; }
-    .opv__contexte { font-size: var(--text-sm); font-weight: 600; color: var(--n-700); }
+    .opv__contexte { font-size: var(--text-sm); font-weight: 500; color: var(--n-700); }
     .opv__corr { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0.5rem; }
     .opv__corr-col { flex: 1 1 14rem; display: flex; flex-direction: column; gap: 0.1rem; padding: 0.35rem 0.6rem; border-radius: var(--radius-md); }
-    .opv__corr-col--avant { background: #FEF2F2; border: 1px solid #FECACA; }
-    .opv__corr-col--apres { background: #F0FDF4; border: 1px solid #BBF7D0; }
-    .opv__corr-k { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .05em; font-weight: 700; color: var(--n-400); }
-    .opv__corr-col--avant .opv__corr-v { color: #B91C1C; text-decoration: line-through; }
-    .opv__corr-col--apres .opv__corr-v { color: #15803D; font-weight: 600; }
+    .opv__corr-col--avant { background: var(--retard-fond); border: 1px solid var(--retard-fond); }
+    .opv__corr-col--apres { background: var(--favorable-fond); border: 1px solid var(--favorable-fond); }
+    .opv__corr-k { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .05em; font-weight: 500; color: var(--n-400); }
+    .opv__corr-col--avant .opv__corr-v { color: var(--retard-texte); text-decoration: line-through; }
+    .opv__corr-col--apres .opv__corr-v { color: var(--favorable-texte); font-weight: 500; }
     .opv__corr-v { font-size: var(--text-sm); overflow-wrap: anywhere; }
-    .opv__corr-fleche { align-self: center; color: var(--n-400); font-weight: 700; }
+    .opv__corr-fleche { align-self: center; color: var(--n-400); font-weight: 500; }
     .opv__demande { font-size: var(--text-sm); color: var(--n-700); background: var(--c-50); padding: 0.35rem 0.6rem; border-radius: var(--radius-md); }
     .opv__fiche { font-size: var(--text-xs); color: var(--n-600); margin-top: 0.3rem; }
     .opv__lien { margin-left: 0.4rem; }
-    .opv__actuelle { display: block; margin-top: 0.15rem; color: #15803d; font-weight: 600; }
+    .opv__actuelle { display: block; margin-top: 0.15rem; color: var(--favorable-texte); font-weight: 500; }
     .opv__precision { font-size: var(--text-xs); color: var(--warning-text); background: var(--warning-bg); padding: 0.3rem 0.6rem; border-radius: var(--radius-md); }
   `,
 })

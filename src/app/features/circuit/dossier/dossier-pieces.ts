@@ -237,20 +237,20 @@ import { DossierContenuStore } from './dossier-contenu.store';
     /* Recette du 09/10 : le même retrait que les lignes de pièces (.piece-row, 9px 14px), sinon la liste colle aux bords de la carte. */
     .pe-liste { list-style: none; margin: 0; padding: 9px 14px; display: flex; flex-direction: column; gap: 0.25rem; }
     .pe-ligne { display: flex; align-items: baseline; gap: 0.5rem; font-size: 0.85rem; }
-    .pe-etat { width: 1rem; font-weight: 700; color: var(--success-700, #047857); }
-    .pe-ligne--manque .pe-etat, .pe-ligne--manque .pe-tag { color: var(--danger-700, #b42318); }
+    .pe-etat { width: 1rem; font-weight: 500; color: var(--success-700, var(--favorable-texte)); }
+    .pe-ligne--manque .pe-etat, .pe-ligne--manque .pe-tag { color: var(--danger-700, var(--retard-texte)); }
     .pe-lib { flex: 1; }
     .pe-joindre { margin-left: 0.5rem; }
     .pe-note { padding: 0 0 0.35rem 1.5rem; font-size: 0.78rem; color: var(--n-500); }
     .pe-depot { padding: 0.25rem 0 0.5rem 1.5rem; }
     .pe-renvoi { margin: 0; padding: 9px 14px 0; display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; font-size: 0.85rem; color: var(--n-700); }
-    .pe-lien { border: none; background: none; padding: 0; color: var(--primary-700, #1d4ed8); text-decoration: underline; cursor: pointer; font: inherit; }
+    .pe-lien { border: none; background: none; padding: 0; color: var(--primary-700, var(--texte)); text-decoration: underline; cursor: pointer; font: inherit; }
     .pe-fichier { display: flex; align-items: center; gap: 0.5rem; padding: 0.1rem 0 0.35rem 1.5rem; }
     .pe-fichier .piece-file { flex: 1; display: inline; }
     .pe-tag { font-size: 0.75rem; color: var(--n-500); }
-    .pe-tag--app { color: var(--success-text, #15803d); font-weight: 600; }
-    .pe-ouvrir { border: 1px solid var(--n-300); background: #fff; border-radius: 6px; padding: 0 0.5rem; font-size: 0.75rem; cursor: pointer; }
-    .piece-fiche { flex: none; padding: 0.1rem 0.5rem; border-radius: 8px; background: #ecfdf5; color: #047857; font-size: 0.72rem; font-weight: 600; }
+    .pe-tag--app { color: var(--success-text); font-weight: 500; }
+    .pe-ouvrir { border: 1px solid var(--n-300); background: var(--carte-fond); border-radius: 6px; padding: 0 0.5rem; font-size: 0.75rem; cursor: pointer; }
+    .piece-fiche { flex: none; padding: 0.1rem 0.5rem; border-radius: 8px; background: var(--favorable-fond); color: var(--favorable-texte); font-size: 0.72rem; font-weight: 500; }
   `,
 })
 export class DossierPieces {

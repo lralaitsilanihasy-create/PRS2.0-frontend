@@ -82,7 +82,7 @@ import { LienDossier } from './lien-dossier';
     }
   `,
   styles: `
-    .agd { background: #fff; border: 1px solid var(--n-200); border-radius: 12px; padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.6rem; }
+    .agd { background: var(--carte-fond); border: 1px solid var(--n-200); border-radius: 12px; padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.6rem; }
     .agd__titre { margin: 0; font-size: 0.95rem; }
     .agd__ligne { margin: 0; display: flex; flex-wrap: wrap; gap: 0.35rem; font-size: 0.84rem; color: var(--n-600); }
     .agd__bloc { border-top: 1px dashed var(--n-200); padding-top: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem; }

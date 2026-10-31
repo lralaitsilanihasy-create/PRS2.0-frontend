@@ -58,8 +58,8 @@ import { DossierContenuStore } from './dossier-contenu.store';
     :host { display: flex; flex-direction: column; gap: 0.75rem; }
     .pd__barre { display: flex; align-items: center; gap: 0.5rem 1rem; flex-wrap: wrap; }
     .pd__vues { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-    .pd__vue { border: 1px solid var(--n-300); background: #fff; border-radius: 999px; padding: 0.3rem 0.9rem; font-size: 0.85rem; cursor: pointer; color: var(--n-700); }
-    .pd__vue--on { background: var(--primary-600, #1d4ed8); border-color: var(--primary-600, #1d4ed8); color: #fff; }
+    .pd__vue { border: 1px solid var(--n-300); background: var(--carte-fond); border-radius: 999px; padding: 0.3rem 0.9rem; font-size: 0.85rem; cursor: pointer; color: var(--n-700); }
+    .pd__vue--on { background: var(--primary-600, var(--bouton-principal)); border-color: var(--primary-600, var(--bouton-principal)); color: var(--texte-menu); }
     .pd__aide { margin: 0; font-size: 0.8rem; color: var(--n-500); }
     .pd__refus { margin: 0; color: var(--danger-text); }
   `,

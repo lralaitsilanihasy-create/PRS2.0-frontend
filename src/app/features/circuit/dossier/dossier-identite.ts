@@ -52,8 +52,8 @@ import { DossierContenuStore } from './dossier-contenu.store';
     .dc-meta { background: var(--n-50); border: 0.5px solid var(--n-200); border-radius: 10px; overflow: hidden; }
     .dc-meta-row { display: flex; align-items: center; gap: 10px; padding: 7px 14px; border-bottom: 0.5px solid var(--n-200); }
     .dc-meta-row:last-child { border-bottom: none; }
-    .dc-meta-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--n-400); width: 110px; flex-shrink: 0; }
-    .dc-meta-value { font-size: 12.5px; font-weight: 600; color: var(--n-800); }
+    .dc-meta-label { font-size: 9.5px; font-weight: 500; text-transform: uppercase; letter-spacing: .08em; color: var(--n-400); width: 110px; flex-shrink: 0; }
+    .dc-meta-value { font-size: 12.5px; font-weight: 500; color: var(--n-800); }
   `,
 })
 export class DossierIdentite {

@@ -103,7 +103,7 @@ export class ElementsDossier {
   `,
   styles: `
     :host { display: block; }
-    .ea-aide { margin: 0; font-size: 0.82rem; color: #5b6784; }
+    .ea-aide { margin: 0; font-size: 0.82rem; color: var(--texte-secondaire); }
   `,
 })
 export class ElementsDossierAutonome implements OnInit {

@@ -54,10 +54,10 @@ export function insererTexte(valeur: string, texte: string, debut = valeur.lengt
     :host { display: block; }
     .mt__ouvrir { list-style: none; display: inline-flex; cursor: pointer; }
     .mt__ouvrir::-webkit-details-marker { display: none; }
-    .mt__volet { margin-top: 0.4rem; border: 1px solid var(--n-200); border-radius: var(--radius-md, 6px); padding: 0.5rem; max-height: 18rem; overflow-y: auto; background: var(--n-0, #fff); }
+    .mt__volet { margin-top: 0.4rem; border: 1px solid var(--n-200); border-radius: var(--radius-md, 6px); padding: 0.5rem; max-height: 18rem; overflow-y: auto; background: var(--n-0, var(--carte-fond)); }
     .mt__liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.25rem; }
     .mt__motif { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 0.15rem; padding: 0.4rem 0.55rem; border: 1px solid transparent; border-radius: 4px; background: none; cursor: pointer; font: inherit; }
-    .mt__motif:hover, .mt__motif:focus-visible { border-color: var(--p-300, #93c5fd); background: var(--p-50, #eff6ff); }
+    .mt__motif:hover, .mt__motif:focus-visible { border-color: var(--p-300); background: var(--p-50); }
     .mt__apercu { font-size: var(--text-xs, 0.75rem); color: var(--n-500); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .mt__aide { margin: 0.4rem 0 0; }
   `,

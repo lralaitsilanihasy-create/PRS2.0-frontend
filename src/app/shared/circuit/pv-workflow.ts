@@ -361,17 +361,16 @@ import {
     </div>
   `,
   styles: `
-    /* Barre de DÉCISION du PV (demande pilote 2026-09-04) : dégradé indigo profond, statut en
-       petites capitales, filet séparateur avant les gestes — remarquable ET professionnelle.
-       Même dérogation assumée aux tokens que le bouton de prise en charge. */
+    /* Barre de DÉCISION du PV (demande pilote 2026-09-04) : bande sombre du menu (design institutionnel, 31/10 — plus de
+       dégradé), statut en petites capitales, filet séparateur avant les gestes. */
     .pv-workflow {
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
-      background: linear-gradient(120deg, #1e1b4b, #312e81 48%, #4338ca);
+      background: var(--menu-fond);
       border-radius: var(--radius-lg);
       padding: 0.9rem 1.15rem;
-      box-shadow: 0 8px 20px rgba(30, 27, 75, 0.28);
+      box-shadow: none;
     }
     .pv-workflow__state {
       display: flex;
@@ -381,8 +380,8 @@ import {
     }
     .pv-workflow__label {
       font-size: var(--text-xs);
-      color: #c7d2fe;
-      font-weight: 700;
+      color: var(--texte-menu);
+      font-weight: 500;
       text-transform: uppercase;
       letter-spacing: 0.06em;
     }
@@ -391,26 +390,26 @@ import {
       flex-wrap: wrap;
       align-items: center;
       gap: 0.5rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.16);
+      border-top: 1px solid var(--menu-survol);
       padding-top: 0.75rem;
     }
     /* Sur fond sombre, les boutons « outline » gardent leur contraste. */
     .pv-workflow__actions .btn-outline {
-      color: #fff;
-      border-color: rgba(255, 255, 255, 0.5);
-      background: rgba(255, 255, 255, 0.08);
+      color: var(--texte-menu);
+      border-color: var(--texte-menu);
+      background: var(--menu-survol);
     }
     .pv-workflow__deja-signe {
       font-size: var(--text-sm);
-      color: #c7d2fe;
+      color: var(--texte-menu);
       font-style: italic;
     }
     /* Navette à deux niveaux : où est le PV (2026-09-04). */
     .pv-workflow__niveau {
       font-size: var(--text-sm);
-      color: #e0e7ff;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: var(--texte-menu);
+      background: var(--menu-survol);
+      border: 1px solid var(--menu-survol);
       border-radius: var(--radius-full);
       padding: 0.2rem 0.7rem;
     }
@@ -436,7 +435,7 @@ import {
        texte d'aide. */
     .pv-workflow__alerte {
       color: var(--danger-text);
-      font-weight: 600;
+      font-weight: 500;
       font-style: normal;
     }
     .pv-workflow__retour {
@@ -450,7 +449,7 @@ import {
     }
     .pv-workflow__retour-label {
       font-size: var(--text-sm);
-      font-weight: 600;
+      font-weight: 500;
       color: var(--warning-text);
     }
     .pv-workflow__retour--reponse {
@@ -462,11 +461,11 @@ import {
     }
     /* Panneau de clôture de navette (acceptation) : ton succès, cohérent avec le bouton vert. */
     .pv-workflow__retour--accept {
-      background: var(--success-bg, #f0fdf4);
-      border-color: var(--success-bdr, #bbf7d0);
+      background: var(--success-bg);
+      border-color: var(--success-bdr);
     }
     .pv-workflow__retour--accept .pv-workflow__retour-label {
-      color: var(--success-text, #15803d);
+      color: var(--success-text);
     }
     .pv-workflow__retour .form-control {
       resize: vertical;
@@ -480,7 +479,7 @@ import {
     /* ⚠️ 28/10 — en pied de fenêtre : fond clair, gestes alignés à droite, panneaux pleine largeur au-dessus. */
     .pv-workflow--pied { background: none; box-shadow: none; border-radius: 0; padding: 0; gap: 0.6rem; }
     .pv-workflow--pied .pv-workflow__actions { border-top: 0; padding-top: 0; justify-content: flex-end; }
-    .pv-workflow--pied .pv-workflow__actions .btn-outline { color: var(--n-700); border-color: var(--n-300); background: #fff; }
+    .pv-workflow--pied .pv-workflow__actions .btn-outline { color: var(--n-700); border-color: var(--n-300); background: var(--carte-fond); }
     .pv-workflow--pied .pv-workflow__deja-signe { color: var(--n-500); }
     .pv-workflow--pied .pv-workflow__niveau { color: var(--n-700); background: var(--n-100); border-color: var(--n-200); }
     .pv-workflow__lettres table { width: 100%; }

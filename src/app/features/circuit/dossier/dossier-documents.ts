@@ -267,7 +267,7 @@ import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marc
     :host(.dc-documents--borne) .dc-section { padding: 12px 16px; }
     .dc-plan { display: flex; flex-direction: column; gap: 0.75rem; }
     .dc-plan__bandeau { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem 1.5rem; flex-wrap: wrap;
-      padding: 0.6rem 0.9rem; border: 1px solid var(--n-200); border-radius: var(--radius-lg, 10px); background: #fff; }
+      padding: 0.6rem 0.9rem; border: 1px solid var(--n-200); border-radius: var(--radius-lg, 10px); background: var(--carte-fond); }
     .dc-plan__texte { margin: 0; }
     .dc-plan__actions { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
   `,

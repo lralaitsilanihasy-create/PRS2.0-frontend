@@ -102,20 +102,20 @@ import { LienDossier } from './lien-dossier';
     }
   `,
   styles: `
-    .agm { background: #fff; border: 1px solid var(--n-200); border-radius: 12px; padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .agm { background: var(--carte-fond); border: 1px solid var(--n-200); border-radius: 12px; padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
     .agm__titre { margin: 0; font-size: 0.95rem; }
     .agm__faits { margin: 0; display: flex; flex-wrap: wrap; gap: 0.35rem; font-size: 0.84rem; color: var(--n-600); }
     .agm__plafond { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.84rem; }
     .agm__plafond progress { width: 100%; max-width: 28rem; }
     .agm__liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
     .agm__acte { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; font-size: 0.85rem; }
-    .agm__nom { font-weight: 600; min-width: 9rem; }
+    .agm__nom { font-weight: 500; min-width: 9rem; }
     .agm__ref { color: var(--n-500); font-family: var(--font-mono, monospace); font-size: 0.8rem; }
-    .agm__ouvrir { font-weight: 600; }
+    .agm__ouvrir { font-weight: 500; }
     .agm__vide { margin: 0; font-size: 0.84rem; color: var(--n-500); }
     .agm__modale { max-width: 40rem; }
     .agm__projection { margin: 0.6rem 0 0; font-size: 0.85rem; }
-    .agm__projection--ko { color: var(--danger-700, #b42318); font-weight: 600; }
+    .agm__projection--ko { color: var(--danger-700, var(--retard-texte)); font-weight: 500; }
     .agm__manques { margin: 0.5rem 0 0; padding-left: 1.2rem; font-size: 0.84rem; color: var(--warning-text); }
   `,
 })

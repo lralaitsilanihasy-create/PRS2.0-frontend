@@ -72,7 +72,7 @@ const LIBELLES_PARTIE: Record<'TECHNIQUE' | 'FINALE', string> = {
     .cr__version { font-size: 0.8rem; color: var(--n-500); }
     .cr__partie { margin: 0.5rem 0 0; font-size: 0.95rem; color: var(--n-800); }
     .cr__section { border: 1px solid var(--n-200); border-radius: var(--radius-lg, 10px); overflow: hidden; }
-    .cr__s-titre { margin: 0; padding: 0.5rem 0.9rem; background: var(--info-bg, #eff6ff); color: var(--info-text, #1d4ed8); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .cr__s-titre { margin: 0; padding: 0.5rem 0.9rem; background: var(--info-bg); color: var(--info-text); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; }
     .cr__lignes { margin: 0; }
     .cr__ligne { display: grid; grid-template-columns: minmax(12rem, 32%) 1fr; gap: 1rem; padding: 0.5rem 0.9rem; border-top: 1px solid var(--n-100); }
     .cr__ligne dt { color: var(--n-500); font-size: 0.85rem; }
@@ -80,7 +80,7 @@ const LIBELLES_PARTIE: Record<'TECHNIQUE' | 'FINALE', string> = {
     .cr__tableau-cadre { overflow-x: auto; padding: 0.5rem 0.9rem 0.75rem; border-top: 1px solid var(--n-100); }
     .cr__tableau { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
     .cr__tableau th, .cr__tableau td { border: 1px solid var(--n-300); padding: 0.35rem 0.5rem; text-align: left; vertical-align: top; }
-    .cr__tableau thead th { background: var(--n-50, #f8fafc); color: var(--n-700); font-weight: 600; }
+    .cr__tableau thead th { background: var(--n-50); color: var(--n-700); font-weight: 500; }
     .cr__tableau tbody th { font-weight: 400; color: var(--n-800); }
     .cr__vide td { height: 1.6rem; }
     .cr__aide { margin: 0; font-size: 0.8rem; color: var(--n-500); }

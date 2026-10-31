@@ -77,13 +77,13 @@ export function suiviRetrait(demandes: readonly DemandeRetrait[], dossier: Dossi
   `,
   styles: `
     :host { display: block; min-width: 0; }
-    .sr { display: grid; gap: 0.3rem; margin-top: 0.2rem; padding: 0.5rem 0.75rem; border: 1px solid #dbe3ee; border-radius: 10px; background: #f8fafc; font-size: 0.875rem; color: #34405a; }
-    .sr--ACCEPTEE { border-color: #a7f3d0; background: #f0fdf7; }
-    .sr--REFUSEE { border-color: #fecaca; background: #fff7f7; }
+    .sr { display: grid; gap: 0.3rem; margin-top: 0.2rem; padding: 0.5rem 0.75rem; border: 1px solid var(--bordure); border-radius: 10px; background: var(--carte-fond); font-size: 0.875rem; color: var(--texte); }
+    .sr--ACCEPTEE { border-color: var(--favorable-texte); background: var(--favorable-fond); }
+    .sr--REFUSEE { border-color: var(--retard-fond); background: var(--retard-fond); }
     .sr__ligne { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.5rem; margin: 0; line-height: 1.4; }
-    .sr__ligne app-icone { color: #0369a1; }
-    .sr__motif { margin: 0; color: #152033; overflow-wrap: anywhere; white-space: pre-line; }
-    .sr__motif-l { margin-right: 0.35rem; font-weight: 700; color: #5b6784; }
+    .sr__ligne app-icone { color: var(--texte); }
+    .sr__motif { margin: 0; color: var(--texte); overflow-wrap: anywhere; white-space: pre-line; }
+    .sr__motif-l { margin-right: 0.35rem; font-weight: 500; color: var(--texte-secondaire); }
   `,
 })
 export class SuiviRetrait {

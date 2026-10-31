@@ -150,16 +150,16 @@ interface Saisie {
     .cd__table th:nth-child(5) { width: 8.5rem; }
     .cd__table th:nth-child(6) { width: 6.5rem; }
     .cd__table td { vertical-align: top; white-space: normal; overflow-wrap: break-word; }
-    .cd__table td.cd__ref { font-weight: 600; }
+    .cd__table td.cd__ref { font-weight: 500; }
     .cd__regle { display: block; font-size: var(--text-xs); color: var(--n-400); overflow-wrap: anywhere; }
-    .cd__nc td:first-child { border-left: 3px solid var(--danger-700, #b42318); }
+    .cd__nc td:first-child { border-left: 3px solid var(--danger-700, var(--retard-texte)); }
     .cd__valeurs span { display: block; }
     .cd__constat { font-size: var(--text-xs); color: var(--n-500); }
     .cd__table td.cd__par { white-space: nowrap; }
     .cd__hist { margin-top: 0.5rem; color: var(--n-500); }
     .cd__hist ul { margin: 0.3rem 0 0 1rem; padding: 0; }
-    .cd__form { margin-top: 0.8rem; padding: 0.75rem; border: 1px solid var(--n-300); border-radius: 6px; background: var(--n-50, #f8fafc); }
-    .cd__form-titre { margin: 0 0 0.5rem; font-weight: 600; }
+    .cd__form { margin-top: 0.8rem; padding: 0.75rem; border: 1px solid var(--n-300); border-radius: 6px; background: var(--n-50); }
+    .cd__form-titre { margin: 0 0 0.5rem; font-weight: 500; }
     .cd__ligne { display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; align-items: flex-end; }
     .cd__champ { flex: 1 1 12rem; margin-bottom: 0.4rem; }
     .cd__champ--large { flex-basis: 100%; }

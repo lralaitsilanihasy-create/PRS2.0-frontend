@@ -51,7 +51,7 @@ import { DossierService } from '../../../services';
     .fp__titre { margin: 0; font-size: 1.05rem; }
     .fp__version { font-size: 0.8rem; color: var(--n-500); }
     .fp__section { border: 1px solid var(--n-200); border-radius: var(--radius-lg, 10px); overflow: hidden; }
-    .fp__s-titre { margin: 0; padding: 0.5rem 0.9rem; background: var(--success-bg, #ecfdf5); color: var(--success-text, #047857); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .fp__s-titre { margin: 0; padding: 0.5rem 0.9rem; background: var(--success-bg); color: var(--success-text); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; }
     .fp__lignes { margin: 0; }
     .fp__ligne { display: grid; grid-template-columns: minmax(12rem, 32%) 1fr; gap: 1rem; padding: 0.5rem 0.9rem; border-top: 1px solid var(--n-100); }
     .fp__ligne dt { color: var(--n-500); font-size: 0.85rem; }

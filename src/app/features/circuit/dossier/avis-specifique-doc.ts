@@ -58,14 +58,14 @@ import { DossierService } from '../../../services';
     .as__titre { margin: 0; font-size: 1.05rem; }
     .as__word { margin-left: auto; }
     .as__version { font-size: 0.8rem; color: var(--n-500); }
-    .as__incomplet { font-size: 0.75rem; font-weight: 600; color: var(--danger-text); }
+    .as__incomplet { font-size: 0.75rem; font-weight: 500; color: var(--danger-text); }
     .as__lignes { margin: 0; border: 1px solid var(--n-200); border-radius: var(--radius-lg, 10px); overflow: hidden; }
     .as__ligne { display: grid; grid-template-columns: minmax(12rem, 38%) 1fr; gap: 1rem; padding: 0.5rem 0.9rem; border-top: 1px solid var(--n-100); }
     .as__ligne:first-child { border-top: none; }
     .as__ligne dt { color: var(--n-500); font-size: 0.85rem; }
     .as__ligne dd { margin: 0; color: var(--n-800); font-size: 0.9rem; overflow-wrap: anywhere; }
     .as__ligne--manque { border-left: 4px solid var(--danger-text); }
-    .as__manque { color: var(--danger-text); font-weight: 600; }
+    .as__manque { color: var(--danger-text); font-weight: 500; }
     .as__so { color: var(--n-500); font-style: italic; }
     .as__aide { margin: 0; font-size: 0.8rem; color: var(--n-500); }
     .as__refus { margin: 0; color: var(--danger-text); }
