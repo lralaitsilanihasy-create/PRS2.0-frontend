@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, signal }
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
+import { DeuxVolets } from '../../shared/ui/deux-volets';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
@@ -22,9 +23,10 @@ type PieceType = 'ARRETE_NOMIN' | 'CIN' | 'PHOTO';
   selector: 'app-inscriptions-admin',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ModaleDirective, ReactiveFormsModule, RouterLink],
+  imports: [ModaleDirective, ReactiveFormsModule, RouterLink, DeuxVolets],
   template: `
-    <div class="ia-wrap">
+    <!-- ⚠️ 31/10 (pilote, Espace de travail, lot 3b) — deux volets : les inscriptions à gauche, le détail de celle choisie à
+         droite (pièces, informations, gestes), sans changer de page. La première est choisie d'office. -->
     <section class="ia">
       <header class="page-header">
         <h1 class="page-title">Inscriptions en attente ({{ inscriptions().length }})</h1>
@@ -41,92 +43,79 @@ type PieceType = 'ARRETE_NOMIN' | 'CIN' | 'PHOTO';
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
       } @else if (inscriptions().length) {
-        <div class="table-card">
-          <table class="cnm-table">
-            <thead>
-              <tr><th scope="col">Type</th><th scope="col">Login</th><th scope="col">Responsable</th><th scope="col">Périmètre</th><th scope="col">Pièces</th><th scope="col">Actions</th></tr>
-            </thead>
-            <tbody>
-              @for (i of inscriptions(); track i.login) {
-                <tr>
-                  <td><span class="ia__badge" [class.ia__badge--ugpm]="i.type === 'UGPM'">{{ i.type }}</span></td>
-                  <td>{{ i.login }}</td>
-                  <td>{{ nomComplet(i) }}<br /><span class="ia__email">{{ email(i) }}</span></td>
-                  <td>
-                    @if (i.type === 'UGPM') {
-                      Tutelle : <strong>{{ i.idPrmpTutelle || '—' }}</strong>
+        <app-deux-volets [ouvert]="!!view()" [cle]="view()?.i?.login ?? null" libelleListe="Inscriptions en attente" libelleDetail="Détail de l’inscription"
+                         invite="Choisissez une inscription : ses pièces et ses informations s’affichent ici.">
+          <ul liste class="ia__liste">
+            @for (i of inscriptions(); track i.login) {
+              <li class="ia__item" [class.ia__item--on]="view()?.i?.login === i.login">
+                <button type="button" class="ia__ligne" [attr.aria-pressed]="view()?.i?.login === i.login" (click)="voirDetail(i)">
+                  <span class="ia__ligne-tete"><span class="ia__badge" [class.ia__badge--ugpm]="i.type === 'UGPM'">{{ i.type }}</span><span class="ia__login">{{ i.login }}</span></span>
+                  <span class="ia__nom">{{ nomComplet(i) }}</span>
+                  <span class="ia__email">{{ email(i) }}</span>
+                  <span class="ia__perimetre">@if (i.type === 'UGPM') { Tutelle : {{ i.idPrmpTutelle || '—' }} } @else { {{ (i.entitesDeclarees?.length ?? 0) }} entité(s) déclarée(s) }</span>
+                </button>
+              </li>
+            }
+          </ul>
+          <div detail>
+            @if (view(); as v) {
+              <div class="ia-detail">
+                <header class="ia-detail__head">
+                  <h2 class="ia-detail__title">
+                    <span class="ia__badge" [class.ia__badge--ugpm]="v.i.type === 'UGPM'">{{ v.i.type }}</span>
+                    {{ v.i.login }} — {{ nomComplet(v.i) }}
+                  </h2>
+                  <div class="ia__actions">
+                    <button type="button" class="btn btn-primary btn-sm" [disabled]="busy() === v.i.login" (click)="valider(v.i)">Valider</button>
+                    <button type="button" class="btn btn-danger btn-sm" [disabled]="busy() === v.i.login" (click)="demanderRefus(v.i)">Refuser</button>
+                  </div>
+                </header>
+                <div class="ia__pieces" role="group" aria-label="Pièces de l’inscription">
+                  <button type="button" class="btn btn-sm" [class.btn-primary]="v.kind === 'detail'" [class.btn-outline]="v.kind !== 'detail'" [attr.aria-pressed]="v.kind === 'detail'" (click)="voirDetail(v.i)">Informations</button>
+                  @for (t of pieceTypes(v.i); track t) {
+                    <button type="button" class="btn btn-sm" [class.btn-primary]="v.kind === t" [class.btn-outline]="v.kind !== t" [attr.aria-pressed]="v.kind === t" (click)="voirPiece(v.i, t)">{{ pieceLabel(t) }}</button>
+                  }
+                </div>
+                <div class="ia-detail__photo">
+                  @if (viewLoading()) {
+                    <div class="ia-detail__no-photo" role="status">Chargement…</div>
+                  } @else if (viewPdf(); as pdf) {
+                    <iframe class="ia-detail__pdf" [src]="pdf" title="Document"></iframe>
+                  } @else if (viewImg(); as img) {
+                    <img class="ia-detail__img" [src]="img" alt="Document" (error)="onPhotoError()" />
+                  } @else {
+                    <div class="ia-detail__no-photo">{{ v.kind === 'detail' ? 'Aucune photo' : 'Aucune pièce' }}</div>
+                  }
+                </div>
+                @if (v.kind === 'detail') {
+                  <dl class="ia-detail__dl">
+                    <dt>Responsable</dt><dd>{{ nomComplet(v.i) }}</dd>
+                    <dt>Email</dt><dd>{{ email(v.i) || '—' }}</dd>
+                    @if (v.i.type === 'UGPM') {
+                      <dt>PRMP de tutelle</dt><dd>{{ v.i.idPrmpTutelle || '—' }}</dd>
                     } @else {
-                      {{ (i.entitesDeclarees?.length ?? 0) }} entité(s) déclarée(s)
+                      <dt>Entités déclarées</dt><dd>{{ (v.i.entitesDeclarees?.length ?? 0) }}</dd>
                     }
-                  </td>
-                  <td>
-                    <div class="ia__pieces">
-                      @for (t of pieceTypes(i); track t) {
-                        <button type="button" class="btn btn-outline btn-sm" (click)="voirPiece(i, t)">{{ pieceLabel(t) }}</button>
+                  </dl>
+                  @if (v.i.type === 'PRMP' && v.i.entitesDeclarees?.length) {
+                    <ul class="ia-detail__entites">
+                      @for (e of v.i.entitesDeclarees; track $index) {
+                        <li>
+                          {{ e.libelle || ('#' + e.idEntiteContract) }}
+                          @if (e.disponible === false) { <span class="ia-detail__pris">(déjà prise)</span> }
+                        </li>
                       }
-                    </div>
-                  </td>
-                  <td>
-                    <div class="ia__actions">
-                      <button type="button" class="btn btn-secondary btn-sm" (click)="voirDetail(i)">Détail</button>
-                      <button type="button" class="btn btn-primary btn-sm" [disabled]="busy() === i.login" (click)="valider(i)">Valider</button>
-                      <button type="button" class="btn btn-danger btn-sm" [disabled]="busy() === i.login" (click)="demanderRefus(i)">Refuser</button>
-                    </div>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+                    </ul>
+                  }
+                }
+              </div>
+            }
+          </div>
+        </app-deux-volets>
       } @else {
         <p class="cnm-muted">Aucune inscription en attente.</p>
       }
     </section>
-
-    @if (view(); as v) {
-      <aside class="ia-detail cnm-card">
-        <header class="ia-detail__head">
-          <h2 class="ia-detail__title">
-            <span class="ia__badge" [class.ia__badge--ugpm]="v.i.type === 'UGPM'">{{ v.i.type }}</span>
-            {{ v.i.login }} — {{ viewLabel(v.kind) }}
-          </h2>
-          <button type="button" class="btn btn-outline btn-sm" (click)="fermerDetail()">Fermer</button>
-        </header>
-        <div class="ia-detail__photo">
-          @if (viewLoading()) {
-            <div class="ia-detail__no-photo">Chargement…</div>
-          } @else if (viewPdf(); as pdf) {
-            <iframe class="ia-detail__pdf" [src]="pdf" title="Document"></iframe>
-          } @else if (viewImg(); as img) {
-            <img class="ia-detail__img" [src]="img" alt="Document" (error)="onPhotoError()" />
-          } @else {
-            <div class="ia-detail__no-photo">{{ v.kind === 'detail' ? 'Aucune photo' : 'Aucune pièce' }}</div>
-          }
-        </div>
-        @if (v.kind === 'detail') {
-          <dl class="ia-detail__dl">
-            <dt>Responsable</dt><dd>{{ nomComplet(v.i) }}</dd>
-            <dt>Email</dt><dd>{{ email(v.i) || '—' }}</dd>
-            @if (v.i.type === 'UGPM') {
-              <dt>PRMP de tutelle</dt><dd>{{ v.i.idPrmpTutelle || '—' }}</dd>
-            } @else {
-              <dt>Entités déclarées</dt><dd>{{ (v.i.entitesDeclarees?.length ?? 0) }}</dd>
-            }
-          </dl>
-          @if (v.i.type === 'PRMP' && v.i.entitesDeclarees?.length) {
-            <ul class="ia-detail__entites">
-              @for (e of v.i.entitesDeclarees; track $index) {
-                <li>
-                  {{ e.libelle || ('#' + e.idEntiteContract) }}
-                  @if (e.disponible === false) { <span class="ia-detail__pris">(déjà prise)</span> }
-                </li>
-              }
-            </ul>
-          }
-        }
-      </aside>
-    }
-    </div>
 
     @if (refuseFor(); as i) {
       <div class="modal-backdrop" [class.closing]="closingRefus()">
@@ -148,14 +137,23 @@ type PieceType = 'ARRETE_NOMIN' | 'CIN' | 'PHOTO';
     }
   `,
   styles: `
-    .ia-wrap { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
-    .ia { flex: 1 1 40rem; display: flex; flex-direction: column; gap: 1rem; }
+    .ia { display: flex; flex-direction: column; gap: 0.75rem; }
     .ia__badge { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: var(--text-xs); font-weight: 500; background: var(--c-100); color: var(--c-800); }
     .ia__badge--ugpm { background: var(--onglet-actif-fond); color: var(--texte); }
-    .ia__email { color: var(--n-400); font-size: var(--text-xs); }
+    .ia__liste { list-style: none; margin: 0; padding: 0; }
+    .ia__item { border-bottom: 1px solid var(--bordure); }
+    .ia__item--on { background: var(--onglet-actif-fond); box-shadow: inset 3px 0 0 var(--menu-fond); }
+    .ia__ligne { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: flex; flex-direction: column; gap: 0.15rem; padding: 0.6rem 0.8rem; }
+    .ia__ligne:hover { background: var(--ligne-survol); }
+    .ia__item--on .ia__ligne:hover { background: transparent; }
+    .ia__ligne:focus-visible { outline: 2px solid var(--bouton-principal); outline-offset: -2px; }
+    .ia__ligne-tete { display: flex; align-items: center; gap: 0.5rem; }
+    .ia__login { font-weight: 500; }
+    .ia__nom { overflow-wrap: anywhere; }
+    .ia__email, .ia__perimetre { color: var(--texte-secondaire); font-size: var(--text-xs); }
     .ia__pieces, .ia__actions { display: flex; gap: 0.35rem; flex-wrap: wrap; }
-    .ia-detail { flex: 1 1 24rem; position: sticky; top: 1rem; padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
-    .ia-detail__head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+    .ia-detail { display: flex; flex-direction: column; gap: 0.8rem; }
+    .ia-detail__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; padding-bottom: 8px; border-bottom: 1px solid var(--bordure); }
     .ia-detail__title { margin: 0; font-size: var(--text-md); font-weight: 500; color: var(--c-800); display: flex; align-items: center; gap: 0.5rem; }
     .ia-detail__photo { display: flex; justify-content: center; }
     .ia-detail__img { width: 100%; max-width: 24rem; border-radius: var(--radius-md); border: 1px solid var(--c-100); }
@@ -267,6 +265,12 @@ export class InscriptionsAdmin implements OnInit, OnDestroy {
       next: (rows) => {
         this.inscriptions.set(rows);
         this.loading.set(false);
+        // ⚠️ 31/10 (deux volets) — sans inscription ouverte (ou si elle a quitté la file), la première est choisie d'office.
+        const ouverte = this.view()?.i.login;
+        if (!rows.some((r) => r.login === ouverte)) {
+          if (rows.length) this.openView(rows[0], 'detail');
+          else this.fermerDetail();
+        }
       },
       error: () => this.loading.set(false),
     });
