@@ -40,10 +40,10 @@ const CHEMIN_A_VERIFIER = '/verificateur/a-verifier';
 
 /**
  * ⚠️ Refonte ergonomique, lot 2 (2026-09-14) — MODE « CONCENTRATION » : une route qui déclare
- * `data: { concentration: true }` (l'examen d'un dossier) range le menu, pour rendre au document et à la
- * grille de contrôle toute la hauteur utile. Le menu reste à un clic : ⚠️ 30/10/2026 (design institutionnel)
- * le bouton « Menu » de la barre l'ouvre en liste verticale, comme sous 768 px. La donnée est cherchée sur toute
- * la branche activée (une route enfant peut la porter).
+ * `data: { concentration: true }` (l'examen d'un dossier) retire le fil d'Ariane de la coquille (la page du dossier
+ * porte le sien, avec le retour à l'origine). ⚠️ 31/10/2026 (pilote) : le menu principal n'est plus jamais replié —
+ * même barre horizontale sur toutes les pages, sans bouton « Menu ». La donnée est cherchée sur toute la branche
+ * activée (une route enfant peut la porter).
  */
 export function routeEnConcentration(racine: ActivatedRouteSnapshot | null): boolean {
   for (let r = racine; r; r = r.firstChild) {
@@ -198,8 +198,6 @@ export class MainLayout {
 
   /** Rubrique dont le menu déroulant est ouvert (une seule à la fois), `null` sinon. */
   readonly rubriqueOuverte = signal<string | null>(null);
-  /** Menu ouvert en liste verticale (sous 768 px, ou en mode concentration). */
-  readonly menuMobileOuvert = signal(false);
   private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
 
   basculerRubrique(cle: string): void {
@@ -217,9 +215,6 @@ export class MainLayout {
     if (!this.rubriqueOuverte()) return;
     const menu = this.hote.nativeElement.querySelector('.menu');
     if (menu && ev.target instanceof Node && !menu.contains(ev.target)) this.rubriqueOuverte.set(null);
-  }
-  basculerMenuMobile(): void {
-    this.menuMobileOuvert.update((v) => !v);
   }
 
   /** URL courante (chemin seul), relue à chaque fin de navigation. */
@@ -279,7 +274,7 @@ export class MainLayout {
   readonly counts = signal<Record<string, number>>({});
   /** Compteurs d'alerte (badge rouge) à côté de certaines entrées (clé = chemin). */
   readonly alerts = signal<Record<string, number>>({});
-  /** Route courante en mode « concentration » : barre latérale repliée en tiroir (`routeEnConcentration`). */
+  /** Route courante en mode « concentration » (`routeEnConcentration`) : pas de fil d'Ariane de la coquille. */
   readonly concentration = signal(false);
   /**
    * Fil d'Ariane (proposition 2026-09-22, lot B, arbitrage Q4) : « accueil du profil › écran courant », sous la barre
@@ -471,7 +466,6 @@ export class MainLayout {
         takeUntilDestroyed(),
       )
       .subscribe(() => {
-        this.menuMobileOuvert.set(false);
         this.rubriqueOuverte.set(null);
         this.urlCourante.set(this.router.url);
         this.concentration.set(routeEnConcentration(this.router.routerState.snapshot.root));

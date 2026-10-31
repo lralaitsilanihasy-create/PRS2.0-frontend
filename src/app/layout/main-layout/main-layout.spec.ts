@@ -97,7 +97,7 @@ describe('Mode « concentration » de la coquille (refonte ergonomique, lot 2)',
     });
   });
 
-  it("range le menu derrière « Menu » sur l'examen, et le rend ailleurs (30/10 : barre horizontale)", async () => {
+  it("garde le menu horizontal sur l'examen comme ailleurs, sans bouton « Menu » (pilote, 31/10)", async () => {
     const { fixture, hote } = await monter(
       {
         role: 'MEMBRE',
@@ -111,19 +111,17 @@ describe('Mode « concentration » de la coquille (refonte ergonomique, lot 2)',
     );
     const router = TestBed.inject(Router);
     expect(hote.classList.contains('layout--concentration')).toBe(true);
-    // Le menu reste accessible : le bouton « Menu » l'ouvre.
-    const bouton = hote.querySelector('.menu__bascule') as HTMLButtonElement;
-    expect(bouton.getAttribute('aria-expanded')).toBe('false');
-    bouton.click();
-    fixture.detectChanges();
-    expect(hote.querySelector('.menu')?.classList.contains('menu--ouvert')).toBe(true);
-    expect(bouton.getAttribute('aria-expanded')).toBe('true');
+    // Même barre qu'ailleurs : les entrées sont là, aucun bouton ne les range.
+    const entrees = () => Array.from(hote.querySelectorAll('.menu__liste > li')).length;
+    const enExamen = entrees();
+    expect(enExamen).toBeGreaterThan(0);
+    expect(hote.querySelector('.menu__bascule')).toBeNull();
 
     await router.navigateByUrl('/membre/tableau-de-bord');
     fixture.detectChanges();
     expect(hote.classList.contains('layout--concentration')).toBe(false);
-    // La navigation referme le menu.
-    expect(hote.querySelector('.menu')?.classList.contains('menu--ouvert')).toBe(false);
+    expect(entrees()).toBe(enExamen);
+    expect(hote.querySelector('.menu__bascule')).toBeNull();
   });
 });
 
@@ -210,13 +208,11 @@ describe('Coquille institutionnelle (design du 30/10/2026)', () => {
     expect(pastille.classList).toContain('PRESIDENT');
   });
 
-  it('le bouton « Menu » porte l’icône, son libellé et son état', async () => {
+  it('aucun bouton « Menu » (sandwich) : la barre horizontale est la seule présentation du menu (pilote, 31/10)', async () => {
     const { hote } = await monter({ role: 'PRESIDENT', login: 'PRESID1' });
-    const bouton = hote.querySelector('.menu__bascule') as HTMLButtonElement;
-    expect(texte(bouton)).toBe('Menu');
-    expect(bouton.getAttribute('aria-expanded')).toBe('false');
-    expect(bouton.getAttribute('aria-controls')).toBe('menu-principal');
-    expect(bouton.querySelector('app-icone svg')).not.toBeNull();
+    expect(hote.querySelector('.menu__bascule')).toBeNull();
+    expect(Array.from(hote.querySelectorAll('.menu button')).some((b) => texte(b) === 'Menu')).toBe(false);
+    expect(hote.querySelector('#menu-principal')).not.toBeNull();
   });
 
   it('la PRMP garde « Créer compte UGPM » (naguère au pied de la barre latérale), dans l’en-tête', async () => {

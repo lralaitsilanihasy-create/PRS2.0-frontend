@@ -156,6 +156,10 @@ Sous 768 px, la barre se replie derrière un bouton « Menu » et s'affiche en l
 concentration** (`data.concentration`, la page du dossier), la barre reste repliée derrière ce bouton : c'est la règle actuelle du
 tiroir.
 
+> ⚠️ **31/10/2026 — décision du pilote** : pas de bouton « Menu » (« sandwich »). La barre horizontale garde la même
+> présentation sur **toutes** les pages, mode concentration compris ; sous 768 px, ses entrées passent à la ligne au lieu
+> de se replier. Le paragraphe ci-dessus ne vaut plus.
+
 ## 4. Composants partagés et statuts
 
 | Demandé | Existant | Proposition |

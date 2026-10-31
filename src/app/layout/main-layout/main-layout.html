@@ -68,16 +68,9 @@
   </div>
 </header>
 
-<nav class="menu" [class.menu--ouvert]="menuMobileOuvert()" aria-label="Navigation principale">
-  <!-- Sous 768 px, et en mode concentration, le menu se range derrière ce bouton et s'ouvre en liste verticale. -->
-  <button
-    type="button"
-    class="menu__bascule"
-    (click)="basculerMenuMobile()"
-    [attr.aria-expanded]="menuMobileOuvert()"
-    aria-controls="menu-principal"
-  ><app-icone nom="menu" [taille]="16" /><span>Menu</span></button>
-
+<!-- Menu principal : toujours la même barre horizontale, sur toutes les pages et à toutes les largeurs — jamais replié derrière
+     un bouton « Menu » (pilote, 31/10/2026). Sur un écran étroit, ses entrées passent à la ligne. -->
+<nav class="menu" aria-label="Navigation principale">
   <ul class="menu__liste" id="menu-principal">
     @for (e of barre(); track e.cle) {
       @if (e.lien; as item) {

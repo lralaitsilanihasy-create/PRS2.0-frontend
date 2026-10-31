@@ -145,24 +145,6 @@
   background: var(--menu-fond);
 }
 
-/* Bouton « Menu » : seulement sous 768 px et en mode concentration. */
-.menu__bascule {
-  display: none;
-  align-items: center;
-  gap: 6px;
-  margin: 5px 0;
-  padding: 7px 12px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--texte-menu);
-  font: inherit;
-  font-size: 13px;
-  cursor: pointer;
-
-  &:hover { background: var(--menu-survol); }
-}
-
 .menu__liste {
   display: flex;
   align-items: flex-end;
@@ -337,25 +319,9 @@
   &:focus { transform: translateY(0); }
 }
 
-/* ── Menu replié derrière « Menu » : sous 768 px, et en mode concentration (l'examen garde sa hauteur utile) ── */
-@mixin menu-replie {
-  .menu { flex-wrap: wrap; align-items: center; }
-  .menu__bascule { display: inline-flex; }
-  .menu__liste { display: none; }
-  .menu--ouvert .menu__liste {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    flex-basis: 100%;
-    padding-bottom: 8px;
-  }
-  .menu__entree--pied { margin-left: 0; }
-  .nav-item { margin-top: 2px; border-radius: 6px; }
-  .menu__deroulant { position: static; margin: 2px 0 4px 12px; }
-}
-
+/* ── Sous 768 px : le menu garde sa présentation, ses entrées passent à la ligne (jamais de bouton « Menu », pilote 31/10) ── */
 @media (max-width: 48rem) {
-  @include menu-replie;
+  .menu__liste { flex-wrap: wrap; row-gap: 4px; padding-top: 4px; }
 
   .entete { flex-wrap: wrap; gap: 10px; }
   .entete__recherche { order: 3; flex-basis: 100%; width: auto; margin-left: 0; }
@@ -363,6 +329,3 @@
   .entete__nom { display: none; }
 }
 
-:host(.layout--concentration) {
-  @include menu-replie;
-}

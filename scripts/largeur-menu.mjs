@@ -80,7 +80,7 @@ function barre(role, api) {
       : `<li class="menu__entree menu__entree--rubrique"><button type="button" class="nav-item nav-rubrique"><span class="nav-label">${echapper(e.titre)}</span>${e.marque ? icone(14, 'nav-deleg') : ''}${icone(14, 'nav-chevron')}</button></li>`,
   );
   const fin = pied.map((i) => `<li class="menu__entree menu__entree--pied"><a class="nav-item"><span class="nav-label">${echapper(i.label)}</span></a></li>`);
-  return `<nav class="menu"><button type="button" class="menu__bascule">Menu</button><ul class="menu__liste">${[...entrees, ...fin].join('')}</ul></nav>`;
+  return `<nav class="menu"><ul class="menu__liste">${[...entrees, ...fin].join('')}</ul></nav>`;
 }
 
 function page(css, contenu, [largeur]) {

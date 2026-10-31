@@ -136,7 +136,9 @@ Inventaire, décisions du pilote (Q1-Q6) et plan : `docs/design-institutionnel-i
   ombre portée ; deux graisses, 400 et 500 ; texte en pile système, titres de page en Georgia.
   `_document-officiel.scss` (avis, DAO, PV réglementaires) garde ses propres couleurs.
 - **Coquille** (`layout/main-layout`) : bandeau tricolore (classe commune `.bandeau-tricolore`), en-tête au
-  logo du Ministère, **menu principal horizontal** collé en haut (`--hauteur-menu`), contenu, pied de page.
+  logo du Ministère, **menu principal horizontal** collé en haut (`--hauteur-menu`), contenu, pied de page. Le menu garde
+  **la même présentation sur toutes les pages** (mode concentration compris) : jamais de bouton « Menu » (« sandwich »,
+  refusé par le pilote le 31/10) ; sous 768 px, ses entrées passent à la ligne.
   La barre latérale et son rail compact sont **retirés** (Q1). Les pages sans menu (connexion, inscription,
   portail public) et les espaces externes portent le même bandeau et le même logo.
 - **Ajouter une entrée de menu** se fait toujours dans `core/navigation/navigation.ts` (`NAV_BY_ROLE`), et
