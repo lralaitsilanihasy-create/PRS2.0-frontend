@@ -1,14 +1,12 @@
-import { Role } from '../../models';
 import { NavItem, separerParDelegation } from './navigation';
 
 /**
- * Regroupement du menu latéral en RUBRIQUES (refonte ergonomique, lot 5 — maquettes validées le
+ * Regroupement du menu en RUBRIQUES (refonte ergonomique, lot 5 — maquettes validées le
  * 2026-09-14, table arbitrée le 2026-09-16).
  *
  * ⚠️ Règle du lot : `navigation.ts` n'est PAS modifié. `NAV_BY_ROLE` est un littéral de données que
  * le pilote fait vivre presque chaque jour (33 commits depuis le 28/08) ; y ajouter un champ
- * `groupe` mettrait un conflit git sous chacun de ses ajouts. Le regroupement, les libellés courts
- * et l'ordre des rubriques sont donc DÉRIVÉS ici, dans un fichier neuf, exactement comme
+ * `groupe` mettrait un conflit git sous chacun de ses ajouts. Le regroupement et l'ordre des rubriques sont donc DÉRIVÉS ici, dans un fichier neuf, exactement comme
  * `separerParDelegation()` dérive déjà la séparation des délégations « sur la donnée, et non par
  * l'ordre de déclaration du menu ».
  *
@@ -100,47 +98,46 @@ export const ORDRE_GROUPES: readonly CleGroupe[] = [
 ];
 
 /**
- * Rubrique et libellé court de chaque entrée, par chemin complet ou par suffixe de chemin.
+ * Rubrique de chaque entrée, par chemin complet ou par suffixe de chemin.
  *
- * Les libellés courts servent le rail compact (lot F4) ; ils sont repris de `D.MENU` des maquettes.
- * Quand deux profils partagent un chemin avec des libellés différents, le libellé court se surcharge
- * dans `COURTS_PAR_ROLE` — la rubrique, elle, reste la même.
+ * ⚠️ 30/10/2026 (design institutionnel) — les rubriques deviennent les menus déroulants de la barre horizontale
+ * (`barreDuMenu`, main-layout). Les libellés courts du rail compact (lot F4) sont retirés avec lui.
  */
-export const GROUPES_PAR_CHEMIN: Readonly<Record<string, { groupe: CleGroupe; court: string }>> = {
+export const GROUPES_PAR_CHEMIN: Readonly<Record<string, { groupe: CleGroupe }>> = {
   // ── Mon travail : ce que le profil traite au quotidien ──
-  'a-faire': { groupe: 'travail', court: 'À faire' },
-  'tableau-de-bord': { groupe: 'travail', court: 'Dossiers' },
-  'soumettre-dossier': { groupe: 'travail', court: 'Créer' },
-  'dossiers-verifies': { groupe: 'travail', court: 'Mise à jour' },
-  'mes-brouillons': { groupe: 'travail', court: 'Brouillons' },
-  'a-verifier': { groupe: 'travail', court: 'À vérifier' },
-  verifies: { groupe: 'travail', court: 'Vérifiés' },
-  publications: { groupe: 'travail', court: 'Publications' },
-  documents: { groupe: 'travail', court: 'Documents' },
+  'a-faire': { groupe: 'travail' },
+  'tableau-de-bord': { groupe: 'travail' },
+  'soumettre-dossier': { groupe: 'travail' },
+  'dossiers-verifies': { groupe: 'travail' },
+  'mes-brouillons': { groupe: 'travail' },
+  'a-verifier': { groupe: 'travail' },
+  verifies: { groupe: 'travail' },
+  publications: { groupe: 'travail' },
+  documents: { groupe: 'travail' },
   // ⚠️ 2026-10-06 — les fiches DAO et la soumission en ligne (PRMP, UGPM).
-  dao: { groupe: 'travail', court: 'Appels' },
-  recus: { groupe: 'travail', court: 'Reçus' },
+  dao: { groupe: 'travail' },
+  recus: { groupe: 'travail' },
   // ⚠️ 06/10 — entrée DYNAMIQUE (main-layout) : le responsable d'au moins une procédure en ligne.
-  '/procedures-en-ligne': { groupe: 'travail', court: 'Procédures' },
+  '/procedures-en-ligne': { groupe: 'travail' },
   // ⚠️ Lot MS-1 (V124, 16/10) — les contrats-cadres et marchés à commandes notifiés (PRMP, UGPM).
-  'contrats-en-vigueur': { groupe: 'travail', court: 'Contrats' },
+  'contrats-en-vigueur': { groupe: 'travail' },
 
   // ── Décisions : les productions de l'examen et les demandes à statuer ──
-  'resultat-examen': { groupe: 'decisions', court: 'PV' },
-  retraits: { groupe: 'decisions', court: 'Retraits' },
+  'resultat-examen': { groupe: 'decisions' },
+  retraits: { groupe: 'decisions' },
 
   // ── Pilotage (Président / CC) ──
-  'repartition-dispatch': { groupe: 'pilotage', court: 'Charge' },
-  'chaines-controle': { groupe: 'pilotage', court: 'Chaînes' },
+  'repartition-dispatch': { groupe: 'pilotage' },
+  'chaines-controle': { groupe: 'pilotage' },
   // ⚠️ Intérim désigné (2026-09-21) — « Intérim » du Président / CC : qui agit à sa place pendant son absence.
-  interim: { groupe: 'pilotage', court: 'Intérim' },
+  interim: { groupe: 'pilotage' },
 
   // ── Planification (PRMP) ──
-  calendrier: { groupe: 'planification', court: 'Calendrier' },
+  calendrier: { groupe: 'planification' },
 
   // ── Archivage (Assistant contrôleur) ──
-  'lettre-renvois': { groupe: 'archivage', court: 'Lettres' },
-  'pv-examens': { groupe: 'archivage', court: 'Archives' },
+  'lettre-renvois': { groupe: 'archivage' },
+  'pv-examens': { groupe: 'archivage' },
 
   // ── Administrateur (classement refait au lot 6 F1 — plan L6, §3). Deux de ses suffixes servent
   //    déjà un autre espace (`tableau-de-bord`, `chaines-controle`) : la clé en chemin COMPLET lève
@@ -151,37 +148,23 @@ export const GROUPES_PAR_CHEMIN: Readonly<Record<string, { groupe: CleGroupe; co
   //    écrans, et ce que l'application garde ou dit d'elle-même. Les trois défauts corrigés : le
   //    journal de connexions n'est plus un « suivi », la communication n'est plus un « paramétrage »,
   //    et les réglages du moteur de contrôle ne sont plus noyés dans les nomenclatures.
-  '/admin/tableau-de-bord': { groupe: 'accueil', court: 'Poste' },
-  inscriptions: { groupe: 'acces', court: 'Demandes' },
-  comptes: { groupe: 'acces', court: 'Comptes' },
-  '/admin/chaines-controle': { groupe: 'regles', court: 'Chaînes' },
-  'delais-standards': { groupe: 'regles', court: 'Délais' },
+  '/admin/tableau-de-bord': { groupe: 'accueil' },
+  inscriptions: { groupe: 'acces' },
+  comptes: { groupe: 'acces' },
+  '/admin/chaines-controle': { groupe: 'regles' },
+  'delais-standards': { groupe: 'regles' },
   // Deux écrans de référentiel promus en entrées de menu : leur chemin garde le segment
   // `referentiels/`, la clé est donc le suffixe complet — la clé `referentiels` (le sommaire) ne
   // l'attrape pas, `entreeTable` compare le suffixe entier.
-  'referentiels/points-ctrls': { groupe: 'regles', court: 'Points' },
-  'agpm-seuil': { groupe: 'regles', court: 'Seuil' },
-  'referentiels/regle-alertes': { groupe: 'regles', court: 'Règles' },
-  referentiels: { groupe: 'referentiels', court: 'Nomenclatures' },
-  audit: { groupe: 'traces', court: 'Journal' },
-  actualites: { groupe: 'traces', court: 'Actualités' },
+  'referentiels/points-ctrls': { groupe: 'regles' },
+  'agpm-seuil': { groupe: 'regles' },
+  'referentiels/regle-alertes': { groupe: 'regles' },
+  referentiels: { groupe: 'referentiels' },
+  audit: { groupe: 'traces' },
+  actualites: { groupe: 'traces' },
 
   // ── Pied de barre : transverse, chemin absolu, répété à l'identique dans les dix menus ──
-  '/notifications': { groupe: 'pied', court: 'Alertes' },
-};
-
-/**
- * Libellé court surchargé pour un profil donné (clé = chemin complet ou suffixe). Deux profils
- * peuvent servir le MÊME écran sous deux libellés : la rubrique ne change pas, le mot du rail si.
- */
-export const COURTS_PAR_ROLE: Readonly<Partial<Record<Role, Readonly<Record<string, string>>>>> = {
-  // « Suivi des dossiers CNM » (cadrage délais) ≠ « Tous les dossiers » de l'UGPM, même écran.
-  PRMP: { 'tableau-de-bord': 'Suivi' },
-  // « Examen de dossiers » (le hub P/CC a les projets de PV) ≠ « PV et lettres de renvoi ».
-  PRESIDENT: { 'resultat-examen': 'Examen' },
-  CHEF_COMMISSION: { 'resultat-examen': 'Examen' },
-  // « PV reçus » de l'Assistant ≠ « Archivage des PV » exercé par délégation chez le P/CC.
-  ASSISTANT_CONTROLEUR: { 'pv-examens': 'PV' },
+  '/notifications': { groupe: 'pied' },
 };
 
 /**
@@ -194,7 +177,7 @@ export function suffixeChemin(path: string): string {
 }
 
 /** Entrée de la table pour cette route : chemin complet d'abord, suffixe ensuite. */
-function entreeTable(item: NavItem): { groupe: CleGroupe; court: string } | undefined {
+function entreeTable(item: NavItem): { groupe: CleGroupe } | undefined {
   return GROUPES_PAR_CHEMIN[item.path] ?? GROUPES_PAR_CHEMIN[suffixeChemin(item.path)];
 }
 
@@ -213,56 +196,6 @@ export function groupeExplicite(item: NavItem): CleGroupe | null {
     return 'delegation';
   }
   return entreeTable(item)?.groupe ?? null;
-}
-
-/**
- * Libellé court de l'entrée (rail compact) : surcharge du profil, sinon table, sinon repli sur le
- * PREMIER MOT du libellé — un ajout du pilote reste lisible en rail sans toucher à ce fichier.
- */
-export function libelleCourt(item: NavItem, role: Role | null = null): string {
-  const surcharges = role ? COURTS_PAR_ROLE[role] : undefined;
-  const surcharge = surcharges?.[item.path] ?? surcharges?.[suffixeChemin(item.path)];
-  return surcharge ?? entreeTable(item)?.court ?? item.label.split(' ')[0];
-}
-
-/**
- * Le libellé court est-il CONTENU dans le libellé complet ? C'est la question exacte que pose le
- * critère WCAG 2.5.3 « Label in Name ». La comparaison ignore la casse et les espaces surnuméraires
- * — « Chaînes » vaut pour « Chaînes de contrôle » — mais PAS les accents : ce que l'utilisateur
- * lit à l'écran est accentué, la correspondance doit l'être aussi.
- */
-export function courtContenuDansLibelle(label: string, court: string): boolean {
-  const normaliser = (texte: string) => texte.replace(/\s+/g, ' ').trim().toLocaleLowerCase('fr');
-  return normaliser(label).includes(normaliser(court));
-}
-
-/**
- * Nom accessible d'une entrée EN RAIL — le libellé complet, précédé du libellé court quand celui-ci
- * en est un SYNONYME et non un fragment (« Alertes — Notifications »).
- *
- * ⚠️ WCAG 2.5.3 « Label in Name » (correctif du 2026-09-16). En rail, le seul texte visible d'une
- * entrée est sa légende ; son nom accessible, lui, reste le libellé complet rangé hors écran. Pour
- * vingt-cinq entrées sur trente la légende est un fragment du libellé (« Dossiers » dans « Tous les
- * dossiers ») et le critère est satisfait d'office. Pour CINQ, la légende est un synonyme — Charge /
- * Répartition de dispatch, Alertes / Notifications, Mise à jour / Mettre à jour un PPM, Archives /
- * Archivage des PV, Retraits / Demandes de retrait. Qui pilote à la voix dit ce qu'il lit
- * (« Alertes ») : la commande ne correspondait alors à rien.
- *
- * Les légendes ne bougent pas (maquettes validées le 2026-09-14) : c'est le nom accessible qui
- * s'élargit, et seulement pour ces cinq entrées. Le mot visible vient EN TÊTE — l'avis du critère
- * recommande de commencer le nom accessible par l'étiquette visible, et plusieurs moteurs de
- * commande vocale ne reconnaissent que ce début. Le libellé complet suit, pour que l'entrée reste
- * identifiable à l'oreille et unique dans son menu (deux entrées « PV » coexistent chez le
- * Président). Le tiret cadratin entouré d'espaces est le séparateur déjà employé partout dans la
- * coquille (`infobulle()`, carte de profil) : un lecteur d'écran n'en dit pas le nom, il marque une
- * pause — « Alertes… Notifications ».
- *
- * En MENU LARGE, rien ne change : le texte visible EST le libellé complet, qui est son propre nom
- * accessible. L'infobulle non plus ne change pas — elle reste le libellé complet, seul.
- */
-export function nomAccessibleRail(item: NavItem, role: Role | null = null): string {
-  const court = libelleCourt(item, role);
-  return courtContenuDansLibelle(item.label, court) ? item.label : `${court} — ${item.label}`;
 }
 
 /** Entrées du PIED de la barre (aujourd'hui : « Notifications », commune aux dix menus). */

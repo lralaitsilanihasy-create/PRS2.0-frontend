@@ -22,11 +22,6 @@
   --p-800: var(--texte);
   --p-900: var(--section-fond);
 
-  /* Largeur de la barre latérale — source UNIQUE des trois géométries de la coquille (.sidebar,
-     .topbar, .page-content), où elle était écrite trois fois. Le rail compact (lot 5, F4) n'en
-     change que la VALEUR, sur l'hôte du layout : les trois la suivent d'elles-mêmes. */
-  --sidebar-w: 215px;
-
   /* Fond du menu — aplat (plus de dégradé). */
   --sidebar-bg: var(--menu-fond);
 
@@ -209,399 +204,18 @@ a:not([class]), .lien { text-decoration: underline; text-decoration-color: var(-
    LAYOUT
 ══════════════════════════════════════════ */
 
-.app-layout {
-  display: flex;
-  min-height: 100vh;
-}
+/* ⚠️ 30/10/2026 (design institutionnel) — les styles de la barre latérale (et de son rail), de la barre du haut fixe et
+   du menu vertical sont retirés : la coquille (bandeau, en-tête, menu horizontal, pied) est stylée dans
+   layout/main-layout/main-layout.scss, seule à les employer. */
 
-.sidebar {
-  position: fixed;
-  top: 0; left: 0; bottom: 0;
-  width: var(--sidebar-w);
-  background: var(--sidebar-bg);
-  border-right: 0;
-  display: flex;
-  flex-direction: column;
-  z-index: 100;
-  overflow: hidden;
-
-  a { text-decoration: none !important; }
-}
-
-/* ⚠️ Refonte ergonomique, lot 5 F4 (2026-09-16) — DENSITÉ DE LA COQUILLE. F2 avait porté le
-   défilement du menu de l'Administrateur (14 entrées, 5 rubriques) de 7 à 136 px à 1229×691, et à
-   59 px à 1366×768 ; le critère du lot est 80 px partout. Les rubriques ne se négocient pas : ce
-   sont elles qui rendent ce menu lisible. Les 68 px repris viennent donc de quatre RESPIRATIONS,
-   jamais du contenu :
-
-   | Poste | Avant | Après | Gain sur le menu Administrateur |
-   |---|---|---|---|
-   | Entrée de menu (padding vertical) | 7 px | 6 px | 14 × 2 = 28 px |
-   | Cinq intitulés de rubrique (main-layout.scss) | 25,2 px | 20,5 px | 20,5 px |
-   | Bloc de marque, ci-dessous (padding vertical) | 16 px | 11 px | 10 px |
-   | Carte de profil (marge + padding) | 10 + 9 px | 7 + 7 px | 10 px |
-
-   Rien n'est masqué, rien n'est conditionné à la taille de l'écran : le menu garde exactement la
-   même forme partout, il est seulement moins aéré. Mesuré après : 0 px à 1366×768 et à 1536×864,
-   67 px à 1229×691. */
-.sidebar-logo {
-  padding: 11px 16px;
-  border-bottom: 0.5px solid var(--n-200);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-.sidebar-logo-mark {
-  width: 30px; height: 30px;
-  border-radius: var(--radius-md);
-  background: var(--menu-fond);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-
-  i { font-size: 14px; color: var(--texte-menu); }
-}
-
-.sidebar-logo-text {
-  .name {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--n-800);
-    letter-spacing: -.01em;
-    line-height: 1.2;
-  }
-  .sub {
-    font-size: 9.5px;
-    color: var(--n-400);
-    font-weight: 400;
-  }
-}
-
-.sidebar-profile {
-  margin: 7px;
-  padding: 7px 10px;
-  border-radius: var(--radius-lg);
-  background: var(--n-50);
-  border: 0.5px solid var(--n-200);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: var(--transition);
-  flex-shrink: 0;
-
-  &:hover {
-    background: var(--p-50);
-    border-color: var(--p-200);
-  }
-
-  .avatar {
-    width: 28px; height: 28px;
-    border-radius: 50%;
-    background: var(--onglet-actif-fond);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    font-weight: 500;
-    color: var(--p-600);
-    flex-shrink: 0;
-  }
-
-  .info {
-    min-width: 0;
-    flex: 1;
-
-    .name {
-      font-size: 11.5px;
-      font-weight: 500;
-      color: var(--n-800);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .role {
-      font-size: 9.5px;
-      color: var(--n-400);
-      font-weight: 400;
-    }
-  }
-}
-
-.sidebar-nav {
-  padding: 8px;
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--n-200) transparent;
-}
-
-.nav-section-label {
-  padding: 6px 9px 3px;
-  font-size: var(--text-xs);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--n-400);
-  margin-top: 4px;
-}
-
-/* ⚠️ Lot 5 F4 — 6 px et non 7 (bloc DENSITÉ ci-dessus) : une entrée passe de 36 à 34 px de haut,
-   soit 28 px rendus au menu de l'Administrateur. On reste très au-dessus de la cible de 24 px de
-   WCAG 2.2 (2.5.8), et le corps du texte n'est pas touché. */
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 9px;
-  border-radius: var(--radius-md);
-  text-decoration: none;
-  color: var(--n-500);
-  font-size: var(--text-base);
-  font-weight: 400;
-  cursor: pointer;
-  transition: var(--transition);
-  border: 0.5px solid transparent;
-
-  i { font-size: 14px; flex-shrink: 0; }
-
-  &:hover {
-    background: var(--p-50);
-    color: var(--n-800);
-    text-decoration: none;
-  }
-
-  &.active {
-    background: var(--grad-light);
-    color: var(--p-600);
-    font-weight: 500;
-    border-color: var(--bordure);
-  }
-}
-
-.nav-badge {
-  margin-left: auto;
-  font-size: 9px;
-  font-weight: 500;
-  padding: 1px 6px;
-  border-radius: var(--radius-full);
-
-  &.w { background: var(--warning-bg); color: var(--warning-text); }
-  &.d { background: var(--danger-bg);  color: var(--danger-text); }
-  &.s { background: var(--success-bg); color: var(--success-text); }
-  &.i { background: var(--info-bg);    color: var(--info-text); }
-}
-
-.nav-sub {
-  margin: 2px 0 3px 22px;
-  padding-left: 10px;
-  border-left: 1.5px solid var(--n-200);
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.nav-sub-item {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 5px 8px;
-  border-radius: var(--radius-sm);
-  text-decoration: none;
-  color: var(--n-400);
-  font-size: var(--text-base);
-  font-weight: 400;
-  cursor: pointer;
-  transition: var(--transition);
-
-  i { font-size: 13px; }
-
-  &:hover {
-    background: var(--p-50);
-    color: var(--n-800);
-  }
-
-  &.active {
-    color: var(--p-600);
-    font-weight: 500;
-  }
-}
-
-.nav-divider {
-  height: 0.5px;
-  background: rgba(255, 255, 255, 0.1);
-  margin: 5px 0;
-}
-
-/* ── Sidebar sombre (marine) : textes clairs + séparateurs translucides.
-   Surcharge les couleurs neutres des règles ci-dessus (spécificité `.sidebar x`). ── */
-.sidebar-logo {
-  border-bottom-color: rgba(255, 255, 255, 0.09);
-  color: var(--texte-menu);
-  font-weight: 500;
-  font-size: 15px;
-  letter-spacing: 0.08em;
-}
-/* ⚠️ Lot 5 (2026-09-16) — les blancs translucides de la barre sombre sont remontés au-dessus des
-   seuils AA. Mesures compositées sur le HAUT du dégradé (#0c4a6e, le pire cas), reproductibles par
-   `scripts/contrastes-coquille.mjs`. Ne pas les rebaisser : ce sont des valeurs calibrées, pas un
-   réglage d'ambiance — même règle que --n-400 / --n-500 (AUDIT.md A2). */
-.sidebar-logo-text .name { color: var(--texte-menu); }
-.sidebar-logo-text .sub { color: rgba(255, 255, 255, 0.72); } /* 5,73:1 */
-.sidebar-profile {
-  background: rgba(255, 255, 255, 0.06);
-  /* Bordure : seul repère du contour de la carte (son fond est à 1,18:1 du dégradé) — et la carte
-     EST un lien chez la PRMP. Élément non textuel : 3:1. 0,10 donnait 1,31:1. */
-  border-color: rgba(255, 255, 255, 0.44); /* 3,16:1 */
-
-  &:hover { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.6); }
-  .info .name { color: var(--texte-menu); }
-  .info .role { color: rgba(255, 255, 255, 0.72); } /* 5,73:1 — était 0,55 (4,06:1) */
-
-  .avatar {
-    /* Initiales sur le bas du dégradé de l'avatar (--p-200 #bae6fd) : p-600 n'y tenait que 3,09:1. */
-    color: var(--p-800);
-  }
-}
-/* Pied de barre latérale en ACTION (ex. « Créer compte UGPM » chez la PRMP) : lien, même gabarit que la carte. */
-a.sidebar-profile--action {
-  text-decoration: none;
-
-  &.active { background: rgba(255, 255, 255, 0.16); border-color: rgba(255, 255, 255, 0.6); }
-}
-.sidebar .nav-section-label { color: rgba(255, 255, 255, 0.72); }
-.sidebar .nav-item {
-  color: rgba(255, 255, 255, 0.82); /* 6,91:1 — était 0,72 (5,73:1) */
-
-  &:hover { background: rgba(255, 255, 255, 0.09); color: var(--texte-menu); }
-  &.active {
-    background: rgba(255, 255, 255, 0.14);
-    color: var(--texte-menu);
-    border-color: rgba(255, 255, 255, 0.16);
-  }
-}
-.sidebar .nav-sub { border-left-color: rgba(255, 255, 255, 0.16); }
-.sidebar .nav-sub-item {
-  color: rgba(255, 255, 255, 0.72); /* 5,73:1 — était 0,60 (4,52:1, conforme de justesse) */
-
-  &:hover { background: rgba(255, 255, 255, 0.09); color: var(--texte-menu); }
-  &.active { color: var(--texte-menu); }
-}
-.sidebar .nav-chevron { color: rgba(255, 255, 255, 0.55); } /* 4,06:1 — était 0,40 (2,85:1) */
-
-/* Topbar */
-.topbar {
-  position: fixed;
-  top: 0; left: var(--sidebar-w); right: 0;
-  height: 48px;
-  background: var(--carte-fond);
-  border-bottom: 0.5px solid var(--n-200);
-  padding: 0 26px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  z-index: 99;
-}
-
-/* Bouton de l'assistant IA (lot 1, 2026-09-18) — ouvre le panneau latéral. Ici plutôt que dans
-   main-layout.scss, qu'il faisait passer au-dessus de son budget de 8 ko. Teinte primaire claire
-   pour le distinguer des boutons de compte ; p-800 sur p-50 : 7,09:1, sur p-100 (ouvert) : 6,59:1.
-   Paires reportées dans scripts/contrastes-coquille.mjs. */
-.topbar-ia {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 10px;
-  border: 1px solid var(--p-200);
-  border-radius: var(--radius-md);
-  background: var(--p-50);
-  color: var(--p-800);
-  font: inherit;
-  font-size: 12.5px;
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-
-  &:hover,
-  &[aria-expanded='true'] {
-    background: var(--p-100);
-  }
-
-  /* Le repère de focus global (--p-400) ne tient que 2,14:1 sur le blanc de la barre. */
-  &:focus-visible {
-    outline: 2px solid var(--p-700);
-    outline-offset: 2px;
-  }
-}
-
-/* Écran étroit : l'icône seule ; le nom accessible (« Assistant IA ») est porté par aria-label. */
-@media (max-width: 56rem) {
-  .topbar-ia__libelle { display: none; }
-}
-
-.topbar-breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--n-400);
-
-  .current {
-    font-size: 12.5px;
-    font-weight: 500;
-    color: var(--n-800);
-  }
-
-  i { font-size: 10px; }
-}
-
-.topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.topbar-profile-badge {
-  font-size: var(--text-xs);
-  font-weight: 500;
-  padding: 2px 9px;
-  border-radius: var(--radius-full);
-  letter-spacing: .03em;
-}
-
-.topbar-bell {
-  position: relative;
-  cursor: pointer;
-
-  i { font-size: 16px; color: var(--n-400); }
-
-  .dot {
-    position: absolute;
-    top: -2px; right: -2px;
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    border: 1.5px solid var(--carte-fond);
-  }
-}
-
-/* Page */
+/* ⚠️ 30/10/2026 (design institutionnel) — plus de barre latérale ni de barre du haut FIXES : le contenu suit le menu
+   principal (main-layout), sur le fond de page, avec une marge intérieure de 14 px 18 px. */
 .page-content {
-  margin-left: var(--sidebar-w);
-  padding-top: 48px;
-  min-height: 100vh;
-  background: var(--tableau-entete);
+  background: var(--page-fond);
 }
 
 .page-inner {
-  padding: 28px 32px;
+  padding: 14px 18px;
   /* Plafond relevé (1600 → 1920) : sur écran large, les pages à deux panneaux (ex. examen :
      contenu du dossier + grille) et les tableaux denses profitent de la largeur au lieu d'être
      tassés ; reste un max, les écrans plus étroits sont inchangés. */
@@ -636,7 +250,7 @@ a.sidebar-profile--action {
      tableau défileraient visiblement DERRIÈRE le titre. */
   &.page-header--colle {
     position: sticky;
-    top: 48px;
+    top: var(--hauteur-menu);
     z-index: 6;
     margin-bottom: 12px;
     padding: 10px 0;
@@ -709,72 +323,74 @@ a.sidebar-profile--action {
    CARTES
 ══════════════════════════════════════════ */
 
+/* ⚠️ 30/10/2026 (design institutionnel) — carte blanche, filet --bordure, rayon 8 px ; l'intitulé (12 px, 500) est souligné
+   d'un filet or de 2 px, comme le composant `app-bloc` (shared/ui/bloc.ts) que les écrans repris emploient. */
 .card {
   background: var(--carte-fond);
-  border: 0.5px solid var(--n-200);
-  border-radius: var(--radius-xl);
+  border: 1px solid var(--bordure);
+  border-radius: 8px;
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
 }
 
 .card-header {
-  padding: 14px 18px;
-  border-bottom: 0.5px solid var(--n-200);
+  padding: 12px;
+  border-bottom: 1px solid var(--bordure);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  background: var(--tableau-entete);
+  background: var(--carte-fond);
 }
 
 .card-title {
-  font-size: var(--text-sm);
+  font-size: 12px;
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: .09em;
-  color: var(--n-500);
-  display: flex;
+  color: var(--texte);
+  display: inline-flex;
   align-items: center;
   gap: 6px;
+  padding-bottom: 3px;
+  border-bottom: 2px solid var(--or);
 }
 
-.card-body { padding: 18px; }
+.card-body { padding: 12px; }
 
 /* ══════════════════════════════════════════
    TABLEAUX
 ══════════════════════════════════════════ */
 
+/* ⚠️ 30/10/2026 (design institutionnel) — bordures fusionnées, 12 px, fond blanc ; chaque cellule a son filet --bordure et
+   une marge intérieure de 7 px 8 px ; l'en-tête est sur --tableau-entete, en graisse 500 ; une ligne survolée prend
+   --ligne-survol ; montants et nombres à droite (`.td-montant`, `th.r`). Sous 768 px, le tableau défile dans son
+   conteneur (`.table-card`, `.ppm-table-wrap`), jamais la page. */
 .table-card {
   background: var(--carte-fond);
-  border: 0.5px solid var(--n-200);
-  border-radius: var(--radius-xl);
-  /* Scroll horizontal de secours : aucune colonne (ex. ACTIONS) n'est coupée
-     silencieusement si le tableau dépasse la largeur du conteneur. */
+  border: 1px solid var(--bordure);
+  border-radius: 8px;
+  /* Défilement horizontal de secours : aucune colonne (ex. ACTIONS) n'est coupée silencieusement. */
   overflow-x: auto;
   overflow-y: hidden;
-  box-shadow: var(--shadow-sm);
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: var(--text-base);
+  font-size: 12px;
   font-family: var(--font-base);
+  background: var(--carte-fond);
 }
 
 thead tr {
-  background: var(--grad-primary);
+  background: var(--tableau-entete);
 }
 
 th {
-  padding: 0.65rem 1.1rem;
-  font-size: var(--text-xs);
+  padding: 7px 8px;
+  font-size: 12px;
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--texte-menu);
+  color: var(--texte);
   text-align: left;
-  border-bottom: 0;
+  border: 1px solid var(--bordure);
   white-space: nowrap;
 
   &.r { text-align: right; }
@@ -782,31 +398,29 @@ th {
 }
 
 td {
-  padding: 0.9rem 1.1rem;
-  border-bottom: 1px solid var(--n-100);
-  color: var(--n-600);
+  padding: 7px 8px;
+  border: 1px solid var(--bordure);
+  color: var(--texte);
   vertical-align: middle;
   white-space: nowrap;
 }
 
 tbody tr {
-  transition: background 160ms var(--ease-out);
+  transition: background 150ms ease;
 
-  &:hover { background: var(--p-50); }
-  &:last-child td { border-bottom: none; }
+  &:hover { background: var(--ligne-survol); }
 }
 
 .td-ref {
-  font-size: var(--text-sm);
+  font-size: 12px;
   font-weight: 500;
-  color: var(--n-400);
+  color: var(--texte-secondaire);
 }
 
 .td-montant {
   text-align: right;
-  font-weight: 500;
   font-variant-numeric: tabular-nums;
-  color: var(--n-800);
+  color: var(--texte);
   white-space: nowrap;
 }
 
@@ -821,108 +435,116 @@ tbody tr {
    FORMULAIRES
 ══════════════════════════════════════════ */
 
+/* ⚠️ 30/10/2026 (design institutionnel) — libellé 11 px secondaire AU-DESSUS du champ ; champ blanc, contour
+   --bordure-champ (3,32:1, WCAG 1.4.11), rayon 6 px ; focus visible ; message d'erreur en --retard-texte sous le champ ;
+   cases et boutons radio à l'accent --bouton-principal. */
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  margin-bottom: 1rem;
+  gap: 4px;
+  margin-bottom: 12px;
 }
 
 .form-label {
-  font-size: var(--text-xs);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: .09em;
-  color: var(--n-400);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--texte-secondaire);
 
   &.required::after {
     content: ' *';
-    color: var(--danger-text);
+    color: var(--retard-texte);
   }
 }
 
 .form-control {
   width: 100%;
-  padding: 0.52rem 0.85rem;
-  font-size: var(--text-md);
+  padding: 6px 10px;
+  font-size: 13px;
   font-family: var(--font-base);
   font-weight: 400;
-  color: var(--n-800);
+  color: var(--texte);
   background: var(--carte-fond);
-  border: 1px solid var(--n-200);
-  border-radius: var(--radius-md);
-  transition: var(--transition);
+  border: 1px solid var(--bordure-champ);
+  border-radius: 6px;
   outline: none;
 
-  &:hover:not(:focus):not(:disabled) { border-color: var(--n-300); }
-
-  &:focus {
-    border-color: var(--p-600);
-    box-shadow: 0 0 0 2px var(--onglet-actif-fond);
+  &:focus-visible, &:focus {
+    outline: 2px solid var(--bouton-principal);
+    outline-offset: 1px;
   }
 
-  /* Texte de substitution : n-300 le rendait quasi invisible (1,36:1). n-400 est conforme (4,5:1)
-     — il reste plus clair que la valeur saisie (n-700), donc distinguable d'une vraie saisie. */
-  &::placeholder { color: var(--n-400); }
+  &::placeholder { color: var(--texte-secondaire); }
+
+  &:disabled { background: var(--tableau-entete); color: var(--texte-secondaire); }
 
   &.error {
-    border-color: var(--danger-text);
-    box-shadow: 0 0 0 2px var(--retard-fond);
+    border-color: var(--retard-texte);
   }
 }
 
 select.form-control {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a0a8c0' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  /* Chevron du sélecteur : tracé de la couleur --texte-secondaire (#5F6368), seule forme possible d'une image de fond. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235F6368' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 0.85rem center;
-  padding-right: 2.2rem;
+  background-position: right 10px center;
+  padding-right: 2rem;
   cursor: pointer;
 }
 
 textarea.form-control {
   resize: vertical;
   min-height: 80px;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .form-error {
-  font-size: var(--text-sm);
-  color: var(--danger-text);
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-
-  &::before { content: '⚠'; font-size: 10px; }
+  font-size: 11px;
+  color: var(--retard-texte);
+  font-weight: 400;
 }
 
 .form-hint {
-  font-size: var(--text-sm);
-  color: var(--n-400);
-  font-style: italic;
+  font-size: 11px;
+  color: var(--texte-secondaire);
+}
+
+/* Cases et boutons radio de toute l'application : l'accent du bouton principal. */
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--bouton-principal);
+}
+
+/* Focus clavier visible sur tout champ, même sans classe de formulaire. */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--bouton-principal);
+  outline-offset: 1px;
 }
 
 /* ══════════════════════════════════════════
    BOUTONS
 ══════════════════════════════════════════ */
 
+/* ⚠️ 30/10/2026 (design institutionnel) — rayon 6 px, 12 px, 7 px 14 px. Principal : fond --bouton-principal, texte blanc,
+   sans bordure (un seul par zone). Secondaire : fond blanc, filet --bordure, texte --texte. Suppression ou rejet : fond
+   blanc, filet --retard-fond, texte --retard-texte. Ni dégradé, ni ombre, ni déplacement au survol. */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 5px;
-  border-radius: var(--radius-md);
-  font-size: var(--text-base);
+  border-radius: 6px;
+  font-size: 12px;
   font-weight: 500;
-  padding: 0.42rem 1rem;
+  padding: 7px 14px;
   cursor: pointer;
   border: 1px solid transparent;
-  transition: var(--transition);
+  transition: background 150ms ease, border-color 150ms ease, filter 150ms ease;
   white-space: nowrap;
-  line-height: 1.5;
+  line-height: 1.4;
   font-family: var(--font-base);
-  letter-spacing: .01em;
   text-decoration: none;
 
   i { font-size: 14px; }
@@ -930,114 +552,70 @@ textarea.form-control {
   &:disabled {
     opacity: 0.45;
     cursor: not-allowed;
-    transform: none !important;
-    box-shadow: none !important;
   }
 
-  /* Retour tactile au clic (les variantes à relief conservent leur élévation au survol). */
-  &:active:not(:disabled) { transform: translateY(1px) scale(0.99); }
+  &:focus-visible { outline: 2px solid var(--bouton-principal); outline-offset: 2px; }
 
   &.btn-sm {
-    font-size: var(--text-sm);
-    padding: 0.28rem 0.7rem;
-    border-radius: var(--radius-sm);
-    i { font-size: 13px; }
+    font-size: 12px;
+    padding: 4px 10px;
   }
 
   &.btn-lg {
-    font-size: var(--text-md);
-    padding: 0.6rem 1.25rem;
-    border-radius: var(--radius-lg);
-    i { font-size: 16px; }
+    font-size: 13px;
+    padding: 9px 18px;
   }
 
   &.btn-primary {
-    background: var(--grad-primary);
+    background: var(--bouton-principal);
     color: var(--texte-menu);
-    box-shadow: none;
+    border-color: var(--bouton-principal);
 
-    &:hover:not(:disabled) {
-      box-shadow: none;
-      transform: translateY(-1px);
-      filter: brightness(1.05);
-    }
+    &:hover:not(:disabled) { filter: brightness(0.92); }
   }
 
-  &.btn-secondary {
-    background: var(--p-50);
-    color: var(--p-600);
-    border-color: var(--p-200);
-
-    &:hover:not(:disabled) {
-      background: var(--p-100);
-      border-color: var(--p-300);
-    }
-  }
-
-  &.btn-outline {
+  &.btn-secondary,
+  &.btn-outline,
+  &.btn-ghost {
     background: var(--carte-fond);
-    color: var(--n-600);
-    border-color: var(--n-200);
+    color: var(--texte);
+    border-color: var(--bordure);
 
-    &:hover:not(:disabled) {
-      background: var(--n-50);
-      border-color: var(--n-300);
-      color: var(--n-800);
-    }
+    &:hover:not(:disabled) { background: var(--ligne-survol); }
   }
 
+  /* Confirmation douce (famille « favorable »). */
   &.btn-success {
-    background: var(--success-bg);
-    color: var(--success-text);
-    border-color: var(--success-bdr);
+    background: var(--favorable-fond);
+    color: var(--favorable-texte);
+    border-color: var(--favorable-fond);
 
-    &:hover:not(:disabled) {
-      background: var(--favorable-fond);
-      transform: translateY(-1px);
-    }
+    &:hover:not(:disabled) { filter: brightness(0.97); }
   }
 
-  /* Vert PLEIN (call-to-action), pendant vert du `.btn-primary` bleu (≠ `.btn-success` doux/pâle). */
+  /* Vert PLEIN : valider, signer — l'action qui clôt une étape. */
   &.btn-vert {
     background: var(--favorable-texte);
     color: var(--texte-menu);
-    box-shadow: none;
+    border-color: var(--favorable-texte);
 
-    &:hover:not(:disabled) {
-      box-shadow: none;
-      transform: translateY(-1px);
-      filter: brightness(1.05);
-    }
+    &:hover:not(:disabled) { filter: brightness(0.92); }
   }
 
   &.btn-warning {
-    background: var(--warning-bg);
-    color: var(--warning-text);
-    border-color: var(--warning-bdr);
+    background: var(--examen-fond);
+    color: var(--examen-texte);
+    border-color: var(--examen-fond);
 
-    &:hover:not(:disabled) { background: var(--examen-fond); }
+    &:hover:not(:disabled) { filter: brightness(0.97); }
   }
 
   &.btn-danger {
     background: var(--carte-fond);
-    color: var(--danger-text);
-    border-color: var(--danger-bdr);
+    color: var(--retard-texte);
+    border-color: var(--retard-fond);
 
-    &:hover:not(:disabled) {
-      background: var(--danger-bg);
-      transform: translateY(-1px);
-    }
-  }
-
-  &.btn-ghost {
-    background: var(--n-100);
-    color: var(--n-600);
-    border-color: var(--n-200);
-
-    &:hover:not(:disabled) {
-      background: var(--n-200);
-      color: var(--n-800);
-    }
+    &:hover:not(:disabled) { background: var(--retard-fond); }
   }
 }
 
@@ -1045,18 +623,22 @@ textarea.form-control {
    BADGES STATUT
 ══════════════════════════════════════════ */
 
+/* ⚠️ 30/10/2026 (design institutionnel) — pastille arrondie (20 px), 11 px, graisse 500, 2 px 9 px. Quatre familles :
+   retard (rejet, erreur), examen (en cours, en attente — « info » y est rangé : aucun texte en bleu), favorable (validé,
+   signé, terminé), neutre (brouillon, reçu, autre). Le composant `app-statut-badge` choisit la famille par
+   `statutSeverity()` (shared/circuit/circuit-workflow.ts). */
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  border-radius: var(--radius-full);
-  padding: 0.2rem 0.65rem;
-  font-size: var(--text-xs);
+  border-radius: 20px;
+  padding: 2px 9px;
+  font-size: 11px;
   font-weight: 500;
-  letter-spacing: .04em;
   white-space: nowrap;
-  /* Cerné discret assorti à la variante → pastilles plus nettes et pro (sans décaler la mise en page). */
-  border: 1px solid transparent;
+  border: 0;
+  background: var(--neutre-fond);
+  color: var(--neutre-texte);
 
   &.badge-dot::before {
     content: '';
@@ -1066,24 +648,18 @@ textarea.form-control {
     flex-shrink: 0;
   }
 
-  &.badge-primary  { background: var(--p-50);        color: var(--p-600);        border-color: var(--p-200); }
-  &.badge-success  { background: var(--success-bg);  color: var(--success-text); border-color: var(--success-bdr); }
-  &.badge-warning  { background: var(--warning-bg);  color: var(--warning-text); border-color: var(--warning-bdr); }
-  &.badge-danger   { background: var(--danger-bg);   color: var(--danger-text);  border-color: var(--danger-bdr); }
-  &.badge-neutral  { background: var(--n-100);       color: var(--n-500);        border-color: var(--n-200); }
-  &.badge-info     { background: var(--info-bg);     color: var(--info-text);    border-color: var(--info-bdr); }
+  /* Familles. */
+  &.badge-danger, &.badge-retard, &.badge-refuse { background: var(--retard-fond); color: var(--retard-texte); }
+  &.badge-warning, &.badge-info, &.badge-examen, &.badge-soumis, &.badge-dispatche, &.badge-attente, &.badge-en-cours {
+    background: var(--examen-fond); color: var(--examen-texte);
+  }
+  &.badge-success, &.badge-favorable, &.badge-signe, &.badge-accepte, &.badge-cloture {
+    background: var(--favorable-fond); color: var(--favorable-texte);
+  }
+  &.badge-neutral, &.badge-neutre, &.badge-primary, &.badge-brouillon, &.badge-prevu {
+    background: var(--neutre-fond); color: var(--neutre-texte);
+  }
 
-  /* Statuts dossier */
-  &.badge-brouillon  { background: var(--n-100);       color: var(--n-500);        border-color: var(--n-200); }
-  &.badge-soumis     { background: var(--info-bg);     color: var(--info-text);    border-color: var(--info-bdr); }
-  &.badge-prevu      { background: var(--info-bg);     color: var(--info-text);    border-color: var(--info-bdr); }
-  &.badge-dispatche  { background: var(--p-50);        color: var(--p-600);        border-color: var(--p-200); }
-  &.badge-signe      { background: var(--success-bg);  color: var(--success-text); border-color: var(--success-bdr); }
-  &.badge-cloture    { background: var(--n-100);       color: var(--n-500);        border-color: var(--n-200); }
-  &.badge-refuse     { background: var(--danger-bg);   color: var(--danger-text);  border-color: var(--danger-bdr); }
-  &.badge-accepte    { background: var(--success-bg);  color: var(--success-text); border-color: var(--success-bdr); }
-  &.badge-attente    { background: var(--warning-bg);  color: var(--warning-text); border-color: var(--warning-bdr); }
-  &.badge-en-cours   { background: var(--success-bg);  color: var(--success-text); border-color: var(--success-bdr); }
 }
 
 /* ══════════════════════════════════════════
@@ -1387,41 +963,35 @@ textarea.form-control {
    ALERTES
 ══════════════════════════════════════════ */
 
+/* ⚠️ 30/10/2026 (design institutionnel) — bandeau à rayon 6 px, sans filet ni barre d'accent. Alerte : --retard-fond /
+   --retard-texte ; confirmation : --favorable-texte ; information et avertissement : famille « examen ». */
 .alert {
-  padding: 11px 14px;
-  border-radius: var(--radius-lg);
-  font-size: var(--text-base);
-  font-weight: 500;
+  padding: 9px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 400;
   display: flex;
   align-items: flex-start;
   gap: 9px;
-  margin-bottom: 14px;
-  border: 0.5px solid;
-  /* Barre d'accent colorée à gauche (reprend la couleur de la variante) — plus premium. */
-  border-left-width: 3px;
+  margin-bottom: 12px;
+  border: 0;
 
   i { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
 
-  &.alert-info {
-    background: var(--info-bg);
-    color: var(--info-text);
-    border-color: var(--info-bdr);
+  &.alert-danger {
+    background: var(--retard-fond);
+    color: var(--retard-texte);
   }
   &.alert-success {
-    background: var(--success-bg);
-    color: var(--success-text);
-    border-color: var(--success-bdr);
+    background: var(--favorable-fond);
+    color: var(--favorable-texte);
   }
-  &.alert-warning {
-    background: var(--warning-bg);
-    color: var(--warning-text);
-    border-color: var(--warning-bdr);
+  &.alert-warning,
+  &.alert-info {
+    background: var(--examen-fond);
+    color: var(--examen-texte);
   }
-  &.alert-danger {
-    background: var(--danger-bg);
-    color: var(--danger-text);
-    border-color: var(--danger-bdr);
-  }
+
 }
 
 /* ══════════════════════════════════════════

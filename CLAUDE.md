@@ -126,31 +126,33 @@ dans un fichier séparé (exemple : `demande-backend-2026-09-17-espace-admin.md`
   l'utilisateur resterait devant un écran vide).
 - **Route de feature** : toujours `loadComponent: () => import(...)`, jamais un import statique.
 
-## Menu latéral et rail (refonte ergonomique, lot 5 — 16/09/2026)
-- **Ajouter une entrée de menu** se fait toujours dans `core/navigation/navigation.ts`
-  (`NAV_BY_ROLE`), comme avant. Il faut en plus lui donner une rubrique dans
-  `GROUPES_PAR_CHEMIN` (`core/navigation/groupes-menu.ts`) — sinon `groupes-menu.spec.ts`
-  (« Garde-fou de dérive ») devient rouge, avec un message qui donne la ligne exacte à
-  ajouter. Rien ne casse à l'écran entre-temps : l'entrée non classée rejoint la première
-  rubrique du menu.
-- Le **libellé court** du rail vient de la même table (`court` dans `GROUPES_PAR_CHEMIN`,
-  surchargeable par profil dans `COURTS_PAR_ROLE`) et doit être contenu dans le libellé
-  complet de l'entrée (WCAG 2.5.3 « Label in Name ») — vérifié sur les dix menus par
-  `groupes-menu.spec.ts`.
-- Le **rail** (barre réduite à 76 px) se règle par un bouton de la barre du haut, mémorisé
-  par utilisateur du navigateur (`localStorage`, clé `cnm.menu-compact`,
-  `MenuCompactStore`) — jamais par matricule (constat S9 de l'audit) : sur un poste
-  partagé, le second compte hérite du réglage du premier. Il ne s'applique jamais aux
-  écrans en mode concentration (`data.concentration`) : la barre y reste un tiroir.
-- Les **contrastes de la coquille** (barre latérale, en-tête) se vérifient par
-  `node scripts/contrastes-coquille.mjs` — toute nouvelle paire de couleurs ajoutée dans
-  la barre ou l'en-tête doit être ajoutée au script, sinon elle n'est jamais mesurée.
-- La **hauteur du menu** se vérifie par `node scripts/hauteur-menu.mjs` (lot 6 — les dix
-  profils, 1366×768 et 1229×691, menu large et rail). Il affiche l'écart en pixels :
-  `+n` = le menu défile, `−n` = la marge qui reste. À lancer après **toute** entrée ajoutée
-  à `NAV_BY_ROLE` : c'est le menu de l'Administrateur qui sature le premier (il n'a plus que
-  39 px de marge à 1229×691, soit à peine une entrée de plus). Il mesure dans un vrai
-  Chrome, sur les vraies feuilles de style et les vraies données — pas sur un modèle.
+## Design institutionnel et menu principal (depuis le 30/10/2026)
+Inventaire, décisions du pilote (Q1-Q6) et plan : `docs/design-institutionnel-inventaire-2026-10-30.md`.
+- **Couleurs** : uniquement les variables du bloc `:root` « DESIGN INSTITUTIONNEL » de `src/styles.scss`
+  (`--menu-fond`, `--texte`, `--bouton-principal`, familles `--retard-*`, `--examen-*`, `--favorable-*`,
+  `--neutre-*`…). Aucune couleur écrite dans un composant. Les anciens jetons (`--p-*`, `--n-*`,
+  `--success-*`…) de `styles/_design-system.scss` y sont **redirigés** — ne pas leur redonner de valeur.
+  **Aucun texte en bleu** (le bleu n'est qu'un fond : menu, bouton principal, onglet actif) ; ni dégradé ni
+  ombre portée ; deux graisses, 400 et 500 ; texte en pile système, titres de page en Georgia.
+  `_document-officiel.scss` (avis, DAO, PV réglementaires) garde ses propres couleurs.
+- **Coquille** (`layout/main-layout`) : bandeau tricolore (classe commune `.bandeau-tricolore`), en-tête au
+  logo du Ministère, **menu principal horizontal** collé en haut (`--hauteur-menu`), contenu, pied de page.
+  La barre latérale et son rail compact sont **retirés** (Q1). Les pages sans menu (connexion, inscription,
+  portail public) et les espaces externes portent le même bandeau et le même logo.
+- **Ajouter une entrée de menu** se fait toujours dans `core/navigation/navigation.ts` (`NAV_BY_ROLE`), et
+  lui donner sa rubrique dans `GROUPES_PAR_CHEMIN` (`core/navigation/groupes-menu.ts`) — sinon
+  `groupes-menu.spec.ts` (« Garde-fou de dérive ») devient rouge, avec la ligne exacte à ajouter. Les rubriques
+  deviennent les **menus déroulants** de la barre (`core/navigation/barre-menu.ts`, `barreDuMenu`) : un menu de
+  7 entrées ou moins reste à plat ; « À faire » et l'accueil de l'Administrateur restent directs, comme une
+  rubrique d'une seule entrée ; délégation et intérim sont toujours des déroulants à leur nom.
+- **Composants partagés** (`shared/ui/`) : `app-titre-page`, `app-bloc`, `app-carte-indicateurs`,
+  `app-bandeau-section` ; badge de statut = `app-statut-badge` / classes `.badge-*` (4 familles, via
+  `statutSeverity()`).
+- Les **contrastes** se vérifient par `node scripts/contrastes-coquille.mjs` (lit `styles.scss`) — toute
+  nouvelle paire de couleurs de la coquille ou des styles communs s'y ajoute, sinon elle n'est jamais mesurée.
+- La **largeur du menu** se vérifie par `node scripts/largeur-menu.mjs` (les dix profils, 1366×768 et
+  1229×691, dans un vrai Chrome) : `+n` = la barre déborde, `−n` = la marge. À lancer après **toute** entrée
+  ajoutée à `NAV_BY_ROLE`.
 
 ## Chronogrammes de pilotage (`chronogrammes/`)
 

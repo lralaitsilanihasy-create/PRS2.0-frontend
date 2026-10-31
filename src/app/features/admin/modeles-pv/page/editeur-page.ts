@@ -310,7 +310,7 @@ const REGLES_USUELLES: Readonly<Record<string, string>> = {
   styles: `
     .edp { display: flex; flex-direction: column; gap: 0.6rem; }
     /* La barre reste visible pendant qu'on descend dans la feuille : collée sous la barre de l'application (48 px). */
-    .edp__barre { position: sticky; top: 48px; z-index: 5; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 10px;
+    .edp__barre { position: sticky; top: var(--hauteur-menu); z-index: 5; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 10px;
       background: #fff; border: 1px solid var(--n-200); border-radius: 10px; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06); }
     .edp__grp { display: inline-flex; gap: 2px; align-items: center; border: 1px solid var(--n-200); border-radius: 8px; padding: 2px 4px; background: #fff; }
     .edp__grp-t { font: 600 10px 'Segoe UI', sans-serif; letter-spacing: 0.04em; text-transform: uppercase; color: var(--n-500); padding: 0 4px 0 2px; }
@@ -373,7 +373,7 @@ const REGLES_USUELLES: Readonly<Record<string, string>> = {
     .edp .pg-image img { max-width: 100%; }
     /* Le panneau reste à côté de la feuille pendant qu'on la parcourt (sous la barre d'outils). */
     /* Sous la barre d’outils, quelle que soit sa hauteur (une ou deux lignes selon la largeur) : --edp-barre la suit. */
-    .edp__panneau { position: sticky; top: calc(48px + var(--edp-barre, 52px) + 12px); display: flex; flex-direction: column; gap: 0.8rem; font-size: 13px; background: #fff;
+    .edp__panneau { position: sticky; top: calc(var(--hauteur-menu) + var(--edp-barre, 52px) + 12px); display: flex; flex-direction: column; gap: 0.8rem; font-size: 13px; background: #fff;
       border: 1px solid var(--n-200); border-radius: 10px; padding: 10px 12px; }
     .edp__ongl { display: flex; gap: 4px; border-bottom: 1px solid var(--n-200); padding-bottom: 8px; }
     .edp__ongl button { flex: 1; border: 1px solid var(--n-200); background: #fff; border-radius: 999px; padding: 4px 8px; font: 600 12px 'Segoe UI', sans-serif; color: var(--n-700); cursor: pointer; }

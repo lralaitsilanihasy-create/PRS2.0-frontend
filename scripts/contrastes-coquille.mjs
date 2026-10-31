@@ -1,176 +1,92 @@
 /**
- * Contrastes WCAG 2.1 de la COQUILLE (barre latérale, barre du haut) — refonte ergonomique, lot 5.
+ * Contrastes WCAG 2.1 de la COQUILLE et des styles communs — design institutionnel (30/10/2026).
  *
  *   node scripts/contrastes-coquille.mjs
  *
- * Sort la table avant/après de chaque paire et rend 1 si l'une d'elles passe sous son seuil APRÈS.
- * Les couleurs translucides de la barre sombre sont COMPOSITÉES sur leur fond réel avant mesure :
- * `rgba(255,255,255,.72)` n'est pas une couleur, c'est un calcul — le lire dans la feuille de style
- * ne dit rien du contraste obtenu. Le fond de référence est le HAUT du dégradé (#0c4a6e), pire cas.
+ * Lit les couleurs dans `src/styles.scss` (le bloc `:root` du design institutionnel, source unique) et mesure chaque paire
+ * texte / fond posée par la coquille (bandeau, en-tête, menu, menus déroulants, pied) et par les styles communs (tableaux,
+ * formulaires, boutons, pastilles, alertes). Rend 1 si une paire passe sous son seuil : 4,5:1 pour un texte, 3:1 pour un
+ * contour de champ ou un repère de focus (WCAG 1.4.11).
  *
- * ⚠️ Les valeurs mesurées ici sont CALIBRÉES, pas décoratives : elles justifient les jetons
- * `--*-ink`, `--compteur-*` et les opacités du bloc `.sidebar` de `styles/_design-system.scss`.
- * Même règle que `--n-400` / `--n-500` (AUDIT.md A2) : on ne les éclaircit pas sans remesurer ici.
+ * ⚠️ Toute nouvelle paire de couleurs posée dans la coquille ou les styles communs s'ajoute à `PAIRES`, sinon elle n'est
+ * jamais mesurée. Deux valeurs de la palette demandée ont été corrigées le 30/10 pour passer ce script, avec l'accord du
+ * pilote : --favorable-texte (#1B7F4B → #187547) et --bordure-champ (ajoutée, #868E96).
  */
-const hex = (h) => {
-  const s = h.replace('#', '');
-  const n = s.length === 3 ? s.split('').map((c) => c + c).join('') : s;
-  return [0, 2, 4].map((i) => parseInt(n.slice(i, i + 2), 16));
-};
-const blanc = (a) => [[255, 255, 255], a];
-/** Or des intitulés de rubrique (demande pilote 2026-09-22) : #f5c542, éventuellement translucide (filet du rail). */
-const DORE = '#f5c542';
-const dore = (a) => [[245, 197, 66], a];
-/** Compositing alpha (source-over) d'une couleur translucide sur un fond opaque. */
-const sur = ([rgb, a], fond) => rgb.map((c, i) => Math.round(c * a + fond[i] * (1 - a)));
+import { readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const RACINE = resolve(fileURLToPath(new URL('..', import.meta.url)));
+const scss = readFileSync(join(RACINE, 'src/styles.scss'), 'utf8');
+
+/** Les variables `--nom: #rrggbb` de styles.scss. */
+const palette = Object.fromEntries([...scss.matchAll(/--([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})\b/g)].map((m) => [m[1], m[2]]));
+
+const hex = (h) => [0, 2, 4].map((i) => parseInt(h.replace('#', '').slice(i, i + 2), 16));
 const canal = (v) => {
   const c = v / 255;
   return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
 };
 const lum = ([r, g, b]) => 0.2126 * canal(r) + 0.7152 * canal(g) + 0.0722 * canal(b);
 const ratio = (a, b) => {
-  const [l1, l2] = [lum(a), lum(b)].sort((x, y) => y - x);
+  const [l1, l2] = [lum(hex(a)), lum(hex(b))].sort((x, y) => y - x);
   return (l1 + 0.05) / (l2 + 0.05);
 };
-/** fg : '#rrggbb' ou blanc(alpha) ; bg : '#rrggbb' opaque. */
-const mesure = (fg, bg) => {
-  const fond = hex(bg);
-  return ratio(Array.isArray(fg) ? sur(fg, fond) : hex(fg), fond);
-};
 
-// ── Fonds de référence ────────────────────────────────────────────────────────
-const SIDEBAR_HAUT = '#0c4a6e'; // pire cas du dégradé (le bas, #082f49, est plus sombre)
-/** Fond OPAQUE obtenu en composant une couleur translucide sur un fond : la bande des intitulés (2026-09-22). */
-const compose = ([rgb, a], bgHex) => '#' + sur([rgb, a], hex(bgHex)).map((c) => c.toString(16).padStart(2, '0')).join('');
-const BANDE = compose([[0, 0, 0], 0.22], '#0c4a6e'); // bande au repos derrière l'intitulé
-const BANDE_SURVOL = compose([[0, 0, 0], 0.32], '#0c4a6e'); // bande du bouton de repli survolé
-const N100 = '#f0f2f8'; // fond de la pilule de recherche de la barre du haut
-const P200 = '#bae6fd'; // bas du dégradé de l'avatar de la carte profil
-
-// ── Profils : fond pâle, couleur d'AVANT (--*-color), encre d'APRÈS (--*-ink) ──
-const PROFILS = [
-  ['PRMP', '#f0f2ff', '#667eea', '#4462e5'],
-  ['Président', '#e0f2fe', '#0369a1', '#0369a1'],
-  ['Chef de commission', '#ecfdf5', '#0e7c5a', '#0e7c5a'],
-  ['Membre', '#fef9c3', '#d97706', '#aa5d05'],
-  ['Vérificateur', '#ede9fe', '#7c3aed', '#7c3aed'],
-  ['Assistant contrôleur', '#fce7f3', '#db2777', '#c9226c'],
-  ['Chargé de publication', '#fce7f3', '#db2777', '#c9226c'],
-  ['Secrétaire', '#cffafe', '#0891b2', '#077792'],
-  ['Administrateur', '#f3f4f6', '#374151', '#374151'],
+const TEXTE = 4.5;
+const CONTOUR = 3;
+/** [où, variable du premier plan, variable du fond, seuil]. */
+const PAIRES = [
+  ['Menu : entrée au repos', 'texte-menu', 'menu-fond', TEXTE],
+  ['Menu : entrée survolée', 'texte-menu', 'menu-survol', TEXTE],
+  ['Menu : entrée active', 'texte', 'onglet-actif-fond', TEXTE],
+  ['Menu : repère de focus (or)', 'or', 'menu-fond', CONTOUR],
+  ['Menu : pastille de compteur', 'texte', 'or', TEXTE],
+  ['Menu : pastille d’alerte', 'retard-texte', 'retard-fond', TEXTE],
+  ['Déroulant : intitulé de rubrique', 'or', 'section-fond', TEXTE],
+  ['Déroulant : entrée', 'texte', 'carte-fond', TEXTE],
+  ['Déroulant : entrée survolée', 'texte', 'ligne-survol', TEXTE],
+  ['Déroulant : entrée active', 'texte', 'onglet-actif-fond', TEXTE],
+  ['En-tête : nom de l’application', 'texte', 'carte-fond', TEXTE],
+  ['En-tête : institution, outils', 'texte-secondaire', 'carte-fond', TEXTE],
+  ['En-tête : avatar', 'neutre-texte', 'neutre-fond', TEXTE],
+  ['En-tête : contour de la recherche', 'bordure-champ', 'carte-fond', CONTOUR],
+  ['Pied de page : texte', 'texte-menu', 'menu-fond', TEXTE],
+  ['Pied de page : lien', 'or', 'menu-fond', TEXTE],
+  ['Page : texte courant', 'texte', 'page-fond', TEXTE],
+  ['Page : fil d’Ariane, texte secondaire', 'texte-secondaire', 'page-fond', TEXTE],
+  ['Tableau : en-tête', 'texte', 'tableau-entete', TEXTE],
+  ['Tableau : texte secondaire en en-tête', 'texte-secondaire', 'tableau-entete', TEXTE],
+  ['Tableau : ligne survolée', 'texte', 'ligne-survol', TEXTE],
+  ['Formulaire : libellé', 'texte-secondaire', 'carte-fond', TEXTE],
+  ['Formulaire : contour du champ', 'bordure-champ', 'carte-fond', CONTOUR],
+  ['Formulaire : message d’erreur', 'retard-texte', 'carte-fond', TEXTE],
+  ['Repère de focus (bouton principal)', 'bouton-principal', 'carte-fond', CONTOUR],
+  ['Repère de focus sur la page', 'bouton-principal', 'page-fond', CONTOUR],
+  ['Bouton principal', 'texte-menu', 'bouton-principal', TEXTE],
+  ['Bouton de suppression', 'retard-texte', 'carte-fond', TEXTE],
+  ['Bouton vert plein (valider)', 'texte-menu', 'favorable-texte', TEXTE],
+  ['Pastille retard', 'retard-texte', 'retard-fond', TEXTE],
+  ['Pastille examen', 'examen-texte', 'examen-fond', TEXTE],
+  ['Pastille favorable', 'favorable-texte', 'favorable-fond', TEXTE],
+  ['Pastille neutre', 'neutre-texte', 'neutre-fond', TEXTE],
+  ['Bandeau de section', 'or', 'section-fond', TEXTE],
+  ['Lien d’évitement', 'texte-menu', 'bouton-principal', TEXTE],
 ];
 
-const lignes = [];
-const pousse = (element, seuil, fgAvant, bgAvant, fgApres, bgApres) =>
-  lignes.push({ element, seuil, avant: mesure(fgAvant, bgAvant), apres: mesure(fgApres, bgApres) });
-/** Paire qui n'existait pas avant (ou contre-épreuve : mesurée, jamais posée à l'écran). */
-const nouveau = (element, seuil, fg, bg, contreEpreuve = false) =>
-  lignes.push({ element, seuil, avant: NaN, apres: mesure(fg, bg), contreEpreuve });
-
-// ── Barre latérale ────────────────────────────────────────────────────────────
-pousse('Entrée de menu au repos', 4.5, blanc(0.72), SIDEBAR_HAUT, blanc(0.82), SIDEBAR_HAUT);
-pousse('Sous-entrée (.nav-item--sub)', 4.5, blanc(0.6), SIDEBAR_HAUT, blanc(0.72), SIDEBAR_HAUT);
-// 2026-09-22 : l'intitulé passe du blanc à 0,72 (5,73:1) à l'OR plein — et au survol du bouton de repli, or clair.
-pousse('Intitulé de rubrique (doré, 2026-09-22)', 4.5, blanc(0.72), SIDEBAR_HAUT, DORE, SIDEBAR_HAUT);
-nouveau('Intitulé de rubrique sur sa BANDE (2026-09-22)', 4.5, DORE, BANDE);
-nouveau('Intitulé de rubrique — survol du bouton de repli (or clair, bande survolée)', 4.5, '#ffd966', BANDE_SURVOL);
-nouveau('Marque et chevron de l’intitulé sur la bande', 3, DORE, BANDE);
-// La bande elle-même n'est pas porteuse de sens (l'intitulé le porte) : pas de seuil, mesurée pour mémoire.
-nouveau('CONTRE-ÉPREUVE : la bande sur le fond (ornement, sans seuil)', 0, BANDE, SIDEBAR_HAUT, true);
-pousse('Chevron de groupe (.nav-chevron)', 3, blanc(0.4), SIDEBAR_HAUT, blanc(0.55), SIDEBAR_HAUT);
-pousse('Chevron de repli des délégations', 3, blanc(0.72), SIDEBAR_HAUT, DORE, SIDEBAR_HAUT);
-pousse('Marque de délégation sur une entrée', 3, blanc(0.72 * 0.65), SIDEBAR_HAUT, blanc(0.82), SIDEBAR_HAUT);
-pousse('Marque de délégation de l’intitulé', 3, blanc(0.72), SIDEBAR_HAUT, DORE, SIDEBAR_HAUT);
-pousse('Marque « CNM »', 4.5, '#ffffff', SIDEBAR_HAUT, '#ffffff', SIDEBAR_HAUT);
-pousse('Carte profil — nom', 4.5, '#ffffff', SIDEBAR_HAUT, '#ffffff', SIDEBAR_HAUT);
-pousse('Carte profil — libellé de rôle', 4.5, blanc(0.55), SIDEBAR_HAUT, blanc(0.72), SIDEBAR_HAUT);
-pousse('Carte profil — initiales de l’avatar', 4.5, '#0284c7', P200, '#075985', P200);
-pousse('Carte profil — bordure (la carte est un lien chez la PRMP)', 3, blanc(0.1), SIDEBAR_HAUT, blanc(0.44), SIDEBAR_HAUT);
-pousse('Repère de focus sur la barre latérale (--p-400)', 3, '#38bdf8', SIDEBAR_HAUT, '#38bdf8', SIDEBAR_HAUT);
-
-// ── Entrée ACTIVE, pastille de profil, barre d'accent — les neuf profils ──────
-for (const [nom, bg, couleur, encre] of PROFILS) {
-  pousse(`Entrée ACTIVE — ${nom}`, 4.5, couleur, bg, encre, bg);
-}
-for (const [nom, bg, couleur, encre] of PROFILS) {
-  pousse(`Pastille de profil (barre du haut) — ${nom}`, 4.5, couleur, bg, encre, bg);
-}
-// La barre d'accent de 3 px est peinte À L'INTÉRIEUR de la pastille claire : même paire que le texte.
-for (const [nom, bg, , encre] of PROFILS) {
-  nouveau(`Barre d’accent 3 px, dans la pastille — ${nom}`, 3, encre, bg);
-}
-// Contre-épreuve — c'est la raison du « à l'intérieur » : posée sur le fond sombre, elle disparaît.
-nouveau('CONTRE-ÉPREUVE : accent posé sur le fond sombre — Administrateur', 3, '#374151', SIDEBAR_HAUT, true);
-
-// ── Pastilles de compteur (ambre unique) et d'alerte (rouge, réservé) ─────────
-pousse('Pastille de compteur — défaut, Président', 4.5, '#0369a1', '#e0f2fe', '#3b2500', '#fbbf24');
-pousse('Pastille de compteur — défaut, Membre', 4.5, '#d97706', '#fef9c3', '#3b2500', '#fbbf24');
-pousse('Pastille de compteur — .i (info)', 4.5, '#0284c7', '#f0f9ff', '#3b2500', '#fbbf24');
-pousse('Pastille de compteur — .s (succès)', 4.5, '#059669', '#ecfdf5', '#3b2500', '#fbbf24');
-pousse('Pastille de compteur — .w', 4.5, '#a16207', '#fef9c3', '#3b2500', '#fbbf24');
-pousse('Pastille de compteur — .d', 4.5, '#b91c1c', '#fee2e2', '#3b2500', '#fbbf24');
-pousse('Pastille d’ALERTE (inchangée)', 4.5, '#b91c1c', '#fee2e2', '#b91c1c', '#fee2e2');
-
-// ── RAIL COMPACT (lot 5, F4) ──────────────────────────────────────────────────
-// En rail, l'intitulé de rubrique passe hors écran et un FILET prend sa place : il n'est plus un
-// ornement, c'est le seul repère visuel de regroupement du menu. Il est donc traité comme un
-// élément non textuel porteur de sens (3:1), et non comme un séparateur décoratif — d'où 0,45,
-// bien au-dessus du 0,12 du filet de pied, qui, lui, double un libellé toujours lisible.
-pousse('Filet de rubrique, en rail (doré, 2026-09-22)', 3, blanc(0.45), SIDEBAR_HAUT, dore(0.7), SIDEBAR_HAUT);
-nouveau('CONTRE-ÉPREUVE : le même filet aux 0,12 du pied de menu', 3, blanc(0.12), SIDEBAR_HAUT, true);
-// La légende sous l'icône (9 px) : même encre que l'entrée au repos, le corps ne change pas le ratio.
-nouveau('Légende du rail sous l’icône', 4.5, blanc(0.82), SIDEBAR_HAUT);
-// L'état courant en rail est celui du menu large : pastille claire + barre d'accent, déjà mesurés
-// profil par profil ci-dessus. Rien de nouveau n'est peint — c'est tout l'intérêt d'un seul gabarit.
-
-// ── Barre du haut ─────────────────────────────────────────────────────────────
-// Bascule du rail : même gabarit que le bouton de tiroir (`_responsive.scss`). C'est le GLYPHE qui
-// porte la commande ; la bordure `--n-200` reprise du bouton de tiroir n'est qu'un liseré de surface.
-nouveau('Bascule du rail — glyphe', 3, '#4a5578', '#ffffff');
-pousse('Recherche — loupe', 3, '#5b6784', N100, '#5b6784', N100);
-pousse('Recherche — texte de substitution', 4.5, '#667299', N100, '#586586', N100);
-pousse('Recherche — saisie', 4.5, '#1a1d2e', N100, '#1a1d2e', N100);
-pousse('Nom de l’utilisateur', 4.5, '#1a1d2e', '#ffffff', '#1a1d2e', '#ffffff');
-pousse('Cloche de notifications', 3, '#34405a', '#ffffff', '#34405a', '#ffffff');
-pousse('Repère de focus sur la barre du haut', 3, '#38bdf8', '#ffffff', '#0369a1', '#ffffff');
-pousse('Repère de focus sur la cloche', 3, '#38bdf8', '#ffffff', '#0369a1', '#ffffff');
-// Le champ de recherche pose `outline: none` : son seul repère de focus est la bordure de la pilule.
-pousse('Bordure de la recherche au focus', 3, '#38bdf8', '#ffffff', '#0369a1', '#ffffff');
-// Assistant IA (2026-09-18) : bouton à teinte primaire claire, --p-800 sur --p-50 (repos) et sur
-// --p-100 (survol, panneau ouvert). Sa bordure --p-200 n'est qu'un liseré : le libellé porte la commande.
-nouveau('Bouton « Assistant IA » — libellé au repos', 4.5, '#075985', '#f0f9ff');
-nouveau('Bouton « Assistant IA » — libellé ouvert ou survolé', 4.5, '#075985', '#e0f2fe');
-nouveau('Repère de focus du bouton « Assistant IA »', 3, '#0369a1', '#ffffff');
-
-// ⚠️ 24/10 (« heure-serveur ») — la pastille « Heure de recette » de la barre du haut (horloge de recette décalée, recette seulement).
-nouveau('Pastille « Heure de recette » — texte sur fond ambre', 4.5, '#92400e', '#fef3c7');
-nouveau('Pastille « Heure de recette » — liseré sur blanc', 3, '#d97706', '#ffffff');
-
-// ── ENTRÉE PUBLIQUE (proposition 2026-09-22) — hors coquille, mais mêmes jetons : mesurée ici, même garde-fou ──
-// Bannière : dégradé #082f49 → #0c4a6e → #0d5578 ; le pire cas pour un texte clair est le bout le plus CLAIR
-// (#0f6a94, premier jet, laissait l'or à 3,69:1 : le bout clair a été assombri, pas l'or éclairci).
-const HERO_CLAIR = '#0d5578';
-nouveau('Entrée publique — promesse (blanc 0,92) sur le bout clair du dégradé', 4.5, blanc(0.92), HERO_CLAIR);
-nouveau('Entrée publique — fil d’Ariane et repères (blanc 0,86) sur le bout clair', 4.5, blanc(0.86), HERO_CLAIR);
-nouveau('Entrée publique — valeur d’un repère (or) sur le bout clair', 4.5, DORE, HERO_CLAIR);
-nouveau('Entrée publique — bouton contour : bordure blanche 0,7 sur le bout clair', 3, blanc(0.7), HERO_CLAIR);
-nouveau('Entrée publique — barre « ce que vous pouvez faire » (blanc 0,9) sur #0c4a6e', 4.5, blanc(0.9), SIDEBAR_HAUT);
-nouveau('Entrée publique — onglet d’audience au repos (--n-500) sur blanc', 4.5, '#586586', '#ffffff');
-nouveau('Entrée publique — mot-clé lien (--p-700) sur blanc', 4.5, '#0369a1', '#ffffff');
-nouveau('Entrée publique — bouton Connexion : blanc sur --p-700', 4.5, '#ffffff', '#0369a1');
-nouveau('Entrée publique — bouton « Créer un compte PRMP » : --p-800 sur blanc', 4.5, '#075985', '#ffffff');
-
-// ── Sortie ────────────────────────────────────────────────────────────────────
-const f = (v) => (Number.isNaN(v) ? '—' : `${v.toFixed(2).replace('.', ',')}:1`);
 let echecs = 0;
-console.log('| Élément | Seuil | Avant | Après | Verdict après |');
-console.log('|---|---|---|---|---|');
-for (const l of lignes) {
-  const sousLeSeuil = !Number.isNaN(l.apres) && l.apres < l.seuil;
-  if (sousLeSeuil && !l.contreEpreuve) echecs++;
-  const verdict = l.contreEpreuve ? 'contre-épreuve' : sousLeSeuil ? 'SOUS LE SEUIL' : 'ok';
-  const avant = `${f(l.avant)}${!Number.isNaN(l.avant) && l.avant < l.seuil ? ' (sous le seuil)' : ''}`;
-  console.log(`| ${l.element} | ${l.seuil.toFixed(1).replace('.', ',')} | ${avant} | ${f(l.apres)} | ${verdict} |`);
+console.log('Contrastes de la coquille et des styles communs (WCAG 2.1)\n');
+for (const [ou, avant, fond, seuil] of PAIRES) {
+  const [a, b] = [palette[avant], palette[fond]];
+  if (!a || !b) {
+    console.log(`✘ ${ou} : variable absente de styles.scss (--${!a ? avant : fond})`);
+    echecs++;
+    continue;
+  }
+  const r = ratio(a, b);
+  const ok = r >= seuil;
+  if (!ok) echecs++;
+  console.log(`${ok ? '✔' : '✘'} ${ou.padEnd(40)} --${avant} ${a} sur --${fond} ${b} : ${r.toFixed(2)}:1 (seuil ${seuil}:1)`);
 }
-console.log(`\n${lignes.length} paires mesurées — ${echecs} sous le seuil APRÈS.`);
-process.exit(echecs === 0 ? 0 : 1);
+console.log(`\n${echecs === 0 ? '✔ Toutes les paires passent.' : `✘ ${echecs} paire(s) sous leur seuil.`}`);
+process.exitCode = echecs === 0 ? 0 : 1;

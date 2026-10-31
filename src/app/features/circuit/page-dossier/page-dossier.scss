@@ -291,7 +291,7 @@
   --doc-entete-top: 45px;
 }
 :host(.pd--barre) .pd-documents {
-  --doc-entete-top: calc(48px + 3.25rem - 3px);
+  --doc-entete-top: calc(var(--hauteur-menu) + 3.25rem - 3px);
 }
 /* Hauteur réservée voisine de celle du panneau : les documents ne sautent pas à l'arrivée des gestes. */
 .pd-etape-attente {

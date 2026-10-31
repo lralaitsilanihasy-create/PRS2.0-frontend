@@ -9,11 +9,10 @@ import { VacanceStore } from '../../core/vacance/vacance.store';
 import { jusquA } from '../../core/interim/interim-libelles';
 import { InterimStore } from '../../core/interim/interim.store';
 import { ProceduresEnLigneStore } from '../../core/procedures/procedures-en-ligne.store';
-import { DelegationsAffichageStore } from '../../core/preferences/delegations-affichage.store';
-import { MenuCompactStore } from '../../core/preferences/menu-compact.store';
 import { ToastService } from '../../core/notifications/toast.service';
 import { NavItem, cheminAFaire, entreesParInterim, navFlat, navFor } from '../../core/navigation/navigation';
-import { libelleCourt, nomAccessibleRail, piedMenu, sectionsMenu } from '../../core/navigation/groupes-menu';
+import { piedMenu, sectionsMenu } from '../../core/navigation/groupes-menu';
+import { barreDuMenu } from '../../core/navigation/barre-menu';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { DossiersRefreshStore } from '../../features/prmp/dossiers-refresh.store';
 import {
@@ -41,16 +40,21 @@ const CHEMIN_A_VERIFIER = '/verificateur/a-verifier';
 
 /**
  * ⚠️ Refonte ergonomique, lot 2 (2026-09-14) — MODE « CONCENTRATION » : une route qui déclare
- * `data: { concentration: true }` (l'examen d'un dossier) replie la barre latérale, pour rendre au
- * document et à la grille de contrôle la largeur d'un portable 15 pouces (1366 px). Le menu reste à
- * un clic : il s'ouvre en tiroir par le bouton de l'en-tête, comme sur tablette. La donnée est
- * cherchée sur toute la branche activée (une route enfant peut la porter).
+ * `data: { concentration: true }` (l'examen d'un dossier) range le menu, pour rendre au document et à la
+ * grille de contrôle toute la hauteur utile. Le menu reste à un clic : ⚠️ 30/10/2026 (design institutionnel)
+ * le bouton « Menu » de la barre l'ouvre en liste verticale, comme sous 768 px. La donnée est cherchée sur toute
+ * la branche activée (une route enfant peut la porter).
  */
 export function routeEnConcentration(racine: ActivatedRouteSnapshot | null): boolean {
   for (let r = racine; r; r = r.firstChild) {
     if (r.data?.['concentration'] === true) return true;
   }
   return false;
+}
+
+/** Chemin seul (sans paramètres ni ancre) d'une URL de l'application. */
+function cheminDe(url: string): string {
+  return url.split('?')[0].split('#')[0];
 }
 
 /**
@@ -76,7 +80,8 @@ export function routeEnConcentration(racine: ActivatedRouteSnapshot | null): boo
   host: {
     '[attr.data-role]': 'role()',
     '[class.layout--concentration]': 'concentration()',
-    '[class.layout--rail]': 'railActif()',
+    '(document:click)': 'clicDocument($event)',
+    '(document:keydown.escape)': 'fermerRubrique()',
   },
 })
 export class MainLayout {
@@ -185,74 +190,76 @@ export class MainLayout {
   readonly navPied = computed(() => piedMenu(this.navItems()));
 
   /**
-   * Repli des rubriques déléguées (demande user 2026-08-28), partagé avec les cartes de
-   * « Mes dossiers » : un seul geste range les tâches déléguées partout. Repli d'AFFICHAGE — aucun
-   * droit n'est retiré, contrairement aux interrupteurs du 15/08 (cf. `DelegationsAffichageStore`).
+   * ⚠️ 30/10/2026 (design institutionnel) — la BARRE horizontale du menu : liens directs et rubriques en menus déroulants
+   * (`barreDuMenu`). Le rail compact (lot 5 F4) et le repli de la rubrique déléguée sont retirés avec la barre latérale :
+   * en barre horizontale, une rubrique est fermée tant qu'on ne l'ouvre pas.
    */
-  private readonly delegationsAffichage = inject(DelegationsAffichageStore);
-  readonly delegationsAffichees = this.delegationsAffichage.affichees;
-  basculerDelegations(): void {
-    this.delegationsAffichage.basculer();
+  readonly barre = computed(() => barreDuMenu(this.navSections(), this.navPied().length));
+
+  /** Rubrique dont le menu déroulant est ouvert (une seule à la fois), `null` sinon. */
+  readonly rubriqueOuverte = signal<string | null>(null);
+  /** Menu ouvert en liste verticale (sous 768 px, ou en mode concentration). */
+  readonly menuMobileOuvert = signal(false);
+  private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  basculerRubrique(cle: string): void {
+    this.rubriqueOuverte.update((c) => (c === cle ? null : cle));
+  }
+  /** Échap ferme le menu déroulant ouvert et rend le focus à son bouton (sans effet si aucun n'est ouvert). */
+  fermerRubrique(): void {
+    const cle = this.rubriqueOuverte();
+    if (!cle) return;
+    this.rubriqueOuverte.set(null);
+    this.hote.nativeElement.querySelector<HTMLButtonElement>(`button[aria-controls="rubrique-${cle}"]`)?.focus();
+  }
+  /** Un clic hors du menu ferme le déroulant ouvert. */
+  clicDocument(ev: Event): void {
+    if (!this.rubriqueOuverte()) return;
+    const menu = this.hote.nativeElement.querySelector('.menu');
+    if (menu && ev.target instanceof Node && !menu.contains(ev.target)) this.rubriqueOuverte.set(null);
+  }
+  basculerMenuMobile(): void {
+    this.menuMobileOuvert.update((v) => !v);
   }
 
+  /** URL courante (chemin seul), relue à chaque fin de navigation. */
+  private readonly urlCourante = signal('');
   /**
-   * ⚠️ RAIL COMPACT (refonte ergonomique, lot 5 F4 — décision de Mathieu du 2026-09-16). La barre
-   * se réduit à 76 px d'icônes légendées : +139 px rendus au contenu sur les trois écrans visés.
-   * C'est une BASCULE de l'utilisateur, mémorisée (`MenuCompactStore`) — rien ne se replie tout seul
-   * selon la largeur de l'écran : personne ne doit perdre son menu sans l'avoir demandé.
+   * Chemin de l'entrée de menu ACTIVE : la plus longue dont le chemin préfixe l'URL — l'entrée reste active sur ses
+   * sous-pages (`/prmp/dao` sur `/prmp/dao/5/recus`). Une page atteinte d'une liste (la page du dossier, `?returnUrl=`)
+   * garde active l'entrée d'où l'on vient.
    */
-  private readonly menuCompact = inject(MenuCompactStore);
-  /** Préférence brute : l'utilisateur a-t-il demandé le rail ? (état du bouton de bascule) */
-  readonly menuReduit = this.menuCompact.reduit;
-  /**
-   * Rail réellement appliqué. Le rail NE SE SUBSTITUE PAS au mode concentration : sur l'examen, la
-   * vérification et la page dossier, la barre reste un TIROIR à 0 px (décision 4 du plan L4), qui
-   * rend toute la largeur au document. Un rail de 76 px y serait une régression de 76 px. La
-   * préférence n'est pas effacée pour autant : elle reprend à la sortie de ces écrans.
-   */
-  readonly railActif = computed(() => this.menuReduit() && !this.concentration());
-
-  /** Réduit le menu au rail d'icônes, ou le redéploie (bouton du pied de la barre). */
-  basculerMenuCompact(): void {
-    this.menuCompact.basculer();
+  readonly cheminActif = computed(() => {
+    const items = [...this.navItems(), ...this.navPied()].flatMap((i) => (i.children?.length ? [i, ...i.children] : [i]));
+    const trouver = (url: string) =>
+      items.map((i) => i.path).filter((p) => url === p || url.startsWith(p + '/')).sort((a, b) => b.length - a.length)[0] ?? null;
+    const url = this.urlCourante();
+    const direct = trouver(cheminDe(url));
+    if (direct) return direct;
+    const retour = new URLSearchParams(url.split('?')[1] ?? '').get('returnUrl');
+    return retour ? trouver(cheminDe(retour)) : null;
+  });
+  estActif(item: NavItem): boolean {
+    return item.path === this.cheminActif();
+  }
+  rubriqueActive(items: NavItem[]): boolean {
+    return items.some((i) => this.estActif(i));
+  }
+  /** Somme des pastilles de compteur des entrées d'une rubrique : un dossier en attente ne se cache pas dans un déroulant. */
+  sommeCompteurs(items: NavItem[]): number {
+    return items.reduce((n, i) => n + (this.countFor(i.path) ?? 0), 0);
+  }
+  sommeAlertes(items: NavItem[]): number {
+    return items.reduce((n, i) => n + (this.alertFor(i.path) ?? 0), 0);
   }
 
-  /**
-   * Légende d'une entrée sous son icône, en rail (`groupes-menu.ts`). Purement VISUELLE : elle est
-   * `aria-hidden`, le nom accessible de l'entrée est porté par `nomAccessible()` (rendu hors écran)
-   * suivi de sa pastille.
-   */
-  legende(item: NavItem): string {
-    return libelleCourt(item, this.role());
-  }
-
-  /**
-   * Nom accessible d'une entrée de menu — le texte de `.nav-label`, visible en menu large et rangé
-   * hors écran en rail.
-   *
-   * ⚠️ WCAG 2.5.3 « Label in Name » (2026-09-16). En rail, le seul texte VISIBLE d'une entrée est sa
-   * légende ; le critère exige qu'il soit contenu dans le nom accessible. Cinq légendes sur trente
-   * sont des synonymes et non des fragments : pour celles-là, et pour elles seules, le nom devient
-   * « Alertes — Notifications » (cf. `nomAccessibleRail`). En menu large le texte visible EST le
-   * libellé complet : le nom accessible n'y bouge pas d'un caractère.
-   */
-  nomAccessible(item: NavItem): string {
-    return this.railActif() ? nomAccessibleRail(item, this.role()) : item.label;
-  }
-
-  /**
-   * Infobulle d'une entrée : la mention de délégation (spec 2026-08-14) et, EN RAIL, le libellé
-   * complet — c'est lui que l'utilisateur vient chercher au survol quand seule la légende est
-   * visible. En menu large le libellé est déjà lisible : pas d'infobulle qui répète le texte.
-   */
+  /** Infobulle d'une entrée : la mention de délégation (spec 2026-08-14) ou d'intérim, rien sinon. */
   infobulle(item: NavItem): string {
-    const deleg = item.interimDe
+    return item.interimDe
       ? `Écran de ${item.interimDe}${item.interimProfil ? ` (${this.delegationLabel(item.interimProfil)})` : ''} — exercé par intérim.`
       : item.delegation
         ? `Tâche du profil ${this.delegationLabel(item.delegation)} — exercée par délégation active.`
         : '';
-    if (!this.railActif()) return deleg;
-    return deleg ? `${item.label} — ${deleg}` : item.label;
   }
   /** « jusqu'au 30/09/2026 » / « sans terme » — bannières d'intérim. */
   jusquA(i: { dateFin: string | null }): string {
@@ -272,8 +279,6 @@ export class MainLayout {
   readonly counts = signal<Record<string, number>>({});
   /** Compteurs d'alerte (badge rouge) à côté de certaines entrées (clé = chemin). */
   readonly alerts = signal<Record<string, number>>({});
-  /** Sidebar ouverte en mode drawer (tablette / mobile, ou mode concentration). Sans effet sinon. */
-  readonly sidebarOpen = signal(false);
   /** Route courante en mode « concentration » : barre latérale repliée en tiroir (`routeEnConcentration`). */
   readonly concentration = signal(false);
   /**
@@ -395,28 +400,12 @@ export class MainLayout {
     });
   }
 
-  /** Couleur du badge de compteur par item (i=info, w=warning, s=success, d=danger). */
-  private readonly badgeSeverites: Record<string, string> = {
-    '/prmp/mes-brouillons': 'i',
-    '/prmp/ppm-marches': 'i',
-    '/prmp/resultat-examen': 'd',
-    '/prmp/retraits': 'd',
-    '/prmp/contrats-en-vigueur': 'w',
-    [CHEMIN_A_VERIFIER]: 'i',
-  };
-  badgeSeverity(path: string): string {
-    return this.badgeSeverites[path] ?? '';
-  }
-
   countFor(path: string): number | undefined {
     return this.counts()[path];
   }
   alertFor(path: string): number | undefined {
     return this.alerts()[path];
   }
-
-  /** Chemins des en-têtes de sous-menu actuellement dépliés. */
-  private readonly openGroups = signal<Set<string>>(this.initialOpenGroups());
 
   /** Titre de la page atteinte, lu par la région live de navigation (voir le template). */
   readonly annonceNavigation = signal('');
@@ -474,14 +463,17 @@ export class MainLayout {
   }
 
   constructor() {
-    // Ferme le drawer mobile à chaque navigation (clic sur un lien de menu).
+    // Referme le menu (déroulant ouvert, liste verticale) à chaque navigation.
+    this.urlCourante.set(this.router.url);
     this.router.events
       .pipe(
         filter((e) => e instanceof NavigationEnd),
         takeUntilDestroyed(),
       )
       .subscribe(() => {
-        this.sidebarOpen.set(false);
+        this.menuMobileOuvert.set(false);
+        this.rubriqueOuverte.set(null);
+        this.urlCourante.set(this.router.url);
         this.concentration.set(routeEnConcentration(this.router.routerState.snapshot.root));
         this.calculerFilAriane();
         this.annoncerPage();
@@ -650,50 +642,6 @@ export class MainLayout {
       },
       error: () => {},
     });
-  }
-
-  isOpen(item: NavItem): boolean {
-    return this.openGroups().has(item.path);
-  }
-
-  toggle(item: NavItem): void {
-    const next = new Set(this.openGroups());
-    if (next.has(item.path)) next.delete(item.path);
-    else next.add(item.path);
-    this.openGroups.set(next);
-  }
-
-  /** Au chargement, ouvre les sous-menus (à tout niveau) contenant la page active. */
-  private initialOpenGroups(): Set<string> {
-    const open = new Set<string>();
-    this.collectOpenGroups(navFor(this.auth.role()), this.router.url, open);
-    return open;
-  }
-  /**
-   * Ajoute à `open` le chemin de chaque groupe (à n'importe quel niveau) dont un descendant **feuille**
-   * correspond à `url`. Retourne `true` si un élément de `items` est actif (pour la remontée récursive).
-   */
-  private collectOpenGroups(items: NavItem[], url: string, open: Set<string>): boolean {
-    let active = false;
-    for (const item of items) {
-      if (item.children?.length) {
-        if (this.collectOpenGroups(item.children, url, open)) {
-          open.add(item.path);
-          active = true;
-        }
-      } else if (url.startsWith(item.path)) {
-        active = true;
-      }
-    }
-    return active;
-  }
-
-  toggleSidebar(): void {
-    this.sidebarOpen.update((v) => !v);
-  }
-
-  closeSidebar(): void {
-    this.sidebarOpen.set(false);
   }
 
   logout(): void {

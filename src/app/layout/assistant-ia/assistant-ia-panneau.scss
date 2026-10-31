@@ -1,4 +1,4 @@
-// Panneau de l'assistant IA — posé sous la barre du haut (48 px, z-index 99), au-dessus du contenu,
+// Panneau de l'assistant IA — à droite, sur toute la hauteur (au-dessus du menu principal, z-index 99), au-dessus du contenu,
 // sous les modales et le panneau des notifications (z-index ≥ 1000). Couleurs de texte : n-800 pour le
 // corps, n-500 pour le secondaire (5,52:1) — jamais n-300, réservé aux bordures (consignes de l'audit).
 
@@ -8,10 +8,10 @@
 
 .aia {
   position: fixed;
-  top: 48px;
+  top: 0;
   right: 0;
   bottom: 0;
-  z-index: 98;
+  z-index: 101;
   width: min(420px, 100vw);
   display: flex;
   flex-direction: column;

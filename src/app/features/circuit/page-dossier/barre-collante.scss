@@ -4,7 +4,7 @@
    largeur. Couleurs de texte au contraste AA : #152033 15:1, #34405a 10:1 sur blanc. */
 :host {
   position: fixed;
-  top: 48px;
+  top: var(--hauteur-menu);
   left: 0;
   right: 0;
   z-index: 90;

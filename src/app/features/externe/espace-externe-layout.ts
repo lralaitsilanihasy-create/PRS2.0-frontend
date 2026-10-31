@@ -29,8 +29,6 @@ interface ConfigEspace {
   piedLien: Lien | null;
   /** Où mène la déconnexion : les procédures publiques pour le candidat ; la connexion pour le membre de CAO, dont rien n'est public. */
   apresDeconnexion: string;
-  /** ⚠️ 19/10 (pilote) — la barre du haut en bleu profond : les espaces des commissions et du dépositaire, pas celui du candidat. */
-  sombre: boolean;
 }
 
 const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
@@ -52,7 +50,6 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
     entree: { label: 'Créer un compte', path: '/candidat/inscription' },
     piedLien: { label: "À propos de l'espace candidat", path: '/accueil/candidat' },
     apresDeconnexion: '/candidat/procedures',
-    sombre: false,
   },
   cao: {
     role: 'MEMBRE_CAO',
@@ -70,7 +67,6 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
     entree: { label: 'Activer mon compte', path: '/cao/activation' },
     piedLien: null,
     apresDeconnexion: '/login',
-    sombre: true,
   },
   depositaire: {
     role: 'DEPOSITAIRE',
@@ -84,7 +80,6 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
     entree: { label: 'Activer mon compte', path: '/depositaire/activation' },
     piedLien: null,
     apresDeconnexion: '/login',
-    sombre: true,
   },
 };
 
@@ -99,15 +94,19 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
   selector: 'app-espace-externe-layout',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, RouterLink, RouterLinkActive, Icone, ChangerMotDePasseModal, ClocheExterne],
+  // ⚠️ 30/10/2026 (design institutionnel, pilote) — même coquille que l'application : bandeau tricolore, en-tête blanc au logo du
+  // Ministère, barre de menu foncée (onglet actif clair), pied foncé. La barre « bleu profond » des espaces des commissions (19/10)
+  // est remplacée : tous les espaces ont désormais la même barre de menu.
   template: `
     <a class="cnm-sr-only cl-evitement" href="#cl-contenu">Aller au contenu</a>
-    <header class="cl-top" [class.cl-top--sombre]="config.sombre">
+    <div class="bandeau-tricolore" aria-hidden="true"><span></span><span></span><span></span></div>
+    <header class="cl-top">
       <div class="cl-top__in">
         <a class="cl-marque" [routerLink]="config.racine" [attr.aria-label]="config.titre + ' — accueil'">
-          <span class="cl-marque__mef" aria-hidden="true">MEF</span>
+          <img class="cl-marque__logo" src="mef-logo.png" alt="" width="42" height="42" />
           <span class="cl-marque__texte">
-            <span class="cl-marque__t">PRS 2.0 · {{ config.titre }}</span>
             <span class="cl-marque__s">Commission nationale des marchés</span>
+            <span class="cl-marque__t">PRS 2.0 · {{ config.titre }}</span>
           </span>
         </a>
         <div class="cl-top__actions">
@@ -117,7 +116,7 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
               <span class="cl-user__role">{{ roleLibelle() }}</span>
             </span>
             <!-- ⚠️ 29/10 (pilote, PRS20 51351b2) — la cloche : le membre, le dépositaire et le candidat lisent leurs notifications. -->
-            <app-cloche-externe [espace]="cle" [sombre]="config.sombre" />
+            <app-cloche-externe [espace]="cle" />
             <button type="button" class="cl-btn" title="Changer mon mot de passe" (click)="motDePasseOuvert.set(true)">
               <app-icone nom="key" [taille]="15" /><span class="cl-btn__txt">Mot de passe</span>
             </button>
@@ -132,24 +131,23 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
           }
         </div>
       </div>
-      <!-- ⚠️ 18/10 (pilote) — les entrées en barre d'onglets pleine largeur, sous la marque : l'en-tête tenait sur deux lignes bancales
-           (menu en haut à droite, compte en dessous à gauche). Sur téléphone, la barre défile dans sa bande, la page ne déborde plus. -->
-      @if (entrees().length) {
-        <div class="cl-onglets">
-          <nav class="cl-nav" [attr.aria-label]="config.titre">
-            @for (l of entrees(); track l.path) {
-              <a [routerLink]="l.path" routerLinkActive="active" ariaCurrentWhenActive="page">{{ l.label }}</a>
-            }
-          </nav>
-        </div>
-      }
     </header>
+    <!-- ⚠️ 18/10 (pilote) — les entrées en barre pleine largeur, sous la marque. Sur téléphone, la barre défile dans sa bande. -->
+    @if (entrees().length) {
+      <div class="cl-onglets">
+        <nav class="cl-nav" [attr.aria-label]="config.titre">
+          @for (l of entrees(); track l.path) {
+            <a [routerLink]="l.path" routerLinkActive="active" ariaCurrentWhenActive="page">{{ l.label }}</a>
+          }
+        </nav>
+      </div>
+    }
 
     <main id="cl-contenu" class="cl-main"><router-outlet /></main>
 
     <footer class="cl-pied">
       <div class="cl-pied__in">
-        <span>Ministère de l'Économie et des Finances — Commission nationale des marchés</span>
+        <span>Commission nationale des marchés · Ministère de l'Économie et des Finances · PRS 2.0</span>
         @if (config.piedLien; as p) { <a [routerLink]="p.path">{{ p.label }}</a> }
       </div>
     </footer>
@@ -159,40 +157,34 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
     }
   `,
   styles: `
-    :host { display: flex; flex-direction: column; min-height: 100vh; background: var(--n-50); color: var(--n-800); }
-    .cl-evitement:focus { position: fixed; inset: auto auto 1rem 1rem; width: auto; height: auto; clip: auto; padding: 0.5rem 0.9rem; background: #fff; color: var(--p-800); border-radius: var(--radius-md); z-index: 10; }
-    .cl-top { background: #fff; border-bottom: 1px solid var(--n-200); }
-    .cl-top__in, .cl-main, .cl-pied__in { width: 100%; max-width: 1200px; margin: 0 auto; padding-left: 16px; padding-right: 16px; box-sizing: border-box; }
-    .cl-top__in { min-height: 60px; display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; padding-top: 8px; padding-bottom: 8px; }
-    .cl-marque { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: var(--n-800); }
-    .cl-marque__mef { width: 36px; height: 36px; border-radius: 50%; background: var(--sidebar-bg); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 0.72rem; letter-spacing: 0.04em; }
-    .cl-marque__texte { display: flex; flex-direction: column; line-height: 1.15; }
-    .cl-marque__t { font-weight: 800; }
-    .cl-marque__s { font-size: var(--text-xs); color: var(--n-500); }
-    .cl-onglets { border-top: 1px solid var(--n-200); }
-    .cl-nav { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 16px; box-sizing: border-box; display: flex; gap: 0.15rem; overflow-x: auto; scrollbar-width: thin; }
-    .cl-nav a { flex: none; white-space: nowrap; padding: 0.7rem 0.85rem 0.6rem; border-bottom: 3px solid transparent; color: var(--n-600); text-decoration: none; font-weight: 600; font-size: var(--text-sm); }
-    .cl-nav a:hover { color: var(--p-800); background: var(--n-100); }
-    .cl-nav a.active { color: var(--p-800); border-bottom-color: var(--p-600); }
-    .cl-top__actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-left: auto; }
-    .cl-user { display: flex; flex-direction: column; line-height: 1.15; margin-right: 0.25rem; text-align: right; }
-    .cl-user__nom { font-weight: 700; font-size: var(--text-sm); }
-    .cl-user__role { font-size: var(--text-xs); color: var(--n-500); }
-    .cl-btn { display: inline-flex; align-items: center; gap: 0.35rem; height: 34px; padding: 0 0.8rem; border: 1px solid var(--n-300); border-radius: var(--radius-md); background: #fff; color: var(--n-800); font: inherit; font-size: var(--text-sm); font-weight: 600; text-decoration: none; cursor: pointer; }
-    .cl-btn:hover { background: var(--n-100); }
-    .cl-btn--primaire { background: var(--bouton-principal); border-color: var(--p-700); color: #fff; }
-    .cl-btn--primaire:hover { background: var(--bouton-principal); }
-    .cl-main { flex: 1; padding-top: 24px; padding-bottom: 32px; }
-    .cl-top--sombre { background: var(--sidebar-bg); border-bottom: 0; }
-    .cl-top--sombre .cl-marque, .cl-top--sombre .cl-user__nom { color: #fff; }
-    .cl-top--sombre .cl-marque__mef { background: #fff; color: var(--p-800); }
-    .cl-top--sombre .cl-marque__s, .cl-top--sombre .cl-user__role { color: rgba(255, 255, 255, 0.78); }
-    .cl-top--sombre .cl-btn { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.35); color: #fff; }
-    .cl-top--sombre .cl-btn:hover { background: rgba(255, 255, 255, 0.2); }
-    .cl-top--sombre .cl-onglets { background: #fff; border-top: 0; border-bottom: 1px solid var(--n-200); }
-    .cl-pied { border-top: 1px solid var(--n-200); background: #fff; }
-    .cl-pied__in { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding-top: 12px; padding-bottom: 12px; font-size: var(--text-xs); color: var(--n-500); }
-    .cl-pied a { color: var(--p-700); font-weight: 600; }
+    :host { display: flex; flex-direction: column; min-height: 100vh; background: var(--page-fond); color: var(--texte); }
+    .cl-evitement:focus { position: fixed; inset: auto auto 1rem 1rem; width: auto; height: auto; clip: auto; padding: 0.5rem 0.9rem; background: var(--bouton-principal); color: var(--texte-menu); border-radius: 6px; z-index: 10; }
+    .cl-top { background: var(--carte-fond); border-bottom: 1px solid var(--bordure); }
+    .cl-top__in, .cl-main, .cl-pied__in { width: 100%; max-width: 1200px; margin: 0 auto; padding-left: 18px; padding-right: 18px; box-sizing: border-box; }
+    .cl-top__in { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; padding-top: 12px; padding-bottom: 12px; }
+    .cl-marque { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--texte); }
+    .cl-marque__logo { width: 42px; height: 42px; object-fit: contain; flex-shrink: 0; }
+    .cl-marque__texte { display: flex; flex-direction: column; line-height: 1.2; }
+    .cl-marque__s { font-size: 11px; color: var(--texte-secondaire); }
+    .cl-marque__t { font-family: var(--police-titre); font-size: 17px; font-weight: 500; color: var(--texte); }
+    .cl-onglets { background: var(--menu-fond); }
+    .cl-nav { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 12px; box-sizing: border-box; display: flex; align-items: flex-end; gap: 2px; overflow-x: auto; scrollbar-width: thin; }
+    .cl-nav a { flex: none; white-space: nowrap; margin-top: 5px; padding: 9px 13px; border-radius: 6px 6px 0 0; color: var(--texte-menu); text-decoration: none; font-size: 13px; transition: background 0.15s ease; }
+    .cl-nav a:hover:not(.active) { background: var(--menu-survol); }
+    .cl-nav a.active { background: var(--onglet-actif-fond); color: var(--texte); font-weight: 500; }
+    .cl-nav a:focus-visible { outline: 2px solid var(--or); outline-offset: -2px; }
+    .cl-top__actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-left: auto; font-size: 12px; color: var(--texte-secondaire); }
+    .cl-user { display: flex; flex-direction: column; line-height: 1.2; margin-right: 0.25rem; text-align: right; }
+    .cl-user__nom { color: var(--texte); }
+    .cl-user__role { font-size: 11px; color: var(--texte-secondaire); }
+    .cl-btn { display: inline-flex; align-items: center; gap: 0.35rem; padding: 7px 14px; border: 1px solid var(--bordure); border-radius: 6px; background: var(--carte-fond); color: var(--texte); font: inherit; font-size: 12px; text-decoration: none; cursor: pointer; }
+    .cl-btn:hover { background: var(--ligne-survol); }
+    .cl-btn--primaire { background: var(--bouton-principal); border-color: var(--bouton-principal); color: var(--texte-menu); }
+    .cl-btn--primaire:hover { background: var(--bouton-principal); filter: brightness(0.92); }
+    .cl-main { flex: 1; padding-top: 14px; padding-bottom: 24px; }
+    .cl-pied { background: var(--menu-fond); }
+    .cl-pied__in { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding-top: 8px; padding-bottom: 8px; font-size: 11px; color: var(--texte-menu); }
+    .cl-pied a { color: var(--or); }
     @media (max-width: 720px) {
       .cl-top__actions { margin-left: 0; width: 100%; justify-content: flex-start; }
       .cl-user { text-align: left; margin-right: auto; }
@@ -201,7 +193,7 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
     @media (max-width: 480px) {
       .cl-top__actions { flex-wrap: nowrap; }
       .cl-btn__txt { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-      .cl-btn { padding: 0 0.6rem; }
+      .cl-btn { padding: 7px 10px; }
     }
   `,
 })

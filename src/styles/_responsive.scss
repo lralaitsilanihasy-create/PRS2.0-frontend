@@ -4,11 +4,6 @@
 
 $bp-tablet : 768px;
 $bp-mobile : 480px;
-/* ⚠️ Lot 5 F4 (2026-09-16) — cette variable Sass n'est employée nulle part : la largeur de la barre
-   est portée par le jeton CSS `--sidebar-w` de `_design-system.scss`, seul à faire foi, parce que le
-   rail compact en change la valeur à l'exécution — ce qu'une variable Sass ne peut pas faire. */
-$sidebar-w : 215px;
-$topbar-h  : 48px;
 
 /* ══════════════════════════════════════════
    MIXINS
@@ -26,164 +21,18 @@ $topbar-h  : 48px;
   @media (max-width: #{$bp-tablet}) { @content; }
 }
 
-/* ══════════════════════════════════════════
-   SIDEBAR — DRAWER MOBILE
-══════════════════════════════════════════ */
-
-/* Bouton hamburger — caché sur desktop.
-   NB : glyphe texte « ☰ » (le projet n'utilise pas de police d'icônes Tabler). */
-.sidebar-toggle {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  width: 36px; height: 36px;
-  border-radius: var(--radius-md);
-  background: transparent;
-  border: 0.5px solid var(--n-200);
-  cursor: pointer;
-  transition: var(--transition);
-  font-size: 20px;
-  line-height: 1;
-  color: var(--n-600);
-  font-family: var(--font-base);
-
-  i { font-size: 18px; color: var(--n-500); }
-
-  &:hover { background: var(--p-50); }
-
-  @include tablet {
-    display: flex;
-  }
-}
-
-/* Bascule du RAIL COMPACT (refonte ergonomique, lot 5 F4, 2026-09-16) — le pendant du bouton
-   ci-dessus, dans la même case de la barre du haut. Les deux ne coexistent jamais : sous 768 px la
-   barre est un tiroir et c'est le hamburger qui sert ; au-dessus, elle est là et c'est le rail.
-   Même gabarit, pour que la case garde la même silhouette d'un seuil à l'autre. */
-.topbar-compact {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  border-radius: var(--radius-md);
-  background: transparent;
-  border: 0.5px solid var(--n-200);
-  color: var(--n-600);
-  cursor: pointer;
-  transition: var(--transition);
-
-  &:hover {
-    background: var(--p-50);
-    border-color: var(--p-200);
-    color: var(--n-800);
-  }
-
-  @include tablet {
-    display: none;
-  }
-}
-
-/* Overlay sidebar mobile */
-.sidebar-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(26,29,46,.45);
-  backdrop-filter: blur(4px);
-  z-index: 99;
-  opacity: 0;
-  transition: opacity 200ms ease;
-
-  @include tablet {
-    display: block;
-
-    &.visible {
-      opacity: 1;
-      pointer-events: all;
-    }
-
-    &:not(.visible) {
-      pointer-events: none;
-    }
-  }
-}
-
-/* Sidebar responsive */
-@include tablet {
-  .sidebar {
-    transform: translateX(-100%);
-    transition: transform 220ms ease;
-    z-index: 100;
-    box-shadow: none;
-
-    &.open {
-      transform: translateX(0);
-      box-shadow: var(--shadow-xl);
-    }
-  }
-}
-
-/* ══════════════════════════════════════════
-   TOPBAR RESPONSIVE
-══════════════════════════════════════════ */
-
-@include tablet {
-  .topbar {
-    left: 0;                    /* sidebar cachée */
-    padding: 0 16px;
-
-    .topbar-breadcrumb .current {
-      display: none;            /* trop long sur tablette */
-    }
-  }
-}
-
-@include mobile {
-  .topbar {
-    padding: 0 12px;
-    height: 44px;
-
-    .topbar-breadcrumb {
-      display: none;            /* masqué sur mobile */
-    }
-
-    .topbar-profile-name {
-      display: none;            /* nom masqué sur mobile */
-    }
-
-    .topbar-title {
-      max-width: 50vw;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-  }
-}
+/* ⚠️ 30/10/2026 (design institutionnel) — le tiroir de la barre latérale, la bascule du rail et la barre du haut fixe
+   sont retirés : sous 768 px, le menu horizontal se replie derrière son bouton « Menu » (main-layout.scss). */
 
 /* ══════════════════════════════════════════
    PAGE CONTENT RESPONSIVE
 ══════════════════════════════════════════ */
 
-@include tablet {
-  .page-content {
-    margin-left: 0;             /* sidebar cachée */
-    padding-top: $topbar-h;
-  }
 
-  .page-inner {
-    padding: 20px 20px;
-  }
-}
 
 @include mobile {
-  .page-content {
-    padding-top: 44px;
-  }
-
   .page-inner {
-    padding: 16px 14px;
+    padding: 14px 16px;
   }
 
   .page-header {

@@ -45,6 +45,22 @@
   /* Typographie — texte courant sans empattement (pile système), titres à empattements. */
   --police-texte: 'Segoe UI', Roboto, Arial, sans-serif;
   --police-titre: Georgia, 'Times New Roman', serif;
+
+  /* Hauteur du menu principal, collé en haut de l'écran à la lecture : les éléments collants des écrans se posent dessous. */
+  --hauteur-menu: 43px;
+}
+
+/* Bandeau tricolore (design institutionnel) : 5 px, trois parts égales — en tête de chaque coquille et des pages sans menu
+   (connexion, inscription, portail public). Décoratif : posé avec aria-hidden. */
+.bandeau-tricolore {
+  display: flex;
+  height: 5px;
+  flex-shrink: 0;
+
+  span { flex: 1; }
+  span:nth-child(1) { background: var(--bandeau-1); }
+  span:nth-child(2) { background: var(--bandeau-2); }
+  span:nth-child(3) { background: var(--bandeau-3); }
 }
 
 /* =============================================================================

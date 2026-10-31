@@ -60,8 +60,11 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, RouterLink],
   template: `
+    <!-- Bandeau tricolore (design institutionnel, 30/10/2026) : page sans menu, avec le bandeau et le logo. -->
+    <div class="bandeau-tricolore" aria-hidden="true"><span></span><span></span><span></span></div>
     <div class="register-page">
       <div class="register-card cnm-card">
+        <img class="register-card__logo" src="mef-logo.png" alt="" width="42" height="42" />
         <h1 class="register-card__title">Inscription PRMP</h1>
         <p class="register-card__subtitle">
           Personne Responsable des Marchés Publics — création de compte
@@ -254,7 +257,8 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
       max-height: 96vh;
       overflow: auto;
     }
-    .register-card__title { margin: 0; font-size: var(--cnm-fs-lg); }
+    .register-card__logo { display: block; width: 42px; height: 42px; object-fit: contain; margin-bottom: 8px; }
+    .register-card__title { margin: 0; font-size: 19px; }
     .register-card__subtitle {
       margin: 2px 0 var(--cnm-space-3);
       font-size: var(--cnm-fs-sm);
