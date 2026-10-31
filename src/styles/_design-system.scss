@@ -751,6 +751,10 @@ textarea:focus-visible {
      comme une bordure de couleur autour du dialogue. Le panneau se détache désormais par l'ombre
      seule — un halo large et un liseré rapproché neutres, qui en dessinent le bord sans teinte. */
   box-shadow: none;
+  /* ⚠️ 31/10 (pilote) — une seule zone de défilement par fenêtre. Sans position, un élément en `position: absolute` du
+     contenu (le texte réservé aux lecteurs d'écran d'un tableau, `.bs__sr`…) se plaçait par rapport au VOILE, des milliers
+     de pixels plus bas : le voile défilait en plus du corps — deux barres. La fenêtre le contient et le coupe désormais. */
+  position: relative;
   width: 94vw;
   max-width: 680px;
   max-height: 90vh;
