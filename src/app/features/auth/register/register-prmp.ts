@@ -62,9 +62,16 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
   template: `
     <!-- Bandeau tricolore (design institutionnel, 30/10/2026) : page sans menu, avec le bandeau et le logo. -->
     <div class="bandeau-tricolore" aria-hidden="true"><span></span><span></span><span></span></div>
+    <!-- ⚠️ 31/10 (pilote, Espace de travail, lot 6) — même en-tête que la connexion et la coquille : logo du Ministère, bleu nuit. -->
+    <header class="rg-entete">
+      <img class="rg-entete__logo" src="mef-logo.png" alt="" width="30" height="30" />
+      <span class="rg-entete__textes">
+        <span class="rg-entete__institution">Commission nationale des marchés</span>
+        <span class="rg-entete__appli">PRS 2.0</span>
+      </span>
+    </header>
     <div class="register-page">
       <div class="register-card cnm-card">
-        <img class="register-card__logo" src="mef-logo.png" alt="" width="42" height="42" />
         <h1 class="register-card__title">Inscription PRMP</h1>
         <p class="register-card__subtitle">
           Personne Responsable des Marchés Publics — création de compte
@@ -240,9 +247,14 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
     </div>
   `,
   styles: `
-    :host { display: block; height: 100%; }
+    :host { display: flex; flex-direction: column; min-height: 100dvh; }
+    .rg-entete { display: flex; align-items: center; gap: 10px; padding: 6px 14px; background: var(--section-fond); color: var(--texte-menu); }
+    .rg-entete__logo { width: 30px; height: 30px; flex: none; object-fit: contain; }
+    .rg-entete__textes { display: flex; flex-direction: column; line-height: 1.2; }
+    .rg-entete__institution { font-size: 10.5px; color: var(--texte-menu-secondaire); }
+    .rg-entete__appli { font-family: var(--police-marque); font-size: 15px; font-weight: 500; color: var(--texte-menu); }
     .register-page {
-      min-height: 100dvh;
+      flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -254,10 +266,9 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
       max-width: min(72rem, 96vw);
       padding: var(--cnm-space-4) var(--cnm-space-5);
       box-shadow: var(--cnm-shadow);
-      max-height: 96vh;
+      max-height: calc(100dvh - 90px);
       overflow: auto;
     }
-    .register-card__logo { display: block; width: 42px; height: 42px; object-fit: contain; margin-bottom: 8px; }
     .register-card__title { margin: 0; font-size: 17px; }
     .register-card__subtitle {
       margin: 2px 0 var(--cnm-space-3);

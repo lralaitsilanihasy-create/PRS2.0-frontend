@@ -22,9 +22,10 @@
 }
 
 /* ── Barre du haut ── */
+/* ⚠️ 31/10 (pilote, Espace de travail, lot 6) — même en-tête que la coquille : bleu nuit profond, compact. */
 .pub-top {
-  background: var(--carte-fond);
-  border-bottom: 1px solid var(--n-200);
+  background: var(--section-fond);
+  color: var(--texte-menu);
 }
 .pub-top__in,
 .pub-nav__in,
@@ -37,7 +38,7 @@
   padding-right: 1.25rem;
 }
 .pub-top__in {
-  height: 64px;
+  height: 44px;
   display: flex;
   align-items: center;
   gap: 1.5rem;
@@ -47,12 +48,13 @@
   align-items: center;
   gap: 10px;
   text-decoration: none;
-  color: var(--texte);
+  color: var(--texte-menu);
 }
+.pub-marque:focus-visible { outline: 2px solid var(--or); outline-offset: 2px; }
 /* Logo du Ministère (design institutionnel, 30/10/2026). */
 .pub-marque__logo {
-  width: 42px;
-  height: 42px;
+  width: 30px;
+  height: 30px;
   object-fit: contain;
   flex-shrink: 0;
 }
@@ -63,12 +65,12 @@
 }
 .pub-marque__t {
   font-family: var(--police-marque);
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 500;
 }
 .pub-marque__s {
-  font-size: 11px;
-  color: var(--texte-secondaire);
+  font-size: 10.5px;
+  color: var(--texte-menu-secondaire);
 }
 .pub-audience {
   display: flex;
@@ -78,17 +80,19 @@
 .pub-audience a {
   display: flex;
   align-items: center;
-  padding: 0 1.25rem;
+  margin-top: 6px;
+  padding: 0 1rem;
   text-decoration: none;
-  color: var(--n-500);
-  font-weight: 500;
-  border-top: 3px solid transparent;
-  border-bottom: 3px solid transparent;
+  color: var(--texte-menu);
+  font-size: 12.5px;
+  border-radius: 4px 4px 0 0;
 }
+.pub-audience a:hover:not([aria-current='page']) { background: var(--menu-survol); }
+.pub-audience a:focus-visible { outline: 2px solid var(--or); outline-offset: -2px; }
 .pub-audience a[aria-current='page'] {
-  color: var(--p-800);
-  background: var(--n-50);
-  border-bottom-color: var(--p-700);
+  color: var(--texte);
+  font-weight: 500;
+  background: var(--onglet-actif-fond);
 }
 .pub-top__actions {
   margin-left: auto;
@@ -100,10 +104,10 @@
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  height: 40px;
-  padding: 0 1.05rem;
-  border-radius: var(--radius-md);
-  font: 500 0.92rem var(--font-base);
+  height: 30px;
+  padding: 0 0.85rem;
+  border-radius: 4px;
+  font: 500 12.5px var(--font-base);
   text-decoration: none;
   border: 1px solid transparent;
 }
@@ -137,12 +141,12 @@
 .pub-nav a {
   color: var(--texte-menu);
   text-decoration: none;
-  padding: 0.45rem 0.8rem;
-  border-radius: 8px;
-  font-size: 0.92rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  font-size: 12.5px;
 }
 .pub-nav a:hover {
-  background: var(--carte-fond);
+  background: var(--menu-survol);
   color: var(--texte-menu);
 }
 .pub-nav__cta {
@@ -162,8 +166,8 @@
   overflow: hidden;
 }
 .pub-hero__in {
-  padding-top: 2.2rem;
-  padding-bottom: 2.4rem;
+  padding-top: 1.4rem;
+  padding-bottom: 1.6rem;
   position: relative;
 }
 .pub-ariane {
@@ -180,15 +184,15 @@
 .pub-hero h1 {
   color: var(--texte-menu); /* la règle globale h1 (encre sombre) l'emportait sur l'héritage du blanc de la bannière */
   margin: 0 0 0.5rem;
-  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-size: clamp(1.3rem, 2.2vw, 1.7rem);
   font-weight: 500;
   line-height: 1.15; /* sur deux lignes (mobile), les lignes se chevauchaient avec l'interligne hérité */
   letter-spacing: -0.02em;
   max-width: 30ch;
 }
 .pub-hero__promesse {
-  margin: 0 0 1.4rem;
-  font-size: 1.08rem;
+  margin: 0 0 1rem;
+  font-size: 13.5px;
   color: var(--texte-menu);
   max-width: 60ch;
 }
@@ -200,7 +204,7 @@
 .pub-reperes {
   display: flex;
   gap: 2rem;
-  margin: 1.6rem 0 0;
+  margin: 1.1rem 0 0;
   flex-wrap: wrap;
 }
 .pub-repere {
@@ -208,7 +212,7 @@
   flex-direction: column;
 }
 .pub-repere__v {
-  font: 500 1.35rem/1.2 var(--police-texte);
+  font: 500 1.15rem/1.2 var(--police-texte);
   color: var(--or); /* or sur la bande du menu (contrastes-coquille.mjs) */
 }
 .pub-repere__l {
@@ -219,12 +223,12 @@
 
 /* ── Section : titre + trois cartes ── */
 .pub-section {
-  padding-top: 2.2rem;
-  padding-bottom: 3rem;
+  padding-top: 1.4rem;
+  padding-bottom: 2rem;
 }
 .pub-section h2 {
   margin: 0 0 0.35rem;
-  font-size: 1.45rem;
+  font-size: 17px;
   color: var(--p-800);
   font-weight: 500;
   letter-spacing: -0.01em;
@@ -242,17 +246,17 @@
 .pub-carte {
   background: var(--carte-fond);
   border: 1px solid var(--n-200);
-  border-radius: 14px;
-  padding: 1.15rem 1.25rem 1.3rem;
+  border-radius: 4px;
+  padding: 0.9rem 1rem 1rem;
   box-shadow: none;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 .pub-carte__n {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
   background: var(--p-50);
   color: var(--p-800);
   display: grid;
@@ -262,13 +266,13 @@
 }
 .pub-carte h3 {
   margin: 0.2rem 0 0;
-  font-size: 1.05rem;
+  font-size: 14px;
   font-weight: 500;
 }
 .pub-carte p {
   margin: 0;
   color: var(--n-500);
-  font-size: 0.93rem;
+  font-size: 12.5px;
 }
 /* Mots-clés : des LIENS (bleu, gras) vers l'écran concerné ; en gras seul quand l'écran dépend du profil. */
 .pub-mot {
@@ -284,21 +288,21 @@
 }
 
 /* ── Pied ── */
+/* Pied réduit, bleu nuit, comme celui de la coquille. */
 .pub-pied {
-  border-top: 1px solid var(--n-200);
-  background: var(--carte-fond);
+  background: var(--menu-fond);
 }
 .pub-pied__in {
-  padding-top: 1.2rem;
-  padding-bottom: 1.2rem;
+  padding-top: 8px;
+  padding-bottom: 8px;
   display: flex;
   gap: 1.5rem;
   flex-wrap: wrap;
-  font-size: 0.85rem;
-  color: var(--n-500);
+  font-size: 11px;
+  color: var(--texte-menu);
 }
 .pub-pied a {
-  color: var(--n-500);
+  color: var(--or);
 }
 
 @media (max-width: 900px) {

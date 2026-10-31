@@ -133,7 +133,8 @@ Inventaire, décisions du pilote (Q1-Q6) et plan : `docs/design-institutionnel-i
   `--neutre-*`…). Aucune couleur écrite dans un composant. Les anciens jetons (`--p-*`, `--n-*`,
   `--success-*`…) de `styles/_design-system.scss` y sont **redirigés** — ne pas leur redonner de valeur.
   **Aucun texte en bleu** (le bleu n'est qu'un fond : menu, bouton principal, onglet actif) ; ni dégradé ni
-  ombre portée ; deux graisses, 400 et 500 ; texte en pile système, titres de page en Georgia.
+  ombre portée ; deux graisses, 400 et 500 ; texte en pile système, titres de page SANS empattements (Georgia réservée à
+  la marque « PRS 2.0 », `--police-marque` — direction « Espace de travail », 31/10).
   **Une seule police pour tous les chiffres** (pilote, 31/10) : montants, dates, références, empreintes prennent la police
   du texte, chiffres à largeur égale (`tabular-nums`) — jamais de chasse fixe (Consolas, monospace) ; `--cnm-mono` et la classe
   `.cnm-mono` y sont redirigés, DM Mono est retirée.
@@ -157,6 +158,13 @@ Inventaire, décisions du pilote (Q1-Q6) et plan : `docs/design-institutionnel-i
   dossiers du périmètre s'appelle « Dossiers » chez tous les profils (« Tous mes dossiers » chez la PRMP et l'UGPM).
   Un menu long se range en **colonnes titrées** : `NavItem.colonne` (Accès et Référentiels de l'Administrateur) ; une
   rubrique de plus de trois colonnes s'ouvre sur toute la largeur de la barre.
+- **Espace de travail (pilote, 31/10)** — l'application est COMPACTE (en-tête bleu nuit fondu avec le menu de 36 px, pied
+  réduit ; la connexion, l'inscription, le portail public et les espaces externes portent le même en-tête) :
+  - une liste dont l'élément s'ouvre se présente en **deux volets** : `app-deux-volets` (`shared/ui/deux-volets.ts`), la
+    ligne est un `<button aria-pressed>` (c'est ce que parcourent J/K) ; un détail en modale peut s'y poser en mode intégré
+    (ex. `app-detail-pv-modal [integre]="true"`) ;
+  - le pied d'un **formulaire de page** porte la classe `.barre-actions` (collée au bas de la fenêtre) — jamais en modale ;
+  - **raccourcis clavier** : `core/clavier/raccourcis-clavier.ts` (J/K, Entrée, /, ?), branchés dans la coquille.
 - **Composants partagés** (`shared/ui/`) : `app-titre-page`, `app-bloc`, `app-carte-indicateurs`,
   `app-bandeau-section` ; badge de statut = `app-statut-badge` / classes `.badge-*` (4 familles, via
   `statutSeverity()`).

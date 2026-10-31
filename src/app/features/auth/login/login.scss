@@ -10,18 +10,19 @@
 }
 
 /* En-tête blanc au logo du Ministère (comme la coquille). */
+/* ⚠️ 31/10 (pilote, Espace de travail, lot 6) — même en-tête que la coquille : bleu nuit profond, compact. */
 .lg-entete {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 18px;
-  background: var(--carte-fond);
-  border-bottom: 1px solid var(--bordure);
+  gap: 10px;
+  padding: 6px 14px;
+  background: var(--section-fond);
+  color: var(--texte-menu);
 
-  &__logo { width: 42px; height: 42px; flex: none; }
+  &__logo { width: 30px; height: 30px; flex: none; object-fit: contain; }
   &__textes { display: flex; flex-direction: column; line-height: 1.2; }
-  &__institution { font-size: 12px; color: var(--texte-secondaire); }
-  &__appli { font-family: var(--police-marque); font-size: 17px; font-weight: 500; color: var(--texte); }
+  &__institution { font-size: 10.5px; color: var(--texte-menu-secondaire); }
+  &__appli { font-family: var(--police-marque); font-size: 15px; font-weight: 500; color: var(--texte-menu); }
 }
 
 .login-page {

@@ -74,9 +74,10 @@ import { routeNotificationExterne } from './notification-externe-route';
   `,
   styles: `
     .ce { position: relative; display: inline-flex; }
-    .ce__cloche { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 1px solid var(--n-300); border-radius: var(--radius-md); background: var(--carte-fond); color: var(--n-800); cursor: pointer; }
-    .ce__cloche:hover { background: var(--n-100); }
-    .ce__cloche:focus-visible { outline: 3px solid var(--p-700); outline-offset: 2px; }
+    /* ⚠️ 31/10 (Espace de travail, lot 6) — posée sur l’en-tête sombre des espaces externes, comme la cloche de la coquille. */
+    .ce__cloche { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 1px solid var(--texte-menu-secondaire); border-radius: 4px; background: transparent; color: var(--texte-menu); cursor: pointer; }
+    .ce__cloche:hover { background: var(--menu-survol); }
+    .ce__cloche:focus-visible { outline: 2px solid var(--or); outline-offset: 2px; }
     .ce--sombre .ce__cloche { background: var(--carte-fond); border-color: var(--bordure); color: var(--texte-menu); }
     .ce--sombre .ce__cloche:hover { background: var(--carte-fond); }
     .ce--sombre .ce__cloche:focus-visible { outline-color: var(--bordure); }

@@ -159,26 +159,29 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
   styles: `
     :host { display: flex; flex-direction: column; min-height: 100vh; background: var(--page-fond); color: var(--texte); }
     .cl-evitement:focus { position: fixed; inset: auto auto 1rem 1rem; width: auto; height: auto; clip: auto; padding: 0.5rem 0.9rem; background: var(--bouton-principal); color: var(--texte-menu); border-radius: 6px; z-index: 10; }
-    .cl-top { background: var(--carte-fond); border-bottom: 1px solid var(--bordure); }
+    /* ⚠️ 31/10 (pilote, Espace de travail, lot 6) — même en-tête que la coquille : bleu nuit profond, compact, fondu avec la barre. */
+    .cl-top { background: var(--section-fond); color: var(--texte-menu); }
     .cl-top__in, .cl-main, .cl-pied__in { width: 100%; max-width: 1200px; margin: 0 auto; padding-left: 18px; padding-right: 18px; box-sizing: border-box; }
-    .cl-top__in { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; padding-top: 12px; padding-bottom: 12px; }
-    .cl-marque { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--texte); }
-    .cl-marque__logo { width: 42px; height: 42px; object-fit: contain; flex-shrink: 0; }
+    .cl-top__in { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; padding-top: 6px; padding-bottom: 6px; }
+    .cl-marque { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--texte-menu); }
+    .cl-marque:focus-visible { outline: 2px solid var(--or); outline-offset: 2px; }
+    .cl-marque__logo { width: 30px; height: 30px; object-fit: contain; flex-shrink: 0; }
     .cl-marque__texte { display: flex; flex-direction: column; line-height: 1.2; }
-    .cl-marque__s { font-size: 11px; color: var(--texte-secondaire); }
-    .cl-marque__t { font-family: var(--police-marque); font-size: 16px; font-weight: 500; color: var(--texte); }
+    .cl-marque__s { font-size: 10.5px; color: var(--texte-menu-secondaire); }
+    .cl-marque__t { font-family: var(--police-marque); font-size: 15px; font-weight: 500; color: var(--texte-menu); }
     .cl-onglets { background: var(--menu-fond); }
     .cl-nav { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 12px; box-sizing: border-box; display: flex; align-items: flex-end; gap: 2px; overflow-x: auto; scrollbar-width: thin; }
-    .cl-nav a { flex: none; white-space: nowrap; margin-top: 5px; padding: 9px 13px; border-radius: 6px 6px 0 0; color: var(--texte-menu); text-decoration: none; font-size: 13px; transition: background 0.15s ease; }
+    .cl-nav a { flex: none; white-space: nowrap; margin-top: 4px; padding: 7px 12px; border-radius: 4px 4px 0 0; color: var(--texte-menu); text-decoration: none; font-size: 13px; transition: background 0.15s ease; }
     .cl-nav a:hover:not(.active) { background: var(--menu-survol); }
     .cl-nav a.active { background: var(--onglet-actif-fond); color: var(--texte); font-weight: 500; }
     .cl-nav a:focus-visible { outline: 2px solid var(--or); outline-offset: -2px; }
     .cl-top__actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-left: auto; font-size: 12px; color: var(--texte-secondaire); }
     .cl-user { display: flex; flex-direction: column; line-height: 1.2; margin-right: 0.25rem; text-align: right; }
-    .cl-user__nom { color: var(--texte); }
-    .cl-user__role { font-size: 11px; color: var(--texte-secondaire); }
-    .cl-btn { display: inline-flex; align-items: center; gap: 0.35rem; padding: 7px 14px; border: 1px solid var(--bordure); border-radius: 6px; background: var(--carte-fond); color: var(--texte); font: inherit; font-size: 12px; text-decoration: none; cursor: pointer; }
-    .cl-btn:hover { background: var(--ligne-survol); }
+    .cl-user__nom { color: var(--texte-menu); }
+    .cl-user__role { font-size: 11px; color: var(--texte-menu-secondaire); }
+    .cl-btn { display: inline-flex; align-items: center; gap: 0.35rem; padding: 4px 10px; border: 1px solid var(--texte-menu-secondaire); border-radius: 4px; background: transparent; color: var(--texte-menu); font: inherit; font-size: 12px; text-decoration: none; cursor: pointer; }
+    .cl-btn:hover { background: var(--menu-survol); }
+    .cl-btn:focus-visible { outline: 2px solid var(--or); outline-offset: 1px; }
     .cl-btn--primaire { background: var(--bouton-principal); border-color: var(--bouton-principal); color: var(--texte-menu); }
     .cl-btn--primaire:hover { background: var(--bouton-principal); filter: brightness(0.92); }
     .cl-main { flex: 1; padding-top: 14px; padding-bottom: 24px; }
