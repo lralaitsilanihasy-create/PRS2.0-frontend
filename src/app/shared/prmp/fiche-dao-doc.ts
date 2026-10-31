@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, input, output, signal, viewChild } from '@angular/core';
 import { of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 
@@ -26,6 +26,30 @@ export interface CelluleFicheCliquee {
   element: HTMLElement;
 }
 
+/** Vue « volets » (31/10) : une information de la fiche, telle qu'elle s'affiche (une par lot quand le champ varie par lot). */
+interface InfoVolet {
+  c: ChampFiche;
+  lot: number | null;
+  cle: string;
+  valeur: string;
+}
+interface RubriqueVolet {
+  r: RubriqueFiche;
+  infos: InfoVolet[];
+}
+interface BlocVolet {
+  bloc: BlocFiche;
+  rubriques: RubriqueVolet[];
+  total: number;
+  remplis: number;
+}
+/** Écart entre les deux colonnes de la vue « volets » (px) : la navigation de page en dépend. */
+const ECART_COLONNES = 18;
+/** Comparaison de recherche : casse et accents ignorés. */
+function pourChercher(s: string): string {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
 /** Une observation déjà posée sur une information de la fiche (pastille numérotée sur la cellule). */
 export interface ObservationCelluleFiche {
   champFiche: string;
@@ -47,11 +71,112 @@ export interface ObservationCelluleFiche {
   standalone: true,
   imports: [FicheBesoin],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '(window:resize)': 'mesurer()', '(keydown)': 'clavier($event)' },
   template: `
     @if (chargement()) {
       <p class="doc-etat" role="status">Chargement de la fiche DAO…</p>
     } @else if (erreur() || !fiche()) {
       <p class="doc-etat">La fiche DAO de ce dossier n'a pas pu être lue.</p>
+    } @else if (vue() === 'volets') {
+      <!-- ⚠️ 31/10 (pilote, maquette « Fiche DAO sans défilement », variante B) — la fenêtre de la page du dossier : le sommaire des blocs
+           (noms complets) à gauche, UN bloc à droite en deux colonnes ; un bloc qui ne tient pas passe sur une page suivante plutôt
+           qu'en défilement. Recherche dans toute la fiche, filtre « Non renseignées », « Copier », flèches du clavier. -->
+      <div #volets class="fv" [style.height.px]="hauteur()">
+        <div class="fv-outils">
+          <label class="fv-recherche">
+            <span aria-hidden="true">⌕</span>
+            <input #champRecherche type="search" [value]="recherche()" (input)="recherche.set($any($event.target).value)"
+                   placeholder="Chercher une information dans toute la fiche…" aria-label="Chercher une information dans toute la fiche" />
+          </label>
+          <div class="fv-filtres" role="group" aria-label="Informations affichées">
+            <button type="button" class="fv-filtre" [attr.aria-pressed]="!seulementVides()" (click)="poserFiltre(false)">Toutes</button>
+            <button type="button" class="fv-filtre" [attr.aria-pressed]="seulementVides()" (click)="poserFiltre(true)">Non renseignées</button>
+          </div>
+          <span class="fv-legende"><span><i class="fv-puce fv-puce--ok"></i>renseignée</span><span><i class="fv-puce fv-puce--vide"></i>à compléter</span></span>
+        </div>
+        <div class="fv-corps">
+          <nav class="fv-rail" aria-label="Blocs de la fiche">
+            <span class="fv-rail__titre">Blocs de la fiche</span>
+            @for (v of vueBlocs(); track v.bloc.code; let k = $index) {
+              <button type="button" class="fv-rail__nom" [attr.aria-current]="k === blocIndex() && !recherche().trim() ? 'true' : null"
+                      [attr.title]="v.bloc.rendu === 'BESOIN' ? 'Expression du besoin' : v.total - v.remplis ? (v.total - v.remplis) + ' information(s) à saisir' : 'Bloc complet'"
+                      (click)="choisirBloc(k)">{{ v.bloc.libelle }}</button>
+            }
+            <span class="fv-rail__aide"><kbd>↑</kbd> <kbd>↓</kbd> changer de bloc · <kbd>/</kbd> chercher</span>
+          </nav>
+          <section class="fv-bloc" aria-live="polite">
+            @if (recherche().trim()) {
+              <div class="fv-bloc__tete">
+                <h3 class="fv-bloc__titre">Recherche « {{ recherche().trim() }} »</h3>
+                <span class="fv-pill fv-pill--neutre">{{ resultats().length }} résultat{{ resultats().length > 1 ? 's' : '' }}</span>
+              </div>
+              <div class="fv-resultats">
+                @for (r of resultats().slice(0, 12); track r.info.cle) {
+                  <button type="button" class="fv-resultat" (click)="ouvrirResultat(r.k)">
+                    <span class="fv-resultat__code">{{ r.code }}</span>
+                    <span class="fv-resultat__texte">
+                      <span class="fv-resultat__lib">{{ r.rubrique }} · {{ r.info.c.libelle }}@if (r.info.lot !== null) { — lot {{ r.info.lot }} }</span>
+                      @if (r.info.valeur) { <span>{{ r.info.valeur }}</span> } @else { <span class="fv-vide">Non renseignée</span> }
+                    </span>
+                  </button>
+                } @empty {
+                  <p class="fv-etat">Aucune information ne contient ce texte.</p>
+                }
+                @if (resultats().length > 12) { <p class="fv-etat">… et {{ resultats().length - 12 }} autres : précisez la recherche.</p> }
+              </div>
+            } @else if (blocCourant(); as v) {
+              <div class="fv-bloc__tete">
+                <span class="fv-code">{{ v.bloc.code }}</span>
+                <h3 class="fv-bloc__titre">{{ v.bloc.libelle }}</h3>
+                @if (nbPages() > 1) { <span class="fv-pill fv-pill--neutre">page {{ page() + 1 }} / {{ nbPages() }}</span> }
+                @if (v.bloc.rendu !== 'BESOIN') {
+                  <span class="fv-pill" [class.fv-pill--ok]="v.remplis === v.total" [class.fv-pill--vide]="v.remplis < v.total">{{ v.remplis }} / {{ v.total }} renseignées</span>
+                }
+              </div>
+              @if (v.bloc.rendu === 'BESOIN') {
+                <!-- Le besoin est un tableau à lui seul (articles, quantités) : il garde son propre défilement. -->
+                <div class="fv-besoin">
+                  <app-fiche-besoin [idDmc]="idDmc()" [nbLots]="fiche()!.nbLots ?? 0" [saisieParLot]="fiche()!.saisieParLot === true"
+                                    [typeMarche]="fiche()!.typeMarche" [lecture]="true" />
+                </div>
+              } @else if (rubriquesAffichees().length) {
+                <div class="fv-cadre"><div #grille class="fv-grille">
+                  @for (r of rubriquesAffichees(); track r.r.code) {
+                    <section class="fv-rub">
+                      <h4 class="fv-rub__titre"><span>{{ r.r.libelle }}</span><span>{{ r.infos.length }}</span></h4>
+                      <dl class="fv-rub__liste">
+                        @for (i of r.infos; track i.cle) {
+                          @let numeros = observationsDe(i.cle);
+                          <div class="fv-info" [class.fv-info--vide]="!i.valeur" [class.fv-info--citee]="citees().has(i.c.code)" [attr.data-champ]="i.c.code">
+                            <dt>{{ i.c.libelle }}@if (i.lot !== null) { <span class="doc-lot">lot {{ i.lot }}</span> }</dt>
+                            <dd [class.fv-long]="i.valeur.length > 260 && !deplies().has(i.cle)">{{ i.valeur || 'Non renseignée' }}</dd>
+                            @if (i.valeur.length > 260 && !deplies().has(i.cle)) {
+                              <button type="button" class="fv-suite" (click)="deplier(i.cle)">Lire la suite</button>
+                            }
+                            @if (numeros.length) { <span class="fv-obs">{{ libelleObs(numeros) }}</span> }
+                            @if (i.valeur) {
+                              <button type="button" class="fv-copier" [attr.aria-label]="'Copier « ' + i.c.libelle + ' »'" (click)="copier(i.cle, i.valeur)">
+                                {{ copie() === i.cle ? 'Copié' : 'Copier' }}
+                              </button>
+                            }
+                          </div>
+                        }
+                      </dl>
+                    </section>
+                  }
+                </div></div>
+              } @else {
+                <p class="fv-etat">Toutes les informations de ce bloc sont renseignées.</p>
+              }
+              <div class="fv-nav">
+                <button type="button" class="btn btn-outline btn-sm" [disabled]="!aPrecedent()" (click)="precedent()">‹ {{ libellePrecedent() }}</button>
+                <span class="fv-nav__ou">Bloc {{ blocIndex() + 1 }} sur {{ vueBlocs().length }}@if (nbPages() > 1) { · page {{ page() + 1 }} / {{ nbPages() }} }</span>
+                <button type="button" class="btn btn-primary btn-sm" [disabled]="!aSuivant()" (click)="suivant()">{{ libelleSuivant() }} ›</button>
+              </div>
+            }
+          </section>
+        </div>
+      </div>
     } @else {
       <article class="doc doc-dao">
         <!-- ⚠️ 18/10 (pilote, lot A) — un en-tête de document : l'objet en titre, les métadonnées en pastilles, l'action de l'hôte
@@ -205,6 +330,79 @@ export interface ObservationCelluleFiche {
     .doc-modif { display: block; margin-top: 0.15rem; font-size: 0.74rem; color: var(--p-700); }
     .doc-etat { color: var(--n-500); font-size: 0.9rem; }
     .doc-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+
+    /* ⚠️ 31/10 (pilote) — vue « volets » de la fenêtre du dossier : rien ne défile, la hauteur est celle qui reste dans la fenêtre. */
+    .fv { display: flex; flex-direction: column; min-height: 22rem; border: 1px solid var(--bordure); border-radius: 4px; overflow: hidden; background: var(--carte-fond); }
+    .fv-outils { flex: none; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 7px 12px; background: var(--tableau-entete); border-bottom: 1px solid var(--bordure); }
+    .fv-recherche { display: flex; align-items: center; gap: 6px; flex: 1 1 16rem; max-width: 26rem; height: 28px; padding: 0 9px; background: var(--carte-fond); border: 1px solid var(--bordure-champ); border-radius: 4px; color: var(--texte-secondaire); }
+    .fv-recherche:focus-within { outline: 2px solid var(--bouton-principal); outline-offset: 1px; }
+    .fv-recherche input { flex: 1; min-width: 0; border: 0; outline: none; font: inherit; background: transparent; color: var(--texte); }
+    .fv-filtres { display: flex; gap: 4px; }
+    .fv-filtre { padding: 3px 10px; border: 1px solid var(--bordure); border-radius: 14px; background: var(--carte-fond); color: var(--texte); font: inherit; font-size: 12px; cursor: pointer; }
+    .fv-filtre[aria-pressed="true"] { background: var(--menu-fond); border-color: var(--menu-fond); color: var(--texte-menu); }
+    .fv-filtre:focus-visible { outline: 2px solid var(--bouton-principal); outline-offset: 2px; }
+    .fv-legende { margin-left: auto; display: flex; gap: 10px; font-size: 11px; color: var(--texte-secondaire); }
+    .fv-legende > span { display: inline-flex; align-items: center; gap: 4px; }
+    .fv-puce { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .fv-puce--ok { background: var(--favorable-texte); }
+    .fv-puce--vide { background: var(--or); }
+    .fv-corps { flex: 1; min-height: 0; display: grid; grid-template-columns: 18.5rem minmax(0, 1fr); }
+    .fv-rail { display: flex; flex-direction: column; gap: 1px; padding: 8px 6px; background: var(--menu-fond); color: var(--texte-menu); min-height: 0; }
+    .fv-rail__titre { padding: 2px 8px 6px; font-size: 10.5px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--texte-menu-secondaire); }
+    .fv-rail__nom { display: block; padding: 5px 12px; border: 0; border-radius: 4px; background: transparent; color: var(--texte-menu); font: inherit; font-size: 12.5px; line-height: 1.3; text-align: left; cursor: pointer; }
+    .fv-rail__nom:hover { background: var(--menu-survol); }
+    .fv-rail__nom[aria-current="true"] { background: var(--onglet-actif-fond); color: var(--texte); font-weight: 500; box-shadow: inset 3px 0 0 var(--or); }
+    .fv-rail__nom:focus-visible { outline: 2px solid var(--or); outline-offset: -2px; }
+    .fv-rail__aide { margin-top: auto; padding: 6px 8px 2px; font-size: 11px; color: var(--texte-menu-secondaire); }
+    .fv-rail__aide kbd, .fv kbd { font: inherit; font-size: 10.5px; padding: 0 4px; border: 1px solid var(--texte-menu-secondaire); border-radius: 3px; }
+    .fv-bloc { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+    .fv-bloc__tete { flex: none; display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 1px solid var(--bordure); }
+    .fv-code { padding: 2px 7px; border-radius: 3px; background: var(--section-fond); color: var(--texte-menu); font-size: 11px; font-weight: 500; }
+    .fv-bloc__titre { margin: 0; flex: 1; min-width: 0; font-size: 15px; font-weight: 500; }
+    .fv-pill { flex: none; padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+    .fv-pill--ok { background: var(--favorable-fond); color: var(--favorable-texte); }
+    .fv-pill--vide { background: var(--examen-fond); color: var(--examen-texte); }
+    .fv-pill--neutre { background: var(--neutre-fond); color: var(--neutre-texte); }
+    /* Les rubriques coulent dans deux colonnes ; au-delà, des colonnes « de page suivante », amenées par la navigation (scrollLeft). */
+    .fv-cadre { flex: 1; min-height: 0; margin: 10px 14px 0; overflow: hidden; }
+    .fv-grille { height: 100%; columns: 2; column-gap: 18px; column-fill: auto; }
+    .fv-rub { margin: 0 0 12px; border: 1px solid var(--bordure); border-radius: 4px; overflow: hidden; }
+    .fv-rub__titre { display: flex; justify-content: space-between; gap: 8px; margin: 0; padding: 4px 10px; background: var(--tableau-entete); color: var(--neutre-texte); font-size: 10.5px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; break-after: avoid; }
+    .fv-rub__liste { margin: 0; }
+    .fv-info { position: relative; break-inside: avoid; padding: 5px 10px 6px 13px; border-top: 1px solid var(--bordure); }
+    .fv-info:first-child { border-top: 0; }
+    .fv-info::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--favorable-fond); }
+    .fv-info:hover { background: var(--ligne-survol); }
+    .fv-info dt { padding-right: 56px; font-size: 11px; color: var(--texte-secondaire); }
+    .fv-info dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--texte); }
+    .fv-info--vide::before { background: var(--or); }
+    .fv-info--vide dd { color: var(--examen-texte); font-style: italic; }
+    .fv-info--citee { background: var(--examen-fond); }
+    .fv-long { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+    .fv-suite { padding: 0; border: 0; background: none; color: var(--texte); font: inherit; font-size: 11.5px; text-decoration: underline; text-decoration-color: var(--lien-soulignement); cursor: pointer; }
+    .fv-obs { display: block; font-size: 11px; color: var(--examen-texte); }
+    .fv-copier { position: absolute; right: 8px; top: 5px; padding: 0 6px; border: 1px solid var(--bordure); border-radius: 3px; background: var(--carte-fond); color: var(--texte); font: inherit; font-size: 11px; cursor: pointer; opacity: 0; }
+    .fv-info:hover .fv-copier, .fv-copier:focus-visible { opacity: 1; }
+    .fv-besoin { flex: 1; min-height: 0; overflow: auto; padding: 10px 14px; }
+    .fv-resultats { flex: 1; min-height: 0; overflow: hidden; display: grid; gap: 6px; align-content: start; padding: 10px 14px; }
+    .fv-resultat { display: grid; grid-template-columns: 3rem minmax(0, 1fr); gap: 8px; padding: 6px 10px; border: 1px solid var(--bordure); border-radius: 4px; background: var(--carte-fond); color: var(--texte); font: inherit; text-align: left; cursor: pointer; }
+    .fv-resultat:hover { background: var(--ligne-survol); }
+    .fv-resultat__code { font-weight: 500; }
+    .fv-resultat__texte { display: flex; flex-direction: column; min-width: 0; overflow-wrap: anywhere; }
+    .fv-resultat__lib { font-size: 11px; color: var(--texte-secondaire); }
+    .fv-vide { color: var(--examen-texte); font-style: italic; }
+    .fv-etat { margin: 0; padding: 24px 14px; color: var(--texte-secondaire); }
+    .fv-nav { flex: none; display: flex; align-items: center; gap: 10px; margin-top: auto; padding: 7px 14px; border-top: 1px solid var(--bordure); background: var(--tableau-entete); }
+    .fv-nav__ou { margin: 0 auto; font-size: 12px; color: var(--texte-secondaire); }
+    @media (max-width: 52rem) {
+      .fv { height: auto !important; }
+      .fv-corps { grid-template-columns: minmax(0, 1fr); }
+      .fv-rail { flex-direction: row; overflow-x: auto; }
+      .fv-rail__nom { white-space: nowrap; }
+      .fv-rail__titre, .fv-rail__aide, .fv-legende { display: none; }
+      .fv-cadre { overflow: visible; }
+      .fv-grille { height: auto; columns: 1; transform: none !important; }
+    }
   `],
 })
 export class FicheDaoDoc {
@@ -226,6 +424,165 @@ export class FicheDaoDoc {
   /** ⚠️ 18/10 (lot B) — l'information (ou le bloc) à montrer : la fiche y défile et la surligne. Le jeton rejoue un même code. */
   readonly cible = input<{ code: string; jeton: number } | null>(null);
   private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  // ── ⚠️ 31/10 (pilote) — vue « volets » de la fenêtre du dossier ──────────────────────────────────────────────────────────
+  /** `volets` : la fenêtre « Fiche DAO » de la page du dossier (sommaire + un bloc, sans défilement) ; `document` ailleurs (examen). */
+  readonly vue = input<'document' | 'volets'>('document');
+  private readonly voletsRef = viewChild<ElementRef<HTMLElement>>('volets');
+  private readonly grilleRef = viewChild<ElementRef<HTMLElement>>('grille');
+  private readonly rechercheRef = viewChild<ElementRef<HTMLInputElement>>('champRecherche');
+  /** La hauteur qui reste dans la fenêtre sous l'en-tête de la fiche (px) ; nulle avant la première mesure. */
+  readonly hauteur = signal<number | null>(null);
+  readonly blocIndex = signal(0);
+  readonly page = signal(0);
+  readonly nbPages = signal(1);
+  readonly recherche = signal('');
+  readonly seulementVides = signal(false);
+  readonly deplies = signal<ReadonlySet<string>>(new Set());
+  readonly copie = signal<string | null>(null);
+
+  readonly vueBlocs = computed<BlocVolet[]>(() => {
+    if (this.vue() !== 'volets') return [];
+    return this.blocs().map((bloc) => {
+      const rubriques =
+        bloc.rendu === 'BESOIN'
+          ? []
+          : this.rubriques(bloc)
+              .map((r) => ({ r, infos: this.champs(bloc, r).flatMap((c) => this.lotsDe(c).map((lot) => ({ c, lot, cle: this.cle(c, lot), valeur: this.valeur(c, lot) }))) }))
+              .filter((x) => x.infos.length);
+      const infos = rubriques.flatMap((x) => x.infos);
+      return { bloc, rubriques, total: infos.length, remplis: infos.filter((i) => !!i.valeur).length };
+    });
+  });
+  readonly blocCourant = computed(() => this.vueBlocs()[this.blocIndex()] ?? null);
+  readonly rubriquesAffichees = computed<RubriqueVolet[]>(() => {
+    const v = this.blocCourant();
+    if (!v) return [];
+    if (!this.seulementVides()) return v.rubriques;
+    return v.rubriques.map((x) => ({ r: x.r, infos: x.infos.filter((i) => !i.valeur) })).filter((x) => x.infos.length);
+  });
+  readonly resultats = computed(() => {
+    const q = pourChercher(this.recherche().trim());
+    if (!q) return [];
+    return this.vueBlocs().flatMap((v, k) =>
+      v.rubriques.flatMap((x) =>
+        x.infos
+          .filter((i) => pourChercher(i.c.libelle).includes(q) || pourChercher(i.valeur).includes(q))
+          .map((info) => ({ k, code: v.bloc.code, rubrique: x.r.libelle, info })),
+      ),
+    );
+  });
+  readonly aPrecedent = computed(() => this.page() > 0 || this.blocIndex() > 0);
+  readonly aSuivant = computed(() => this.page() < this.nbPages() - 1 || this.blocIndex() < this.vueBlocs().length - 1);
+  readonly libellePrecedent = computed(() => {
+    if (this.page() > 0) return `Page ${this.page()} du bloc`;
+    const p = this.vueBlocs()[this.blocIndex() - 1];
+    return p ? `${p.bloc.code} ${this.court(p.bloc.libelle)}` : 'Début';
+  });
+  readonly libelleSuivant = computed(() => {
+    if (this.page() < this.nbPages() - 1) return `Suite du bloc (page ${this.page() + 2})`;
+    const s = this.vueBlocs()[this.blocIndex() + 1];
+    return s ? `${s.bloc.code} ${this.court(s.bloc.libelle)}` : 'Fin';
+  });
+
+  /** La fenêtre s'ouvre : on mesure la place qui reste (après l'animation d'ouverture aussi). */
+  private readonly suiviHauteur = effect(() => {
+    if (this.vue() !== 'volets' || this.chargement() || !this.fiche()) return;
+    setTimeout(() => this.mesurer());
+    setTimeout(() => this.mesurer(), 400);
+  });
+  /** Bloc, filtre, hauteur ou page changés : on recompte les pages et on amène la page courante. */
+  private readonly suiviPages = effect(() => {
+    this.rubriquesAffichees();
+    this.hauteur();
+    this.deplies();
+    this.page();
+    this.recherche();
+    setTimeout(() => this.paginer());
+  });
+
+  mesurer(): void {
+    if (this.vue() !== 'volets') return;
+    const el = this.voletsRef()?.nativeElement;
+    if (!el) return;
+    const corps = el.closest('.modal-body');
+    const bas = corps ? corps.getBoundingClientRect().bottom : window.innerHeight;
+    // 18 px : la marge basse de la section qui accueille la fiche, et une marge de sûreté contre un défilement d'un pixel.
+    this.hauteur.set(Math.max(352, Math.floor(bas - el.getBoundingClientRect().top - 18)));
+  }
+  /**
+   * Les rubriques coulent dans deux colonnes ; ce qui ne tient pas forme des colonnes au-delà, que le cadre masque. Une « page » = deux
+   * colonnes : on les compte, et on amène la page courante en TRANSLATANT la grille — pas par scrollLeft, que le navigateur borne quand
+   * la dernière page n'a qu'une colonne (elle reprenait alors une colonne de la page précédente). Aucune barre de défilement.
+   */
+  private paginer(): void {
+    const g = this.grilleRef()?.nativeElement;
+    if (!g) {
+      if (this.nbPages() !== 1) this.nbPages.set(1);
+      return;
+    }
+    const pas = g.clientWidth + ECART_COLONNES;
+    const n = Math.max(1, Math.ceil((g.scrollWidth + ECART_COLONNES) / pas - 0.01));
+    if (n !== this.nbPages()) this.nbPages.set(n);
+    if (this.page() >= n) {
+      this.page.set(n - 1);
+      return;
+    }
+    g.style.transform = this.page() ? `translateX(-${this.page() * pas}px)` : '';
+  }
+  choisirBloc(k: number): void {
+    this.blocIndex.set(k);
+    this.page.set(0);
+    this.recherche.set('');
+  }
+  poserFiltre(vides: boolean): void {
+    this.seulementVides.set(vides);
+    this.page.set(0);
+  }
+  suivant(): void {
+    if (this.page() < this.nbPages() - 1) this.page.update((p) => p + 1);
+    else if (this.blocIndex() < this.vueBlocs().length - 1) this.choisirBloc(this.blocIndex() + 1);
+  }
+  precedent(): void {
+    if (this.page() > 0) this.page.update((p) => p - 1);
+    else if (this.blocIndex() > 0) this.choisirBloc(this.blocIndex() - 1);
+  }
+  ouvrirResultat(k: number): void {
+    this.choisirBloc(k);
+  }
+  deplier(cle: string): void {
+    this.deplies.update((s) => new Set(s).add(cle));
+  }
+  copier(cle: string, valeur: string): void {
+    void navigator.clipboard?.writeText(valeur).then(
+      () => this.copie.set(cle),
+      () => this.copie.set(null),
+    );
+  }
+  /** Flèches : bloc ou page suivant/précédent ; « / » : la recherche ; Échap dans la recherche la vide (puis la fenêtre se ferme). */
+  clavier(e: KeyboardEvent): void {
+    if (this.vue() !== 'volets') return;
+    const cible = e.target as HTMLElement | null;
+    if (cible?.tagName === 'INPUT') {
+      if (e.key === 'Escape' && this.recherche()) {
+        this.recherche.set('');
+        e.stopPropagation();
+      }
+      return;
+    }
+    if (e.key === '/') {
+      e.preventDefault();
+      this.rechercheRef()?.nativeElement.focus();
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      this.suivant();
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      this.precedent();
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
   /** Le premier mot significatif d'un intitulé de bloc, pour le sommaire. */
   court(libelle: string): string {
     return (libelle.split(/[ ,&(]/).find((m) => m.length > 2) ?? libelle).replace(/[.:]$/, '');

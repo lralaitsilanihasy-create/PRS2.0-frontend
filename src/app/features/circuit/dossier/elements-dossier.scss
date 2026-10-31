@@ -85,8 +85,9 @@
 .pd-docmodal {
   width: 96vw;
   max-width: 96vw;
-  height: 94vh;
-  max-height: 94vh;
+  /* ⚠️ 31/10 — la hauteur de l’écran moins les marges du voile (1,5 rem de chaque côté) : 94vh les dépassait de 2 px en 768 px de haut. */
+  height: min(94vh, calc(100vh - 3rem));
+  max-height: min(94vh, calc(100vh - 3rem));
   display: flex;
   flex-direction: column;
 }

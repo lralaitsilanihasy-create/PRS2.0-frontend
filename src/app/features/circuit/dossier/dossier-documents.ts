@@ -163,9 +163,15 @@ import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marc
             <app-fiche-marche-dossier [dossier]="contenu.dossier()" [enModale]="true" (liaisonChangee)="liaisonChangee.emit()" />
           }
           <!-- ⚠️ 27/10 (pilote) — la fiche DAO en données seulement : le PDF du DAO complet n’est plus proposé ici. -->
-          <app-document-visionneuse>
-            <app-fiche-dao-doc [idDmc]="idFiche()!" />
-          </app-document-visionneuse>
+          <!-- ⚠️ 31/10 (pilote, maquette variante B) — dans la fenêtre de la page, la fiche se lit SANS défilement : sommaire des blocs à
+               gauche, un bloc à la fois à droite. Ailleurs (onglet de la page), le document reste tel quel. -->
+          @if (ongletImpose()) {
+            <app-fiche-dao-doc [idDmc]="idFiche()!" vue="volets" />
+          } @else {
+            <app-document-visionneuse>
+              <app-fiche-dao-doc [idDmc]="idFiche()!" />
+            </app-document-visionneuse>
+          }
         </div>
       }
       @if (contenu.dossier().idDmc && ongletProcedure() === 'avis') {

@@ -33,7 +33,13 @@ import { LettresInvitation } from '../../../shared/prmp/lettres-invitation';
         <p class="fmd__ligne">
           <span class="fmd__etat" [class.fmd__etat--ok]="f.statut === 'VALIDEE'">{{ f.statut === 'VALIDEE' ? 'Validée' : 'Brouillon' }}</span>
           <span>version {{ f.version }}</span>
-          @if (f.nbAttendus) { <span>· {{ f.nbSaisis ?? 0 }} sur {{ f.nbAttendus }} informations</span> }
+          @if (f.nbAttendus) {
+            <span>· {{ f.nbSaisis ?? 0 }} sur {{ f.nbAttendus }} informations</span>
+            @if (enModale()) {
+              <!-- ⚠️ 31/10 (pilote, maquette variante B) — l'avancement de la saisie, en jauge. -->
+              <i class="fmd__jauge" aria-hidden="true"><b [style.width.%]="((f.nbSaisis ?? 0) * 100) / f.nbAttendus"></b></i>
+            }
+          }
           @if (f.refeDossierPpm) { <span class="fmd__ppm">· ligne du plan {{ f.refeDossierPpm }}</span> }
         </p>
         @if (f.designationMarche) { <p class="fmd__obj">{{ f.designationMarche }}</p> }
@@ -79,7 +85,19 @@ import { LettresInvitation } from '../../../shared/prmp/lettres-invitation';
   `,
   styles: `
     .fmd { background: var(--carte-fond); border: 1px solid var(--n-200); border-radius: 12px; padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.4rem; }
-    .fmd--modale { border: none; padding: 0 0 0.75rem; margin-bottom: 0.75rem; border-bottom: 1px solid var(--n-200); border-radius: 0; }
+    /* ⚠️ 31/10 (pilote, maquette variante B) — dans la fenêtre, une bande bleu nuit compacte : état, version, jauge, ligne du plan, objet ;
+       les gestes à droite. */
+    .fmd--modale { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 14px; align-items: center; margin-bottom: 10px; padding: 8px 14px;
+      border: none; border-radius: 4px; background: var(--section-fond); color: var(--texte-menu); }
+    .fmd--modale .fmd__ligne { grid-column: 1; color: var(--texte-menu-secondaire); }
+    .fmd--modale .fmd__ppm { color: var(--texte-menu-secondaire); }
+    .fmd--modale .fmd__obj { grid-column: 1; color: var(--texte-menu); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fmd--modale .fmd__actions { grid-column: 2; grid-row: 1 / span 2; margin: 0; }
+    .fmd--modale .fmd__actions .btn { background: transparent; border-color: var(--texte-menu-secondaire); color: var(--texte-menu); }
+    .fmd--modale .fmd__actions .btn:hover { background: var(--menu-survol); }
+    .fmd--modale .fmd__actions .btn:focus-visible { outline: 2px solid var(--or); outline-offset: 1px; }
+    .fmd__jauge { display: inline-block; width: 110px; height: 6px; border-radius: 3px; background: var(--menu-survol); overflow: hidden; }
+    .fmd__jauge b { display: block; height: 100%; background: var(--or); }
     .fmd__titre { display: flex; align-items: center; gap: 0.4rem; margin: 0; font-size: 0.95rem; }
     .fmd__ligne { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; margin: 0; font-size: 0.84rem; color: var(--n-600); }
     .fmd__etat { padding: 0.05rem 0.5rem; border-radius: 999px; background: var(--n-100); color: var(--n-600); font-weight: 500; font-size: 0.74rem; }
