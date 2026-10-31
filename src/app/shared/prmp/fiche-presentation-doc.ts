@@ -21,7 +21,7 @@ import { FichePresentation } from './fiche-presentation';
  * Membre). Les données arrivent CALCULÉES (`calculerFichePresentation`) : le composant n'appelle rien.
  *
  * ⚠️ 2026-09-14 (décision des chefs, refonte ergonomique lot 1) — présentée comme la feuille
- * officielle (bordures noires, en-têtes gris clair, Arial) : à envelopper dans
+ * officielle (structure du document ; présentation des tableaux de l'application depuis le 31/10) : à envelopper dans
  * `<app-document-visionneuse>`. La mention d'origine des listes et les observations par ligne sont
  * des annotations, masquables.
  */

@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
 
 /**
- * Visionneuse d'un document officiel : la FEUILLE (page blanche, texte noir, Arial) posée sur un
- * fond gris, avec l'interrupteur « Annotations » quand le document en porte.
+ * Visionneuse d'un document officiel : la FEUILLE, avec l'interrupteur « Annotations » quand le document en porte.
+ * ⚠️ 31/10/2026 (pilote) — la feuille s'affiche comme les tableaux de l'application (carte blanche à filet fin, police du
+ * texte, en-têtes gris clair) ; elle garde la structure du document officiel (_document-officiel.scss).
  *
  * ⚠️ Décision des chefs (2026-09-14, refonte ergonomique, lot 1) — le plan de passation, la fiche
  * de présentation et le projet d'AGPM s'affichent comme le PDF officiel ; ce que l'application y

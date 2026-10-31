@@ -137,7 +137,9 @@ Inventaire, décisions du pilote (Q1-Q6) et plan : `docs/design-institutionnel-i
   **Une seule police pour tous les chiffres** (pilote, 31/10) : montants, dates, références, empreintes prennent la police
   du texte, chiffres à largeur égale (`tabular-nums`) — jamais de chasse fixe (Consolas, monospace) ; `--cnm-mono` et la classe
   `.cnm-mono` y sont redirigés, DM Mono est retirée.
-  `_document-officiel.scss` (avis, DAO, PV réglementaires) garde ses propres couleurs.
+  `_document-officiel.scss` (plan de passation, projet d'AGPM, fiche de présentation) suit la palette depuis le 31/10 : ces
+  documents gardent leur STRUCTURE officielle (colonnes, regroupements, intitulés) mais s'affichent comme les tableaux de
+  l'application (carte blanche, en-têtes `--tableau-entete`, filets `--bordure`, police du texte).
 - **Coquille** (`layout/main-layout`) : bandeau tricolore (classe commune `.bandeau-tricolore`), en-tête au
   logo du Ministère, **menu principal horizontal** collé en haut (`--hauteur-menu`), contenu, pied de page. Le menu garde
   **la même présentation sur toutes les pages** (mode concentration compris) : jamais de bouton « Menu » (« sandwich »,
