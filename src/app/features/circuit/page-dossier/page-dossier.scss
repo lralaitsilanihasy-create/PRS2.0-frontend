@@ -263,6 +263,12 @@
 }
 .pd-etape--pause .pd-etape__d { color: var(--examen-texte); }
 
+/* ── Historique (31/10) ── */
+.pd-historique {
+  display: block;
+  margin: 0.75rem 0;
+}
+
 /* ── Documents ── */
 /* Les blocs (onglets, visionneuse) apportent leurs marges : la section ne fait que les accueillir. */
 .pd-documents {

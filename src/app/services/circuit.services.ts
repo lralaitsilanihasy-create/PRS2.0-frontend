@@ -6,6 +6,8 @@ import { skipErrorToast } from '../core/errors/api-error';
 import { CrudService } from './api/crud.service';
 import {
   AvisSpecifiqueDonnees,
+  EvenementHistorique,
+  FiliationDossier,
   CanevasRapport,
   FichePresentationDao,
   AFaire,
@@ -150,6 +152,20 @@ export class DossierService extends CrudService<Dossier> {
     return this.http.get<RechercheDossier[]>(`${this.baseUrl}/recherche`, {
       params: new HttpParams().set('q', q),
     });
+  }
+
+  /**
+   * ⚠️ 31/10 (pilote, demande « filiation-dossier », B1) — `GET /api/dossiers/{id}/filiation` : l'arbre des dossiers qui s'attachent
+   * à celui-ci, la racine en tête. 403 si le dossier demandé est hors périmètre ; un nœud hors périmètre arrive `masque`.
+   * Silencieux : le bloc « Historique du dossier » affiche lui-même l'échec.
+   */
+  filiation(idDossier: number): Observable<FiliationDossier> {
+    return this.http.get<FiliationDossier>(`${this.baseUrl}/${idDossier}/filiation`, { context: skipErrorToast() });
+  }
+
+  /** ⚠️ 31/10 (B2) — `GET /api/dossiers/{id}/historique` : tout ce qui s'est passé sur ce dossier, trié par date. Silencieux. */
+  historique(idDossier: number): Observable<EvenementHistorique[]> {
+    return this.http.get<EvenementHistorique[]>(`${this.baseUrl}/${idDossier}/historique`, { context: skipErrorToast() });
   }
 
   /**

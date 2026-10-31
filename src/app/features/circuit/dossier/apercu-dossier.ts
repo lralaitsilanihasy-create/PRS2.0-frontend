@@ -5,6 +5,7 @@ import { Dossier } from '../../../models';
 import { ReputeApprouve, StatutBadge } from '../../../shared/circuit';
 import { DossierContenuStore } from './dossier-contenu.store';
 import { DossierIdentite } from './dossier-identite';
+import { HistoriqueDossier } from './historique-dossier';
 
 /**
  * Aperçu d'un dossier dans le volet de droite d'une liste (pilote, 31/10/2026, Espace de travail, lot 3c — « liste + détail
@@ -17,7 +18,7 @@ import { DossierIdentite } from './dossier-identite';
 @Component({
   selector: 'app-apercu-dossier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, StatutBadge, ReputeApprouve, DossierIdentite],
+  imports: [RouterLink, StatutBadge, ReputeApprouve, DossierIdentite, HistoriqueDossier],
   providers: [DossierContenuStore],
   template: `
     <article class="ad" [attr.aria-label]="'Dossier ' + reference()">
@@ -37,6 +38,8 @@ import { DossierIdentite } from './dossier-identite';
         <p class="ad__attente text-sm text-muted" role="status">Chargement du dossier…</p>
       } @else {
         <app-dossier-identite />
+        <!-- ⚠️ 31/10 (pilote) — l'historique complet du dossier, aussi dans le volet de droite des listes. -->
+        <app-historique-dossier [idDossier]="dossier().idDossier" />
       }
     </article>
   `,

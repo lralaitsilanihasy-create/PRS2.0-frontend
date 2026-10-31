@@ -26,3 +26,4 @@ export * from './remise.model';
 export * from './bon-commande.model';
 export * from './reception-commande.model';
 export * from './modele-pv.model';
+export * from './filiation.model';

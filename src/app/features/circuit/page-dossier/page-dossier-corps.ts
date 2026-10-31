@@ -36,6 +36,7 @@ import { FicheMarcheDossier } from './fiche-marche-dossier';
 import { ActesGestionMarche } from './actes-gestion-marche';
 import { ActeGestionDossier } from './acte-gestion-dossier';
 import { SyntheseDossier } from './synthese-dossier';
+import { HistoriqueDossier } from '../dossier/historique-dossier';
 import { AvisSpecifique } from '../../../shared/prmp/avis-specifique';
 import { LettresInvitation } from '../../../shared/prmp/lettres-invitation';
 
@@ -62,6 +63,7 @@ const HAUT_TOPBAR = 48;
   selector: 'app-page-dossier-corps',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    HistoriqueDossier,
     NgTemplateOutlet,
     ElementsDossier,
     AvisSpecifique,
@@ -256,6 +258,10 @@ const HAUT_TOPBAR = 48;
       } @else if (dossier().idTypeDossier === 'DGC') {
         <app-acte-gestion-dossier class="pd-fiche" [dossier]="dossier()" (modifie)="apresGeste()" />
       }
+
+      <!-- ⚠️ 31/10 (pilote) — l'historique complet : les dossiers liés (versions, mise en concurrence, marchés, actes de gestion) et,
+           pour chacun, ses PV, lettres de renvoi et étapes (demande « filiation-dossier », B1-B2). -->
+      <app-historique-dossier class="pd-historique" [idDossier]="dossier().idDossier" />
 
       <section class="pd-documents" aria-label="Documents du dossier">
         @if (contenu.loading()) {

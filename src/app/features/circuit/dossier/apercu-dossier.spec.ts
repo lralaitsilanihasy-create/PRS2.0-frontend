@@ -53,12 +53,14 @@ describe('Aperçu du dossier (volet de droite)', () => {
     expect(Array.from(hote.querySelectorAll('.ad__gestes button, .ad__gestes a')).map((b) => texte(b))).toEqual(['Dispatcher', 'Ouvrir la page du dossier']);
     expect(hote.querySelector('.ad__gestes a')?.getAttribute('href')).toBe('/president/dossier/42?retour=liste');
     expect(texte(hote.querySelector('.frise'))).toBe('frise du dossier');
-    expect(hote.querySelector('[role="status"]')).not.toBeNull();
+    expect(hote.querySelector('.ad__attente')).not.toBeNull();
     expect(hote.querySelector('app-dossier-identite')).toBeNull();
 
     repondre(http);
     fixture.detectChanges();
-    expect(hote.querySelector('[role="status"]')).toBeNull();
+    expect(hote.querySelector('.ad__attente')).toBeNull();
     expect(hote.querySelector('app-dossier-identite')).not.toBeNull();
+    // ⚠️ 31/10 — l'historique complet du dossier suit l'identité (demande « filiation-dossier », B1).
+    expect(http.match('/api/dossiers/42/filiation').length).toBe(1);
   });
 });
