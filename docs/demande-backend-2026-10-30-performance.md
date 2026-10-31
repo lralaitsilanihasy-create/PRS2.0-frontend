@@ -189,3 +189,33 @@ servis ne sont pas lus par l'écran : voir Q3.
 > - **`dossiers`** : l'avis à imprimer lit la dernière version, ses valeurs, son dossier (`t_fiche_marche`) et les PV signés
 >   (`t_pv_examen`) en lot.
 > - **Reste** : `eligibles` garde la vue d'évaluation par procédure en évaluation (écart déjà annoncé).
+
+> ⚠️ **2026-10-31 — mesure de contrôle du front sur le reliquat** (PRS20 `b576eef3`, recette relancée à 06:55, **poste au repos** —
+> premiers temps comparables ; mêmes 57 écrans des 8 profils, même base : 5 procédures, 36 lignes, 10 dossiers) :
+>
+> | Appel (rejoué seul) | Après le second chantier | Après le reliquat |
+> |---|---|---|
+> | `GET /api/fiches-marche/en-ligne` (responsable, Admin) | 60 SQL | **47 / 46 SQL** — une requête par table, plus aucune par procédure ✓ |
+> | `GET /api/fiches-marche/en-ligne` (CC) | 43 SQL | **26 SQL** |
+> | `GET /api/fiches-marche/en-ligne` (5 autres profils) | 18 SQL | **24 SQL** — coût fixe des préchargements, constant quel que soit le nombre de procédures (accepté) |
+> | `GET /api/contrats-en-vigueur` (PRMP) | 52 SQL | **42 SQL** |
+> | `GET /api/dossiers` (PRMP) | 68 SQL | **53 SQL** |
+> | `GET /api/dmcs/eligibles` (PRMP) | 147 SQL | **145 SQL** (écart annoncé : vue d'évaluation par procédure) |
+>
+> Écrans : médiane **304 ms** (681 mesurés hier soir, poste chargé), 90e centile **378 ms** (1 304), le plus lent **839 ms**
+> (`/prmp/dao`, 2 070). Requêtes SQL de l'ensemble des écrans : 4 392 → **4 327**.
+>
+> **Demandé** — trois listes du circuit relisent encore leur parent **une ligne à la fois** (10 dossiers en base → 10 lectures ;
+> la cascade grandira avec la base). Aucun contrat d'API ne doit changer :
+> - **B7** — `GET /api/receptions` (P, CC, Secrétaire, Membre, Vérificateur : 11-12 SQL) lit `t_dossier` **par réception**
+>   (`where "ID_DOSSIER"=$1`, 10×). Précharger les dossiers de la page en une requête.
+> - **B8** — `GET /api/dispatchs` (mêmes profils : 21-22 SQL) lit `t_reception` **par dispatch** (`where "ID_RECEPTION"=$1`, 10×),
+>   puis son dossier. Précharger réceptions et dossiers en lot.
+> - **B9** — `GET /api/pv-examens/definitifs` (P, CC, Membre, Vérificateur : 37-38 SQL) relit **par PV** la chaîne
+>   `t_examen` ⋈ `t_dispatch` ⋈ `t_reception` (12×) pour retrouver le dossier. La PRMP n'en fait que 7 (4× la même requête) :
+>   la même lecture en lot vaut pour tous les profils.
+>
+> **Côté front (ce dépôt)** : les appels « en double » de la mesure ont été rejoués en navigation **par le menu** (sans
+> rechargement). Seul `GET /api/dossiers` était réellement lu deux fois (retraits P/CC) : corrigé, une lecture. Les autres
+> (`/api/profiles`, `/api/delegation-profils`, `/api/notifications/mes`) ne venaient que du rechargement complet de la mesure ;
+> la seconde lecture de `/api/kpis/badges` (retraits PRMP) est voulue — l'écran remet le compteur à zéro côté serveur.

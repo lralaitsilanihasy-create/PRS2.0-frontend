@@ -7,7 +7,7 @@ import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur } from '../../core/securite/fichiers-surs';
 import { DemandeRetrait } from '../../models';
-import { DemandeRetraitService, DossierService, ReferenceLookupService } from '../../services';
+import { DemandeRetraitService, DossierService } from '../../services';
 import { StatutBadge, statutDemandeRetraitLabel } from '../../shared/circuit';
 import { LienDossier } from './page-dossier/lien-dossier';
 
@@ -182,7 +182,6 @@ import { LienDossier } from './page-dossier/lien-dossier';
 export class RetraitsValidation {
   private readonly service = inject(DemandeRetraitService);
   private readonly dossierService = inject(DossierService);
-  private readonly lookups = inject(ReferenceLookupService);
   private readonly toast = inject(ToastService);
   private readonly permissions = inject(PermissionsService);
   private readonly route = inject(ActivatedRoute);
@@ -223,19 +222,20 @@ export class RetraitsValidation {
   readonly canDecide = computed(() => this.permissions.can('DEMANDE_RETRAIT_DECISION'));
 
   constructor() {
-    this.lookups.lookup(DossierService, 'idDossier', ['refeDossier']).subscribe((m) => this.dossierMap.set(m));
-    // ⚠️ Le type ne peut PAS venir d'un second `lookup(DossierService, …)` : le cache de
-    // `ReferenceLookupService` est indexé par SERVICE, pas par champs — il renverrait la table des
-    // références. Un appel de liste dédié, une fois, et l'on en tire la correspondance de type.
+    // ⚠️ 31/10 (mesure de performance) — UNE seule lecture de la liste des dossiers, dont on tire les deux
+    // correspondances : référence (naguère par `lookup(DossierService, …)`) et type. Les deux lectures
+    // d'avant appelaient deux fois `GET /api/dossiers` à l'ouverture de l'écran.
     this.dossierService.list().subscribe({
       next: (rows) => {
-        const m = new Map<number, string>();
+        const refs = new Map<string, string>();
+        const types = new Map<number, string>();
         for (const d of rows) {
-          if (d.idDossier != null && d.idTypeDossier) {
-            m.set(d.idDossier, d.idTypeDossier);
-          }
+          if (d.idDossier == null) continue;
+          refs.set(String(d.idDossier), (d.refeDossier ?? '').trim() || String(d.idDossier));
+          if (d.idTypeDossier) types.set(d.idDossier, d.idTypeDossier);
         }
-        this.typeParDossier.set(m);
+        this.dossierMap.set(refs);
+        this.typeParDossier.set(types);
       },
       error: () => {},
     });
