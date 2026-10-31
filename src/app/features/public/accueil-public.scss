@@ -208,7 +208,7 @@
   flex-direction: column;
 }
 .pub-repere__v {
-  font: 500 1.35rem/1.2 var(--cnm-mono);
+  font: 500 1.35rem/1.2 var(--police-texte);
   color: var(--or); /* or sur la bande du menu (contrastes-coquille.mjs) */
 }
 .pub-repere__l {
@@ -257,7 +257,7 @@
   color: var(--p-800);
   display: grid;
   place-items: center;
-  font-family: var(--cnm-mono);
+  font-family: var(--police-texte);
   font-weight: 500;
 }
 .pub-carte h3 {

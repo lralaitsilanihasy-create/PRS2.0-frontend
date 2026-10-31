@@ -139,7 +139,7 @@ import { EtatErreur } from '../../shared/ui/etat-erreur';
     }
     .pcr-code {
       display: block;
-      font-family: var(--cnm-mono);
+      font-family: var(--police-texte);
       font-size: var(--text-xs);
       color: var(--n-500);
     }

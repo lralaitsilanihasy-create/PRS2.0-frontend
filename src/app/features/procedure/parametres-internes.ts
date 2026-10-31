@@ -226,7 +226,7 @@ import { CeremonieResponsable } from './ceremonie-responsable';
     .pi__depositaire { display: flex; flex-direction: column; gap: 0.4rem; padding-top: 0.5rem; border-top: 1px solid var(--n-200); }
     .pi__membres { margin: 0; padding-left: 1.1rem; font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.2rem; }
     .pi__profil, .pi__code { color: var(--n-500); font-size: 0.78rem; font-weight: 400; }
-    .pi__code { margin-left: 0.3rem; font-family: var(--font-mono, ui-monospace, monospace); }
+    .pi__code { margin-left: 0.3rem; font-family: var(--police-texte); }
     .pi__lecture { padding: 0.45rem 0.6rem; border-radius: 8px; background: var(--n-100); color: var(--n-700); font-size: 0.9rem; }
     .pi__calc { margin-left: 0.4rem; font-size: 0.74rem; font-style: italic; color: var(--n-500); }
     .pi__court { max-width: 8rem; }

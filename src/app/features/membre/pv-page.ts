@@ -656,7 +656,7 @@ export class MembrePv {
         `th{background:#f2f4f8;text-transform:uppercase;font-size:11px;color:#666}` +
         `dl{margin:0}dl>div{display:flex;gap:8px;margin:2px 0}` +
         `dt{flex:0 0 170px;text-transform:uppercase;font-size:11px;color:#888}dd{margin:0}` +
-        `.cnm-mono{font-family:Consolas,'Courier New',monospace;font-size:12px}` +
+        `.cnm-mono{font-family:var(--police-texte);font-size:12px}` +
         // Badges (statut du PV, avis global) — mêmes teintes que l'écran.
         `.badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid #E5E7EB;background:#F3F4F6;color:#4B5563}` +
         `.badge-success{background:#F0FDF4;color:#15803D;border-color:#BBF7D0}` +

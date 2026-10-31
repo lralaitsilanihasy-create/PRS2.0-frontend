@@ -159,7 +159,7 @@ export interface ObservationCelluleFiche {
     .doc-sous-titre { margin: 0.15rem 0 0; color: var(--n-500); font-size: 0.86rem; }
     .doc-bloc { margin-top: 1rem; }
     .doc-bloc-titre { font-size: 0.92rem; margin: 0 0 0.35rem; }
-    .doc-bloc-code { font-family: var(--font-mono, monospace); font-size: 0.78rem; color: var(--n-500); margin-right: 0.4rem; }
+    .doc-bloc-code { font-family: var(--police-texte); font-size: 0.78rem; color: var(--n-500); margin-right: 0.4rem; }
     .doc-rub { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-500); margin: 0.6rem 0 0.2rem; }
     /* ⚠️ 18/10 — le style « feuille officielle » (Arial, bordures noires) cède ici au style de l'application, comme B12 ; les règles
        d'observation de _document-officiel (cellule observable, pastilles) restent en vigueur. */
@@ -184,7 +184,7 @@ export interface ObservationCelluleFiche {
     /* ⚠️ 18/10 (pilote, lot B) — sommaire collant, informations citées par le point ouvert, information visée surlignée. */
     .fd-sommaire { position: sticky; top: 0; z-index: 3; display: flex; gap: 0.3rem; margin: 0.6rem -0.25rem 0; padding: 0.45rem 0.25rem; background: var(--carte-fond); border-bottom: 1px solid var(--n-200); overflow-x: auto; }
     .fd-chip { flex: none; display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.55rem; border: 1px solid var(--n-300); border-radius: 999px; background: var(--carte-fond); font: 500 0.74rem var(--font-base); color: var(--texte); cursor: pointer; white-space: nowrap; }
-    .fd-chip b { font-family: var(--font-mono, monospace); font-size: 0.68rem; color: var(--texte); }
+    .fd-chip b { font-family: var(--police-texte); font-size: 0.68rem; color: var(--texte); }
     .fd-chip:hover { border-color: var(--bouton-principal); color: var(--texte); }
     .fd-chip__obs { min-width: 1.05rem; padding: 0 0.3rem; border-radius: 999px; background: var(--examen-texte); color: var(--texte-menu); font-size: 0.64rem; text-align: center; }
     .fd-carte { scroll-margin-top: 3rem; }

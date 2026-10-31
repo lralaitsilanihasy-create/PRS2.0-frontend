@@ -134,6 +134,9 @@ Inventaire, décisions du pilote (Q1-Q6) et plan : `docs/design-institutionnel-i
   `--success-*`…) de `styles/_design-system.scss` y sont **redirigés** — ne pas leur redonner de valeur.
   **Aucun texte en bleu** (le bleu n'est qu'un fond : menu, bouton principal, onglet actif) ; ni dégradé ni
   ombre portée ; deux graisses, 400 et 500 ; texte en pile système, titres de page en Georgia.
+  **Une seule police pour tous les chiffres** (pilote, 31/10) : montants, dates, références, empreintes prennent la police
+  du texte, chiffres à largeur égale (`tabular-nums`) — jamais de chasse fixe (Consolas, monospace) ; `--cnm-mono` et la classe
+  `.cnm-mono` y sont redirigés, DM Mono est retirée.
   `_document-officiel.scss` (avis, DAO, PV réglementaires) garde ses propres couleurs.
 - **Coquille** (`layout/main-layout`) : bandeau tricolore (classe commune `.bandeau-tricolore`), en-tête au
   logo du Ministère, **menu principal horizontal** collé en haut (`--hauteur-menu`), contenu, pied de page. Le menu garde

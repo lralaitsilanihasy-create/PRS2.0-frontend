@@ -176,7 +176,7 @@ const VALEURS_LISIBLES: Readonly<Record<string, string>> = {
     .cv__regle--ouverte { box-shadow: none; border-color: var(--reco-border); }
 
     .cv__ligne { display: grid; grid-template-columns: 9.5rem 1fr auto auto auto; gap: 0.75rem; align-items: center; padding: 0.6rem 0.75rem; }
-    .cv__nom-puce { font-family: Consolas, monospace; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.02em; color: var(--texte);
+    .cv__nom-puce { font-family: var(--police-texte); font-size: 0.78rem; font-weight: 500; letter-spacing: 0.02em; color: var(--texte);
       background: var(--reco-bg); border: 1px solid var(--reco-border); border-radius: 6px; padding: 0.15rem 0.5rem; white-space: nowrap;
       justify-self: start; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
     .cv__resume { display: flex; flex-direction: column; min-width: 0; }
@@ -205,7 +205,7 @@ const VALEURS_LISIBLES: Readonly<Record<string, string>> = {
     .cv__ajout-critere { align-self: flex-start; border: 0; background: none; color: var(--texte); font: inherit; font-size: 0.82rem; font-weight: 500; cursor: pointer; padding: 0.2rem 0; }
     .cv__ajout-critere:hover { text-decoration: underline; }
     .cv__code { margin: 0; font-size: 0.75rem; color: var(--text-muted); }
-    .cv__mono, code { font-family: Consolas, monospace; font-size: 0.85em; }
+    .cv__mono, code { font-family: var(--police-texte); font-size: 0.85em; }
     .cv__probleme { margin: 0; font-size: 0.82rem; color: var(--miss-text); font-weight: 500; }
     .cv__probleme--info { color: var(--prep-text); font-weight: 500; }
     .cv__vide { padding: 1rem; border: 1px dashed var(--border); border-radius: 10px; color: var(--text-muted); font-size: 0.9rem; text-align: center; }

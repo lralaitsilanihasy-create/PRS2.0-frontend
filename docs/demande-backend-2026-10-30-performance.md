@@ -179,3 +179,13 @@ servis ne sont pas lus par l'écran : voir Q3.
 > compilation Maven tournait sur le poste (≈ 4 cœurs occupés) ; les appels simultanés d'un écran y prenaient ≈ 400 ms au lieu de
 > ≈ 40. Ils seront remesurés poste au repos. **Demandé (B1, reliquat)** : précharger aussi, pour `en-ligne`, les paramètres internes,
 > la CAO, le matériel et les spécifications de toutes les procédures de la liste.
+
+> ⚠️ **2026-10-31 — reliquat livré (PRS20, sans migration ; aucun contrat ne change) :**
+> - **`en-ligne`** : paramètres internes, CAO, matériel, personnel et spécifications préchargés pour toute la liste (une requête chacun).
+>   Ces lectures se faisaient par identifiant : dans la transaction d'un test, Hibernate les servait de son cache, d'où leur absence de
+>   mes mesures. Le test mesure désormais contexte vidé : une requête par nature, pour 1 comme pour 3 procédures (hors paramètres,
+>   relus seulement en test).
+> - **`contrats-en-vigueur`** : décisions de reconduction, bons de commande, titulaires et leurs offres préchargés pour tous les contrats.
+> - **`dossiers`** : l'avis à imprimer lit la dernière version, ses valeurs, son dossier (`t_fiche_marche`) et les PV signés
+>   (`t_pv_examen`) en lot.
+> - **Reste** : `eligibles` garde la vue d'évaluation par procédure en évaluation (écart déjà annoncé).

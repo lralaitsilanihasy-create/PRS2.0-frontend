@@ -110,7 +110,7 @@ const FAMILLES: readonly { cle: string; titre: string; detail: string; types: re
     .mdo__ouvrir:hover:not(:disabled) { border-color: var(--reco-border); background: var(--card-bg); box-shadow: none; }
     .mdo__ouvrir:focus-visible, .mdo__oeil:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .mdo__ouvrir:disabled, .mdo__oeil:disabled { opacity: 0.6; cursor: default; }
-    .mdo__sigle { font-family: Consolas, monospace; font-size: 13px; font-weight: 500; color: var(--texte); letter-spacing: 0.02em; }
+    .mdo__sigle { font-family: var(--police-texte); font-size: 13px; font-weight: 500; color: var(--texte); letter-spacing: 0.02em; }
     .mdo__nom { font-size: 13px; line-height: 1.3; color: var(--text); }
     .mdo__bas { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: auto; padding-top: 4px; font-size: 12px; }
     .mdo__etat { display: inline-flex; align-items: center; gap: 5px; color: var(--text-muted); }

@@ -86,7 +86,7 @@ import { blocsMd } from './markdown';
     .md__list li { margin-bottom: 0.25rem; }
     .md__quote { margin: 0 0 0.7rem; padding: 0.5rem 0.9rem; border-left: 3px solid var(--c-200); background: var(--c-50); color: var(--n-600); }
     .md__hr { margin: 1rem 0; border: 0; border-top: 1px solid var(--n-200); }
-    .md__code { padding: 0.05rem 0.3rem; background: var(--n-100); border-radius: 4px; font-family: var(--font-mono, monospace); font-size: 0.92em; }
+    .md__code { padding: 0.05rem 0.3rem; background: var(--n-100); border-radius: 4px; font-family: var(--police-texte); font-size: 0.92em; }
     a { color: var(--c-600); }
   `,
 })

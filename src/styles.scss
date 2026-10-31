@@ -103,10 +103,11 @@
   --cnm-profile-publication: var(--assist-color);
   --cnm-profile-admin: var(--admin-color);
 
-  /* Typographie → pile système (texte), Georgia (titres), DM Mono (références) */
+  /* Typographie → pile système (texte), Georgia (titres). ⚠️ 31/10 (pilote) : UNE seule police pour tous les chiffres —
+     --cnm-mono (naguère DM Mono, références et numéros) prend la police du texte ; les chiffres y sont à largeur égale. */
   --cnm-font: var(--font-base);
   --cnm-font-display: var(--font-base);
-  --cnm-mono: 'DM Mono', ui-monospace, monospace;
+  --cnm-mono: var(--police-texte);
   --cnm-fs-micro: 10px;
   --cnm-fs-xs: 11px;
   --cnm-fs-sm: 12px;
@@ -175,8 +176,14 @@ a:not([class]):hover, .lien:hover {
   color: var(--cnm-text-3);
 }
 
-.cnm-mono {
-  font-family: var(--cnm-mono);
+/* Références, numéros, dates, empreintes : même police que le texte (pilote, 31/10) ; chiffres à largeur égale pour
+   l'alignement en colonne. Les balises <code>/<kbd>/<samp> du navigateur (chasse fixe par défaut) suivent la même règle. */
+.cnm-mono,
+code,
+kbd,
+samp {
+  font-family: var(--police-texte);
+  font-variant-numeric: tabular-nums;
 }
 
 .cnm-muted {

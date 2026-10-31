@@ -146,6 +146,8 @@ html { scroll-behavior: smooth; }
 
 body {
   font-family: var(--font-base);
+  /* Chiffres à largeur égale partout (montants et dates alignés en colonne), dans la police du texte (pilote, 31/10). */
+  font-variant-numeric: tabular-nums;
   font-size: var(--text-base);
   color: var(--texte);
   background: var(--page-fond);

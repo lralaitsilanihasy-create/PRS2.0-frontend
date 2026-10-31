@@ -25,7 +25,7 @@
 }
 .ap__ref {
   margin: -0.45rem 0 0;
-  font: 500 1.125rem/1.2 var(--cnm-mono);
+  font: 500 1.125rem/1.2 var(--police-texte);
   letter-spacing: -0.02em;
   overflow-wrap: anywhere;
 }
@@ -68,7 +68,7 @@
   padding: 0 0.4rem;
   border: 1px solid var(--bordure);
   border-radius: 5px;
-  font: 500 0.71875rem/1.15rem var(--cnm-mono);
+  font: 500 0.71875rem/1.15rem var(--police-texte);
   color: var(--texte-secondaire);
   background: var(--carte-fond);
 }
@@ -122,7 +122,7 @@
 .frise__e--a-venir .frise__l { font-weight: 500; color: var(--texte-secondaire); }
 .frise__d {
   min-height: 0.7rem;
-  font: 400 0.65625rem/1 var(--cnm-mono);
+  font: 400 0.65625rem/1 var(--police-texte);
   color: var(--texte-secondaire);
 }
 

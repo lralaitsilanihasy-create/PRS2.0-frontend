@@ -72,7 +72,7 @@ const LIBELLE: Readonly<Record<NiveauPointRapport, string>> = { BLOQUANT: 'Bloqu
     .rcp__sugg { display: block; color: var(--n-700); font-size: 0.85rem; }
     .rcp__reussis { margin: 0; display: flex; gap: 0.5rem; align-items: center; font-size: 0.85rem; color: var(--n-700); }
     .rcp__pied { margin: 0; font-size: 0.85rem; color: var(--n-500); }
-    code { font-family: Consolas, monospace; font-size: 0.85em; }
+    code { font-family: var(--police-texte); font-size: 0.85em; }
   `,
 })
 export class RapportControlePv {

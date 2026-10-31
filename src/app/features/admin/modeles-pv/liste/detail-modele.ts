@@ -75,7 +75,7 @@ import { ETAPES_CYCLE, LigneModele } from './modeles-pv-vue';
     .dtm__courante { font-weight: 400; }
     .dtm__texte { margin: 0; font-size: 13px; color: var(--text-muted); }
     .dtm__puces { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
-    .dtm__code { font-family: Consolas, 'Courier New', monospace; font-size: 11px; padding: 2px 6px; border-radius: 6px; border: 1px solid; }
+    .dtm__code { font-family: var(--police-texte); font-size: 11px; padding: 2px 6px; border-radius: 6px; border: 1px solid; }
     .dtm__code { background: var(--card-bg); color: var(--text); border-color: var(--border); }
     .dtm__remplace { margin: 0; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--texte); }
     .dtm__infos { margin: 0; display: flex; flex-direction: column; }

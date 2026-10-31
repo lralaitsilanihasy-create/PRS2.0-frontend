@@ -65,7 +65,7 @@
   color: var(--texte);
 }
 .tete__ref {
-  font: 500 1.125rem/1.1 var(--cnm-mono);
+  font: 500 1.125rem/1.1 var(--police-texte);
   letter-spacing: -0.02em;
   color: var(--texte);
 }
@@ -241,7 +241,7 @@
   border-radius: 9px;
   background: var(--ligne-survol);
   color: var(--texte);
-  font: 500 0.6875rem/1.1rem var(--cnm-mono);
+  font: 500 0.6875rem/1.1rem var(--police-texte);
 }
 .doc__titre { margin: 0; font: 500 0.8125rem/1 var(--font-base); letter-spacing: 0; color: var(--texte); display: flex; gap: 0.4rem; align-items: center; }
 .doc__esp { flex: 1; }
@@ -312,7 +312,7 @@
 .pj__etat--done-ras { background: var(--favorable-fond); border-color: var(--favorable-texte); }
 .pj__etat--done-obs { background: var(--examen-fond); border-color: var(--examen-texte); box-shadow: inset 0 0 0 3px var(--examen-fond), inset 0 0 0 10px var(--examen-texte); }
 .pj__etat--current { background: var(--bouton-principal); border-color: var(--bouton-principal); box-shadow: inset 0 0 0 3px var(--bouton-principal), inset 0 0 0 10px var(--carte-fond); }
-.pj__idx { flex: none; font: 500 0.6875rem/1 var(--cnm-mono); color: var(--texte-secondaire); }
+.pj__idx { flex: none; font: 500 0.6875rem/1 var(--police-texte); color: var(--texte-secondaire); }
 .pj__nom { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .pj__fmt { flex: none; padding: 0 0.3rem; border-radius: 4px; background: var(--ligne-survol); font-size: 0.625rem; color: var(--texte); }
 .pj__apercu { min-width: 0; min-height: 0; display: flex; background: var(--carte-fond); border-radius: 8px; overflow: hidden; }
@@ -368,7 +368,7 @@
   cursor: pointer;
 }
 .prop__point:hover { border-color: var(--examen-texte); background: var(--examen-fond); }
-.prop__rang { font-family: var(--cnm-mono); color: var(--texte-secondaire); }
+.prop__rang { font-family: var(--police-texte); color: var(--texte-secondaire); }
 
 /* ── Écrans étroits (hors cible) : on empile et la page défile. ── */
 @media (max-width: 60rem) {

@@ -76,11 +76,11 @@ import { CatalogueModelePv } from '../../../models';
     .cat__groupe td { padding: 0.35rem 0.25rem; border-top: 1px solid var(--n-100); vertical-align: top; }
     .cat__groupe ul { margin: 0.25rem 0; padding-left: 1rem; font-size: 0.85rem; }
     .cat__var { border: 0; background: var(--p-50); color: var(--p-700); border-radius: 6px; padding: 0.05rem 0.4rem; cursor: pointer;
-      font-family: Consolas, monospace; font-size: 0.8rem; }
+      font-family: var(--police-texte); font-size: 0.8rem; }
     .cat__var:hover, .cat__var:focus-visible { background: var(--p-100); }
     .cat__lib { display: block; color: var(--n-700); }
     .cat__ex { color: var(--n-500); width: 40%; }
-    code { font-family: Consolas, monospace; font-size: 0.85em; }
+    code { font-family: var(--police-texte); font-size: 0.85em; }
   `,
 })
 export class CatalogueVariables {

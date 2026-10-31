@@ -59,7 +59,7 @@ const PUCES_VISIBLES = 3;
     .lgm__sous { font-size: 12px; color: var(--text-muted); }
     .lgm__sous--remplace { color: var(--texte); display: inline-flex; align-items: center; gap: 4px; }
     .lgm__puces { display: flex; flex-wrap: wrap; gap: 4px; }
-    .lgm__code { font-family: Consolas, 'Courier New', monospace; font-size: 11px; padding: 2px 6px; border-radius: 6px; border: 1px solid; }
+    .lgm__code { font-family: var(--police-texte); font-size: 11px; padding: 2px 6px; border-radius: 6px; border: 1px solid; }
     /* Les codes sont des données, pas un état : neutres. La couleur d'état reste au carré d'icône et au badge. */
     .lgm__code { background: var(--card-bg); color: var(--text); border-color: var(--border); }
     .lgm__code--plus { background: var(--page-bg); color: var(--text-muted); }

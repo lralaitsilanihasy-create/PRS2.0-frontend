@@ -111,7 +111,7 @@ export function lireCalendrier(v: string | number | null | undefined): { process
     .pi__item--large { grid-column: 1 / -1; }
     .pi__item dt { font-size: 0.74rem; color: var(--n-500); }
     .pi__item dd { margin: 0; font-size: 0.88rem; color: var(--n-900); overflow-wrap: anywhere; }
-    .pi__code { font-family: var(--cnm-mono); font-size: 0.82rem; }
+    .pi__code { font-family: var(--police-texte); font-size: 0.82rem; }
     .pi__table { font-size: 0.84rem; table-layout: fixed; width: 100%; }
     .pi__table th, .pi__table td { padding-top: 0.3rem; padding-bottom: 0.3rem; white-space: normal; overflow-wrap: anywhere; }
     .pi__table th.pi__num, .pi__table th.pi__date { width: 9.5rem; }

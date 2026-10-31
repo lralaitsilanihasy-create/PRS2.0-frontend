@@ -269,7 +269,7 @@ const TAILLE_MAX_IMAGE_MO = 10;
     .act-profils-champ { margin: 1rem 0 0; padding: 0.75rem; border: 1px solid var(--n-200); border-radius: var(--radius-md); }
     .act-profils-liste { display: flex; flex-wrap: wrap; gap: 0.5rem 1.2rem; margin-top: 0.5rem; }
     .act-profil { display: flex; align-items: center; gap: 0.4rem; font-size: var(--text-sm); }
-    .act-md { font-family: var(--font-mono, monospace); min-height: 12rem; }
+    .act-md { font-family: var(--police-texte); min-height: 12rem; }
     .act-apercu { margin-top: 0.75rem; padding: 0.9rem; border: 1px dashed var(--n-300); border-radius: var(--radius-md); background: var(--n-50); }
     .act-apercu__lbl { display: block; margin-bottom: 0.5rem; font-size: var(--text-xs); font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--n-500); }
     .act-images-champ { margin-top: 1rem; }

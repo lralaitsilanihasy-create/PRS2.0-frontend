@@ -527,7 +527,7 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
     .mpf__choisie td { background: var(--p-50); }
     .mpf__actions-ligne { text-align: right; white-space: nowrap; width: 1%; }
     .mpf__ouverte { font-size: 0.78rem; color: var(--n-500); }
-    .mpf__resume { margin: 0; font-family: Consolas, monospace; font-size: 0.85rem; color: var(--n-700); line-height: 1.6; }
+    .mpf__resume { margin: 0; font-family: var(--police-texte); font-size: 0.85rem; color: var(--n-700); line-height: 1.6; }
     .mpf__lien { align-self: flex-start; border: 0; background: none; padding: 0; color: var(--p-700); text-decoration: underline; cursor: pointer; font: inherit; font-size: 0.85rem; }
     .mpf__actions-ligne .btn + .btn { margin-left: 0.3rem; }
     .mpf__note { margin: 0; font-size: 0.8rem; color: var(--n-500); }
@@ -558,7 +558,7 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
     .mpf__deux { display: grid; grid-template-columns: repeat(auto-fit, minmax(24rem, 1fr)); gap: 1.25rem; align-items: start; }
     .mpf__deux > div { display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
     .mpf__form { display: flex; flex-direction: column; gap: 0.75rem; }
-    code { font-family: Consolas, monospace; font-size: 0.85em; }
+    code { font-family: var(--police-texte); font-size: 0.85em; }
     @media (max-width: 760px) { .mpf__archiver { position: static; margin-top: 0.6rem; } }
   `,
 })

@@ -133,13 +133,10 @@ import { MarkdownVue } from './markdown-vue';
     }
 
     .act__kicker { margin: 0 0 0.4rem; font-size: var(--text-xs); font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: var(--n-500); }
-
-    /* ⚠️ Serif SYSTÈME et non une fonte web : le projet auto-héberge ses polices (Plus Jakarta Sans,
-       DM Mono) et n'en compte aucune à empattements. En ajouter une alourdirait le chargement de
-       toute l'application pour un seul écran ; Georgia est présente partout, avec repli. */
+    /* Titre à empattements : la police des titres de l’application (Georgia, pile système — design institutionnel). */
     .act__titre {
       margin: 0;
-      font-family: Georgia, 'Times New Roman', 'Liberation Serif', serif;
+      font-family: var(--police-titre);
       font-size: clamp(1.9rem, 3.4vw, 2.5rem);
       line-height: 1.15;
       font-weight: 500;

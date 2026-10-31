@@ -46,7 +46,7 @@
 /* Imputations : compactes, en colonnes. */
 .iv__imputations { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 0.3rem 1.5rem; }
 .iv__imputations li { display: flex; justify-content: space-between; gap: 0.75rem; padding: 0.3rem 0; border-bottom: 1px dashed var(--n-200); font-size: 0.85rem; }
-.iv__code { color: var(--texte); font-family: var(--font-mono, monospace); font-size: 0.8rem; }
+.iv__code { color: var(--texte); font-family: var(--police-texte); font-size: 0.8rem; }
 .iv__mt { color: var(--texte); font-weight: 500; font-variant-numeric: tabular-nums; }
 
 .iv__supports { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.88rem; color: var(--texte); }

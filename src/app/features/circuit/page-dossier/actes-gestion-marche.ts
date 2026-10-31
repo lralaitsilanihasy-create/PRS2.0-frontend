@@ -110,7 +110,7 @@ import { LienDossier } from './lien-dossier';
     .agm__liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
     .agm__acte { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; font-size: 0.85rem; }
     .agm__nom { font-weight: 500; min-width: 9rem; }
-    .agm__ref { color: var(--n-500); font-family: var(--font-mono, monospace); font-size: 0.8rem; }
+    .agm__ref { color: var(--n-500); font-family: var(--police-texte); font-size: 0.8rem; }
     .agm__ouvrir { font-weight: 500; }
     .agm__vide { margin: 0; font-size: 0.84rem; color: var(--n-500); }
     .agm__modale { max-width: 40rem; }

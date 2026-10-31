@@ -129,7 +129,7 @@ const options = (c: ChampSaisie): string[] => c.options.split('\n').map((x) => x
       display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr auto auto; gap: 0.6rem; align-items: end; }
     .chv__large { grid-column: 1 / -1; }
     .chv__case { display: flex; gap: 0.35rem; align-items: center; padding-bottom: 0.5rem; color: var(--n-700); white-space: nowrap; }
-    .chv__mono, code { font-family: Consolas, monospace; font-size: 0.85em; }
+    .chv__mono, code { font-family: var(--police-texte); font-size: 0.85em; }
     .chv__alerte { margin: 0; color: var(--warning-text); }
     .chv__actions { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
     .chv__espace { flex: 1; }

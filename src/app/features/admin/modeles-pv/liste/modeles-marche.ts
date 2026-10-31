@@ -100,7 +100,7 @@ import { LigneMarche } from './modeles-pv-vue';
     .mmc__etat--code { color: var(--text-muted); background: var(--page-bg); border-color: var(--border); }
     .mmc__etat--prep { color: var(--prep-text); background: var(--prep-bg); border-color: var(--prep-border); }
     .mmc__etat--ok { color: var(--ok-text); background: var(--ok-bg); border-color: var(--ok-border); }
-    .mmc__code { font-family: Consolas, monospace; font-size: 12px; font-weight: 500; color: var(--texte); }
+    .mmc__code { font-family: var(--police-texte); font-size: 12px; font-weight: 500; color: var(--texte); }
     .mmc__desc { font-size: 13px; color: var(--text-muted); line-height: 1.35; }
     .mmc__action { margin-top: auto; padding-top: 6px; font-size: 12.5px; font-weight: 500; color: var(--texte); display: inline-flex; align-items: center; gap: 2px; }
     .mmc__tuile--code .mmc__action { color: var(--texte-menu); background: var(--primary); align-self: flex-start; border-radius: 6px; padding: 3px 8px; margin-top: 8px; }

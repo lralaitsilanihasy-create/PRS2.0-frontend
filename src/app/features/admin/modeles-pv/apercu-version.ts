@@ -149,7 +149,7 @@ const AVIS: readonly { code: AvisApercu | ''; libelle: string }[] = [
     .apv__exemple--on { background: var(--reco-bg); border-color: var(--primary); }
     .apv__exemple:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .apv__fichier { margin: 0; font-size: 0.85rem; color: var(--n-700); }
-    .apv__fichier code { font-family: Consolas, monospace; }
+    .apv__fichier code { font-family: var(--police-texte); }
     .apv__alerte { display: block; color: var(--warning-text); font-size: 0.85rem; }
     .apv__saisis { border: 1px solid var(--n-200); border-radius: 10px; padding: 0.75rem 0.9rem; margin: 0;
       display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 0.6rem; }

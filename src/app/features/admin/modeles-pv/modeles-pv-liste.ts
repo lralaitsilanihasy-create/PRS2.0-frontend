@@ -138,14 +138,14 @@ import { LIBELLES_NATURE, MOTIF_CODE_MODELE, propositionPourFamille } from './mo
     .mpv__archives summary:focus-visible, .mpv__archives a:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .mpv__archives ul { margin: 6px 0 0; padding-left: 18px; columns: 2 22rem; column-gap: 2rem; }
     .mpv__archives li { break-inside: avoid; margin: 2px 0; }
-    .mpv__code { font-family: Consolas, monospace; font-size: 12px; color: var(--text-muted); }
+    .mpv__code { font-family: var(--police-texte); font-size: 12px; color: var(--text-muted); }
     .mpv__archives a { color: var(--texte); }
     .mpv__lien { border: 0; background: none; padding: 0; font: inherit; color: var(--texte); text-decoration: underline; cursor: pointer; }
     .mpv__lien:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .mpv__form { display: flex; flex-direction: column; gap: 0.75rem; }
     .mpv__nature { border: 0; padding: 0; margin: 0; display: flex; gap: 1.25rem; flex-wrap: wrap; }
     .mpv__nature legend { width: 100%; }
-    .mpv__mono { font-family: Consolas, monospace; font-size: 0.8rem; }
+    .mpv__mono { font-family: var(--police-texte); font-size: 0.8rem; }
   `,
 })
 export class ModelesPvListe implements OnInit {

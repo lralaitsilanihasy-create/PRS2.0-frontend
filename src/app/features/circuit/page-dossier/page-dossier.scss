@@ -51,7 +51,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font: 500 0.875rem/1.2 var(--cnm-mono);
+  font: 500 0.875rem/1.2 var(--police-texte);
   color: var(--texte);
 }
 .pd-outils {
@@ -92,7 +92,7 @@
 }
 .pd-ref {
   margin: 0;
-  font: 500 1.75rem/1.15 var(--cnm-mono);
+  font: 500 1.75rem/1.15 var(--police-texte);
   letter-spacing: -0.035em;
   color: var(--texte);
   overflow-wrap: anywhere;
@@ -121,7 +121,7 @@
   border: 1px solid var(--bordure);
   border-radius: 6px;
   background: var(--carte-fond);
-  font: 500 0.78125rem/1.45rem var(--cnm-mono);
+  font: 500 0.78125rem/1.45rem var(--police-texte);
   color: var(--texte);
   white-space: nowrap;
 }
@@ -213,7 +213,7 @@
   border: 2px solid var(--bouton-principal);
   border-radius: 50%;
   background: var(--carte-fond);
-  font: 500 0.8125rem/1 var(--cnm-mono);
+  font: 500 0.8125rem/1 var(--police-texte);
   color: var(--texte-secondaire);
 }
 .pd-etape--faite .pd-etape__pt { border-color: var(--bouton-principal); background: var(--bouton-principal); color: var(--texte-menu); }
@@ -229,7 +229,7 @@
 .pd-etape--a-venir .pd-etape__l { font-weight: 500; color: var(--texte-secondaire); }
 .pd-etape__d {
   min-height: 1rem;
-  font: 400 0.75rem/1.3 var(--cnm-mono);
+  font: 400 0.75rem/1.3 var(--police-texte);
   color: var(--texte-secondaire);
 }
 .pd-etape--pause .pd-etape__d { color: var(--examen-texte); }

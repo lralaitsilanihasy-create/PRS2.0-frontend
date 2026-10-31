@@ -127,7 +127,7 @@ export function htmlRecapitulatif(r: RecapitulatifOffre): string {
   const t = r.bordereau?.totaux;
   return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Récapitulatif de l’offre</title>
 <style>body{font:10.5pt/1.4 Arial,sans-serif;margin:1.5cm;color:#111}h1{font-size:16pt;margin:0 0 .2cm}h2{font-size:12pt;margin:.6cm 0 .2cm;border-bottom:1px solid #999}h3{font-size:10.5pt;margin:.4cm 0 .1cm}
-table{border-collapse:collapse;width:100%;font-size:9.5pt}th,td{border:1px solid #bbb;padding:3px 5px;text-align:left;vertical-align:top}td.n{text-align:right;white-space:nowrap}.mono{font-family:ui-monospace,Consolas,monospace;font-size:8pt;word-break:break-all}
+table{border-collapse:collapse;width:100%;font-size:9.5pt}th,td{border:1px solid #bbb;padding:3px 5px;text-align:left;vertical-align:top}td.n{text-align:right;white-space:nowrap}.mono{font-family:var(--police-texte);font-size:8pt;word-break:break-all}
 .avert{border:1px solid #c80;background:#fff7e0;padding:6px 8px;margin:.3cm 0}dl{display:grid;grid-template-columns:max-content 1fr;gap:2px 12px;margin:0}dt{color:#555}dd{margin:0}</style></head><body>
 <h1>Récapitulatif de l’offre</h1>
 <p>${echapper(r.procedure.objet ?? '')}${r.procedure.lot ? ` — lot ${r.procedure.lot}` : ''} · ${echapper(r.procedure.reference ?? '')} · généré le ${echapper(new Date(r.genereLe).toLocaleString('fr-FR'))}</p>

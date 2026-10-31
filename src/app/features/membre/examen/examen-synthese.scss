@@ -82,7 +82,7 @@
   border-radius: 50%;
   background: var(--favorable-texte);
   color: var(--texte-menu);
-  font: 500 0.6875rem/1 var(--cnm-mono);
+  font: 500 0.6875rem/1 var(--police-texte);
 }
 .g--na .g__n { background: var(--neutre-fond); color: var(--texte); }
 .g--na .g__l { color: var(--texte-secondaire); }
@@ -113,7 +113,7 @@
   border-radius: 50%;
   background: var(--examen-fond);
   color: var(--examen-texte);
-  font: 500 0.71875rem/1.375rem var(--cnm-mono);
+  font: 500 0.71875rem/1.375rem var(--police-texte);
   text-align: center;
 }
 .o__t { font-size: 0.8125rem; font-weight: 500; line-height: 1.3; min-width: 0; color: var(--texte); }

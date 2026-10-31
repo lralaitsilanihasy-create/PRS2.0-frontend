@@ -125,7 +125,7 @@ const PAGE_SIZE = 15;
     .marches__pager-info {
       font-size: var(--cnm-fs-sm);
       color: var(--cnm-text-2);
-      font-family: var(--cnm-mono);
+      font-family: var(--police-texte);
     }
   `,
 })
