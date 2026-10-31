@@ -1,6 +1,8 @@
 /* ⚠️ 30/10/2026 (design institutionnel, pilote — docs/design-institutionnel-inventaire-2026-10-30.md) — la coquille se lit
    de haut en bas : bandeau tricolore, en-tête, menu principal horizontal (collé en haut à la lecture), contenu, pied de page.
-   Toutes les couleurs sont des variables de `src/styles.scss` ; aucun dégradé, aucune ombre portée. */
+   Toutes les couleurs sont des variables de `src/styles.scss` ; aucun dégradé, aucune ombre portée.
+   ⚠️ 31/10/2026 (pilote, direction « Espace de travail ») — coquille COMPACTE : en-tête bleu nuit profond fondu avec le menu,
+   bandeau de 3 px, menu de 36 px, pied de page réduit. */
 
 :host {
   display: flex;
@@ -14,10 +16,10 @@
 .entete {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 12px 18px;
-  background: var(--carte-fond);
-  border-bottom: 1px solid var(--bordure);
+  gap: 14px;
+  padding: 6px 14px;
+  background: var(--section-fond);
+  color: var(--texte-menu);
 }
 
 .entete__marque {
@@ -29,33 +31,33 @@
 
 /* Logo du Ministère (image existante) en lieu et place du cercle au bâtiment, comme le prévoit la demande. */
 .entete__logo {
-  width: 42px;
-  height: 42px;
+  width: 30px;
+  height: 30px;
   object-fit: contain;
   flex-shrink: 0;
 }
 
 .entete__noms { line-height: 1.2; min-width: 0; }
-.entete__institution { font-size: 11px; color: var(--texte-secondaire); }
-.entete__appli { font-family: var(--police-titre); font-size: 17px; font-weight: 500; color: var(--texte); }
+.entete__institution { font-size: 10.5px; color: var(--texte-menu-secondaire); }
+.entete__appli { font-family: var(--police-marque); font-size: 15px; font-weight: 500; color: var(--texte-menu); }
 
 /* Recherche « aller à un dossier par référence » : un champ de la palette, focus visible. */
 .entete__recherche {
   display: flex;
   align-items: center;
   gap: 6px;
-  height: 30px;
+  height: 26px;
   width: 18rem;
   max-width: 100%;
   margin-left: 12px;
-  padding: 0 10px;
-  background: var(--carte-fond);
-  border: 1px solid var(--bordure-champ);
-  border-radius: 6px;
+  padding: 0 9px;
+  background: var(--menu-fond);
+  border: 1px solid var(--texte-menu-secondaire);
+  border-radius: 4px;
 
-  &:focus-within { outline: 2px solid var(--bouton-principal); outline-offset: 1px; }
+  &:focus-within { outline: 2px solid var(--or); outline-offset: 1px; }
 }
-.entete__recherche-ic { color: var(--texte-secondaire); flex-shrink: 0; }
+.entete__recherche-ic { color: var(--texte-menu-secondaire); flex-shrink: 0; }
 .entete__recherche-champ {
   flex: 1;
   min-width: 0;
@@ -64,9 +66,9 @@
   outline: none;
   font: inherit;
   font-size: 12px;
-  color: var(--texte);
+  color: var(--texte-menu);
 
-  &::placeholder { color: var(--texte-secondaire); }
+  &::placeholder { color: var(--texte-menu-secondaire); }
   &:disabled { opacity: 0.6; }
 }
 
@@ -76,7 +78,7 @@
   gap: 10px;
   margin-left: auto;
   font-size: 12px;
-  color: var(--texte-secondaire);
+  color: var(--texte-menu-secondaire);
   min-width: 0;
 }
 
@@ -84,16 +86,17 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 10px;
-  border: 1px solid var(--bordure);
-  border-radius: 6px;
-  background: var(--carte-fond);
-  color: var(--texte);
+  padding: 3px 9px;
+  border: 1px solid var(--texte-menu-secondaire);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--texte-menu);
   font: inherit;
   font-size: 12px;
   cursor: pointer;
 
-  &:hover { background: var(--ligne-survol); }
+  &:hover { background: var(--menu-survol); }
+  &:focus-visible { outline: 2px solid var(--or); outline-offset: 1px; }
 }
 
 .entete__utilisateur {
@@ -105,12 +108,12 @@
 .entete__avatar {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
   border-radius: 50%;
-  background: var(--neutre-fond);
-  color: var(--neutre-texte);
+  background: var(--menu-survol);
+  color: var(--texte-menu);
   font-size: 10px;
   font-weight: 500;
 }
@@ -119,8 +122,20 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--texte);
+  color: var(--texte-menu);
 }
+/* Cloche des notifications et boutons de session (Créer compte UGPM, Mot de passe, Déconnexion), sur l’en-tête sombre. */
+.entete app-notification-center { color: var(--texte-menu); }
+.entete .btn-outline {
+  background: transparent;
+  border-color: var(--texte-menu-secondaire);
+  color: var(--texte-menu);
+
+  &:hover, &.active { background: var(--menu-survol); color: var(--texte-menu); }
+  &:focus-visible { outline: 2px solid var(--or); outline-offset: 1px; }
+}
+/* Pastille du profil, sur l’en-tête sombre. */
+.entete__utilisateur .profile-badge { background: var(--menu-survol); color: var(--texte-menu); }
 
 /* Pastille « Heure de recette » (24/10) : famille « examen ». */
 .entete__recette {
@@ -167,16 +182,16 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 5px;
-  padding: 9px 13px;
+  margin-top: 4px;
+  padding: 7px 11px;
   border: 0;
-  border-radius: 6px 6px 0 0;
+  border-radius: 4px 4px 0 0;
   background: transparent;
   color: var(--texte-menu);
   font: inherit;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 400;
-  line-height: 20px;
+  line-height: 18px;
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
@@ -335,11 +350,12 @@
 .fil-ariane__ici { color: var(--texte-secondaire); }
 
 /* ── Pied de page ── */
+/* ⚠️ 31/10 (pilote, Espace de travail) — pied GARDÉ mais réduit : une ligne fine, visible en fin de défilement. */
 .pied-page {
-  padding: 8px 18px;
-  background: var(--menu-fond);
-  color: var(--texte-menu);
-  font-size: 11px;
+  padding: 4px 14px;
+  background: var(--section-fond);
+  color: var(--texte-menu-secondaire);
+  font-size: 10.5px;
 }
 
 /* Lien d'évitement : hors écran, ramené visuellement dès qu'il reçoit le focus clavier. */

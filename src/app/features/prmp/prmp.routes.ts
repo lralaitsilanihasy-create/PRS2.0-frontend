@@ -32,7 +32,7 @@ export const PRMP_ROUTES: Routes = [
     // tableau référence · enregistrement CNM (réception Secrétaire) · fin de traitement prévue.
     path: 'tableau-de-bord',
     loadComponent: () => import('./suivi-delais').then((m) => m.SuiviDelais),
-    data: { title: 'Suivi des dossiers CNM' },
+    data: { title: 'Tous mes dossiers' },
   },
   { path: 'a-rectifier', loadComponent: () => import('./dossiers-a-rectifier').then((m) => m.DossiersARectifier) },
   // Formulaire restreint de rectification en place (en-tête PPM + lignes marché) ; returnUrl en query param.

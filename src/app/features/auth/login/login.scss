@@ -21,7 +21,7 @@
   &__logo { width: 42px; height: 42px; flex: none; }
   &__textes { display: flex; flex-direction: column; line-height: 1.2; }
   &__institution { font-size: 12px; color: var(--texte-secondaire); }
-  &__appli { font-family: var(--police-titre); font-size: 19px; font-weight: 500; color: var(--texte); }
+  &__appli { font-family: var(--police-marque); font-size: 17px; font-weight: 500; color: var(--texte); }
 }
 
 .login-page {
@@ -86,7 +86,7 @@
   &__title {
     margin: 0 0 4px;
     font-family: var(--police-titre);
-    font-size: 19px;
+    font-size: 17px;
     font-weight: 500;
     color: var(--texte);
   }

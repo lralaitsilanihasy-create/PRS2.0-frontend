@@ -23,7 +23,8 @@
   --menu-survol: #1A527B;
   --section-fond: #082C47;
   --onglet-actif-fond: #EAF2FF;
-  --page-fond: #F3F7FB;
+  /* ⚠️ 31/10 (Espace de travail) — fond gris bleuté, un cran plus soutenu : les cartes blanches s’en détachent sans ombre. */
+  --page-fond: #E9EEF3;
   --carte-fond: #FFFFFF;
   --tableau-entete: #EEF1F4;
   --ligne-survol: #F7F8FA;
@@ -32,6 +33,8 @@
   --texte: #1F2328;
   --texte-secondaire: #5F6368;
   --texte-menu: #FFFFFF;
+  /* ⚠️ 31/10 (Espace de travail) — texte secondaire SUR FOND SOMBRE (en-tête bleu nuit) : institution, champ de recherche. */
+  --texte-menu-secondaire: #A9BCCD;
   --lien-soulignement: #B0B5BB;
   --or: #F5B800;
   --bouton-principal: #2557D6;
@@ -42,19 +45,22 @@
   --neutre-fond: #ECEEF1;    --neutre-texte: #3C4043;
   --bandeau-1: #FFFFFF; --bandeau-2: #C8102E; --bandeau-3: #007A3D;
 
-  /* Typographie — texte courant sans empattement (pile système), titres à empattements. */
+  /* Typographie — texte courant sans empattement (pile système). ⚠️ 31/10 (pilote, Espace de travail) — les TITRES passent
+     eux aussi sans empattements ; Georgia ne reste que pour la marque « PRS 2.0 » de l'en-tête (--police-marque). */
   --police-texte: 'Segoe UI', Roboto, Arial, sans-serif;
-  --police-titre: Georgia, 'Times New Roman', serif;
+  --police-titre: var(--police-texte);
+  --police-marque: Georgia, 'Times New Roman', serif;
 
-  /* Hauteur du menu principal, collé en haut de l'écran à la lecture : les éléments collants des écrans se posent dessous. */
-  --hauteur-menu: 43px;
+  /* Hauteur du menu principal, collé en haut de l'écran à la lecture : les éléments collants des écrans se posent dessous.
+     ⚠️ 31/10 (Espace de travail) — barre compacte : 43 → 36 px. */
+  --hauteur-menu: 36px;
 }
 
 /* Bandeau tricolore (design institutionnel) : 5 px, trois parts égales — en tête de chaque coquille et des pages sans menu
    (connexion, inscription, portail public). Décoratif : posé avec aria-hidden. */
 .bandeau-tricolore {
   display: flex;
-  height: 5px;
+  height: 3px;
   flex-shrink: 0;
 
   span { flex: 1; }
@@ -142,7 +148,8 @@
    les composants utilisent .page-title / .page-subtitle / .topbar-title). */
 .page-title {
   font-family: var(--police-titre);
-  font-size: 19px;
+  /* ⚠️ 31/10 (Espace de travail) — titre compact, sans empattements. */
+  font-size: 17px;
   font-weight: 500;
   color: var(--texte);
   letter-spacing: 0;

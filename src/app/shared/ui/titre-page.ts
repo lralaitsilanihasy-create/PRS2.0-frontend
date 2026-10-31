@@ -27,7 +27,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
     :host { display: block; }
     .tp { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
     .tp__textes { min-width: 0; }
-    .tp__titre { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0; font-family: var(--police-titre); font-size: 19px; font-weight: 500; line-height: 1.25; color: var(--texte); }
+    .tp__titre { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0; font-family: var(--police-titre); font-size: 17px; font-weight: 500; line-height: 1.25; color: var(--texte); }
     .tp__sous-titre { margin: 2px 0 0; font-size: 12px; color: var(--texte-secondaire); }
     .tp__actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .tp__actions:empty { display: none; }

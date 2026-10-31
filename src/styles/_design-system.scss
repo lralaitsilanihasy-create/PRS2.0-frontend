@@ -65,7 +65,8 @@
   /* Typographie */
   --text-xs  : 10px;
   --text-sm  : 11px;
-  --text-base: 13px;
+  /* ⚠️ 31/10 (Espace de travail) — texte courant à 12,5 px : plus d’informations par écran. */
+  --text-base: 12.5px;
   --text-md  : 13px;
   --text-lg  : 15px;
   --text-xl  : 18px;
@@ -73,11 +74,11 @@
   --text-3xl : 26px;
 
   /* Rayons — design institutionnel (31/10) : une carte ne dépasse pas 8 px ; lg, xl et 2xl y sont ramenés. */
-  --radius-sm  : 6px;
-  --radius-md  : 8px;
-  --radius-lg  : 8px;
-  --radius-xl  : 8px;
-  --radius-2xl : 8px;
+  --radius-sm  : 4px;
+  --radius-md  : 4px;
+  --radius-lg  : 4px;
+  --radius-xl  : 4px;
+  --radius-2xl : 4px;
   --radius-full: 100px;
 
   /* Ombres — superposées (ambiance neutre + touche de marque) pour une profondeur douce et sophistiquée. */
@@ -330,12 +331,13 @@ a:not([class]), .lien { text-decoration: underline; text-decoration-color: var(-
 .card {
   background: var(--carte-fond);
   border: 1px solid var(--bordure);
-  border-radius: 8px;
+  /* ⚠️ 31/10 (Espace de travail) — arrondis de 4 px. */
+  border-radius: 4px;
   overflow: hidden;
 }
 
 .card-header {
-  padding: 12px;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--bordure);
   display: flex;
   align-items: center;
@@ -355,7 +357,7 @@ a:not([class]), .lien { text-decoration: underline; text-decoration-color: var(-
   border-bottom: 2px solid var(--or);
 }
 
-.card-body { padding: 12px; }
+.card-body { padding: 10px 12px; }
 
 /* ══════════════════════════════════════════
    TABLEAUX
@@ -387,7 +389,8 @@ thead tr {
 }
 
 th {
-  padding: 7px 8px;
+  /* ⚠️ 31/10 (Espace de travail) — lignes resserrées. */
+  padding: 6px 10px;
   font-size: 12px;
   font-weight: 500;
   color: var(--texte);
@@ -400,7 +403,7 @@ th {
 }
 
 td {
-  padding: 7px 8px;
+  padding: 6px 10px;
   border: 1px solid var(--bordure);
   color: var(--texte);
   vertical-align: middle;
@@ -460,14 +463,14 @@ tbody tr {
 
 .form-control {
   width: 100%;
-  padding: 6px 10px;
-  font-size: 13px;
+  padding: 5px 9px;
+  font-size: 12.5px;
   font-family: var(--font-base);
   font-weight: 400;
   color: var(--texte);
   background: var(--carte-fond);
   border: 1px solid var(--bordure-champ);
-  border-radius: 6px;
+  border-radius: 4px;
   outline: none;
 
   &:focus-visible, &:focus {
@@ -537,10 +540,11 @@ textarea:focus-visible {
   align-items: center;
   justify-content: center;
   gap: 5px;
-  border-radius: 6px;
+  /* ⚠️ 31/10 (Espace de travail) — boutons compacts, arrondis de 4 px. */
+  border-radius: 4px;
   font-size: 12px;
   font-weight: 500;
-  padding: 7px 14px;
+  padding: 5px 11px;
   cursor: pointer;
   border: 1px solid transparent;
   transition: background 150ms ease, border-color 150ms ease, filter 150ms ease;

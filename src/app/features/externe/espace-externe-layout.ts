@@ -166,7 +166,7 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
     .cl-marque__logo { width: 42px; height: 42px; object-fit: contain; flex-shrink: 0; }
     .cl-marque__texte { display: flex; flex-direction: column; line-height: 1.2; }
     .cl-marque__s { font-size: 11px; color: var(--texte-secondaire); }
-    .cl-marque__t { font-family: var(--police-titre); font-size: 17px; font-weight: 500; color: var(--texte); }
+    .cl-marque__t { font-family: var(--police-marque); font-size: 16px; font-weight: 500; color: var(--texte); }
     .cl-onglets { background: var(--menu-fond); }
     .cl-nav { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 12px; box-sizing: border-box; display: flex; align-items: flex-end; gap: 2px; overflow-x: auto; scrollbar-width: thin; }
     .cl-nav a { flex: none; white-space: nowrap; margin-top: 5px; padding: 9px 13px; border-radius: 6px 6px 0 0; color: var(--texte-menu); text-decoration: none; font-size: 13px; transition: background 0.15s ease; }

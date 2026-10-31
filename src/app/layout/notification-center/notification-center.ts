@@ -95,7 +95,7 @@ const MESSAGERIE_ROLES: Record<string, string> = {
   `,
   styles: `
     .notif { position: relative; display: inline-flex; }
-    .notif__bell { position: relative; display: inline-flex; background: transparent; border: 0; cursor: pointer; line-height: 1; padding: 4px; color: var(--texte); }
+    .notif__bell { position: relative; display: inline-flex; background: transparent; border: 0; cursor: pointer; line-height: 1; padding: 4px; color: inherit; }
     /* ⚠️ 2026-09-16 (recette clavier du lot 5) — le repère de focus global (--p-400) ne tient que
        2,14:1 sur le blanc de la barre du haut. La règle .topbar de la coquille ne traverse pas
        l'encapsulation de ce composant : la cloche recolore son contour elle-même (5,93:1). */

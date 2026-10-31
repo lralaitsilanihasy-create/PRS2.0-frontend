@@ -258,7 +258,7 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
       overflow: auto;
     }
     .register-card__logo { display: block; width: 42px; height: 42px; object-fit: contain; margin-bottom: 8px; }
-    .register-card__title { margin: 0; font-size: 19px; }
+    .register-card__title { margin: 0; font-size: 17px; }
     .register-card__subtitle {
       margin: 2px 0 var(--cnm-space-3);
       font-size: var(--cnm-fs-sm);
