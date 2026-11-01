@@ -113,18 +113,20 @@ export function decisionsOffre(o: OffreEvaluee): { conformite: string; conformit
   template: `
     @let s = seance();
     <section class="iv">
-      <div class="iv__tete">
-        <p class="iv__sur">La séance d'ouverture des plis</p>
-        <h3 class="iv__objet">{{ etat(s.etat) }}</h3>
-        <div class="iv__chiffres">
-          <div class="iv__chiffre"><span class="iv__chiffre-l">Ouverte le</span><span class="iv__chiffre-v">{{ s.ouverteLe ? horodatage(s.ouverteLe) : '—' }}</span></div>
-          <div class="iv__chiffre"><span class="iv__chiffre-l">Offres déchiffrées le</span><span class="iv__chiffre-v">{{ s.dechiffreeLe ? horodatage(s.dechiffreeLe) : '—' }}</span></div>
-          <div class="iv__chiffre"><span class="iv__chiffre-l">Offres ouvertes</span><span class="iv__chiffre-v">{{ ouvertes() }} sur {{ s.offres.length }}</span></div>
-          <div class="iv__chiffre"><span class="iv__chiffre-l">Clés requises</span><span class="iv__chiffre-v">{{ s.quorum }}{{ s.secoursEmploye ? ' · secours employé' : '' }}</span></div>
-        </div>
-        @if (s.heureOuverture) { <p class="iv__note">Heure d'ouverture fixée : {{ horodatage(s.heureOuverture) }}.</p> }
-        @if (s.secoursDemande; as d) { <p class="iv__note">Part de secours demandée le {{ horodatage(d.date) }} — motif : {{ d.motif }}.</p> }
-      </div>
+      <!-- ⚠️ 01/11 (pilote, maquette « Écrans figés », variante A) — l'état en une ligne, puis la bande « en bref » des faits clés. -->
+      <p class="iv__ligne">{{ etat(s.etat) }}@if (s.heureOuverture) { · heure d'ouverture fixée : {{ horodatage(s.heureOuverture) }}}</p>
+      <dl class="iv__bref">
+        <div><dt>Ouverte le</dt><dd>{{ s.ouverteLe ? horodatage(s.ouverteLe) : '—' }}</dd></div>
+        <div><dt>Offres déchiffrées le</dt><dd>{{ s.dechiffreeLe ? horodatage(s.dechiffreeLe) : '—' }}</dd></div>
+        <div><dt>Offres ouvertes</dt><dd>{{ ouvertes() }} sur {{ s.offres.length }}<span>{{ s.quorum }} clés requises{{ s.secoursEmploye ? ' · secours employé' : '' }}</span></dd></div>
+        @if (s.pv; as pv) {
+          <div [class.iv__bref-ok]="!!pv.signe"><dt>PV d'ouverture</dt><dd>{{ pv.signe ? 'Signé' : pv.produit ? 'Non signé' : 'Non produit' }}@if (pv.signeLe) { <span>le {{ horodatage(pv.signeLe) }}</span> }</dd></div>
+          @if (pv.quorum; as q) {
+            <div [class.iv__bref-ok]="q.atteint"><dt>Quorum</dt><dd>{{ q.atteint ? 'Atteint' : 'Non atteint' }}<span>{{ q.requis }} requis, {{ q.obtenus }} présent{{ q.obtenus > 1 ? 's' : '' }}</span></dd></div>
+          }
+        }
+      </dl>
+      @if (s.secoursDemande; as d) { <p class="iv__note">Part de secours demandée le {{ horodatage(d.date) }} — motif : {{ d.motif }}.</p> }
 
       <div class="iv__bloc">
         <h4 class="iv__titre">Membres de la commission <span class="iv__compte">{{ s.membres.length }}</span></h4>
@@ -192,16 +194,14 @@ export class InstantaneSeanceVue {
   template: `
     @let ev = evaluation();
     <section class="iv">
-      <div class="iv__tete">
-        <p class="iv__sur">L'évaluation des offres</p>
-        <h3 class="iv__objet">{{ etat(ev.etat) }}</h3>
-        <div class="iv__chiffres">
-          <div class="iv__chiffre"><span class="iv__chiffre-l">Ouverte le</span><span class="iv__chiffre-v">{{ horodatage(ev.ouverteLe) }}</span></div>
-          @if (ev.ouvertePar) { <div class="iv__chiffre"><span class="iv__chiffre-l">Par</span><span class="iv__chiffre-v">{{ ev.ouvertePar }}</span></div> }
-          <div class="iv__chiffre"><span class="iv__chiffre-l">Offres évaluées</span><span class="iv__chiffre-v">{{ nbOffres() }}</span></div>
-          @if (ev.rapport?.signe) { <div class="iv__chiffre"><span class="iv__chiffre-l">Rapport validé le</span><span class="iv__chiffre-v">{{ horodatage(ev.rapport!.signeLe) }}</span></div> }
-        </div>
-      </div>
+      <!-- ⚠️ 01/11 (pilote, maquette « Écrans figés », variante A) — l'état en une ligne, puis la bande « en bref » des faits clés. -->
+      <p class="iv__ligne">L'évaluation des offres · {{ etat(ev.etat) }}</p>
+      <dl class="iv__bref">
+        <div><dt>Ouverte le</dt><dd>{{ horodatage(ev.ouverteLe) }}@if (ev.ouvertePar) { <span>par {{ ev.ouvertePar }}</span> }</dd></div>
+        <div [class.iv__bref-ok]="impartialite().ok"><dt>Impartialité</dt><dd>{{ impartialite().texte }}<span>{{ ev.declarations.length }} déclaration{{ ev.declarations.length > 1 ? 's' : '' }}</span></dd></div>
+        <div><dt>Offres évaluées</dt><dd>{{ nbOffres() }}</dd></div>
+        <div [class.iv__bref-ok]="!!ev.rapport?.signe"><dt>Rapport</dt><dd>{{ ev.rapport?.signe ? 'Signé' : ev.rapport ? 'Signatures en cours' : 'Pas encore produit' }}@if (ev.rapport?.signe) { <span>le {{ horodatage(ev.rapport!.signeLe) }}</span> }</dd></div>
+      </dl>
 
       <div class="iv__bloc">
         <h4 class="iv__titre">Déclarations des membres <span class="iv__compte">{{ ev.declarations.length }}</span></h4>
@@ -306,6 +306,13 @@ export class InstantaneEvaluationVue {
   readonly etape = (e: string): string => (LIBELLES_ETAPE as Record<string, string>)[e] ?? e;
   readonly signatures = computed(() => lignesSignatures(this.evaluation().rapport?.signaturesAttendues, this.evaluation().rapport?.signatures));
   readonly nbOffres = computed(() => this.evaluation().lots.reduce((n, l) => n + l.offres.length, 0));
+  /** ⚠️ 01/11 — les déclarations d'impartialité en un mot : toutes signées sans conflit, un conflit déclaré, ou en attente. */
+  readonly impartialite = computed(() => {
+    const d = this.evaluation().declarations;
+    if (d.some((x) => x.conflit)) return { texte: 'Conflit déclaré', ok: false };
+    if (!d.length || d.some((x) => !x.signeeLe)) return { texte: 'En attente', ok: false };
+    return { texte: 'Aucun conflit', ok: true };
+  });
 
   /** Le classement d'abord (rang croissant), les offres sans rang ensuite, par numéro. */
   trier(offres: readonly OffreEvaluee[]): OffreEvaluee[] {
@@ -330,24 +337,26 @@ export class InstantaneEvaluationVue {
   template: `
     <section class="iv">
       @for (l of attribution().lots; track l.lot) {
-        <div class="iv__tete">
-          <p class="iv__sur">L'attribution — lot {{ l.lot }}</p>
-          <h3 class="iv__objet">{{ etat(l) }}</h3>
-          @if (l.dossierMarche; as d) {
-            <p class="iv__note">Dossier de marché n° {{ d.idDossier }} · {{ d.sousType }}{{ d.statut ? ' · ' + statut(d.statut) : '' }}{{ d.avis ? ' · avis ' + avis(d.avis) : '' }}{{ d.creeLe ? ' · créé le ' + horodatage(d.creeLe) : '' }}</p>
-          }
-        </div>
-
-        @if (l.proposition; as p) {
-          <div class="iv__bloc">
-            <h4 class="iv__titre">Proposition du rapport</h4>
-            @if (p.titulaires?.length) {
-              <app-titulaires-proposes [titulaires]="p.titulaires" [lot]="l.lot" />
-            } @else if (p.infructueux) {
-              <p class="iv__note">Lot proposé infructueux{{ p.motifInfructuosite ? ' — ' + p.motifInfructuosite : '' }}.</p>
+        <!-- ⚠️ 01/11 (pilote, maquette « Écrans figés », variante A) — le lot et son dossier de marché en une ligne, puis la bande « en bref ». -->
+        <p class="iv__ligne">Lot {{ l.lot }}@if (l.dossierMarche; as d) { · dossier de marché n° {{ d.idDossier }} ({{ d.sousType }}){{ d.creeLe ? ', créé le ' + horodatage(d.creeLe) : '' }} }</p>
+        <dl class="iv__bref">
+          <div><dt>État du lot</dt><dd>{{ etat(l) }}@if (l.dossierMarche?.avis; as a) { <span>avis {{ avis(a) }}</span> }</dd></div>
+          @if (l.proposition; as p) {
+            @if (p.infructueux) {
+              <div><dt>Proposition</dt><dd>Infructueux@if (p.motifInfructuosite) { <span>{{ p.motifInfructuosite }}</span> }</dd></div>
             } @else {
-              <p class="iv__note"><strong>{{ p.candidat }}</strong>{{ p.numero != null ? ' (offre n° ' + p.numero + ')' : '' }}, {{ ariary(p.montant) }} HT{{ p.delai != null ? ' · délai ' + p.delai : '' }}</p>
+              <div><dt>Proposé par le rapport</dt><dd>{{ p.candidat }}@if (p.numero != null) { <span>offre n° {{ p.numero }}</span> }</dd></div>
+              <div><dt>Montant</dt><dd>{{ ariary(p.montant) }} HT@if (p.montantTtc != null) { <span>{{ ariary(p.montantTtc) }} TTC</span> }</dd></div>
+              @if (p.delai != null) { <div><dt>Délai</dt><dd>{{ p.delai }}</dd></div> }
             }
+          }
+        </dl>
+
+        <!-- La proposition simple est dans la bande « en bref » ; un contrat cadre garde ici la liste de ses titulaires. -->
+        @if (l.proposition?.titulaires?.length) {
+          <div class="iv__bloc">
+            <h4 class="iv__titre">Titulaires proposés par le rapport</h4>
+            <app-titulaires-proposes [titulaires]="l.proposition!.titulaires!" [lot]="l.lot" />
           </div>
         }
 

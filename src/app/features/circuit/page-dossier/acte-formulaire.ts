@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
 
 import { CategorieMarche, DemandeActe, SousTypeActe } from '../../../models';
-import { LIBELLES_ACTE, LIBELLES_CATEGORIE_MARCHE, SOUS_TYPES_ACTE } from './actes-gestion-modele';
+import { LIBELLES_ACTE, LIBELLES_CATEGORIE_MARCHE, SOUS_TYPES_ACTE, ariary } from './actes-gestion-modele';
 
 /**
  * ⚠️ Manuel de contrôle, M5a (V98) — les déclarations d'un acte de gestion, au dépôt comme à la modification d'un brouillon. Le montant
@@ -20,10 +20,19 @@ import { LIBELLES_ACTE, LIBELLES_CATEGORIE_MARCHE, SOUS_TYPES_ACTE } from './act
         </select>
       </label>
       @if (demande().sousType === 'AVN') {
+        <!-- ⚠️ 01/11 (pilote, « améliorer ») — l'unité dans le champ, et le montant relu en clair dessous (hausse ou baisse). -->
         <label class="form-group">
-          <span class="form-label">Montant de l’avenant, hors taxes (Ariary)</span>
-          <input class="form-control" type="number" step="1" [disabled]="desactive()" [value]="demande().montantHt ?? ''" (input)="poserNombre('montantHt', $event)" />
-          <span class="form-hint">Positif pour une hausse, négatif pour une baisse.</span>
+          <span class="form-label">Montant de l’avenant, hors taxes</span>
+          <span class="af__montant">
+            <input class="form-control" type="number" step="1" [disabled]="desactive()" [value]="demande().montantHt ?? ''" (input)="poserNombre('montantHt', $event)"
+              aria-describedby="af-montant-aide" />
+            <span class="af__unite" aria-hidden="true">Ar HT</span>
+          </span>
+          @if (lecture(); as l) {
+            <span class="af__lecture" [class.af__lecture--baisse]="l.baisse" role="status">{{ l.texte }}</span>
+          } @else {
+            <span class="form-hint" id="af-montant-aide">Positif pour une hausse, négatif pour une baisse.</span>
+          }
         </label>
       }
       @if (!montantInitialConnu()) {
@@ -42,8 +51,11 @@ import { LIBELLES_ACTE, LIBELLES_CATEGORIE_MARCHE, SOUS_TYPES_ACTE } from './act
           </select>
         </label>
       }
-      <fieldset class="af__faits">
-        <legend class="form-label">Faits du marché, s’ils sont survenus</legend>
+      <!-- ⚠️ 01/11 (pilote, « améliorer ») — des dates facultatives : repliées, sauf si l'une est déjà connue. -->
+      <details class="af__faits" [open]="faitsConnus()">
+        <summary class="af__faits-t">Dates du marché déjà survenues <span class="af__facultatif">facultatif</span></summary>
+        @if (demande().sousType === 'AVN') { <p class="form-hint af__faits-aide">Un avenant n’est plus possible après la réception ou le solde du marché.</p> }
+        <div class="af__faits-grille">
         <label class="form-group">
           <span class="form-label">Réception provisoire</span>
           <input class="form-control" type="date" [disabled]="desactive()" [value]="demande().dateReceptionProvisoire ?? ''" (input)="poser('dateReceptionProvisoire', $any($event.target).value || null)" />
@@ -56,13 +68,24 @@ import { LIBELLES_ACTE, LIBELLES_CATEGORIE_MARCHE, SOUS_TYPES_ACTE } from './act
           <span class="form-label">Solde réglé le</span>
           <input class="form-control" type="date" [disabled]="desactive()" [value]="demande().dateSolde ?? ''" (input)="poser('dateSolde', $any($event.target).value || null)" />
         </label>
-      </fieldset>
+        </div>
+      </details>
     </div>
   `,
   styles: `
-    .af { display: flex; flex-direction: column; gap: 0.6rem; }
-    .af__faits { border: 1px solid var(--n-200); border-radius: 8px; padding: 0.5rem 0.75rem; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); gap: 0.5rem; }
-    .af__faits legend { padding: 0 0.3rem; }
+    .af { display: flex; flex-direction: column; gap: 0.7rem; }
+    .af__montant { position: relative; display: block; }
+    .af__montant .form-control { padding-right: 4.5rem; font-variant-numeric: tabular-nums; appearance: textfield; -moz-appearance: textfield; }
+    .af__montant .form-control::-webkit-inner-spin-button, .af__montant .form-control::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .af__unite { position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); font-size: 0.85rem; color: var(--texte-secondaire); pointer-events: none; }
+    .af__lecture { font-size: 0.85rem; font-weight: 500; color: var(--favorable-texte); }
+    .af__lecture--baisse { color: var(--examen-texte); }
+    .af__faits { border: 1px solid var(--bordure); border-radius: 6px; padding: 0.4rem 0.75rem; }
+    .af__faits[open] { padding-bottom: 0.75rem; }
+    .af__faits-t { cursor: pointer; font-size: 0.9rem; font-weight: 500; padding: 0.2rem 0; }
+    .af__facultatif { margin-left: 0.4rem; padding: 0 0.45rem; border-radius: 999px; background: var(--neutre-fond); color: var(--neutre-texte); font-size: 0.72rem; font-weight: 500; }
+    .af__faits-aide { margin: 0.25rem 0 0.5rem; }
+    .af__faits-grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); gap: 0.5rem; }
   `,
 })
 export class ActeFormulaire {
@@ -78,6 +101,18 @@ export class ActeFormulaire {
   readonly libelles = LIBELLES_ACTE;
   readonly categories = Object.keys(LIBELLES_CATEGORIE_MARCHE) as CategorieMarche[];
   readonly libellesCategorie = LIBELLES_CATEGORIE_MARCHE;
+
+  /** ⚠️ 01/11 — le montant de l'avenant relu en clair : « Hausse de 25 000 000 Ar HT », « Baisse de … ». */
+  readonly lecture = computed(() => {
+    const v = this.demande().montantHt;
+    if (v == null || v === 0) return null;
+    return { texte: `${v > 0 ? 'Hausse' : 'Baisse'} de ${ariary(Math.abs(v))} HT`, baisse: v < 0 };
+  });
+  /** Une date du marché est déjà connue : le bloc des dates s'ouvre. */
+  readonly faitsConnus = computed(() => {
+    const d = this.demande();
+    return !!(d.dateReceptionProvisoire || d.dateReceptionDefinitive || d.dateSolde);
+  });
 
   poser<K extends keyof DemandeActe>(cle: K, valeur: DemandeActe[K]): void {
     this.demande.update((d) => ({ ...d, [cle]: valeur, ...(cle === 'sousType' && valeur !== 'AVN' ? { montantHt: null } : {}) }));

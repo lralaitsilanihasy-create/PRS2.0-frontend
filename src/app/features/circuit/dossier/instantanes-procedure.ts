@@ -131,8 +131,9 @@ export class InstantanePlanVue {
   readonly etapes = computed(() => etapesDuDao(etapesFigees(texte(this.v()['DATES_PREVISIONNELLES']))));
 }
 
-interface DocumentFige { idDocument: number; libelle?: string; extension?: string; version?: number | null; dateGeneration?: string }
-interface DisponibiliteFigee { raison?: string | null; supportsMinimaux?: string[] }
+interface PublicationFigee { datePublication?: string | null; jmpNumero?: string | null; jmpDate?: string | null; supports?: string | null }
+interface DocumentFige { idDocument: number; libelle?: string; extension?: string; version?: number | null; dateGeneration?: string; publication?: PublicationFigee | null }
+interface DisponibiliteFigee { raison?: string | null; supportsMinimaux?: string[]; idAvis?: string | null; statutPv?: string | null }
 
 /** Le projet de la version la plus récente (PDF et Word de la même version), ou null. */
 export function projetCourant(projets: readonly DocumentFige[]): { version: number; date: string; formats: string } | null {
@@ -151,14 +152,30 @@ export function projetCourant(projets: readonly DocumentFige[]): { version: numb
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="iv">
-      @if (projet(); as p) {
-        <div class="iv__tete">
-          <p class="iv__sur">Le projet d’avis spécifique soumis</p>
-          <h3 class="iv__objet">Version {{ p.version }} de la fiche DAO</h3>
-          <p class="iv__note">Produit le {{ p.date }} · {{ p.formats }} · le document se lit à la pièce « Projet d’avis spécifique » du dossier.</p>
+      <!-- ⚠️ 01/11 (pilote, maquette « Écrans figés », variante A) — la bande « en bref » : l'avis de la CNM sur le DAO, la publication
+           (date, journal), le projet d'avis et les lettres ; puis les supports et les documents. -->
+      <dl class="iv__bref">
+        @if (avis().idAvis; as a) {
+          <div [class.iv__bref-ok]="a === 'FAV' || a === 'FAVR'"><dt>Avis de la CNM sur le DAO</dt><dd>{{ libelleAvis(a) }}@if (avis().statutPv === 'SIGNE') { <span>PV signé</span> }</dd></div>
+        }
+        @if (publication(); as pub) {
+          <div><dt>Publié le</dt><dd>{{ jj(pub.datePublication) }}</dd></div>
+          @if (pub.jmpNumero) { <div><dt>Journal des marchés publics</dt><dd>n° {{ pub.jmpNumero }}@if (pub.jmpDate) { <span>du {{ jj(pub.jmpDate) }}</span> }</dd></div> }
+        } @else if (projet(); as p) {
+          <div><dt>Projet d’avis</dt><dd>Version {{ p.version }}<span>produit le {{ p.date }} · {{ p.formats }}</span></dd></div>
+        } @else {
+          <div><dt>Avis</dt><dd>Ni projet ni publication<span>à la soumission</span></dd></div>
+        }
+        <div><dt>Lettres d’invitation</dt><dd>{{ lettresUtiles() ? 'Après le PV favorable' : 'Sans objet' }}@if (!lettresUtiles()) { <span>catégorie sans lettre</span> }</dd></div>
+      </dl>
+      @if (publication()?.supports; as s) {
+        <div class="iv__bloc">
+          <h4 class="iv__titre">Publication</h4>
+          <p class="iv__note">{{ s }}</p>
         </div>
-      } @else {
-        <p class="iv__vide">Aucun projet d’avis n’était produit à la soumission.</p>
+      }
+      @if (projet() && publication()) {
+        <p class="iv__note">Projet d’avis : version {{ projet()!.version }}, produit le {{ projet()!.date }} · le document se lit à la pièce « Projet d’avis spécifique » du dossier.</p>
       }
 
       @if (supports().length) {
@@ -176,10 +193,7 @@ export function projetCourant(projets: readonly DocumentFige[]): { version: numb
       }
 
       @if (lettresUtiles()) {
-        <div class="iv__bloc">
-          <h4 class="iv__titre">Lettres d’invitation</h4>
-          <p class="iv__note">Elles s’impriment, une par candidat de la liste restreinte, après le PV favorable de la Commission.</p>
-        </div>
+        <p class="iv__note">Les lettres d’invitation s’impriment, une par candidat de la liste restreinte, après le PV favorable de la Commission.</p>
       }
     </section>
   `,
@@ -193,8 +207,18 @@ export class InstantaneAvisVue {
   readonly documents = computed(() => (this.donnees()['documents'] ?? []) as DocumentFige[]);
   readonly projet = computed(() => projetCourant((this.donnees()['projets'] ?? []) as DocumentFige[]));
   readonly supports = computed(() => this.avis().supportsMinimaux ?? []);
+  /** ⚠️ 01/11 — la publication du dernier avis imprimé (date, journal, supports), s'il y en a une. */
+  readonly publication = computed(() => this.documents().map((d) => d.publication).find((p) => !!p?.datePublication) ?? null);
+  readonly jj = (d?: string | null): string => (d ? jjmmaaaa(d.slice(0, 10)) : '—');
+  libelleAvis(a: string): string { return ({ FAV: 'Favorable', FAVR: 'Favorable avec réserves', DEF: 'Défavorable' } as Record<string, string>)[a] ?? a; }
   quand(d?: string): string { return horodatage(d ?? null); }
 }
+
+/** L'origine d'un membre de la commission, en clair. */
+const ORIGINES_MEMBRE: Readonly<Record<string, string>> = {
+  ENTITE_CONTRACTANTE: 'Entité contractante',
+  EXPERT_OBJET: 'Expert de l’objet',
+};
 
 @Component({
   selector: 'app-instantane-cao',
@@ -208,13 +232,24 @@ export class InstantaneAvisVue {
           <p class="iv__note">Elle se désigne avant l’ouverture des plis ; ses membres apparaîtront aux soumissions suivantes.</p>
         </div>
       } @else {
-        <div class="iv__tete">
-          <p class="iv__sur">La commission d’appel d’offres</p>
-          <h3 class="iv__objet">{{ membres().length }} membre{{ membres().length > 1 ? 's' : '' }}@if (decision()) { · décision {{ decision() }}}</h3>
+        <!-- ⚠️ 01/11 (pilote, maquette « Écrans figés », variante A) — la décision en une ligne, la bande « en bref », puis les membres
+             avec leur origine et leur fonction. -->
+        @if (decision()) { <p class="iv__ligne">{{ decision() }}</p> }
+        <dl class="iv__bref">
+          @if (dateDecision()) { <div><dt>Décision</dt><dd>{{ dateDecision() }}@if (decisionJointe()) { <span>décision jointe</span> }</dd></div> }
+          <div><dt>Membres</dt><dd>{{ membres().length }}@if (president(); as p) { <span>président : {{ p }}</span> }</dd></div>
+          <div [class.iv__bref-ok]="donnees()['etat'] === 'COMPLETE'"><dt>Composition</dt><dd>{{ donnees()['etat'] === 'COMPLETE' ? 'Complète' : 'À compléter' }}<span>{{ anomalies().length ? anomalies().length + ' constat(s)' : 'aucun constat' }}</span></dd></div>
+        </dl>
+        <div class="table-responsive">
+          <table class="cnm-table iv__table" aria-label="Membres de la commission d’appel d’offres">
+            <thead><tr><th scope="col">Membre</th><th scope="col">Rôle</th><th scope="col">Origine</th><th scope="col">Fonction ou domaine</th></tr></thead>
+            <tbody>
+              @for (m of membres(); track $index) {
+                <tr><td>{{ m.nom }}</td><td>{{ m.qualite }}</td><td>{{ m.origine || '—' }}</td><td>{{ m.fonction || '—' }}</td></tr>
+              }
+            </tbody>
+          </table>
         </div>
-        <ul class="iv__membres">
-          @for (m of membres(); track $index) { <li><span class="iv__nom">{{ m.nom }}</span><span class="iv__qualite">{{ m.qualite }}</span></li> }
-        </ul>
         @if (anomalies().length) {
           <div class="iv__bloc iv__bloc--alerte">
             <h4 class="iv__titre">Constats</h4>
@@ -232,11 +267,26 @@ export class InstantaneCaoVue {
     const d = this.donnees()['decision'] as Json | string | null | undefined;
     if (!d) return '';
     if (typeof d === 'string') return d;
-    return [texte(d['numero'] ?? d['reference']), d['date'] ? 'du ' + jjmmaaaa(texte(d['date'])) : ''].filter(Boolean).join(' ');
+    // ⚠️ 01/11 — la référence servie est déjà une phrase complète (« Décision n° … du 06/07/2026 portant … ») : telle quelle.
+    const ref = texte(d['numero'] ?? d['reference']);
+    if (ref) return /^d[ée]cision/i.test(ref) ? ref : `Décision ${ref}${d['date'] && !ref.includes(jjmmaaaa(texte(d['date']))) ? ' du ' + jjmmaaaa(texte(d['date'])) : ''}`;
+    return d['date'] ? 'Décision du ' + jjmmaaaa(texte(d['date'])) : '';
   });
   readonly membres = computed(() => ((this.donnees()['membres'] ?? []) as Json[]).map((m) => ({
-    nom: texte(m['nom'] ?? m['nomComplet'] ?? m['im']),
+    nom: [texte(m['nom'] ?? m['nomComplet'] ?? m['im']), texte(m['prenom'])].filter(Boolean).join(' '),
     qualite: m['president'] ? 'Président' : texte(m['qualite'] ?? m['role']) || 'Membre',
+    origine: ORIGINES_MEMBRE[texte(m['origine'])] ?? texte(m['origine']).replace(/_/g, ' ').toLowerCase(),
+    fonction: [texte(m['fonction']), texte(m['service']), texte(m['organisme']), texte(m['domaine'])].filter(Boolean).join(' · '),
   })));
+  /** ⚠️ 01/11 — la date de la décision, son fichier, le président (bande « en bref »). */
+  readonly dateDecision = computed(() => {
+    const d = this.donnees()['decision'];
+    return d && typeof d === 'object' && (d as Json)['date'] ? jjmmaaaa(texte((d as Json)['date'])) : '';
+  });
+  readonly decisionJointe = computed(() => {
+    const d = this.donnees()['decision'];
+    return !!d && typeof d === 'object' && (d as Json)['fichier'] === true;
+  });
+  readonly president = computed(() => this.membres().find((m) => m.qualite === 'Président')?.nom ?? '');
   readonly anomalies = computed(() => ((this.donnees()['anomalies'] ?? []) as Json[]).map((a) => texte(a['message'] ?? a['regle'])));
 }

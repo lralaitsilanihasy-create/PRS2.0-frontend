@@ -93,25 +93,28 @@ import { LienDossier } from './lien-dossier';
     @if (ouvert() && marche(); as m) {
       <div class="modal-backdrop">
         <div class="modal cnm-form agm__modale" role="dialog" aria-modal="true" aria-label="Déposer un acte de gestion" appModale (appModaleFermer)="fermer()">
-          <header class="modal-header-plain">
-            <span class="modal-title">Déposer un acte de gestion — {{ m.refeDossier || 'marché' }}</span>
-            <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="fermer()">✕</button>
-          </header>
+          <!-- ⚠️ 01/11 (pilote, « améliorer ») — l'en-tête des autres fenêtres : titre, marché, bouton de fermeture à sa place. -->
+          <div class="modal-header">
+            <h2 class="modal-title">Déposer un acte de gestion <span class="agm__ref">· {{ m.refeDossier || 'marché' }}</span></h2>
+            <button type="button" class="btn-close" aria-label="Fermer" (click)="fermer()">✕</button>
+          </div>
           <div class="modal-body">
             <app-acte-formulaire [(demande)]="demande" [montantInitialConnu]="m.montantInitialHt != null" [categorieConnue]="m.categorie != null" [desactive]="envoi()" />
-            @if (demande().sousType === 'AVN') {
+            <!-- Le plafond des avenants : seulement une fois le montant saisi, en jauge, avec la marge qui reste. -->
+            @if (demande().sousType === 'AVN' && demande().montantHt) {
               @if (projection(); as p) {
-                <p class="agm__projection" [class.agm__projection--ko]="p.depasse" role="status">
-                  Avec cet avenant, n° {{ m.rangAvenantSuivant }} : {{ ariary(p.cumul) }} sur un plafond de {{ ariary(p.plafond) }}{{ p.depasse ? ' — le plafond serait dépassé : le serveur refusera.' : '.' }}
-                </p>
+                <div class="agm__projection" [class.agm__projection--ko]="p.depasse" role="status">
+                  <span class="agm__projection-t">Avenant n° {{ m.rangAvenantSuivant }} · cumul des avenants {{ ariary(p.cumul) }} sur un plafond de {{ ariary(p.plafond) }}</span>
+                  <progress [max]="p.plafond || 1" [value]="p.cumul < 0 ? 0 : (p.cumul > p.plafond ? p.plafond : p.cumul)" aria-hidden="true"></progress>
+                  <span class="agm__projection-r">{{ p.depasse ? 'Plafond dépassé de ' + ariary(p.cumul - p.plafond) + ' : le dépôt sera refusé.' : 'Il reste ' + ariary(p.plafond - p.cumul) + ' sous le plafond (le tiers du montant initial).' }}</span>
+                </div>
               }
-            }
-            @if (manques().length) {
-              <ul class="agm__manques">@for (x of manques(); track x) { <li>{{ x }}</li> }</ul>
             }
             @if (refus(); as r) { <div class="alert alert-danger" role="alert"><span>{{ r }}</span></div> }
           </div>
-          <footer class="modal-footer">
+          <footer class="modal-footer agm__pied">
+            <!-- Ce qui manque se dit près du bouton qu'il bloque, sans alerte affichée d'emblée. -->
+            @if (manques().length) { <span class="agm__manque">Pour déposer : {{ manquesTexte() }}</span> }
             <button type="button" class="btn btn-outline" [disabled]="envoi()" (click)="fermer()">Annuler</button>
             <button type="button" class="btn btn-primary" [disabled]="envoi() || manques().length > 0" (click)="deposer()">{{ envoi() ? 'Dépôt…' : 'Déposer l’acte en brouillon' }}</button>
           </footer>
@@ -137,9 +140,15 @@ import { LienDossier } from './lien-dossier';
     .agm__ouvrir { font-weight: 500; }
     .agm__vide { margin: 0; font-size: 0.84rem; color: var(--n-500); }
     .agm__modale { max-width: 40rem; }
-    .agm__projection { margin: 0.6rem 0 0; font-size: 0.85rem; }
-    .agm__projection--ko { color: var(--danger-700, var(--retard-texte)); font-weight: 500; }
-    .agm__manques { margin: 0.5rem 0 0; padding-left: 1.2rem; font-size: 0.84rem; color: var(--warning-text); }
+    .agm__ref { font-weight: 400; color: var(--texte-secondaire); font-size: 0.9rem; }
+    .agm__projection { display: flex; flex-direction: column; gap: 0.3rem; margin: 0.8rem 0 0; padding: 0.6rem 0.8rem; border-radius: 6px;
+      background: var(--favorable-fond); color: var(--texte); font-size: 0.85rem; }
+    .agm__projection progress { width: 100%; height: 0.5rem; }
+    .agm__projection-r { font-weight: 500; color: var(--favorable-texte); }
+    .agm__projection--ko { background: var(--retard-fond); }
+    .agm__projection--ko .agm__projection-r { color: var(--retard-texte); }
+    .agm__pied { flex-wrap: wrap; }
+    .agm__manque { margin-right: auto; font-size: 0.82rem; color: var(--texte-secondaire); }
   `,
 })
 export class ActesGestionMarche implements OnInit {
@@ -174,6 +183,8 @@ export class ActesGestionMarche implements OnInit {
     return m ? projectionPlafond(m, this.demande().montantHt) : null;
   });
   readonly manques = computed(() => manquesDemande(this.demande(), this.marche()));
+  /** ⚠️ 01/11 — ce qui manque, en une phrase près du bouton (« le montant hors taxes de l'avenant… »). */
+  readonly manquesTexte = computed(() => this.manques().map((x) => x.charAt(0).toLowerCase() + x.slice(1).replace(/\.$/, '')).join(' ; ') + '.');
 
   ngOnInit(): void {
     this.charger();

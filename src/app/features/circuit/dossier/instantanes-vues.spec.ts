@@ -145,9 +145,10 @@ describe('Vues dédiées des écrans figés (manuel révisé, R4)', () => {
     fixture.componentRef.setInput('attribution', attribution);
     fixture.detectChanges();
     const t = texteDe(fixture);
-    expect(t).toContain('L\'attribution — lot 1 Au contrôle de la Commission');
-    expect(t).toContain(`Proposition du rapport Alpha (offre n° 1), ${AR(950000)} HT · délai 30 jours`);
-    expect(t).toMatch(/Dossier de marché n° 100371 · DDM-AOO · [^·]+ · créé le 13\/10\/2026 à 16:00/);
+    // ⚠️ 01/11 (variante A) — le lot et son dossier en une ligne, puis la bande « en bref ».
+    expect(t).toContain('État du lot Au contrôle de la Commission');
+    expect(t).toContain(`Proposé par le rapport Alpha offre n° 1 Montant ${AR(950000)} HT Délai 30 jours`);
+    expect(t).toContain('Lot 1 · dossier de marché n° 100371 (DDM-AOO), créé le 13/10/2026 à 16:00');
     expect(t).not.toContain('· SOUMIS ·');
     expect(t).not.toContain('Attributaire');
     expect(t).not.toContain('Retrait');

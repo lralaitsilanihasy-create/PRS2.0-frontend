@@ -145,7 +145,7 @@ describe('Écrans figés d’un dossier (manuel révisé, R4)', () => {
     fixture.detectChanges();
     http.expectNone((r) => r.url.includes('/instantanes/'));
     expect(racine().querySelector('app-instantane-evaluation')).not.toBeNull();
-    expect(texte()).toContain("L'évaluation des offres En cours");
+    expect(texte()).toContain("L'évaluation des offres · En cours");
   });
 
   it('changer de soumission lit les écrans de celle-ci ; un écran absent retombe sur le premier', () => {

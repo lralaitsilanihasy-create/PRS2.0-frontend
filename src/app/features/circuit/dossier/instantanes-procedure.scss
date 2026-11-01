@@ -30,6 +30,9 @@
 .iv__bref dt { font-size: 0.7rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--texte-secondaire); }
 .iv__bref dd { margin: 2px 0 0; font-weight: 500; color: var(--texte); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
 .iv__bref dd span { display: block; font-weight: 400; font-size: 0.78rem; color: var(--texte-secondaire); }
+/* Un fait conforme (PV signé, quorum atteint, aucun conflit…) : en vert, comme l'application. */
+.iv__bref > .iv__bref-ok { background: var(--favorable-fond); }
+.iv__bref > .iv__bref-ok dd { color: var(--favorable-texte); }
 .iv__jalons { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr)); }
 .iv__jalons li { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 20px 6px 0; text-align: center; }
 .iv__jalons li::before { content: ''; position: absolute; left: 0; right: 0; top: 6px; height: 2px; background: var(--menu-fond); }
