@@ -1,4 +1,15 @@
 import { EcartInstantane, EcartsInstantanes } from '../../../models';
+import { etapeIndexForDossier } from '../../../shared/circuit/circuit-workflow';
+
+/**
+ * ⚠️ 01/11 (pilote) — le contrôle de la CNM est-il terminé (PV signé, ou au-delà) ? La comparaison avec la soumission ne sert QUE
+ * pendant le contrôle : un écart y est un signal (une donnée a bougé pendant l'examen). Après, c'est la suite normale du marché
+ * (notification, signature, enregistrement) : on ne compare plus, les deux boutons « État actuel / À la soumission » restent.
+ * Un dossier retiré n'est pas « contrôlé ».
+ */
+export function controleTermine(statut: string | null | undefined): boolean {
+  return etapeIndexForDossier(statut ?? undefined) >= 4;
+}
 
 /**
  * ⚠️ 01/11 (« ecarts-ecrans-figes », §B1) — ce qu'une carte du dossier dit de ses écrans figés comparés à leur état actuel :

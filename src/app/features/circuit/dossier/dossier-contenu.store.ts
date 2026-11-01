@@ -2,6 +2,7 @@ import { Injectable, Signal, computed, inject, signal } from '@angular/core';
 import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { controleTermine } from './bilan-ecarts';
 import { ActionDossier, Capm, Chronometrage, ControleResultat, DiffDossier, Dossier, EcartsInstantanes, Instantane, Marche, MarchePrevision, ModePassation, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne, TypePieceJointe, VersionArchivee } from '../../../models';
 
 /** ⚠️ 30/10 — les pièces fournies par l'application qu'un élément du dossier présente en données (voir `ongletDe` de la liste des pièces). */
@@ -419,7 +420,10 @@ export class DossierContenuStore {
         // Écrans figés (R4) : dans la vague, silencieux — sans instantané (dossier soumis avant V104, ou non soumis), pas d'onglet.
         instantanes: this.instantaneService.liste(id).pipe(catchError(() => of([] as Instantane[]))),
         // ⚠️ 01/11 — les écarts avec la dernière soumission, dans la même vague : 404 sans écran figé, silencieux.
-        ecarts: this.instantaneService.ecarts(id).pipe(catchError(() => of(null as EcartsInstantanes | null))),
+        // Seulement pendant le contrôle (pilote, 01/11) : une fois le PV signé, on ne compare plus.
+        ecarts: controleTermine(this.dossier().statut)
+          ? of(null as EcartsInstantanes | null)
+          : this.instantaneService.ecarts(id).pipe(catchError(() => of(null as EcartsInstantanes | null))),
         controles: this.controleService.liste(id).pipe(catchError(() => of([] as ControleResultat[]))),
         exigees: this.dossier().idDmc || this.dossier().procedure
           ? this.dossierService.piecesExigees(id).pipe(catchError(() => of([] as TypePieceJointe[])))

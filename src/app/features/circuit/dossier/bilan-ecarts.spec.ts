@@ -1,5 +1,5 @@
 import { EcartsEcranInstantane, EcartsInstantanes } from '../../../models';
-import { bilanEcarts } from './bilan-ecarts';
+import { bilanEcarts, controleTermine } from './bilan-ecarts';
 
 const ecran = (e: string, x: Partial<EcartsEcranInstantane> = {}): EcartsEcranInstantane =>
   ({ ecran: e, identique: true, comparable: true, tronque: false, ecarts: [], ...x });
@@ -31,5 +31,10 @@ describe('bilanEcarts', () => {
 
   it('aucun écran comparable : non comparable, ni ✓ ni ≠', () => {
     expect(bilanEcarts(reponse(ecran('AVIS', { comparable: false, identique: null })), ['AVIS']).etat).toBe('non-comparable');
+  });
+
+  it('le contrôle est terminé dès le PV signé ; pas pendant l’examen ni pour un dossier retiré', () => {
+    for (const st of ['PV_SIGNE', 'EN_VERIFICATION', 'DECISION_TRANSMISE_SIGMP', 'CLOTURE']) expect(controleTermine(st), st).toBe(true);
+    for (const st of ['SOUMIS', 'EN_EXAMEN', 'EXAMINE', 'EN_ATTENTE_PIECES', 'A_REEXAMINER', 'RETIRE', null]) expect(controleTermine(st), String(st)).toBe(false);
   });
 });

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 
 import { horodatage } from '../../../shared/prmp/avis-specifique-modele';
-import { bilanEcarts } from './bilan-ecarts';
+import { bilanEcarts, controleTermine } from './bilan-ecarts';
 import { DossierContenuStore } from './dossier-contenu.store';
 import { DossierInstantanes, libelleEcranInstantane } from './dossier-instantanes';
 
@@ -15,7 +15,11 @@ import { DossierInstantanes, libelleEcranInstantane } from './dossier-instantane
  *
  * ⚠️ 01/11 (« ecarts-ecrans-figes », §B1) — à côté du sélecteur, la comparaison servie par le serveur entre la soumission (choisie, à
  * défaut la plus récente) et l'état actuel : « ✓ identique », « n écart(s) » qui déplie la liste (valeur soumise → valeur actuelle),
- * ou « non comparable » quand l'écran ne se recalcule pas pour ce profil. Sans réponse, rien n'est affiché.
+ * Sans réponse, rien n'est affiché.
+ *
+ * ⚠️ 01/11 (pilote) — la comparaison ne s'affiche que PENDANT LE CONTRÔLE (jusqu'au PV signé), et seulement quand quelque chose a
+ * changé : « ≠ n écarts », qui déplie la liste. Ni « identique », ni « non comparable », ni rien une fois le PV signé : les deux
+ * boutons suffisent à relire la version contrôlée.
  */
 @Component({
   selector: 'app-bascule-figee',
@@ -32,21 +36,13 @@ import { DossierInstantanes, libelleEcranInstantane } from './dossier-instantane
             </button>
           }
         </div>
-        @switch (bilan().etat) {
-          @case ('identique') {
-            <span class="bf__etat bf__etat--ok"><span aria-hidden="true">✓</span> identique à la soumission n° {{ comparee() }}@if (bilan().nonComparables.length) {<span class="bf__etat-note"> · {{ libellesNonComparables() }} : non comparable</span>}</span>
-          }
-          @case ('non-comparable') {
-            <span class="bf__etat" title="Cet écran ne se recalcule pas pour votre profil : seul ce qui a été soumis peut être lu.">Non comparable avec la soumission n° {{ comparee() }}</span>
-          }
-          @case ('ecarts') {
-            <button type="button" class="bf__etat bf__etat--ecart" [attr.aria-expanded]="deplie()" aria-controls="bf-ecarts" (click)="deplie.set(!deplie())">
-              <span aria-hidden="true">≠</span> {{ bilan().lignes.length }}{{ bilan().tronque ? '+' : '' }} écart{{ bilan().lignes.length > 1 ? 's' : '' }} avec la soumission n° {{ comparee() }}
-              <span aria-hidden="true">{{ deplie() ? '▴' : '▾' }}</span></button>
-          }
+        @if (signal()) {
+          <button type="button" class="bf__etat bf__etat--ecart" [attr.aria-expanded]="deplie()" aria-controls="bf-ecarts" (click)="deplie.set(!deplie())">
+            <span aria-hidden="true">≠</span> {{ bilan().lignes.length }}{{ bilan().tronque ? '+' : '' }} écart{{ bilan().lignes.length > 1 ? 's' : '' }} avec la soumission n° {{ comparee() }}
+            <span aria-hidden="true">{{ deplie() ? '▴' : '▾' }}</span></button>
         }
       </div>
-      @if (bilan().etat === 'ecarts' && deplie()) {
+      @if (signal() && deplie()) {
         <div class="bf__ecarts" id="bf-ecarts">
           <table>
             <caption class="bf__legende">Écarts entre la soumission n° {{ comparee() }} et l'état actuel</caption>
@@ -90,10 +86,8 @@ import { DossierInstantanes, libelleEcranInstantane } from './dossier-instantane
     .bf__date { font-weight: 400; }
     .bf__etat { display: inline-flex; gap: 6px; align-items: center; padding: 3px 10px; border-radius: 10px; font: inherit; font-size: 0.8rem; font-weight: 500;
       background: var(--neutre-fond); color: var(--neutre-texte); border: 0; }
-    .bf__etat--ok { background: var(--favorable-fond); color: var(--favorable-texte); }
     .bf__etat--ecart { background: var(--examen-fond); color: var(--examen-texte); cursor: pointer; }
     .bf__etat--ecart:focus-visible { outline: 2px solid var(--bouton-principal); outline-offset: 2px; }
-    .bf__etat-note { font-weight: 400; }
     .bf__ecarts { margin: 0 0 12px; border: 1px solid var(--bordure); border-radius: 6px; overflow: hidden; }
     /* Disposition fixe : un résumé long (200 caractères) passe à la ligne au lieu d'élargir le tableau. */
     .bf__ecarts table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 0.82rem; font-variant-numeric: tabular-nums; }
@@ -130,14 +124,17 @@ export class BasculeFigee {
   /** La soumission comparée à l'état actuel : celle qui est affichée, à défaut la plus récente de la carte. */
   readonly comparee = computed(() => this.choix() ?? this.soumissions()[0] ?? 0);
   readonly bilan = computed(() => bilanEcarts(this.contenu.ecarts().get(this.comparee()) ?? null, this.ecrans()));
-  readonly libellesNonComparables = computed(() => this.bilan().nonComparables.map(libelleEcranInstantane).join(', '));
+  /** Le PV est signé (ou au-delà) : on ne compare plus. */
+  private readonly controleTermine = computed(() => controleTermine(this.contenu.dossier().statut));
+  /** Pendant le contrôle, un écran comparable a changé depuis la soumission : la seule chose à signaler. */
+  readonly signal = computed(() => !this.controleTermine() && this.bilan().etat === 'ecarts');
   readonly libelleEcran = libelleEcranInstantane;
 
   constructor() {
     // La dernière soumission est lue dans la vague ; une plus ancienne, à son premier affichage.
     effect(() => {
       const n = this.comparee();
-      if (n) untracked(() => this.contenu.chargerEcarts(n));
+      if (n && !this.controleTermine()) untracked(() => this.contenu.chargerEcarts(n));
     });
   }
 

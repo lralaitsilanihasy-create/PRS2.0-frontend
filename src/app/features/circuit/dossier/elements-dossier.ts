@@ -4,7 +4,7 @@ import { Dossier } from '../../../models';
 import { DossierService } from '../../../services';
 import { ModaleDirective } from '../../../shared/a11y/modale.directive';
 import { Icone, NomIcone } from '../../../shared/ui/icone';
-import { bilanEcarts } from './bilan-ecarts';
+import { bilanEcarts, controleTermine } from './bilan-ecarts';
 import { DossierContenuStore } from './dossier-contenu.store';
 import { DossierDocuments } from './dossier-documents';
 import { OngletDossier, documentsDuDossier } from './documents-du-dossier';
@@ -45,6 +45,7 @@ const ICONES: Record<OngletDossier, NomIcone> = {
               <!-- ⚠️ 01/11 (pilote, fusion des écrans figés) — l'élément montre aussi ce qui a été soumis. -->
               <!-- ⚠️ 01/11 (« ecarts-ecrans-figes ») — « ≠ soumission » quand l'état actuel diffère de la dernière soumission (comparaison du serveur). -->
               @if (o.ecransFiges?.length && o.cle !== 'figes') {
+                <!-- ⚠️ 01/11 (pilote) — « ≠ soumission » seulement pendant le contrôle (jusqu'au PV signé) : après, on ne compare plus. -->
                 @if (differe(o.ecransFiges!)) {
                   <span class="pd-carte__fige pd-carte__fige--ecart" title="L'état actuel diffère de ce qui a été soumis : la fenêtre liste les écarts"><span aria-hidden="true">≠</span> soumission</span>
                 } @else {
@@ -91,7 +92,9 @@ export class ElementsDossier {
 
   icone(cle: OngletDossier): NomIcone { return ICONES[cle]; }
 
-  differe(ecrans: readonly string[]): boolean { return bilanEcarts(this.contenu.ecartsDerniere(), ecrans).etat === 'ecarts'; }
+  readonly controleTermine = computed(() => controleTermine(this.contenu.dossier().statut));
+
+  differe(ecrans: readonly string[]): boolean { return !this.controleTermine() && bilanEcarts(this.contenu.ecartsDerniere(), ecrans).etat === 'ecarts'; }
   libelle(cle: OngletDossier): string { return this.documents().find((o) => o.cle === cle)?.libelle ?? 'Dossier'; }
   fermer(): void {
     this.ouvert.set(null);
