@@ -38,6 +38,84 @@ export function texteValeurs(valeurs: Record<string, unknown> | null | undefined
     .join(' · ');
 }
 
+/** Les noms de valeurs connus, en clair ; un nom inconnu est découpé en mots (`dateLimiteRemise` → « date limite remise »). */
+const NOMS_VALEURS: Readonly<Record<string, string>> = {
+  procedureEnLigne: 'procédure dans l’application',
+  seanceOuverte: 'séance d’ouverture tenue',
+  pvOuvertureSigne: 'PV d’ouverture signé',
+  evaluationOuverte: 'évaluation ouverte',
+  rapportSigne: 'rapport signé',
+  rapportSigneLe: 'rapport signé le',
+  corrections: 'corrections hors calcul',
+};
+
+function nomLisible(cle: string): string {
+  if (NOMS_VALEURS[cle]) return NOMS_VALEURS[cle];
+  return cle.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
+}
+
+/** « 2026-08-21T11:00:00 » → « 21/08/2026 à 11:00 ». */
+function dateHeure(v: unknown): string {
+  const m = typeof v === 'string' ? /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/.exec(v) : null;
+  if (!m) return texteValeur(v);
+  return m[4] ? `${m[3]}/${m[2]}/${m[1]} à ${m[4]}:${m[5]}` : `${m[3]}/${m[2]}/${m[1]}`;
+}
+
+/** Le quorum d'une séance (`{ constate, regle, requis, obtenus, atteint, presidentRequis, presidentSigne, representant }`). */
+function texteQuorum(q: unknown): string {
+  if (!q || typeof q !== 'object') return 'non constaté';
+  const v = q as Record<string, unknown>;
+  if (v['constate'] === false) return 'non constaté';
+  const regle = v['regle'] === 'MAJORITE' ? 'quorum à la majorité' : v['regle'] ? `quorum (${String(v['regle']).toLowerCase()})` : 'quorum';
+  const effectif = v['requis'] != null && v['obtenus'] != null ? ` : ${v['requis']} requis, ${v['obtenus']} présent${Number(v['obtenus']) > 1 ? 's' : ''}` : '';
+  const atteint = v['atteint'] === false ? ' — NON atteint' : v['atteint'] === true ? ' — atteint' : '';
+  const president = v['presidentRequis'] === false ? ''
+    : v['presidentSigne'] === true ? (v['representant'] === true ? ' · représentant du président signataire' : ' · président signataire')
+    : v['presidentSigne'] === false ? ' · président NON signataire' : '';
+  return `${regle}${effectif}${atteint}${president}`;
+}
+
+/**
+ * ⚠️ 01/11 (pilote, « rendre la colonne Constat lisible ») — les valeurs constatées d'un contrôle en une phrase. Les trois règles
+ * automatiques du dossier de marché ont leur phrase (contrat : docs/api-endpoints.md, « Les deux premières règles » et
+ * `CORRECTIONS_HORS_CALCUL`) ; une autre règle garde la liste « nom : valeur », noms mis en mots.
+ */
+export function constatLisible(regle: string | null | undefined, valeurs: Record<string, unknown> | null | undefined): string {
+  if (!valeurs) return '';
+  if (valeurs['procedureEnLigne'] === false) return 'Procédure conduite hors de l’application : sans objet';
+  switch (regle) {
+    case 'CORRECTIONS_HORS_CALCUL': {
+      const c = Array.isArray(valeurs['corrections']) ? (valeurs['corrections'] as Record<string, unknown>[]) : [];
+      if (!c.length) return 'Aucune correction hors calcul : les montants évalués sont ceux calculés par l’application';
+      return `${c.length} correction${c.length > 1 ? 's' : ''} hors calcul : ` + c.map((x) =>
+        [x['lot'] != null ? `lot ${x['lot']}` : '', x['offre'] != null ? `offre ${x['offre']}` : '', x['libelle'] ? String(x['libelle']) : '']
+          .filter(Boolean).join(', ')
+        + (x['avant'] != null || x['apres'] != null ? ` (${texteValeur(x['avant'])} → ${texteValeur(x['apres'])})` : '')
+        + (x['motif'] ? ` — ${x['motif']}` : '')).join(' ; ');
+    }
+    case 'DOCUMENTS_EVALUATION_SIGNES': {
+      // Seul ce que le serveur a constaté est dit : une valeur absente ne vaut ni « signé » ni « non signé ».
+      const pv = valeurs['seanceOuverte'] === false ? 'Séance d’ouverture non tenue'
+        : valeurs['pvOuvertureSigne'] === true ? 'PV d’ouverture signé' : valeurs['pvOuvertureSigne'] === false ? 'PV d’ouverture NON signé' : '';
+      const rapport = valeurs['evaluationOuverte'] === false ? 'évaluation non ouverte'
+        : valeurs['rapportSigne'] === true ? `rapport d’évaluation signé${valeurs['rapportSigneLe'] ? ' le ' + dateHeure(valeurs['rapportSigneLe']) : ''}`
+        : valeurs['rapportSigne'] === false ? 'rapport d’évaluation NON signé' : '';
+      return [pv, rapport].filter(Boolean).join(' · ');
+    }
+    case 'QUORUM_COMMISSION': {
+      const ouverture = texteQuorum(valeurs['pvOuverture']);
+      const rapport = texteQuorum(valeurs['rapport']);
+      return ouverture === rapport
+        ? `À l’ouverture et au rapport : ${ouverture}`
+        : `À l’ouverture : ${ouverture} · au rapport : ${rapport}`;
+    }
+    default:
+      return Object.entries(valeurs)
+        .map(([k, v]) => `${nomLisible(k)} : ${k.endsWith('Le') ? dateHeure(v) : texteValeur(v)}`)
+        .join(' · ');
+  }
+}
+
 /**
  * Le refus 400 `CONTROLES_BLOQUANTS` (`details.controles[{ code, reference, libelle, valeurs }]`), un contrôle par ligne, pour la
  * boîte de dialogue (qui respecte les retours à la ligne) ; `null` si l'erreur est d'une autre nature.
@@ -48,7 +126,7 @@ export function messageControlesBloquants(e: ApiError | HttpErrorResponse): stri
   if (!controles.length) return 'La soumission est refusée : un contrôle bloquant n’est pas conforme.';
   const lignes = controles.map((c) => {
     const ref = c.reference ? `[${c.reference}] ` : '';
-    const vals = texteValeurs(c.valeurs);
+    const vals = constatLisible(c.code, c.valeurs);
     return `• ${ref}${c.libelle || c.code}${vals ? ' — ' + vals : ''}`;
   });
   return `La soumission est refusée : ${controles.length} contrôle(s) bloquant(s) non conforme(s). Corrigez, puis soumettez de nouveau.\n${lignes.join('\n')}`;

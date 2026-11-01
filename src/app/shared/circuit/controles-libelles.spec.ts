@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 
 import { ApiError, toApiError } from '../../core/errors/api-error';
 import { ControleResultat } from '../../models';
-import { bilanControles, controlesEffectifs, messageControleNonConforme, messageControlesBloquants, messageSoumissionRefusee, texteValeurs } from './controles-libelles';
+import { bilanControles, constatLisible, controlesEffectifs, messageControleNonConforme, messageControlesBloquants, messageSoumissionRefusee, texteValeurs } from './controles-libelles';
 
 const erreur = (status: number, body: unknown): ApiError => toApiError(new HttpErrorResponse({ status, error: body, url: '/api/dossiers/1/soumettre' }));
 
@@ -12,6 +12,22 @@ const ligne = (p: Partial<ControleResultat>): ControleResultat => ({
 });
 
 describe('Contrôles du dossier — règles pures (manuel révisé, R5)', () => {
+  // ⚠️ 01/11 (pilote) — le constat en phrase (dossier 00009/MAOO-CC/CNM/2026, recette).
+  it('constatLisible : une phrase par règle automatique, un repli lisible sinon', () => {
+    expect(constatLisible('CORRECTIONS_HORS_CALCUL', { procedureEnLigne: true, corrections: [] })).toBe('Aucune correction hors calcul : les montants évalués sont ceux calculés par l’application');
+    expect(constatLisible('CORRECTIONS_HORS_CALCUL', { procedureEnLigne: true, corrections: [{ lot: 1, offre: 2, libelle: 'erreur de report', avant: 10, apres: 12, motif: 'acte d’engagement' }] }))
+      .toBe('1 correction hors calcul : lot 1, offre 2, erreur de report (10 → 12) — acte d’engagement');
+    expect(constatLisible('DOCUMENTS_EVALUATION_SIGNES', { procedureEnLigne: true, seanceOuverte: true, pvOuvertureSigne: true, evaluationOuverte: true, rapportSigne: true, rapportSigneLe: '2026-08-21T11:00:00' }))
+      .toBe('PV d’ouverture signé · rapport d’évaluation signé le 21/08/2026 à 11:00');
+    const q = { constate: true, regle: 'MAJORITE', requis: 2, obtenus: 2, atteint: true, presidentRequis: true, presidentSigne: true };
+    expect(constatLisible('QUORUM_COMMISSION', { procedureEnLigne: true, pvOuverture: q, rapport: q }))
+      .toBe('À l’ouverture et au rapport : quorum à la majorité : 2 requis, 2 présents — atteint · président signataire');
+    expect(constatLisible('QUORUM_COMMISSION', { pvOuverture: q, rapport: { ...q, obtenus: 1, atteint: false } }))
+      .toBe('À l’ouverture : quorum à la majorité : 2 requis, 2 présents — atteint · président signataire · au rapport : quorum à la majorité : 2 requis, 1 présent — NON atteint · président signataire');
+    expect(constatLisible('DOCUMENTS_EVALUATION_SIGNES', { procedureEnLigne: false })).toBe('Procédure conduite hors de l’application : sans objet');
+    expect(constatLisible('DELAI_PUBLICITE', { dateLimiteRemise: '2026-08-14', joursObtenus: 28 })).toBe('date limite remise : 14/08/2026 · jours obtenus : 28');
+  });
+
   it('texteValeurs : les valeurs constatées en une ligne, dates et booléens en clair', () => {
     expect(texteValeurs({ procedureEnLigne: true, pvOuvertureSigne: false, rapportSigneLe: '2026-10-07T09:44:22', pvOuverture: { constate: false } })).toBe(
       'procedureEnLigne : oui · pvOuvertureSigne : non · rapportSigneLe : 07/10/2026 09:44 · pvOuverture : constate : non',
@@ -32,7 +48,7 @@ describe('Contrôles du dossier — règles pures (manuel révisé, R5)', () => 
     });
     const m = messageControlesBloquants(e);
     expect(m).toContain('2 contrôle(s) bloquant(s)');
-    expect(m).toContain("\n• [2-III-A P5] Documents d'évaluation signés — pvOuvertureSigne : non · rapportSigne : oui");
+    expect(m).toContain("\n• [2-III-A P5] Documents d'évaluation signés — PV d’ouverture NON signé · rapport d’évaluation signé");
     expect(m).toContain('\n• QUORUM_COMMISSION');
     expect(messageControlesBloquants(erreur(409, { code: 'VACANCE_PRMP', message: 'x' }))).toBeNull();
   });

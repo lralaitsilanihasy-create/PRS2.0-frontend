@@ -5,7 +5,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { telechargerBlob } from '../../core/securite/fichiers-surs';
 import { ControleCorps, ControleResultat, PointsCtrl, ResultatControle } from '../../models';
 import { ControleService } from '../../services';
-import { LIBELLES_RESULTAT, bilanControles, controlesEffectifs, texteValeurs } from './controles-libelles';
+import { LIBELLES_RESULTAT, bilanControles, constatLisible, controlesEffectifs } from './controles-libelles';
 
 /** La saisie d'un résultat (levée d'un contrôle existant, ou nouveau contrôle B). */
 interface Saisie {
@@ -201,7 +201,8 @@ export class ControlesDossier {
   });
 
   valeurs(c: ControleResultat): string {
-    return texteValeurs(c.valeurs);
+    // ⚠️ 01/11 (pilote) — le constat en phrase, plus les clés brutes du serveur.
+    return constatLisible(c.regle, c.valeurs);
   }
 
   quand(iso: string | null): string {

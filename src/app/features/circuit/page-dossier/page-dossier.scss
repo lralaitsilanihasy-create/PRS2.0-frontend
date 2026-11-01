@@ -265,6 +265,8 @@
 
 /* ⚠️ 01/11 (pilote, variante A) — la chaîne de la procédure, sous la synthèse ; l'historique s'ouvre en fenêtre (« Historique »). */
 .pd-chaine { display: block; }
+/* ⚠️ 01/11 (pilote) — les actes de gestion d'un marché : une barre repliée, sur toute la largeur. */
+.pd-actes { display: block; }
 .pd-sousmodal__ref { font-weight: 400; color: var(--texte-secondaire); font-size: 0.9rem; }
 .pd-sousmodal__journal { margin-left: auto; margin-right: 0.5rem; }
 

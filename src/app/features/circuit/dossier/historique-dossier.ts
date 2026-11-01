@@ -129,6 +129,7 @@ type EtatHistorique = { etat: 'chargement' } | { etat: 'erreur' } | { etat: 'pre
         <app-etat-erreur message="L’historique du dossier n’a pas pu être chargé." (reessayer)="charger(idDossier())" />
       } @else if (filiation()) {
         <!-- ⚠️ 01/11 (pilote, variante A) — les dossiers liés en pastilles, dans l'ordre de l'arbre : le choix filtre l'historique. -->
+        @if (!enResume()) {
         <p class="hd__info">{{ nbDossiers() }} dossier{{ nbDossiers() > 1 ? 's' : '' }} lié{{ nbDossiers() > 1 ? 's' : '' }} — choisissez-en un pour voir son historique.</p>
         <div class="hd__dossiers" role="group" aria-label="Dossiers liés">
           @for (n of noeuds(); track $index) {
@@ -143,8 +144,9 @@ type EtatHistorique = { etat: 'chargement' } | { etat: 'erreur' } | { etat: 'pre
             }
           }
         </div>
+        }
         <div class="hd__evts" aria-live="polite">
-          @if (noeudChoisi(); as n) {
+          @if (!enResume() && noeudChoisi(); as n) {
             <div class="hd__evts-tete">
               <h3 class="hd__evts-titre">{{ n.refeDossier || 'Dossier #' + n.idDossier }}</h3>
               <app-statut-badge [statut]="n.statut" />
@@ -162,7 +164,7 @@ type EtatHistorique = { etat: 'chargement' } | { etat: 'erreur' } | { etat: 'pre
             @case ('pret') {
               @if (evenementsChoisis().length) {
                     <ol class="hd__liste">
-                      @for (e of evenementsChoisis(); track $index) {
+                      @for (e of evenementsAffiches(); track $index) {
                         <li class="hd__evt">
                           <span class="hd__date">{{ date(e.date) }}</span>
                           <span class="hd__corps">
@@ -184,6 +186,9 @@ type EtatHistorique = { etat: 'chargement' } | { etat: 'erreur' } | { etat: 'pre
                         </li>
                       }
                     </ol>
+                    @if (enResume() && evenementsChoisis().length > evenementsAffiches().length) {
+                      <button type="button" class="btn btn-link btn-sm hd__tout" (click)="complet.set(true)">Tout l’historique ({{ evenementsChoisis().length }} événements, dossiers liés compris)</button>
+                    }
               } @else {
                 <p class="hd__info">Rien n’est encore enregistré sur ce dossier.</p>
               }
@@ -222,6 +227,7 @@ type EtatHistorique = { etat: 'chargement' } | { etat: 'erreur' } | { etat: 'pre
     .hd__type { font-weight: 500; }
     .hd__ref { overflow-wrap: anywhere; color: var(--texte); }
     .hd__meta { font-size: 12px; color: var(--texte-secondaire); overflow-wrap: anywhere; }
+    .hd__tout { margin-top: 4px; padding-left: 0; }
     @container (max-width: 40rem) {
       .hd__evt { grid-template-columns: minmax(0, 1fr); gap: 0; }
     }
@@ -233,6 +239,17 @@ export class HistoriqueDossier {
 
   /** Le dossier de la page (ou du volet) : l'arbre est celui auquel il appartient. */
   readonly idDossier = input.required<number>();
+  /**
+   * ⚠️ 01/11 (pilote, maquette « Tous mes dossiers », variante B) — dans le volet d'une liste : les `resume` derniers événements du
+   * dossier, le plus récent d'abord, sans les pastilles des dossiers liés ; « Tout l'historique » déplie la vue complète.
+   */
+  readonly resume = input<number | null>(null);
+  readonly complet = signal(false);
+  readonly enResume = computed(() => this.resume() != null && !this.complet());
+  readonly evenementsAffiches = computed(() => {
+    const n = this.resume();
+    return this.enResume() && n != null ? this.evenementsChoisis().slice(-n).reverse() : this.evenementsChoisis();
+  });
 
   /** `indisponible` : la route n'est pas servie par ce serveur (404) — le bloc ne s'affiche pas, plutôt qu'une erreur sur chaque page. */
   readonly etat = signal<'chargement' | 'erreur' | 'pret' | 'indisponible'>('chargement');

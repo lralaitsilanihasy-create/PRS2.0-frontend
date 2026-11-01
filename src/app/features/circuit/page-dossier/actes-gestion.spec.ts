@@ -84,6 +84,11 @@ describe('Actes de gestion (manuel de contrôle, M5a — V98)', () => {
     it('montre les faits, le plafond et les actes ; la PRMP dépose, l’acte s’ouvre en brouillon', () => {
       const { http, toast } = monter('PRMP', MARCHE);
       const el = fixture.nativeElement as HTMLElement;
+      // ⚠️ 01/11 (pilote) — une barre repliée : le nombre d'actes et le plafond ; « Détails » déplie les faits et la liste.
+      expect(texte(el.querySelector('.agm__barre'))).toContain('1 acte');
+      expect(el.querySelector('.agm__detail')).toBeNull();
+      fixture.componentInstance.deplie.set(true);
+      fixture.detectChanges();
       expect(texte(el.querySelector('.agm__plafond'))).toContain('le tiers du montant initial');
       expect(texte(el.querySelector('.agm__acte'))).toContain('Avenant n° 1');
       expect(texte(el.querySelector('.agm__ref'))).toBe('00012/AVN1/CNM/2026');

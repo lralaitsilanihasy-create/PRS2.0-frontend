@@ -48,10 +48,12 @@ describe('Aperçu du dossier (volet de droite)', () => {
 
   it('référence, statut, gestes de l’hôte avec « Ouvrir la page du dossier », frise ; l’identité une fois le contenu lu', () => {
     const { fixture, hote, http } = monter();
-    expect(texte(hote.querySelector('.ad__ref'))).toBe('00011/DAOO/CNM/2026');
-    expect(hote.querySelector('.ad__statut app-statut-badge')).not.toBeNull();
-    expect(Array.from(hote.querySelectorAll('.ad__gestes button, .ad__gestes a')).map((b) => texte(b))).toEqual(['Dispatcher', 'Ouvrir la page du dossier']);
-    expect(hote.querySelector('.ad__gestes a')?.getAttribute('href')).toBe('/president/dossier/42?retour=liste');
+    // ⚠️ 01/11 (variante B) — le statut est dans le titre ; « Ouvrir la page du dossier » passe dans l'en-tête.
+    expect(texte(hote.querySelector('.ad__ref'))).toBe('00011/DAOO/CNM/2026 Initial');
+    expect(hote.querySelector('.ad__ref app-statut-badge')).not.toBeNull();
+    expect(Array.from(hote.querySelectorAll('.ad__gestes button, .ad__gestes a')).map((b) => texte(b))).toEqual(['Dispatcher']);
+    expect(texte(hote.querySelector('.ad__ouvrir'))).toBe('Ouvrir la page du dossier →');
+    expect(hote.querySelector('.ad__ouvrir')?.getAttribute('href')).toBe('/president/dossier/42?retour=liste');
     expect(texte(hote.querySelector('.frise'))).toBe('frise du dossier');
     expect(hote.querySelector('.ad__attente')).not.toBeNull();
     expect(hote.querySelector('app-dossier-identite')).toBeNull();
@@ -60,7 +62,7 @@ describe('Aperçu du dossier (volet de droite)', () => {
     fixture.detectChanges();
     expect(hote.querySelector('.ad__attente')).toBeNull();
     expect(hote.querySelector('app-dossier-identite')).not.toBeNull();
-    // ⚠️ 31/10 — l'historique complet du dossier suit l'identité (demande « filiation-dossier », B1).
-    expect(http.match('/api/dossiers/42/filiation').length).toBe(1);
+    // ⚠️ 01/11 (variante B) — la chaîne de la procédure et les derniers événements lisent chacun la filiation (B1).
+    expect(http.match('/api/dossiers/42/filiation').length).toBe(2);
   });
 });

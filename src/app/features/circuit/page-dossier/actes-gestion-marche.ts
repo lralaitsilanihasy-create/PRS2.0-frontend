@@ -17,6 +17,9 @@ import { LienDossier } from './lien-dossier';
  * les faits retenus (montant initial, catégorie, réceptions, solde), le cumul des avenants face au **plafond du tiers**, la liste des
  * actes avec leur avis, et — pour la PRMP ou l'UGPM, une fois le marché contrôlé favorablement — le **dépôt** d'un acte, qui naît en
  * brouillon : la page de son dossier s'ouvre aussitôt pour y joindre les pièces et le soumettre.
+ *
+ * ⚠️ 01/11 (pilote, « ne pas encombrer l'écran ») — une BARRE d'une ligne, repliée : le nombre d'actes, la part du plafond des avenants
+ * et le bouton de dépôt ; « Détails » déplie les faits du marché et la liste des actes.
  */
 @Component({
   selector: 'app-actes-gestion-marche',
@@ -27,7 +30,24 @@ import { LienDossier } from './lien-dossier';
       <!-- ⚠️ 19/10 (pilote) — rien avant le contrôle : un acte ne se dépose que sur un marché au PV favorable (FAV, FAVR). -->
       @if (m.actes.length || (redacteur() && (m.avisMarche === 'FAV' || m.avisMarche === 'FAVR'))) {
         <section class="agm" aria-labelledby="agm-titre">
-          <h2 class="agm__titre" id="agm-titre">Actes de gestion du marché</h2>
+          <div class="agm__barre">
+            <h2 class="agm__titre" id="agm-titre">Actes de gestion</h2>
+            <span class="agm__resume">{{ m.actes.length ? m.actes.length + ' acte' + (m.actes.length > 1 ? 's' : '') : 'aucun acte' }}</span>
+            @if (m.plafondAvenantsHt != null) {
+              <span class="agm__resume" [title]="'Avenants : ' + ariary(m.cumulAvenantsHt ?? 0) + ' sur un plafond de ' + ariary(m.plafondAvenantsHt) + ' (le tiers du montant initial)'">
+                · avenants {{ ariary(m.cumulAvenantsHt ?? 0) }} / {{ ariary(m.plafondAvenantsHt) }}
+                <progress class="agm__jauge" [max]="m.plafondAvenantsHt || 1" [value]="(m.cumulAvenantsHt ?? 0) < 0 ? 0 : (m.cumulAvenantsHt ?? 0)" aria-label="Part du plafond des avenants consommée"></progress>
+              </span>
+            }
+            <span class="agm__espace"></span>
+            @if (redacteur() && marcheControle(m)) {
+              <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrir()">Déposer un acte de gestion</button>
+            }
+            <button type="button" class="btn btn-outline btn-sm" [attr.aria-expanded]="deplie()" aria-controls="agm-detail" (click)="deplie.set(!deplie())">
+              Détails <span aria-hidden="true">{{ deplie() ? '▴' : '▾' }}</span></button>
+          </div>
+          @if (deplie()) {
+          <div class="agm__detail" id="agm-detail">
           <p class="agm__faits">
             @if (m.montantInitialHt == null && contratCadre.has(m.sousTypeMarche ?? '')) {
               <span>Contrat-cadre : montants par titulaire</span>
@@ -61,12 +81,10 @@ import { LienDossier } from './lien-dossier';
           } @else {
             <p class="agm__vide">Aucun acte de gestion sur ce marché.</p>
           }
-          @if (redacteur()) {
-            @if (marcheControle(m)) {
-              <div><button type="button" class="btn btn-secondary btn-sm" (click)="ouvrir()">Déposer un acte de gestion</button></div>
-            } @else {
-              <p class="agm__vide">Un acte de gestion se dépose une fois le marché contrôlé favorablement par la Commission.</p>
-            }
+          @if (redacteur() && !marcheControle(m)) {
+            <p class="agm__vide">Un acte de gestion se dépose une fois le marché contrôlé favorablement par la Commission.</p>
+          }
+          </div>
           }
         </section>
       }
@@ -102,8 +120,13 @@ import { LienDossier } from './lien-dossier';
     }
   `,
   styles: `
-    .agm { background: var(--carte-fond); border: 1px solid var(--n-200); border-radius: 12px; padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
-    .agm__titre { margin: 0; font-size: 0.95rem; }
+    .agm { background: var(--carte-fond); border: 1px solid var(--bordure); border-radius: 8px; padding: 0.5rem 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .agm__barre { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.6rem; }
+    .agm__titre { margin: 0; font-size: 0.95rem; font-weight: 500; }
+    .agm__resume { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.84rem; color: var(--texte-secondaire); }
+    .agm__jauge { width: 5rem; height: 0.5rem; }
+    .agm__espace { flex: 1; }
+    .agm__detail { display: flex; flex-direction: column; gap: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--bordure); }
     .agm__faits { margin: 0; display: flex; flex-wrap: wrap; gap: 0.35rem; font-size: 0.84rem; color: var(--n-600); }
     .agm__plafond { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.84rem; }
     .agm__plafond progress { width: 100%; max-width: 28rem; }
@@ -138,6 +161,8 @@ export class ActesGestionMarche implements OnInit {
 
   readonly marche = signal<MarcheActes | null>(null);
   readonly ouvert = signal(false);
+  /** ⚠️ 01/11 (pilote) — la barre est repliée : « Détails » montre les faits du marché et la liste des actes. */
+  readonly deplie = signal(false);
   readonly envoi = signal(false);
   readonly refus = signal<string | null>(null);
   readonly demande = signal<DemandeActe>(demandeVide());

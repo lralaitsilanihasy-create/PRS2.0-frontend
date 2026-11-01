@@ -262,7 +262,7 @@ const HAUT_TOPBAR = 48;
       }
       <!-- ⚠️ 09/10 (manuel de contrôle, M5a) — un marché porte ses actes de gestion ; un acte (DGC) se complète et se soumet ici. -->
       @if (dossier().idTypeDossier === 'DDM') {
-        <app-actes-gestion-marche class="pd-fiche" [dossier]="dossier()" />
+        <app-actes-gestion-marche class="pd-actes" [dossier]="dossier()" />
       } @else if (dossier().idTypeDossier === 'DGC') {
         <app-acte-gestion-dossier class="pd-fiche" [dossier]="dossier()" (modifie)="apresGeste()" />
       }

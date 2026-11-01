@@ -49,7 +49,8 @@ describe('Écrans figés d’un dossier (manuel révisé, R4)', () => {
     while (marche.nextNode()) morceaux.push(marche.currentNode.textContent ?? '');
     return morceaux.join(' ').replace(/\s+/g, ' ').trim();
   };
-  const onglets = (): string[] => Array.from(racine().querySelectorAll('[role="tab"]')).map((b) => (b.textContent ?? '').trim());
+  /** ⚠️ 01/11 (variante A) — le sommaire : le nom de chaque écran (sans son numéro ni son résumé). */
+  const onglets = (): string[] => Array.from(racine().querySelectorAll('[role="tab"] .di__nom')).map((b) => (b.textContent ?? '').trim());
 
   function monter(liste: Instantane[], options: { statut?: string; ecarts?: Map<number, EcartsInstantanes> } = {}): void {
     toast = { error: vi.fn() };
@@ -70,9 +71,27 @@ describe('Écrans figés d’un dossier (manuel révisé, R4)', () => {
     fixture.detectChanges();
   }
 
+  /**
+   * ⚠️ 01/11 (variante A) — les écrans d'une soumission sont lus ensemble : chaque requête en cours reçoit sa réponse (par défaut `{}`),
+   * et le numéro de soumission demandé est vérifié.
+   */
+  function servir(soumission: number, reponses: Record<string, unknown> = {}, echecs: readonly string[] = []): string[] {
+    const reqs = http.match((r) => r.url.startsWith('/api/dossiers/100371/instantanes/'));
+    const ecrans: string[] = [];
+    for (const r of reqs) {
+      const ecran = r.request.url.split('/').pop() ?? '';
+      ecrans.push(ecran);
+      expect(r.request.params.get('soumission')).toBe(String(soumission));
+      if (echecs.includes(ecran)) r.flush({ code: 'ERREUR' }, { status: 500, statusText: 'Erreur' });
+      else r.flush(reponses[ecran] ?? {});
+    }
+    fixture.detectChanges();
+    return ecrans;
+  }
+
   afterEach(() => http.verify());
 
-  // ⚠️ 01/11 (pilote) — pendant le contrôle seulement : « ≠ » sur l'onglet de l'écran qui a changé, et la liste de ses écarts.
+  // ⚠️ 01/11 (pilote) — pendant le contrôle seulement : « ≠ » sur l'écran qui a changé, et la liste de ses écarts.
   const ECARTS = new Map<number, EcartsInstantanes>([[2, { soumission: 2, figeLe: '2026-10-13T17:00:00', ecrans: [
     { ecran: 'PLAN', identique: false, comparable: true, tronque: false, ecarts: [{ chemin: 'ligne.montant', libelle: 'Ligne du plan — Montant', soumis: '1 000 Ar', actuel: '2 000 Ar' }] },
     { ecran: 'SEANCE', identique: true, comparable: true, tronque: false, ecarts: [] },
@@ -80,8 +99,7 @@ describe('Écrans figés d’un dossier (manuel révisé, R4)', () => {
 
   it('pendant le contrôle, l’écran qui a changé porte « ≠ » et déplie ses écarts', () => {
     monter(LISTE, { ecarts: ECARTS });
-    http.expectOne((r) => r.url === '/api/dossiers/100371/instantanes/PLAN').flush({});
-    fixture.detectChanges();
+    servir(2);
     expect(onglets()[0]).toContain('≠');
     expect(onglets()[1]).not.toContain('≠');
     racine().querySelector<HTMLButtonElement>('.di__ecart')!.click();
@@ -92,74 +110,63 @@ describe('Écrans figés d’un dossier (manuel révisé, R4)', () => {
 
   it('une fois le PV signé, plus de comparaison', () => {
     monter(LISTE, { statut: 'CLOTURE', ecarts: ECARTS });
-    http.expectOne((r) => r.url === '/api/dossiers/100371/instantanes/PLAN').flush({});
-    fixture.detectChanges();
+    servir(2);
     expect(onglets()[0]).not.toContain('≠');
     expect(racine().querySelector('.di__ecart')).toBeNull();
   });
 
-  it('ouvre la dernière soumission, ses écrans dans l’ordre de lecture, et lit le premier (PLAN) avec son numéro de soumission', () => {
+  it('le bandeau de la soumission, le sommaire dans l’ordre de la procédure avec un résumé par écran, puis le premier écran', () => {
     monter(LISTE);
+    // ⚠️ 01/11 (variante A) — le bandeau : la soumission, sa date, son auteur, le nombre d'écrans.
+    expect(racine().querySelector<HTMLSelectElement>('#di-soumission')?.value).toBe('2');
+    expect(texte()).toContain('figée le 13/10/2026 à 17:00 par ADMIN01');
+    expect(texte()).toContain('4 écrans · 2 soumissions');
     expect(onglets()).toEqual(['Ligne du plan', "Séance d'ouverture", 'Évaluation', 'Attribution']);
-    const select = racine().querySelector<HTMLSelectElement>('#di-soumission');
-    expect(select?.value).toBe('2');
-    expect(texte()).toContain('6 écrans · 2 soumissions');
-    const req = http.expectOne((r) => r.url === '/api/dossiers/100371/instantanes/PLAN');
-    expect(req.request.params.get('soumission')).toBe('2');
-    req.flush({ idDmc: 40, versionPpm: 3, ligne: { idDetail: 7 }, valeurs: { OBJET: 'Fournitures de bureau', PPM_REFERENCE: '00001/MLF/PPM/2026' } });
-    fixture.detectChanges();
-    // ⚠️ 18/10 (pilote) — plus de bande : la date et l'export sont sur la rangée des écrans, l'empreinte en infobulle.
-    expect(racine().querySelector('.di__bandeau')).toBeNull();
-    expect(racine().querySelector('.di__quand')).toBeNull();
-    // ⚠️ 18/10 (pilote) — la ligne du plan a sa vue dédiée ; la donnée complète reste dépliable dessous.
+    // Les quatre écrans de la soumission n° 2 sont lus ensemble.
+    expect(servir(2, {
+      PLAN: { idDmc: 40, versionPpm: 3, ligne: { idDetail: 7 }, valeurs: { OBJET: 'Fournitures de bureau', PPM_REFERENCE: '00001/MLF/PPM/2026', MONTANT_ESTIMATIF: '45 000 000' } },
+      EVALUATION,
+    }).sort()).toEqual(['ATTRIBUTION', 'EVALUATION', 'PLAN', 'SEANCE']);
+    // Le résumé du sommaire.
+    expect(racine().querySelector('[role="tab"] .di__resume')?.textContent?.trim()).toBe('45 000 000 Ar');
+    // La ligne du plan : sa vue dédiée, l'objet en une ligne puis la bande « en bref ».
+    expect(racine().querySelector('.di__titre')?.textContent?.trim()).toBe('Ligne du plan');
     expect(racine().querySelector('app-instantane-plan')).not.toBeNull();
+    expect(racine().querySelector('.iv__ligne')?.textContent?.trim()).toBe('Ligne n° 7 · Fournitures de bureau');
+    expect(texte()).toContain('Montant estimatif 45 000 000 Ar');
     expect(texte()).toContain('Référence 00001/MLF/PPM/2026');
     expect(texte()).toContain('mise à jour n° 3');
-    expect(racine().querySelector('.iv__objet')?.textContent?.trim()).toBe('Fournitures de bureau');
-    expect(racine().querySelector('.di__complet')).toBeNull();
   });
 
-  it('choisir un écran à vue dédiée le lit et le rend en lecture seule, avec les données complètes sous un volet', () => {
+  it('choisir un écran le montre sans le relire : la soumission entière est déjà lue', () => {
     monter(LISTE);
-    http.expectOne((r) => r.url === '/api/dossiers/100371/instantanes/PLAN').flush({});
-    fixture.detectChanges();
+    servir(2, { EVALUATION });
     fixture.componentInstance.choisirEcran('EVALUATION');
     fixture.detectChanges();
-    http.expectOne((r) => r.url === '/api/dossiers/100371/instantanes/EVALUATION' && r.params.get('soumission') === '2').flush(EVALUATION);
-    fixture.detectChanges();
+    http.expectNone((r) => r.url.includes('/instantanes/'));
     expect(racine().querySelector('app-instantane-evaluation')).not.toBeNull();
     expect(texte()).toContain("L'évaluation des offres En cours");
-    expect(racine().querySelector('.di__complet')).toBeNull();
   });
 
-  it('changer de soumission relit l’écran courant pour cette soumission ; un écran absent de celle-ci retombe sur le premier', () => {
+  it('changer de soumission lit les écrans de celle-ci ; un écran absent retombe sur le premier', () => {
     monter(LISTE);
-    http.expectOne((r) => r.url === '/api/dossiers/100371/instantanes/PLAN').flush({});
-    fixture.detectChanges();
+    servir(2, { EVALUATION });
     fixture.componentInstance.choisirEcran('EVALUATION');
-    fixture.detectChanges();
-    http.expectOne((r) => r.url === '/api/dossiers/100371/instantanes/EVALUATION').flush(EVALUATION);
-    fixture.detectChanges();
     fixture.componentInstance.choisirSoumission('1');
     fixture.detectChanges();
-    // La soumission n° 1 n'a pas d'évaluation : le premier écran (PLAN) de cette soumission est lu.
+    // La soumission n° 1 n'a pas d'évaluation : le premier écran (PLAN) de cette soumission est montré.
     expect(onglets()).toEqual(['Ligne du plan', "Séance d'ouverture"]);
-    const req = http.expectOne((r) => r.url === '/api/dossiers/100371/instantanes/PLAN');
-    expect(req.request.params.get('soumission')).toBe('1');
-    req.flush({});
-    fixture.detectChanges();
+    expect(servir(1).sort()).toEqual(['PLAN', 'SEANCE']);
     expect(racine().querySelector('app-instantane-plan')).not.toBeNull();
   });
 
   it('un échec de lecture montre l’état d’erreur avec reprise ; la reprise relit', () => {
     monter(LISTE);
-    http.expectOne((r) => r.url === '/api/dossiers/100371/instantanes/PLAN').flush({ code: 'ERREUR' }, { status: 500, statusText: 'Erreur' });
-    fixture.detectChanges();
+    servir(2, {}, ['PLAN']);
     expect(racine().querySelector('app-etat-erreur')).not.toBeNull();
     fixture.componentInstance.relance.set(1);
     fixture.detectChanges();
-    http.expectOne((r) => r.url === '/api/dossiers/100371/instantanes/PLAN').flush({});
-    fixture.detectChanges();
+    servir(2);
     expect(racine().querySelector('app-etat-erreur')).toBeNull();
   });
 

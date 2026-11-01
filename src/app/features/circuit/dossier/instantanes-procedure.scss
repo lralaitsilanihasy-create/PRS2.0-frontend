@@ -22,6 +22,28 @@
 .iv__chiffre-v { font-size: 1.05rem; font-weight: 500; color: var(--texte); font-variant-numeric: tabular-nums; }
 .iv__chiffre-v small { font-size: 0.75rem; font-weight: 500; }
 
+/* ⚠️ 01/11 (pilote, maquette « Écrans figés », variante A) — l'objet de la ligne, la bande « en bref », les jalons reliés. */
+.iv__ligne { margin: 0; font-size: 0.9rem; color: var(--texte-secondaire); }
+.iv__bref { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); margin: 0; border: 1px solid var(--bordure); border-radius: 6px; overflow: hidden; }
+.iv__bref > div { padding: 8px 12px; border-left: 1px solid var(--bordure); min-width: 0; }
+.iv__bref > div:first-child { border-left: 0; }
+.iv__bref dt { font-size: 0.7rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--texte-secondaire); }
+.iv__bref dd { margin: 2px 0 0; font-weight: 500; color: var(--texte); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.iv__bref dd span { display: block; font-weight: 400; font-size: 0.78rem; color: var(--texte-secondaire); }
+.iv__jalons { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr)); }
+.iv__jalons li { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 20px 6px 0; text-align: center; }
+.iv__jalons li::before { content: ''; position: absolute; left: 0; right: 0; top: 6px; height: 2px; background: var(--menu-fond); }
+.iv__jalons li:first-child::before { left: 50%; }
+.iv__jalons li:last-child::before { right: 50%; }
+.iv__jalons li:only-child::before { display: none; }
+.iv__jalons li::after { content: ''; position: absolute; left: calc(50% - 6px); top: 0; width: 12px; height: 12px; border-radius: 50%; background: var(--carte-fond); border: 2px solid var(--menu-fond); }
+@media (max-width: 40rem) {
+  .iv__jalons { grid-template-columns: minmax(0, 1fr); }
+  .iv__jalons li { align-items: flex-start; text-align: left; padding: 0 0 8px 22px; }
+  .iv__jalons li::before { left: 5px; right: auto; top: 0; bottom: 0; width: 2px; height: auto; }
+  .iv__jalons li::after { left: 0; top: 3px; }
+}
+
 /* Blocs de lecture. */
 .iv__deux { display: grid; grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr)); gap: 1rem; }
 .iv__bloc { padding: 0.85rem 1.1rem; border: 1px solid var(--n-200); border-radius: 12px; background: var(--carte-fond); }

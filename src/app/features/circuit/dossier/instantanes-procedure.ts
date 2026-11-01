@@ -54,21 +54,16 @@ export function etapesDuDao(etapes: readonly { etape: string; date: string }[]):
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="iv">
-      <div class="iv__tete">
-        <p class="iv__sur">La ligne du plan, telle que soumise</p>
-        <h3 class="iv__objet">{{ v()['OBJET'] || ligne()['designationMarche'] }}</h3>
-        <div class="iv__puces">
-          @for (p of puces(); track p) { <span class="iv__puce">{{ p }}</span> }
-        </div>
-        <div class="iv__chiffres">
-          <div class="iv__chiffre"><span class="iv__chiffre-l">Montant estimatif</span><span class="iv__chiffre-v">{{ v()['MONTANT_ESTIMATIF'] }} <small>Ar</small></span></div>
-          @if (ligne()['nouvMontEstim']) {
-            <div class="iv__chiffre"><span class="iv__chiffre-l">Nouveau montant</span><span class="iv__chiffre-v">{{ ligne()['nouvMontEstim'] }} <small>Ar</small></span></div>
-          }
-          <div class="iv__chiffre"><span class="iv__chiffre-l">Financement</span><span class="iv__chiffre-v">{{ v()['FINANCEMENT'] }}</span></div>
-          <div class="iv__chiffre"><span class="iv__chiffre-l">Compte</span><span class="iv__chiffre-v">{{ v()['COMPTES'] }}</span></div>
-        </div>
-      </div>
+      <!-- ⚠️ 01/11 (pilote, maquette « Écrans figés », variante A) — l'objet en une ligne, puis une bande « en bref » des faits clés
+           (au lieu du grand cadre bleu) ; le calendrier en jalons reliés. -->
+      <p class="iv__ligne">@if (ligne()['idDetail']) { Ligne n° {{ ligne()['idDetail'] }} · }{{ v()['OBJET'] || ligne()['designationMarche'] }}</p>
+      <dl class="iv__bref">
+        <div><dt>Montant estimatif</dt><dd>{{ v()['MONTANT_ESTIMATIF'] }} Ar</dd></div>
+        @if (ligne()['nouvMontEstim']) { <div><dt>Nouveau montant</dt><dd>{{ ligne()['nouvMontEstim'] }} Ar</dd></div> }
+        <div><dt>Mode</dt><dd>{{ v()['MODE'] || '—' }}</dd></div>
+        <div><dt>Forme · catégorie</dt><dd>{{ v()['FORME_MARCHE'] || '—' }}@if (v()['NATURE']) { <span>{{ v()['NATURE'] }}</span> }</dd></div>
+        <div><dt>Financement</dt><dd>{{ v()['FINANCEMENT'] || '—' }}@if (v()['COMPTES']) { <span>compte {{ v()['COMPTES'] }}</span> }</dd></div>
+      </dl>
 
       <div class="iv__deux">
         <div class="iv__bloc">
@@ -99,9 +94,9 @@ export function etapesDuDao(etapes: readonly { etape: string; date: string }[]):
       @if (etapes().length) {
         <div class="iv__bloc">
           <h4 class="iv__titre">Calendrier prévu pour le DAO</h4>
-          <ol class="iv__frise">
+          <ol class="iv__jalons">
             @for (e of etapes(); track e.cle) {
-              <li class="iv__jalon"><span class="iv__jalon-d">{{ e.date }}</span><span class="iv__jalon-l">{{ e.libelle }}</span></li>
+              <li><span class="iv__jalon-d">{{ e.date }}</span><span class="iv__jalon-l">{{ e.libelle }}</span></li>
             }
           </ol>
         </div>
@@ -126,7 +121,6 @@ export class InstantanePlanVue {
   readonly v = computed(() => (this.donnees()['valeurs'] ?? {}) as Record<string, string>);
   readonly ligne = computed(() => (this.donnees()['ligne'] ?? {}) as Json);
   readonly versionPlan = computed(() => Number(this.donnees()['versionPpm'] ?? 0));
-  readonly puces = computed(() => [this.v()['MODE'], this.v()['FORME_MARCHE'], this.v()['NATURE']].filter(Boolean));
   /** Un seul lot : rien à dire ; plusieurs : leurs montants. */
   readonly lots = computed(() => (this.v()['NB_LOTS_PPM'] && this.v()['NB_LOTS_PPM'] !== '1' ? `${this.v()['NB_LOTS_PPM']} — ${this.v()['LOTS_MONTANTS'] ?? ''}` : ''));
   readonly justifications = computed(() => [

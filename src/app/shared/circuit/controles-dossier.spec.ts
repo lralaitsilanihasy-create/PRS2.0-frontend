@@ -46,7 +46,7 @@ describe('Contrôles du dossier — composant (manuel révisé, R5)', () => {
     monter(LISTE, false);
     const t = texte();
     expect(t).toContain('1 conforme(s) 1 non conforme(s) 1 sans objet'.replace('1 sans objet', '0 sans objet'));
-    expect(t).toContain("2-III-A P5 Documents d'évaluation signés DOCUMENTS_EVALUATION_SIGNES Non conforme pvOuvertureSigne : non automatique");
+    expect(t).toContain("2-III-A P5 Documents d'évaluation signés DOCUMENTS_EVALUATION_SIGNES Non conforme PV d’ouverture NON signé automatique");
     expect(t).toContain('Conforme bloquant constate : 32 · requis : 30');
     expect(racine().querySelectorAll('tbody tr').length).toBe(2);
     expect(Array.from(racine().querySelectorAll('button')).map((b) => b.textContent?.trim())).toEqual(['Exporter en PDF']);

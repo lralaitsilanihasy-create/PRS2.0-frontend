@@ -11,11 +11,10 @@ import { VacanceStore } from '../../core/vacance/vacance.store';
 import { Dossier, Reception } from '../../models';
 import { DossierService, EntiteContractService, LocaliteService, ReceptionService, ReferenceLookupService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
-import { ReputeApprouve, StatutBadge } from '../../shared/circuit';
+import { ReputeApprouve, StatutBadge, traitementCnmTermine } from '../../shared/circuit';
+import { FamilleDossier, LIBELLES_FAMILLE, familleDossier } from '../circuit/dossier/famille-dossier';
 import { LienDossier } from '../circuit/page-dossier/lien-dossier';
 import { CompleterPiecesDepotModal } from './completer-pieces-depot-modal';
-import { ApercuDossier } from '../circuit/dossier/apercu-dossier';
-import { DeuxVolets } from '../../shared/ui/deux-volets';
 import { DossiersRefreshStore } from './dossiers-refresh.store';
 
 /**
@@ -30,10 +29,22 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
  * Lot L4-F6 : la ligne mène à la PAGE du dossier (`/prmp/dossier/:id`) ; la modale de consultation
  * quitte l'écran. Aucun filtre ni pagination ici : le retour rend la liste inchangée.
  */
+/** ⚠️ 01/11 (pilote, variante B) — l'état d'un dossier pour les compteurs : à traiter par la PRMP, à la Commission, traitement terminé. */
+export type EtatSuivi = 'a-traiter' | 'commission' | 'clos';
+
+const A_TRAITER: ReadonlySet<string> = new Set(['BROUILLON', 'EN_ATTENTE_DECISION_PRMP', 'EN_ATTENTE_COMPLEMENTS_DEPOT']);
+
+/** Un dossier retiré n'entre dans aucun compteur (il reste dans « tous »). */
+export function etatSuivi(d: Pick<Dossier, 'statut' | 'attentePrmp'>): EtatSuivi | null {
+  if (d.statut === 'RETIRE') return null;
+  if (A_TRAITER.has(d.statut ?? '') || d.attentePrmp) return 'a-traiter';
+  return traitementCnmTermine(d.statut) ? 'clos' : 'commission';
+}
+
 @Component({
   selector: 'app-suivi-delais',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, NgTemplateOutlet, RouterLink, EtatErreur, StatutBadge, ReputeApprouve, CompleterPiecesDepotModal, DeuxVolets, ApercuDossier],
+  imports: [DatePipe, NgTemplateOutlet, RouterLink, EtatErreur, StatutBadge, ReputeApprouve, CompleterPiecesDepotModal],
   template: `
     <section>
       <header class="page-header">
@@ -43,61 +54,40 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                profils) ; la PRMP garde « Suivi des dossiers CNM » (nom choisi le 2026-09-06, cadrage délais). -->
           <h1 class="page-title">Tous mes dossiers</h1>
         </div>
-        <div class="sdl-vue" role="group" aria-label="Choix de l'affichage">
-          <button type="button" class="btn btn-sm" [class.btn-primary]="vue() === 'volets'" [class.btn-outline]="vue() !== 'volets'" [attr.aria-pressed]="vue() === 'volets'" (click)="setVue('volets')">Deux volets</button>
-          <button type="button" class="btn btn-sm" [class.btn-primary]="vue() === 'tableau'" [class.btn-outline]="vue() !== 'tableau'" [attr.aria-pressed]="vue() === 'tableau'" (click)="setVue('tableau')">Tableau</button>
-        </div>
+        <!-- ⚠️ 01/11 (pilote) — l'affichage « Deux volets » est retiré de cet écran : le tableau seul, avec ses compteurs et ses filtres. -->
       </header>
       <!-- Phrase de rôle (proposition 2026-09-22, lot B) : à quoi sert l'écran, pour qui. -->
       <!-- ⚠️ 14/10 — la phrase disait « les brouillons ne sont pas ici » alors que la liste les porte depuis le 13/09 (demande pilote). -->
       <p class="page-role">Tous vos dossiers, du brouillon à la clôture : leur statut, leur date d'enregistrement à la Commission et la fin de traitement prévue. La PRMP y soumet ses brouillons.</p>
 
+      <!-- ⚠️ 01/11 (pilote, maquette « Tous mes dossiers », variante B) — les compteurs (qui filtrent aussi) et la barre de filtres :
+           recherche, famille. Ils valent pour les deux affichages. -->
+      @if (!loading() && !erreur() && dossiers().length) {
+        <div class="sdl-cpts" role="group" aria-label="Filtrer par état">
+          <button type="button" class="sdl-cpt" [attr.aria-pressed]="etatFiltre() === null" (click)="etatFiltre.set(null)"><b>{{ dossiers().length }}</b><span>tous</span></button>
+          <button type="button" class="sdl-cpt sdl-cpt--vous" [attr.aria-pressed]="etatFiltre() === 'a-traiter'" (click)="basculerEtat('a-traiter')"><b>{{ comptes()['a-traiter'] }}</b><span>à traiter par vous</span></button>
+          <button type="button" class="sdl-cpt" [attr.aria-pressed]="etatFiltre() === 'commission'" (click)="basculerEtat('commission')"><b>{{ comptes().commission }}</b><span>à la Commission</span></button>
+          <button type="button" class="sdl-cpt" [attr.aria-pressed]="etatFiltre() === 'clos'" (click)="basculerEtat('clos')"><b>{{ comptes().clos }}</b><span>traitement terminé</span></button>
+        </div>
+        <div class="sdl-filtres">
+          <label class="sdl-recherche" for="sdl-recherche"><span aria-hidden="true">⌕</span>
+            <input id="sdl-recherche" type="search" placeholder="Référence ou type (DAOO, MAOO…)" aria-label="Rechercher un dossier"
+              [value]="recherche()" (input)="recherche.set($any($event.target).value)" /></label>
+          <div class="sdl-puces" role="group" aria-label="Filtrer par famille">
+            <span class="sdl-puces__lib">Famille</span>
+            <button type="button" class="sdl-puce" [attr.aria-pressed]="familleFiltre() === null" (click)="familleFiltre.set(null)">Toutes</button>
+            @for (fm of familles(); track fm.famille) {
+              <button type="button" class="sdl-puce fam-{{ fm.famille }}" [attr.aria-pressed]="familleFiltre() === fm.famille" (click)="basculerFamille(fm.famille)">
+                <i aria-hidden="true"></i>{{ fm.libelle }} <span class="sdl-puce__n">{{ fm.n }}</span></button>
+            }
+          </div>
+        </div>
+      }
+
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
       } @else if (erreur()) {
         <app-etat-erreur message="Impossible de charger le suivi des délais." (reessayer)="charger()" />
-      } @else if (vue() === 'volets') {
-        <!-- ⚠️ 31/10 (pilote, Espace de travail, lot 3c) — deux volets : les dossiers à gauche, l'aperçu du dossier choisi à
-             droite (ses gestes, son dépôt et sa fin de traitement, son identité) ; le premier est choisi d'office. -->
-        @if (!dossiers().length) {
-          <p class="text-muted">Aucun dossier à la CNM.</p>
-        } @else {
-        <app-deux-volets [ouvert]="!!selection()" [cle]="selection()?.idDossier ?? null" libelleListe="Mes dossiers" libelleDetail="Aperçu du dossier"
-                         invite="Choisissez un dossier : son aperçu s’affiche ici.">
-          <ul liste class="sdl-volet">
-            @for (d of dossiers(); track d.idDossier) {
-              <li class="sdl-item" [class.sdl-item--on]="selection()?.idDossier === d.idDossier">
-                <button type="button" class="sdl-ligne" [attr.aria-pressed]="selection()?.idDossier === d.idDossier" (click)="choisi.set(d.idDossier)">
-                  <span class="sdl-ligne__ref">{{ d.refeDossier || ('Dossier #' + d.idDossier) }} <span class="sdl-ligne__type">{{ typeDossierLabel(d) }}</span></span>
-                  <span class="sdl-ligne__ent">{{ entiteLabel(d) }}</span>
-                  <span class="sdl-ligne__bas">
-                    <app-statut-badge [statut]="d.statut" />
-                    @if (d.attentePrmp) { <span class="sdl-attente">⏸ à vous</span> }
-                  </span>
-                </button>
-              </li>
-            }
-          </ul>
-          <div detail>
-            @for (d of selectionListe(); track d.idDossier) {
-              <app-apercu-dossier [dossier]="d" [lien]="lien.commandes(d.idDossier)" [params]="lien.params()">
-                <span gestes class="sdl-gestes"><ng-container [ngTemplateOutlet]="gestesTpl" [ngTemplateOutletContext]="{ $implicit: d }" /></span>
-                <dl frise class="sdl-dates">
-                  <div><dt>Dépôt du dossier</dt><dd>{{ d.dateSoumission ? (d.dateSoumission | date: 'dd/MM/yyyy') : '—' }}</dd></div>
-                  <div><dt>Fin traitement CNM</dt><dd>
-                    @if (enregistrement(d)) {
-                      @if (d.datesEtapes?.['CLOTURE']; as clot) { {{ clot | date: 'dd/MM/yyyy HH:mm' }} }
-                      @else if (d.datePrevisionnelleFin) { {{ d.datePrevisionnelleFin | date: 'dd/MM/yyyy' }} }
-                      @else { — }
-                    } @else { — }
-                  </dd></div>
-                  <div><dt>Localité</dt><dd>{{ localiteLabel(d) }}</dd></div>
-                </dl>
-              </app-apercu-dossier>
-            }
-          </div>
-        </app-deux-volets>
-        }
       } @else {
         <div class="table-card sdl-table">
           <table>
@@ -117,7 +107,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
               </tr>
             </thead>
             <tbody>
-              @for (d of dossiers(); track d.idDossier) {
+              @for (d of visibles(); track d.idDossier) {
                 <tr class="ligne-clic" [class.cnm-row-cloture]="d.datesEtapes?.['CLOTURE']">
                   <!-- Ligne cliquable : la référence est un vrai lien (nom accessible + clavier, Ctrl+clic
                        = nouvel onglet) dont la zone cliquable est étendue à la ligne (overlay ::after) —
@@ -158,7 +148,10 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="8" class="empty-cell">Aucun dossier à la CNM.</td></tr>
+                <tr><td colspan="8" class="empty-cell">
+                  @if (dossiers().length) { Aucun dossier ne répond à ces filtres. <button type="button" class="btn btn-link btn-sm" (click)="effacerFiltres()">Effacer les filtres</button> }
+                  @else { Aucun dossier à la CNM. }
+                </td></tr>
               }
             </tbody>
           </table>
@@ -200,26 +193,29 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
     }
   `,
   styles: `
-    /* ⚠️ 31/10 (Espace de travail, lot 3c) — bascule de vue et volet de gauche. */
     .page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-    .sdl-vue { display: flex; gap: 6px; }
-    .sdl-volet { list-style: none; margin: 0; padding: 0; }
-    .sdl-item { border-bottom: 1px solid var(--bordure); }
-    .sdl-item--on { background: var(--onglet-actif-fond); box-shadow: inset 3px 0 0 var(--menu-fond); }
-    .sdl-ligne { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: flex; flex-direction: column; gap: 0.2rem; padding: 0.55rem 0.8rem; }
-    .sdl-ligne:hover { background: var(--ligne-survol); }
-    .sdl-item--on .sdl-ligne:hover { background: transparent; }
-    .sdl-ligne:focus-visible { outline: 2px solid var(--bouton-principal); outline-offset: -2px; }
-    .sdl-ligne__ref { font-weight: 500; }
-    .sdl-ligne__type { margin-left: 4px; font-weight: 400; font-size: var(--text-sm); color: var(--texte-secondaire); }
-    .sdl-ligne__ent { font-size: var(--text-sm); color: var(--texte-secondaire); overflow-wrap: anywhere; }
-    .sdl-ligne__bas { display: flex; flex-wrap: wrap; gap: 0.3rem 0.5rem; align-items: center; }
-    .sdl-gestes { display: contents; }
-    .sdl-dates { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0; margin: 0; border: 1px solid var(--bordure); border-radius: 4px; }
-    .sdl-dates > div { padding: 6px 10px; }
-    .sdl-dates > div + div { border-left: 1px solid var(--bordure); }
-    .sdl-dates dt { font-size: 11px; color: var(--texte-secondaire); }
-    .sdl-dates dd { margin: 0; font-weight: 500; }
+    /* ⚠️ 01/11 (pilote, variante B) — compteurs qui filtrent, barre de filtres, lignes à filet de famille. */
+    .sdl-cpts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
+    .sdl-cpt { display: flex; flex-direction: column; align-items: flex-start; min-width: 8.5rem; padding: 6px 14px; border: 1px solid var(--bordure); border-radius: 6px;
+      background: var(--carte-fond); color: var(--texte); font: inherit; text-align: left; cursor: pointer; }
+    .sdl-cpt b { font-size: 20px; font-weight: 500; line-height: 1.1; }
+    .sdl-cpt span { font-size: 12px; color: var(--texte-secondaire); }
+    .sdl-cpt--vous { background: var(--examen-fond); border-color: var(--examen-fond); }
+    .sdl-cpt--vous span { color: var(--examen-texte); }
+    .sdl-cpt[aria-pressed="true"] { border-color: var(--section-fond); box-shadow: inset 0 0 0 1px var(--section-fond); }
+    .sdl-cpt:focus-visible, .sdl-puce:focus-visible { outline: 2px solid var(--bouton-principal); outline-offset: 2px; }
+    .sdl-filtres { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 12px; padding: 8px 12px; border: 1px solid var(--bordure);
+      border-radius: 6px; background: var(--carte-fond); }
+    .sdl-recherche { flex: 1 1 16rem; display: flex; align-items: center; gap: 6px; min-width: 0; padding: 4px 10px; border: 1px solid var(--bordure-champ); border-radius: 4px; }
+    .sdl-recherche input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font: inherit; color: var(--texte); }
+    .sdl-recherche:focus-within { outline: 2px solid var(--bouton-principal); outline-offset: 1px; }
+    .sdl-puces { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+    .sdl-puces__lib { font-size: 12px; color: var(--texte-secondaire); }
+    .sdl-puce { display: inline-flex; align-items: center; gap: 6px; padding: 3px 11px; border: 1px solid var(--bordure); border-radius: 14px; background: var(--carte-fond);
+      color: var(--texte); font: inherit; font-size: 12.5px; cursor: pointer; }
+    .sdl-puce i { width: 9px; height: 9px; border-radius: 2px; background: var(--fam); }
+    .sdl-puce__n { font-size: 11.5px; opacity: 0.8; }
+    .sdl-puce[aria-pressed="true"] { background: var(--section-fond); border-color: var(--section-fond); color: var(--texte-menu); }
     .sdl-attente { display: inline-block; margin-left: 0.35rem; padding: 0.05rem 0.4rem; border-radius: var(--radius-full); background: var(--warning-bg); border: 1px solid var(--warning-bdr); color: var(--warning-text); font-size: var(--text-xs); white-space: nowrap; }
     /* Ligne cliquable : la référence est un vrai bouton (nom accessible + clavier) dont la zone
        cliquable est ÉTENDUE à toute la ligne via un overlay ::after ; pas de (click) sur <tr>. */
@@ -283,36 +279,6 @@ export class SuiviDelais {
   private readonly receptions = signal<Map<number, Reception>>(new Map());
   /** Dossier ouvert dans le modal « Compléter les pièces » (EN_ATTENTE_COMPLEMENTS_DEPOT ; null = fermé). */
   readonly completer = signal<Dossier | null>(null);
-  /** ⚠️ 31/10 (Espace de travail, lot 3c) — affichage : deux volets (par défaut) ou tableau ; choix mémorisé par navigateur. */
-  readonly vue = signal<'volets' | 'tableau'>(this.lireVue());
-  /** Deux volets : le dossier choisi (le premier tant que rien n'est choisi, ou si le choisi a quitté la liste). */
-  readonly choisi = signal<number | null>(null);
-  readonly selection = computed(() => {
-    const liste = this.dossiers();
-    return liste.find((d) => d.idDossier === this.choisi()) ?? liste[0] ?? null;
-  });
-  /** Le dossier choisi en liste d'un élément : l'aperçu est recréé (et son contenu relu) quand il change. */
-  readonly selectionListe = computed(() => {
-    const d = this.selection();
-    return d ? [d] : [];
-  });
-
-  private lireVue(): 'volets' | 'tableau' {
-    try {
-      return localStorage.getItem('cnm-suivi-vue') === 'tableau' ? 'tableau' : 'volets';
-    } catch {
-      return 'volets';
-    }
-  }
-  setVue(v: 'volets' | 'tableau'): void {
-    this.vue.set(v);
-    try {
-      localStorage.setItem('cnm-suivi-vue', v);
-    } catch {
-      /* localStorage indisponible : le choix ne persiste pas, sans conséquence. */
-    }
-  }
-
   /**
    * Tous les dossiers de la PRMP, plus récents d'abord. ⚠️ 2026-09-13 (demande pilote) : les BROUILLONS
    * sont désormais AFFICHÉS (avec un bouton « Soumettre ») — ils n'ont ni enregistrement ni délai CNM,
@@ -322,6 +288,32 @@ export class SuiviDelais {
     [...this.tous()].sort((a, b) => b.idDossier - a.idDossier),
   );
 
+  // ── ⚠️ 01/11 (pilote, variante B) — filtres et compteurs ──────────────────────────────────────
+  readonly recherche = signal('');
+  readonly familleFiltre = signal<FamilleDossier | null>(null);
+  readonly etatFiltre = signal<EtatSuivi | null>(null);
+  /** Le nombre de dossiers par état (les compteurs). */
+  readonly comptes = computed(() => {
+    const c: Record<EtatSuivi, number> = { 'a-traiter': 0, commission: 0, clos: 0 };
+    for (const d of this.dossiers()) { const e = etatSuivi(d); if (e) c[e]++; }
+    return c;
+  });
+  /** Les familles présentes, avec leur nombre, dans l'ordre plan → mise en concurrence → marché → autres. */
+  readonly familles = computed(() => (['plan', 'mec', 'marche', 'autre'] as const)
+    .map((famille) => ({ famille, libelle: LIBELLES_FAMILLE[famille], n: this.dossiers().filter((d) => familleDossier(d) === famille).length }))
+    .filter((x) => x.n > 0));
+  /** La liste après filtres (les deux affichages). */
+  readonly visibles = computed(() => {
+    const q = this.recherche().trim().toLowerCase();
+    const fm = this.familleFiltre();
+    const et = this.etatFiltre();
+    return this.dossiers().filter((d) =>
+      (!fm || familleDossier(d) === fm) && (!et || etatSuivi(d) === et)
+      && (!q || `${d.refeDossier ?? ''} ${d.idSousType ?? ''} ${d.idTypeDossier ?? ''} ${d.idDossier}`.toLowerCase().includes(q)));
+  });
+  basculerEtat(e: EtatSuivi): void { this.etatFiltre.set(this.etatFiltre() === e ? null : e); }
+  basculerFamille(f: FamilleDossier): void { this.familleFiltre.set(this.familleFiltre() === f ? null : f); }
+  effacerFiltres(): void { this.recherche.set(''); this.familleFiltre.set(null); this.etatFiltre.set(null); }
   constructor() {
     this.charger();
     // Libellés d'entité / localité (cache partagé) — colonnes « Entité contractante » / « Localité ».

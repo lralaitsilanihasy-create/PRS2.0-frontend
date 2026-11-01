@@ -69,6 +69,14 @@
   span:nth-child(3) { background: var(--bandeau-3); }
 }
 
+/* ⚠️ 01/11 (pilote, maquette « Tous mes dossiers », variante B) — une couleur par FAMILLE de dossier (son type : plan, mise en
+   concurrence, marché ; le reste en neutre), en filet seulement : les pastilles gardent le statut. --fam (filet) et --fam-fond
+   (étiquette du type). Répartition : features/circuit/dossier/famille-dossier.ts. */
+.fam-plan { --fam: var(--menu-fond); --fam-fond: var(--onglet-actif-fond); }
+.fam-mec { --fam: var(--or); --fam-fond: var(--examen-fond); }
+.fam-marche { --fam: var(--favorable-texte); --fam-fond: var(--favorable-fond); }
+.fam-autre { --fam: var(--neutre-texte); --fam-fond: var(--neutre-fond); }
+
 /* =============================================================================
    COUCHE DE COMPATIBILITÉ — Le design system actif est « C » (violet, Plus Jakarta
    Sans), défini dans styles/_design-system.scss (importé via @use ci-dessus).
