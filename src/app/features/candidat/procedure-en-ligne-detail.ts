@@ -22,6 +22,16 @@ import { LIBELLES_ETAT_ETAPE, OffreDeposee, etapesParcours, grouperDocuments, ja
  * d'offres se retire **connecté** : chaque téléchargement inscrit une ligne au registre de la PRMP (compte, entreprise,
  * document, version), et l'écran le dit avant le clic. Hors critères, le serveur répond 404 sans dire lequel manque.
  */
+/** ⚠️ 01/11 (variante B) — les fiches thématiques de l'avis et les codes de mention (`MentionsPublication`) qu'elles rangent. */
+const FICHES_AVIS: readonly { cle: string; titre: string; codes: readonly string[] }[] = [
+  { cle: 'marche', titre: 'Le marché', codes: ['LOTS_MAX', 'FORME_PRIX'] },
+  { cle: 'retrait', titre: 'Retrait du dossier', codes: ['ADRESSE_CONSULTATION', 'ADRESSE_RETRAIT', 'COUT_DOSSIER', 'COMPTE_PAIEMENT'] },
+  { cle: 'offre', titre: 'Offre et garantie', codes: ['DATE_HEURE_LIMITE', 'MONTANT_GARANTIE', 'FORMES_GARANTIE'] },
+  { cle: 'seance', titre: 'Séance et visite', codes: ['HEURE_OUVERTURE', 'VISITE_LIEUX', 'REUNION_PREPARATOIRE'] },
+];
+/** Le libellé du modèle type, raccourci quand il porte une explication qui ne tient pas dans une fiche. */
+const LIBELLES_COURTS_AVIS: Readonly<Record<string, string>> = { COMPTE_PAIEMENT: 'Modalités de paiement (compte bancaire de l’ARMP)' };
+
 @Component({
   selector: 'app-procedure-en-ligne-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -55,6 +65,7 @@ import { LIBELLES_ETAT_ETAPE, OffreDeposee, etapesParcours, grouperDocuments, ja
             @if (p.autoriteContractante) { <span><app-icone nom="board" [taille]="14" />{{ p.autoriteContractante }}</span> }
             @if (p.categorie) { <span><app-icone nom="layers" [taille]="14" />{{ categories[p.categorie] }}</span> }
             <span><app-icone nom="columns" [taille]="14" />{{ p.lots.length > 1 ? p.lots.length + ' lots' : 'Lot unique' }}</span>
+            @if (p.datePublication) { <span><app-icone nom="calendar" [taille]="14" />Avis publié le {{ date(p.datePublication) }}</span> }
           </p>
         </div>
         <div class="ped__echeance" [class.ped__echeance--close]="p.etat === 'CLOSE'">
@@ -64,27 +75,17 @@ import { LIBELLES_ETAT_ETAPE, OffreDeposee, etapesParcours, grouperDocuments, ja
         </div>
       </header>
 
-      @if (avisDonnees(); as a) {
-        <!-- ⚠️ 01/11 (pilote, « avis-specifique-public-donnees », variante A) — l'avis spécifique publié, en données, dans la page ;
-             le PDF reste la pièce officielle. Lu sur la version de la dernière impression, lisible sans compte. -->
-        <section class="card ped__bloc ped__avis" aria-labelledby="ped-avis-t">
-          <h2 id="ped-avis-t" class="ped__h2"><app-icone nom="file" [taille]="16" />Avis spécifique d'appel d'offres</h2>
-          <dl class="ped__avis-liste">
-            @if (a.numero) { <div class="ped__avis-ligne"><dt>Numéro</dt><dd>{{ a.numero }}</dd></div> }
-            @if (a.autoriteContractante) { <div class="ped__avis-ligne"><dt>Autorité contractante</dt><dd>{{ a.autoriteContractante }}</dd></div> }
-            @for (m of a.mentions; track m.code) {
-              <div class="ped__avis-ligne"><dt>{{ m.libelle }}</dt>
-                <dd [class.ped__avis-so]="!m.valeur">{{ m.valeur || (m.sansObjet ? 'sans objet' : '—') }}</dd></div>
-            }
-          </dl>
-          <p class="ped__avis-pied">
-            <span class="text-sm text-muted">{{ p.datePublication ? 'Publié le ' + date(p.datePublication) + ' · ' : '' }}version {{ a.versionFiche }} de la fiche DAO</span>
-            @if (avisAbsent()) {
-              <span class="text-sm text-muted" role="status">Le PDF de l'avis n'est plus disponible en ligne.</span>
-            } @else {
-              <button type="button" class="btn btn-secondary btn-sm" [disabled]="avisEnCours()" (click)="lireAvis(p.idDmc)">{{ avisEnCours() ? 'Ouverture…' : 'Lire l’avis spécifique (PDF)' }}</button>
-            }
-          </p>
+      @if (p.avisSpecifique) {
+        <!-- ⚠️ 01/11 (pilote, maquette « page d'une procédure », variante B) — l'avis publié en bandeau ; ses mentions sont rangées en
+             fiches thématiques plus bas. Le PDF reste la pièce officielle, lisible sans compte ni paiement (ce n'est pas un retrait). -->
+        <section class="card ped__avis-bandeau" aria-labelledby="ped-avis-t">
+          <p class="ped__avis-titre"><strong id="ped-avis-t">Avis spécifique d'appel d'offres</strong>
+            <span class="text-sm text-muted">{{ p.datePublication ? 'publié le ' + date(p.datePublication) + ' · ' : '' }}version {{ p.avisSpecifique.version }} de la fiche DAO</span></p>
+          @if (avisAbsent()) {
+            <span class="text-sm text-muted" role="status">Le PDF de l'avis n'est plus disponible en ligne.</span>
+          } @else {
+            <button type="button" class="btn btn-secondary btn-sm" [disabled]="avisEnCours()" (click)="lireAvis(p.idDmc)"><app-icone nom="file" [taille]="14" />{{ avisEnCours() ? 'Ouverture…' : 'Lire l’avis (PDF)' }}</button>
+          }
         </section>
       }
 
@@ -107,13 +108,31 @@ import { LIBELLES_ETAT_ETAPE, OffreDeposee, etapesParcours, grouperDocuments, ja
             }
           </ol>
           @if (!connecte()) {
-            <p class="ped__invite"><app-icone nom="key" [taille]="15" />Pour retirer le dossier, poser une question ou déposer une offre, <a routerLink="/login" [queryParams]="{ returnUrl: lienRetour() }">connectez-vous</a> ou <a routerLink="/candidat/inscription">créez un compte candidat</a>.</p>
+            <p class="ped__invite"><span><app-icone nom="key" [taille]="15" />Pour retirer le dossier, poser une question ou déposer une offre, il faut un compte candidat.</span>
+              <span class="ped__invite-actions">
+                <a class="btn btn-sm btn-outline" routerLink="/candidat/inscription">Créer un compte</a>
+                <a class="btn btn-sm btn-primary" routerLink="/login" [queryParams]="{ returnUrl: lienRetour() }">Se connecter</a>
+              </span></p>
           }
         </section>
       }
 
       <div class="ped__corps">
         <div class="ped__principal">
+          @if (fichesAvis().length) {
+            <div class="ped__fiches" aria-label="Mentions de l'avis spécifique">
+              @for (fi of fichesAvis(); track fi.cle) {
+                <section class="card ped__fiche" [attr.data-fiche]="fi.cle" [attr.aria-labelledby]="'ped-fiche-' + fi.cle">
+                  <h3 class="ped__fiche-titre" [id]="'ped-fiche-' + fi.cle">{{ fi.titre }}</h3>
+                  <dl class="ped__fiche-liste">
+                    @for (m of fi.mentions; track m.code) {
+                      <div><dt>{{ m.libelle }}</dt><dd [class.ped__avis-so]="!m.valeur">{{ m.valeur || (m.sansObjet ? 'sans objet' : '—') }}</dd></div>
+                    }
+                  </dl>
+                </section>
+              }
+            </div>
+          }
           @if (p.etat === 'CLOSE') {
             <!-- Recette du 05/10 : le PV publié n'était lisible nulle part à l'écran. -->
             <section class="card ped__bloc" aria-labelledby="ped-pv">
@@ -198,15 +217,6 @@ import { LIBELLES_ETAT_ETAPE, OffreDeposee, etapesParcours, grouperDocuments, ja
               }
             </ol>
             @if (p.heureReference) { <p class="text-xs text-muted">Heure qui fait foi : {{ p.heureReference }}.</p> }
-            @if (p.avisSpecifique && !avisDonnees()) {
-              <!-- ⚠️ 01/11 (« avis-specifique-public ») — l'avis publié, lisible sans compte ni paiement (ce n'est pas un retrait du DAO) ;
-                   ici seulement quand le bloc de l'avis en données n'est pas affiché. -->
-              @if (avisAbsent()) {
-                <p class="text-sm text-muted" role="status">L'avis spécifique n'est plus disponible en ligne.</p>
-              } @else {
-                <p><button type="button" class="btn btn-secondary btn-sm" [disabled]="avisEnCours()" (click)="lireAvis(p.idDmc)">{{ avisEnCours() ? 'Ouverture…' : 'Lire l’avis spécifique (PDF)' }}</button></p>
-              }
-            }
           </section>
 
           <section class="card ped__bloc" id="ped-remise" aria-labelledby="ped-remise-t">
@@ -290,11 +300,29 @@ import { LIBELLES_ETAT_ETAPE, OffreDeposee, etapesParcours, grouperDocuments, ja
     .ped__sous { margin: 0.5rem 0 0; display: flex; gap: 0.4rem 1.1rem; flex-wrap: wrap; color: var(--n-500); font-size: var(--text-sm); }
     .ped__sous span { display: inline-flex; gap: 0.35rem; align-items: center; }
     .ped__echeance { display: flex; flex-direction: column; align-items: flex-end; gap: 0.15rem; padding: 0.8rem 1.1rem; border-radius: var(--radius-md);
-      background: var(--p-100); color: var(--p-800); text-align: right; min-width: 14rem; }
-    .ped__echeance--close { background: var(--n-100); color: var(--n-600); }
+      background: var(--section-fond); color: var(--texte-menu); text-align: right; min-width: 14rem; }
+    .ped__echeance--close { background: var(--neutre-fond); color: var(--neutre-texte); }
     .ped__echeance-lib { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500; }
     .ped__echeance-date { font-size: 1.2rem; }
     .ped__echeance-reste { font-size: var(--text-sm); }
+    .ped__echeance:not(.ped__echeance--close) .ped__echeance-lib { color: var(--texte-menu-secondaire); }
+    .ped__echeance:not(.ped__echeance--close) .ped__echeance-reste:not(:empty) { margin-top: 0.2rem; padding: 1px 10px; border-radius: 10px; background: var(--or); color: var(--texte); font-weight: 500; }
+    /* ⚠️ 01/11 (variante B) — le bandeau de l'avis et ses fiches thématiques à filet de couleur. */
+    .ped__avis-bandeau { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.6rem; padding: 0.8rem 1.4rem; margin-bottom: 1rem; }
+    .ped__avis-titre { margin: 0; display: flex; flex-wrap: wrap; gap: 0.3rem 0.6rem; align-items: baseline; }
+    .ped__avis-titre strong { font-weight: 500; }
+    .ped__avis-bandeau .btn { display: inline-flex; gap: 0.35rem; align-items: center; }
+    .ped__fiches { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .ped__fiche { --fc: var(--menu-fond); --fc-t: var(--texte); padding: 0.9rem 1.15rem; border-top: 3px solid var(--fc); }
+    .ped__fiche[data-fiche="retrait"] { --fc: var(--or); --fc-t: var(--examen-texte); }
+    .ped__fiche[data-fiche="offre"] { --fc: var(--favorable-texte); --fc-t: var(--favorable-texte); }
+    .ped__fiche[data-fiche="seance"] { --fc: var(--neutre-texte); --fc-t: var(--neutre-texte); }
+    .ped__fiche-titre { margin: 0 0 0.5rem; font-size: 0.8rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: var(--fc-t); }
+    .ped__fiche-liste { margin: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+    .ped__fiche-liste > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 0.2rem 0.8rem; }
+    .ped__fiche-liste dt { color: var(--texte-secondaire); font-size: 0.85rem; }
+    .ped__fiche-liste dd { margin: 0; font-size: 0.88rem; overflow-wrap: anywhere; }
+    .ped__avis-so { font-style: italic; color: var(--texte-secondaire); }
 
     /* Parcours */
     .ped__parcours { margin-bottom: 1rem; }
@@ -316,22 +344,16 @@ import { LIBELLES_ETAT_ETAPE, OffreDeposee, etapesParcours, grouperDocuments, ja
     .ped__etape[data-etat='a-faire'] .ped__etape-n { background: var(--bouton-principal); color: var(--texte-menu); }
     .ped__etape[data-etat='a-faire'] .ped__etape-etat { background: var(--p-100); color: var(--p-800); }
     .ped__etape[data-etat='en-cours'] .ped__etape-n, .ped__etape[data-etat='en-cours'] .ped__etape-etat { background: var(--examen-fond); color: var(--examen-texte); }
-    .ped__invite { margin: 0.6rem 0 0; display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; font-size: var(--text-sm); color: var(--n-600); }
-    .ped__invite a { font-weight: 500; }
+    .ped__invite { margin: 0.6rem 0 0; display: flex; gap: 0.5rem 1rem; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 0.6rem 0.9rem;
+      border: 1px solid var(--bordure); border-radius: var(--radius-md); background: var(--ligne-survol); font-size: var(--text-sm); color: var(--texte-secondaire); }
+    .ped__invite > span:first-child { display: inline-flex; gap: 0.4rem; align-items: center; }
+    .ped__invite-actions { display: inline-flex; gap: 0.5rem; }
 
     /* Corps : deux colonnes */
     .ped__corps { display: grid; grid-template-columns: minmax(0, 1fr) minmax(17rem, 22rem); gap: 1rem; align-items: start; }
     .ped__principal, .ped__cote { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
     .ped__cote { position: sticky; top: 1rem; }
     .ped__bloc { padding: 1rem 1.15rem; display: flex; flex-direction: column; gap: 0.6rem; scroll-margin-top: 1rem; }
-    .ped__avis-liste { margin: 0; display: flex; flex-direction: column; border: 1px solid var(--bordure); border-radius: 4px; }
-    .ped__avis-ligne { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 0.25rem 1rem; padding: 0.45rem 0.8rem; border-top: 1px solid var(--bordure); }
-    .ped__avis-ligne:first-child { border-top: 0; }
-    .ped__avis-ligne dt { color: var(--texte-secondaire); font-size: 0.85rem; }
-    .ped__avis-ligne dd { margin: 0; font-size: 0.9rem; overflow-wrap: anywhere; }
-    .ped__avis-so { font-style: italic; color: var(--texte-secondaire); }
-    .ped__avis-pied { margin: 0; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem; }
-    @media (max-width: 40rem) { .ped__avis-ligne { grid-template-columns: 1fr; } }
     .ped__h2 { margin: 0; display: flex; gap: 0.45rem; align-items: center; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-600); }
     .ped__h2 app-icone { color: var(--p-600); }
     .ped__h2:focus { outline: none; }
@@ -378,6 +400,7 @@ import { LIBELLES_ETAT_ETAPE, OffreDeposee, etapesParcours, grouperDocuments, ja
     }
     @media (max-width: 640px) {
       .ped__tete { grid-template-columns: 1fr; }
+      .ped__fiches { grid-template-columns: 1fr; }
       .ped__echeance { align-items: flex-start; text-align: left; min-width: 0; }
       .ped__doc { grid-template-columns: auto 1fr; }
       .ped__doc-formats { grid-column: 1 / -1; justify-content: flex-start; }
@@ -415,6 +438,21 @@ export class ProcedureEnLigneDetail implements OnInit {
   readonly pvEnCours = signal(false);
   readonly avisEnCours = signal(false);
   readonly avisAbsent = signal(false);
+  /**
+   * ⚠️ 01/11 (variante B) — les mentions de l'avis rangées en quatre fiches. L'objet est déjà le titre de la page ; une mention au
+   * code inconnu rejoint « Le marché », pour qu'aucune ne se perde.
+   */
+  readonly fichesAvis = computed(() => {
+    const a = this.avisDonnees();
+    if (!a) return [];
+    const fiches = FICHES_AVIS.map((x) => ({ ...x, mentions: [] as AvisSpecifiquePublic['mentions'] }));
+    for (const m of a.mentions) {
+      if (m.code === 'OBJET') continue;
+      const cle = FICHES_AVIS.find((x) => x.codes.includes(m.code))?.cle ?? 'marche';
+      fiches.find((x) => x.cle === cle)!.mentions.push({ ...m, libelle: LIBELLES_COURTS_AVIS[m.code] ?? m.libelle });
+    }
+    return fiches.filter((x) => x.mentions.length);
+  });
   /** ⚠️ 01/11 — l'avis publié en données ; `null` sans avis ou si la lecture échoue (le bloc s'efface, le bouton PDF du calendrier reste). */
   readonly avisDonnees = signal<AvisSpecifiquePublic | null>(null);
   /** V72 — le reçu des frais de l'entreprise (lu par `app-frais-dossier`). */
