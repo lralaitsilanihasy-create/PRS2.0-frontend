@@ -5,7 +5,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { dateFr } from '../../core/interim/interim-libelles';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur, telechargerBlob } from '../../core/securite/fichiers-surs';
-import { DocumentProcedureEnLigne, ProcedureEnLigne, RecuDao } from '../../models';
+import { AvisSpecifiquePublic, DocumentProcedureEnLigne, ProcedureEnLigne, RecuDao } from '../../models';
 import { OffresCandidatService, ProceduresEnLigneService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { Icone } from '../../shared/ui/icone';
@@ -63,6 +63,30 @@ import { LIBELLES_ETAT_ETAPE, OffreDeposee, etapesParcours, grouperDocuments, ja
           <span class="ped__echeance-reste">{{ p.etat === 'CLOSE' ? 'Les dépôts sont clos.' : (reste() ?? '') }}</span>
         </div>
       </header>
+
+      @if (avisDonnees(); as a) {
+        <!-- ⚠️ 01/11 (pilote, « avis-specifique-public-donnees », variante A) — l'avis spécifique publié, en données, dans la page ;
+             le PDF reste la pièce officielle. Lu sur la version de la dernière impression, lisible sans compte. -->
+        <section class="card ped__bloc ped__avis" aria-labelledby="ped-avis-t">
+          <h2 id="ped-avis-t" class="ped__h2"><app-icone nom="file" [taille]="16" />Avis spécifique d'appel d'offres</h2>
+          <dl class="ped__avis-liste">
+            @if (a.numero) { <div class="ped__avis-ligne"><dt>Numéro</dt><dd>{{ a.numero }}</dd></div> }
+            @if (a.autoriteContractante) { <div class="ped__avis-ligne"><dt>Autorité contractante</dt><dd>{{ a.autoriteContractante }}</dd></div> }
+            @for (m of a.mentions; track m.code) {
+              <div class="ped__avis-ligne"><dt>{{ m.libelle }}</dt>
+                <dd [class.ped__avis-so]="!m.valeur">{{ m.valeur || (m.sansObjet ? 'sans objet' : '—') }}</dd></div>
+            }
+          </dl>
+          <p class="ped__avis-pied">
+            <span class="text-sm text-muted">{{ p.datePublication ? 'Publié le ' + date(p.datePublication) + ' · ' : '' }}version {{ a.versionFiche }} de la fiche DAO</span>
+            @if (avisAbsent()) {
+              <span class="text-sm text-muted" role="status">Le PDF de l'avis n'est plus disponible en ligne.</span>
+            } @else {
+              <button type="button" class="btn btn-secondary btn-sm" [disabled]="avisEnCours()" (click)="lireAvis(p.idDmc)">{{ avisEnCours() ? 'Ouverture…' : 'Lire l’avis spécifique (PDF)' }}</button>
+            }
+          </p>
+        </section>
+      }
 
       <!-- Le parcours du candidat : chaque étape dit son état et mène à sa section. -->
       @if (p.etat !== 'CLOSE') {
@@ -174,8 +198,9 @@ import { LIBELLES_ETAT_ETAPE, OffreDeposee, etapesParcours, grouperDocuments, ja
               }
             </ol>
             @if (p.heureReference) { <p class="text-xs text-muted">Heure qui fait foi : {{ p.heureReference }}.</p> }
-            @if (p.avisSpecifique) {
-              <!-- ⚠️ 01/11 (« avis-specifique-public ») — l'avis publié, lisible sans compte ni paiement (ce n'est pas un retrait du DAO). -->
+            @if (p.avisSpecifique && !avisDonnees()) {
+              <!-- ⚠️ 01/11 (« avis-specifique-public ») — l'avis publié, lisible sans compte ni paiement (ce n'est pas un retrait du DAO) ;
+                   ici seulement quand le bloc de l'avis en données n'est pas affiché. -->
               @if (avisAbsent()) {
                 <p class="text-sm text-muted" role="status">L'avis spécifique n'est plus disponible en ligne.</p>
               } @else {
@@ -299,6 +324,14 @@ import { LIBELLES_ETAT_ETAPE, OffreDeposee, etapesParcours, grouperDocuments, ja
     .ped__principal, .ped__cote { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
     .ped__cote { position: sticky; top: 1rem; }
     .ped__bloc { padding: 1rem 1.15rem; display: flex; flex-direction: column; gap: 0.6rem; scroll-margin-top: 1rem; }
+    .ped__avis-liste { margin: 0; display: flex; flex-direction: column; border: 1px solid var(--bordure); border-radius: 4px; }
+    .ped__avis-ligne { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 0.25rem 1rem; padding: 0.45rem 0.8rem; border-top: 1px solid var(--bordure); }
+    .ped__avis-ligne:first-child { border-top: 0; }
+    .ped__avis-ligne dt { color: var(--texte-secondaire); font-size: 0.85rem; }
+    .ped__avis-ligne dd { margin: 0; font-size: 0.9rem; overflow-wrap: anywhere; }
+    .ped__avis-so { font-style: italic; color: var(--texte-secondaire); }
+    .ped__avis-pied { margin: 0; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem; }
+    @media (max-width: 40rem) { .ped__avis-ligne { grid-template-columns: 1fr; } }
     .ped__h2 { margin: 0; display: flex; gap: 0.45rem; align-items: center; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-600); }
     .ped__h2 app-icone { color: var(--p-600); }
     .ped__h2:focus { outline: none; }
@@ -382,6 +415,8 @@ export class ProcedureEnLigneDetail implements OnInit {
   readonly pvEnCours = signal(false);
   readonly avisEnCours = signal(false);
   readonly avisAbsent = signal(false);
+  /** ⚠️ 01/11 — l'avis publié en données ; `null` sans avis ou si la lecture échoue (le bloc s'efface, le bouton PDF du calendrier reste). */
+  readonly avisDonnees = signal<AvisSpecifiquePublic | null>(null);
   /** V72 — le reçu des frais de l'entreprise (lu par `app-frais-dossier`). */
   readonly recu = signal<RecuDao | null>(null);
   /** Retrait libre, ou reçu validé : le serveur garde la même règle (403 `FRAIS_NON_REGLES`). */
@@ -434,6 +469,10 @@ export class ProcedureEnLigneDetail implements OnInit {
         this.procedure.set(p);
         this.document.title = `${p.reference || 'Procédure'} — Espace candidat — PRS 2.0`;
         this.chargement.set(false);
+        this.avisDonnees.set(null);
+        if (p.avisSpecifique) {
+          this.service.avisSpecifiqueDonnees(this.idDmc).subscribe({ next: (a) => this.avisDonnees.set(a), error: () => this.avisDonnees.set(null) });
+        }
         if (this.connecte()) {
           this.chargerDocuments();
           this.offres.liste().subscribe({ next: (l) => this.depose.set(offresDeposees(l, this.idDmc)[0] ?? null), error: () => this.depose.set(null) });

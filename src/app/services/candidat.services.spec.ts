@@ -97,6 +97,13 @@ describe('Services du candidat — chemins du contrat', () => {
     const avis = http.expectOne({ method: 'GET', url: '/api/procedures-en-ligne/34/avis-specifique' });
     expect(avis.request.responseType).toBe('blob');
     avis.flush(new Blob(['%PDF'], { type: 'application/pdf' }));
+
+    // ⚠️ 01/11 (« avis-specifique-public-donnees », §B1) — le même avis, en données.
+    let numero: string | null | undefined;
+    s.avisSpecifiqueDonnees(34).subscribe((a) => (numero = a.numero));
+    http.expectOne({ method: 'GET', url: '/api/procedures-en-ligne/34/avis-specifique/donnees' })
+      .flush({ idDmc: 34, versionFiche: 3, gabarit: 'AVIS-T', numero: '05-CC', autoriteContractante: null, mentions: [] });
+    expect(numero).toBe('05-CC');
   });
 
   it('l’Administrateur : entreprises par statut (NON_VERIFIE par défaut côté serveur), décision, pièce en blob', () => {

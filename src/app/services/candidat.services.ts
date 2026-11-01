@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { skipErrorToast } from '../core/errors/api-error';
-import { Accuse, BesoinEnLigne, ConfirmationCandidat, ConfirmationCandidatCorps, CopieOffre, CreationOffreCorps, DecisionVerificationNif, DepotRecuCorps, DocumentProcedureEnLigne, Entreprise, EntrepriseCorps, ExclusionArmp, ExclusionArmpCorps, Horloge, InscriptionCandidat, InscriptionCandidatCorps, InvitationCandidat, Offre, OffreLue, PieceAttendue, PieceEntreprise, ProcedureEnLigne, RecuDao, StatutVerificationNif, TypePieceEntreprise, VerificationNif } from '../models';
+import { Accuse, AvisSpecifiquePublic, BesoinEnLigne, ConfirmationCandidat, ConfirmationCandidatCorps, CopieOffre, CreationOffreCorps, DecisionVerificationNif, DepotRecuCorps, DocumentProcedureEnLigne, Entreprise, EntrepriseCorps, ExclusionArmp, ExclusionArmpCorps, Horloge, InscriptionCandidat, InscriptionCandidatCorps, InvitationCandidat, Offre, OffreLue, PieceAttendue, PieceEntreprise, ProcedureEnLigne, RecuDao, StatutVerificationNif, TypePieceEntreprise, VerificationNif } from '../models';
 
 /**
  * Soumission en ligne, lot 1 (demande du 04/10, §B2 à §B8 ; backend V63 à V65). Services BESPOKE : aucune de ces
@@ -151,6 +151,11 @@ export class ProceduresEnLigneService {
    */
   avisSpecifique(idDmc: number): Observable<Blob> {
     return this.http.get(`${this.base}/${idDmc}/avis-specifique`, { responseType: 'blob', context: skipErrorToast() });
+  }
+
+  /** ⚠️ 01/11 (« avis-specifique-public-donnees », §B1) — le même avis, en données (public) ; 404 dans les mêmes cas. Silencieux. */
+  avisSpecifiqueDonnees(idDmc: number): Observable<AvisSpecifiquePublic> {
+    return this.http.get<AvisSpecifiquePublic>(`${this.base}/${idDmc}/avis-specifique/donnees`, { context: skipErrorToast() });
   }
 }
 

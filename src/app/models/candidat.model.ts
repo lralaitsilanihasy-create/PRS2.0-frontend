@@ -221,6 +221,22 @@ export interface ProcedureEnLigne {
   avisSpecifique?: { imprimeLe: string; version: number; taille: number } | null;
 }
 
+/**
+ * ⚠️ 01/11 (« avis-specifique-public-donnees », §B1) — l'avis spécifique publié, en données (`GET /{idDmc}/avis-specifique/donnees`,
+ * public) : les mentions du modèle type lues sur la version de la dernière impression, valeurs telles que l'avis les écrit.
+ */
+export interface AvisSpecifiquePublic {
+  idDmc: number;
+  versionFiche: number;
+  /** `AVIS-F` ou `AVIS-T`. */
+  gabarit: string;
+  /** Le numéro imprimé à l'avis (`B02-OE-01` pour un contrat-cadre, puis `B02-OB-03`). */
+  numero: string | null;
+  autoriteContractante: string | null;
+  /** `valeur` nulle : mention non renseignée. */
+  mentions: { code: string; libelle: string; sansObjet: boolean; valeur: string | null }[];
+}
+
 export type EtatRecu = 'EN_ATTENTE' | 'VALIDE' | 'REFUSE';
 
 /**
