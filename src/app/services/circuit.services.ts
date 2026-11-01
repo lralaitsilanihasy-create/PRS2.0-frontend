@@ -1,6 +1,6 @@
 import { HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 
 import { skipErrorToast } from '../core/errors/api-error';
 import { CrudService } from './api/crud.service';
@@ -50,6 +50,9 @@ import {
  * backend ; les rôles d'écriture sont appliqués par le serveur (403/409 sinon).
  */
 
+/** Le titre de la section `PROCEDURE` de la fiche de présentation (pilote, 01/11). */
+export const TITRE_SECTION_AVIS_SPECIFIQUE = 'Avis spécifique';
+
 @Injectable({ providedIn: 'root' })
 export class DossierService extends CrudService<Dossier> {
   protected readonly resource = 'dossiers';
@@ -65,7 +68,11 @@ export class DossierService extends CrudService<Dossier> {
 
   /** ⚠️ 17/10 (B2) — la fiche de présentation d'un dossier DAO né d'une fiche, en données (409 `FICHE_PRESENTATION_INDISPONIBLE`). */
   fichePresentation(id: number): Observable<FichePresentationDao> {
-    return this.http.get<FichePresentationDao>(`${this.baseUrl}/${id}/fiche-presentation`, { context: skipErrorToast() });
+    return this.http.get<FichePresentationDao>(`${this.baseUrl}/${id}/fiche-presentation`, { context: skipErrorToast() }).pipe(
+      // ⚠️ 01/11 (pilote) — la section `PROCEDURE` s'intitule « Avis spécifique » : renommée ici pour tous les écrans en attendant
+      // que le serveur serve ce titre (docs/demande-backend-2026-11-01-section-avis-specifique.md, B1) ; inerte ensuite.
+      map((f) => ({ ...f, sections: f.sections.map((x) => (x.code === 'PROCEDURE' ? { ...x, titre: TITRE_SECTION_AVIS_SPECIFIQUE } : x)) })),
+    );
   }
 
   /** ⚠️ 17/10 (B2) — la même, en PDF. */
