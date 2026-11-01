@@ -174,6 +174,14 @@ import { LIBELLES_ETAT_ETAPE, OffreDeposee, etapesParcours, grouperDocuments, ja
               }
             </ol>
             @if (p.heureReference) { <p class="text-xs text-muted">Heure qui fait foi : {{ p.heureReference }}.</p> }
+            @if (p.avisSpecifique) {
+              <!-- ⚠️ 01/11 (« avis-specifique-public ») — l'avis publié, lisible sans compte ni paiement (ce n'est pas un retrait du DAO). -->
+              @if (avisAbsent()) {
+                <p class="text-sm text-muted" role="status">L'avis spécifique n'est plus disponible en ligne.</p>
+              } @else {
+                <p><button type="button" class="btn btn-secondary btn-sm" [disabled]="avisEnCours()" (click)="lireAvis(p.idDmc)">{{ avisEnCours() ? 'Ouverture…' : 'Lire l’avis spécifique (PDF)' }}</button></p>
+              }
+            }
           </section>
 
           <section class="card ped__bloc" id="ped-remise" aria-labelledby="ped-remise-t">
@@ -372,6 +380,8 @@ export class ProcedureEnLigneDetail implements OnInit {
   /** Le `code` du document en cours de retrait : un seul à la fois, le bouton le dit. */
   readonly enCours = signal<string | null>(null);
   readonly pvEnCours = signal(false);
+  readonly avisEnCours = signal(false);
+  readonly avisAbsent = signal(false);
   /** V72 — le reçu des frais de l'entreprise (lu par `app-frais-dossier`). */
   readonly recu = signal<RecuDao | null>(null);
   /** Retrait libre, ou reçu validé : le serveur garde la même règle (403 `FRAIS_NON_REGLES`). */
@@ -465,6 +475,21 @@ export class ProcedureEnLigneDetail implements OnInit {
       },
       // 401/403 → dialogue centralisé ; 403 FRAIS_NON_REGLES (reçu pas encore validé) le dit en clair.
       error: () => this.enCours.set(null),
+    });
+  }
+
+  /** ⚠️ 01/11 — l'avis spécifique publié (dernière impression), ouvert dans un nouvel onglet (`ouvrirBlobSur`) ; 404 : plus servi. */
+  lireAvis(idDmc: number): void {
+    this.avisEnCours.set(true);
+    this.service.avisSpecifique(idDmc).subscribe({
+      next: (b) => {
+        this.avisEnCours.set(false);
+        ouvrirBlobSur(b);
+      },
+      error: (e: { status?: number }) => {
+        this.avisEnCours.set(false);
+        if (e.status === 404) this.avisAbsent.set(true);
+      },
     });
   }
 

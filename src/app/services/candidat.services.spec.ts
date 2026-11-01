@@ -91,6 +91,12 @@ describe('Services du candidat — chemins du contrat', () => {
     expect(req.request.responseType).toBe('blob');
     req.flush(new Blob(['%PDF'], { type: 'application/pdf' }));
     expect(blob).toBeInstanceOf(Blob);
+
+    // ⚠️ 01/11 (« avis-specifique-public », §B1) — l'avis publié, en PDF, par la route publique.
+    s.avisSpecifique(34).subscribe();
+    const avis = http.expectOne({ method: 'GET', url: '/api/procedures-en-ligne/34/avis-specifique' });
+    expect(avis.request.responseType).toBe('blob');
+    avis.flush(new Blob(['%PDF'], { type: 'application/pdf' }));
   });
 
   it('l’Administrateur : entreprises par statut (NON_VERIFIE par défaut côté serveur), décision, pièce en blob', () => {

@@ -88,6 +88,12 @@ describe('Liste des procédures (19/10, maquette)', () => {
     expect(l[0]).toMatchObject({ genre: 'AMI', joursRestants: 10, avancement: 50 });
   });
 
+  it('⚠️ 01/11 — le lien « Avis » : seulement l’appel d’offres dont l’avis spécifique est imprimé (jamais un AMI)', () => {
+    const avecAvis = procedure({ ...ouverte, avisSpecifique: { imprimeLe: '2026-10-28T21:00', version: 3, taille: 1024 } });
+    const l = lignesProcedures([aVenir, avecAvis], [ami], cats, maintenant);
+    expect(l.map((x) => [x.cle, x.idDmcAvis])).toEqual([['AMI-9', null], ['AO-3', 3], ['AO-2', null]]);
+  });
+
   it('les compteurs : ouvertes, à venir, prochaine échéance en jours', () => {
     expect(compteursProcedures(lignesProcedures([aVenir, ouverte], [], cats, maintenant))).toEqual({ ouvertes: 1, aVenir: 1, prochaine: 32 });
     expect(compteursProcedures([])).toEqual({ ouvertes: 0, aVenir: 0, prochaine: null });

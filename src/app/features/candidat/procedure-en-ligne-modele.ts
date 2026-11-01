@@ -198,6 +198,8 @@ export interface LigneProcedure {
   joursRestants: number | null;
   /** Part écoulée de la période de dépôt, de 0 à 100 ; `null` à venir ou sans dates. */
   avancement: number | null;
+  /** ⚠️ 01/11 — l'appel d'offres dont l'avis spécifique se lit en ligne (`avisSpecifique`) ; `null` sinon (AMI compris). */
+  idDmcAvis: number | null;
 }
 
 export type FiltreProcedures = 'TOUTES' | 'OUVERTE' | 'A_VENIR';
@@ -255,6 +257,7 @@ export function lignesProcedures(
       dateOuverture: a.publieLe,
       joursRestants: a.ouvert ? joursAvant(a.dateLimite, maintenant) : null,
       avancement: a.ouvert ? avancementDepot(a.publieLe, a.dateLimite, maintenant) : null,
+      idDmcAvis: null,
     })),
     ...procedures.map((p): LigneProcedure => ({
       cle: `AO-${p.idDmc}`,
@@ -270,6 +273,7 @@ export function lignesProcedures(
       dateOuverture: p.dateOuvertureDepots,
       joursRestants: p.etat === 'CLOSE' ? null : joursAvant(p.dateLimite, maintenant),
       avancement: p.etat === 'OUVERTE' ? avancementDepot(p.dateOuvertureDepots ?? p.datePublication, p.dateLimite, maintenant) : null,
+      idDmcAvis: p.avisSpecifique ? p.idDmc : null,
     })),
   ];
   // La date limite la plus proche d'abord, les closes à la fin.

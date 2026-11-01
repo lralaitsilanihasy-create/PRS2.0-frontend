@@ -64,3 +64,10 @@ présent : pas d'appel à l'aveugle suivi d'un 404.
   sans historique « avis initial / avis rectificatif ».
 - **Q2 — Mentions de publication : non requises.** Le journal et le numéro du Journal des marchés publics saisis à l'impression
   (`publication.journal`, `jmpNumero`, `jmpDate`) ne sont pas ajoutés à `avisSpecifique` : B2 reste tel qu'écrit ci-dessus.
+
+> ⚠️ **2026-11-01 — B1, B2 livrés (PRS20, sans migration), conformes aux arbitrages Q1 et Q2.**
+> - **B1** — `GET /api/procedures-en-ligne/{idDmc}/avis-specifique`, public : le PDF de la **dernière** impression de l'avis (type
+>   `AVIS`, extension `pdf` ; jamais le .docx ni `AVIS_PROJET`), `Content-Disposition` avec le nom enregistré ; 404 hors critères de
+>   `GET …/{idDmc}`, pour une consultation restreinte ou sans avis imprimé. Rien au registre des retraits, aucun reçu exigé.
+> - **B2** — `avisSpecifique: { imprimeLe, version, taille }` en **dernier champ** de `ProcedureEnLigneDto` (liste et détail), `null`
+>   sans avis imprimé et pour une consultation restreinte.

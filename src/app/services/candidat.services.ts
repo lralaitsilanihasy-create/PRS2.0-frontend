@@ -144,6 +144,14 @@ export class ProceduresEnLigneService {
   pv(idDmc: number): Observable<Blob> {
     return this.http.get(`${this.base}/${idDmc}/pv`, { responseType: 'blob', context: skipErrorToast() });
   }
+
+  /**
+   * ⚠️ 01/11 (« avis-specifique-public », §B1) — `GET /{idDmc}/avis-specifique` (public) : le PDF de la dernière impression de
+   * l'avis spécifique ; 404 hors critères ou sans avis. N'est pas un retrait du DAO (ni registre, ni reçu). Silencieux.
+   */
+  avisSpecifique(idDmc: number): Observable<Blob> {
+    return this.http.get(`${this.base}/${idDmc}/avis-specifique`, { responseType: 'blob', context: skipErrorToast() });
+  }
 }
 
 /** Vérification des entreprises par l'Administrateur (`/api/admin/entreprises`, §B4). */

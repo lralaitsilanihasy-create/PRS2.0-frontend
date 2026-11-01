@@ -214,6 +214,11 @@ export interface ProcedureEnLigne {
   fraisDossier?: { lot: number | null; montant: number }[] | null;
   /** Le compte de l'ARMP à créditer ; `null` pour un dossier gratuit ou un compte non réglé. */
   compteDao?: { banque: string | null; titulaire: string | null; numeroCompte: string | null } | null;
+  /**
+   * ⚠️ 01/11 (« avis-specifique-public », §B2) — la dernière impression de l'avis spécifique, lisible sans compte par
+   * `GET /{idDmc}/avis-specifique` ; `null` sans avis imprimé et pour une consultation restreinte.
+   */
+  avisSpecifique?: { imprimeLe: string; version: number; taille: number } | null;
 }
 
 export type EtatRecu = 'EN_ATTENTE' | 'VALIDE' | 'REFUSE';

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, DOCUMENT, OnInit, computed, inject,
 import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { ouvrirBlobSur } from '../../core/securite/fichiers-surs';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
@@ -99,6 +100,11 @@ import { FiltreProcedures, compteursProcedures, filtrerProcedures, lignesProcedu
               @if (l.joursRestants != null) {
                 <p class="pel__jours"><strong>{{ l.joursRestants === 0 ? 'Dernier' : l.joursRestants }}</strong><span>{{ l.joursRestants === 0 ? 'jour' : l.joursRestants > 1 ? 'jours restants' : 'jour restant' }}</span></p>
               }
+              @if (l.idDmcAvis; as id) {
+                <!-- ⚠️ 01/11 (« avis-specifique-public ») — l'avis spécifique publié, lisible sans compte. -->
+                <button type="button" class="btn btn-sm btn-ghost" [disabled]="avisEnCours() === id" [attr.aria-label]="'Lire l’avis spécifique — ' + l.objet"
+                        (click)="lireAvis(id)"><app-icone nom="file" [taille]="14" />{{ avisEnCours() === id ? 'Ouverture…' : 'Avis' }}</button>
+              }
               <a class="btn btn-sm" [class.btn-primary]="l.etat === 'OUVERTE'" [class.btn-outline]="l.etat !== 'OUVERTE'" [routerLink]="l.lien">
                 {{ l.etat === 'OUVERTE' ? 'Consulter' : 'Voir le détail' }}<app-icone nom="chev" [taille]="14" />
               </a>
@@ -189,6 +195,18 @@ export class ProceduresEnLigne implements OnInit {
   readonly lignes = computed(() => lignesProcedures(this.procedures(), this.amis(), LIBELLES_CATEGORIES));
   readonly compteurs = computed(() => compteursProcedures(this.lignes()));
   readonly visibles = computed(() => filtrerProcedures(this.lignes(), this.texte(), this.filtre()));
+
+  /** L'avis en cours d'ouverture (identifiant de la procédure). */
+  readonly avisEnCours = signal<number | null>(null);
+
+  /** ⚠️ 01/11 — le PDF de l'avis spécifique publié, ouvert dans un nouvel onglet (`ouvrirBlobSur`) ; un échec ne bloque rien. */
+  lireAvis(idDmc: number): void {
+    this.avisEnCours.set(idDmc);
+    this.service.avisSpecifique(idDmc).subscribe({
+      next: (b) => { this.avisEnCours.set(null); ouvrirBlobSur(b); },
+      error: () => this.avisEnCours.set(null),
+    });
+  }
 
   libelleEtat(etat: 'OUVERTE' | 'A_VENIR' | 'CLOSE', genre: 'AO' | 'AMI'): string {
     return genre === 'AMI' ? (etat === 'OUVERTE' ? 'Manifestation ouverte' : 'Close') : this.etats[etat];
