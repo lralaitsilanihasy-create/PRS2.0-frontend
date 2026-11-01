@@ -79,7 +79,7 @@ export const REFERENTIELS: AdminResource[] = [
   {
     slug: 'categorie-entites',
     config: {
-      title: "Catégories d'entité",
+      title: 'Catégories d’entité',
       service: CategorieEntiteService,
       idKey: 'libelle',
       writeCapability: 'REFERENTIEL_WRITE',
@@ -318,7 +318,7 @@ export const REFERENTIELS: AdminResource[] = [
   {
     slug: 'type-dmc',
     config: {
-      title: 'Types de document DMC (par marché)',
+      title: 'Types de document DMC',
       service: TypeDmcService,
       idKey: 'idTypeDmc',
       writeCapability: 'REFERENTIEL_WRITE',
@@ -477,7 +477,7 @@ export const REFERENTIELS: AdminResource[] = [
   {
     slug: 'regle-alertes',
     config: {
-      title: "Règles d'alerte",
+      title: 'Règles d’alerte',
       service: RegleAlerteService,
       idKey: 'idRegleAlerte',
       writeCapability: 'REFERENTIEL_WRITE',
@@ -494,7 +494,7 @@ export const REFERENTIELS: AdminResource[] = [
   {
     slug: 'regle-anomalies',
     config: {
-      title: "Règles d'anomalie",
+      title: 'Règles d’anomalie',
       service: RegleAnomalieService,
       idKey: 'idRegleAnomalie',
       writeCapability: 'REFERENTIEL_WRITE',

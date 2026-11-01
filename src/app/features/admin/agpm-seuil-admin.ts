@@ -20,7 +20,7 @@ import { EtatErreur } from '../../shared/ui/etat-erreur';
   template: `
     <section class="asa">
       <header class="page-header">
-        <h1 class="page-title">Seuil AGPM — appel à manifestation d'intérêt</h1>
+        <h1 class="page-title">Seuil AGPM (AMI)</h1>
         <button type="button" class="btn btn-secondary btn-sm" (click)="charger()" [disabled]="loading()">Rafraîchir</button>
       </header>
 

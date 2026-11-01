@@ -171,7 +171,7 @@ describe('sectionsMenu — dérivation des rubriques', () => {
     expect(sections[2].items.map((i) => i.label)).toEqual(['Appels d’offres', 'Reçus des frais de dossier']);
     expect(sections[3].items.map((i) => i.label)).toEqual(['Contrats en vigueur']);
     expect(sections[4].items.map((i) => i.label)).toEqual(['PV et lettres de renvoi', 'Demandes de retrait']);
-    expect(sections[5].items.map((i) => i.label)).toEqual(['Calendrier']);
+    expect(sections[5].items.map((i) => i.label)).toEqual(['Calendrier des jalons']);
   });
 
   it('Membre : Mon travail · Dossiers · Décisions', () => {
@@ -184,7 +184,7 @@ describe('sectionsMenu — dérivation des rubriques', () => {
   it('Assistant contrôleur : Mon travail · Dossiers · Reçus (les PV d’abord, 31/10)', () => {
     const sections = sectionsMenu(navFor('ASSISTANT_CONTROLEUR'));
     expect(sections.map((s) => s.titre)).toEqual(['Mon travail', 'Dossiers', 'Reçus']);
-    expect(sections[2].items.map((i) => i.label)).toEqual(['PV reçus', 'Lettres de renvoi reçues']);
+    expect(sections[2].items.map((i) => i.label)).toEqual(['PV à archiver', 'Lettres de renvoi reçues']);
   });
 
   /**
@@ -197,8 +197,8 @@ describe('sectionsMenu — dérivation des rubriques', () => {
     expect(sections[0].items.map((i) => i.label)).toEqual(['Poste d’administration']);
     // ⚠️ 31/10 (pilote) — Accès en deux colonnes ; mandats, intérims, rattachements et entreprises remontés au menu.
     expect(sections[1].items.map((i) => [i.colonne, i.label])).toEqual([
-      ['Demandes', 'Demandes d’accès'],
-      ['Demandes', 'Rattachements PRMP ⇄ entité'],
+      ['Demandes', 'Inscriptions en attente'],
+      ['Demandes', 'Rattachements en attente'],
       ['Comptes', 'Comptes & personnes'],
       ['Comptes', 'Mandats PRMP'],
       ['Comptes', 'Intérims'],
@@ -221,7 +221,7 @@ describe('sectionsMenu — dérivation des rubriques', () => {
       'Passation en ligne',
     ]);
     // ⚠️ Lot 6 F5 — l'écran porte les écritures ET les connexions ; ⚠️ 31/10 le libellé le dit.
-    expect(sections[4].items.map((i) => i.label)).toEqual(['Journal (écritures et connexions)', 'Actualités']);
+    expect(sections[4].items.map((i) => i.label)).toEqual(['Journal des écritures et des connexions', 'Actualités']);
   });
 
   it('Administrateur : chaque référentiel du carrefour « Nomenclatures » a son entrée dans le menu en colonnes (31/10)', () => {
@@ -260,8 +260,8 @@ describe('sectionsMenu — dérivation des rubriques', () => {
       expect(sections.map((s) => s.titre), role).toEqual(['Mon travail', 'Dossiers', 'Décisions', 'Pilotage', 'Exercé par délégation']);
       expect(sections[2].items.map((i) => i.label), role).toEqual(['PV et lettres de renvoi', 'Demandes de retrait']);
       expect(sections[3].items.map((i) => i.label), role).toEqual([
-        'Répartition du dispatch',
-        'Intérim', // intérim désigné (2026-09-21) : qui agit à la place du P/CC absent
+        'Répartition des dossiers par contrôleur',
+        'Mon intérim', // intérim désigné (2026-09-21) : qui agit à la place du P/CC absent
         'Chaînes de contrôle',
         'Rapports', // ⚠️ 31/10 (pilote) — remis au menu
         'Statistiques',
@@ -296,7 +296,7 @@ describe('sectionsMenu — la section « Exercé par délégation » ne bouge pa
       expect(derniere.cle, role).toBe('delegation');
       expect(derniere.titre, role).toBe('Exercé par délégation');
       expect(derniere.repliable, role).toBe(true);
-      expect(derniere.items.map((i) => i.label), role).toEqual(['Vérifications', 'Archivage des PV']);
+      expect(derniere.items.map((i) => i.label), role).toEqual(['Dossiers à vérifier', 'PV à archiver']);
       expect(derniere.items.every((i) => !!i.delegation), role).toBe(true);
     }
   });

@@ -16,6 +16,6 @@ export const SECRETAIRE_ROUTES: Routes = [
   // ⚠️ Examen (25/09) — la fiche DAO du dossier examiné, EN LECTURE : le serveur la sert déjà à tous les rôles de
   // contrôle, seul le front la gardait dans l'espace PRMP. Même composant, mode lecture déduit du rôle.
   { path: 'dao/:idDmc', loadComponent: () => import('../prmp/fiche-marche/fiche-marche').then((m) => m.FicheMarcheEcran), data: { title: 'Fiche DAO', concentration: true } },
-  { path: 'tableau-de-bord', loadComponent: () => import('../circuit/dossiers-pipeline').then((m) => m.DossiersPipeline), data: { title: 'Tous les dossiers' } },
+  { path: 'tableau-de-bord', loadComponent: () => import('../circuit/dossiers-pipeline').then((m) => m.DossiersPipeline), data: { title: 'Dossiers', perimetre: 'Tous les dossiers reçus' } },
   { path: 'messagerie', loadComponent: () => import('../transverse/messagerie').then((m) => m.Messagerie) },
 ];

@@ -58,7 +58,7 @@ type Onglet = 'actions' | 'connexions';
   template: `
     <section class="al">
       <header class="page-header">
-        <h1 class="page-title">Journal</h1>
+        <h1 class="page-title">Journal des écritures et des connexions</h1>
       </header>
 
       <!-- ⚠️ Les flèches sont écoutées sur chaque ONGLET, pas sur la barre : un conteneur qui porte

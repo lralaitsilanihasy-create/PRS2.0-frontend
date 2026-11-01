@@ -38,8 +38,8 @@ const LIBELLES_CHAMPS: Readonly<Record<keyof ExclusionArmpCorps, string>> = {
     <section class="ex">
       <header class="page-header page-header--actions">
         <div>
-          <div class="page-subtitle">Nomenclatures · espace candidat</div>
-          <h1 class="page-title">Entreprises exclues par l'ARMP</h1>
+          <div class="page-subtitle">Référentiels · espace candidat</div>
+          <h1 class="page-title">Entreprises exclues par l’ARMP</h1>
         </div>
         <button type="button" class="btn btn-primary" (click)="ouvrir(null)">Ajouter une exclusion</button>
       </header>

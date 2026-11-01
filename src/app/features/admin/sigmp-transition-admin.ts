@@ -24,7 +24,10 @@ type Cle = 'finTransition' | 'decisionReference' | 'decisionDate';
   template: `
     <section class="sta">
       <header class="page-header">
-        <h1 class="page-title">Transition SIGMP — documents générés par l’application</h1>
+        <div>
+          <div class="page-subtitle">Documents générés par l’application</div>
+          <h1 class="page-title">Transition SIGMP</h1>
+        </div>
         <button type="button" class="btn btn-secondary btn-sm" (click)="charger()" [disabled]="loading()">Rafraîchir</button>
       </header>
 

@@ -57,7 +57,11 @@ type VuePipeline = 'volets' | 'frise' | 'tableau';
   template: `
     <section class="pipeline">
       <header class="page-header pipeline__header">
-        <h1 class="page-title">{{ title }}</h1>
+        <!-- ⚠️ 01/11 (pilote, « les mots du menu ») — le titre du menu (« Dossiers »), le périmètre du profil en sous-titre. -->
+        <div>
+          @if (perimetre) { <div class="page-subtitle">{{ perimetre }}</div> }
+          <h1 class="page-title">{{ title }}</h1>
+        </div>
         <div class="pipeline__vue" role="group" aria-label="Choix de l'affichage">
           <button type="button" class="btn btn-sm" [class.btn-primary]="vue() === 'volets'" [class.btn-outline]="vue() !== 'volets'" [attr.aria-pressed]="vue() === 'volets'" (click)="setVue('volets')">Deux volets</button>
           <button type="button" class="btn btn-sm" [class.btn-primary]="vue() === 'frise'" [class.btn-outline]="vue() !== 'frise'" [attr.aria-pressed]="vue() === 'frise'" (click)="setVue('frise')">Frise</button>
@@ -437,6 +441,7 @@ export class DossiersPipeline {
   })();
 
   protected readonly title = (this.route.snapshot.data['title'] as string) ?? 'Dossiers';
+  protected readonly perimetre = (this.route.snapshot.data['perimetre'] as string | undefined) ?? null;
   /** Frise du circuit par dossier ; désactivable via `route.data.timeline === false`. */
   protected readonly showTimeline = (this.route.snapshot.data['timeline'] as boolean | undefined) ?? true;
   /** Bouton « Examiner » par dossier ; activé via `route.data.examenAction === true` (écran Examens). */

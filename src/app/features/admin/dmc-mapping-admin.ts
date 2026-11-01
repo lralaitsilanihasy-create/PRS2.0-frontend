@@ -18,7 +18,10 @@ import { ModePassationService, TypeDmcService } from '../../services';
   template: `
     <section class="dm">
       <header class="page-header">
-        <h1 class="page-title">Mapping mode de passation → document DMC</h1>
+        <div>
+          <div class="page-subtitle">Mode de passation → document DMC</div>
+          <h1 class="page-title">Mapping mode → document DMC</h1>
+        </div>
         <button type="button" class="btn btn-secondary btn-sm" (click)="charger()" [disabled]="loading()">Rafraîchir</button>
       </header>
       <p class="alert alert-info">

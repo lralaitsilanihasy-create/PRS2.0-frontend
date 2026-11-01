@@ -102,7 +102,7 @@ const GESTES: Readonly<Record<string, string>> = {
     <section class="acc">
       <header class="page-header">
         <p class="page-subtitle">Administration</p>
-        <h1 class="page-title">Poste d'administration</h1>
+        <h1 class="page-title">Poste d’administration</h1>
         <p class="acc__jour">
           {{ dateDuJour() }}
           @if (doyenne(); as d) {

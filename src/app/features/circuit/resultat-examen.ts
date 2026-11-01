@@ -128,10 +128,9 @@ const CARTES_MEMBRE: CarteResultat[] = [
       <header class="page-header">
         <div>
           <div class="page-subtitle">{{ sousTitre() }}</div>
-          <!-- ⚠️ Demande pilote (2026-09-13) — PRMP et MEMBRE affichent « PV et lettres de renvoi »
-               (le Membre y regroupe Projets de PV + Projets de lettre de renvoi + PV définitifs).
-               P/CC gardent « Examen de dossiers ». -->
-          <h1 class="page-title">{{ estPrmp() || estMembre() ? 'PV et lettres de renvoi' : 'Examen de dossiers' }}</h1>
+          <!-- ⚠️ 01/11 (pilote, « les mots du menu ») — « PV et lettres de renvoi » pour tous les profils, comme leur menu
+               (Président et Chef de commission gardaient « Examen de dossiers », l'ancien nom). -->
+          <h1 class="page-title">PV et lettres de renvoi</h1>
         </div>
       </header>
       @if (estPrmp()) {

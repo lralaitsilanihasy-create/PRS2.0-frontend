@@ -42,7 +42,7 @@ export const PRESIDENT_ROUTES: Routes = [
   {
     path: 'tableau-de-bord',
     loadComponent: () => import('../circuit/dossiers-pipeline').then((m) => m.DossiersPipeline),
-    data: { title: 'Tous types de dossiers confondus' },
+    data: { title: 'Dossiers', perimetre: 'Tous types de dossiers, toutes localités' },
   },
   // ⚠️ Rattachements (2026-09-01) — chaînes Membre→Vérificateur→Assistant : le Président administre partout.
   { path: 'chaines-controle', loadComponent: () => import('../admin/chaines-controle').then((m) => m.ChainesControle) },
@@ -51,7 +51,7 @@ export const PRESIDENT_ROUTES: Routes = [
   { path: 'interim', loadComponent: () => import('../circuit/interims-ecran').then((m) => m.InterimsEcran), data: { title: 'Mon intérim' } },
   // ⚠️ Demande pilote (2026-09-12) — « Répartition de dispatch » quitte « Mes dossiers » pour son propre
   // écran + entrée de menu (le composant est autonome, scopé serveur — toutes localités pour le Président).
-  { path: 'repartition-dispatch', loadComponent: () => import('../circuit/dispatchs-controleurs').then((m) => m.DispatchsControleurs), data: { title: 'Répartition de dispatch' } },
+  { path: 'repartition-dispatch', loadComponent: () => import('../circuit/dispatchs-controleurs').then((m) => m.DispatchsControleurs), data: { title: 'Répartition des dossiers par contrôleur' } },
   // Pré-dispatch et « Dispatch des dossiers » retirés : classement + action de dispatch dans « Mes dossiers ».
   // ⚠️ 2026-08-06 (demande user) — hub « Résultat examen » : une seule entrée de menu pour les trois
   // écrans produits par l'examen (projets de PV, PV définitifs, lettres de renvoi). Les routes des
@@ -63,12 +63,12 @@ export const PRESIDENT_ROUTES: Routes = [
     path: 'resultat-examen',
     loadComponent: () => import('../circuit/resultat-examen').then((m) => m.ResultatExamen),
     children: [
-      { path: 'pv', loadComponent: () => import('../membre/pv-page').then((m) => m.MembrePv) },
-      { path: 'pv-definitifs', loadComponent: () => import('../circuit/pv-definitifs').then((m) => m.PvDefinitifs) },
+      { path: 'pv', loadComponent: () => import('../membre/pv-page').then((m) => m.MembrePv), data: { title: 'Projets de PV' } },
+      { path: 'pv-definitifs', loadComponent: () => import('../circuit/pv-definitifs').then((m) => m.PvDefinitifs), data: { title: 'PV définitifs' } },
       {
         path: 'lettre-renvois',
         loadComponent: () => import('../circuit/lettre-renvoi-consultation').then((m) => m.LettreRenvoiConsultation),
-        data: { source: 'localite', signable: true, title: 'Lettres de renvoi' },
+        data: { source: 'localite', signable: true, title: 'Lettres de renvoi à signer' },
       },
     ],
   },
@@ -81,10 +81,10 @@ export const PRESIDENT_ROUTES: Routes = [
   { path: 'verifications', loadComponent: () => import('../circuit/dossiers-pipeline').then((m) => m.DossiersPipeline), data: { title: 'Dossiers à vérifier', timeline: false, source: 'a-verifier', verifAction: true } },
   { path: 'verifier/:idDossier', loadComponent: () => import('../verificateur/verifier-dossier').then((m) => m.VerifierDossier), data: { title: 'Vérifier un dossier', concentration: true } },
   { path: 'en-attente-prmp', loadComponent: () => import('../verificateur/en-attente-prmp').then((m) => m.EnAttentePrmp) },
-  { path: 'pv-examens', loadComponent: () => import('../circuit/pv-assistant').then((m) => m.PvAssistant) },
+  { path: 'pv-examens', loadComponent: () => import('../circuit/pv-assistant').then((m) => m.PvAssistant), data: { title: 'PV à archiver' } },
   { path: 'pv-examens/:idPv', loadComponent: () => import('../circuit/pv-assistant').then((m) => m.PvAssistant) },
-  { path: 'rapports', loadComponent: () => import('../pilotage/rapports-page').then((m) => m.RapportsPage) },
-  { path: 'statistiques', loadComponent: () => import('../pilotage/kpi-dashboard').then((m) => m.KpiDashboard) },
+  { path: 'rapports', loadComponent: () => import('../pilotage/rapports-page').then((m) => m.RapportsPage), data: { title: 'Rapports' } },
+  { path: 'statistiques', loadComponent: () => import('../pilotage/kpi-dashboard').then((m) => m.KpiDashboard), data: { title: 'Statistiques' } },
   // ⚠️ 2026-08-04 — menu commun Président / Chef de commission (cf. `menuCommission()` dans
   // navigation.ts) : mêmes écrans partagés, périmètre scopé par le backend (national ici).
   { path: 'messagerie', loadComponent: () => import('../transverse/messagerie').then((m) => m.Messagerie) },

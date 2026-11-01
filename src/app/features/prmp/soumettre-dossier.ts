@@ -135,7 +135,7 @@ interface ApercuDossier {
       <header class="page-header page-header--actions">
         <div>
           <div class="page-subtitle">{{ domaine() }}</div>
-          <h1 class="page-title">Créer dossier</h1>
+          <h1 class="page-title">Créer un dossier</h1>
         </div>
         <!-- ⚠️ Demande pilote (2026-09-13) — bouton retour PRMP retiré (navigation par le menu). L'UGPM
              garde « ← Mes brouillons » (retour vers sa liste après saisie). -->
@@ -144,7 +144,8 @@ interface ApercuDossier {
         }
       </header>
       <!-- Phrase de rôle (proposition 2026-09-22, lot B) : à quoi sert l'écran, pour qui. -->
-      <p class="page-role">Importez le plan de passation PDF ou saisissez-le, complétez la fiche, joignez les pièces ; le dossier part à la Commission quand vous le soumettez.</p>
+      <!-- ⚠️ 01/11 (pilote, « les mots du menu ») — le titre du menu, et une phrase qui dit le premier choix : le type de dossier. -->
+      <p class="page-role">Choisissez le type de dossier (plan de passation, mise en concurrence, marché), complétez-le et joignez ses pièces : il part à la Commission quand vous le soumettez.</p>
 
       <!-- ⚠️ 2026-08-05 (demande user) — rattrapage : on arrive ici par réflexe pour faire évoluer un PPM
            déjà validé, alors que cet écran crée un dossier NEUF. Le renvoi n'est proposé qu'à la PRMP

@@ -7,10 +7,12 @@
         <app-icone nom="chev" [taille]="12" />
       }
       <span>Fiche marché du dossier</span>
-    } @else {
-      <a routerLink="/prmp/soumettre-dossier" [queryParams]="{ famille: 'DMC' }"><app-icone nom="chevl" [taille]="14" />Créer dossier</a>
+    } @else if (idDmc() != null) {
+      <!-- ⚠️ 01/11 (pilote, « les mots du menu ») — l'écran est l'entrée « Appels d'offres » du menu Passation, plus une étape de
+           « Créer dossier » : la fiche remonte à la liste des appels d'offres. -->
+      <a routerLink="/prmp/dao"><app-icone nom="chevl" [taille]="14" />Appels d’offres</a>
       <app-icone nom="chev" [taille]="12" />
-      <span>Dossier de mise en concurrence — appel d'offres</span>
+      <span>Fiche DAO</span>
     }
   </nav>
 
@@ -20,7 +22,7 @@
       <!-- La désignation d'une ligne peut décrire quatre lots en toutes lettres : bornée à deux lignes, entière
            en infobulle — mais seulement si elle est vraiment coupée (cf. appTitreSiTronque). -->
       <h1 class="page-title fm__titre" appTitreSiTronque>
-        @if (idDmc() == null) { Fiche DAO — choisir la ligne du plan de passation }
+        @if (idDmc() == null) { Appels d’offres }
         @else { Fiche DAO{{ fiche()?.designationMarche ? ' — ' + fiche()?.designationMarche : '' }} }
       </h1>
     </div>
@@ -138,6 +140,12 @@
       <p class="page-role">
         La fiche marché du dossier examiné, en <strong>lecture</strong> : le cadrage, les informations saisies par la PRMP,
         les reprises d'un document à l'autre, le bilan des contrôles et les documents produits.
+      </p>
+    } @else if (idDmc() == null) {
+      <!-- ⚠️ 01/11 (pilote, « les mots du menu ») — la liste des appels d'offres : ce qu'elle montre et ce qu'on y fait. -->
+      <p class="page-role">
+        Vos appels d’offres, une ligne du plan de passation chacun : préparez la fiche DAO d’une ligne éligible, puis suivez ses reçus
+        de frais de dossier et les offres déposées.
       </p>
     } @else if (ficheVerrouillee()) {
       <p class="page-role">La fiche validée de la procédure, figée depuis la soumission du dossier : son suivi ci-dessus, ses informations et ses documents en consultation ci-dessous.</p>

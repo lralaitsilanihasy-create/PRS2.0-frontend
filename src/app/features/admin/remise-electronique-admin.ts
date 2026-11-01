@@ -22,8 +22,8 @@ const NIVEAUX = ['Simple', 'Avancée', 'Qualifiée'] as const;
     <section class="rea">
       <header class="page-header">
         <div>
-          <div class="page-subtitle">Nomenclatures · fiche DAO d'un appel d'offres</div>
-          <h1 class="page-title">Remise électronique — défauts et bornes</h1>
+          <div class="page-subtitle">Référentiels · défauts et bornes de la fiche DAO</div>
+          <h1 class="page-title">Remise électronique</h1>
         </div>
         <button type="button" class="btn btn-secondary btn-sm" (click)="charger()" [disabled]="loading()">Rafraîchir</button>
       </header>

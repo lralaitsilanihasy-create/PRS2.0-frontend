@@ -54,8 +54,8 @@ const MOTIFS: readonly MotifInterim[] = ['CONGE', 'MISSION', 'MALADIE', 'VACANCE
     <section class="it">
       <header class="page-header">
         <div>
-          <div class="page-subtitle">{{ admin ? 'Comptes & hiérarchie' : 'Organisation' }}</div>
-          <h1 class="page-title">{{ admin ? 'Intérims des contrôleurs' : 'Mon intérim' }}</h1>
+          <div class="page-subtitle">{{ admin ? 'Accès · Comptes' : 'Pilotage' }}</div>
+          <h1 class="page-title">{{ admin ? 'Intérims' : 'Mon intérim' }}</h1>
         </div>
         @if (peutDesigner()) {
           <button type="button" class="btn btn-primary" (click)="ouvrirDesignation()">+ Désigner un intérimaire</button>

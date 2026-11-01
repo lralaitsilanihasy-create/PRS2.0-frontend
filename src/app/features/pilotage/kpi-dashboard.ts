@@ -16,7 +16,7 @@ import { StatutBadge } from '../../shared/circuit';
     <section class="kpi">
       <header class="page-header">
         <div class="page-subtitle">Pilotage</div>
-        <h1 class="page-title">Tableau de bord</h1>
+        <h1 class="page-title">Statistiques</h1>
       </header>
 
       @if (loading()) {

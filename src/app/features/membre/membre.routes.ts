@@ -15,7 +15,7 @@ export const MEMBRE_ROUTES: Routes = [
   {
     path: 'tableau-de-bord',
     loadComponent: () => import('../circuit/dossiers-pipeline').then((m) => m.DossiersPipeline),
-    data: { title: 'Dossiers de ma localité' },
+    data: { title: 'Dossiers', perimetre: 'Ma localité' },
   },
   // ⚠️ Demande pilote (2026-09-13) — « Mes dossiers » (cartes type × statut) RETIRÉ du menu : « Tous
   // les dossiers » (pipeline) porte déjà À examiner / Examinés avec les actions inline (Examiner /
@@ -31,9 +31,9 @@ export const MEMBRE_ROUTES: Routes = [
     path: 'resultat-examen',
     loadComponent: () => import('../circuit/resultat-examen').then((m) => m.ResultatExamen),
     children: [
-      { path: 'pv', loadComponent: () => import('./pv-page').then((m) => m.MembrePv) },
-      { path: 'lettre-renvois', loadComponent: () => import('./lettre-renvois').then((m) => m.LettreRenvoiList) },
-      { path: 'pv-definitifs', loadComponent: () => import('../circuit/pv-definitifs').then((m) => m.PvDefinitifs) },
+      { path: 'pv', loadComponent: () => import('./pv-page').then((m) => m.MembrePv), data: { title: 'Projets de PV' } },
+      { path: 'lettre-renvois', loadComponent: () => import('./lettre-renvois').then((m) => m.LettreRenvoiList), data: { title: 'Projets de lettre de renvoi' } },
+      { path: 'pv-definitifs', loadComponent: () => import('../circuit/pv-definitifs').then((m) => m.PvDefinitifs), data: { title: 'PV définitifs' } },
     ],
   },
   // Anciennes URL (notifications, favoris, `?gerer=`) → redirigées vers le hub.

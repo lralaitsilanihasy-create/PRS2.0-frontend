@@ -70,7 +70,7 @@ export const ADMIN_ROUTES: Routes = [
   {
     path: 'referentiels',
     loadComponent: () => import('../../shared/ui/section-home').then((m) => m.SectionHome),
-    data: { title: 'Nomenclatures', links: refLinks },
+    data: { title: 'Référentiels', links: refLinks },
   },
   { path: 'referentiels/entite-arbre', loadComponent: () => import('./entite-arbre').then((m) => m.EntiteArbre) },
   { path: 'referentiels/dmc-mapping', loadComponent: () => import('./dmc-mapping-admin').then((m) => m.DmcMappingAdmin) },
@@ -81,9 +81,9 @@ export const ADMIN_ROUTES: Routes = [
   { path: 'referentiels/recours-suspensifs', loadComponent: () => import('./recours-suspensifs-admin').then((m) => m.RecoursSuspensifsAdmin), data: { title: 'Recours suspensifs' } },
   { path: 'referentiels/modeles-pv', loadComponent: () => import('./modeles-pv/modeles-pv-liste').then((m) => m.ModelesPvListe), data: { title: 'Modèles de documents' } },
   { path: 'referentiels/modeles-pv/:id', loadComponent: () => import('./modeles-pv/modele-pv-fiche').then((m) => m.ModelePvFicheEcran), data: { title: 'Modèle de document' } },
-  { path: 'referentiels/remise-electronique', loadComponent: () => import('./remise-electronique-admin').then((m) => m.RemiseElectroniqueAdmin), data: { title: 'Remise électronique — défauts et bornes' } },
+  { path: 'referentiels/remise-electronique', loadComponent: () => import('./remise-electronique-admin').then((m) => m.RemiseElectroniqueAdmin), data: { title: 'Remise électronique' } },
   // ⚠️ Soumission en ligne, lot 1 (04/10, §B4, §B5, §B7) — l'espace candidat côté Administrateur.
-  { path: 'referentiels/candidats', loadComponent: () => import('./parametres-candidats-admin').then((m) => m.ParametresCandidatsAdmin), data: { title: 'Candidats — paramètres' } },
+  { path: 'referentiels/candidats', loadComponent: () => import('./parametres-candidats-admin').then((m) => m.ParametresCandidatsAdmin), data: { title: 'Candidats — espace en ligne' } },
   { path: 'referentiels/exclusions-armp', loadComponent: () => import('./exclusions-armp-admin').then((m) => m.ExclusionsArmpAdmin), data: { title: 'Entreprises exclues par l’ARMP' } },
   { path: 'entreprises', loadComponent: () => import('./entreprises-admin').then((m) => m.EntreprisesAdmin), data: { title: 'Entreprises candidates' } },
   // ⚠️ Remise électronique (27/09, Q8) — l'Administrateur désigne le responsable de la procédure DEPUIS la fiche : il

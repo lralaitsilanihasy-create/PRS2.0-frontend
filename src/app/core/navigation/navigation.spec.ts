@@ -33,8 +33,8 @@ describe('separerParDelegation', () => {
     // son unique action « Numéroter » est inline dans « Tous les dossiers » (comme l'examen du Membre).
     // Restent les deux délégations sans équivalent inline complet : Vérifications et Archivage des PV.
     const [propres, delegues] = separerParDelegation(navFor('PRESIDENT'));
-    expect(delegues.items.map((i) => i.label)).toEqual(['Vérifications', 'Archivage des PV']);
-    expect(propres.items.map((i) => i.label)).not.toContain('Vérifications');
+    expect(delegues.items.map((i) => i.label)).toEqual(['Dossiers à vérifier', 'PV à archiver']);
+    expect(propres.items.map((i) => i.label)).not.toContain('Dossiers à vérifier');
     // « Rapports »/« Statistiques »/« Messagerie » sont retirés du menu pour le moment (2026-09-04).
     expect(propres.items.map((i) => i.label)).toContain('Chaînes de contrôle');
   });

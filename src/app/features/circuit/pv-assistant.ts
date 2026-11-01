@@ -35,7 +35,7 @@ import {
       <header class="page-header">
         <div>
           <div class="page-subtitle">Domaine Assistant</div>
-          <h1 class="page-title">PV reçus</h1>
+          <h1 class="page-title">PV à archiver</h1>
         </div>
       </header>
       <!-- Phrase de rôle (proposition 2026-09-22, lot B) : à quoi sert l'écran, pour qui. -->

@@ -34,7 +34,7 @@ const STATUT_LABELS: Record<string, string> = {
     <section class="ma">
       <header class="page-header">
         <div>
-          <div class="page-subtitle">Comptes & hiérarchie</div>
+          <div class="page-subtitle">Accès · Comptes</div>
           <h1 class="page-title">Mandats PRMP</h1>
         </div>
         <button type="button" class="btn btn-primary" (click)="ouvrirCreation()">+ Nouveau mandat</button>

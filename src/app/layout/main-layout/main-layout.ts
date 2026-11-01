@@ -303,7 +303,8 @@ export class MainLayout {
     let parents: { label: string; chemin: string[] }[] = [];
     let params: Record<string, string> = {};
     while (route) {
-      const t = route.snapshot.data['title'] as string | undefined;
+      // ⚠️ 01/11 (pilote) — un écran qui change de nom selon sa requête (« Mettre à jour un PPM » = les dossiers vérifiés, ?maj=1).
+      const t = (route.snapshot.data['titreMaj'] && route.snapshot.queryParams['maj'] ? route.snapshot.data['titreMaj'] : route.snapshot.data['title']) as string | undefined;
       if (t) titre = t;
       const p = route.snapshot.data['parents'] as { label: string; chemin: string[] }[] | undefined;
       if (p) parents = p;

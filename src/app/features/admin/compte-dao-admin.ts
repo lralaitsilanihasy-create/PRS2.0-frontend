@@ -23,7 +23,10 @@ type Cle = 'banque' | 'titulaire' | 'numeroCompte';
   template: `
     <section class="cda">
       <header class="page-header">
-        <h1 class="page-title">Compte bancaire de l’ARMP — prix des DAO</h1>
+        <div>
+          <div class="page-subtitle">Prix des DAO</div>
+          <h1 class="page-title">Compte bancaire de l’ARMP</h1>
+        </div>
         <button type="button" class="btn btn-secondary btn-sm" (click)="charger()" [disabled]="loading()">Rafraîchir</button>
       </header>
 

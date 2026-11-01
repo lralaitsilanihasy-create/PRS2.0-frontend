@@ -33,7 +33,7 @@ function vide(): ChampFiche {
     <section class="cfm">
       <header class="page-header">
         <div>
-          <div class="page-subtitle">Nomenclatures · fiche DAO d'un appel d'offres</div>
+          <div class="page-subtitle">Référentiels · fiche DAO d’un appel d’offres</div>
           <h1 class="page-title">Champs de la fiche DAO</h1>
         </div>
         <div class="cfm__actions">

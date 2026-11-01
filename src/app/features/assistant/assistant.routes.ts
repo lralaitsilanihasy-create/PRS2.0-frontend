@@ -13,7 +13,7 @@ export const ASSISTANT_ROUTES: Routes = [
   { path: 'a-faire', loadComponent: () => import('../home/a-faire').then((m) => m.AFaireEcran), data: { title: 'À faire' } },
   // Refonte ergonomique (lot L4-F2) — page d'un dossier, en lecture seule ; alias partageable `/dossier/:idDossier`.
   { path: 'dossier/:idDossier', loadComponent: () => import('../circuit/page-dossier/page-dossier').then((m) => m.PageDossier), data: { title: 'Dossier', concentration: true } },
-  { path: 'tableau-de-bord', loadComponent: () => import('../circuit/dossiers-pipeline').then((m) => m.DossiersPipeline), data: { title: 'Dossiers de ma localité' } },
+  { path: 'tableau-de-bord', loadComponent: () => import('../circuit/dossiers-pipeline').then((m) => m.DossiersPipeline), data: { title: 'Dossiers', perimetre: 'Ma localité' } },
   // `:idLettre` / `:idPv` : liens de notification (LETTRE_RENVOI_COPIE / PV_DEFINITIF_COPIE / CLOTURE_COPIE_ASSISTANT).
   { path: 'lettre-renvois', loadComponent: () => import('../circuit/lettre-renvoi-consultation').then((m) => m.LettreRenvoiConsultation), data: { source: 'localite', title: 'Lettres de renvoi reçues', archivable: true } },
   { path: 'lettre-renvois/:idLettre', loadComponent: () => import('../circuit/lettre-renvoi-consultation').then((m) => m.LettreRenvoiConsultation), data: { source: 'localite', title: 'Lettres de renvoi reçues', archivable: true } },

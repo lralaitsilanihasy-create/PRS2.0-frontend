@@ -143,8 +143,8 @@ interface LienEcran {
     <section class="ann">
       <header class="page-header ann__tete">
         <div class="ann__titres">
-          <p class="page-subtitle">Annuaire</p>
-          <h1 class="page-title">Qui est qui, et qui peut quoi</h1>
+          <p class="page-subtitle">Qui est qui, et qui peut quoi</p>
+          <h1 class="page-title">Comptes &amp; personnes</h1>
         </div>
         <div class="ann__chercher" [formGroup]="filtres">
           <label class="cnm-sr-only" for="ann-q">

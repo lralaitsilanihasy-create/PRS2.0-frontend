@@ -68,7 +68,8 @@ interface LigneControleur {
   imports: [StatutBadge, DatePipe, ModaleDirective, EtatErreur, RouterLink],
   template: `
     <section class="dpc">
-      <h2 class="dpc__titre"><span aria-hidden="true">📊</span> Dispatchs par contrôleur</h2>
+      <!-- ⚠️ 01/11 (pilote, « les mots du menu ») — un vrai titre de page, le nom de l'entrée du menu. -->
+      <h1 class="page-title dpc__titre">Répartition des dossiers par contrôleur</h1>
       <p class="dpc__intro">Répartition des dossiers <strong>dispatchés</strong> entre leurs <strong>attributaires</strong> (dernier dispatch de chaque dossier) : chaque dossier compte <strong>une seule fois</strong> — la copie adressée au Chef de commission n'est pas une attribution. Un dossier sort de la statistique dès que son <strong>PV définitif est signé</strong> ; les attributions d'un CC ou d'un Président n'apparaissent que si la <strong>délégation du profil Membre</strong> est active.</p>
 
       @if (loading()) {

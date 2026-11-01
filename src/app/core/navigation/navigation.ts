@@ -107,7 +107,8 @@ function menuCommission(base: '/president' | '/cc'): NavItem[] {
     // comprise) ; le classement par type et les compteurs faisaient double emploi.
     // ⚠️ Demande pilote (2026-09-12) — la section « Dispatchs par contrôleur » quitte « Mes dossiers »
     // pour sa propre entrée de menu « Répartition de dispatch » (écran dédié, composant autonome).
-    { label: 'Répartition du dispatch', path: `${base}/repartition-dispatch`, icon: 'board' },
+    // ⚠️ 01/11 (pilote, « les mots du menu ») — libellé du menu = titre de l'écran = fil d'Ariane, pour toutes les entrées.
+    { label: 'Répartition des dossiers par contrôleur', path: `${base}/repartition-dispatch`, icon: 'board' },
     // ⚠️ 2026-08-06 (demande user) — « Projets de PV », « PV définitifs » et « Lettres de renvoi »
     // sont regroupés dans un écran-hub à cartes : ce sont les trois productions d'un même examen.
     // Les trois écrans et leurs routes sont inchangés, seul le chemin d'accès l'est.
@@ -126,14 +127,14 @@ function menuCommission(base: '/president' | '/cc'): NavItem[] {
     // action (« Attribuer un numéro ») est désormais inline dans « Tous les dossiers ». Restent les deux
     // délégations sans équivalent inline complet : Vérifications (PV joint, avis, ciblage) et Archivage
     // des PV (liste de PV, action de clôture).
-    { label: 'Vérifications', path: `${base}/verifications`, icon: 'shield', delegation: 'VERIFICATEUR' },
-    { label: 'Archivage des PV', path: `${base}/pv-examens`, icon: 'archive', delegation: 'ASSISTANT_CONTROLEUR' },
+    { label: 'Dossiers à vérifier', path: `${base}/verifications`, icon: 'shield', delegation: 'VERIFICATEUR' },
+    { label: 'PV à archiver', path: `${base}/pv-examens`, icon: 'archive', delegation: 'ASSISTANT_CONTROLEUR' },
     // ⚠️ Rattachements (2026-09-01) — chaînes Membre→Vérificateur→Assistant, administrées par
     // Admin + Président (partout) + CC (sa localité) : droit PROPRE du P/CC, pas une délégation.
     // ⚠️ Intérim désigné (2026-09-21, demande `docs/demande-backend-2026-09-21-gestion-interim.md`) — le titulaire
     // désigne LUI-MÊME qui agit à sa place pendant son absence (Président ← tout CC ; CC ← CC ou Membre de sa
     // localité), sur pièce ; historique, révocation. Droit PROPRE du P/CC (l'Admin a le sien en repli).
-    { label: 'Intérim', path: `${base}/interim`, icon: 'users' },
+    { label: 'Mon intérim', path: `${base}/interim`, icon: 'users' },
     { label: 'Chaînes de contrôle', path: `${base}/chaines-controle`, icon: 'layers' },
     // « PPM & marchés » et « Marchés & dates prév. » : retirés du menu des DEUX profils
     // (demande user 2026-08-04). Routes conservées de part et d'autre — cf. president.routes.ts / cc.routes.ts.
@@ -200,7 +201,8 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     // « PV et lettres de renvoi » côté PRMP (le hub P/CC garde « Examen de dossiers », il a les projets de PV).
     { label: 'PV et lettres de renvoi', path: '/prmp/resultat-examen', icon: 'file' },
     { label: 'Demandes de retrait', path: '/prmp/retraits', icon: 'undo' },
-    { label: 'Calendrier', path: '/prmp/calendrier', icon: 'calendar' },
+    // ⚠️ 01/11 (pilote, « les mots du menu ») — le nom de l'écran : les dates prévues et réelles de chaque jalon du plan.
+    { label: 'Calendrier des jalons', path: '/prmp/calendrier', icon: 'calendar' },
     // ⚠️ Spec notifications (2026-08-02) — écran transverse, présent dans TOUS les profils.
     { label: 'Notifications', path: '/notifications', icon: 'bell' },
   ],
@@ -261,11 +263,11 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
   ],
   VERIFICATEUR: [
     entreeAFaire('verificateur'),
-    { label: 'À vérifier', path: '/verificateur/a-verifier', icon: 'shield' },
+    { label: 'Dossiers à vérifier', path: '/verificateur/a-verifier', icon: 'shield' },
     // « En attente PRMP » : retiré du menu (demande user 2026-08-04) — sous-vue redondante. Ces dossiers
     // (EN_ATTENTE_DECISION_PRMP) figurent déjà dans « À vérifier », badgés « En attente PRMP » et en
     // lecture seule ; leur historique d'échanges s'affiche dans l'écran de vérification. Route conservée.
-    { label: 'Vérifiés / clôturés', path: '/verificateur/verifies', icon: 'check' },
+    { label: 'Dossiers vérifiés / clôturés', path: '/verificateur/verifies', icon: 'check' },
     // Messagerie retirée du menu pour le moment (demande pilote 2026-09-04) — route conservée.
     // { label: 'Messagerie', path: '/verificateur/messagerie', icon: 'message' },
     { label: 'Notifications', path: '/notifications', icon: 'bell' },
@@ -276,7 +278,7 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     // (pipeline `tableau-de-bord`) ; route inchangée.
     { label: 'Dossiers', path: '/assistant/tableau-de-bord', icon: 'folder' },
     // ⚠️ 31/10 (pilote) — rubrique « Reçus » : les PV d'abord, dans l'ordre du circuit.
-    { label: 'PV reçus', path: '/assistant/pv-examens', icon: 'file' },
+    { label: 'PV à archiver', path: '/assistant/pv-examens', icon: 'file' },
     { label: 'Lettres de renvoi reçues', path: '/assistant/lettre-renvois', icon: 'mail' },
     // Messagerie retirée du menu pour le moment (demande pilote 2026-09-04) — route conservée.
     // { label: 'Messagerie', path: '/assistant/messagerie', icon: 'message' },
@@ -304,8 +306,8 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     // tuiles) ou par la page des comptes remontent dans la barre, rangés par thème (`colonne`). Aucun droit nouveau : ce sont
     // les routes de l'espace d'administration. Lot 6 F1 : « Demandes d'accès » ouvre les inscriptions ; les rattachements ont
     // désormais leur propre entrée.
-    { label: 'Demandes d’accès', path: '/admin/inscriptions', icon: 'inbox', colonne: 'Demandes' },
-    { label: 'Rattachements PRMP ⇄ entité', path: '/admin/rattachements', icon: 'link', colonne: 'Demandes' },
+    { label: 'Inscriptions en attente', path: '/admin/inscriptions', icon: 'inbox', colonne: 'Demandes' },
+    { label: 'Rattachements en attente', path: '/admin/rattachements', icon: 'link', colonne: 'Demandes' },
     { label: 'Comptes & personnes', path: '/admin/comptes', icon: 'users', colonne: 'Comptes' },
     { label: 'Mandats PRMP', path: '/admin/comptes/mandats', icon: 'calendar', colonne: 'Comptes' },
     { label: 'Intérims', path: '/admin/comptes/interims', icon: 'users', colonne: 'Comptes' },
@@ -349,7 +351,7 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     { label: 'Recours suspensifs', path: '/admin/referentiels/recours-suspensifs', icon: 'table', colonne: 'Passation en ligne' },
     { label: 'Transition SIGMP', path: '/admin/referentiels/sigmp-transition', icon: 'table', colonne: 'Passation en ligne' },
     // ⚠️ Lot 6 F5 — l'écran porte DEUX journaux en onglets, les écritures et les connexions ; ⚠️ 31/10 le libellé le dit.
-    { label: 'Journal (écritures et connexions)', path: '/admin/audit', icon: 'history' },
+    { label: 'Journal des écritures et des connexions', path: '/admin/audit', icon: 'history' },
     { label: 'Actualités', path: '/admin/actualites', icon: 'message' },
     // Rapports retirés du menu pour le moment (demande pilote 2026-09-04) — route conservée.
     // { label: 'Rapports', path: '/admin/rapports', icon: 'board' },

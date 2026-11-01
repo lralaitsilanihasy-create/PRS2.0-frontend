@@ -22,8 +22,8 @@ import { ConservationOffresAdmin } from './conservation-offres-admin';
     <section class="pca">
       <header class="page-header">
         <div>
-          <div class="page-subtitle">Nomenclatures · espace candidat</div>
-          <h1 class="page-title">Candidats — paramètres de l'espace en ligne</h1>
+          <div class="page-subtitle">Référentiels · paramètres de l’espace candidat</div>
+          <h1 class="page-title">Candidats — espace en ligne</h1>
         </div>
         <button type="button" class="btn btn-secondary btn-sm" (click)="charger()" [disabled]="loading()">Rafraîchir</button>
       </header>

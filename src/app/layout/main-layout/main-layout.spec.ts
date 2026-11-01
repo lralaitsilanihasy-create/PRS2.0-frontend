@@ -301,7 +301,7 @@ describe('Menu horizontal par rubriques (design institutionnel, 30/10/2026)', ()
 
   it('PRMP : À faire, Dossiers, Passation, Contrats en vigueur en direct, Décisions, Calendrier en direct (31/10)', async () => {
     const { hote } = await monter({ role: 'PRMP', login: 'PRMP001' });
-    expect(barre(hote)).toEqual(['À faire', 'Dossiers', 'Passation', 'Contrats en vigueur', 'Décisions', 'Calendrier', 'Notifications']);
+    expect(barre(hote)).toEqual(['À faire', 'Dossiers', 'Passation', 'Contrats en vigueur', 'Décisions', 'Calendrier des jalons', 'Notifications']);
   });
 
   it('Assistant contrôleur : les PV et lettres reçus forment la rubrique « Reçus » (31/10)', async () => {

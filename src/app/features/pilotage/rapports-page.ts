@@ -15,7 +15,7 @@ import { RapportService } from '../../services';
   template: `
     <section class="rapports">
       <header class="page-header">
-        <h1 class="page-title">Rapports des dossiers</h1>
+        <h1 class="page-title">Rapports</h1>
       </header>
 
       <div class="rapports__filters">

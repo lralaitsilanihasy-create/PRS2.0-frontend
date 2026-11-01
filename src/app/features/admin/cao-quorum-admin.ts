@@ -23,7 +23,10 @@ type Mode = 'MAJORITE' | 'TOUS' | 'NOMBRE';
   template: `
     <section class="cqa">
       <header class="page-header">
-        <h1 class="page-title">Quorum de la commission d’appel d’offres</h1>
+        <div>
+          <div class="page-subtitle">Commission d’appel d’offres</div>
+          <h1 class="page-title">Quorum de la CAO</h1>
+        </div>
         <button type="button" class="btn btn-secondary btn-sm" (click)="charger()" [disabled]="loading()">Rafraîchir</button>
       </header>
 

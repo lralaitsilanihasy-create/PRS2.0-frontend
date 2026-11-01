@@ -35,7 +35,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
       <header class="page-header">
         <div>
           <div class="page-subtitle">Domaine PRMP</div>
-          <h1 class="page-title">Demande de retrait</h1>
+          <h1 class="page-title">Demandes de retrait</h1>
         </div>
       </header>
       <!-- Phrase de rôle (proposition 2026-09-22, lot B) : à quoi sert l'écran, pour qui. -->

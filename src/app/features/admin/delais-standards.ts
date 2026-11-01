@@ -20,7 +20,7 @@ const UNITES: Readonly<Record<string, string>> = { JOURS: 'jours', JOURS_FRANCS:
   template: `
     <section class="dst">
       <header class="page-header">
-        <h1 class="page-title">Délais standards du circuit</h1>
+        <h1 class="page-title">Délais standards</h1>
         <button type="button" class="btn btn-secondary btn-sm" (click)="charger()" [disabled]="loading()">Rafraîchir</button>
       </header>
       <!-- Un seul <span> : .alert est en flex, des <strong> nus deviendraient des colonnes. -->
