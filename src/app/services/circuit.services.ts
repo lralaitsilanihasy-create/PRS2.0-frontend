@@ -7,6 +7,7 @@ import { CrudService } from './api/crud.service';
 import {
   AvisSpecifiqueDonnees,
   EvenementHistorique,
+  EssentielDossier,
   FiliationDossier,
   CanevasRapport,
   FichePresentationDao,
@@ -166,6 +167,11 @@ export class DossierService extends CrudService<Dossier> {
   /** ⚠️ 31/10 (B2) — `GET /api/dossiers/{id}/historique` : tout ce qui s'est passé sur ce dossier, trié par date. Silencieux. */
   historique(idDossier: number): Observable<EvenementHistorique[]> {
     return this.http.get<EvenementHistorique[]>(`${this.baseUrl}/${idDossier}/historique`, { context: skipErrorToast() });
+  }
+
+  /** ⚠️ 01/11 (« essentiel-dossier », B1) — `GET /api/dossiers/{id}/essentiel` : avis, attributions, contrat, suites. Silencieux : sans réponse, la bande ne paraît pas. */
+  essentiel(idDossier: number): Observable<EssentielDossier> {
+    return this.http.get<EssentielDossier>(`${this.baseUrl}/${idDossier}/essentiel`, { context: skipErrorToast() });
   }
 
   /**

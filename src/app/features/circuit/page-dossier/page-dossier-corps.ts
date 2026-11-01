@@ -38,6 +38,7 @@ import { ActeGestionDossier } from './acte-gestion-dossier';
 import { SyntheseDossier } from './synthese-dossier';
 import { HistoriqueDossier } from '../dossier/historique-dossier';
 import { ChaineProcedure } from './chaine-procedure';
+import { EssentielDossierBande } from './essentiel-dossier';
 import { AvisSpecifique } from '../../../shared/prmp/avis-specifique';
 import { LettresInvitation } from '../../../shared/prmp/lettres-invitation';
 
@@ -66,6 +67,7 @@ const HAUT_TOPBAR = 48;
   imports: [
     HistoriqueDossier,
     ChaineProcedure,
+    EssentielDossierBande,
     NgTemplateOutlet,
     ElementsDossier,
     AvisSpecifique,
@@ -191,6 +193,10 @@ const HAUT_TOPBAR = 48;
         }
       </ol>
       </section>
+
+      <!-- ⚠️ 01/11 (pilote, variante A, lot 2 — « essentiel-dossier », B1) — ce qu'est devenu le dossier : avis, attributaire, contrat,
+           suites ; chaque case ouvre l'élément qui la justifie. Muette sans réponse. -->
+      <app-essentiel-dossier class="pd-essentiel" [idDossier]="dossier().idDossier" [reference]="reference()" (historique)="historiqueOuvert.set(true)" />
 
       <!-- Assistant IA, lot 2 : la synthèse du dossier, À LA DEMANDE. Sous la frise, avant l'étape en
            cours : elle répond à « où en est ce dossier », c'est-à-dire à la question qu'on se pose en

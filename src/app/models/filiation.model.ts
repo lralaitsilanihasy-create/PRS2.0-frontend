@@ -66,3 +66,18 @@ export interface EvenementHistorique {
   /** Numéro de version (VERSION_ARCHIVEE). */
   numero: number | null;
 }
+
+/**
+ * ⚠️ 01/11 (pilote, demande « essentiel-dossier », B1 — PRS20 0146646a) — `GET /api/dossiers/{id}/essentiel` : ce qu'est devenu le
+ * dossier, en quatre blocs, chacun `null` tant qu'il n'existe pas (un plan n'a que l'avis). Pour la PRMP et l'UGPM, l'avis vient du
+ * dernier PV SIGNÉ ; aucun nom de contrôleur n'est servi.
+ */
+export interface EssentielDossier {
+  avis: { code: string; libelle: string | null; refePv: string | null; definitif: boolean; idPv: number | null } | null;
+  /** Un élément par lot attribué et non retiré ; l'attributaire est l'offre attribuée, à défaut le titulaire de rang 1. */
+  attributions: { lot: number | null; attributaire: string | null; numeroOffre: number | null; montant: number | null; idDossierMarche: number | null }[] | null;
+  /** Celui du lot (le premier lot pour une mise en concurrence à plusieurs lots) ; `signeLe` = signature du marché, à défaut prise d'effet. */
+  contrat: { forme: string | null; libelleForme: string | null; signeLe: string | null; finLe: string | null } | null;
+  /** `null` sans bon de commande ni acte de gestion. */
+  suites: { bonsCommande: number; dernierBon: { numero: number | null; date: string | null } | null; actesGestion: number } | null;
+}
