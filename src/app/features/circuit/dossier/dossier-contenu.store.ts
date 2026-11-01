@@ -2,7 +2,7 @@ import { Injectable, Signal, computed, inject, signal } from '@angular/core';
 import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
-import { ActionDossier, Capm, Chronometrage, ControleResultat, DiffDossier, Dossier, Instantane, Marche, MarchePrevision, ModePassation, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne, TypePieceJointe, VersionArchivee } from '../../../models';
+import { ActionDossier, Capm, Chronometrage, ControleResultat, DiffDossier, Dossier, EcartsInstantanes, Instantane, Marche, MarchePrevision, ModePassation, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne, TypePieceJointe, VersionArchivee } from '../../../models';
 
 /** ⚠️ 30/10 — les pièces fournies par l'application qu'un élément du dossier présente en données (voir `ongletDe` de la liste des pièces). */
 const CODES_EN_DONNEES: ReadonlySet<string> = new Set(['FICHE_PRESENTATION', 'PV_CNM_DMC', 'PV_VALIDATION_CAO', 'CANEVAS_RAPPORT', 'CALENDRIER', 'AGPM_CONTROLE', 'PPM_CONTROLE']);
@@ -297,6 +297,25 @@ export class DossierContenuStore {
   private readonly instantaneService = inject(InstantaneService);
   readonly instantanes = signal<Instantane[]>([]);
   readonly instantanesVisible = computed(() => !this.estPpm() && this.instantanes().length > 0);
+  /**
+   * ⚠️ 01/11 (« ecarts-ecrans-figes », §B1) — les écarts entre chaque écran figé et son état actuel, par numéro de soumission : la
+   * dernière est lue dans la vague (la pastille des cartes), une autre à la demande (`chargerEcarts`). Silencieux : sans réponse, les
+   * cartes gardent « figé à la soumission », sans comparaison.
+   */
+  readonly ecarts = signal<ReadonlyMap<number, EcartsInstantanes>>(new Map());
+  /** La comparaison avec la dernière soumission (celle des pastilles), `null` tant qu'elle n'est pas connue. */
+  readonly ecartsDerniere = computed(() => {
+    const n = Math.max(0, ...this.instantanes().map((i) => i.numeroSoumission));
+    return this.ecarts().get(n) ?? null;
+  });
+
+  /** Les écarts d'une soumission antérieure, lus une fois à la demande de la fenêtre qui l'affiche. */
+  chargerEcarts(soumission: number): void {
+    if (this.ecarts().has(soumission)) return;
+    this.instantaneService.ecarts(this.dossier().idDossier, soumission).pipe(catchError(() => of(null))).subscribe((e) => {
+      if (e) this.ecarts.update((m) => new Map(m).set(e.soumission, e));
+    });
+  }
   /** ⚠️ R5 (V105) — les contrôles du dossier (automatiques et du Membre), lus dans la même vague ; l'onglet n'apparaît qu'avec un résultat. */
   private readonly controleService = inject(ControleService);
   readonly controles = signal<ControleResultat[]>([]);
@@ -399,11 +418,13 @@ export class DossierContenuStore {
         ...commun,
         // Écrans figés (R4) : dans la vague, silencieux — sans instantané (dossier soumis avant V104, ou non soumis), pas d'onglet.
         instantanes: this.instantaneService.liste(id).pipe(catchError(() => of([] as Instantane[]))),
+        // ⚠️ 01/11 — les écarts avec la dernière soumission, dans la même vague : 404 sans écran figé, silencieux.
+        ecarts: this.instantaneService.ecarts(id).pipe(catchError(() => of(null as EcartsInstantanes | null))),
         controles: this.controleService.liste(id).pipe(catchError(() => of([] as ControleResultat[]))),
         exigees: this.dossier().idDmc || this.dossier().procedure
           ? this.dossierService.piecesExigees(id).pipe(catchError(() => of([] as TypePieceJointe[])))
           : of([] as TypePieceJointe[]),
-      }).subscribe(({ typeMap, localiteMap, entiteMap, pieces, journal, chrono, instantanes, controles, exigees }) => {
+      }).subscribe(({ typeMap, localiteMap, entiteMap, pieces, journal, chrono, instantanes, ecarts, controles, exigees }) => {
         this.typesEnDonnees.set(new Set(exigees.filter((t) => t.fourniePar === 'APPLICATION' && CODES_EN_DONNEES.has(t.code ?? '')).map((t) => t.idTypePiece)));
         this.typeMap.set(typeMap);
         this.localiteMap.set(localiteMap);
@@ -412,6 +433,7 @@ export class DossierContenuStore {
         this.journal.set(journal);
         this.chronoDossier.set(chrono);
         this.instantanes.set(instantanes);
+        this.ecarts.set(ecarts ? new Map([[ecarts.soumission, ecarts]]) : new Map());
         this.controles.set(controles);
         this.loading.set(false);
       });

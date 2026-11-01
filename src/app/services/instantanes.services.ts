@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 import { skipErrorToast } from '../core/errors/api-error';
 import { environment } from '../../environments/environment';
-import { Instantane } from '../models';
+import { EcartsInstantanes, Instantane } from '../models';
 
 /**
  * ⚠️ Manuel révisé, R4 (V104, 13/10) — `GET /api/dossiers/{id}/instantanes[/{ecran}[/pdf]][?soumission=n]` : les écrans figés à la
@@ -30,6 +30,11 @@ export class InstantaneService {
   /** Le JSON figé, tel que l'écran vivant le lisait : son type dépend de l'écran (`Seance`, `Evaluation`, `Attribution`, `Cao`…). */
   lire(idDossier: number, ecran: string, soumission?: number | null): Observable<unknown> {
     return this.http.get<unknown>(this.url(idDossier, `/${ecran}`), { params: this.params(soumission), context: skipErrorToast() });
+  }
+
+  /** ⚠️ 01/11 (« ecarts-ecrans-figes », §B1) — chaque écran figé de la soumission comparé à son état actuel (404 sans écran figé). */
+  ecarts(idDossier: number, soumission?: number | null): Observable<EcartsInstantanes> {
+    return this.http.get<EcartsInstantanes>(this.url(idDossier, '/ecarts'), { params: this.params(soumission), context: skipErrorToast() });
   }
 
   /** L'export PDF (`INSTANTANE_<ecran>_<dossier>_s<n>.pdf`), pour l'archivage avec le PV. */

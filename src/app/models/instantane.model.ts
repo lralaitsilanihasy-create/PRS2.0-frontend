@@ -21,3 +21,30 @@ export interface Instantane {
   /** Octets du JSON. */
   taille: number;
 }
+
+/** ⚠️ 01/11 (« ecarts-ecrans-figes », §B1) — un écart entre l'écran figé et son état actuel, libellé et valeurs formatés par le serveur. */
+export interface EcartInstantane {
+  chemin: string;
+  libelle: string;
+  /** `null` : valeur absente à la soumission (ajout). */
+  soumis: string | null;
+  /** `null` : valeur absente aujourd'hui (retrait). */
+  actuel: string | null;
+}
+
+/** Un écran figé comparé à son état actuel. `comparable: false` : l'écran ne se recalcule pas pour l'appelant (`identique` nul). */
+export interface EcartsEcranInstantane {
+  ecran: EcranInstantane;
+  identique: boolean | null;
+  comparable: boolean;
+  /** Plus de 50 écarts : la liste est coupée. */
+  tronque: boolean;
+  ecarts: EcartInstantane[];
+}
+
+/** `GET /api/dossiers/{id}/instantanes/ecarts[?soumission=n]` — 404 sans écran figé. */
+export interface EcartsInstantanes {
+  soumission: number;
+  figeLe: string;
+  ecrans: EcartsEcranInstantane[];
+}

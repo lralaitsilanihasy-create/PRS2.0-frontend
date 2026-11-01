@@ -4,6 +4,7 @@ import { Dossier } from '../../../models';
 import { DossierService } from '../../../services';
 import { ModaleDirective } from '../../../shared/a11y/modale.directive';
 import { Icone, NomIcone } from '../../../shared/ui/icone';
+import { bilanEcarts } from './bilan-ecarts';
 import { DossierContenuStore } from './dossier-contenu.store';
 import { DossierDocuments } from './dossier-documents';
 import { OngletDossier, documentsDuDossier } from './documents-du-dossier';
@@ -38,6 +39,15 @@ const ICONES: Record<OngletDossier, NomIcone> = {
                 @if (o.n !== undefined) { <span class="pd-carte__n">{{ o.n }}</span> }
               </span>
               @if (o.resume) { <span class="pd-carte__resume">{{ o.resume }}</span> }
+              <!-- ⚠️ 01/11 (pilote, fusion des écrans figés) — l'élément montre aussi ce qui a été soumis. -->
+              <!-- ⚠️ 01/11 (« ecarts-ecrans-figes ») — « ≠ soumission » quand l'état actuel diffère de la dernière soumission (comparaison du serveur). -->
+              @if (o.ecransFiges?.length && o.cle !== 'figes') {
+                @if (differe(o.ecransFiges!)) {
+                  <span class="pd-carte__fige pd-carte__fige--ecart" title="L'état actuel diffère de ce qui a été soumis : la fenêtre liste les écarts"><span aria-hidden="true">≠</span> soumission</span>
+                } @else {
+                  <span class="pd-carte__fige" title="Figé à la soumission : la fenêtre propose « État actuel / À la soumission »"><span aria-hidden="true">🔒</span> figé à la soumission</span>
+                }
+              }
             </span>
           </button>
         }
@@ -76,6 +86,8 @@ export class ElementsDossier {
   readonly documents = computed(() => documentsDuDossier(this.contenu, this.manquantes()));
 
   icone(cle: OngletDossier): NomIcone { return ICONES[cle]; }
+
+  differe(ecrans: readonly string[]): boolean { return bilanEcarts(this.contenu.ecartsDerniere(), ecrans).etat === 'ecarts'; }
   libelle(cle: OngletDossier): string { return this.documents().find((o) => o.cle === cle)?.libelle ?? 'Dossier'; }
   fermer(): void {
     this.ouvert.set(null);

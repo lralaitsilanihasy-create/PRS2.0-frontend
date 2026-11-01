@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { Subscription } from 'rxjs';
 
 import { Instantane } from '../../../models';
@@ -44,6 +44,9 @@ export function libelleEcranInstantane(ecran: string): string {
   providers: [ReferentielsFiges, { provide: RESOLVEUR_FIGES, useExisting: ReferentielsFiges }],
   template: `
     <!-- ⚠️ 18/10 (pilote, « améliorer les boutons et les caractères ») — un en-tête court, dans la police de l'application. -->
+    <!-- ⚠️ 01/11 (pilote, fusion des écrans figés) — intégré à une carte du dossier (integre), ni en-tête ni choix de soumission :
+         la carte les porte (sélecteur « État actuel / À la soumission ») ; les onglets d'écran ne paraissent que s'il y en a plusieurs. -->
+    @if (!integre()) {
     <div class="di__tete">
       <span class="di__cadenas" aria-hidden="true">🔒</span>
       <p class="di__intro">
@@ -52,7 +55,8 @@ export function libelleEcranInstantane(ecran: string): string {
       </p>
     </div>
 
-    @if (soumissions().length > 1) {
+    }
+    @if (!integre() && soumissions().length > 1) {
       <div class="di__select">
         <label for="di-soumission">Soumission à afficher</label>
         <select id="di-soumission" class="form-control" (change)="choisirSoumission($any($event.target).value)">
@@ -63,6 +67,7 @@ export function libelleEcranInstantane(ecran: string): string {
       </div>
     }
 
+    @if (!integre() || ecransDeLaSoumission().length > 1) {
     <div class="di__ecrans" role="tablist" aria-label="Écrans figés de la soumission">
       @for (i of ecransDeLaSoumission(); track i.idInstantane) {
         <button type="button" role="tab" class="di__onglet" [class.di__onglet--on]="courant()?.idInstantane === i.idInstantane"
@@ -70,6 +75,7 @@ export function libelleEcranInstantane(ecran: string): string {
       }
       <!-- ⚠️ 18/10 (pilote) — ni bande « Figé à la soumission », ni date, ni export à l'écran : la trace est l'instantané serveur. -->
     </div>
+    }
 
     @if (courant(); as i) {
       @if (chargement()) {
@@ -121,21 +127,33 @@ export class DossierInstantanes {
   protected readonly contenu = inject(DossierContenuStore);
   private readonly service = inject(InstantaneService);
 
+  /** ⚠️ 01/11 — les écrans que montre la carte hôte (vide : tous). */
+  readonly ecransRetenus = input<readonly string[]>([]);
+  /** ⚠️ 01/11 — la soumission choisie par la carte hôte (`null` : choix interne, la plus récente par défaut). */
+  readonly soumissionImposee = input<number | null>(null);
+  /** ⚠️ 01/11 — dans une carte du dossier : sans en-tête ni choix de soumission. */
+  readonly integre = input(false);
+
   readonly horodatage = horodatage;
   readonly libelle = libelleEcranInstantane;
 
   /** Les numéros de soumission, la plus récente en tête. */
-  readonly soumissions = computed(() => [...new Set(this.contenu.instantanes().map((i) => i.numeroSoumission))].sort((a, b) => b - a));
+  readonly soumissions = computed(() => [...new Set(this.retenus().map((i) => i.numeroSoumission))].sort((a, b) => b - a));
+  /** Les instantanés des écrans retenus. */
+  private readonly retenus = computed(() => {
+    const e = this.ecransRetenus();
+    return this.contenu.instantanes().filter((i) => !e.length || e.includes(i.ecran));
+  });
   private readonly soumission = signal<number | null>(null);
   readonly soumissionEffective = computed(() => {
-    const choix = this.soumission();
+    const choix = this.soumissionImposee() ?? this.soumission();
     return choix != null && this.soumissions().includes(choix) ? choix : (this.soumissions()[0] ?? null);
   });
   readonly ecransDeLaSoumission = computed(() =>
-    this.contenu
-      .instantanes()
+    this.retenus()
       .filter((i) => i.numeroSoumission === this.soumissionEffective())
-      .sort((a, b) => ORDRE_ECRANS.indexOf(a.ecran) - ORDRE_ECRANS.indexOf(b.ecran)),
+      // Dans une carte, l'ordre de la carte (son sujet d'abord : l'évaluation avant la commission) ; sinon l'ordre de lecture.
+      .sort((a, b) => this.rang(a.ecran) - this.rang(b.ecran)),
   );
   private readonly ecran = signal<string | null>(null);
   /** L'instantané affiché : l'écran choisi s'il existe pour cette soumission, sinon le premier. */
@@ -154,6 +172,11 @@ export class DossierInstantanes {
       const abonnement = untracked(() => this.lire(id, c));
       nettoyer(() => abonnement?.unsubscribe());
     });
+  }
+
+  private rang(ecran: string): number {
+    const e = this.ecransRetenus();
+    return e.length ? e.indexOf(ecran) : ORDRE_ECRANS.indexOf(ecran);
   }
 
   choisirSoumission(valeur: string): void {
