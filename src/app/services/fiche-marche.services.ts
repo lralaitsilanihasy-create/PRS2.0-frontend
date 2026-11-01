@@ -70,6 +70,14 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
   protected readonly resource = 'fiches-marche';
 
   /**
+   * ⚠️ 01/11 (pilote, écran « Notifications ») — la fiche d'une procédure, lue pour NOMMER le marché (objet, plan) à la place de son
+   * numéro interne. Lecture d'enrichissement : sans boîte d'erreur, un profil sans accès garde simplement le texte servi.
+   */
+  lireSilencieuse(idDmc: number): Observable<FicheMarche> {
+    return this.http.get<FicheMarche>(`${this.baseUrl}/${idDmc}`, { context: skipErrorToast() });
+  }
+
+  /**
    * ⚠️ V73 (06/10) — `GET /{idDmc}/specifications` : le Word des spécifications techniques de la version, inséré dans le DAO
    * complet ; 404 sans fichier. Silencieux.
    */

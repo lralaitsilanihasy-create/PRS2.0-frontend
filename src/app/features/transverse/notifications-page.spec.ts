@@ -74,8 +74,9 @@ describe('Page /notifications — notification sans écran dédié (lot L5-F6)',
       http.expectNone('/api/dossiers/42');
 
       // La commande qui, elle, agit reste offerte.
-      const marquer = hote.querySelector('.np__actions button') as HTMLButtonElement;
-      expect(marquer.textContent?.trim()).toBe('Marquer non lue');
+      // ⚠️ 01/11 (variante A) — le marquage est un petit bouton au bout de la rangée, nommé pour les lecteurs d'écran.
+      const marquer = hote.querySelector('.np__lu') as HTMLButtonElement;
+      expect(marquer.getAttribute('aria-label')).toBe('Marquer non lue');
       marquer.click();
       http.expectOne('/api/notifications/7/non-lu').flush(notif({ lu: false }));
     });
