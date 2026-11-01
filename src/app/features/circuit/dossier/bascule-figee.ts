@@ -50,6 +50,7 @@ import { DossierInstantanes, libelleEcranInstantane } from './dossier-instantane
         <div class="bf__ecarts" id="bf-ecarts">
           <table>
             <caption class="bf__legende">Écarts entre la soumission n° {{ comparee() }} et l'état actuel</caption>
+            <colgroup><col style="width: 32%" /><col style="width: 28%" /><col style="width: 40%" /></colgroup>
             <thead><tr><th scope="col">Élément</th><th scope="col">À la soumission</th><th scope="col">Aujourd'hui</th></tr></thead>
             <tbody>
               @for (l of bilan().lignes; track l.ecran + l.chemin) {
@@ -94,9 +95,10 @@ import { DossierInstantanes, libelleEcranInstantane } from './dossier-instantane
     .bf__etat--ecart:focus-visible { outline: 2px solid var(--bouton-principal); outline-offset: 2px; }
     .bf__etat-note { font-weight: 400; }
     .bf__ecarts { margin: 0 0 12px; border: 1px solid var(--bordure); border-radius: 6px; overflow: hidden; }
-    .bf__ecarts table { width: 100%; border-collapse: collapse; font-size: 0.82rem; font-variant-numeric: tabular-nums; }
+    /* Disposition fixe : un résumé long (200 caractères) passe à la ligne au lieu d'élargir le tableau. */
+    .bf__ecarts table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 0.82rem; font-variant-numeric: tabular-nums; }
     .bf__legende { caption-side: top; text-align: left; padding: 6px 10px; font-size: 0.8rem; font-weight: 500; color: var(--texte); }
-    .bf__ecarts th, .bf__ecarts td { padding: 5px 10px; text-align: left; vertical-align: top; border-top: 1px solid var(--bordure); overflow-wrap: anywhere; }
+    .bf__ecarts th, .bf__ecarts td { padding: 5px 10px; text-align: left; vertical-align: top; border-top: 1px solid var(--bordure); white-space: normal; overflow-wrap: anywhere; }
     .bf__ecarts thead th { background: var(--tableau-entete); font-weight: 500; }
     .bf__ecarts tbody th { font-weight: 400; }
     .bf__ecran { color: var(--texte-secondaire); }
