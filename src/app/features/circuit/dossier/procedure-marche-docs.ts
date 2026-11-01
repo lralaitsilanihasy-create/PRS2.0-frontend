@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, OnInit, computed, effect, inject, input, signal } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 import { catchError, forkJoin, map, of } from 'rxjs';
@@ -47,7 +47,64 @@ export interface ValiditeOffre {
   selector: 'app-seance-marche-doc',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LectureSeance],
+  host: { '(window:resize)': 'ajuster()' },
   template: `
+    @if (vue() === 'onglets') {
+      <!-- ⚠️ 31/10 (pilote, maquette « Séance d'ouverture », variante B) — la fenêtre de la page du dossier, sans défilement : le déroulé
+           de la séance en frise, puis à gauche les présents, les plis hors délai et la synthèse, à droite une offre par onglet (la
+           validité y porte sa date d'expiration). -->
+      <section class="pmd pmd--onglets" aria-label="Séance d'ouverture des plis" [style.zoom]="zoom() < 1 ? zoom() : null">
+        <h3 class="pmd__cache">Séance d'ouverture des plis</h3>
+        @if (seance(); as s) {
+          <dl class="pmd-frise">
+            <div class="pmd-jalon"><dt>Date limite de remise</dt><dd>{{ dateLimite() ? date(dateLimite()) : '—' }}</dd></div>
+            <div class="pmd-jalon"><dt>Séance ouverte</dt><dd>{{ date(s.ouverteLe) || '—' }}</dd></div>
+            <div class="pmd-jalon"><dt>Offres déchiffrées</dt><dd>{{ date(s.dechiffreeLe) || '—' }}</dd></div>
+            <div class="pmd-jalon"><dt>PV d'ouverture</dt><dd>{{ s.pv?.signe ? 'signé' + (signeLe() ? ' le ' + date(signeLe()) : '') : s.pv?.produit ? 'produit, signatures en cours' : 'non produit' }}</dd></div>
+            <div class="pmd-jalon pmd-jalon--etat"><dt>Publication du PV</dt><dd><span class="pmd-pill" [class.pmd-pill--ok]="s.pv?.publie">{{ s.pv?.publie ? 'publié' : 'non publié' }}</span></dd></div>
+            <div class="pmd-jalon pmd-jalon--etat"><dt>Quorum</dt><dd>
+              @if (s.pv?.quorum; as q) {
+                <span class="pmd-pill" [class.pmd-pill--ok]="q.atteint" [class.pmd-pill--ko]="!q.atteint">{{ q.obtenus }} signataire(s) sur {{ q.requis }} — {{ q.atteint ? 'atteint' : 'non atteint' }}</span>
+              } @else { {{ s.quorum }} requis }
+            </dd></div>
+          </dl>
+        }
+        <app-lecture-seance [idDmc]="idDmc()" [piecesOuvrables]="false" [onglets]="true" [validites]="validites()">
+          @if (seance(); as s) {
+            <div gauche class="pmd-gauche">
+              <div class="pmd-encart">
+                <h4 class="pmd-encart__titre">Présents et signataires</h4>
+                <ul class="pmd-encart__liste">
+                  @for (m of s.membres; track m.im) {
+                    @let sig = signature(m.im);
+                    <li><strong>{{ m.nom }}</strong><span>&nbsp;— {{ m.president ? 'président · ' : '' }}{{ m.present ? 'présent' : 'absent' }}
+                      · {{ sig ? (sig.empechement ? 'empêché' + (sig.motif ? ' (' + sig.motif + ')' : '') : 'a signé le PV le ' + date(sig.date)) : 'n’a pas signé le PV' }}</span></li>
+                  }
+                  @for (a of s.autres; track $index) { <li><strong>{{ a.nom }}</strong><span>&nbsp;— {{ a.qualite ? a.qualite + ' · ' : '' }}présent</span></li> }
+                </ul>
+              </div>
+              <div class="pmd-encart pmd-encart--ligne">
+                <h4 class="pmd-encart__titre">Plis hors délai</h4>
+                @if (s.pv?.tentativesRefusees; as tr) {
+                  @if (tr.length) {
+                    <ul class="pmd-encart__liste">
+                      @for (t of tr; track $index) {
+                        <li class="pmd__attendue">{{ date(t.horodatage) }} · {{ t.entreprise || 'entreprise non déclarée' }}{{ t.nif ? ' (NIF ' + t.nif + ')' : '' }}{{ t.lot ? ' · lot ' + t.lot : '' }} — {{ geste(t.geste) }} refusé{{ t.motif ? ' : ' + t.motif : '' }}</li>
+                      }
+                    </ul>
+                  } @else {
+                    <span class="pmd-pill pmd-pill--ok">aucun</span><span class="pmd__aide">aucune tentative de dépôt refusée après la date limite</span>
+                  }
+                } @else {
+                  <span class="pmd__aide">se lisent une fois la séance ouverte</span>
+                }
+              </div>
+              <p class="pmd__aide">Les pièces des offres restent réservées aux membres de la commission d'appel d'offres. Expiration = date limite de remise + validité déclarée à l’acte d’engagement, avant toute prorogation.</p>
+            </div>
+          }
+        </app-lecture-seance>
+      </section>
+    } @else {
     <section class="pmd" aria-label="Séance d'ouverture des plis">
       <h3 class="pmd__titre">Séance d'ouverture des plis</h3>
       @if (seance(); as s) {
@@ -110,11 +167,48 @@ export interface ValiditeOffre {
         <p class="pmd__aide">Expiration = date limite de remise + validité déclarée à l’acte d’engagement, avant toute prorogation.</p>
       }
     </section>
+    }
   `,
   styleUrl: './procedure-marche-docs.scss',
 })
 export class SeanceMarcheDoc implements OnInit {
   readonly idDmc = input.required<number>();
+  /** ⚠️ 31/10 (pilote, variante B) — `onglets` : la fenêtre de la page du dossier (frise, synthèse, une offre par onglet). */
+  readonly vue = input<'document' | 'onglets'>('document');
+  private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
+  /** Réduction légère quand la séance dépasse un peu la fenêtre (80 % au plus). */
+  readonly zoom = signal(1);
+  private readonly suiviZoom = effect(() => {
+    if (this.vue() !== 'onglets') return;
+    this.seance();
+    this.validites();
+    setTimeout(() => this.ajuster(), 300);
+    setTimeout(() => this.ajuster(), 900);
+  });
+
+  /** Mesure la séance à sa taille naturelle et la réduit juste assez pour tenir dans le corps de la fenêtre. */
+  ajuster(): void {
+    if (this.vue() !== 'onglets') return;
+    const corps = this.hote.nativeElement.closest('.modal-body');
+    const section = this.hote.nativeElement.querySelector<HTMLElement>('.pmd--onglets');
+    if (!corps || !section) return;
+    section.style.zoom = '';
+    const tient = (): boolean => corps.scrollHeight <= corps.clientHeight + 1;
+    let z = 1;
+    if (!tient()) {
+      const surplus = corps.scrollHeight - corps.clientHeight;
+      z = Math.max(0.8, Math.floor(((section.offsetHeight - surplus) / section.offsetHeight) * 100) / 100);
+      section.style.zoom = String(z);
+      while (z < 1 && tient()) {
+        const essai = Math.round((z + 0.01) * 100) / 100;
+        section.style.zoom = String(essai);
+        if (!tient()) break;
+        z = essai;
+      }
+    }
+    this.zoom.set(z);
+    section.style.zoom = z < 1 ? String(z) : '';
+  }
   private readonly seances = inject(SeanceService);
   private readonly procedures = inject(ProceduresEnLigneService);
   private readonly evaluations = inject(EvaluationService);
@@ -218,12 +312,199 @@ export class ProjetMarcheDoc implements OnInit {
   selector: 'app-evaluation-marche-doc',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [EtatErreur, TitulairesProposes, ProjetMarcheDoc],
+  host: { '(window:resize)': 'ajuster()' },
   template: `
     @if (chargement()) {
       <p class="text-muted" role="status">Chargement de l'évaluation…</p>
     } @else if (erreur()) {
       <app-etat-erreur message="L'évaluation n'a pas pu être lue." (reessayer)="charger()" />
     } @else if (lotEval(); as l) {
+      @if (parties() && vue() === 'rapport') {
+        <!-- ⚠️ 01/11 (pilote, maquette « Rapport d'évaluation », variante B) — la fenêtre de la page du dossier, sans défilement : le
+             rapport se lit partie par partie, un onglet chacune (synthèse, une offre par onglet, commission et signatures). -->
+        <section class="pmd pmd--onglets" aria-label="Rapport d’évaluation" [style.zoom]="zoom() < 1 ? zoom() : null">
+          <h3 class="pmd__cache">Rapport d'évaluation — lot {{ l.lot }}</h3>
+          <div class="pme-onglets" role="tablist" aria-label="Parties du rapport">
+            <button type="button" class="pme-onglet pme-onglet--synthese" role="tab" [attr.aria-selected]="partie() === 'synthese'" (click)="partie.set('synthese')">Synthèse et classement</button>
+            @for (o of offresTriees(); track o.idOffre) {
+              <button type="button" class="pme-onglet pme-onglet--offre" [class.pme-onglet--ecartee]="!!o.ecartee" role="tab" [attr.aria-selected]="partie() === o.idOffre" (click)="partie.set(o.idOffre)">Offre n° {{ o.numero ?? '—' }}</button>
+            }
+            @if (offresQualifiees().length) {
+              <button type="button" class="pme-onglet pme-onglet--qualif" role="tab" [attr.aria-selected]="partie() === 'qualification'" (click)="partie.set('qualification')">Post-qualification</button>
+            }
+            @if (cao() || ev()?.declarations?.length || ev()?.rapport) {
+              <button type="button" class="pme-onglet pme-onglet--commission" role="tab" [attr.aria-selected]="partie() === 'commission'" (click)="partie.set('commission')">Commission et signatures</button>
+            }
+          </div>
+          @if (partie() === 'synthese' || partie() === 'commission') {
+            <dl class="pmd-frise pmd-frise--cinq">
+              <div class="pmd-jalon"><dt>Commission désignée</dt><dd>{{ cao()?.decision?.reference || '—' }}</dd></div>
+              <div class="pmd-jalon pmd-jalon--etat"><dt>Conflits d'intérêts</dt><dd>
+                @if (ev()?.declarations?.length) {
+                  <span class="pmd-pill" [class.pmd-pill--ok]="!declarationsEnDefaut()" [class.pmd-pill--ko]="declarationsEnDefaut()">{{ declarationsSignees() }} déclaration(s) sur {{ ev()!.declarations.length }}{{ declarationsEnDefaut() ? '' : ' — absence' }}</span>
+                } @else { — }
+              </dd></div>
+              <div class="pmd-jalon"><dt>Rapport produit</dt><dd>{{ ev()?.rapport ? date(ev()!.rapport!.produitLe) : 'non produit' }}</dd></div>
+              <div class="pmd-jalon"><dt>Rapport validé</dt><dd>{{ ev()?.rapport?.signe ? date(ev()!.rapport!.signeLe) : ev()?.rapport ? 'signatures en cours' : '—' }}</dd></div>
+              <div class="pmd-jalon pmd-jalon--etat"><dt>Quorum</dt><dd>
+                @if (ev()?.rapport?.quorum; as q) {
+                  <span class="pmd-pill" [class.pmd-pill--ok]="q.atteint" [class.pmd-pill--ko]="!q.atteint">{{ q.atteint ? 'atteint' : 'non atteint' }}</span>
+                } @else { — }
+              </dd></div>
+            </dl>
+          }
+          @if (partie() === 'synthese') {
+            <table class="cnm-table pmd__table pme-table" aria-label="Classement des offres et moralité des prix">
+              <thead><tr><th scope="col">Rang</th><th scope="col">Offre</th><th scope="col">Soumissionnaire</th><th scope="col">Examen préliminaire</th><th scope="col" class="pmd__num">Montant évalué HT</th><th scope="col" class="pmd__num">Écart à l’estimation</th><th scope="col" class="pmd__num">Écart à la moyenne</th><th scope="col">Offre anormale</th><th scope="col">Post-qualification</th></tr></thead>
+              <tbody>
+                @for (o of offresTriees(); track o.idOffre) {
+                  @let s = synthese(o);
+                  @let ix = indicateurDe(o.idOffre);
+                  <tr [class.pmd__ecartee]="!!o.ecartee" [class.pme-premier]="o.rang === 1">
+                    <td>{{ o.rang ?? '—' }}</td>
+                    <td><button type="button" class="pme-lien" (click)="partie.set(o.idOffre)">n° {{ o.numero ?? '—' }}</button></td>
+                    <td>{{ o.entreprise.raisonSociale }}</td>
+                    <td>{{ s.conformite }}{{ o.ecartee?.motif ? ' — ' + o.ecartee!.motif : '' }}</td>
+                    <td class="pmd__num pme-fort">{{ ariary(o.evaluation?.montantEvalue) }}</td>
+                    <td class="pmd__num">{{ ecart(ix?.ecartEstimation) }}</td><td class="pmd__num">{{ ecart(ix?.ecartMoyenne) }}</td>
+                    <td>{{ s.anormale }}{{ ix?.alertes?.length ? ' — ' + ix!.alertes.join(' ; ') : '' }}</td><td>{{ s.qualification }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+            <div class="pme-deux">
+              @if (indicateurs(); as ip) {
+                <div class="pmd-encart">
+                  <h4 class="pmd-encart__titre">Moralité des prix</h4>
+                  <p class="pmd__ligne">Estimation de la fiche <strong class="pme-fort">{{ ariary(ip.estimation) }}</strong> HT · moyenne des offres <strong class="pme-fort">{{ ariary(ip.moyenne) }}</strong> HT</p>
+                  @if (ip.methodeDao) { <p class="pmd__aide">Méthode du DAO : {{ ip.methodeDao }}</p> }
+                </div>
+              }
+              @if (ev()?.rapport?.observations) {
+                <div class="pmd-encart">
+                  <h4 class="pmd-encart__titre">Observations du rapport</h4>
+                  <p class="pmd__ligne">« {{ ev()!.rapport!.observations }} »</p>
+                </div>
+              }
+            </div>
+          } @else if (partie() === 'commission') {
+            <div class="pme-deux">
+              @if (cao(); as c) {
+                <div class="pmd-encart">
+                  <h4 class="pmd-encart__titre">Commission d'appel d'offres</h4>
+                  <p class="pmd__ligne"><strong>Décision de désignation :</strong> {{ c.decision.reference || '—' }}{{ c.decision.date && !(c.decision.reference ?? '').includes(jour(c.decision.date)) ? ' du ' + jour(c.decision.date) : '' }}{{ c.decision.fichier ? '' : ' (décision signée non jointe)' }}</p>
+                  <ul class="pmd-encart__liste">
+                    @for (m of c.membres; track m.id) { <li><strong>{{ m.nom }} {{ m.prenom }}</strong><span>&nbsp;— {{ m.president ? 'président · ' : '' }}{{ origine(m.origine) }}{{ m.fonction ? ' · ' + m.fonction : '' }}</span></li> }
+                  </ul>
+                </div>
+              }
+              @if (ev()?.declarations?.length) {
+                <div class="pmd-encart">
+                  <h4 class="pmd-encart__titre">Déclarations d'absence de conflit d'intérêts</h4>
+                  <ul class="pmd-encart__liste">
+                    @for (d of ev()!.declarations; track d.membre) {
+                      <li [class.pmd__attendue]="!d.signeeLe || d.conflit"><strong>{{ d.nom }}</strong><span>&nbsp;— {{ d.president ? 'président · ' : '' }}{{ !d.signeeLe ? 'déclaration non signée' : d.conflit ? 'conflit déclaré' + (d.precision ? ' — ' + d.precision : '') : 'absence de conflit, signée le ' + date(d.signeeLe) }}</span></li>
+                    }
+                  </ul>
+                </div>
+              }
+            </div>
+            @if (ev()?.rapport; as r) {
+              <div class="pmd-encart">
+                <h4 class="pmd-encart__titre">PV de validation — le rapport signé</h4>
+                <p class="pmd__ligne">Rapport produit le {{ date(r.produitLe) }}{{ r.signe ? ', validé le ' + date(r.signeLe) + ' (dernière signature)' : ', signatures en cours' }}.</p>
+                @if (r.observations) { <p class="pmd__aide">« {{ r.observations }} »</p> }
+                <ul class="pmd-encart__liste">
+                  @for (g of r.signatures; track $index) { <li><strong>{{ g.nom }}</strong><span>&nbsp;— {{ g.president ? 'président · ' : '' }}signé le {{ date(g.date) }}{{ g.observation ? ' — ' + g.observation : '' }}</span></li> }
+                  @for (g of r.signaturesAttendues; track $index) { <li class="pmd__attendue">{{ g.nom }} — signature attendue</li> }
+                </ul>
+              </div>
+            }
+          } @else if (offreChoisie(); as o) {
+            <p class="pmd__ligne pme-titre"><strong>Offre n° {{ o.numero ?? '—' }} · {{ o.entreprise.raisonSociale }}</strong>
+              <span>&nbsp;NIF {{ o.entreprise.nif }} · rang {{ o.rang ?? '—' }}{{ o.evaluation ? ' · ' + ariary(o.evaluation.montantEvalue) + ' HT' : '' }}{{ o.ecartee ? ' · écartée' + (o.ecartee.motif ? ' : ' + o.ecartee.motif : '') : '' }}</span></p>
+            <div class="pme-offre">
+              <div class="pme-col">
+                @if (o.conformite?.verifications?.length) {
+                  <table class="cnm-table pmd__table pme-table" [attr.aria-label]="'Examen préliminaire de l’offre n° ' + o.numero">
+                    <thead><tr><th scope="col" colspan="3">Examen préliminaire{{ o.conformite?.clause ? ' · clause ' + o.conformite!.clause : '' }}</th></tr></thead>
+                    <tbody>
+                      @for (v of o.conformite!.verifications; track v.code) {
+                        @let c = v.cote ?? v.coteProposee;
+                        <tr><td><span class="pmd-pill" [class.pmd-pill--ok]="c === 'C' || c === 'SC'" [class.pmd-pill--ko]="c === 'NC'" [class.pmd-pill--att]="!c">{{ cote(c) }}</span></td>
+                          <td>{{ v.libelle }}</td><td class="pme-constat">{{ v.observation || v.constat || '—' }}</td></tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <p class="pmd__aide">Examen préliminaire non renseigné.</p>
+                }
+              </div>
+              <div class="pme-col">
+                @if (o.evaluation; as e) {
+                  <div class="pmd-encart">
+                    <p class="pmd__ligne"><span class="pmd-encart__titre">Montant</span> · prix lu <strong class="pme-fort">{{ ariary(e.prixLu) }}</strong> HT · corrigé <strong class="pme-fort">{{ ariary(e.prixCorrige) }}</strong> · évalué <strong class="pme-fort">{{ ariary(e.montantEvalue) }}</strong></p>
+                    @if (e.corrections.length) {
+                      <ul class="pmd-encart__liste">
+                        @for (k of e.corrections; track $index) { <li>{{ k.libelle }} : {{ ariary(k.avant) }} → {{ ariary(k.apres) }} ({{ regle(k.regle) }}){{ k.motif ? ' — ' + k.motif : '' }}</li> }
+                      </ul>
+                    }
+                    <p class="pmd__aide">{{ e.corrections.length ? '' : 'Aucune correction arithmétique · ' }}rabais : {{ e.rabais?.montant ? ariary(e.rabais!.montant) : 'aucun' }} · marge de préférence : {{ e.preference?.eligible ? 'appliquée' + (e.preference?.taux ? ' (' + e.preference!.taux + ' %)' : '') : 'non' }}{{ e.criteres.length ? ' · critères monétisés : ' + e.criteres.length : '' }}</p>
+                  </div>
+                }
+                @if (specs()[o.idOffre]; as sp) {
+                  @if (sp.length) {
+                    <table class="cnm-table pmd__table pme-table" [attr.aria-label]="'Spécifications de l’offre n° ' + o.numero">
+                      <thead><tr><th scope="col">Spécification</th><th scope="col">Exigé</th><th scope="col">Proposé</th><th scope="col">Cote</th></tr></thead>
+                      <tbody>
+                        @for (x of sp; track x.idArticle + '-' + x.idCaracteristique) {
+                          <tr [class.pmd__ko]="(x.cote ?? x.coteProposee) === 'NC'">
+                            <td>{{ x.article }}{{ x.marque ? ' · ' + x.marque : '' }}{{ x.modele ? ' ' + x.modele : '' }} · {{ x.caracteristique }}</td><td>{{ x.exigee || '—' }}</td>
+                            <td>{{ x.proposee || '—' }}{{ x.declareeConforme === false ? ' (déclarée non conforme)' : '' }}</td>
+                            <td>{{ cote(x.cote ?? x.coteProposee) }}{{ x.observation ? ' — ' + x.observation : '' }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  } @else {
+                    <p class="pmd__aide">Offre déposée par pièces : pas de tableau de spécifications (la conformité se lit dans l’examen préliminaire).</p>
+                  }
+                }
+                <div class="pmd-encart pmd-encart--ligne">
+                  <span class="pmd-encart__titre">Post-qualification</span>
+                  @if (o.qualification?.criteres?.length) {
+                    @let q = synthese(o).qualification;
+                    <span class="pmd-pill" [class.pmd-pill--ok]="q === 'Qualifiée'" [class.pmd-pill--ko]="q === 'Non qualifiée'">{{ q === '—' ? 'en cours' : q }}</span>
+                    <button type="button" class="pme-lien" (click)="partie.set('qualification')">le détail des critères</button>
+                  } @else {
+                    <span class="pmd__aide">{{ o.rang === 1 ? 'non encore conduite.' : 'elle ne porte que sur l’offre classée première ; cette offre n’a pas été examinée à ce stade.' }}</span>
+                  }
+                </div>
+              </div>
+            </div>
+          } @else if (partie() === 'qualification') {
+            @for (o of offresQualifiees(); track o.idOffre) {
+              @let commun = motifCommun(o.qualification!.criteres);
+              <p class="pmd__ligne pme-titre"><strong>Offre n° {{ o.numero ?? '—' }} · {{ o.entreprise.raisonSociale }}</strong><span>&nbsp;— {{ synthese(o).qualification === '—' ? 'post-qualification en cours' : synthese(o).qualification }}</span></p>
+              <table class="cnm-table pmd__table pme-table" [attr.aria-label]="'Post-qualification de l’offre n° ' + o.numero">
+                <colgroup><col class="pme-c30" /><col class="pme-c42" /><col /></colgroup>
+                <thead><tr><th scope="col">Critère</th><th scope="col">Exigence du DAO</th><th scope="col">Décision</th></tr></thead>
+                <tbody>
+                  @for (k of o.qualification!.criteres; track k.code; let i = $index) {
+                    @if (i === 0 || o.qualification!.criteres[i - 1].groupe !== k.groupe) {
+                      <tr class="pme-groupe"><th scope="rowgroup" colspan="3">{{ groupe(k.groupe) }}</th></tr>
+                    }
+                    <tr><td><strong>{{ k.libelle }}</strong></td><td>{{ exigenceLisible(k.exigence) }}</td>
+                      <td><span class="pmd-pill" [class.pmd-pill--ok]="k.decision === 'SATISFAIT'" [class.pmd-pill--ko]="k.decision === 'NON_SATISFAIT'">{{ k.decision === 'SATISFAIT' ? 'Satisfait' : k.decision === 'NON_SATISFAIT' ? 'Non satisfait' : 'à décider' }}</span>
+                        @if (motifCourt(k); as m) { @if (m !== commun) { <span class="pme-constat">&nbsp;{{ m }}</span> } }</td></tr>
+                  }
+                </tbody>
+              </table>
+              @if (commun) { <p class="pmd__aide">Motif, sauf mention dans la ligne : {{ commun }}</p> }
+            }
+          }
+        </section>
+      } @else {
       <section class="pmd" [attr.aria-label]="vue() === 'attribution' ? 'Attribution proposée' : 'Rapport d’évaluation'">
         @if (vue() === 'rapport') {
           @if (cao(); as c) {
@@ -348,6 +629,7 @@ export class ProjetMarcheDoc implements OnInit {
           </ul>
         }
       </section>
+      }
     }
   `,
   styleUrl: './procedure-marche-docs.scss',
@@ -357,6 +639,81 @@ export class EvaluationMarcheDoc implements OnInit {
   readonly lot = input<number | null>(null);
   /** Le rapport (décisions, signatures : le PV de validation) ou l'attribution (titulaires, proposition, projet de marché). */
   readonly vue = input<'rapport' | 'attribution'>('rapport');
+  /** ⚠️ 01/11 (pilote, variante B) — la fenêtre de la page du dossier : le rapport partie par partie, un onglet chacune. */
+  readonly parties = input(false);
+  /** L'onglet ouvert : `synthese`, `qualification`, `commission` ou l'identifiant d'une offre. */
+  readonly partie = signal<string>('synthese');
+  readonly offreChoisie = computed(() => this.offresTriees().find((o) => o.idOffre === this.partie()) ?? null);
+  /** Les offres post-qualifiées (en principe la seule classée première) : leurs critères ont leur onglet. */
+  readonly offresQualifiees = computed(() => this.offresTriees().filter((o) => !!o.qualification?.criteres?.length));
+  readonly declarationsSignees = computed(() => (this.ev()?.declarations ?? []).filter((d) => !!d.signeeLe).length);
+  readonly declarationsEnDefaut = computed(() => (this.ev()?.declarations ?? []).some((d) => !d.signeeLe || d.conflit));
+  private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
+  /** Réduction légère quand la partie ouverte dépasse un peu la fenêtre (80 % au plus). */
+  readonly zoom = signal(1);
+  private readonly suiviZoom = effect(() => {
+    if (!this.parties()) return;
+    this.partie();
+    this.ev();
+    this.cao();
+    this.indicateurs();
+    this.specs();
+    setTimeout(() => this.ajuster(), 300);
+    setTimeout(() => this.ajuster(), 900);
+  });
+
+  /** Mesure la partie ouverte à sa taille naturelle et la réduit juste assez pour tenir dans le corps de la fenêtre. */
+  ajuster(): void {
+    if (!this.parties()) return;
+    const corps = this.hote.nativeElement.closest('.modal-body');
+    const section = this.hote.nativeElement.querySelector<HTMLElement>('.pmd--onglets');
+    if (!corps || !section) return;
+    section.style.zoom = '';
+    const tient = (): boolean => corps.scrollHeight <= corps.clientHeight + 1;
+    let z = 1;
+    if (!tient()) {
+      const surplus = corps.scrollHeight - corps.clientHeight;
+      z = Math.max(0.8, Math.floor(((section.offsetHeight - surplus) / section.offsetHeight) * 100) / 100);
+      section.style.zoom = String(z);
+      while (z < 1 && tient()) {
+        const essai = Math.round((z + 0.01) * 100) / 100;
+        section.style.zoom = String(essai);
+        if (!tient()) break;
+        z = essai;
+      }
+    }
+    this.zoom.set(z);
+    section.style.zoom = z < 1 ? String(z) : '';
+  }
+
+  /** Le motif porté par au moins trois critères : écrit une fois sous le tableau plutôt que répété à chaque ligne. */
+  motifCommun(criteres: readonly { exigence?: string | null; motif?: string | null; constat?: string | null }[]): string | null {
+    const compte = new Map<string, number>();
+    for (const k of criteres) { const m = this.motifCourt(k); if (m) compte.set(m, (compte.get(m) ?? 0) + 1); }
+    const [motif, n] = [...compte.entries()].sort((a, b) => b[1] - a[1])[0] ?? [null, 0];
+    return n >= 3 ? motif : null;
+  }
+
+  /** Une exigence purement chiffrée (« 25000000000 ») se lit groupée par milliers ; le reste tel que le DAO l'écrit. */
+  exigenceLisible(e: string | null | undefined): string {
+    if (!e) return '—';
+    return /^\d{4,}$/.test(e.trim()) ? e.trim().replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0') : e;
+  }
+
+  indicateurDe(idOffre: string): IndicateursPrix['offres'][number] | null {
+    return this.indicateurs()?.offres.find((x) => x.idOffre === idOffre) ?? null;
+  }
+
+  /** Le motif d'un critère, sans répéter l'exigence déjà affichée dans sa colonne (« Exigence « … » satisfaite au vu… »). */
+  motifCourt(k: { exigence?: string | null; motif?: string | null; constat?: string | null }): string {
+    const m = k.motif || k.constat || '';
+    const prefixe = k.exigence ? `Exigence « ${k.exigence} » ` : null;
+    if (prefixe && m.startsWith(prefixe)) {
+      const reste = m.slice(prefixe.length);
+      return reste.charAt(0).toUpperCase() + reste.slice(1);
+    }
+    return m;
+  }
   private readonly service = inject(EvaluationService);
   private readonly caoService = inject(CaoService);
   readonly chargement = signal(true);

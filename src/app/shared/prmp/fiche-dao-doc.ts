@@ -149,10 +149,8 @@ export interface ObservationCelluleFiche {
                           @let numeros = observationsDe(i.cle);
                           <div class="fv-info" [class.fv-info--vide]="!i.valeur" [class.fv-info--citee]="citees().has(i.c.code)" [attr.data-champ]="i.c.code">
                             <dt>{{ i.c.libelle }}@if (i.lot !== null) { <span class="doc-lot">lot {{ i.lot }}</span> }</dt>
-                            <dd [class.fv-long]="i.valeur.length > 260 && !deplies().has(i.cle)">{{ i.valeur || 'Non renseignée' }}</dd>
-                            @if (i.valeur.length > 260 && !deplies().has(i.cle)) {
-                              <button type="button" class="fv-suite" (click)="deplier(i.cle)">Lire la suite</button>
-                            }
+                            <!-- ⚠️ 31/10 (pilote) — une valeur se lit toujours en entier : jamais coupée ni remplacée par « … ». -->
+                            <dd>{{ i.valeur || 'Non renseignée' }}</dd>
                             @if (numeros.length) { <span class="fv-obs">{{ libelleObs(numeros) }}</span> }
                             @if (i.valeur) {
                               <button type="button" class="fv-copier" [attr.aria-label]="'Copier « ' + i.c.libelle + ' »'" (click)="copier(i.cle, i.valeur)">
@@ -378,8 +376,6 @@ export interface ObservationCelluleFiche {
     .fv-info--vide::before { background: var(--or); }
     .fv-info--vide dd { color: var(--examen-texte); font-style: italic; }
     .fv-info--citee { background: var(--examen-fond); }
-    .fv-long { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
-    .fv-suite { padding: 0; border: 0; background: none; color: var(--texte); font: inherit; font-size: 11.5px; text-decoration: underline; text-decoration-color: var(--lien-soulignement); cursor: pointer; }
     .fv-obs { display: block; font-size: 11px; color: var(--examen-texte); }
     .fv-copier { position: absolute; right: 8px; top: 5px; padding: 0 6px; border: 1px solid var(--bordure); border-radius: 3px; background: var(--carte-fond); color: var(--texte); font: inherit; font-size: 11px; cursor: pointer; opacity: 0; }
     .fv-info:hover .fv-copier, .fv-copier:focus-visible { opacity: 1; }
@@ -438,7 +434,6 @@ export class FicheDaoDoc {
   readonly nbPages = signal(1);
   readonly recherche = signal('');
   readonly seulementVides = signal(false);
-  readonly deplies = signal<ReadonlySet<string>>(new Set());
   readonly copie = signal<string | null>(null);
 
   readonly vueBlocs = computed<BlocVolet[]>(() => {
@@ -495,7 +490,6 @@ export class FicheDaoDoc {
   private readonly suiviPages = effect(() => {
     this.rubriquesAffichees();
     this.hauteur();
-    this.deplies();
     this.page();
     this.recherche();
     setTimeout(() => this.paginer());
@@ -549,9 +543,6 @@ export class FicheDaoDoc {
   }
   ouvrirResultat(k: number): void {
     this.choisirBloc(k);
-  }
-  deplier(cle: string): void {
-    this.deplies.update((s) => new Set(s).add(cle));
   }
   copier(cle: string, valeur: string): void {
     void navigator.clipboard?.writeText(valeur).then(

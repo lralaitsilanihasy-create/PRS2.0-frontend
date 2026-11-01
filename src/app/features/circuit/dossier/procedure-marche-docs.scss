@@ -26,3 +26,55 @@
 .pmd__detail .pmd__table { width: 100%; table-layout: auto; }
 .pmd__detail .pmd__table td, .pmd__detail .pmd__table th { white-space: normal; vertical-align: top; }
 .pmd__ko td { color: var(--danger-text); }
+
+// ⚠️ 31/10 (pilote, maquette « Séance d'ouverture », variante B) — la vue « onglets » de la fenêtre du dossier.
+.pmd--onglets { gap: 10px; }
+.pmd__cache { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+.pmd-frise { margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 0.9fr) minmax(0, 1.2fr); background: var(--section-fond); color: var(--texte-menu); border-radius: 4px; }
+.pmd-jalon { position: relative; min-width: 0; padding: 7px 12px 7px 28px; }
+.pmd-jalon::before { content: ''; position: absolute; left: 12px; top: 13px; width: 9px; height: 9px; border-radius: 50%; background: var(--or); }
+.pmd-jalon--etat::before { background: var(--texte-menu-secondaire); }
+.pmd-jalon dt { font-size: 10.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--texte-menu-secondaire); }
+.pmd-jalon dd { margin: 0; font-weight: 500; }
+.pmd-pill { display: inline-block; white-space: nowrap; padding: 1px 8px; border-radius: 10px; font-size: 11.5px; font-weight: 500; background: var(--neutre-fond); color: var(--neutre-texte); }
+.pmd-pill--ok { background: var(--favorable-fond); color: var(--favorable-texte); }
+.pmd-pill--ko { background: var(--retard-fond); color: var(--retard-texte); }
+.pmd-gauche { display: flex; flex-direction: column; gap: 8px; }
+.pmd-encart { border: 1px solid var(--bordure); border-radius: 4px; padding: 6px 12px; display: flex; flex-direction: column; gap: 4px; }
+.pmd-encart--ligne { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; }
+.pmd-encart__titre { margin: 0; font-size: 10.5px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texte-secondaire); }
+.pmd-encart__liste { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; }
+.pmd-encart__liste span { color: var(--texte-secondaire); }
+@media (max-width: 52rem) { .pmd-frise { grid-template-columns: 1fr 1fr; } .pmd--onglets { zoom: 1 !important; } }
+
+// ⚠️ 01/11 (pilote, maquette « Rapport d'évaluation », variante B) — le rapport partie par partie dans la fenêtre du dossier.
+.pmd-frise--cinq { grid-template-columns: minmax(0, 1.5fr) repeat(4, minmax(0, 1fr)); }
+.pmd-pill--att { background: var(--examen-fond); color: var(--examen-texte); }
+.pme-onglets { display: flex; flex-wrap: wrap; gap: 2px; border-bottom: 1px solid var(--bordure); }
+// ⚠️ 01/11 (pilote) — chaque famille d'onglet a sa couleur : synthèse bleu nuit, offres vert (rouge si écartée), post-qualification
+// ocre, commission gris. Au repos, le fond clair de la famille et un filet de sa couleur en tête ; ouvert, la couleur pleine.
+.pme-onglet { --o-fond: var(--neutre-fond); --o-fort: var(--neutre-texte); --o-texte-fort: var(--texte-menu);
+  padding: 5px 12px 6px; border: 0; border-top: 3px solid var(--o-fort); border-radius: 4px 4px 0 0; background: var(--o-fond); color: var(--o-fort); font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; }
+.pme-onglet--synthese { --o-fond: var(--onglet-actif-fond); --o-fort: var(--section-fond); --o-texte-fort: var(--texte-menu); color: var(--texte); }
+.pme-onglet--offre { --o-fond: var(--favorable-fond); --o-fort: var(--favorable-texte); }
+.pme-onglet--ecartee { --o-fond: var(--retard-fond); --o-fort: var(--retard-texte); }
+.pme-onglet--qualif { --o-fond: var(--examen-fond); --o-fort: var(--examen-texte); }
+.pme-onglet:hover { filter: brightness(0.96); }
+.pme-onglet[aria-selected="true"] { background: var(--o-fort); color: var(--o-texte-fort); filter: none; }
+.pme-onglet:focus-visible, .pme-lien:focus-visible { outline: 2px solid var(--bouton-principal); outline-offset: 2px; }
+.pme-lien { padding: 0; border: 0; background: none; color: var(--texte); font: inherit; text-decoration: underline; text-decoration-color: var(--lien-soulignement); cursor: pointer; }
+.pme-table { width: 100%; table-layout: auto; }
+.pme-table td, .pme-table th { white-space: normal; vertical-align: top; padding-top: 3px; padding-bottom: 3px; }
+.pme-table td.pmd__num, .pme-table th.pmd__num { white-space: nowrap; }
+.pme-premier td { background: var(--favorable-fond); }
+.pme-fort { font-weight: 500; white-space: nowrap; }
+.pme-deux { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+.pme-titre span { color: var(--texte-secondaire); }
+.pme-offre { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.pme-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.pme-constat { color: var(--texte-secondaire); }
+.pme-motif { display: block; font-size: 11.5px; }
+.pme-c30 { width: 30%; }
+.pme-c42 { width: 52%; }
+.pme-groupe th { padding: 4px 8px 2px; background: none; font-size: 10.5px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: var(--texte-secondaire); text-align: left; }
+@media (max-width: 52rem) { .pme-deux, .pme-offre { grid-template-columns: minmax(0, 1fr); } .pmd-frise--cinq { grid-template-columns: 1fr 1fr; } }

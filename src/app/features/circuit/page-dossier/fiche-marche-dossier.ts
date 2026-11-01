@@ -91,7 +91,7 @@ import { LettresInvitation } from '../../../shared/prmp/lettres-invitation';
       border: none; border-radius: 4px; background: var(--section-fond); color: var(--texte-menu); }
     .fmd--modale .fmd__ligne { grid-column: 1; color: var(--texte-menu-secondaire); }
     .fmd--modale .fmd__ppm { color: var(--texte-menu-secondaire); }
-    .fmd--modale .fmd__obj { grid-column: 1; color: var(--texte-menu); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fmd--modale .fmd__obj { grid-column: 1; color: var(--texte-menu); overflow-wrap: break-word; }
     .fmd--modale .fmd__actions { grid-column: 2; grid-row: 1 / span 2; margin: 0; }
     .fmd--modale .fmd__actions .btn { background: transparent; border-color: var(--texte-menu-secondaire); color: var(--texte-menu); }
     .fmd--modale .fmd__actions .btn:hover { background: var(--menu-survol); }

@@ -150,9 +150,14 @@ import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marc
       }
       @if (idFiche() && ongletProcedure() === 'presentation') {
         <div class="dc-section">
-          <app-document-visionneuse>
-            <app-fiche-presentation-dao [idDossier]="contenu.dossier().idDossier" />
-          </app-document-visionneuse>
+          <!-- ⚠️ 31/10 (pilote, maquette variante A) — dans la fenêtre de la page : tout sur un écran (chiffres clés + cartes). -->
+          @if (ongletImpose()) {
+            <app-fiche-presentation-dao [idDossier]="contenu.dossier().idDossier" vue="tableau" />
+          } @else {
+            <app-document-visionneuse>
+              <app-fiche-presentation-dao [idDossier]="contenu.dossier().idDossier" />
+            </app-document-visionneuse>
+          }
         </div>
       }
       @if (idFiche() && ongletProcedure() === 'fiche-dao') {
@@ -196,12 +201,14 @@ import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marc
         }
         @if (ongletProcedure() === 'seance') {
           <div class="dc-section">
-            <app-seance-marche-doc [idDmc]="pr.idDmc" />
+            <!-- ⚠️ 31/10 (pilote, maquette variante B) — dans la fenêtre de la page : sans défilement, une offre par onglet. -->
+            <app-seance-marche-doc [idDmc]="pr.idDmc" [vue]="ongletImpose() ? 'onglets' : 'document'" />
           </div>
         }
         @if (ongletProcedure() === 'evaluation') {
           <div class="dc-section">
-            <app-evaluation-marche-doc [idDmc]="pr.idDmc" [lot]="pr.lot" />
+            <!-- ⚠️ 01/11 (pilote, maquette variante B) — dans la fenêtre de la page : sans défilement, une partie du rapport par onglet. -->
+            <app-evaluation-marche-doc [idDmc]="pr.idDmc" [lot]="pr.lot" [parties]="!!ongletImpose()" />
           </div>
         }
         @if (ongletProcedure() === 'attribution') {

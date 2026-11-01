@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, DOCUMENT, OnInit, inject, input, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, DOCUMENT, OnInit, computed, inject, input, signal } from '@angular/core';
 
 import { ouvrirBlobSur } from '../../core/securite/fichiers-surs';
 import { DocumentFormulaire, Lecture, OffreLue, TypeAlerteLecture } from '../../models';
@@ -22,7 +23,7 @@ const LIBELLES_INTEGRITE: Readonly<Record<string, string>> = {
 @Component({
   selector: 'app-lecture-seance',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [EtatErreur],
+  imports: [EtatErreur, NgTemplateOutlet],
   template: `
     @if (chargement()) {
       <p class="text-muted" role="status">Chargement de la lecture…</p>
@@ -31,116 +32,41 @@ const LIBELLES_INTEGRITE: Readonly<Record<string, string>> = {
     } @else if (lecture(); as l) {
       <div class="ls" [class.ls--projection]="projection()">
         @if (!l.offres.length && !l.nonOuvertes.length) { <p class="empty-state-title">Aucune offre n'a été déposée.</p> }
+        @if (onglets()) {
+          <!-- ⚠️ 31/10 (pilote, maquette « Séance d'ouverture », variante B) — la fenêtre de la page du dossier : à gauche ce que l'hôte
+               projette (présents, plis hors délai) et la synthèse ; à droite, une offre par onglet. Rien ne défile. -->
+          <div class="ls__deux">
+            <div class="ls__gauche">
+              <ng-content select="[gauche]" />
+              @if (l.offres.length) {
+                <h4 class="ls__h4">Lecture des offres</h4>
+                <ng-container [ngTemplateOutlet]="tableTpl" [ngTemplateOutletContext]="{ $implicit: l }" />
+              }
+              @if (l.nonOuvertes.length) {
+                <h4 class="ls__h4">Offres non ouvertes</h4>
+                <ul class="ls__non">
+                  @for (n of l.nonOuvertes; track $index) { <li>N° {{ n.numero ?? '—' }} · {{ n.entreprise }} — {{ n.etat }}{{ n.motif ? ' : ' + n.motif : '' }}</li> }
+                </ul>
+              }
+            </div>
+            @if (offreCourante(); as o) {
+              <div class="ls__droite">
+                <div class="ls__onglets" role="tablist" aria-label="Offres lues">
+                  @for (x of l.offres; track x.idOffre) {
+                    <button type="button" class="ls__onglet" role="tab" [attr.aria-selected]="x.idOffre === o.idOffre" (click)="offreChoisie.set(x.idOffre)">Offre n° {{ x.numero ?? '?' }}</button>
+                  }
+                </div>
+                <ng-container [ngTemplateOutlet]="offreTpl" [ngTemplateOutletContext]="{ $implicit: o }" />
+              </div>
+            }
+          </div>
+        } @else {
         @if (l.offres.length) {
           <!-- ⚠️ 19/10 (pilote) — la synthèse de la lecture, dans l'ordre d'arrivée : aller d'un coup d'œil à l'offre voulue. -->
-          <div class="ls__synthese">
-            <table class="ls__table" aria-label="Synthèse de la lecture des offres">
-              <thead><tr><th scope="col">N°</th><th scope="col">Soumissionnaire</th><th scope="col" class="ls__num">Montant TTC</th><th scope="col">Délai</th><th scope="col">Intégrité</th><th scope="col">Alertes</th></tr></thead>
-              <tbody>
-                @for (o of l.offres; track o.idOffre) {
-                  <tr>
-                    <td><a class="ls__ancre" [href]="'#offre-' + o.idOffre" [attr.aria-label]="'Aller à l’offre n° ' + (o.numero ?? '?')" (click)="aller($event, o.idOffre)">{{ o.numero ?? '—' }}</a></td>
-                    <td>{{ o.entreprise.raisonSociale }}{{ o.lot ? ' — lot ' + o.lot : '' }}</td>
-                    <td class="ls__num"><strong>{{ montant(o.acteEngagement?.montantTtc) }}</strong></td>
-                    <td>{{ o.acteEngagement ? o.acteEngagement.delai + ' ' + (o.acteEngagement.delaiUnite === 'MOIS' ? 'mois' : 'jours') : '—' }}</td>
-                    <td><span class="badge" [class.badge-success]="o.integrite === 'INTACTE'" [class.badge-danger]="o.integrite !== 'INTACTE'">{{ integrites[o.integrite] ?? o.integrite }}</span></td>
-                    <td>
-                      @if (o.alertes.length || o.piecesManquantes.length) {
-                        <span class="badge badge-warning">{{ o.alertes.length + (o.piecesManquantes.length ? 1 : 0) }}</span>
-                      } @else {
-                        <span class="text-muted">—</span>
-                      }
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
+          <ng-container [ngTemplateOutlet]="tableTpl" [ngTemplateOutletContext]="{ $implicit: l }" />
         }
         @for (o of l.offres; track o.idOffre) {
-          <article class="card ls__offre" tabindex="-1" [id]="'offre-' + o.idOffre" [class.ls__offre--ko]="o.integrite !== 'INTACTE'" [attr.aria-label]="'Offre n° ' + (o.numero ?? '?')">
-            <header class="ls__tete">
-              <span class="ls__numero" aria-hidden="true">{{ o.numero ?? '?' }}</span>
-              <div class="ls__ident">
-                <h3 class="ls__titre">{{ o.entreprise.raisonSociale }}{{ o.lot ? ' — lot ' + o.lot : '' }}</h3>
-                <span class="text-sm text-muted">Offre n° {{ o.numero ?? '—' }} · NIF <span class="cnm-mono">{{ o.entreprise.nif }}</span>
-                  · STAT <span class="cnm-mono">{{ o.entreprise.stat || 'non déclaré' }}</span>
-                  @if (o.entreprise.verification; as v) {
-                    · <span [class.ls__nif-ok]="v.statut === 'VERIFIE_DGI' || v.statut === 'VERIFIE_SUR_PIECES'" [class.ls__nif-ko]="v.statut === 'INCONNU_DGI' || v.statut === 'REFUSE_SUR_PIECES'">{{ statutsNif[v.statut] ?? v.statut }}</span>
-                  }
-                </span>
-              </div>
-              <span class="badge" [class.badge-success]="o.integrite === 'INTACTE'" [class.badge-danger]="o.integrite !== 'INTACTE'">{{ integrites[o.integrite] ?? o.integrite }}</span>
-            </header>
-            @if (o.motif) { <p class="text-sm ls__motif">{{ o.motif }}</p> }
-            @if (o.groupement?.length) { <p class="text-sm ls__ligne">Groupement : {{ membres(o) }}</p> }
-            @if (o.acteEngagement; as a) {
-              <!-- ⚠️ 29/10 (pilote) — trois cases répétaient le même montant (HT, TTC, bordereau recalculé TTC et HT) : le montant lu à haute
-                   voix en grand, le HT dessous, et la concordance avec le bordereau recalculé par le serveur (lot 5) en une pastille. -->
-              <div class="ls__lu">
-                <div class="ls__lu-montant">
-                  <span class="ls__lu-l">Montant de l’offre, toutes taxes</span>
-                  <strong class="ls__lu-ttc">{{ montant(a.montantTtc) }}</strong>
-                  <span class="ls__lu-ht">{{ montant(a.montantHt) }} hors taxes</span>
-                </div>
-                @if (o.formulaires && o.totaux; as t) {
-                  <div class="ls__lu-controle">
-                    @if (ecart(a.montantTtc, t.ttc); as e) {
-                      <span class="ls__pastille ls__pastille--ecart">Écart de {{ montant(e) }} avec le bordereau</span>
-                      <span class="ls__lu-ht">Bordereau recalculé : {{ montant(t.ttc) }} TTC · {{ montant(t.ht) }} HT</span>
-                    } @else {
-                      <span class="ls__pastille ls__pastille--ok">✓ Concorde avec le bordereau recalculé</span>
-                    }
-                    @if (t.htMin != null) { <span class="ls__lu-ht">Au minimum : {{ montant(t.ttcMin) }} TTC · {{ montant(t.htMin) }} HT</span> }
-                  </div>
-                }
-              </div>
-              <dl class="ls__ae">
-                <div><dt>Délai</dt><dd>{{ a.delai }} {{ a.delaiUnite === 'MOIS' ? 'mois' : 'jours' }}</dd></div>
-                <div><dt>Validité</dt><dd>{{ a.validiteJours }} jours</dd></div>
-                <div><dt>Rabais</dt><dd>{{ o.rabais?.lecture || (isTexte(a.rabais) ? a.rabais : '') || '—' }}</dd></div>
-                <div><dt>Garantie</dt><dd>{{ garantie(o) }}</dd></div>
-                @if (o.fraisDossier; as fr) {
-                  <!-- V72 : le reçu des frais de dossier, validé avant le retrait (lu par le serveur, pas dans l'offre). -->
-                  <div class="ls__large"><dt>Frais de dossier</dt><dd>{{ fr.regle ? 'réglés' + (fr.referencePaiement ? ' · réf. ' + fr.referencePaiement : '') + (fr.dateValidation ? ' · reçu validé le ' + dateCourte(fr.dateValidation) : '') : 'aucun reçu validé' }}</dd></div>
-                }
-              </dl>
-            }
-            @if (o.piecesManquantes.length) { <p class="text-sm ls__manque">Pièces manquantes : {{ o.piecesManquantes.join(' ; ') }}</p> }
-            @for (a of o.alertes; track $index) { <p class="alert alert-warning ls__alerte" role="note"><span>{{ alertes[a.type] ?? a.type }} : {{ a.message }}</span></p> }
-            @if (erreurPiece()?.idOffre === o.idOffre) { <p class="alert alert-danger" role="alert"><span>{{ erreurPiece()!.message }}</span></p> }
-            @if (piecesOuvrables() && (documents(o).length || o.pieces.length)) {
-              <div class="ls__docs">
-                @if (documents(o).length) {
-                  <div class="ls__groupe">
-                    <span class="ls__groupe-titre">Formulaires remplis en ligne</span>
-                    <ul class="ls__pieces" aria-label="Formulaires remplis en ligne">
-                      @for (d of documents(o); track d.type) {
-                        <li><button type="button" class="btn btn-sm btn-secondary" [disabled]="ouverture() === o.idOffre + d.type" (click)="ouvrirFormulaire(o.idOffre, d.type)">{{ d.libelle }}</button></li>
-                      }
-                    </ul>
-                  </div>
-                }
-                @if (o.pieces.length) {
-                  <div class="ls__groupe">
-                    <span class="ls__groupe-titre">Pièces jointes</span>
-                    <ul class="ls__pieces" aria-label="Pièces jointes de l'offre">
-                      @for (p of o.pieces; track p.code) {
-                        <li>
-                          @if (p.presente && p.nomFichier) {
-                            <button type="button" class="btn btn-sm btn-outline" [disabled]="ouverture() === o.idOffre + p.nomFichier" (click)="ouvrir(o.idOffre, p.nomFichier!)">{{ p.libelle }}</button>
-                            @if (p.empreinteConforme === false) { <span class="badge badge-danger">empreinte non conforme</span> }
-                          } @else {
-                            <span class="text-sm text-muted">{{ p.libelle }} — absente</span>
-                          }
-                        </li>
-                      }
-                    </ul>
-                  </div>
-                }
-              </div>
-            }
-          </article>
+          <ng-container [ngTemplateOutlet]="offreTpl" [ngTemplateOutletContext]="{ $implicit: o }" />
         }
         @if (l.nonOuvertes.length) {
           <h3 class="ls__h3">Offres non ouvertes</h3>
@@ -148,8 +74,125 @@ const LIBELLES_INTEGRITE: Readonly<Record<string, string>> = {
             @for (n of l.nonOuvertes; track $index) { <li>N° {{ n.numero ?? '—' }} · {{ n.entreprise }} — {{ n.etat }}{{ n.motif ? ' : ' + n.motif : '' }}</li> }
           </ul>
         }
+        }
       </div>
     }
+
+    <ng-template #tableTpl let-l>
+      <div class="ls__synthese">
+        <table class="ls__table" aria-label="Synthèse de la lecture des offres">
+          <thead><tr><th scope="col">N°</th><th scope="col">Soumissionnaire</th><th scope="col" class="ls__num">Montant TTC</th><th scope="col">Délai</th><th scope="col">Intégrité</th><th scope="col">Alertes</th></tr></thead>
+          <tbody>
+            @for (o of l.offres; track o.idOffre) {
+              <tr>
+                <td><a class="ls__ancre" [href]="'#offre-' + o.idOffre" [attr.aria-label]="'Aller à l’offre n° ' + (o.numero ?? '?')" (click)="aller($event, o.idOffre)">{{ o.numero ?? '—' }}</a></td>
+                <td>{{ o.entreprise.raisonSociale }}{{ o.lot ? ' — lot ' + o.lot : '' }}</td>
+                <td class="ls__num"><strong>{{ montant(o.acteEngagement?.montantTtc) }}</strong></td>
+                <td>{{ o.acteEngagement ? o.acteEngagement.delai + ' ' + (o.acteEngagement.delaiUnite === 'MOIS' ? 'mois' : 'jours') : '—' }}</td>
+                <td><span class="badge" [class.badge-success]="o.integrite === 'INTACTE'" [class.badge-danger]="o.integrite !== 'INTACTE'">{{ integrites[o.integrite] ?? o.integrite }}</span></td>
+                <td>
+                  @if (o.alertes.length || o.piecesManquantes.length) {
+                    <span class="badge badge-warning">{{ o.alertes.length + (o.piecesManquantes.length ? 1 : 0) }}</span>
+                  } @else {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </ng-template>
+
+    <ng-template #offreTpl let-o>
+      <article class="card ls__offre" tabindex="-1" [id]="'offre-' + o.idOffre" [class.ls__offre--ko]="o.integrite !== 'INTACTE'" [attr.aria-label]="'Offre n° ' + (o.numero ?? '?')">
+        <header class="ls__tete">
+          <span class="ls__numero" aria-hidden="true">{{ o.numero ?? '?' }}</span>
+          <div class="ls__ident">
+            <h3 class="ls__titre">{{ o.entreprise.raisonSociale }}{{ o.lot ? ' — lot ' + o.lot : '' }}</h3>
+            <span class="text-sm text-muted">Offre n° {{ o.numero ?? '—' }} · NIF <span class="cnm-mono">{{ o.entreprise.nif }}</span>
+              · STAT <span class="cnm-mono">{{ o.entreprise.stat || 'non déclaré' }}</span>
+              @if (o.entreprise.verification; as v) {
+                · <span [class.ls__nif-ok]="v.statut === 'VERIFIE_DGI' || v.statut === 'VERIFIE_SUR_PIECES'" [class.ls__nif-ko]="v.statut === 'INCONNU_DGI' || v.statut === 'REFUSE_SUR_PIECES'">{{ statutsNif[v.statut] ?? v.statut }}</span>
+              }
+            </span>
+          </div>
+          <span class="badge" [class.badge-success]="o.integrite === 'INTACTE'" [class.badge-danger]="o.integrite !== 'INTACTE'">{{ integrites[o.integrite] ?? o.integrite }}</span>
+        </header>
+        @if (o.motif) { <p class="text-sm ls__motif">{{ o.motif }}</p> }
+        @if (o.groupement?.length) { <p class="text-sm ls__ligne">Groupement : {{ membres(o) }}</p> }
+        @if (o.acteEngagement; as a) {
+          <!-- ⚠️ 29/10 (pilote) — trois cases répétaient le même montant (HT, TTC, bordereau recalculé TTC et HT) : le montant lu à haute
+               voix en grand, le HT dessous, et la concordance avec le bordereau recalculé par le serveur (lot 5) en une pastille. -->
+          <div class="ls__lu">
+            <div class="ls__lu-montant">
+              <span class="ls__lu-l">Montant de l’offre, toutes taxes</span>
+              <strong class="ls__lu-ttc">{{ montant(a.montantTtc) }}</strong>
+              <span class="ls__lu-ht">{{ montant(a.montantHt) }} hors taxes</span>
+            </div>
+            @if (o.formulaires && o.totaux; as t) {
+              <div class="ls__lu-controle">
+                @if (ecart(a.montantTtc, t.ttc); as e) {
+                  <span class="ls__pastille ls__pastille--ecart">Écart de {{ montant(e) }} avec le bordereau</span>
+                  <span class="ls__lu-ht">Bordereau recalculé : {{ montant(t.ttc) }} TTC · {{ montant(t.ht) }} HT</span>
+                } @else {
+                  <span class="ls__pastille ls__pastille--ok">✓ Concorde avec le bordereau recalculé</span>
+                }
+                @if (t.htMin != null) { <span class="ls__lu-ht">Au minimum : {{ montant(t.ttcMin) }} TTC · {{ montant(t.htMin) }} HT</span> }
+              </div>
+            }
+          </div>
+          <dl class="ls__ae">
+            <div><dt>Délai</dt><dd>{{ a.delai }} {{ a.delaiUnite === 'MOIS' ? 'mois' : 'jours' }}</dd></div>
+            <div><dt>Validité</dt><dd>{{ a.validiteJours }} jours
+                  @if (validiteDe(o.numero); as v) {
+                    <small class="ls__expire">expire le {{ v.expire ?? '—' }} · {{ v.prorogations.length ? 'prorogée' : 'sans prorogation' }}</small>
+                  }
+                </dd></div>
+            <div><dt>Rabais</dt><dd>{{ o.rabais?.lecture || (isTexte(a.rabais) ? a.rabais : '') || '—' }}</dd></div>
+            <div><dt>Garantie</dt><dd>{{ insecable(garantie(o)) }}</dd></div>
+            @if (o.fraisDossier; as fr) {
+              <!-- V72 : le reçu des frais de dossier, validé avant le retrait (lu par le serveur, pas dans l'offre). -->
+              <div class="ls__large"><dt>Frais de dossier</dt><dd>{{ fr.regle ? 'réglés' + (fr.referencePaiement ? ' · réf. ' + fr.referencePaiement : '') + (fr.dateValidation ? ' · reçu validé le ' + dateCourte(fr.dateValidation) : '') : 'aucun reçu validé' }}</dd></div>
+            }
+          </dl>
+        }
+        @if (o.piecesManquantes.length) { <p class="text-sm ls__manque">Pièces manquantes : {{ o.piecesManquantes.join(' ; ') }}</p> }
+        @for (a of o.alertes; track $index) { <p class="alert alert-warning ls__alerte" role="note"><span>{{ libelleAlerte(a.type) }} : {{ insecable(a.message) }}</span></p> }
+        @if (erreurPiece()?.idOffre === o.idOffre) { <p class="alert alert-danger" role="alert"><span>{{ erreurPiece()!.message }}</span></p> }
+        @if (piecesOuvrables() && (documents(o).length || o.pieces.length)) {
+          <div class="ls__docs">
+            @if (documents(o).length) {
+              <div class="ls__groupe">
+                <span class="ls__groupe-titre">Formulaires remplis en ligne</span>
+                <ul class="ls__pieces" aria-label="Formulaires remplis en ligne">
+                  @for (d of documents(o); track d.type) {
+                    <li><button type="button" class="btn btn-sm btn-secondary" [disabled]="ouverture() === o.idOffre + d.type" (click)="ouvrirFormulaire(o.idOffre, d.type)">{{ d.libelle }}</button></li>
+                  }
+                </ul>
+              </div>
+            }
+            @if (o.pieces.length) {
+              <div class="ls__groupe">
+                <span class="ls__groupe-titre">Pièces jointes</span>
+                <ul class="ls__pieces" aria-label="Pièces jointes de l'offre">
+                  @for (p of o.pieces; track p.code) {
+                    <li>
+                      @if (p.presente && p.nomFichier) {
+                        <button type="button" class="btn btn-sm btn-outline" [disabled]="ouverture() === o.idOffre + p.nomFichier" (click)="ouvrir(o.idOffre, p.nomFichier!)">{{ p.libelle }}</button>
+                        @if (p.empreinteConforme === false) { <span class="badge badge-danger">empreinte non conforme</span> }
+                      } @else {
+                        <span class="text-sm text-muted">{{ p.libelle }} — absente</span>
+                      }
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
+          </div>
+        }
+      </article>
+    </ng-template>
   `,
   styles: `
     .ls { display: flex; flex-direction: column; gap: 0.8rem; }
@@ -202,6 +245,18 @@ const LIBELLES_INTEGRITE: Readonly<Record<string, string>> = {
     .ls__pieces { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
     .ls__h3 { margin: 0.5rem 0 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-500); }
     .ls__non { margin: 0; padding-left: 1.2rem; font-size: var(--text-sm); }
+    /* ⚠️ 31/10 (pilote, variante B) — synthèse à gauche, une offre par onglet à droite. */
+    .ls__deux { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+    .ls__gauche, .ls__droite { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+    .ls__h4 { margin: 0; font-size: 14px; font-weight: 500; }
+    .ls__onglets { display: flex; gap: 2px; border-bottom: 1px solid var(--bordure); }
+    .ls__onglet { padding: 6px 12px; border: 1px solid transparent; border-bottom: 0; border-radius: 4px 4px 0 0; background: none; color: var(--texte-secondaire); font: inherit; font-size: 12.5px; cursor: pointer; }
+    .ls__onglet[aria-selected="true"] { margin-bottom: -1px; background: var(--onglet-actif-fond); border-color: var(--bordure); color: var(--texte); font-weight: 500; }
+    .ls__onglet:focus-visible { outline: 2px solid var(--bouton-principal); outline-offset: 2px; }
+    .ls__deux .ls__offre { gap: 0.5rem; padding: 0.8rem 1rem; }
+    .ls__deux .ls__lu-ttc { font-size: 1.35rem; }
+    .ls__expire { display: block; font-size: 11px; color: var(--texte-secondaire); }
+    @media (max-width: 52rem) { .ls__deux { grid-template-columns: minmax(0, 1fr); } }
     .ls--projection { font-size: 1.25rem; }
     .ls--projection .ls__titre { font-size: 1.5rem; }
     .ls--projection .ls__table, .ls--projection .ls__ae { font-size: 1.15rem; }
@@ -212,6 +267,15 @@ export class LectureSeance implements OnInit {
   readonly idDmc = input.required<number>();
   readonly piecesOuvrables = input(true);
   readonly projection = input(false);
+  /** ⚠️ 31/10 (pilote, variante B) — une offre par onglet, la synthèse à côté : la fenêtre de la page du dossier. */
+  readonly onglets = input(false);
+  /** Les validités calculées par l'hôte (date limite + durée, prorogations) : la date d'expiration s'affiche avec la validité. */
+  readonly validites = input<readonly { numero: number | null; expire: string | null; prorogations: readonly unknown[] }[]>([]);
+  readonly offreChoisie = signal<string | null>(null);
+  readonly offreCourante = computed(() => {
+    const offres = this.lecture()?.offres ?? [];
+    return offres.find((o) => o.idOffre === this.offreChoisie()) ?? offres[0] ?? null;
+  });
 
   private readonly service = inject(SeanceService);
   private readonly document = inject(DOCUMENT);
@@ -276,9 +340,26 @@ export class LectureSeance implements OnInit {
   /** ⚠️ 19/10 — la synthèse mène à la carte de l'offre sans toucher à l'URL. */
   aller(e: Event, idOffre: string): void {
     e.preventDefault();
+    if (this.onglets()) {
+      this.offreChoisie.set(idOffre);
+      return;
+    }
     const cible = this.document.getElementById('offre-' + idOffre);
     cible?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     cible?.focus({ preventScroll: true });
+  }
+
+  /** ⚠️ 31/10 (pilote) — un montant ne se coupe jamais : espaces insécables entre ses groupes de chiffres et devant son unité. */
+  insecable(texte: string | null | undefined): string {
+    return (texte ?? '').replace(/(\d) (?=\d{3}(?!\d))/g, '$1\u00A0').replace(/(\d) (?=(Ar|Ariary|%)(?![\p{L}]))/gu, '$1\u00A0');
+  }
+
+  libelleAlerte(type: string): string {
+    return (this.alertes as Readonly<Record<string, string>>)[type] ?? type;
+  }
+
+  validiteDe(numero: number | null): { expire: string | null; prorogations: readonly unknown[] } | null {
+    return this.validites().find((v) => v.numero === numero) ?? null;
   }
 
   membres(o: OffreLue): string {
