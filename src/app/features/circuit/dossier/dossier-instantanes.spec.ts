@@ -4,7 +4,7 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ToastService } from '../../../core/notifications/toast.service';
-import { Dossier, Instantane } from '../../../models';
+import { Dossier, EcartsInstantanes, Instantane } from '../../../models';
 import { DossierContenuStore } from './dossier-contenu.store';
 import { RESOLVEUR_FIGES, ResolveurFiges } from '../../../shared/ui/donnees-figees';
 import { DossierInstantanes, libelleEcranInstantane } from './dossier-instantanes';
@@ -51,14 +51,15 @@ describe('Écrans figés d’un dossier (manuel révisé, R4)', () => {
   };
   const onglets = (): string[] => Array.from(racine().querySelectorAll('[role="tab"]')).map((b) => (b.textContent ?? '').trim());
 
-  function monter(liste: Instantane[]): void {
+  function monter(liste: Instantane[], options: { statut?: string; ecarts?: Map<number, EcartsInstantanes> } = {}): void {
     toast = { error: vi.fn() };
     TestBed.configureTestingModule({
       imports: [DossierInstantanes],
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: DossierContenuStore, useValue: { instantanes: signal(liste), dossier: signal(DOSSIER) } },
+        { provide: DossierContenuStore, useValue: { instantanes: signal(liste), dossier: signal({ ...DOSSIER, statut: options.statut ?? DOSSIER.statut }),
+          ecarts: signal(options.ecarts ?? new Map()), chargerEcarts: vi.fn() } },
         { provide: ToastService, useValue: toast },
       ],
     });
@@ -70,6 +71,32 @@ describe('Écrans figés d’un dossier (manuel révisé, R4)', () => {
   }
 
   afterEach(() => http.verify());
+
+  // ⚠️ 01/11 (pilote) — pendant le contrôle seulement : « ≠ » sur l'onglet de l'écran qui a changé, et la liste de ses écarts.
+  const ECARTS = new Map<number, EcartsInstantanes>([[2, { soumission: 2, figeLe: '2026-10-13T17:00:00', ecrans: [
+    { ecran: 'PLAN', identique: false, comparable: true, tronque: false, ecarts: [{ chemin: 'ligne.montant', libelle: 'Ligne du plan — Montant', soumis: '1 000 Ar', actuel: '2 000 Ar' }] },
+    { ecran: 'SEANCE', identique: true, comparable: true, tronque: false, ecarts: [] },
+  ] }]]);
+
+  it('pendant le contrôle, l’écran qui a changé porte « ≠ » et déplie ses écarts', () => {
+    monter(LISTE, { ecarts: ECARTS });
+    http.expectOne((r) => r.url === '/api/dossiers/100371/instantanes/PLAN').flush({});
+    fixture.detectChanges();
+    expect(onglets()[0]).toContain('≠');
+    expect(onglets()[1]).not.toContain('≠');
+    racine().querySelector<HTMLButtonElement>('.di__ecart')!.click();
+    fixture.detectChanges();
+    expect(texte()).toContain('1 écart avec la soumission n° 2');
+    expect(texte()).toContain('Ligne du plan — Montant 1 000 Ar 2 000 Ar');
+  });
+
+  it('une fois le PV signé, plus de comparaison', () => {
+    monter(LISTE, { statut: 'CLOTURE', ecarts: ECARTS });
+    http.expectOne((r) => r.url === '/api/dossiers/100371/instantanes/PLAN').flush({});
+    fixture.detectChanges();
+    expect(onglets()[0]).not.toContain('≠');
+    expect(racine().querySelector('.di__ecart')).toBeNull();
+  });
 
   it('ouvre la dernière soumission, ses écrans dans l’ordre de lecture, et lit le premier (PLAN) avec son numéro de soumission', () => {
     monter(LISTE);

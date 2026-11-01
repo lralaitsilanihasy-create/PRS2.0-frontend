@@ -43,14 +43,10 @@ const ICONES: Record<OngletDossier, NomIcone> = {
               @if (o.resume) { <span class="pd-carte__resume">{{ o.resume }}</span> }
               @if (o.source) { <span class="pd-carte__source">du dossier {{ o.source }}</span> }
               <!-- ⚠️ 01/11 (pilote, fusion des écrans figés) — l'élément montre aussi ce qui a été soumis. -->
-              <!-- ⚠️ 01/11 (« ecarts-ecrans-figes ») — « ≠ soumission » quand l'état actuel diffère de la dernière soumission (comparaison du serveur). -->
-              @if (o.ecransFiges?.length && o.cle !== 'figes') {
-                <!-- ⚠️ 01/11 (pilote) — « ≠ soumission » seulement pendant le contrôle (jusqu'au PV signé) : après, on ne compare plus. -->
-                @if (differe(o.ecransFiges!)) {
-                  <span class="pd-carte__fige pd-carte__fige--ecart" title="L'état actuel diffère de ce qui a été soumis : la fenêtre liste les écarts"><span aria-hidden="true">≠</span> soumission</span>
-                } @else {
-                  <span class="pd-carte__fige" title="Figé à la soumission : la fenêtre propose « État actuel / À la soumission »"><span aria-hidden="true">🔒</span> figé à la soumission</span>
-                }
+              <!-- ⚠️ 01/11 (« ecarts-ecrans-figes ») — pendant le contrôle seulement (jusqu'au PV signé), « ≠ soumission » quand un écran figé
+                   diffère aujourd'hui de ce qui a été soumis (comparaison du serveur) ; la fenêtre dit lequel et liste les écarts. -->
+              @if (o.cle === 'figes' && differe()) {
+                <span class="pd-carte__fige pd-carte__fige--ecart" title="Un écran a changé depuis la soumission : la fenêtre liste les écarts"><span aria-hidden="true">≠</span> soumission</span>
               }
             </span>
             <span class="pd-carte__chevron" aria-hidden="true">›</span>
@@ -94,7 +90,10 @@ export class ElementsDossier {
 
   readonly controleTermine = computed(() => controleTermine(this.contenu.dossier().statut));
 
-  differe(ecrans: readonly string[]): boolean { return !this.controleTermine() && bilanEcarts(this.contenu.ecartsDerniere(), ecrans).etat === 'ecarts'; }
+  differe(): boolean {
+    const e = this.contenu.ecartsDerniere();
+    return !this.controleTermine() && !!e && bilanEcarts(e, e.ecrans.map((x) => x.ecran)).etat === 'ecarts';
+  }
   libelle(cle: OngletDossier): string { return this.documents().find((o) => o.cle === cle)?.libelle ?? 'Dossier'; }
   fermer(): void {
     this.ouvert.set(null);

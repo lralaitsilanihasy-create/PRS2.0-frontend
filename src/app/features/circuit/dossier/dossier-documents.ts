@@ -14,7 +14,6 @@ import { PpmMarchesTable } from '../../../shared/prmp/ppm-marches-table';
 import { DocumentVisionneuse } from '../../../shared/ui/document-visionneuse';
 import { DossierContenuStore } from './dossier-contenu.store';
 import { DossierInstantanes } from './dossier-instantanes';
-import { BasculeFigee } from './bascule-figee';
 import { DocumentDuDossier, OngletDossier, documentsDuDossier } from './documents-du-dossier';
 import { DossierPieces } from './dossier-pieces';
 import { AvisSpecifiqueDoc } from './avis-specifique-doc';
@@ -35,7 +34,7 @@ import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marc
 @Component({
   selector: 'app-dossier-documents',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PpmMarchesTable, FichePresentationDoc, AgpmDoc, DocumentVisionneuse, DossierPieces, DossierVersions, DossierInstantanes, BasculeFigee, ControlesDossier, CalendrierAnnuel, PublicationAgpmPanneau, FicheDaoDoc, FichePresentationDaoDoc, PlanDuDossierDao, CanevasRapportDoc, BordereauEstimatifDoc, AvisSpecifiqueDoc, FicheMarcheDossier, SeanceMarcheDoc, EvaluationMarcheDoc, PvCnmDoc],
+  imports: [PpmMarchesTable, FichePresentationDoc, AgpmDoc, DocumentVisionneuse, DossierPieces, DossierVersions, DossierInstantanes, ControlesDossier, CalendrierAnnuel, PublicationAgpmPanneau, FicheDaoDoc, FichePresentationDaoDoc, PlanDuDossierDao, CanevasRapportDoc, BordereauEstimatifDoc, AvisSpecifiqueDoc, FicheMarcheDossier, SeanceMarcheDoc, EvaluationMarcheDoc, PvCnmDoc],
   host: { '[class.dc-documents--borne]': 'panneauBorne()' },
   template: `
     @if (contenu.estPpm()) {
@@ -151,8 +150,6 @@ import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marc
       }
       @if (idFiche() && ongletProcedure() === 'presentation') {
         <div class="dc-section">
-          <!-- ⚠️ 01/11 (pilote, fusion des écrans figés) — chaque élément porte ses écrans figés : « État actuel / À la soumission n° k ». -->
-          <app-bascule-figee [ecrans]="ecransFigesDe('presentation')">
           <!-- ⚠️ 31/10 (pilote, maquette variante A) — dans la fenêtre de la page : tout sur un écran (chiffres clés + cartes). -->
           @if (ongletImpose()) {
             <app-fiche-presentation-dao [idDossier]="contenu.dossier().idDossier" vue="tableau" />
@@ -161,7 +158,6 @@ import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marc
               <app-fiche-presentation-dao [idDossier]="contenu.dossier().idDossier" />
             </app-document-visionneuse>
           }
-          </app-bascule-figee>
         </div>
       }
       @if (idFiche() && ongletProcedure() === 'fiche-dao') {
@@ -186,11 +182,9 @@ import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marc
       @if (contenu.dossier().idDmc && ongletProcedure() === 'avis') {
         <div class="dc-section">
           <!-- ⚠️ 27/10 (pilote) — en données seulement : le PDF joint d’office n’est plus proposé à côté. -->
-          <app-bascule-figee [ecrans]="ecransFigesDe('avis')">
           <app-document-visionneuse>
             <app-avis-specifique-doc [idDossier]="contenu.dossier().idDossier" />
           </app-document-visionneuse>
-          </app-bascule-figee>
         </div>
       }
       @if (idFiche() && ongletProcedure() === 'bordereau') {
@@ -208,24 +202,18 @@ import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marc
         @if (ongletProcedure() === 'seance') {
           <div class="dc-section">
             <!-- ⚠️ 31/10 (pilote, maquette variante B) — dans la fenêtre de la page : sans défilement, une offre par onglet. -->
-            <app-bascule-figee [ecrans]="ecransFigesDe('seance')">
             <app-seance-marche-doc [idDmc]="pr.idDmc" [vue]="ongletImpose() ? 'onglets' : 'document'" />
-            </app-bascule-figee>
           </div>
         }
         @if (ongletProcedure() === 'evaluation') {
           <div class="dc-section">
             <!-- ⚠️ 01/11 (pilote, maquette variante B) — dans la fenêtre de la page : sans défilement, une partie du rapport par onglet. -->
-            <app-bascule-figee [ecrans]="ecransFigesDe('evaluation')">
             <app-evaluation-marche-doc [idDmc]="pr.idDmc" [lot]="pr.lot" [parties]="!!ongletImpose()" />
-            </app-bascule-figee>
           </div>
         }
         @if (ongletProcedure() === 'attribution') {
           <div class="dc-section">
-            <app-bascule-figee [ecrans]="ecransFigesDe('attribution')">
             <app-evaluation-marche-doc [idDmc]="pr.idDmc" [lot]="pr.lot" [vue]="'attribution'" />
-            </app-bascule-figee>
           </div>
         }
       }
@@ -273,7 +261,7 @@ import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marc
       }
       @if (contenu.instantanesVisible() && ongletProcedure() === 'figes') {
         <div class="dc-section">
-          <app-dossier-instantanes [ecransRetenus]="ecransFigesDe('figes')" />
+          <app-dossier-instantanes />
         </div>
       }
       @if (contenu.controlesVisible() && ongletProcedure() === 'controles') {
@@ -322,11 +310,6 @@ export class DossierDocuments {
   /** La fiche a été détachée depuis la modale : l'hôte relit le dossier. */
   readonly liaisonChangee = output<void>();
   readonly documents = computed<DocumentDuDossier[]>(() => documentsDuDossier(this.contenu));
-
-  /** ⚠️ 01/11 (fusion des écrans figés) — les écrans figés qu'accueille l'élément `cle` (vide : aucun, pas de sélecteur). */
-  ecransFigesDe(cle: OngletDossier): readonly string[] {
-    return this.documents().find((d) => d.cle === cle)?.ecransFiges ?? [];
-  }
   voirOnglet(o: OngletDossier): void {
     if (this.ongletImpose()) this.ongletDemande.emit(o);
     else this.ongletChoisi.set(o);

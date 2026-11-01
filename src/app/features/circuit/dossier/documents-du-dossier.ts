@@ -1,4 +1,4 @@
-import { Instantane, PieceJointeDossier } from '../../../models';
+import { PieceJointeDossier } from '../../../models';
 import { controlesEffectifs } from '../../../shared/circuit/controles-libelles';
 import { DossierContenuStore } from './dossier-contenu.store';
 import { OngletPieceFournie, avecProcedure, ongletDuFichier } from './dossier-pieces';
@@ -15,39 +15,8 @@ export interface DocumentDuDossier {
   resume?: string;
   /** La teinte de l'onglet, reprise des onglets du dossier de planification. */
   teinte?: 'vert' | 'bleu' | 'gris';
-  /** ⚠️ 01/11 (fusion des écrans figés) — les écrans figés que la carte montre aussi, au sélecteur « À la soumission ». */
-  ecransFiges?: readonly string[];
   /** ⚠️ 01/11 (pilote, variante A) — l'élément vient d'un autre dossier (la fiche DAO d'un dossier de marché) : sa référence. */
   source?: string;
-}
-
-/**
- * ⚠️ 01/11 (pilote, maquette « fusion des écrans figés », cas 2) — la carte qui accueille chaque écran figé, par ordre de préférence :
- * la première carte présente l'emporte. Un écran sans carte hôte (acte de gestion, sans suite…) garde la carte « Écrans figés ».
- */
-const HOTES_ECRAN: Readonly<Record<string, readonly OngletDossier[]>> = {
-  PLAN: ['presentation'],
-  AVIS: ['avis', 'presentation'],
-  AMI: ['presentation'],
-  CAO: ['evaluation', 'presentation'],
-  SEANCE: ['seance'],
-  EVALUATION: ['evaluation'],
-  ATTRIBUTION: ['attribution'],
-};
-
-/** Les écrans figés répartis entre les cartes présentes ; `orphelins` : ceux qu'aucune carte n'accueille. */
-export function repartirEcransFiges(cles: readonly OngletDossier[], instantanes: readonly Instantane[]): { parCarte: Map<OngletDossier, string[]>; orphelins: Instantane[] } {
-  const parCarte = new Map<OngletDossier, string[]>();
-  const orphelins: Instantane[] = [];
-  // Dans une carte, son sujet d'abord : la ligne du plan avant l'avis, l'évaluation avant la commission.
-  const ordre = ['PLAN', 'AVIS', 'AMI', 'SEANCE', 'EVALUATION', 'CAO', 'ATTRIBUTION'];
-  const rang = (e: string): number => (ordre.includes(e) ? ordre.indexOf(e) : ordre.length);
-  for (const ecran of [...new Set(instantanes.map((i) => i.ecran))].sort((a, b) => rang(a) - rang(b))) {
-    const hote = (HOTES_ECRAN[ecran] ?? []).find((c) => cles.includes(c));
-    if (hote) parCarte.set(hote, [...(parCarte.get(hote) ?? []), ecran]);
-    else orphelins.push(...instantanes.filter((i) => i.ecran === ecran));
-  }
-  return { parCarte, orphelins };
 }
 
 /** Les fichiers produits par la fiche que montre un élément (hors pièces d'après lettre de renvoi). */
@@ -109,15 +78,10 @@ export function documentsDuDossier(contenu: DossierContenuStore, manquantes = 0)
     ? `${manquantes} obligatoire${manquantes > 1 ? 's' : ''} manquante${manquantes > 1 ? 's' : ''}`
     : nPieces ? `${nPieces} fichier${nPieces > 1 ? 's' : ''} joint${nPieces > 1 ? 's' : ''}` : 'Aucun fichier joint' });
   if (contenu.instantanesVisible()) {
-    // ⚠️ 01/11 (pilote, fusion) — chaque écran figé rejoint la carte qui montre le même sujet ; la carte « Écrans figés » ne reste
-    // que pour ceux qu'aucune carte n'accueille.
-    const { parCarte, orphelins } = repartirEcransFiges(liste.map((x) => x.cle), contenu.instantanes());
-    for (const x of liste) { const e = parCarte.get(x.cle); if (e) x.ecransFiges = e; }
-    if (orphelins.length) {
-      const n = orphelins.length;
-      liste.push({ cle: 'figes', libelle: 'Écrans figés', n, teinte: 'gris', resume: `${n} écran${n > 1 ? 's' : ''} figé${n > 1 ? 's' : ''} à la soumission`,
-        ecransFiges: [...new Set(orphelins.map((i) => i.ecran))] });
-    }
+    // ⚠️ 01/11 (pilote) — la fusion des écrans figés dans les cartes est RETIRÉE : le bouton « À la soumission » d'une carte laissait
+    // croire à une copie de la même fiche (la fiche de présentation n'est jamais figée). Les écrans figés restent ici, sous leur nom.
+    const n = contenu.instantanes().length;
+    liste.push({ cle: 'figes', libelle: 'Écrans figés', n, teinte: 'gris', resume: `${n} écran${n > 1 ? 's' : ''} figé${n > 1 ? 's' : ''} à la soumission` });
   }
   if (contenu.controlesVisible()) {
     const n = controlesEffectifs(contenu.controles()).length;
