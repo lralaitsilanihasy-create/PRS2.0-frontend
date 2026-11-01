@@ -4,12 +4,13 @@
  * - J / K : élément suivant / précédent d'une liste en deux volets (`app-deux-volets`) — il est choisi ET reçoit le focus ;
  * - Entrée : ouvre l'élément qui a le focus (rien à coder : chaque ligne de liste est un `<button>`) ;
  * - / : place le curseur dans la recherche de la page (à défaut, « Aller à un dossier » de l'en-tête) ;
- * - ? : affiche l'aide des raccourcis.
+ * - ? : affiche l'aide des raccourcis ;
+ * - H : ouvre l'historique de la procédure, sur la page d'un dossier (⚠️ 01/11, maquette « page du dossier », variante A).
  *
  * Un raccourci ne se déclenche JAMAIS pendant une saisie (champ, zone de texte, liste déroulante, éditeur), avec Ctrl, Alt ou
  * ⌘, ni quand une modale est ouverte (elle garde la main : Échap, Tab).
  */
-export type Raccourci = 'suivant' | 'precedent' | 'recherche' | 'aide';
+export type Raccourci = 'suivant' | 'precedent' | 'recherche' | 'aide' | 'historique';
 
 /** L'aide affichée par « ? » — une ligne par raccourci, dans l'ordre de lecture. */
 export const AIDE_RACCOURCIS: readonly { touches: readonly string[]; effet: string }[] = [
@@ -17,6 +18,7 @@ export const AIDE_RACCOURCIS: readonly { touches: readonly string[]; effet: stri
   { touches: ['K'], effet: 'Élément précédent de la liste' },
   { touches: ['Entrée'], effet: 'Ouvrir l’élément sélectionné au clavier' },
   { touches: ['/'], effet: 'Aller à la recherche' },
+  { touches: ['H'], effet: 'Ouvrir l’historique de la procédure (page d’un dossier)' },
   { touches: ['?'], effet: 'Afficher cette aide' },
   { touches: ['Échap'], effet: 'Fermer une fenêtre ou un menu' },
 ];
@@ -41,6 +43,9 @@ export function raccourciDe(e: KeyboardEvent, doc: Document): Raccourci | null {
       return 'precedent';
     case '/':
       return 'recherche';
+    case 'h':
+    case 'H':
+      return 'historique';
     case '?':
       return 'aide';
     default:
@@ -66,6 +71,14 @@ export function deplacerDansLaListe(doc: Document, sens: 1 | -1): boolean {
   if (cible.getAttribute('aria-pressed') !== 'true') cible.click();
   cible.focus();
   cible.scrollIntoView?.({ block: 'nearest' });
+  return true;
+}
+
+/** Clique le bouton de la page qui porte ce raccourci (`data-raccourci`). Rend false s'il n'y en a pas. */
+export function declencherRaccourci(doc: Document, nom: string): boolean {
+  const bouton = doc.querySelector<HTMLButtonElement>(`main [data-raccourci="${nom}"]:not([disabled])`) ?? doc.querySelector<HTMLButtonElement>(`[data-raccourci="${nom}"]:not([disabled])`);
+  if (!bouton) return false;
+  bouton.click();
   return true;
 }
 

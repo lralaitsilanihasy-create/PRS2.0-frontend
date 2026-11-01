@@ -17,6 +17,8 @@ export interface DocumentDuDossier {
   teinte?: 'vert' | 'bleu' | 'gris';
   /** ⚠️ 01/11 (fusion des écrans figés) — les écrans figés que la carte montre aussi, au sélecteur « À la soumission ». */
   ecransFiges?: readonly string[];
+  /** ⚠️ 01/11 (pilote, variante A) — l'élément vient d'un autre dossier (la fiche DAO d'un dossier de marché) : sa référence. */
+  source?: string;
 }
 
 /**
@@ -85,8 +87,9 @@ export function documentsDuDossier(contenu: DossierContenuStore, manquantes = 0)
     const p = d.procedure;
     liste.push(
       { cle: 'presentation', libelle: 'Fiche de présentation', teinte: 'vert', resume: 'Identification, marché, procédure et attribution' },
-      { cle: 'pv-cnm', libelle: 'PV de la Commission sur le DAO', resume: p.refeDossierMiseEnConcurrence ? 'Dossier ' + p.refeDossierMiseEnConcurrence : 'Le dossier de mise en concurrence' },
-      { cle: 'fiche-dao', libelle: 'Fiche DAO', resume: 'Le dossier d’appel d’offres de la procédure' },
+      { cle: 'pv-cnm', libelle: 'PV de la Commission sur le DAO', resume: 'L’avis de la Commission sur le dossier d’appel d’offres',
+        source: p.refeDossierMiseEnConcurrence ?? 'le dossier de mise en concurrence' },
+      { cle: 'fiche-dao', libelle: 'Fiche DAO', resume: 'Le dossier d’appel d’offres de la procédure', source: p.refeDossierMiseEnConcurrence ?? 'le dossier de mise en concurrence' },
       // ⚠️ 27/10 (« dossier-marche-remise-papier », P4) — remise papier : ni séance, ni évaluation, ni attribution dans l'application ;
       // leurs pièces papier se lisent dans « Pièces jointes ».
       ...(p.remisePapier ? [] : [

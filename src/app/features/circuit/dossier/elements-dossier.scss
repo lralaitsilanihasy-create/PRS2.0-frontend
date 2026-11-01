@@ -18,70 +18,59 @@
   color: var(--n-500);
   margin-right: 0.25rem;
 }
-// ⚠️ 18/10 (pilote) — les cartes des éléments du dossier.
-// Un bloc, pas une boîte flexible : la grille des cartes se mesure à la largeur réelle (sinon ses rangées prennent la hauteur des cartes empilées).
+// ⚠️ 01/11 (pilote, variante A) — une seule grille de cartes blanches, dans l'ordre du dossier (le rangement par phase est retiré).
 .pd-docs { display: block; }
 .pd-docs .pd-docs__titre { display: block; margin-bottom: 0.5rem; }
 .pd-docs__cartes {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
-  // ⚠️ 18/10 (pilote) — toutes les cartes à la même hauteur, d'une rangée à l'autre (celle de la plus haute).
-  grid-auto-rows: 1fr;
-  align-items: stretch;
-  gap: 0.85rem;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: 0.6rem;
 }
-// ⚠️ 18/10 (pilote, maquette jointe) — carte pastel, bordure foncée, icône cerclée à gauche ; texte #152033 / #34405a (AA sur ces fonds).
 .pd-carte {
   display: flex;
   align-items: flex-start;
-  gap: 0.9rem;
+  gap: 0.7rem;
   min-width: 0;
-  padding: 0.95rem 1.1rem;
-  border: 1.5px solid var(--bordure-champ);
-  border-radius: 10px;
+  padding: 0.7rem 0.6rem 0.7rem 0.8rem;
+  border: 1px solid var(--bordure);
+  border-radius: 6px;
   background: var(--carte-fond);
   text-align: left;
   font: inherit;
   color: var(--texte);
   cursor: pointer;
-  transition: box-shadow 0.15s, transform 0.15s;
 }
-.pd-carte:hover { box-shadow: none; transform: translateY(-2px); }
+.pd-carte:hover { border-color: var(--bordure-champ); background: var(--ligne-survol); }
 .pd-carte:focus-visible { outline: 3px solid var(--bouton-principal); outline-offset: 2px; }
-.pd-carte--presentation { background: var(--favorable-fond); }
-.pd-carte--fiche-dao { background: var(--onglet-actif-fond); }
-.pd-carte--avis { background: var(--onglet-actif-fond); }
-.pd-carte--plan { background: var(--onglet-actif-fond); }
-.pd-carte--canevas { background: var(--examen-fond); }
-.pd-carte--bordereau { background: var(--favorable-fond); }
-.pd-carte--pieces { background: var(--ligne-survol); }
-.pd-carte--figes { background: var(--onglet-actif-fond); }
-.pd-carte--controles { background: var(--favorable-fond); }
+// Un élément venu d'un autre dossier (la fiche DAO d'un dossier de marché) : en pointillés, sa référence dessous.
+.pd-carte--autre { border: 1px dashed var(--bordure-champ); }
 .pd-carte--alerte { background: var(--retard-fond); border-color: var(--retard-texte); }
 .pd-carte--alerte .pd-carte__resume { color: var(--retard-texte); font-weight: 500; }
 .pd-carte__icone {
   flex: none;
   display: grid;
   place-items: center;
-  width: 2.9rem;
-  height: 2.9rem;
-  border: 1.5px solid var(--bordure-champ);
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid var(--bordure);
   border-radius: 50%;
   background: var(--carte-fond);
 }
-.pd-carte__texte { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; flex: 1; }
+.pd-carte__texte { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; flex: 1; }
 .pd-carte__tete { display: flex; align-items: center; gap: 0.5rem; }
-.pd-carte__nom { font-weight: 500; font-size: 0.98rem; letter-spacing: -0.01em; }
+.pd-carte__nom { font-weight: 500; font-size: 0.94rem; }
 .pd-carte__n {
   margin-left: auto;
   padding: 0.05rem 0.5rem;
-  border: 1px solid var(--bordure-champ);
+  border: 1px solid var(--bordure);
   border-radius: 999px;
   background: var(--carte-fond);
   font-size: 0.72rem;
   font-weight: 500;
 }
-.pd-carte__resume { font-size: 0.82rem; line-height: 1.45; color: var(--texte); }
+.pd-carte__resume { font-size: 0.8rem; line-height: 1.4; color: var(--texte-secondaire); }
+.pd-carte__source { font-size: 0.75rem; color: var(--texte-secondaire); }
+.pd-carte__chevron { flex: none; align-self: center; font-size: 1.25rem; line-height: 1; color: var(--texte-secondaire); }
 .pd-docmodal {
   width: 96vw;
   max-width: 96vw;

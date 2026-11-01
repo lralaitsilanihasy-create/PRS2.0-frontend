@@ -116,7 +116,9 @@ describe('Page dossier', () => {
         for (const nom of CONTROLEURS) expect(dom, nom).not.toContain(nom);
         // Ni Journal ni Délais.
         expect(Array.from(racine().querySelectorAll('button')).map((b) => texte(b))).not.toContain('Délais');
-        expect(racine().querySelector('.pd-outils')).toBeNull();
+        // ⚠️ 01/11 (variante A) — la barre d'outils n'y porte que « Historique » (servi à tous les profils qui lisent le dossier).
+        expect(texte(racine().querySelector('.pd-outils'))).not.toContain('Journal');
+        expect(texte(racine().querySelector('.pd-outils'))).toContain('Historique');
         // La date reste : « date seule » au survol.
         expect(racine().querySelectorAll('.pd-etape')[1].getAttribute('title')).toBe('Dispatch · lun. 07/09/2026');
         // La référence PPM de la PRMP est montrée (règle existante).

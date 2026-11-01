@@ -15,6 +15,7 @@ describe('raccourcis clavier', () => {
     expect(raccourciDe(frappe('K'), document)).toBe('precedent');
     expect(raccourciDe(frappe('/'), document)).toBe('recherche');
     expect(raccourciDe(frappe('?', document.body, { shiftKey: true }), document)).toBe('aide');
+    expect(raccourciDe(frappe('h'), document)).toBe('historique');
     expect(raccourciDe(frappe('x'), document)).toBeNull();
   });
 

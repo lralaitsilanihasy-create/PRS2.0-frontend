@@ -39,12 +39,14 @@ import { HistoriqueDossier } from './historique-dossier';
       } @else {
         <app-dossier-identite />
         <!-- ⚠️ 31/10 (pilote) — l'historique complet du dossier, aussi dans le volet de droite des listes. -->
+        <h3 class="ad__h">Historique du dossier</h3>
         <app-historique-dossier [idDossier]="dossier().idDossier" />
       }
     </article>
   `,
   styles: `
     :host { display: block; }
+    .ad__h { margin: 4px 0 0; font-size: 14px; font-weight: 500; }
     .ad { display: flex; flex-direction: column; gap: 10px; }
     .ad__tete { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-bottom: 8px; border-bottom: 1px solid var(--bordure); }
     .ad__titres { min-width: 0; }

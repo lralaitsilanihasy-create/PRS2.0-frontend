@@ -32,7 +32,7 @@ import { ChangerMotDePasseModal } from '../../features/auth/mon-compte/changer-m
 import { ActualitesModal } from '../../shared/actualites/actualites-modal';
 import { Icone } from '../../shared/ui/icone';
 import { AideClavier } from '../../core/clavier/aide-clavier';
-import { deplacerDansLaListe, focaliserRecherche, raccourciDe } from '../../core/clavier/raccourcis-clavier';
+import { declencherRaccourci, deplacerDansLaListe, focaliserRecherche, raccourciDe } from '../../core/clavier/raccourcis-clavier';
 import { Actualite } from '../../models/actualite.model';
 import { ActualiteService } from '../../services/actualite.services';
 import { Dossier, estLocaliteCentrale, Role } from '../../models';
@@ -333,13 +333,14 @@ export class MainLayout {
   /** ⚠️ 31/10 (Espace de travail, lot 5) — aide des raccourcis clavier, ouverte par « ? ». */
   readonly aideClavier = signal(false);
 
-  /** Raccourcis clavier (J/K, /, ?) — voir core/clavier/raccourcis-clavier.ts. */
+  /** Raccourcis clavier (J/K, /, ?, H) — voir core/clavier/raccourcis-clavier.ts. */
   raccourci(e: KeyboardEvent): void {
     const r = raccourciDe(e, document);
     if (!r) return;
     let fait = true;
     if (r === 'aide') this.aideClavier.set(true);
     else if (r === 'recherche') fait = focaliserRecherche(document);
+    else if (r === 'historique') fait = declencherRaccourci(document, 'historique');
     else fait = deplacerDansLaListe(document, r === 'suivant' ? 1 : -1);
     // Sans effet (pas de liste, pas de recherche), la frappe reste au navigateur.
     if (fait) e.preventDefault();

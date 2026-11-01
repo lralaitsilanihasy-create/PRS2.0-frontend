@@ -263,11 +263,10 @@
 }
 .pd-etape--pause .pd-etape__d { color: var(--examen-texte); }
 
-/* ── Historique (31/10) ── */
-.pd-historique {
-  display: block;
-  margin: 0.75rem 0;
-}
+/* ⚠️ 01/11 (pilote, variante A) — la chaîne de la procédure, sous la synthèse ; l'historique s'ouvre en fenêtre (« Historique »). */
+.pd-chaine { display: block; }
+.pd-sousmodal__ref { font-weight: 400; color: var(--texte-secondaire); font-size: 0.9rem; }
+.pd-sousmodal__journal { margin-left: auto; margin-right: 0.5rem; }
 
 /* ── Documents ── */
 /* Les blocs (onglets, visionneuse) apportent leurs marges : la section ne fait que les accueillir. */
@@ -361,27 +360,19 @@
 }
 
 /* ⚠️ 19/10 (V137) — la procédure d'un dossier de marché né d'une attribution. */
+/* ⚠️ 01/11 (variante A) — sous la chaîne de la procédure, dont elle complète le dossier de marché. */
 .pd-procedure {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.9rem 1.1rem;
-  border: 1px solid var(--n-200);
-  border-left: 4px solid var(--p-600);
-  border-radius: 10px;
-  background: var(--carte-fond);
-}
-.pd-procedure__titre {
-  margin: 0;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--n-600);
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-top: 0.55rem;
 }
 .pd-procedure__texte {
   margin: 0;
-  font-size: var(--text-sm);
-  color: var(--n-700);
+  font-size: 0.8125rem;
+  color: var(--texte-secondaire);
 }
 .pd-procedure__liens {
   display: flex;
@@ -398,3 +389,53 @@
 .pd-confirm__faits dd { margin: 0; }
 .pd-confirm__aide { margin: 0; font-size: var(--text-sm); color: var(--n-500); }
 .pd-confirm__refus { margin: 0.6rem 0 0; padding: 0.5rem 0.75rem; border-radius: 6px; background: var(--danger-bg); color: var(--danger-text); font-size: var(--text-sm); white-space: pre-line; }
+
+/* =============================================================================
+   ⚠️ 01/11 (pilote, maquette « page du dossier », variante A) — l'EN-TÊTE DU DOSSIER EN BLEU NUIT, comme celui de l'application :
+   la référence, le statut et la frise se détachent du contenu. La frise tient sur une ligne : point, étape, date, reliés par un trait
+   (toujours sept colonnes égales, la pointe du panneau d'étape reste en face de son étape).
+   ============================================================================= */
+.pd-carte {
+  gap: 0.75rem;
+  padding: 0.9rem 1.25rem 0.8rem;
+  border-color: var(--section-fond);
+  background: var(--section-fond);
+  color: var(--texte-menu);
+}
+.pd-carte :focus-visible { outline-color: var(--or); }
+.pd-ref { color: var(--texte-menu); }
+.pd-ent { color: var(--texte-menu); }
+.pd-puces, .pd-puce, .pd-puce + .pd-puce::before, .pd-puce + .pd-deplier::before { color: var(--texte-menu-secondaire); }
+.pd-deplier { color: var(--texte-menu); }
+.pd-deplier:hover { text-decoration-color: var(--texte-menu-secondaire); }
+.pd-fin { color: var(--texte-menu-secondaire); }
+.pd-fin b { color: var(--texte-menu); }
+/* L'identité dépliée garde ses couleurs de lecture : sur un fond blanc, dans la carte. */
+.pd-identite { padding: 0.6rem 0.8rem; border-radius: 6px; background: var(--carte-fond); color: var(--texte); }
+
+.pd-carte .pd-frise { padding-top: 0.7rem; border-top-color: var(--menu-fond); }
+.pd-etape { flex-direction: row; align-items: center; justify-content: flex-start; gap: 0.35rem; text-align: left; }
+/* Le trait qui vient de l'étape précédente occupe la place libre, à gauche du point. */
+.pd-etape::before { position: static; flex: 1 1 0.75rem; min-width: 0.75rem; width: auto; height: 2px; margin-right: 0.15rem; background: var(--menu-fond); }
+.pd-etape:first-child::before { display: block; visibility: hidden; flex-grow: 0; }
+.pd-etape--faite::before, .pd-etape--courante::before, .pd-etape--pause::before { background: var(--texte-menu-secondaire); }
+.pd-etape__pt { flex: none; width: 1.15rem; height: 1.15rem; border: 1.5px solid var(--texte-menu-secondaire); background: transparent;
+  font-size: 0.68rem; color: var(--texte-menu-secondaire); }
+.pd-etape__pt app-icone { transform: scale(0.75); }
+.pd-etape--faite .pd-etape__pt { border-color: var(--favorable-fond); background: var(--favorable-fond); color: var(--favorable-texte); }
+.pd-etape--courante .pd-etape__pt { border: 2px solid var(--or); color: var(--texte-menu); box-shadow: none; }
+.pd-etape--pause .pd-etape__pt { border: 2px solid var(--or); background: var(--or); color: var(--texte); box-shadow: none; }
+.pd-etape__l { flex: none; font-size: 0.78rem; color: var(--texte-menu); white-space: nowrap; }
+.pd-etape--courante .pd-etape__l { color: var(--or); }
+.pd-etape--a-venir .pd-etape__l { color: var(--texte-menu-secondaire); font-weight: 400; }
+.pd-etape__d { flex: none; min-height: 0; font-size: 0.72rem; color: var(--texte-menu-secondaire); white-space: nowrap; }
+.pd-etape--pause .pd-etape__d { color: var(--or); }
+/* Étroit : les étapes passent à la ligne, sans trait. */
+@media (max-width: 64rem) {
+  .pd-frise { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; }
+  .pd-etape::before { display: none; }
+}
+
+/* Le bouton « Historique » : la porte de l'historique, en or (touche H). */
+.pd-outil--histo { border: 1px solid var(--or); background: var(--or); color: var(--texte); font-weight: 500; }
+.pd-outil--histo:hover { background: var(--or); border-color: var(--examen-texte); }

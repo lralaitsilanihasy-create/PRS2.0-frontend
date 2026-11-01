@@ -37,6 +37,7 @@ import { ActesGestionMarche } from './actes-gestion-marche';
 import { ActeGestionDossier } from './acte-gestion-dossier';
 import { SyntheseDossier } from './synthese-dossier';
 import { HistoriqueDossier } from '../dossier/historique-dossier';
+import { ChaineProcedure } from './chaine-procedure';
 import { AvisSpecifique } from '../../../shared/prmp/avis-specifique';
 import { LettresInvitation } from '../../../shared/prmp/lettres-invitation';
 
@@ -64,6 +65,7 @@ const HAUT_TOPBAR = 48;
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     HistoriqueDossier,
+    ChaineProcedure,
     NgTemplateOutlet,
     ElementsDossier,
     AvisSpecifique,
@@ -101,16 +103,22 @@ const HAUT_TOPBAR = 48;
           <app-icone class="pd-ariane__sep" nom="chev" [taille]="13" />
           <span class="pd-ariane__ici" aria-current="page">{{ reference() }}</span>
         </nav>
-        <!-- Restitutions INTERNES CNM (demande pilote du 06/09) : jamais pour la PRMP ni l'UGPM. -->
-        @if (contenu.restitutionsVisibles() && !contenu.loading()) {
+        @if (!contenu.loading()) {
           <div class="pd-outils">
-            @if (contenu.journalVisible().length) {
+            <!-- ⚠️ 01/11 (pilote, maquette « page du dossier », variante A) — l'historique ne s'affiche plus sous la page : il s'ouvre
+                 ici, en fenêtre (touche H), pour tous les profils qui lisent le dossier. -->
+            <button type="button" class="btn btn-sm pd-outil pd-outil--histo" data-raccourci="historique" aria-keyshortcuts="H"
+              title="Historique de la procédure (touche H)" (click)="historiqueOuvert.set(true)">
+              <app-icone nom="layers" [taille]="16" />Historique
+            </button>
+            <!-- Restitutions INTERNES CNM (demande pilote du 06/09) : jamais pour la PRMP ni l'UGPM. -->
+            @if (contenu.restitutionsVisibles() && contenu.journalVisible().length) {
               <button type="button" class="btn btn-outline btn-sm pd-outil" (click)="journalOuvert.set(true)">
                 <app-icone nom="history" [taille]="16" />Journal
                 <span class="pd-outil__n">{{ contenu.journalVisible().length }}<span class="cnm-sr-only"> actions</span></span>
               </button>
             }
-            @if (contenu.chronoDispo()) {
+            @if (contenu.restitutionsVisibles() && contenu.chronoDispo()) {
               <button type="button" class="btn btn-outline btn-sm pd-outil" (click)="chronoOuvert.set(true)">
                 <app-icone nom="clock" [taille]="16" />Délais
               </button>
@@ -190,6 +198,26 @@ const HAUT_TOPBAR = 48;
            que son profil permet, la liste blanche s'en charge côté serveur. -->
       <app-synthese-dossier class="pd-synthese" [idDossier]="dossier().idDossier" />
 
+      <!-- ⚠️ 01/11 (pilote, maquette « page du dossier », variante A) — la chaîne de la procédure (plan, mise en concurrence, marché,
+           actes), lue sur la filiation ; elle remplace le bloc « Procédure du marché », dont la phrase et les liens passent dessous. -->
+      <app-chaine-procedure class="pd-chaine" [idDossier]="dossier().idDossier">
+        @if (dossier().procedure; as pr) {
+          <div class="pd-procedure">
+            <!-- ⚠️ 19/10 (V137, « dossier-marche-contrat-cadre », B2) — le dossier de MARCHÉ né d'une attribution : sa procédure (fiche, lot). -->
+            <p class="pd-procedure__texte">
+              Dossier de marché du <strong>lot n° {{ pr.lot }}</strong>, produit par l'attribution : les pièces marquées « attribution »
+              sont jointes d'office et ne se retirent pas.
+            </p>
+            @if (domainePrmp()) {
+              <div class="pd-procedure__liens">
+                <a class="btn btn-outline btn-sm" [routerLink]="['/prmp/dao', pr.idDmc]">Fiche DAO</a>
+                <a class="btn btn-outline btn-sm" [routerLink]="['/procedure', pr.idDmc, 'evaluation']">Évaluation et attribution</a>
+              </div>
+            }
+          </div>
+        }
+      </app-chaine-procedure>
+
       <!-- Lot F3 : l'étape en cours et les gestes servis par GET /api/dossiers/{id}/gestes. -->
       @switch (gestes().etat) {
         @case ('chargement') {
@@ -207,7 +235,7 @@ const HAUT_TOPBAR = 48;
           <app-etat-erreur class="pd-etape-erreur" message="L'étape en cours n'a pas pu être chargée." aide="Le dossier reste consultable ci-dessous." (reessayer)="relancerGestes.emit()" />
         }
         @case ('pret') {
-          @if (vue(); as v) {
+          @if (panneauVisible() && vue(); as v) {
             <app-etape-courante #panneau [vue]="v" [occupe]="occupe()" [bloques]="bloques()" [idLocalite]="dossier().idLocalite ?? null" [lienPv]="lienPv()"
               [gesteFocus]="focusNavette()" [suiviRetrait]="suiviRetrait()" (agir)="agir($event)" (navetteChangee)="apresGeste()"
               (retraitDecide)="apresGeste($event === 'acceptee' ? 'retrait-accepte' : null)">
@@ -233,35 +261,11 @@ const HAUT_TOPBAR = 48;
         }
       }
       <!-- ⚠️ 09/10 (manuel de contrôle, M5a) — un marché porte ses actes de gestion ; un acte (DGC) se complète et se soumet ici. -->
-      <!-- ⚠️ 19/10 (V137, demande « dossier-marche-contrat-cadre », B2) — l'analogue de l'encart de la fiche pour un dossier de
-           MARCHÉ né d'une attribution : sa procédure (fiche, lot) et son dossier de mise en concurrence, servis dans « procedure ». -->
-      @if (dossier().procedure; as pr) {
-        <section class="pd-procedure" aria-labelledby="pd-procedure-t">
-          <h2 id="pd-procedure-t" class="pd-procedure__titre">Procédure du marché</h2>
-          <p class="pd-procedure__texte">
-            Dossier de marché du <strong>lot n° {{ pr.lot }}</strong>, produit par l'attribution : les pièces marquées « attribution »
-            sont jointes d'office et ne se retirent pas.
-          </p>
-          <div class="pd-procedure__liens">
-            @if (pr.idDossierMiseEnConcurrence != null) {
-              <a class="btn btn-outline btn-sm" [routerLink]="['/dossier', pr.idDossierMiseEnConcurrence]">Dossier de mise en concurrence{{ pr.refeDossierMiseEnConcurrence ? ' ' + pr.refeDossierMiseEnConcurrence : '' }}</a>
-            }
-            @if (domainePrmp()) {
-              <a class="btn btn-outline btn-sm" [routerLink]="['/prmp/dao', pr.idDmc]">Fiche DAO</a>
-              <a class="btn btn-outline btn-sm" [routerLink]="['/procedure', pr.idDmc, 'evaluation']">Évaluation et attribution</a>
-            }
-          </div>
-        </section>
-      }
       @if (dossier().idTypeDossier === 'DDM') {
         <app-actes-gestion-marche class="pd-fiche" [dossier]="dossier()" />
       } @else if (dossier().idTypeDossier === 'DGC') {
         <app-acte-gestion-dossier class="pd-fiche" [dossier]="dossier()" (modifie)="apresGeste()" />
       }
-
-      <!-- ⚠️ 31/10 (pilote) — l'historique complet : les dossiers liés (versions, mise en concurrence, marchés, actes de gestion) et,
-           pour chacun, ses PV, lettres de renvoi et étapes (demande « filiation-dossier », B1-B2). -->
-      <app-historique-dossier class="pd-historique" [idDossier]="dossier().idDossier" />
 
       <section class="pd-documents" aria-label="Documents du dossier">
         @if (contenu.loading()) {
@@ -271,7 +275,7 @@ const HAUT_TOPBAR = 48;
           </div>
         } @else if (enModale()) {
           <!-- Sans panneau d'étape (lecture seule, échec), les boutons prennent la place des onglets. -->
-          @if (gestes().etat !== 'pret' || !vue()) { <ng-container *ngTemplateOutlet="elementsDossier" /> }
+          @if (gestes().etat !== 'pret' || !vue() || !panneauVisible()) { <ng-container *ngTemplateOutlet="elementsDossier" /> }
         } @else {
           <app-dossier-documents [enteteCollante]="true" />
         }
@@ -349,6 +353,28 @@ const HAUT_TOPBAR = 48;
         </div>
       </div>
     }
+    <!-- ⚠️ 01/11 (pilote, variante A) — l'historique complet : les dossiers liés (versions, mise en concurrence, marchés, actes de gestion)
+         et, pour chacun, ses PV, lettres de renvoi et étapes, par phase (demande « filiation-dossier », B1-B2). -->
+    @if (historiqueOuvert()) {
+      <div class="modal-backdrop">
+        <div class="modal modal-lg pd-sousmodal" role="dialog" aria-modal="true"
+          [attr.aria-label]="'Historique de la procédure — ' + reference()"
+          appModale (appModaleFermer)="historiqueOuvert.set(false)">
+          <div class="modal-header">
+            <h2 class="modal-title"><app-icone nom="layers" [taille]="18" />Historique de la procédure <span class="pd-sousmodal__ref">· {{ reference() }}</span></h2>
+            @if (contenu.restitutionsVisibles() && contenu.journalVisible().length) {
+              <button type="button" class="btn btn-outline btn-sm pd-sousmodal__journal" (click)="historiqueOuvert.set(false); journalOuvert.set(true)">
+                <app-icone nom="history" [taille]="15" />Journal complet
+              </button>
+            }
+            <button type="button" class="btn-close" aria-label="Fermer l'historique" (click)="historiqueOuvert.set(false)">✕</button>
+          </div>
+          <div class="modal-body pd-sousmodal__corps">
+            <app-historique-dossier [idDossier]="dossier().idDossier" />
+          </div>
+        </div>
+      </div>
+    }
     @if (journalOuvert()) {
       <div class="modal-backdrop">
         <div class="modal modal-lg pd-sousmodal" role="dialog" aria-modal="true"
@@ -407,6 +433,8 @@ export class PageDossierCorps implements OnInit {
   readonly identiteOuverte = signal(false);
   readonly journalOuvert = signal(false);
   readonly chronoOuvert = signal(false);
+  /** ⚠️ 01/11 (pilote, variante A) — l'historique de la procédure, en fenêtre. */
+  readonly historiqueOuvert = signal(false);
 
   /** Espace du profil (« president », « prmp »…) : les gestes y restent. */
   private readonly espace = this.router.url.split(/[?#]/)[0].split('/')[1] || '';
@@ -433,6 +461,16 @@ export class PageDossierCorps implements OnInit {
     // « Soumettre le dossier » et celui de son encart (« Soumettre l'acte à la Commission », avec ses pièces exigées). L'encart suffit.
     const gestes = this.dossier().idTypeDossier === 'DGC' ? { ...g.gestes, taches: g.gestes.taches.filter((t) => t.geste !== 'SOUMETTRE') } : g.gestes;
     return vueEtape(this.dossier(), gestes, this.auth.role());
+  });
+  /**
+   * ⚠️ 01/11 (pilote, maquette « page du dossier », variante A) — sur un dossier dont la CNM a fini le traitement et qui n'offre aucun
+   * geste au connecté, le panneau « Circuit terminé » ne faisait que répéter le statut et la frise : il s'efface.
+   */
+  readonly panneauVisible = computed(() => {
+    const v = this.vue();
+    if (!v) return false;
+    const inactif = !v.principal && !v.secondaires.length && !v.navette && !v.retrait && !v.delai && !v.faits.length && !v.horsPanneau.length;
+    return !(inactif && this.cnmTerminee());
   });
   readonly montant = computed(() => {
     const g = this.gestes();

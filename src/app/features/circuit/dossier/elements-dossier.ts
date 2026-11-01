@@ -28,10 +28,12 @@ const ICONES: Record<OngletDossier, NomIcone> = {
   template: `
     <div class="pd-docs" role="group" aria-labelledby="pd-docs-titre">
       <span class="pd-docs__titre" id="pd-docs-titre">{{ titre() }}</span>
+      <!-- ⚠️ 01/11 (pilote, variante A) — une seule grille de cartes blanches, dans l'ordre du dossier ; un chevron dit qu'elles s'ouvrent.
+           Le rangement par phase de la maquette est RETIRÉ (pilote, 01/11 : il ne correspondait pas à la réalité du circuit). -->
       <div class="pd-docs__cartes">
         @for (o of documents(); track o.cle) {
           <button type="button" class="pd-carte pd-carte--{{ o.cle }}" [class.pd-carte--alerte]="o.cle === 'pieces' && manquantes() > 0"
-            (click)="ouvert.set(o.cle)">
+            [class.pd-carte--autre]="!!o.source" (click)="ouvert.set(o.cle)">
             <span class="pd-carte__icone"><app-icone [nom]="icone(o.cle)" [taille]="22" /></span>
             <span class="pd-carte__texte">
               <span class="pd-carte__tete">
@@ -39,6 +41,7 @@ const ICONES: Record<OngletDossier, NomIcone> = {
                 @if (o.n !== undefined) { <span class="pd-carte__n">{{ o.n }}</span> }
               </span>
               @if (o.resume) { <span class="pd-carte__resume">{{ o.resume }}</span> }
+              @if (o.source) { <span class="pd-carte__source">du dossier {{ o.source }}</span> }
               <!-- ⚠️ 01/11 (pilote, fusion des écrans figés) — l'élément montre aussi ce qui a été soumis. -->
               <!-- ⚠️ 01/11 (« ecarts-ecrans-figes ») — « ≠ soumission » quand l'état actuel diffère de la dernière soumission (comparaison du serveur). -->
               @if (o.ecransFiges?.length && o.cle !== 'figes') {
@@ -49,6 +52,7 @@ const ICONES: Record<OngletDossier, NomIcone> = {
                 }
               }
             </span>
+            <span class="pd-carte__chevron" aria-hidden="true">›</span>
           </button>
         }
       </div>
