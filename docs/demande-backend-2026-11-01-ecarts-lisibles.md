@@ -89,3 +89,31 @@ n'est pas couvert.
 >   offre n° — montant » (n° seulement s'il est servi), acte daté « le jj/mm/aaaa par … — référence ou autorité », membre « nom prénom —
 >   qualité », document « fichier — date », délai « du … au … (n jours) » ; à défaut « champ : valeur, … » sans les champs `id…` ; une
 >   liste, ses éléments résumés séparés par « ; » (200 caractères au plus).
+## Complément du 01/11 (recette de la livraison 1609e01f)
+
+Recette sur 00009/MAOO-CC/CNM/2026 (PRES001), écran ATTRIBUTION : B1 à B3 sont bons. Il reste deux défauts.
+
+### B4 — Les noms de champ dans les résumés « à défaut »
+
+Le repli « champ : valeur, … » écrit les noms bruts, découpés mais sans accents. Exemples :
+
+- Avis d'attribution : « depart : 17/09/2026, echeance : 17/10/2026 » ;
+- Pièces de l'attributaire : « echeance : 15/09/2026, delai depasse : oui, … ».
+
+Demande : passer ces noms par **le même dictionnaire que B2** (« Départ », « Échéance », « Délai dépassé », « Date de
+délivrance »…) et compléter ce dictionnaire avec les noms rencontrés dans les écrans figés.
+
+### B5 — Le nom de la liste pour ses éléments
+
+« Lot 1 — Titulaire 1 (ajouté) », « Titulaire 2 », « Titulaire 3 » paraissent **deux fois**. Le second groupe vient de
+`suiviTitulaires`, mais son libellé a perdu le nom de la liste au profit du seul nom de l'élément.
+
+Demande : un élément de liste garde le **nom de sa liste** devant son identité, par exemple « Lot 1 — Suivi des titulaires —
+Titulaire 1 (ajouté) ». À défaut, seule la liste principale peut s'en passer : « Titulaire 1 » pour `titulaires`.
+
+> ⚠️ **2026-11-01 — B4, B5 livrés (PRS20).**
+> - **B4** — le repli « champ : valeur, … » passe par le dictionnaire des noms de champ (« Départ : 17/09/2026, Échéance : 17/10/2026,
+>   Délai dépassé : oui », « Date de délivrance ») ; un nom absent du dictionnaire est découpé en mots **accentués un à un** (délai,
+>   échéance, dépôt, réception, pièce, signé, notifié…) avec une majuscule initiale.
+> - **B5** — le nom de la liste est gardé devant l'élément, sauf quand il n'est que le pluriel du nom de l'élément : « Lot 1 — Suivi
+>   des titulaires — Titulaire 1 (ajouté) » et « Lot 1 — Titulaire 1 (ajouté) » sont distincts ; « Lot 1 », « Offre n° 2 » inchangés.
