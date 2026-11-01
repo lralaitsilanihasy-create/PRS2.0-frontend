@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { ApiError, codeErreur, corpsErreur } from '../../core/errors/api-error';
@@ -7,6 +7,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur, telechargerBlob } from '../../core/securite/fichiers-surs';
 import { ArticleFiche, BonCommande, Consommation, ContratVigueur } from '../../models';
 import { BonsCommandeService, FicheMarcheService } from '../../services';
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 import { ariary } from '../evaluation/libelles-evaluation';
 import { ReceptionsBonVue } from '../receptions/receptions-bon';
@@ -66,7 +67,7 @@ const LIGNE_VIDE = (): LigneSaisie => ({ idArticle: null, designation: '', unite
  */
 @Component({
   selector: 'app-bons-commande-contrat',
-  imports: [ReceptionsBonVue],
+  imports: [ReceptionsBonVue, ModaleDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @let c = contrat();
@@ -77,34 +78,18 @@ const LIGNE_VIDE = (): LigneSaisie => ({ idArticle: null, designation: '', unite
     } @else if (conso(); as k) {
       <dl class="bc__grille">
         <div><dt>Commandé sur la durée du contrat</dt><dd>{{ ariary(k.cumulHt) }} HT@if (k.cumulTtc) { · {{ ariary(k.cumulTtc) }} TTC }</dd></div>
+        <!-- ⚠️ 01/11 (pilote, maquette « Contrats en vigueur », variante B) — une case sans valeur ne s'affiche plus (« du au », « — · — »). -->
         @if (commandes()) {
-          <div><dt>Année contractuelle</dt><dd>du {{ date(k.anneeDebut) }} au {{ date(k.anneeFin) }}</dd></div>
-          <div><dt>Commandé cette année</dt><dd>{{ ariary(k.cumulAnnee) }} HT</dd></div>
-          <div><dt>Minimum annuel · maximum estimé</dt><dd>{{ k.minimum != null ? ariary(k.minimum) : '—' }} · {{ k.maximum != null ? ariary(k.maximum) : '—' }}</dd></div>
+          @if (k.anneeDebut && k.anneeFin) { <div><dt>Année contractuelle</dt><dd>du {{ date(k.anneeDebut) }} au {{ date(k.anneeFin) }}</dd></div> }
+          @if (k.cumulAnnee != null) { <div><dt>Commandé cette année</dt><dd>{{ ariary(k.cumulAnnee) }} HT</dd></div> }
+          @if (k.minimum != null) { <div><dt>Minimum annuel</dt><dd>{{ ariary(k.minimum) }}</dd></div> }
+          @if (k.maximum != null) { <div><dt>Maximum estimé</dt><dd>{{ ariary(k.maximum) }}</dd></div> }
           @if (k.resteMaximum != null) { <div><dt>Reste avant le maximum estimé (durée du marché)</dt><dd [class.bc__depasse]="k.resteMaximum < 0">{{ ariary(k.resteMaximum) }} HT</dd></div> }
         } @else if (k.montantEstime != null) {
           <div><dt>Valeur maximale estimée</dt><dd>{{ ariary(k.montantEstime) }} HT</dd></div>
         }
       </dl>
       @for (a of k.alertes; track a) { <div class="alert alert-warning" role="note"><span>{{ alerte(a) }}</span></div> }
-
-      <!-- ⚠️ 29/10 (« bons-reception », §B1 ; V148) — marché à commandes : les quantités de l'année par article du besoin. -->
-      @if (commandes() && k.articles?.length) {
-        <div class="cnm-table-wrap">
-          <table class="cnm-table bc__table" aria-label="Quantités commandées sur la durée du marché, par article">
-            <thead><tr><th scope="col">Article du besoin</th><th scope="col">Unité</th><th scope="col" class="bc__num">Minimum</th><th scope="col" class="bc__num">Maximum</th><th scope="col" class="bc__num">Commandé sur la durée</th><th scope="col" class="bc__num">Reste</th></tr></thead>
-            <tbody>
-              @for (a of k.articles; track a.idArticle) {
-                <tr [class.bc__epuise]="a.resteQuantite === 0">
-                  <td>{{ a.designation || '—' }}</td><td>{{ a.unite || '—' }}</td>
-                  <td class="bc__num">{{ quantite(a.quantiteMin) }}</td><td class="bc__num">{{ quantite(a.quantiteMax) }}</td>
-                  <td class="bc__num">{{ quantite(a.commandeDuree) }}</td><td class="bc__num">{{ quantite(a.resteQuantite) }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      }
 
       @if (!commandes() && k.subsequents.length) {
         <div class="cnm-table-wrap">
@@ -122,21 +107,23 @@ const LIGNE_VIDE = (): LigneSaisie => ({ idArticle: null, designation: '', unite
       @if (k.bons.length) {
         <div class="cnm-table-wrap">
           <table class="cnm-table bc__table" aria-label="Bons de commande">
-            <thead><tr><th scope="col">Bon</th><th scope="col">Titulaire</th><th scope="col">Objet</th><th scope="col" class="bc__num">Montant HT</th><th scope="col">Émis le</th><th scope="col">Accusé de réception</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+            <thead><tr><th scope="col">Bon</th><th scope="col">Objet</th><th scope="col" class="bc__num">Montant HT</th><th scope="col">Émis · accusé</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
             <tbody>
               @for (b of k.bons; track b.id) {
                 <tr [class.bc__annule]="b.etat === 'ANNULE'">
-                  <td>n° {{ b.numero }}{{ b.numeroRemise ? ' (remise n° ' + b.numeroRemise + ')' : '' }}</td>
-                  <td>{{ b.titulaire || '—' }}</td>
-                  <td>{{ b.objet || '—' }}</td>
+                  <td class="bc__nowrap">n° {{ b.numero }}</td>
+                  <td>{{ b.objet || '—' }}<span class="bc__sous">{{ sousBon(b) }}</span></td>
                   <td class="bc__num">{{ ariary(b.montantHt) }}@if (b.montantTtc != null) { <br /><span class="text-muted">{{ ariary(b.montantTtc) }} TTC ({{ b.tauxTva }} %)</span> }</td>
-                  <td class="text-sm">{{ dateHeure(b.emisLe) }}</td>
+                  <!-- ⚠️ 01/11 (variante B) — émission et accusé dans une colonne : le tableau tient dans la section, actions comprises. -->
                   <td class="text-sm">
-                    @if (b.etat === 'ANNULE') { <span class="badge badge-danger">Annulé</span> {{ b.motifAnnulation }} }
-                    @else if (b.accuseLe) { {{ dateHeure(b.accuseLe) }} }
-                    @else { <span class="text-muted">en attente</span> }
+                    <span class="bc__nowrap">émis le {{ dateHeure(b.emisLe) }}</span>
+                    <span class="bc__sous">
+                      @if (b.etat === 'ANNULE') { <span class="badge badge-danger">Annulé</span> {{ b.motifAnnulation }} }
+                      @else if (b.accuseLe) { accusé le {{ dateHeure(b.accuseLe) }} }
+                      @else { <span class="badge badge-warning">accusé en attente</span> }
+                    </span>
                   </td>
-                  <td class="bc__actions">
+                  <td><div class="bc__actions">
                     <button type="button" class="btn btn-outline btn-sm" [attr.aria-label]="'Bon n° ' + b.numero + ' (PDF)'" (click)="ouvrir(service.document(b.id))">PDF</button>
                     <button type="button" class="btn btn-ghost btn-sm" [attr.aria-label]="'Bon n° ' + b.numero + ' (Word)'" (click)="enregistrer(service.document(b.id, 'docx'), 'bon-commande-' + b.numero + '.docx')">Word</button>
                     @if (b.etat === 'EMIS') {
@@ -145,16 +132,16 @@ const LIGNE_VIDE = (): LigneSaisie => ({ idArticle: null, designation: '', unite
                     @if (prmp() && b.etat === 'EMIS') {
                       <button type="button" class="btn btn-ghost btn-sm" [attr.aria-label]="'Annuler le bon n° ' + b.numero" (click)="annulation.set(annulation() === b.id ? null : b.id)">Annuler…</button>
                     }
-                  </td>
+                  </div></td>
                 </tr>
                 <!-- ⚠️ Lot MS-4 (V127) — la réception du bon : livraison, PV du président, signatures, définitive. -->
                 @if (reception() === b.id) {
-                  <tr><td colspan="7">
+                  <tr><td colspan="5">
                     <app-receptions-bon [idBon]="b.id" [peutDeclarer]="prmp() || ugpm()" [president]="prmp() && presideeParPrmp()" [signataire]="prmp() ? 'PRMP' : null" />
                   </td></tr>
                 }
                 @if (annulation() === b.id) {
-                  <tr><td colspan="7">
+                  <tr><td colspan="5">
                     <div class="bc__ligne">
                       <label class="form-group bc__large"><span class="form-label">Motif de l’annulation du bon n° {{ b.numero }}</span><input class="form-control" type="text" [value]="motifAnnulation()" (input)="motifAnnulation.set($any($event.target).value)" /></label>
                       <button type="button" class="btn btn-danger btn-sm" [disabled]="!motifAnnulation().trim() || occupe()" (click)="annuler(b)">Annuler le bon</button>
@@ -167,10 +154,39 @@ const LIGNE_VIDE = (): LigneSaisie => ({ idArticle: null, designation: '', unite
         </div>
       } @else { <p class="text-sm text-muted">Aucun bon de commande émis.</p> }
 
+      <!-- ⚠️ 29/10 (« bons-reception », §B1 ; V148) — marché à commandes : les quantités de l'année par article du besoin. -->
+      @if (commandes() && k.articles?.length) {
+        <!-- ⚠️ 01/11 (variante B) — replié, après les bons : seize articles repoussaient les bons hors de l'écran. -->
+        <details class="bc__repli">
+        <summary>Quantités commandées par article ({{ k.articles!.length }})</summary>
+        <div class="cnm-table-wrap">
+          <table class="cnm-table bc__table" aria-label="Quantités commandées sur la durée du marché, par article">
+            <thead><tr><th scope="col">Article du besoin</th><th scope="col">Unité</th><th scope="col" class="bc__num">Minimum</th><th scope="col" class="bc__num">Maximum</th><th scope="col" class="bc__num">Commandé sur la durée</th><th scope="col" class="bc__num">Reste</th></tr></thead>
+            <tbody>
+              @for (a of k.articles; track a.idArticle) {
+                <tr [class.bc__epuise]="a.resteQuantite === 0">
+                  <td>{{ a.designation || '—' }}</td><td>{{ a.unite || '—' }}</td>
+                  <td class="bc__num">{{ quantite(a.quantiteMin) }}</td><td class="bc__num">{{ quantite(a.quantiteMax) }}</td>
+                  <td class="bc__num">{{ quantite(a.commandeDuree) }}</td><td class="bc__num">{{ quantite(a.resteQuantite) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        </details>
+      }
+
+
       @if (prmp() && c.etat === 'EN_VIGUEUR' && (commandes() || k.subsequents.length)) {
-        <details class="bc__details">
-          <summary>Émettre un bon de commande…</summary>
-          <div class="bc__form">
+        @if (emissionOuverte()) {
+        <div class="modal-backdrop">
+        <div class="modal modal-lg" role="dialog" aria-modal="true" aria-label="Émettre un bon de commande" appModale (appModaleFermer)="emissionOuverte.set(false)">
+          <div class="modal-header">
+            <h2 class="modal-title">Émettre un bon de commande</h2>
+            <button type="button" class="btn-close" aria-label="Fermer" (click)="emissionOuverte.set(false)">✕</button>
+          </div>
+          <div class="modal-body bc__form">
+            <p class="text-sm text-muted bc__contexte">{{ c.objet }}@if (c.titulaires.length === 1) { · titulaire : {{ c.titulaires[0].candidat }} }</p>
             @if (!commandes()) {
               <label class="form-group"><span class="form-label">Marché subséquent</span>
                 <select class="form-control" (change)="idRemise.set($any($event.target).value ? +$any($event.target).value : null)">
@@ -216,9 +232,14 @@ const LIGNE_VIDE = (): LigneSaisie => ({ idArticle: null, designation: '', unite
             </div>
             <label class="form-group"><span class="form-label">Observations (facultatives)</span><input class="form-control" type="text" [value]="entete().observations" (input)="poserEntete('observations', $any($event.target).value)" /></label>
             @if (refus(); as r) { <div class="alert alert-danger" role="alert">{{ r }}</div> }
-            <div><button type="button" class="btn btn-primary btn-sm" [disabled]="!emissionComplete() || occupe()" (click)="emettre()">Émettre et notifier le bon</button></div>
           </div>
-        </details>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" (click)="emissionOuverte.set(false)">Annuler</button>
+            <button type="button" class="btn btn-primary" [disabled]="!emissionComplete() || occupe()" (click)="emettre()">Émettre et notifier le bon</button>
+          </div>
+        </div>
+        </div>
+        }
       } @else if (prmp() && c.etat === 'EN_VIGUEUR' && !commandes()) {
         <p class="text-sm text-muted">Un bon de commande relève d’un marché subséquent attribué (décret, art. 33) : attribuez d’abord une remise en concurrence.</p>
       }
@@ -231,14 +252,19 @@ const LIGNE_VIDE = (): LigneSaisie => ({ idArticle: null, designation: '', unite
     .bc__grille dt { font-size: 0.74rem; color: var(--n-500); }
     .bc__grille dd { margin: 0; font-size: 0.88rem; font-weight: 500; }
     .bc__table { font-size: 0.82rem; }
+    .bc__table td:not(.bc__num) { white-space: normal; }
     .bc__table thead th { background: var(--p-100); color: var(--p-800); }
     .bc__num { text-align: right; white-space: nowrap; }
     .bc__annule td { color: var(--n-500); }
     .bc__epuise td { color: var(--n-500); }
     .bc__depasse { color: var(--danger-text); }
-    .bc__actions { display: flex; gap: 0.25rem; white-space: nowrap; }
-    .bc__details summary { cursor: pointer; font-size: var(--text-sm); font-weight: 500; }
-    .bc__form { display: flex; flex-direction: column; gap: 0.45rem; padding-top: 0.4rem; }
+    .bc__actions { display: flex; flex-wrap: wrap; gap: 0.25rem; justify-content: flex-end; min-width: 8.5rem; }
+    .bc__form { display: flex; flex-direction: column; gap: 0.6rem; }
+    .bc__contexte { margin: 0; }
+    .bc__sous { display: block; font-size: 0.75rem; color: var(--texte-secondaire); }
+    .bc__nowrap { white-space: nowrap; }
+    .bc__repli > summary { cursor: pointer; font-size: var(--text-sm); font-weight: 500; padding: 0.2rem 0; }
+    .bc__repli[open] > summary { margin-bottom: 0.4rem; }
     .bc__ligne { display: flex; gap: 0.5rem; align-items: flex-end; flex-wrap: wrap; }
     .bc__large { flex: 1 1 16rem; }
     .bc__court { max-width: 7rem; }
@@ -253,6 +279,10 @@ export class BonsCommandeContrat implements OnInit {
   readonly ugpm = input(false);
   /** ⚠️ MS-4 — la PRMP préside la commission de réception : elle établit le PV et signe. */
   readonly presideeParPrmp = input(false);
+  /** ⚠️ 01/11 (variante B) — la consommation lue : le parent en tire la ligne de titre de la section. */
+  readonly lue = output<Consommation>();
+  /** ⚠️ 01/11 (variante B) — l'émission s'ouvre en fenêtre, depuis la colonne des gestes du parent. */
+  readonly emissionOuverte = signal(false);
   /** Le bon dont la réception est dépliée. */
   readonly reception = signal<number | null>(null);
 
@@ -306,12 +336,29 @@ export class BonsCommandeContrat implements OnInit {
       next: (k) => {
         this.conso.set(k);
         this.chargement.set(false);
+        this.lue.emit(k);
       },
       error: (e: ApiError) => {
         this.chargement.set(false);
         this.erreurLecture.set(e.status === 403 ? 'Les bons de commande ne sont pas ouverts à votre profil.' : 'Les bons de commande n’ont pas pu être chargés.');
       },
     });
+  }
+
+  /** L'émission est-elle offerte ? PRMP, contrat en vigueur ; contrat-cadre : un marché subséquent attribué. */
+  readonly peutEmettre = computed(() => {
+    const k = this.conso();
+    return this.prmp() && this.contrat().etat === 'EN_VIGUEUR' && !!k && (this.commandes() || k.subsequents.length > 0);
+  });
+
+  ouvrirEmission(): void {
+    this.refus.set(null);
+    this.emissionOuverte.set(true);
+  }
+
+  /** Sous l'objet du bon : le titulaire, le marché subséquent, la livraison. */
+  sousBon(b: BonCommande): string {
+    return [b.titulaire, b.numeroRemise ? `marché subséquent n° ${b.numeroRemise}` : '', b.lieuLivraison, b.delaiLivraison].filter(Boolean).join(' · ');
   }
 
   alerte(a: string): string {
@@ -379,6 +426,7 @@ export class BonsCommandeContrat implements OnInit {
         this.idRemise.set(null);
         this.entete.set({ objet: '', delai: '', lieu: '', observations: '' });
         this.lignes.set([LIGNE_VIDE()]);
+        this.emissionOuverte.set(false);
         this.toast.success(`Le bon de commande n° ${b.numero} est émis (${ariary(b.montantHt)} HT) et notifié au titulaire.`);
         this.charger();
       },

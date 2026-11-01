@@ -52,6 +52,12 @@ describe('Bons de commande d’un contrat (MS-3)', () => {
     monter(CONTRAT(), CONSO());
     expect(texte()).toContain('Remise n° 1 — Cartouches');
     expect(texte()).toContain('en attente');
+    // ⚠️ 01/11 (variante B) — l'émission s'ouvre en fenêtre, depuis la colonne des gestes du parent.
+    expect(racine().querySelector('.bc__form')).toBeNull();
+    expect(fixture.componentInstance.peutEmettre()).toBe(true);
+    fixture.componentInstance.ouvrirEmission();
+    fixture.detectChanges();
+    expect(racine().querySelector('[role=dialog]')?.getAttribute('aria-label')).toBe('Émettre un bon de commande');
     const select = racine().querySelector('.bc__form select') as HTMLSelectElement;
     select.value = '3';
     select.dispatchEvent(new Event('change'));
@@ -80,8 +86,11 @@ describe('Bons de commande d’un contrat (MS-3)', () => {
       { idArticle: 42, lot: 2, designation: 'Autre lot', unite: 'u', caracteristiques: [] },
     ]);
     fixture.detectChanges();
-    expect(texte()).toContain('Minimum annuel · maximum estimé');
+    expect(texte()).toContain('Minimum annuel1 000 Ar');
+    expect(texte()).toContain('Maximum estimé5 000 000 Ar');
     expect(texte()).toContain('minimum annuel n’est pas atteint');
+    fixture.componentInstance.ouvrirEmission();
+    fixture.detectChanges();
     const objet = Array.from(racine().querySelectorAll('label')).find((l) => l.textContent?.startsWith('Objet'))!.querySelector('input')!;
     saisir(objet, 'Ramettes d’octobre');
     const select = racine().querySelector('.bc__form tbody select') as HTMLSelectElement;
@@ -98,6 +107,9 @@ describe('Bons de commande d’un contrat (MS-3)', () => {
     expect(post.request.body.idRemise).toBeNull();
     post.flush({ id: 12, numero: 1, montantHt: 250000 });
     http.expectOne('/api/contrats-en-vigueur/7/bons-commande').flush(CONSO({ typeMarche: 'A_COMMANDE', subsequents: [] }));
+    fixture.detectChanges();
+    // Le bon émis, la fenêtre se referme.
+    expect(fixture.componentInstance.emissionOuverte()).toBe(false);
   });
 
   it('la PRMP annule un bon avec un motif ; l’UGPM lit sans émettre ni annuler', () => {
@@ -114,7 +126,7 @@ describe('Bons de commande d’un contrat (MS-3)', () => {
     TestBed.resetTestingModule();
     monter(CONTRAT(), CONSO(), false);
     expect(bouton('Annuler…')).toBeUndefined();
-    expect(texte()).not.toContain('Émettre un bon de commande');
+    expect(fixture.componentInstance.peutEmettre()).toBe(false);
   });
 
   it('nomme les refus', () => {
@@ -141,6 +153,8 @@ describe('Bons de commande d’un contrat (MS-3)', () => {
     // D3 — le maximum estimé n'est plus un plafond : dépassé, il est signalé, et le reste négatif se lit en rouge.
     expect(texte()).toContain('valeur maximale estimée du marché à commandes');
     expect(racine().querySelector('.bc__depasse')?.textContent?.replace(/\s/g, ' ')).toContain('-60 000');
+    fixture.componentInstance.ouvrirEmission();
+    fixture.detectChanges();
     expect((racine().querySelector('.bc__form tbody select') as HTMLSelectElement).options[1].textContent).toBe('Ramette A4 — reste 20');
   });
 });

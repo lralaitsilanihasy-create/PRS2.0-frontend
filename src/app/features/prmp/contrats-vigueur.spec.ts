@@ -53,7 +53,7 @@ describe('Contrats en vigueur (MS-1)', () => {
     TestBed.resetTestingModule();
   });
 
-  it('liste les contrats, les alertes d’abord ; une ligne s’ouvre sur place sur ses titulaires', () => {
+  it('liste les contrats, les alertes d’abord ; le premier s’ouvre en tableau de bord, sur l’onglet de son alerte', () => {
     monter('PRMP', [CONTRAT({ id: 8, objet: 'Fournitures de bureau', alertes: [], dateFin: '2026-11-30' }), CONTRAT()]);
     const lignes = racine().querySelectorAll('.cv__ligne');
     expect(lignes.length).toBe(2);
@@ -62,7 +62,15 @@ describe('Contrats en vigueur (MS-1)', () => {
     (lignes[0] as HTMLButtonElement).click();
     http.expectOne('/api/contrats-en-vigueur/7/remises').flush([]);
     fixture.detectChanges();
-    expect(texte()).toContain('liste fermée');
+    // ⚠️ 01/11 (variante B) — jamais « fiche 50 » : la référence du dossier de marché (B1), à défaut le lot.
+    expect(texte()).not.toContain('fiche 50');
+    expect(racine().querySelector('.cv__ref')?.textContent).toBe('Lot 1');
+    // ⚠️ 01/11 (variante A) — quatre indicateurs, puis des onglets ; la reconduction à décider ouvre son onglet.
+    expect(Array.from(racine().querySelectorAll('.cv__ind dt')).map((e) => e.textContent)).toEqual(['Échéance', 'Commandé', 'Titulaire', 'Réception']);
+    expect(Array.from(racine().querySelectorAll('[role=tab]')).map((e) => e.textContent?.replace(/\d+/g, '').trim()))
+      .toEqual(['Bons de commande', 'Remises en concurrence', 'Titulaires', 'Réception', 'Termes du contrat', 'Reconduction']);
+    expect(racine().querySelector('[role=tab][aria-selected=true]')?.textContent?.trim()).toBe('Reconduction');
+    expect(texte()).toContain('Liste fermée');
     expect(texte()).toContain('Entreprise 4');
     expect(texte()).toContain('au plus tard le 31/12/2027');
   });
@@ -76,22 +84,34 @@ describe('Contrats en vigueur (MS-1)', () => {
     // Le bloc des bons suit la branche du marché à commandes : il lit les articles du besoin (prix du bordereau).
     http.expectOne('/api/fiches-marche/50/articles').flush([]);
     expect(texte()).not.toContain('Remises en concurrence');
-    expect(texte()).toContain('marché à commandes (loi n° 2016-055, art. 30)');
+    expect(texte()).toContain('Marché à commandes : loi n° 2016-055, art. 30.');
+    expect(bouton('Lancer une remise')).toBeUndefined();
   });
 
-  it('29/10 (V147) — ouvert depuis une notification (?dmc=) : le contrat s’ouvre ; remise au calendrier en retard, formulaire déplié', () => {
+  it('01/11 (B1) — un contrat se nomme par la référence de son dossier de marché ; ce qui a été commandé se lit dans les indicateurs (B2)', () => {
+    monter('PRMP', [CONTRAT({ refeDossierMarche: '00009/MAOO-CC/CNM/2026', commandeHt: 3000000, alertes: [] })]);
+    http.expectOne('/api/contrats-en-vigueur/7/remises').flush([]);
+    fixture.detectChanges();
+    expect(racine().querySelector('.cv__ref')?.textContent).toBe('00009/MAOO-CC/CNM/2026 · lot 1');
+    expect(racine().querySelector('.cv__ligne')?.textContent).toContain('00009/MAOO-CC/CNM/2026 · lot 1');
+    const commande = racine().querySelectorAll('.cv__ind > div')[1].textContent!.replace(/\s/g, ' ');
+    expect(commande).toContain('3 000 000 Ar');
+    expect(commande).toContain('2 % de 150 000 000 Ar estimés');
+  });
+
+  it('29/10 (V147) — ouvert depuis une notification (?dmc=) : le contrat s’ouvre ; remise au calendrier en retard, section et geste en avant', () => {
     monter('PRMP', [
       CONTRAT({ id: 8, idDmc: 49, objet: 'Autre contrat', alertes: [] }),
       CONTRAT({ alertes: ['REMISE_A_LANCER'], periodiciteMois: 3, premiereRemise: '2026-01-15', prochaineRemise: '2026-01-15' }),
     ], { dmc: '50' });
     http.expectOne('/api/contrats-en-vigueur/7/remises').flush([]);
     fixture.detectChanges();
-    expect(racine().querySelector('#cv-detail-7')).not.toBeNull();
-    expect(racine().querySelector('#cv-detail-8')).toBeNull();
+    expect(racine().querySelector('#cv-detail .cv__titre')?.textContent).toBe('Consommables informatiques');
     expect(texte()).toContain('Remise en concurrence à lancer');
     expect(texte()).toContain('tous les 3 mois, à partir du 15/01/2026');
     expect(texte()).toContain('En retard');
-    expect((racine().querySelector('.cv__details') as HTMLDetailsElement).open).toBe(true);
+    expect(racine().querySelector('[role=tab][aria-selected=true]')?.textContent?.trim()).toMatch(/^Remises en concurrence/);
+    expect(bouton('Lancer une remise').classList).toContain('btn-primary');
   });
 
   it('29/10 (PRS20 1307a57) — la PRMP relit les termes depuis la fiche ; le refus est nommé ; l’UGPM n’a pas le bouton', () => {
@@ -122,6 +142,8 @@ describe('Contrats en vigueur (MS-1)', () => {
     (racine().querySelector('.cv__ligne') as HTMLButtonElement).click();
     http.expectOne('/api/contrats-en-vigueur/7/remises').flush([]);
     fixture.detectChanges();
+    bouton('Décider la reconduction').click();
+    fixture.detectChanges();
     (racine().querySelector('input[type=radio]') as HTMLInputElement).dispatchEvent(new Event('change'));
     const ref = Array.from(racine().querySelectorAll('label')).find((l) => l.textContent?.includes('Référence'))!.querySelector('input') as HTMLInputElement;
     ref.value = 'Décision n° 12/PRMP';
@@ -135,6 +157,7 @@ describe('Contrats en vigueur (MS-1)', () => {
     expect(texte()).toContain('Reconduit');
     expect(texte()).toContain('Hors préavis');
     expect(bouton('Enregistrer la décision')).toBeUndefined();
+    expect(bouton('Décider la reconduction')).toBeUndefined();
   });
 
   it('l’UGPM lit sans décider', () => {
@@ -142,7 +165,7 @@ describe('Contrats en vigueur (MS-1)', () => {
     (racine().querySelector('.cv__ligne') as HTMLButtonElement).click();
     http.expectOne('/api/contrats-en-vigueur/7/remises').flush([]);
     fixture.detectChanges();
-    expect(bouton('Enregistrer la décision')).toBeUndefined();
+    expect(bouton('Décider la reconduction')).toBeUndefined();
   });
 
   it('nomme les refus de la reconduction', () => {
@@ -154,6 +177,8 @@ describe('Contrats en vigueur (MS-1)', () => {
     monter('PRMP', [CONTRAT({ alertes: [] })]);
     (racine().querySelector('.cv__ligne') as HTMLButtonElement).click();
     http.expectOne('/api/contrats-en-vigueur/7/remises').flush([]);
+    fixture.detectChanges();
+    bouton('Lancer une remise').click();
     fixture.detectChanges();
     const champ = (libelle: string): HTMLInputElement | HTMLTextAreaElement =>
       Array.from(racine().querySelectorAll('label')).find((l) => l.textContent?.includes(libelle))!.querySelector('input, textarea') as HTMLInputElement;

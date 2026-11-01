@@ -80,6 +80,13 @@ export interface ContratVigueur {
    * l'alerte `REMISE_A_LANCER` reste) —, sinon la suivante ; nulle quand plus aucune échéance ne tombe avant `dateFin`.
    */
   prochaineRemise?: string | null;
+  /** ⚠️ 01/11 (demande « contrats-vigueur-liste », B1) — le dossier de marché du lot : le contrat se nomme par sa référence. Facultatif tant que non livré. */
+  idDossierMarche?: number | null;
+  refeDossierMarche?: string | null;
+  /** ⚠️ 01/11 (B2) — ce qui a été commandé, dans la liste (bons non annulés). Facultatif tant que non livré. */
+  commandeHt?: number | null;
+  bonsEmis?: number | null;
+  bonsSansAccuse?: number | null;
 }
 
 /** Corps de `POST /api/contrats-en-vigueur/{id}/reconduction` (PRMP de la fiche). */
