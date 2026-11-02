@@ -18,60 +18,10 @@
     </aside>
 
     <section class="login-card__form">
-      <form class="login-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
-        <h2 class="login-form__title">Connexion</h2>
-
-        @if (errorMessage()) {
-          <div class="login-form__error" role="alert">{{ errorMessage() }}</div>
-        }
-
-        <!-- Libellé visible au-dessus du champ : le champ reste nommé quand le texte de substitution disparaît (AUDIT.md A7). -->
-        <label class="login-field" [class.login-field--invalid]="form.controls.login.touched && form.controls.login.invalid">
-          <span class="login-field__libelle">Identifiant ou adresse électronique</span>
-          <!-- Un candidat (soumission en ligne, 04/10) se connecte par son adresse électronique ; un agent par son matricule. -->
-          <input
-            type="text"
-            class="login-field__input"
-            autocomplete="username"
-            formControlName="login"
-            required
-            [attr.aria-invalid]="form.controls.login.touched && form.controls.login.invalid ? 'true' : null"
-            [attr.aria-describedby]="form.controls.login.touched && form.controls.login.hasError('required') ? 'login-erreur' : null"
-          />
-        </label>
-        @if (form.controls.login.touched && form.controls.login.hasError('required')) {
-          <span class="login-form__hint" id="login-erreur">L'identifiant est obligatoire.</span>
-        }
-
-        <label class="login-field" [class.login-field--invalid]="form.controls.motDePasse.touched && form.controls.motDePasse.invalid">
-          <span class="login-field__libelle">Mot de passe</span>
-          <input
-            type="password"
-            class="login-field__input"
-            autocomplete="current-password"
-            formControlName="motDePasse"
-            required
-            [attr.aria-invalid]="form.controls.motDePasse.touched && form.controls.motDePasse.invalid ? 'true' : null"
-            [attr.aria-describedby]="form.controls.motDePasse.touched && form.controls.motDePasse.hasError('required') ? 'mdp-erreur' : null"
-          />
-        </label>
-        @if (form.controls.motDePasse.touched && form.controls.motDePasse.hasError('required')) {
-          <span class="login-form__hint" id="mdp-erreur">Le mot de passe est obligatoire.</span>
-        }
-
-        <div class="login-form__row">
-          <label class="login-form__remember">
-            <input type="checkbox" formControlName="seSouvenir" /><span>Se souvenir de moi</span>
-          </label>
-          <button type="button" class="login-form__forgot" (click)="motDePasseOublie()">Mot de passe oublié&nbsp;?</button>
-        </div>
-
-        <button type="submit" class="btn btn-primary login-form__submit" [disabled]="submitting()">
-          {{ submitting() ? 'Connexion…' : 'Se connecter' }}
-        </button>
-
+      <!-- ⚠️ 01/11 — le formulaire est partagé avec le portail public (FormulaireConnexion) ; les liens du bas restent ceux de cet écran. -->
+      <app-formulaire-connexion class="login-card__formulaire">
         <p class="login-form__signup">Nouveau&nbsp;? <a routerLink="/inscription">Créer un compte PRMP</a> · <a routerLink="/candidat/inscription">Créer un compte candidat</a> · <a routerLink="/accueil/prmp">Découvrir PRS 2.0</a></p>
-      </form>
+      </app-formulaire-connexion>
     </section>
   </div>
 </main>

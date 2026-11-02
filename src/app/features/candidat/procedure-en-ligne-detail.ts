@@ -38,7 +38,7 @@ const LIBELLES_COURTS_AVIS: Readonly<Record<string, string>> = { COMPTE_PAIEMENT
   imports: [RouterLink, EtatErreur, FraisDossier, ResultatsPublics, QuestionsProcedureVue, Icone],
   template: `
     <nav class="ped__ariane" aria-label="Fil d'Ariane">
-      <a routerLink="/candidat/procedures">Procédures ouvertes</a>
+      <a routerLink="/candidat/procedures">Avis ouverts</a>
       <span aria-hidden="true">›</span>
       <span aria-current="page">{{ procedure()?.objet || procedure()?.reference || 'Procédure' }}</span>
     </nav>
@@ -48,7 +48,7 @@ const LIBELLES_COURTS_AVIS: Readonly<Record<string, string>> = { COMPTE_PAIEMENT
     } @else if (introuvable()) {
       <div class="empty-state">
         <p class="empty-state-title">Cette procédure n'est pas ouverte en ligne.</p>
-        <p class="empty-state-text">Elle n'existe pas, ou elle ne remplit pas les conditions de la remise électronique. <a routerLink="/candidat/procedures">Revenir aux procédures ouvertes</a>.</p>
+        <p class="empty-state-text">Elle n'existe pas, ou elle ne remplit pas les conditions de la remise électronique. <a routerLink="/candidat/procedures">Revenir aux avis ouverts</a>.</p>
       </div>
     } @else if (erreur()) {
       <app-etat-erreur message="La procédure n'a pas pu être chargée." (reessayer)="charger()" />

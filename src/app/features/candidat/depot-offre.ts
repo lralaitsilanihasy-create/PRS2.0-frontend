@@ -97,7 +97,7 @@ function motifDepot(e: unknown, enveloppe: EnveloppeOffre | null = null): string
   imports: [RouterLink, EtatErreur, OffreFormulaires, OffreTravauxFormulaires, RabaisOffreSaisie],
   template: `
     <nav class="do__ariane" aria-label="Fil d'Ariane">
-      <a routerLink="/candidat/procedures">Procédures ouvertes</a><span aria-hidden="true">›</span>
+      <a routerLink="/candidat/procedures">Avis ouverts</a><span aria-hidden="true">›</span>
       <a [routerLink]="['/candidat', 'procedures', idDmc]">{{ procedure()?.objet || procedure()?.reference || 'Procédure' }}</a><span aria-hidden="true">›</span>
       <span aria-current="page">{{ titreDepot() }}</span>
     </nav>

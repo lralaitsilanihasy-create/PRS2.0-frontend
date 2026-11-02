@@ -61,7 +61,7 @@ interface LigneMembre {
   imports: [RouterLink, EtatErreur, Icone],
   template: `
     <nav class="aed__ariane" aria-label="Fil d'Ariane">
-      <a routerLink="/candidat/procedures">Procédures ouvertes</a>
+      <a routerLink="/candidat/procedures">Avis ouverts</a>
       <span aria-hidden="true">›</span>
       <span aria-current="page">{{ ami()?.objet || ami()?.reference || 'Appel à manifestation d’intérêt' }}</span>
     </nav>
@@ -71,7 +71,7 @@ interface LigneMembre {
     } @else if (introuvable()) {
       <div class="empty-state">
         <p class="empty-state-title">Cet appel à manifestation d’intérêt n’est pas publié.</p>
-        <p class="empty-state-text"><a routerLink="/candidat/procedures">Revenir aux procédures ouvertes</a>.</p>
+        <p class="empty-state-text"><a routerLink="/candidat/procedures">Revenir aux avis ouverts</a>.</p>
       </div>
     } @else if (erreur()) {
       <app-etat-erreur message="L’appel n’a pas pu être chargé." (reessayer)="charger()" />

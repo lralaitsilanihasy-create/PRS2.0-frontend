@@ -60,8 +60,8 @@ export function enveloppeManquante(o: Offre, toutes: Offre[]): EnveloppeOffre | 
     } @else if (erreur()) {
       <app-etat-erreur message="Vos offres n'ont pas pu être chargées." (reessayer)="charger()" />
     } @else if (!offres().length) {
-      <app-etat-vide-candidat icone="send" titre="Aucune offre déposée" texte="Choisissez une procédure ouverte, retirez son dossier, puis déposez votre offre : elle est chiffrée sur votre poste et apparaît ici avec son accusé de réception.">
-        <a etatVideAction class="btn btn-primary btn-sm" routerLink="/candidat/procedures">Voir les procédures ouvertes</a>
+      <app-etat-vide-candidat icone="send" titre="Aucune offre déposée" texte="Choisissez un avis ouvert, retirez son dossier, puis déposez votre offre : elle est chiffrée sur votre poste et apparaît ici avec son accusé de réception.">
+        <a etatVideAction class="btn btn-primary btn-sm" routerLink="/candidat/procedures">Voir les avis ouverts</a>
       </app-etat-vide-candidat>
     } @else {
       @if (message(); as m) { <div class="alert alert-danger" role="alert">{{ m }}</div> }

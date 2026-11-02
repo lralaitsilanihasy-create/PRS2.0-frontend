@@ -1,96 +1,17 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
-import { ApiError } from '../../../core/errors/api-error';
-import { espaceExterneDe } from '../../../core/auth/auth.guard';
-import { AuthService } from '../../../core/auth/auth.service';
-import { ToastService } from '../../../core/notifications/toast.service';
+import { FormulaireConnexion } from './formulaire-connexion';
 
-/** Page de connexion (route publique). Seul point d'entrée de l'authentification. */
+/**
+ * Page de connexion (route publique). ⚠️ 01/11 — le formulaire, seul point d'entrée de l'authentification, est extrait dans
+ * `FormulaireConnexion` : le portail public le porte aussi.
+ */
 @Component({
   selector: 'app-login',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [RouterLink, FormulaireConnexion],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
-export class Login {
-  private readonly fb = inject(FormBuilder);
-  private readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
-  private readonly toast = inject(ToastService);
-
-  readonly form = this.fb.nonNullable.group({
-    login: ['', Validators.required],
-    motDePasse: ['', Validators.required],
-    seSouvenir: [true],
-  });
-
-  readonly submitting = signal(false);
-  readonly errorMessage = signal<string | null>(null);
-
-  constructor() {
-    // ⚠️ Soumission en ligne, lot 1 (04/10) — la confirmation du compte candidat renvoie ici avec l'adresse (`?login=`).
-    const login = this.route.snapshot.queryParamMap.get('login');
-    if (login) this.form.patchValue({ login });
-  }
-
-  submit(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-    this.submitting.set(true);
-    this.errorMessage.set(null);
-
-    const { login, motDePasse, seSouvenir } = this.form.getRawValue();
-    this.auth.authenticate({ login, motDePasse }, seSouvenir).subscribe({
-      next: (res) => {
-        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
-        // Un profil EXTERNE (candidat, membre de CAO) n'a que son espace : un retour vers la coquille interne (ou aucun)
-        // le mène à sa racine.
-        const espace = espaceExterneDe(res.role);
-        const cible = espace ? (returnUrl?.startsWith(espace) ? returnUrl : espace) : (returnUrl ?? '/');
-        void this.router.navigateByUrl(cible);
-      },
-      error: (err: ApiError) => {
-        this.submitting.set(false);
-        // ⚠️ Soumission en ligne (04/10) — des 409 nommés : le compte candidat n'est pas confirmé, ou il est archivé et un
-        // nouveau code vient de partir (après le mot de passe vérifié : un tiers n'apprend rien) ; le compte de membre de
-        // CAO n'est pas activé (avant toute vérification : il n'a pas encore de mot de passe — écart accepté). Même
-        // geste : l'écran du code, avec l'adresse déjà posée.
-        if (err.status === 409 && (err.code === 'COMPTE_A_CONFIRMER' || err.code === 'COMPTE_ARCHIVE')) {
-          this.toast.info(err.message, err.code === 'COMPTE_ARCHIVE' ? 'Compte archivé' : 'Compte à confirmer');
-          void this.router.navigate(['/candidat', 'confirmation'], {
-            queryParams: { email: login.trim(), archive: err.code === 'COMPTE_ARCHIVE' ? 1 : null },
-          });
-          return;
-        }
-        if (err.status === 409 && err.code === 'COMPTE_A_ACTIVER') {
-          this.toast.info(err.message, 'Compte à activer');
-          // ⚠️ V71 : le dépositaire de la part de secours a aussi un compte à activer ; la réponse ne dit pas lequel, la page
-          // visée (`returnUrl`) le dit — à défaut, la CAO, dont l'écran d'activation renvoie vers l'autre en cas d'échec.
-          const visee = this.route.snapshot.queryParamMap.get('returnUrl') ?? '';
-          const espace = visee.startsWith('/depositaire') ? '/depositaire' : '/cao';
-          void this.router.navigate([espace, 'activation'], { queryParams: { email: login.trim() } });
-          return;
-        }
-        // 401 = identifiants invalides OU compte désactivé : on affiche le message backend si présent.
-        const message = err.status === 401 ? err.message || 'Identifiants invalides.' : err.message;
-        // Boîte de dialogue centrée (règle maison du 06/08 : un refus s'accuse réception) ;
-        // le bandeau en ligne reste comme rappel une fois le dialogue fermé.
-        this.toast.error(message, 'Connexion refusée');
-        this.errorMessage.set(message);
-      },
-    });
-  }
-
-  /** Pas d'endpoint public de réinitialisation : on oriente vers l'administrateur. */
-  motDePasseOublie(): void {
-    this.toast.info(
-      "Mot de passe oublié : contactez l'administrateur pour une réinitialisation.",
-    );
-  }
-}
+export class Login {}

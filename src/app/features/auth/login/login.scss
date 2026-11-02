@@ -76,108 +76,18 @@
   padding: 32px;
 }
 
-.login-form {
-  width: 100%;
-  max-width: 22rem;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  font-size: 13px;
-
-  &__title {
-    margin: 0 0 4px;
-    font-family: var(--police-titre);
-    font-size: 17px;
-    font-weight: 500;
-    color: var(--texte);
-  }
-
-  &__error {
-    padding: 8px 12px;
-    border-radius: 6px;
-    background: var(--retard-fond);
-    color: var(--retard-texte);
-  }
-
-  &__hint {
-    margin-top: -6px;
-    font-size: 12px;
-    color: var(--retard-texte);
-  }
-
-  &__row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  &__remember {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--texte-secondaire);
-    cursor: pointer;
-  }
-  &__remember input { accent-color: var(--bouton-principal); }
-
-  &__forgot {
-    padding: 0;
-    border: 0;
-    background: none;
-    font: inherit;
-    color: var(--texte);
-    text-decoration: underline;
-    text-decoration-color: var(--lien-soulignement);
-    text-underline-offset: 3px;
-    cursor: pointer;
-  }
-
-  &__submit {
-    width: 100%;
-    margin-top: 4px;
-    justify-content: center;
-  }
-
-  &__signup {
-    margin: 4px 0 0;
-    font-size: 12px;
-    color: var(--texte-secondaire);
-  }
-  &__signup a {
-    color: var(--texte);
-    text-decoration: underline;
-    text-decoration-color: var(--lien-soulignement);
-    text-underline-offset: 3px;
-  }
+/* ⚠️ 01/11 — le formulaire et ses champs sont stylés par FormulaireConnexion ; restent sa largeur et les liens du bas. */
+.login-card__formulaire { width: 100%; max-width: 22rem; }
+.login-form__signup {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--texte-secondaire);
 }
-
-/* Champ : libellé visible au-dessus, contour --bordure-champ (3,32:1). */
-.login-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-
-  &__libelle {
-    font-size: 11px;
-    color: var(--texte-secondaire);
-  }
-  &__input {
-    padding: 8px 10px;
-    border: 1px solid var(--bordure-champ);
-    border-radius: 6px;
-    background: var(--carte-fond);
-    color: var(--texte);
-    font: inherit;
-    font-size: 13px;
-
-    &:focus-visible {
-      outline: 2px solid var(--bouton-principal);
-      outline-offset: 1px;
-    }
-  }
-  &--invalid .login-field__input { border-color: var(--retard-texte); }
+.login-form__signup a {
+  color: var(--texte);
+  text-decoration: underline;
+  text-decoration-color: var(--lien-soulignement);
+  text-underline-offset: 3px;
 }
 
 .lg-pied {

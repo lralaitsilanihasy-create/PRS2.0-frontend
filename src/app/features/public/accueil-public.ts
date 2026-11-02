@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs/operators';
 
 import { Icone } from '../../shared/ui/icone';
+import { FormulaireConnexion } from '../auth/login/formulaire-connexion';
 import { AUDIENCES, AudiencePublique, CONTENU_PUBLIC, Fragment, audienceDepuis } from './accueil-public-libelles';
 
 /**
@@ -13,11 +14,14 @@ import { AUDIENCES, AudiencePublique, CONTENU_PUBLIC, Fragment, audienceDepuis }
  * haut avec deux onglets d'audience et le bouton Connexion, barre secondaire « ce que vous pouvez faire », bannière
  * en dégradé (pas de photo) portant le titre, la promesse, les actions et trois repères fixes, puis un titre de
  * section et trois cartes dont les mots-clés sont des liens. `/login` et `/inscription` sont inchangés.
+ *
+ * ⚠️ 01/11 (pilote, maquette « Portail public », variante A) — le formulaire de connexion (`FormulaireConnexion`, celui de
+ * `/login`) est posé à droite de la bannière ; la barre secondaire et les boutons en double sont retirés ; le pied reste en bas.
  */
 @Component({
   selector: 'app-accueil-public',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icone],
+  imports: [RouterLink, Icone, FormulaireConnexion],
   templateUrl: './accueil-public.html',
   styleUrl: './accueil-public.scss',
 })
@@ -43,14 +47,13 @@ export class AccueilPublic {
     return CONTENU_PUBLIC[a].onglet;
   }
 
-  /** Une ancre (« #circuit ») fait défiler la page ; le routeur n'est pas concerné. */
-  estAncre(lien: string): boolean {
-    return lien.startsWith('#');
-  }
-
+  /** Une ancre (« #connexion ») fait défiler la page ; le routeur n'est pas concerné. */
   versAncre(lien: string, ev: Event): void {
     ev.preventDefault();
-    this.document.getElementById(lien.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const cible = this.document.getElementById(lien.slice(1));
+    cible?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Le formulaire de connexion : le focus va au premier champ.
+    (cible?.querySelector('input') as HTMLInputElement | null)?.focus({ preventScroll: true });
   }
 
   estMot(f: Fragment): f is { mot: string; lien?: string } {

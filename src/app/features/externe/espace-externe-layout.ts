@@ -36,7 +36,7 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
     role: 'CANDIDAT',
     racine: '/candidat',
     titre: 'Espace candidat',
-    navPublique: [{ label: 'Procédures ouvertes', path: '/candidat/procedures' }],
+    navPublique: [{ label: 'Avis ouverts', path: '/candidat/procedures' }],
     navConnecte: [
       { label: 'Mes offres', path: '/candidat/offres' },
       { label: 'Mes invitations', path: '/candidat/invitations' },

@@ -36,7 +36,7 @@ const LIBELLES_ETAT: Readonly<Record<EtatProcedureEnLigne, string>> = {
       <app-etat-erreur message="Vos invitations n'ont pas pu être chargées." (reessayer)="charger()" />
     } @else if (!invitations().length) {
       <app-etat-vide-candidat icone="mail" titre="Aucune invitation" texte="Les consultations restreintes ne sont pas publiées. Si une lettre d’invitation vous a été adressée par courriel, créez votre compte avec cette même adresse : l’invitation s’y rattache.">
-        <a etatVideAction class="btn btn-outline btn-sm" routerLink="/candidat/procedures">Voir les procédures ouvertes</a>
+        <a etatVideAction class="btn btn-outline btn-sm" routerLink="/candidat/procedures">Voir les avis ouverts</a>
       </app-etat-vide-candidat>
     } @else {
       @if (message(); as m) { <div class="alert alert-danger" role="alert">{{ m }}</div> }

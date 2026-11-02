@@ -76,6 +76,8 @@ const PAIRES = [
   ['Pastille neutre', 'neutre-texte', 'neutre-fond', TEXTE],
   ['Bandeau de section', 'or', 'section-fond', TEXTE],
   ['Lien d’évitement', 'texte-menu', 'bouton-principal', TEXTE],
+  // ⚠️ 02/11 (pilote) — le bouton « Se connecter » du portail public, à l'or de l'accent.
+  ['Bouton de connexion du portail', 'texte', 'or', TEXTE],
 ];
 
 let echecs = 0;

@@ -32,7 +32,8 @@ import { FiltreProcedures, compteursProcedures, filtrerProcedures, lignesProcedu
   template: `
     <header class="page-header">
       <div class="page-subtitle">Espace candidat</div>
-      <h1 class="page-title">Procédures ouvertes à la remise électronique</h1>
+      <!-- ⚠️ 02/11 (pilote) — « Avis ouverts » : l'entreprise découvre l'offre par son avis (spécifique, ou à manifestation d'intérêt). -->
+      <h1 class="page-title">Avis ouverts à la remise électronique</h1>
     </header>
     <p class="page-role">
       Les appels d'offres et les appels à manifestation d'intérêt que vous pouvez retirer en ligne, la date limite la plus proche d'abord.
@@ -44,7 +45,7 @@ import { FiltreProcedures, compteursProcedures, filtrerProcedures, lignesProcedu
     } @else if (erreur()) {
       <app-etat-erreur message="Les procédures n'ont pas pu être chargées." (reessayer)="charger()" />
     } @else if (!lignes().length) {
-      <app-etat-vide-candidat icone="globe" titre="Aucune procédure ouverte en ligne pour le moment" texte="Les appels d’offres et les appels à manifestation d’intérêt paraissent ici dès la publication de leur avis." />
+      <app-etat-vide-candidat icone="globe" titre="Aucun avis ouvert en ligne pour le moment" texte="Les appels d’offres et les appels à manifestation d’intérêt paraissent ici dès la publication de leur avis." />
     } @else {
       @let c = compteurs();
       <section class="pel__compteurs" aria-label="En bref">
@@ -213,7 +214,7 @@ export class ProceduresEnLigne implements OnInit {
   }
 
   ngOnInit(): void {
-    this.document.title = 'Procédures ouvertes — Espace candidat — PRS 2.0';
+    this.document.title = 'Avis ouverts — Espace candidat — PRS 2.0';
     this.charger();
   }
 
