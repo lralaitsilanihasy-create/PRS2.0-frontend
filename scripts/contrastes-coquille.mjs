@@ -85,6 +85,10 @@ const PAIRES = [
   // ⚠️ 02/11 (pilote) — portail public : l'onglet de public actif, à l'or ; les autres au survol.
   ['Portail : onglet de public actif', 'texte', 'or', TEXTE],
   ['Portail : onglet de public au survol', 'texte-menu', 'menu-survol', TEXTE],
+  ['Portail CNM : texte de la bannière', 'texte-menu', 'portail-cnm-fond', TEXTE],
+  ['Portail CNM : chiffres des repères (or)', 'or', 'portail-cnm-fond', TEXTE],
+  ['Portail Entreprises : texte de la bannière', 'texte-menu', 'portail-entreprises-fond', TEXTE],
+  ['Portail Entreprises : chiffres des repères (or)', 'or', 'portail-entreprises-fond', TEXTE],
 ];
 
 let echecs = 0;

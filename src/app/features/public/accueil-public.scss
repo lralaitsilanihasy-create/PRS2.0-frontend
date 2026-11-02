@@ -135,10 +135,14 @@
 /* ── Bannière : la promesse à gauche, la connexion à droite. ── */
 .pub-main {
   flex: 1;
+  /* ⚠️ 02/11 (pilote) — chaque public a son fond : bannière et pastilles des étapes. */
+  --portail-fond: var(--menu-fond);
 }
+.pub-main[data-public='commission'] { --portail-fond: var(--portail-cnm-fond); }
+.pub-main[data-public='candidat'] { --portail-fond: var(--portail-entreprises-fond); }
 .pub-hero {
   /* Bande du menu (design institutionnel, 31/10) : l’or des repères y tient son contraste (scripts/contrastes-coquille.mjs). */
-  background: var(--menu-fond);
+  background: var(--portail-fond);
   color: var(--texte-menu);
 }
 .pub-hero__in {
@@ -265,8 +269,8 @@
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: var(--onglet-actif-fond);
-  color: var(--texte);
+  background: var(--portail-fond);
+  color: var(--texte-menu);
   display: grid;
   place-items: center;
   font-size: 13px;

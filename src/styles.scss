@@ -44,6 +44,10 @@
   --favorable-fond: #E3F4EA; --favorable-texte: #187547;
   --neutre-fond: #ECEEF1;    --neutre-texte: #3C4043;
   --bandeau-1: #FFFFFF; --bandeau-2: #C8102E; --bandeau-3: #007A3D;
+  /* ⚠️ 02/11 (pilote) — le portail public : un fond par public. PRMP & UGPM garde la bande du menu ; la CNM et les entreprises
+     prennent le vert et le rouge du bandeau, assombris pour le blanc et l’or (scripts/contrastes-coquille.mjs). */
+  --portail-cnm-fond: #0E4A32;
+  --portail-entreprises-fond: #5E1A26;
 
   /* Typographie — texte courant sans empattement (pile système). ⚠️ 31/10 (pilote, Espace de travail) — les TITRES passent
      eux aussi sans empattements ; Georgia ne reste que pour la marque « PRS 2.0 » de l'en-tête (--police-marque). */
