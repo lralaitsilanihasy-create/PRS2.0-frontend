@@ -53,7 +53,7 @@ export function proceduresPourMarche(lignes: readonly LigneEligible[], sousTypeM
 
 /** ⚠️ 27/10 (P1) — pourquoi le dossier de marché d'une procédure papier ne peut pas encore naître. */
 export const MOTIFS_MARCHE_PAPIER: Readonly<Record<string, string>> = {
-  FICHE_NON_VALIDEE: 'La fiche DAO n’est pas validée.',
+  FICHE_NON_VALIDEE: 'Les informations du DAO ne sont pas validées.',
   DOSSIER_NON_CLOTURE: 'Le dossier de mise en concurrence n’est pas encore clôturé.',
   AVIS_NON_FAVORABLE: 'L’avis de la Commission sur le DAO n’est pas favorable.',
   AVIS_NON_PUBLIE: 'L’avis spécifique n’a pas encore été imprimé (publié).',
@@ -171,7 +171,7 @@ export function lotsPapierACreer(l: Pick<LigneEligible, 'lots' | 'dossiersMarche
               </tr>
             } @empty {
               <tr><td colspan="6" class="dm__vide">
-                Aucune procédure prête : il faut une fiche DAO validée ; en remise électronique, un dossier de mise en concurrence clôturé
+                Aucune procédure prête : il faut des informations du DAO validées ; en remise électronique, un dossier de mise en concurrence clôturé
                 et des offres reçues en ligne.
               </td></tr>
             }

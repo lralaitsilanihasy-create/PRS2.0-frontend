@@ -19,3 +19,22 @@ export const accueilPublicGuard: CanActivateFn = () => {
   if (espace) return router.parseUrl(espace);
   return router.parseUrl(cheminAFaire(auth.role()) ?? '/');
 };
+
+/** Les trois publics du portail (`/accueil/:audience`). */
+export type PublicPortail = 'prmp' | 'commission' | 'candidat';
+
+/**
+ * ⚠️ 02/11 (pilote) — le public du portail dont relève un profil : PRMP et UGPM (et le Responsable de procédure, de leur côté) sur
+ * « PRMP & UGPM », le candidat sur « Entreprises », les profils de la CNM et l'Administrateur sur « CNM ». Les membres de CAO et les
+ * dépositaires, invités par une PRMP, relèvent de « PRMP & UGPM ».
+ */
+export function publicDuRole(role: string | null | undefined): PublicPortail {
+  if (role === 'CANDIDAT') return 'candidat';
+  if (!role || ['PRMP', 'UGPM', 'RESPONSABLE_PROCEDURE', 'MEMBRE_CAO', 'DEPOSITAIRE'].includes(role)) return 'prmp';
+  return 'commission';
+}
+
+/** ⚠️ 02/11 (pilote) — après la déconnexion, le portail public, sur l'onglet du profil qui sort (rôle lu AVANT la déconnexion). */
+export function accueilApresDeconnexion(role: string | null | undefined): string {
+  return `/accueil/${publicDuRole(role)}`;
+}

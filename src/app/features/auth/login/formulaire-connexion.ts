@@ -1,11 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, input, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { ApiError } from '../../../core/errors/api-error';
 import { espaceExterneDe } from '../../../core/auth/auth.guard';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ToastService } from '../../../core/notifications/toast.service';
+import { PublicPortail, publicDuRole } from '../../../core/navigation/accueil-public.guard';
+import { CONTENU_PUBLIC } from '../../public/accueil-public-libelles';
 
 /**
  * ⚠️ 01/11 (pilote, maquette « Portail public », variante A) — le FORMULAIRE de connexion, seul point d'entrée de
@@ -15,14 +17,17 @@ import { ToastService } from '../../../core/notifications/toast.service';
 @Component({
   selector: 'app-formulaire-connexion',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   template: `
     <form class="login-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
       <h2 class="login-form__title" [id]="idTitre()">{{ titre() }}</h2>
       @if (sousTitre()) { <p class="login-form__sous">{{ sousTitre() }}</p> }
 
       @if (errorMessage()) {
-        <div class="login-form__error" role="alert">{{ errorMessage() }}</div>
+        <div class="login-form__error" role="alert">{{ errorMessage() }}
+          <!-- ⚠️ 02/11 (pilote) — un compte d'un autre public : le lien mène à l'onglet où il se connecte. -->
+          @if (bonPublic(); as bon) { <a class="login-form__vers" [routerLink]="['/accueil', bon]">Aller à l’onglet « {{ onglet(bon) }} »</a> }
+        </div>
       }
 
       <!-- Libellé visible au-dessus du champ : le champ reste nommé quand le texte de substitution disparaît (AUDIT.md A7). -->
@@ -67,7 +72,7 @@ import { ToastService } from '../../../core/notifications/toast.service';
         <button type="button" class="login-form__forgot" (click)="motDePasseOublie()">Mot de passe oublié&nbsp;?</button>
       </div>
 
-      <button type="submit" class="btn login-form__submit" [class.btn-primary]="accent() === 'defaut'" [class.login-form__submit--or]="accent() === 'or'" [disabled]="submitting()">
+      <button type="submit" class="btn btn-primary login-form__submit" [disabled]="submitting()">
         {{ submitting() ? 'Connexion…' : 'Se connecter' }}
       </button>
 
@@ -80,6 +85,7 @@ import { ToastService } from '../../../core/notifications/toast.service';
     .login-form__title { margin: 0; font-size: 17px; font-weight: 500; color: var(--texte); }
     .login-form__sous { margin: -6px 0 0; font-size: 12px; color: var(--texte-secondaire); }
     .login-form__error { padding: 8px 12px; border-radius: 6px; background: var(--retard-fond); color: var(--retard-texte); }
+    .login-form__vers { display: block; margin-top: 4px; color: var(--retard-texte); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
     .login-form__hint { margin-top: -6px; font-size: 12px; color: var(--retard-texte); }
     .login-form__row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
     .login-form__remember { display: inline-flex; align-items: center; gap: 6px; color: var(--texte-secondaire); cursor: pointer; }
@@ -89,10 +95,6 @@ import { ToastService } from '../../../core/notifications/toast.service';
       text-decoration: underline; text-decoration-color: var(--lien-soulignement); text-underline-offset: 3px;
     }
     .login-form__submit { width: 100%; margin-top: 4px; justify-content: center; }
-    /* ⚠️ 02/11 (pilote) — sur le portail, le bouton prend l'or de l'accent (repères, bandeau) au lieu du bleu vif. */
-    .login-form__submit--or { background: var(--or); border-color: var(--or); color: var(--texte); font-weight: 500; }
-    .login-form__submit--or:hover:not(:disabled) { filter: brightness(0.95); }
-    .login-form__submit--or:focus-visible { outline: 2px solid var(--section-fond); outline-offset: 2px; }
     /* Champ : libellé visible au-dessus, contour --bordure-champ (3,32:1). */
     .login-field { display: flex; flex-direction: column; gap: 4px; }
     .login-field__libelle { font-size: 11px; color: var(--texte-secondaire); }
@@ -115,8 +117,14 @@ export class FormulaireConnexion {
   readonly sousTitre = input<string | null>(null);
   /** Préfixe des identifiants du formulaire (titre, messages) : l'hôte le nomme par `aria-labelledby`. */
   readonly idTitre = input('connexion');
-  /** La couleur du bouton : le bleu des boutons principaux (écran `/login`), ou l'or de l'accent (portail public). */
-  readonly accent = input<'defaut' | 'or'>('defaut');
+  /**
+   * ⚠️ 02/11 (pilote) — sur le portail, le public de l'onglet : chaque public ne se connecte que depuis son onglet. Un compte d'un autre
+   * public voit sa session refermée aussitôt, avec un lien vers le bon onglet. `null` (écran `/login`) : tous les comptes. Ce n'est pas
+   * une garde de sécurité — le serveur reste juge des droits —, c'est l'entrée de chacun.
+   */
+  readonly publicAttendu = input<PublicPortail | null>(null);
+  /** Le public dont relève le compte refusé (le lien vers son onglet). */
+  readonly bonPublic = signal<PublicPortail | null>(null);
 
   readonly form = this.fb.nonNullable.group({
     login: ['', Validators.required],
@@ -128,6 +136,11 @@ export class FormulaireConnexion {
   readonly errorMessage = signal<string | null>(null);
 
   constructor() {
+    // Changer d'onglet efface le refus de l'onglet précédent.
+    effect(() => {
+      this.publicAttendu();
+      untracked(() => { this.errorMessage.set(null); this.bonPublic.set(null); });
+    });
     // ⚠️ Soumission en ligne, lot 1 (04/10) — la confirmation du compte candidat renvoie ici avec l'adresse (`?login=`).
     const login = this.route.snapshot.queryParamMap.get('login');
     if (login) this.form.patchValue({ login });
@@ -140,10 +153,23 @@ export class FormulaireConnexion {
     }
     this.submitting.set(true);
     this.errorMessage.set(null);
+    this.bonPublic.set(null);
 
     const { login, motDePasse, seSouvenir } = this.form.getRawValue();
     this.auth.authenticate({ login, motDePasse }, seSouvenir).subscribe({
       next: (res) => {
+        const attendu = this.publicAttendu();
+        const bon = publicDuRole(res.role);
+        if (attendu && bon !== attendu) {
+          this.auth.logout();
+          this.submitting.set(false);
+          this.form.controls.motDePasse.reset('');
+          const message = `Ce compte relève de l’espace « ${this.onglet(bon)} » : connectez-vous depuis cet onglet.`;
+          this.toast.error(message, 'Connexion refusée');
+          this.errorMessage.set(message);
+          this.bonPublic.set(bon);
+          return;
+        }
         const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
         // Un profil EXTERNE (candidat, membre de CAO) n'a que son espace : un retour vers la coquille interne (ou aucun)
         // le mène à sa racine.
@@ -181,6 +207,10 @@ export class FormulaireConnexion {
         this.errorMessage.set(message);
       },
     });
+  }
+
+  onglet(p: PublicPortail): string {
+    return CONTENU_PUBLIC[p].onglet;
   }
 
   /** Pas d'endpoint public de réinitialisation : on oriente vers l'administrateur. */

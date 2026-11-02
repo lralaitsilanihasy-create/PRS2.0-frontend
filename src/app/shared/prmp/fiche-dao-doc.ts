@@ -74,9 +74,9 @@ export interface ObservationCelluleFiche {
   host: { '(window:resize)': 'mesurer()', '(keydown)': 'clavier($event)' },
   template: `
     @if (chargement()) {
-      <p class="doc-etat" role="status">Chargement de la fiche DAO…</p>
+      <p class="doc-etat" role="status">Chargement des informations du DAO…</p>
     } @else if (erreur() || !fiche()) {
-      <p class="doc-etat">La fiche DAO de ce dossier n'a pas pu être lue.</p>
+      <p class="doc-etat">Les informations du DAO de ce dossier n'ont pas pu être lues.</p>
     } @else if (vue() === 'volets') {
       <!-- ⚠️ 31/10 (pilote, maquette « Fiche DAO sans défilement », variante B) — la fenêtre de la page du dossier : le sommaire des blocs
            (noms complets) à gauche, UN bloc à droite en deux colonnes ; un bloc qui ne tient pas passe sur une page suivante plutôt
@@ -181,7 +181,7 @@ export interface ObservationCelluleFiche {
              (le DAO complet en PDF) projetée à droite. -->
         <header class="doc-entete fd-tete">
           <div class="fd-tete__texte">
-            <p class="fd-tete__sur">Fiche DAO</p>
+            <p class="fd-tete__sur">Informations du DAO</p>
             <h2 class="doc-titre fd-tete__titre">{{ fiche()!.designationMarche }}</h2>
             <p class="doc-sous-titre fd-tete__puces">
               <span class="fd-puce">Version {{ fiche()!.version }}</span>

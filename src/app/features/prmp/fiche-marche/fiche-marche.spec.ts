@@ -211,15 +211,21 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     monter('PRMP', null);
     http.expectOne('/api/dmcs/eligibles').flush(LIGNES);
     rendre();
-    const lignes = Array.from(racine().querySelectorAll('tbody tr'));
+    const lignes = Array.from(racine().querySelectorAll('tbody tr:not(.fm-liste__plan)'));
     expect(lignes.length).toBe(3);
-    // ⚠️ 29/09 (pilote) — la forme du marché a sa propre colonne (3e) ; la catégorie reste sous le mode.
-    expect(Array.from(racine().querySelectorAll('thead th')).map((e) => texte(e))).toEqual([
-      'Dossier de planification', 'Nature', 'Forme', 'Objet du marché', 'Mode de passation', 'Montant estimatif', 'Action',
-    ]);
-    expect(lignes.map((l) => texte(l.querySelectorAll('td')[2]))).toEqual(['Quantité fixe', 'Quantité fixe', 'Contrat-cadre']);
-    expect(Array.from(racine().querySelectorAll('.fm__forme')).map((e) => texte(e)))
-      .toEqual(['Fournitures et services', 'Fournitures et services', 'Fournitures et services']);
+    // ⚠️ 02/11 (pilote, variante A) — quatre colonnes ; nature, forme, mode et catégorie sous l'objet ; le plan en intertitre.
+    expect(Array.from(racine().querySelectorAll('thead th')).map((e) => texte(e))).toEqual(['Objet du marché', 'Étape', 'Montant estimatif', 'Action']);
+    expect(lignes.map((l) => texte(l.querySelector('.fm-liste__forme')))).toEqual(['Quantité fixe', 'Quantité fixe', 'Contrat-cadre']);
+    expect(lignes.every((l) => texte(l.querySelector('.fm-liste__sous')).includes('Fournitures et services'))).toBe(true);
+    expect(racine().querySelectorAll('.fm-liste__plan').length).toBeGreaterThanOrEqual(1);
+    // Le filtre par étape dit ses nombres ; « Lancés » vide la liste ici (aucune ligne n'a de dossier clôturé).
+    const filtres = Array.from(racine().querySelectorAll<HTMLButtonElement>('.fm-liste__seg button'));
+    expect(filtres.map((b) => texte(b))).toEqual(['Toutes 3', 'À préparer 2', 'En préparation 1', 'À la CNM 0', 'Lancés 0']);
+    filtres[4].click();
+    rendre();
+    expect(texte(racine().querySelector('tbody'))).toContain('Aucun appel d’offres ne correspond à ce filtre.');
+    filtres[0].click();
+    rendre();
     const bloquee = lignes[2].querySelector('button') as HTMLButtonElement;
     expect(texte(bloquee)).toBe('Pas encore pris en charge');
     expect(bloquee.disabled).toBe(true);
@@ -227,7 +233,7 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     expect(texte(lignes[0])).toContain('420 000 000 Ar');
     expect(racine().querySelector('.alert')).toBeNull();
 
-    bouton('Ouvrir la fiche').click();
+    bouton('Ouvrir les informations du DAO').click();
     expect(navigate).toHaveBeenCalledWith(['/prmp/dao', 42]);
 
     bouton('Préparer l’appel d’offres').click();
@@ -241,7 +247,7 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     monter('PRMP', null, { dossier: '3' });
     http.expectOne('/api/dmcs/eligibles').flush([...LIGNES, { ...LIGNES[0], idDetail: 30, idDossier: 8, refeDossier: 'PPM-2026-008', designationMarche: 'Autre PPM' }]);
     rendre();
-    expect(racine().querySelectorAll('tbody tr').length).toBe(3);
+    expect(racine().querySelectorAll('tbody tr:not(.fm-liste__plan)').length).toBe(3);
     expect(texte(racine().querySelector('.fm__filtre'))).toContain('Lignes du plan de passation PPM-2026-003');
     expect((racine().querySelector('.fm__filtre a') as HTMLAnchorElement).getAttribute('href')).toBe('/prmp/dao');
     TestBed.resetTestingModule();
@@ -258,7 +264,7 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     http.expectOne('/api/dmcs/eligibles').flush(LIGNES);
     rendre();
     expect(navigate).not.toHaveBeenCalled();
-    expect(racine().querySelectorAll('tbody tr').length).toBe(3);
+    expect(racine().querySelectorAll('tbody tr:not(.fm-liste__plan)').length).toBe(3);
   });
 
   it('14/10 (pilote) — ?sousType= depuis « Créer dossier » : seules les lignes de ce sous-type, avec le bandeau qui le dit', () => {
@@ -268,7 +274,7 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     // Le sous-type de chaque ligne est servi par le serveur (backend e16a4f5) ; les lignes de LIGNES sont des DAOO.
     http.expectOne('/api/dmcs/eligibles').flush([...LIGNES.map((l) => ({ ...l, sousType: 'DAOO' })), preq, pi]);
     rendre();
-    const lignes = Array.from(racine().querySelectorAll('tbody tr'));
+    const lignes = Array.from(racine().querySelectorAll('tbody tr:not(.fm-liste__plan)'));
     expect(lignes.length).toBe(1);
     expect(texte(lignes[0])).toContain('Pont (pré-qualification)');
     expect(texte(racine().querySelector('[data-testid=fm-filtre-sous-type]'))).toContain('dossier d’appel d’offres ouvert avec pré-qualification');
@@ -418,7 +424,7 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     fixture.componentInstance.charger();
     http.expectOne('/api/dmcs/eligibles').flush(LIGNES);
     rendre();
-    expect(racine().querySelectorAll('tbody tr').length).toBe(3);
+    expect(racine().querySelectorAll('tbody tr:not(.fm-liste__plan)').length).toBe(3);
   });
 
   it('fiche sans contrat : structure de l’esquisse (8 blocs à saisir, comptes attendus), cadrage ouvert mais non enregistrable', () => {

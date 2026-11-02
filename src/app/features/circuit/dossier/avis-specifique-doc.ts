@@ -25,7 +25,7 @@ import { DossierService } from '../../../services';
       } @else if (avis(); as a) {
         <div class="as__tete">
           <h3 id="as-titre" class="as__titre">{{ a.lettre ? 'Projet de lettre d’invitation' : 'Projet d’avis spécifique d’appel d’offres' }}</h3>
-          <span class="as__version">fiche DAO, version {{ a.versionFiche }}</span>
+          <span class="as__version">informations du DAO, version {{ a.versionFiche }}</span>
           @if (!a.documentComplet) { <span class="as__incomplet">mention(s) à compléter</span> }
           <!-- ⚠️ 18/10 (pilote) — le projet en Word, repris de l'ancien encart de la page (le PDF est la pièce jointe d'office). -->
           @if (domaine()) {
@@ -48,7 +48,7 @@ import { DossierService } from '../../../services';
             </div>
           }
         </dl>
-        <p class="as__aide">Produit par l’application à partir de la fiche DAO : il tient lieu de l’imprimé du SIGMP. Sans information de publication : celle-ci s’imprime avec l’avis, après le PV favorable.</p>
+        <p class="as__aide">Produit par l’application à partir des informations du DAO : il tient lieu de l’imprimé du SIGMP. Sans information de publication : celle-ci s’imprime avec l’avis, après le PV favorable.</p>
       }
     </section>
   `,
@@ -94,7 +94,7 @@ export class AvisSpecifiqueDoc {
         error: (e: ApiError) => {
           this.avis.set(null);
           this.chargement.set(false);
-          this.refus.set(corpsErreur<{ message?: string }>(e)?.message ?? 'Le projet d’avis n’est pas disponible : la fiche DAO doit être validée.');
+          this.refus.set(corpsErreur<{ message?: string }>(e)?.message ?? 'Le projet d’avis n’est pas disponible : les informations du DAO doivent être validées.');
         },
       });
       nettoyer(() => abonnement.unsubscribe());

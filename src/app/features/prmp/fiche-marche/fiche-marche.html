@@ -1,4 +1,6 @@
-<section class="fm">
+<!-- ⚠️ 02/11 (pilote, maquette « Informations du DAO », variante B) — deux grands onglets : « La fiche » (cadrage, étapes, bilan) et
+     « La procédure » (le suivi, jalon par jalon). Dans l'onglet de la procédure, le reste de la fiche s'efface (classe sur la section). -->
+<section class="fm" [class.fm--procedure]="ongletsFiche() && ongletFiche() === 'procedure'">
   <nav class="fm__fil" aria-label="Fil d'Ariane">
     @if (enLecture()) {
       <!-- ⚠️ Examen (25/09) — un contrôleur revient au DOSSIER qu'il examine, pas à « Créer dossier », écran de la PRMP. -->
@@ -12,7 +14,7 @@
            « Créer dossier » : la fiche remonte à la liste des appels d'offres. -->
       <a routerLink="/prmp/dao"><app-icone nom="chevl" [taille]="14" />Appels d’offres</a>
       <app-icone nom="chev" [taille]="12" />
-      <span>Fiche DAO</span>
+      <span>Informations du DAO</span>
     }
   </nav>
 
@@ -23,18 +25,14 @@
            en infobulle — mais seulement si elle est vraiment coupée (cf. appTitreSiTronque). -->
       <h1 class="page-title fm__titre" appTitreSiTronque>
         @if (idDmc() == null) { Appels d’offres }
-        @else { Fiche DAO{{ fiche()?.designationMarche ? ' — ' + fiche()?.designationMarche : '' }} }
+        @else { Informations du DAO{{ fiche()?.designationMarche ? ' — ' + fiche()?.designationMarche : '' }} }
       </h1>
     </div>
     @if (fiche(); as f) {
       <div class="fm__ref">
         @if (categorie(); as c) { <span class="fm__rep fm__rep--plan" title="Catégorie de dossier, déduite de la nature de la ligne du plan de passation">{{ libellesCategories[c] }}</span> }
         @if (typeMarche(); as t) { <span class="fm__rep fm__rep--plan" title="Forme du marché, reprise de la ligne du plan de passation">{{ libellesTypes[t] }}</span> }
-        <span class="cnm-mono">ligne {{ f.idDetail }} du PPM {{ f.refeDossier || ('#' + f.idDossier) }}</span>
-        <!-- ⚠️ 19/10 (pilote) — l'état du dossier soumis, à côté de la ligne du plan. -->
-        @if (dossierSoumis(); as d) {
-          <span class="fm__rep" [class.fm__rep--non]="d.statut === 'BROUILLON'" title="Le dossier soumis à la Commission depuis cette fiche">Dossier {{ d.refeDossier || ('n° ' + f.idDossierSoumis) }} : {{ libelleStatutDossier() }}</span>
-        }
+        <!-- ⚠️ 02/11 (variante B) — la ligne du plan et le dossier soumis se lisent dans la bande de chiffres, sous l'en-tête. -->
         <!-- ⚠️ Remise électronique (27/09) — l'ÉTAT des paramètres internes se lit par tous ; leurs valeurs, par le seul titulaire. -->
         @if (modeElectronique() && f.parametresInternes; as etat) {
           <span class="fm__rep" [class.fm__rep--ko]="etat !== 'COMPLETS'" title="Paramètres internes de la procédure (écran séparé du responsable)">Paramètres internes : {{ libelleEtatInternes(etat) }}</span>
@@ -49,12 +47,36 @@
       </div>
     }
   </header>
+
+  @if (fiche(); as f) {
+    <!-- ⚠️ 02/11 (variante B) — les chiffres de la fiche : ligne du plan, dossier, version, informations saisies, offres. -->
+    <dl class="fm-cles">
+      <div><dt>Ligne du plan</dt><dd>n° {{ f.idDetail }}<small> · PPM {{ f.refeDossier || ('#' + f.idDossier) }}</small></dd></div>
+      @if (dossierSoumis(); as d) {
+        <div><dt>Dossier</dt><dd>{{ d.refeDossier || ('n° ' + f.idDossierSoumis) }}<small> · {{ libelleStatutDossier() }}</small></dd></div>
+      }
+      <div><dt>{{ figee() ? 'Version validée' : 'Version' }}</dt><dd>v{{ f.version }}<small> · {{ figee() ? (dateValidation() ? 'le ' + dateValidation() : 'validée') : 'brouillon' }}</small></dd></div>
+      <div class="fm-cles--or"><dt>Informations saisies</dt><dd>{{ prog().saisis }} sur {{ prog().attendus }}</dd>
+        <dd class="fm-cles__jauge" aria-hidden="true"><i [style.width.%]="prog().attendus ? (prog().saisis * 100) / prog().attendus : 0"></i></dd></div>
+      @if (modeElectronique() && f.depots; as dep) {
+        <div><dt>Offres</dt><dd>{{ dep.nombre }} déposée{{ dep.nombre > 1 ? 's' : '' }}<small>{{ dep.clos ? ' · dépôts clos' : '' }}</small></dd></div>
+      }
+    </dl>
+    @if (ongletsFiche()) {
+      <div class="fm-onglets" role="tablist" aria-label="Informations du DAO">
+        <button type="button" role="tab" id="fm-tab-fiche" [attr.aria-selected]="ongletFiche() === 'fiche'" (click)="ongletFiche.set('fiche')">La fiche</button>
+        <button type="button" role="tab" id="fm-tab-proc" [attr.aria-selected]="ongletFiche() === 'procedure'" (click)="ongletFiche.set('procedure')">
+          La procédure@if (jalonsAFaire()) { <span class="fm-onglets__n" [attr.aria-label]="jalonsAFaire() + ' jalon(s) non abouti(s)'">{{ jalonsAFaire() }}</span> }
+        </button>
+      </div>
+    }
+  }
   <!-- ⚠️ 19/10 (pilote) — le suivi de la procédure : les états (commission, cérémonie, dépôts) et les écrans (retraits, reçus,
        questions, séance, évaluation) étaient mêlés en puces et en boutons dans l'en-tête. Une carte par geste, avec son état. -->
   @if (fiche(); as f) {
-    @if (suiviVisible()) {
-      <section class="fm__suivi" aria-labelledby="fm-suivi">
-        <h2 id="fm-suivi" class="fm__suivi-titre">Suivi de la procédure</h2>
+    @if (suiviVisible() && ongletFiche() === 'procedure') {
+      <section class="fm__suivi" role="tabpanel" aria-labelledby="fm-tab-proc">
+        <h2 id="fm-suivi" class="fm__suivi-titre">Suivi de la procédure — vert : fait ou ouvert · ocre : à compléter</h2>
         <div class="fm__suivi-grille">
           @if (lienAmi(); as lien) {
             <a class="fm__suivi-carte" [routerLink]="lien"><app-icone nom="users" [taille]="18" /><span class="fm__suivi-nom">Appel à manifestation d’intérêt</span><span class="fm__suivi-etat">Liste restreinte</span></a>
@@ -144,11 +166,11 @@
     } @else if (idDmc() == null) {
       <!-- ⚠️ 01/11 (pilote, « les mots du menu ») — la liste des appels d'offres : ce qu'elle montre et ce qu'on y fait. -->
       <p class="page-role">
-        Vos appels d’offres, une ligne du plan de passation chacun : préparez la fiche DAO d’une ligne éligible, puis suivez ses reçus
+        Vos appels d’offres, une ligne du plan de passation chacun : préparez les informations du DAO d’une ligne éligible, puis suivez ses reçus
         de frais de dossier et les offres déposées.
       </p>
     } @else if (ficheVerrouillee()) {
-      <p class="page-role">La fiche validée de la procédure, figée depuis la soumission du dossier : son suivi ci-dessus, ses informations et ses documents en consultation ci-dessous.</p>
+      <p class="page-role">La fiche validée de la procédure, figée depuis la soumission du dossier : ses informations et ses documents en consultation ci-dessous ; son suivi, jalon par jalon, dans l’onglet « La procédure ».</p>
     } @else {
       <p class="page-role">
         Une information saisie une fois, dans un formulaire : {{ documentsEnToutesLettres() }} seront générés depuis cette fiche
@@ -172,18 +194,18 @@
     <div class="alert alert-warning" role="status">
       <app-icone nom="alert" [taille]="16" />
       @if (categorieBloque()) {
-        <span><strong>Dossier de catégorie « {{ libellesCategories[categorie()!] }} »</strong> : la fiche DAO ne prépare pour l'instant
+        <span><strong>Dossier de catégorie « {{ libellesCategories[categorie()!] }} »</strong> : les informations du DAO ne préparent pour l'instant
         que les marchés de <strong>fournitures et services</strong>. La catégorie vient de la <strong>nature</strong> de la ligne du
         plan de passation. Rien n'est à corriger : cette catégorie sera outillée à un prochain lot.</span>
       } @else if (!categorie()) {
-        <span><strong>Nature absente ou non classée sur cette ligne du plan</strong> : la fiche DAO ne peut pas savoir quelle
+        <span><strong>Nature absente ou non classée sur cette ligne du plan</strong> : les informations du DAO ne peuvent pas savoir quelle
         catégorie de dossier préparer. Complétez la <strong>nature du marché</strong> de la ligne dans le plan de passation, ou
         demandez à l'Administrateur de rattacher cette nature à une catégorie.</span>
       } @else if (typeMarche(); as t) {
         <span><strong>Marché {{ libellesTypes[t].toLowerCase() }}</strong> : la ligne du plan de passation est bien de ce type, mais la fiche
         marché ne le prépare pas encore. Rien n'est à corriger dans le plan : ce type sera outillé à un prochain lot.</span>
       } @else {
-        <span><strong>Forme du marché absente de cette ligne du plan</strong> : la fiche DAO ne peut pas savoir quel type de
+        <span><strong>Forme du marché absente de cette ligne du plan</strong> : les informations du DAO ne peuvent pas savoir quel type de
         marché préparer. Complétez la <strong>forme du marché</strong> de la ligne dans le plan de passation.</span>
       }
     </div>
@@ -237,51 +259,73 @@
         <a routerLink="/prmp/dao">Voir toutes les lignes éligibles</a>
       </p>
     }
-    <!-- ⚠️ Colonnes bornées (23/09) : une désignation de plan peut tenir sur dix lignes (lots décrits en toutes
-         lettres) — sans largeur fixe, elle poussait le mode, le montant et le BOUTON D'ACTION hors de l'écran. -->
+    <!-- ⚠️ 02/11 (pilote, maquette « Appels d'offres », variante A) — la liste se lit par ÉTAPE (filtre avec ses nombres, pastille de
+         couleur) et par PLAN (sa référence en intertitre, au lieu d'être répétée à chaque ligne) ; nature, forme, mode et catégorie
+         passent sous l'objet. Les suites (reçus à valider, offres déposées) se lisent dans la colonne de l'étape. -->
+    <div class="fm-liste__outils">
+      <div class="fm-liste__seg" role="group" aria-label="Étape des appels d'offres">
+        <button type="button" [attr.aria-pressed]="filtreEtape() === 'tous'" (click)="filtreEtape.set('tous')">Toutes <span class="fm-liste__n">{{ compteEtape('tous') }}</span></button>
+        @for (e of etapesLigne; track e.cle) {
+          <button type="button" [attr.aria-pressed]="filtreEtape() === e.cle" (click)="filtreEtape.set(e.cle)">{{ e.libelle }} <span class="fm-liste__n">{{ compteEtape(e.cle) }}</span></button>
+        }
+      </div>
+      <label class="fm-liste__cherche">
+        <span class="cnm-sr-only">Chercher un appel d'offres par son objet ou une référence</span>
+        <input type="search" class="form-control" placeholder="Chercher un objet, une référence…" [value]="rechercheLigne()" (input)="rechercheLigne.set($any($event.target).value)" />
+      </label>
+    </div>
     <div class="table-card">
-      <table class="fm__lignes">
-        <colgroup><col class="fm__c-ref" /><col class="fm__c-nat" /><col class="fm__c-forme" /><col /><col class="fm__c-mode" /><col class="fm__c-mt" /><col class="fm__c-act" /></colgroup>
+      <table class="fm-liste">
+        <colgroup><col /><col class="fm-liste__c-etape" /><col class="fm-liste__c-mt" /><col class="fm-liste__c-act" /></colgroup>
         <thead>
-          <tr><th scope="col">Dossier de planification</th><th scope="col">Nature</th><th scope="col">Forme</th><th scope="col">Objet du marché</th><th scope="col">Mode de passation</th><th scope="col" class="r">Montant estimatif</th><th scope="col" class="r">Action</th></tr>
+          <tr><th scope="col">Objet du marché</th><th scope="col">Étape</th><th scope="col" class="r">Montant estimatif</th><th scope="col" class="r">Action</th></tr>
         </thead>
         <tbody>
-          @for (l of eligiblesAffichees(); track l.idDetail) {
-            <tr>
-              <td class="cnm-mono">{{ l.refeDossier || ('#' + l.idDossier) }}</td>
-              <!-- Nature de la ligne telle que le plan la porte (pilote 29/09) — servie par /api/dmcs/eligibles. -->
-              <td>{{ l.libelleNature || '—' }}</td>
-              <!-- Forme du marché dans sa propre colonne (pilote 29/09) ; en rouge si la fiche ne la prend pas en charge. -->
-              <td [class.fm__forme--ko]="l.formeOutillee === false">{{ formeDe(l) || '—' }}</td>
-              <td><span class="fm__obj" appTitreSiTronque>{{ l.designationMarche }}</span></td>
-              <td class="fm__mode">
-                <span>{{ l.libelleMode || l.idMode || '—' }}</span>
-                @if (categorieDe(l); as cat) { <span class="fm__forme" [class.fm__forme--ko]="l.categorieOutillee === false">{{ cat }}</span> }
-              </td>
-              <td class="r cnm-mono">{{ montant(l.montEstim) }}</td>
-              <td class="r">
-                <!-- ⚠️ Lot 1c — une ligne dont la forme n'est pas prise en charge reste visible (la PRMP doit savoir
-                     qu'elle existe et pourquoi elle attend), mais sa préparation est refusée, ici comme au serveur. -->
-                <button type="button" class="btn btn-sm" [class.btn-primary]="!l.dejaDao && !ligneBloquee(l)" [class.btn-outline]="l.dejaDao || ligneBloquee(l)"
-                  [disabled]="saving() || (ligneBloquee(l) && !l.dejaDao)"
-                  [attr.title]="ligneBloquee(l) ? raisonLigneBloquee(l) : null"
-                  (click)="choisirLigne(l)">
-                  {{ l.dejaDao ? geste(l).bouton : ligneBloquee(l) ? 'Pas encore pris en charge' : 'Préparer l’appel d’offres' }}
-                </button>
-                <!-- ⚠️ 19/10 (« etat-fiche-liste ») — où en est la fiche et son dossier ; rien tant que le serveur ne le sert pas. -->
-                @if (l.dejaDao && geste(l).repere; as r) { <div class="fm__etat-ligne" [attr.data-genre]="geste(l).genre" [attr.title]="l.dossier?.refeDossier ? 'Dossier ' + l.dossier!.refeDossier : null">{{ r }}</div> }
-                <!-- 06/10 — ce qui attend sur la fiche : les reçus à valider (un candidat attend), et les offres déposées. -->
-                @if (l.idDmc && l.recusEnAttente) {
-                  <a class="fm__recus" [routerLink]="['/prmp', 'dao', l.idDmc, 'recus']">{{ l.recusEnAttente }} reçu{{ l.recusEnAttente > 1 ? 's' : '' }} à valider</a>
-                }
-                @if (l.nbOffres) { <div class="text-xs text-muted">{{ l.nbOffres }} offre{{ l.nbOffres > 1 ? 's' : '' }} déposée{{ l.nbOffres > 1 ? 's' : '' }}</div> }
-              </td>
-            </tr>
+          @for (g of groupesLignes(); track g.plan) {
+            <tr class="fm-liste__plan"><th scope="rowgroup" colspan="4">Plan {{ g.plan }} <span>· {{ g.lignes.length }} ligne{{ g.lignes.length > 1 ? 's' : '' }}</span></th></tr>
+            @for (l of g.lignes; track l.idDetail) {
+              <tr>
+                <td>
+                  <span class="fm__obj fm-liste__obj" appTitreSiTronque>{{ l.designationMarche }}</span>
+                  <!-- Nature (pilote 29/09), forme (en ocre si la fiche ne la prend pas en charge), mode et catégorie de dossier. -->
+                  <span class="fm-liste__sous">
+                    @if (formeDe(l); as forme) { <span class="fm-liste__forme" [class.fm__forme--ko]="l.formeOutillee === false">{{ forme }}</span> }
+                    <span class="fm-liste__infos">
+                      @if (l.libelleNature) { <span>{{ l.libelleNature }}</span> }
+                      <span>{{ l.libelleMode || l.idMode || '—' }}</span>
+                      @if (categorieDe(l); as cat) { <span [class.fm__forme--ko]="l.categorieOutillee === false">{{ cat }}</span> }
+                    </span>
+                  </span>
+                </td>
+                <td>
+                  <span class="fm-liste__pas" [attr.data-etape]="ligneBloquee(l) && !l.dejaDao ? 'bloque' : etapeDe(l)"
+                        [attr.title]="l.dossier?.refeDossier ? 'Dossier ' + l.dossier!.refeDossier : null">{{ pastilleEtape(l) }}</span>
+                  <!-- 06/10 — ce qui attend sur la fiche : les reçus à valider (un candidat attend), et les offres déposées. -->
+                  @if (l.idDmc && l.recusEnAttente) {
+                    <a class="fm__recus" [routerLink]="['/prmp', 'dao', l.idDmc, 'recus']">{{ l.recusEnAttente }} reçu{{ l.recusEnAttente > 1 ? 's' : '' }} à valider</a>
+                  }
+                  @if (l.nbOffres) { <span class="fm-liste__suite">{{ l.nbOffres }} offre{{ l.nbOffres > 1 ? 's' : '' }} déposée{{ l.nbOffres > 1 ? 's' : '' }}</span> }
+                </td>
+                <td class="r fm-liste__mt">{{ montant(l.montEstim) }}</td>
+                <td class="r">
+                  <!-- ⚠️ Lot 1c — une ligne dont la forme n'est pas prise en charge reste visible (la PRMP doit savoir
+                       qu'elle existe et pourquoi elle attend), mais sa préparation est refusée, ici comme au serveur. -->
+                  <button type="button" class="btn btn-sm" [class.btn-primary]="(!l.dejaDao && !ligneBloquee(l)) || etapeDe(l) === 'saisie'" [class.btn-outline]="!((!l.dejaDao && !ligneBloquee(l)) || etapeDe(l) === 'saisie')"
+                    [disabled]="saving() || (ligneBloquee(l) && !l.dejaDao)"
+                    [attr.title]="ligneBloquee(l) ? raisonLigneBloquee(l) : null"
+                    (click)="choisirLigne(l)">
+                    {{ l.dejaDao ? geste(l).bouton : ligneBloquee(l) ? 'Pas encore pris en charge' : 'Préparer l’appel d’offres' }}
+                  </button>
+                </td>
+              </tr>
+            }
           } @empty {
-            @if (libelleSousTypeFiltre(); as st) {
-              <tr><td colspan="7" class="fm__vide">Aucune ligne éligible pour un {{ st.charAt(0).toLowerCase() + st.slice(1) }} — {{ raisonSousTypeFiltre() }}. Il faut une ligne d'un PPM au PV signé, sans DAO déjà préparé ; une ligne mal renseignée se corrige dans le plan de passation.</td></tr>
+            @if (eligiblesAffichees().length) {
+              <tr><td colspan="4" class="fm__vide">Aucun appel d’offres ne correspond à ce filtre.</td></tr>
+            } @else if (libelleSousTypeFiltre(); as st) {
+              <tr><td colspan="4" class="fm__vide">Aucune ligne éligible pour un {{ st.charAt(0).toLowerCase() + st.slice(1) }} — {{ raisonSousTypeFiltre() }}. Il faut une ligne d'un PPM au PV signé, sans DAO déjà préparé ; une ligne mal renseignée se corrige dans le plan de passation.</td></tr>
             } @else {
-              <tr><td colspan="7" class="fm__vide">{{ filtreDossier() != null ? 'Aucune ligne éligible dans ce plan de passation' : 'Aucune ligne de plan de passation éligible' }} : il faut un PPM au PV signé, dont le mode de passation est un appel d'offres, sans DAO déjà préparé.</td></tr>
+              <tr><td colspan="4" class="fm__vide">{{ filtreDossier() != null ? 'Aucune ligne éligible dans ce plan de passation' : 'Aucune ligne de plan de passation éligible' }} : il faut un PPM au PV signé, dont le mode de passation est un appel d'offres, sans DAO déjà préparé.</td></tr>
             }
           }
         </tbody>

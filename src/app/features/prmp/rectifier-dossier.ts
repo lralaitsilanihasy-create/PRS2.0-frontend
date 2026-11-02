@@ -287,7 +287,7 @@ import { DossierModificationStore } from './dossier-modification.store';
         @if (dossier()?.idDmc != null) {
           <!-- ⚠️ 28/10 (pilote) — un dossier né d'une fiche DAO arrivé ici par un ancien lien : son écran de rectification, pas une impasse. -->
           <div class="alert alert-info">
-            <span>Ce dossier est un dossier d'appel d'offres : il se rectifie depuis sa fiche DAO.</span>
+            <span>Ce dossier est un dossier d'appel d'offres : il se rectifie depuis ses informations du DAO.</span>
             <a class="btn btn-primary btn-sm" [routerLink]="['/prmp/rectifier-dao', dossier()!.idDossier]" [queryParams]="{ returnUrl: returnUrl() }">Rectifier le dossier DAO</a>
           </div>
         } @else {

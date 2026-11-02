@@ -39,7 +39,7 @@ const AVIS: readonly { code: AvisApercu | ''; libelle: string }[] = [
           <span class="apv__ou">ou</span>
         }
         @if (surProcedure()) {
-          <input class="form-control apv__procedure" type="number" min="1" placeholder="N° de procédure" aria-label="N° de la procédure (fiche DAO)"
+          <input class="form-control apv__procedure" type="number" min="1" placeholder="N° de procédure" aria-label="N° de la procédure (informations du DAO)"
                  [value]="procedure()?.idDmc ?? ''" (change)="choisirProcedure($any($event.target).value, lot())" />
           <input class="form-control apv__lot" type="number" min="1" aria-label="N° du lot" title="N° du lot" [value]="lot()"
                  (change)="choisirProcedure(procedure()?.idDmc ?? '', $any($event.target).value)" />

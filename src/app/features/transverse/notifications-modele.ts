@@ -39,7 +39,7 @@ const GESTES: Readonly<Record<string, string>> = {
   ECHEANCE_AVIS_ATTRIBUTION: 'Publier l’avis d’attribution',
   LIVRAISON_DECLAREE: 'Établir la réception',
   PIECES_ATTRIBUTAIRE_DEPOSEES: 'Vérifier la pièce',
-  DAO_COMPLET_PRET: 'Ouvrir la fiche DAO',
+  DAO_COMPLET_PRET: 'Ouvrir les informations du DAO',
   PV_SIGNE: 'Lire le PV',
   DEPOTS_CLOS: 'Voir les dépôts',
 };

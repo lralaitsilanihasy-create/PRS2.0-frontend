@@ -511,7 +511,7 @@ export function ficheDuDossier(d: { idDmc?: number | null; procedure?: { idDmc: 
 export type OngletPieceFournie = 'presentation' | 'fiche-dao' | 'avis' | 'plan' | 'canevas' | 'bordereau' | 'seance' | 'evaluation' | 'attribution' | 'pv-cnm';
 const LIBELLES_ONGLET: Record<OngletPieceFournie, string> = {
   presentation: 'Fiche de présentation',
-  'fiche-dao': 'Fiche DAO',
+  'fiche-dao': 'Informations du DAO',
   avis: 'Avis spécifique',
   plan: 'Plan de passation',
   canevas: 'Canevas de rapport',

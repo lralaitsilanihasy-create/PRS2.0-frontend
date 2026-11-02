@@ -22,6 +22,8 @@ export type Fragment = string | { mot: string; lien?: string };
 
 export interface CartePublique {
   titre: string;
+  /** ⚠️ 02/11 (pilote) — qui agit à cette étape (profils de l'onglet). */
+  qui?: string;
   texte: readonly Fragment[];
 }
 
@@ -46,14 +48,16 @@ export interface ContenuAudience {
 }
 
 export const CONTENU_PUBLIC: Readonly<Record<AudiencePublique, ContenuAudience>> = {
-  // ⚠️ 02/11 (pilote) — chaque onglet résume les PROCESSUS de son public, en six étapes, du premier au dernier geste.
+  // ⚠️ 02/11 (pilote) — chaque onglet résume les PROCESSUS de son public, en six étapes, du premier au dernier geste ; chaque étape dit
+  // QUI agit, d'après le rattachement des profils (celui de la connexion et de la déconnexion, \`publicDuRole\`).
   prmp: {
     onglet: 'PRMP & UGPM',
-    pour: 'Personnes responsables des marchés publics et leurs unités de gestion',
+    pour: 'PRMP, UGPM, responsables de procédure, membres de commission d’appel d’offres et dépositaires',
     titre: 'Du plan de passation au contrat, chaque étape de vos marchés',
     promesse:
-      'Vous soumettez vos dossiers au contrôle a priori de la CNM, vous lancez vos appels d’offres en ligne et vous suivez ' +
-      'vos contrats jusqu’à la réception. L’UGPM prépare les dossiers ; la PRMP les soumet et décide.',
+      'La PRMP soumet ses dossiers au contrôle a priori de la CNM et décide ; l’UGPM les prépare. Le responsable de procédure ' +
+      'conduit les appels d’offres en ligne, la commission d’appel d’offres ouvre et évalue les offres, le dépositaire garde la ' +
+      'part de secours de la clé.',
     actions: [],
     cta: { libelle: 'Créer un compte PRMP', lien: '/inscription' },
     reperes: [
@@ -63,43 +67,49 @@ export const CONTENU_PUBLIC: Readonly<Record<AudiencePublique, ContenuAudience>>
     ],
     sectionTitre: 'Le parcours d’un marché, en six étapes.',
     sectionTexte:
-      'Chaque dossier soumis à la CNM revient avec un procès-verbal : favorable, favorable avec réserves ou défavorable.',
+      'Chaque étape dit qui agit. Chaque dossier soumis à la CNM revient avec un procès-verbal : favorable, favorable avec réserves ou défavorable.',
     cartes: [
       {
         titre: 'Planifier',
+        qui: 'UGPM, PRMP',
         texte: [
-          'Importez le ',
+          'L’UGPM importe le ',
           { mot: 'plan de passation au format PDF', lien: '/prmp/soumettre-dossier' },
-          ' et son avis général, complétez la fiche, joignez les pièces et soumettez. Une mise à jour est une ',
+          ' et son avis général, complète la fiche et joint les pièces ; la PRMP soumet. Une mise à jour est une ',
           { mot: 'nouvelle version', lien: '/prmp/dossiers-verifies' },
           ' : rien ne s’écrase.',
         ],
       },
       {
         titre: 'Préparer l’appel d’offres',
+        qui: 'UGPM, PRMP',
         texte: [
-          'Pour chaque ligne du plan, remplissez la ',
-          { mot: 'fiche DAO', lien: '/prmp/dao' },
-          ' : l’application produit le dossier d’appel d’offres et l’avis, contrôlés par la CNM avant leur publication.',
+          'Pour chaque ligne du plan, les ',
+          { mot: 'informations du DAO', lien: '/prmp/dao' },
+          ' produisent le dossier d’appel d’offres et l’avis, contrôlés par la CNM avant leur publication.',
         ],
       },
       {
-        titre: 'Recevoir les offres',
+        titre: 'Ouvrir la procédure en ligne',
+        qui: 'Responsable de procédure, dépositaire, PRMP',
         texte: [
-          'Faites paraître l’avis, validez les ',
+          'Le responsable de procédure règle les paramètres internes et conduit la cérémonie des clés ; le dépositaire garde la part de ',
+          'secours. Les offres arrivent chiffrées ; la PRMP valide les ',
           { mot: 'reçus des frais de dossier', lien: '/prmp/recus' },
-          ' ; les offres déposées en ligne ne s’ouvrent qu’en séance, à l’heure prévue, par la commission d’appel d’offres.',
+          '.',
         ],
       },
       {
-        titre: 'Évaluer et attribuer',
+        titre: 'Ouvrir et évaluer les offres',
+        qui: 'Commission d’appel d’offres',
         texte: [
-          'La commission d’appel d’offres évalue, classe et propose l’attributaire. Le dossier de marché passe au contrôle de la ',
-          'CNM avant la signature du contrat.',
+          'À l’heure prévue, la commission d’appel d’offres ouvre les plis en séance, puis évalue, classe et propose l’attributaire. ',
+          'Le dossier de marché passe au contrôle de la CNM avant la signature du contrat.',
         ],
       },
       {
         titre: 'Exécuter le contrat',
+        qui: 'PRMP, commission de réception',
         texte: [
           'Pour les ',
           { mot: 'contrats-cadres et marchés à commandes', lien: '/prmp/contrats-en-vigueur' },
@@ -108,6 +118,7 @@ export const CONTENU_PUBLIC: Readonly<Record<AudiencePublique, ContenuAudience>>
       },
       {
         titre: 'Suivre et recevoir les PV',
+        qui: 'PRMP, UGPM',
         texte: [
           'Chaque dossier avance sur une frise, avec sa ',
           { mot: 'fin de traitement prévue', lien: '/prmp/tableau-de-bord' },
@@ -122,7 +133,7 @@ export const CONTENU_PUBLIC: Readonly<Record<AudiencePublique, ContenuAudience>>
   },
   commission: {
     onglet: 'CNM',
-    pour: 'Président, chefs de commission, membres, secrétaires, vérificateurs et assistants',
+    pour: 'Président, chefs de commission, membres, secrétaires, vérificateurs, assistants, chargé de publication et Administrateur',
     titre: 'Le contrôle a priori des marchés, du dépôt à l’archivage',
     promesse:
       'À la connexion, « À faire » montre à chacun ce que le circuit attend de lui, par urgence, avec le délai qui court. ' +
@@ -140,6 +151,7 @@ export const CONTENU_PUBLIC: Readonly<Record<AudiencePublique, ContenuAudience>>
     cartes: [
       {
         titre: 'Recevoir',
+        qui: 'Secrétaire',
         texte: [
           'Le Secrétaire ',
           { mot: 'contrôle la recevabilité' },
@@ -148,6 +160,7 @@ export const CONTENU_PUBLIC: Readonly<Record<AudiencePublique, ContenuAudience>>
       },
       {
         titre: 'Dispatcher',
+        qui: 'Président, chef de commission',
         texte: [
           'Le Président ou le Chef de commission ',
           { mot: 'attribue le dossier' },
@@ -156,6 +169,7 @@ export const CONTENU_PUBLIC: Readonly<Record<AudiencePublique, ContenuAudience>>
       },
       {
         titre: 'Examiner',
+        qui: 'Membre',
         texte: [
           'Le Membre ',
           { mot: 'examine ligne à ligne' },
@@ -164,6 +178,7 @@ export const CONTENU_PUBLIC: Readonly<Record<AudiencePublique, ContenuAudience>>
       },
       {
         titre: 'Viser et signer',
+        qui: 'Président, chef de commission, membre',
         texte: [
           'Le dispatcheur ',
           { mot: 'vise' },
@@ -173,19 +188,25 @@ export const CONTENU_PUBLIC: Readonly<Record<AudiencePublique, ContenuAudience>>
         ],
       },
       {
-        titre: 'Vérifier',
+        titre: 'Vérifier et archiver',
+        qui: 'Vérificateur, assistant',
         texte: [
           'Après un avis favorable avec réserves, le Vérificateur suit la ',
           { mot: 'levée des observations' },
-          ', puis transmet le dossier à SIGMP.',
+          ' et transmet le dossier à SIGMP ; l’Assistant ',
+          { mot: 'archive' },
+          ' le PV définitif.',
         ],
       },
       {
-        titre: 'Archiver',
+        titre: 'Publier et administrer',
+        qui: 'Chargé de publication, Administrateur',
         texte: [
-          'L’Assistant ',
-          { mot: 'archive' },
-          ' le PV définitif. Le journal du dossier garde chaque geste, y compris « par intérim de ».',
+          'Le chargé de publication ',
+          { mot: 'met en ligne les documents publics' },
+          ' ; l’Administrateur ',
+          { mot: 'ouvre les comptes' },
+          ', valide les inscriptions et les rattachements, et tient les référentiels.',
         ],
       },
     ],
@@ -194,7 +215,7 @@ export const CONTENU_PUBLIC: Readonly<Record<AudiencePublique, ContenuAudience>>
   // ouverte en séance par la commission d'appel d'offres.
   candidat: {
     onglet: 'Entreprises',
-    pour: 'Entreprises candidates aux appels d’offres en remise électronique',
+    pour: 'Entreprises candidates aux appels d’offres en remise électronique, et titulaires de leurs contrats',
     titre: 'Retirez le dossier, déposez votre offre en ligne',
     promesse:
       'Les appels d’offres ouverts à la remise électronique sont publiés ici. Avec un compte, vous retirez le dossier ' +
@@ -214,6 +235,7 @@ export const CONTENU_PUBLIC: Readonly<Record<AudiencePublique, ContenuAudience>>
         // ⚠️ 02/11 (pilote) — l'entreprise découvre l'offre par l'AVIS : avis spécifique (appel d'offres) ou avis à manifestation
         // d'intérêt (prestations intellectuelles). « Procédure » reste là où l'on retire le dossier et où l'on dépose l'offre.
         titre: 'Trouver l’avis',
+        qui: 'Sans compte',
         texte: [
           'Les ',
           { mot: 'avis spécifiques', lien: '/candidat/procedures' },
@@ -222,6 +244,7 @@ export const CONTENU_PUBLIC: Readonly<Record<AudiencePublique, ContenuAudience>>
       },
       {
         titre: 'Déclarer votre entreprise',
+        qui: 'Candidat',
         texte: [
           'Raison sociale, NIF, STAT, RCS, représentant et pièces : ',
           { mot: 'une déclaration', lien: '/candidat/entreprise' },
@@ -230,6 +253,7 @@ export const CONTENU_PUBLIC: Readonly<Record<AudiencePublique, ContenuAudience>>
       },
       {
         titre: 'Retirer le dossier',
+        qui: 'Candidat',
         texte: [
           'Avec un compte confirmé, vous téléchargez le ',
           { mot: 'dossier d’appel d’offres', lien: '/candidat/procedures' },
@@ -238,6 +262,7 @@ export const CONTENU_PUBLIC: Readonly<Record<AudiencePublique, ContenuAudience>>
       },
       {
         titre: 'Déposer votre offre',
+        qui: 'Candidat',
         texte: [
           'Avant la date limite, ',
           { mot: 'votre offre', lien: '/candidat/offres' },
@@ -246,14 +271,16 @@ export const CONTENU_PUBLIC: Readonly<Record<AudiencePublique, ContenuAudience>>
       },
       {
         titre: 'Répondre aux remises en concurrence',
+        qui: 'Titulaire d’un contrat-cadre',
         texte: [
-          'Titulaire d’un contrat-cadre, vous recevez les ',
+          'Vous recevez les ',
           { mot: 'remises en concurrence', lien: '/candidat/remises' },
           ' des marchés subséquents et y répondez en ligne.',
         ],
       },
       {
         titre: 'Exécuter les bons de commande',
+        qui: 'Titulaire',
         texte: [
           'Vous recevez les ',
           { mot: 'bons de commande', lien: '/candidat/bons-commande' },

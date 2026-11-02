@@ -39,9 +39,9 @@ export function actionLabel(type: string): string {
     TRANSMISSION_SIGMP: 'Transmission SIGMP',
     ARCHIVAGE: 'Archivage',
     // ⚠️ 18/10 — les gestes des dossiers nés d'une fiche, consignés par le backend (V118, lot 1b, V132).
-    DOSSIER_CREE_DEPUIS_FICHE: 'Dossier produit par la fiche DAO',
-    FICHE_MARCHE_RATTACHEE: 'Fiche DAO rattachée',
-    FICHE_MARCHE_DETACHEE: 'Fiche DAO détachée',
+    DOSSIER_CREE_DEPUIS_FICHE: 'Dossier produit par les informations du DAO',
+    FICHE_MARCHE_RATTACHEE: 'Informations du DAO rattachées',
+    FICHE_MARCHE_DETACHEE: 'Informations du DAO détachées',
     PUBLICATION_AGPM_REPRISE: 'Publication de l’AGPM reprise du plan',
     SOUS_TYPE_REQUALIFIE: 'Sous-type requalifié',
   };

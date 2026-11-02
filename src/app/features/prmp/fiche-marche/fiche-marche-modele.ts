@@ -1056,10 +1056,30 @@ export interface GesteLigne {
 export function gesteLigne(l: Pick<LigneEligible, 'fiche' | 'dossier'>): GesteLigne {
   const f = l.fiche;
   const d = l.dossier;
-  if (!f) return { bouton: 'Ouvrir la fiche', repere: null, genre: null };
+  if (!f) return { bouton: 'Ouvrir les informations du DAO', repere: null, genre: null };
   if (f.statut === 'BROUILLON') return { bouton: 'Continuer la saisie', repere: f.version > 1 ? `Révision v${f.version} en cours` : 'Brouillon', genre: 'saisie' };
   if (!d || d.statut === 'BROUILLON') return { bouton: 'Continuer', repere: `Fiche validée v${f.version}${d ? ' · dossier en brouillon' : ''}`, genre: 'saisie' };
   if (['EN_ATTENTE_DECISION_PRMP', 'EN_ATTENTE_PIECES', 'EN_ATTENTE_COMPLEMENTS_DEPOT'].includes(d.statut)) return { bouton: 'Rectifier', repere: `Rendu à la PRMP · ${statutDossierLabel(d.statut)}`, genre: 'prmp' };
   if (d.statut === 'CLOTURE') return { bouton: 'Consulter', repere: 'Dossier clôturé', genre: 'clos' };
   return { bouton: 'Consulter', repere: `À la Commission · ${statutDossierLabel(d.statut)}`, genre: 'cnm' };
+}
+
+/**
+ * ⚠️ 02/11 (pilote, maquette « Appels d'offres », variante A) — l'étape d'une ligne, pour le filtre et la pastille : à préparer (pas de
+ * fiche), en préparation (fiche en saisie ou validée, dossier à soumettre ou rendu à rectifier : la PRMP a la main), à la CNM (dossier
+ * en contrôle), lancé (contrôle clos : avis, reçus, offres, séance).
+ */
+export type EtapeLigne = 'prep' | 'saisie' | 'cnm' | 'lance';
+
+export const ETAPES_LIGNE: readonly { cle: EtapeLigne; libelle: string }[] = [
+  { cle: 'prep', libelle: 'À préparer' },
+  { cle: 'saisie', libelle: 'En préparation' },
+  { cle: 'cnm', libelle: 'À la CNM' },
+  { cle: 'lance', libelle: 'Lancés' },
+];
+
+export function etapeLigne(l: Pick<LigneEligible, 'dejaDao' | 'fiche' | 'dossier'>): EtapeLigne {
+  if (!l.dejaDao) return 'prep';
+  const genre = gesteLigne(l).genre;
+  return genre === 'cnm' ? 'cnm' : genre === 'clos' ? 'lance' : 'saisie';
 }

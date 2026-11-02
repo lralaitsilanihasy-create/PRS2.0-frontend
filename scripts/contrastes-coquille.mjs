@@ -76,8 +76,15 @@ const PAIRES = [
   ['Pastille neutre', 'neutre-texte', 'neutre-fond', TEXTE],
   ['Bandeau de section', 'or', 'section-fond', TEXTE],
   ['Lien d’évitement', 'texte-menu', 'bouton-principal', TEXTE],
-  // ⚠️ 02/11 (pilote) — le bouton « Se connecter » du portail public, à l'or de l'accent.
-  ['Bouton de connexion du portail', 'texte', 'or', TEXTE],
+  // ⚠️ 02/11 (pilote) — les boutons pleins par geste (design commun) : btn-pdf, btn-nuit, btn-ocre, btn-rouge, btn-gris (btn-word = bouton principal, ci-dessus).
+  ['Bouton PDF (btn-pdf)', 'texte-menu', 'favorable-texte', TEXTE],
+  ['Bouton geste secondaire (btn-nuit)', 'texte-menu', 'section-fond', TEXTE],
+  ['Bouton ajouter ou relire (btn-ocre)', 'texte-menu', 'examen-texte', TEXTE],
+  ['Bouton retirer ou annuler (btn-rouge)', 'texte-menu', 'retard-texte', TEXTE],
+  ['Bouton fermer (btn-gris)', 'neutre-texte', 'neutre-fond', TEXTE],
+  // ⚠️ 02/11 (pilote) — portail public : l'onglet de public actif, à l'or ; les autres au survol.
+  ['Portail : onglet de public actif', 'texte', 'or', TEXTE],
+  ['Portail : onglet de public au survol', 'texte-menu', 'menu-survol', TEXTE],
 ];
 
 let echecs = 0;

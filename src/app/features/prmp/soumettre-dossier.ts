@@ -182,7 +182,7 @@ interface ApercuDossier {
                 <span class="sd__choix-ic" aria-hidden="true">📢</span>
                 <span class="sd__choix-titre">Dossier de mise en concurrence</span>
               </span>
-              <span class="sd__choix-desc">Consultation, gré à gré… — un type + une localité, pièces jointes selon le type. L'appel d'offres, lui, se prépare dans sa fiche DAO.</span>
+              <span class="sd__choix-desc">Consultation, gré à gré… — un type + une localité, pièces jointes selon le type. L'appel d'offres, lui, se prépare dans ses informations du DAO.</span>
               <span class="sd__choix-go">Commencer<span class="sd__choix-arrow" aria-hidden="true">›</span></span>
             </button>
             <button type="button" class="sd__choix-card sd__choix-card--marche" (click)="choisirFamille('DDM')">
@@ -534,7 +534,7 @@ interface ApercuDossier {
             <!-- ⚠️ 15/10 (constat du pilote) — sans sous-type, l'écran montrait les pièces par défaut de la famille (CCAG, CCTP…) et un
                  bouton « Créer le dossier » : rien ne s'affiche avant le choix, qui décide du chemin (fiche DAO ou formulaire). -->
             @if (appelOffres() || !sousTypeChoisi()) {
-              @if (!sousTypeChoisi()) { <p class="form-hint">Le sous-type choisi décide du chemin : la fiche DAO pour un appel d’offres ou une consultation, ce formulaire pour les autres.</p> }
+              @if (!sousTypeChoisi()) { <p class="form-hint">Le sous-type choisi décide du chemin : les informations du DAO pour un appel d’offres ou une consultation, ce formulaire pour les autres.</p> }
               <footer class="sd__foot">
                 <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
               </footer>
@@ -2330,7 +2330,7 @@ export class SoumettreDossier {
     this.submitting.set(false);
     // ⚠️ 15/10 (backend 5bbda11) — un dossier d'appel d'offres ou de consultation ne se crée que par sa fiche DAO.
     if (codeErreur(e) === 'DOSSIER_PAR_FICHE') {
-      this.toast.error('Un dossier d’appel d’offres ou de consultation se prépare dans sa fiche DAO : choisissez la ligne du plan de passation, la validation de la fiche produit le dossier.', 'Création impossible');
+      this.toast.error('Un dossier d’appel d’offres ou de consultation se prépare dans ses informations du DAO : choisissez la ligne du plan de passation, leur validation produit le dossier.', 'Création impossible');
       return;
     }
     if (e.fieldErrors) {

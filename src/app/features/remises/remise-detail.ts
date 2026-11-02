@@ -106,12 +106,12 @@ export type ProfilRemise = 'PRMP' | 'UGPM' | 'CAO' | 'LECTURE';
 
       <div class="rd__actions">
         @if (r.lettreDisponible) {
-          <button type="button" class="btn btn-outline btn-sm" (click)="ouvrir(service.lettre(r.id))">Lettre d’invitation (PDF)</button>
-          <button type="button" class="btn btn-ghost btn-sm" (click)="enregistrer(service.lettre(r.id, 'docx'), 'lettre-remise-' + r.id + '.docx')">Word</button>
+          <button type="button" class="btn btn-pdf btn-sm" (click)="ouvrir(service.lettre(r.id))">Lettre d’invitation (PDF)</button>
+          <button type="button" class="btn btn-word btn-sm" (click)="enregistrer(service.lettre(r.id, 'docx'), 'lettre-remise-' + r.id + '.docx')">Word</button>
         }
         @if (r.rapportDisponible) {
-          <button type="button" class="btn btn-outline btn-sm" (click)="ouvrir(service.rapport(r.id))">Rapport simplifié (PDF)</button>
-          <button type="button" class="btn btn-ghost btn-sm" (click)="enregistrer(service.rapport(r.id, 'docx'), 'rapport-remise-' + r.id + '.docx')">Word</button>
+          <button type="button" class="btn btn-pdf btn-sm" (click)="ouvrir(service.rapport(r.id))">Rapport simplifié (PDF)</button>
+          <button type="button" class="btn btn-word btn-sm" (click)="enregistrer(service.rapport(r.id, 'docx'), 'rapport-remise-' + r.id + '.docx')">Word</button>
         }
       </div>
 
@@ -158,7 +158,7 @@ export type ProfilRemise = 'PRMP' | 'UGPM' | 'CAO' | 'LECTURE';
                     @else if (x.conforme === false) { <span class="badge badge-danger">Non conforme</span> <span class="text-sm">{{ x.motif }}</span> }
                     @else { <span class="text-muted">—</span> }
                   </td>
-                  <td>@if (x.fichier) { <button type="button" class="btn btn-ghost btn-sm" [attr.aria-label]="'Réponse de ' + x.candidat + ' : ' + x.fichier" (click)="ouvrir(service.fichierReponse(r.id, x.id))">{{ x.fichier }}</button> }</td>
+                  <td>@if (x.fichier) { <button type="button" class="btn btn-nuit btn-sm" [attr.aria-label]="'Réponse de ' + x.candidat + ' : ' + x.fichier" (click)="ouvrir(service.fichierReponse(r.id, x.id))">{{ x.fichier }}</button> }</td>
                 </tr>
               }
             </tbody>
@@ -192,7 +192,7 @@ export type ProfilRemise = 'PRMP' | 'UGPM' | 'CAO' | 'LECTURE';
               <label class="form-group"><span class="form-label">Délai proposé (facultatif)</span><input class="form-control" type="text" [value]="champ('pDelai')" (input)="poser('pDelai', $any($event.target).value)" /></label>
             </div>
             <label class="form-group"><span class="form-label">La réponse (PDF, JPEG, PNG)</span><input class="form-control" type="file" accept="application/pdf,image/jpeg,image/png" (change)="choisir($any($event.target))" /></label>
-            <div><button type="button" class="btn btn-outline btn-sm" [disabled]="!papierComplet() || occupe()" (click)="enregistrerPapier(r)">Enregistrer la réponse</button></div>
+            <div><button type="button" class="btn btn-nuit btn-sm" [disabled]="!papierComplet() || occupe()" (click)="enregistrerPapier(r)">Enregistrer la réponse</button></div>
           </div>
         </details>
       }

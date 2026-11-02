@@ -90,7 +90,7 @@ describe('FicheDaoDoc — la fiche DAO comme document de l’examen (lot B)', ()
   it('charge la fiche puis le référentiel de sa forme et de sa catégorie, et se présente comme un document', () => {
     expect(lire).toHaveBeenCalledWith(14);
     expect(referentiel).toHaveBeenCalledWith('QUANTITE_FIXE', 'FOURNITURES_SERVICES');
-    expect(racine().querySelector('.fd-tete__sur')?.textContent).toBe('Fiche DAO');
+    expect(racine().querySelector('.fd-tete__sur')?.textContent).toBe('Informations du DAO');
     expect(racine().querySelector('.doc-titre')?.textContent).toContain('Fourniture et livraison de matériels informatiques');
     expect(racine().querySelector('.doc-sous-titre')?.textContent?.replace(/\s+/g, ' ')).toContain('Version 1');
     expect(Array.from(racine().querySelectorAll('.fd-puce')).map((e) => e.textContent?.trim())).toContain('Validée');
@@ -158,7 +158,7 @@ describe('FicheDaoDoc — la fiche DAO comme document de l’examen (lot B)', ()
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
-    expect(racine().querySelector('.doc-etat')?.textContent).toContain("La fiche DAO de ce dossier n'a pas pu être lue.");
+    expect(racine().querySelector('.doc-etat')?.textContent).toContain("Les informations du DAO de ce dossier n'ont pas pu être lues.");
     expect(racine().querySelector('table')).toBeNull();
   });
 });

@@ -119,7 +119,7 @@ export const routes: Routes = [
         // la CAO notent depuis leur espace (/cao/procedures/:idDmc/ami).
         path: 'procedure/:idDmc/ami',
         loadComponent: () => import('./features/ami/preselection-ami').then((m) => m.PreselectionAmi),
-        data: { title: 'Présélection des candidats', espace: 'interne', parents: [{ label: 'Fiche DAO', chemin: ['/prmp/dao', ':idDmc'] }, { label: 'Appel à manifestation d’intérêt', chemin: ['/prmp/dao', ':idDmc', 'ami'] }] },
+        data: { title: 'Présélection des candidats', espace: 'interne', parents: [{ label: 'Informations du DAO', chemin: ['/prmp/dao', ':idDmc'] }, { label: 'Appel à manifestation d’intérêt', chemin: ['/prmp/dao', ':idDmc', 'ami'] }] },
       },
       {
         // ⚠️ 06/10 — les procédures en ligne du responsable (toutes pour l'Administrateur). Route transverse : le serveur

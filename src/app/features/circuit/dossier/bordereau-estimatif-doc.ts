@@ -25,7 +25,7 @@ interface LotBordereau {
     <section class="be" aria-labelledby="be-titre">
       <div class="be__tete">
         <h3 id="be-titre" class="be__titre">{{ travaux() ? 'Devis quantitatif et estimatif' : 'Bordereau des prix estimatifs' }}</h3>
-        @if (fiche(); as f) { <span class="be__version">fiche DAO, version {{ versionSoumise() || f.version }}{{ versionSoumise() ? ', soumise' : '' }}</span> }
+        @if (fiche(); as f) { <span class="be__version">informations du DAO, version {{ versionSoumise() || f.version }}{{ versionSoumise() ? ', soumise' : '' }}</span> }
       </div>
       @if (chargement()) {
         <p class="be__aide" role="status">Chargement…</p>

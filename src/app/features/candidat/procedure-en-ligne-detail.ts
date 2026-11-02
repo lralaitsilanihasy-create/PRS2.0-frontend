@@ -80,7 +80,7 @@ const LIBELLES_COURTS_AVIS: Readonly<Record<string, string>> = { COMPTE_PAIEMENT
              fiches thématiques plus bas. Le PDF reste la pièce officielle, lisible sans compte ni paiement (ce n'est pas un retrait). -->
         <section class="card ped__avis-bandeau" aria-labelledby="ped-avis-t">
           <p class="ped__avis-titre"><strong id="ped-avis-t">Avis spécifique d'appel d'offres</strong>
-            <span class="text-sm text-muted">{{ p.datePublication ? 'publié le ' + date(p.datePublication) + ' · ' : '' }}version {{ p.avisSpecifique.version }} de la fiche DAO</span></p>
+            <span class="text-sm text-muted">{{ p.datePublication ? 'publié le ' + date(p.datePublication) + ' · ' : '' }}version {{ p.avisSpecifique.version }} des informations du DAO</span></p>
           @if (avisAbsent()) {
             <span class="text-sm text-muted" role="status">Le PDF de l'avis n'est plus disponible en ligne.</span>
           } @else {

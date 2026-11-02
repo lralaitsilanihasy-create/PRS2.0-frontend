@@ -34,7 +34,7 @@ const refLinks = [
   { label: 'Mapping mode → document DMC', path: '/admin/referentiels/dmc-mapping' },
   // Écran dédié (fiche DAO d'un appel d'offres, 22/09) : listes et conditions dépassent le CRUD générique ;
   // pas de suppression (un champ écarté passe inactif).
-  { label: 'Champs de la fiche DAO (appel d’offres)', path: '/admin/referentiels/champs-fiche-marche' },
+  { label: 'Champs des informations du DAO (appel d’offres)', path: '/admin/referentiels/champs-fiche-marche' },
   // ⚠️ Remise électronique (27/09) — défauts et bornes du bloc B04-SE, centralisés (cahier des charges du pilote).
   { label: 'Remise électronique — défauts et bornes', path: '/admin/referentiels/remise-electronique' },
   // ⚠️ 01/10 (avis spécifique §B8) — le compte bancaire unique de l'ARMP, imprimé dans l'avis pour le prix du DAO.
@@ -74,7 +74,7 @@ export const ADMIN_ROUTES: Routes = [
   },
   { path: 'referentiels/entite-arbre', loadComponent: () => import('./entite-arbre').then((m) => m.EntiteArbre) },
   { path: 'referentiels/dmc-mapping', loadComponent: () => import('./dmc-mapping-admin').then((m) => m.DmcMappingAdmin) },
-  { path: 'referentiels/champs-fiche-marche', loadComponent: () => import('./champs-fiche-marche-admin').then((m) => m.ChampsFicheMarcheAdmin), data: { title: 'Champs de la fiche DAO' } },
+  { path: 'referentiels/champs-fiche-marche', loadComponent: () => import('./champs-fiche-marche-admin').then((m) => m.ChampsFicheMarcheAdmin), data: { title: 'Champs des informations du DAO' } },
   { path: 'referentiels/compte-dao', loadComponent: () => import('./compte-dao-admin').then((m) => m.CompteDaoAdmin), data: { title: 'Compte bancaire de l’ARMP' } },
   { path: 'referentiels/cao-quorum', loadComponent: () => import('./cao-quorum-admin').then((m) => m.CaoQuorumAdmin), data: { title: 'Quorum de la CAO' } },
   { path: 'referentiels/sigmp-transition', loadComponent: () => import('./sigmp-transition-admin').then((m) => m.SigmpTransitionAdmin), data: { title: 'Transition SIGMP' } },
@@ -88,7 +88,7 @@ export const ADMIN_ROUTES: Routes = [
   { path: 'entreprises', loadComponent: () => import('./entreprises-admin').then((m) => m.EntreprisesAdmin), data: { title: 'Entreprises candidates' } },
   // ⚠️ Remise électronique (27/09, Q8) — l'Administrateur désigne le responsable de la procédure DEPUIS la fiche : il
   // lui faut donc l'atteindre. La fiche s'ouvre pour lui en lecture (le mode se déduit du rôle), avec l'encart.
-  { path: 'dao/:idDmc', loadComponent: () => import('../prmp/fiche-marche/fiche-marche').then((m) => m.FicheMarcheEcran), data: { title: 'Fiche DAO', concentration: true } },
+  { path: 'dao/:idDmc', loadComponent: () => import('../prmp/fiche-marche/fiche-marche').then((m) => m.FicheMarcheEcran), data: { title: 'Informations du DAO', concentration: true } },
   ...REFERENTIELS.map((r) => ({
     path: `referentiels/${r.slug}`,
     loadComponent: () => import('../../shared/crud/crud-page').then((m) => m.CrudPage),

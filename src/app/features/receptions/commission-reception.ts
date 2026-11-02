@@ -70,13 +70,13 @@ function aujourdhui(): string {
                       <td><input class="form-control form-control-sm" type="email" [attr.aria-label]="'Adresse du membre ' + (i + 1)" [value]="m.email" (input)="poser(i, 'email', $any($event.target).value)" /></td>
                       <td><input class="form-control form-control-sm" type="text" [attr.aria-label]="'Fonction du membre ' + (i + 1)" [value]="m.fonction" (input)="poser(i, 'fonction', $any($event.target).value)" /></td>
                       @if (!presideeParPrmp()) { <td><input type="radio" name="cr-president" [attr.aria-label]="'Le membre ' + (i + 1) + ' préside'" [checked]="m.president" (change)="presider(i)" /></td> }
-                      <td>@if (membres().length > 1) { <button type="button" class="btn btn-ghost btn-sm" [attr.aria-label]="'Retirer le membre ' + (i + 1)" (click)="retirer(i)">✕</button> }</td>
+                      <td>@if (membres().length > 1) { <button type="button" class="btn btn-rouge btn-sm" [attr.aria-label]="'Retirer le membre ' + (i + 1)" (click)="retirer(i)">✕</button> }</td>
                     </tr>
                   }
                 </tbody>
               </table>
             </div>
-            <div><button type="button" class="btn btn-ghost btn-sm" (click)="membres.update((l) => [...l, vide()])">Ajouter un membre</button></div>
+            <div><button type="button" class="btn btn-ocre btn-sm" (click)="membres.update((l) => [...l, vide()])">Ajouter un membre</button></div>
             <p class="text-sm text-muted">Au moins deux personnes, la PRMP comprise quand elle préside ; sinon un membre préside et la représente (art. 13-IV). Chaque membre reçoit un compte et une invitation par courriel.</p>
             @if (refus(); as r) { <div class="alert alert-danger" role="alert">{{ r }}</div> }
             <div><button type="button" class="btn btn-primary btn-sm" [disabled]="!complete() || occupe()" (click)="designer()">Enregistrer la commission</button></div>

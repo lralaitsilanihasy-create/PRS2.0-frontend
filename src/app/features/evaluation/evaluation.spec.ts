@@ -313,8 +313,17 @@ describe('Écran de l’évaluation', () => {
       lots: EVALUATION.lots.map((l) => ({ lot: l.lot, conformiteArretee: true, arret: null, offres: [] })),
     });
     fixture.detectChanges();
-    const etapes = Array.from(racine().querySelectorAll('.ev__etape-b')).map((b) => (b.textContent ?? '').replace(/\s+/g, ' ').trim());
+    // ⚠️ 02/11 (variante B) — les étapes sont les entrées du groupe « Évaluation » du sommaire.
+    const etapes: string[] = [];
+    for (let el = racine().querySelector('.ev-rail__t')?.nextElementSibling; el && !el.classList.contains('ev-rail__t'); el = el.nextElementSibling) {
+      etapes.push((el.textContent ?? '').replace(/\s+/g, ' ').trim());
+    }
     expect(etapes).toHaveLength(3);
+    // Si le membre doit d'abord signer sa déclaration, l'écran s'ouvre sur elle : on passe à l'étape en cours.
+    if (!racine().querySelector('app-etape-technique')) {
+      (racine().querySelectorAll<HTMLButtonElement>('.ev-rail__b')[1]).click();
+      fixture.detectChanges();
+    }
     expect(etapes[1]).toContain('Évaluation technique');
     expect(racine().querySelector('app-etape-technique')).not.toBeNull();
     // L'arrêt générique de l'étape ne double pas celui de la notation technique.

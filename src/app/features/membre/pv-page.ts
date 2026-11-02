@@ -179,7 +179,7 @@ import { EtapeCircuitPv, etapesCircuitPv, phraseEtatPv } from './pv-circuit';
                                     @for (o of observationsTriees(d); track o.idObservation ?? $index) {
                                       <div class="pv-obs"><span class="pv-obs__avant">{{ o.auLieuDe || '—' }}</span> → <span class="pv-obs__apres">{{ o.lire || '—' }}</span></div>
                                       @if (o.champFiche) {
-                                        <div class="pv-obs__fiche">Information de la fiche DAO : <b>{{ o.libelleChampFiche || o.champFiche }}</b>@if (o.lot) { — lot {{ o.lot }} }@if (o.valeurChampFiche) { · valeur observée « {{ o.valeurChampFiche }} » }</div>
+                                        <div class="pv-obs__fiche">Information du DAO : <b>{{ o.libelleChampFiche || o.champFiche }}</b>@if (o.lot) { — lot {{ o.lot }} }@if (o.valeurChampFiche) { · valeur observée « {{ o.valeurChampFiche }} » }</div>
                                       }
                                     }
                                   } @else {

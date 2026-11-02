@@ -60,7 +60,7 @@ describe('ObservationPvCard', () => {
     fixture.detectChanges();
 
     expect(texte('.opv__fiche')).toBe(
-      'Information de la fiche DAO : Montant de la garantie de soumission (Ariary) — lot 2 · valeur observée « 2 170 000 Ariary (deux millions cent soixante-dix mille ariary) » → actuelle « 2 000 000 Ariary (deux millions ariary) » (version 2) Ouvrir la fiche',
+      'Information du DAO : Montant de la garantie de soumission (Ariary) — lot 2 · valeur observée « 2 170 000 Ariary (deux millions cent soixante-dix mille ariary) » → actuelle « 2 000 000 Ariary (deux millions ariary) » (version 2) Ouvrir les informations du DAO',
     );
     expect(racine().querySelector<HTMLAnchorElement>('.opv__lien')?.getAttribute('href')).toBe('/verificateur/dao/14');
   });
@@ -71,7 +71,7 @@ describe('ObservationPvCard', () => {
     fixture.componentRef.setInput('obs', { ...OBS, idDmc: 14, champFiche: 'B04-VO-01', valeurChampFiche: '75', valeurChampFicheActuelle: '75' });
     fixture.detectChanges();
 
-    expect(texte('.opv__fiche')).toBe('Information de la fiche DAO : B04-VO-01 · valeur observée « 75 »');
+    expect(texte('.opv__fiche')).toBe('Information du DAO : B04-VO-01 · valeur observée « 75 »');
     expect(racine().querySelector('.opv__lien')).toBeNull();
     expect(racine().querySelector('.opv__actuelle')).toBeNull();
   });

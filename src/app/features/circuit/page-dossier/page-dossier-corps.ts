@@ -216,7 +216,7 @@ const HAUT_TOPBAR = 48;
             </p>
             @if (domainePrmp()) {
               <div class="pd-procedure__liens">
-                <a class="btn btn-outline btn-sm" [routerLink]="['/prmp/dao', pr.idDmc]">Fiche DAO</a>
+                <a class="btn btn-outline btn-sm" [routerLink]="['/prmp/dao', pr.idDmc]">Informations du DAO</a>
                 <a class="btn btn-outline btn-sm" [routerLink]="['/procedure', pr.idDmc, 'evaluation']">Évaluation et attribution</a>
               </div>
             }

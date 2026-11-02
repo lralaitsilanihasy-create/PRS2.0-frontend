@@ -30,7 +30,7 @@ import { dateHeureFr } from '../candidat/libelles-candidat';
       } @else if (refuse()) {
         <div class="alert alert-info" role="status"><span>Le registre des retraits est réservé à la PRMP de la fiche.</span></div>
       } @else if (inconnue()) {
-        <div class="alert alert-info" role="status"><span>Aucune fiche DAO pour cette ligne du plan.</span></div>
+        <div class="alert alert-info" role="status"><span>Aucune information du DAO pour cette ligne du plan.</span></div>
       } @else if (erreur()) {
         <app-etat-erreur message="Le registre n'a pas pu être chargé." (reessayer)="charger()" />
       } @else if (!retraits().length) {

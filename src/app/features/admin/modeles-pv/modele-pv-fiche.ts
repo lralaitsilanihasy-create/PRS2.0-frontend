@@ -160,7 +160,7 @@ const BADGE_ETAT: Readonly<Record<string, string>> = { BROUILLON: 'badge-warning
                       L’application assemble le PV officiel et les phrases de la famille servie, avec ses règles et ses champs déjà déclarés.
                     } @else if (f.nature === 'DOCUMENT_DAO') {
                       L’application convertit le document type de l’ARMP intégré pour ce document ({{ f.sigles?.[0] ?? '—' }}) en page modifiable,
-                      avec ses règles, ses passages et les données de la fiche DAO. Le départ est la référence des écarts au document type.
+                      avec ses règles, ses passages et les informations du DAO. Le départ est la référence des écarts au document type.
                     } @else if (f.nature === 'PROJET_MARCHE') {
                       L’application recopie mot pour mot le projet de marché qu’elle produit aujourd’hui pour la catégorie choisie (marché simple et
                       contrat-cadre), avec ses variables, ses règles et ses articles numérotés.

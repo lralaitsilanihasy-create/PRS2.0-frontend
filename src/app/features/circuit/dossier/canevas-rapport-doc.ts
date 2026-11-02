@@ -23,7 +23,7 @@ const LIBELLES_PARTIE: Record<'TECHNIQUE' | 'FINALE', string> = {
     <section class="cr" aria-labelledby="cr-titre">
       <div class="cr__tete">
         <h3 id="cr-titre" class="cr__titre">Canevas de rapport d’évaluation</h3>
-        @if (canevas(); as c) { <span class="cr__version">fiche DAO, version {{ c.versionFiche }}</span> }
+        @if (canevas(); as c) { <span class="cr__version">informations du DAO, version {{ c.versionFiche }}</span> }
       </div>
       @if (chargement()) {
         <p class="cr__aide" role="status">Chargement…</p>
@@ -61,7 +61,7 @@ const LIBELLES_PARTIE: Record<'TECHNIQUE' | 'FINALE', string> = {
             }
           </div>
         }
-        <p class="cr__aide">Produit par l’application à partir de la fiche DAO soumise : il tient lieu de la pièce « Canevas de rapport d’évaluation ». Les tableaux seront remplis par la commission d’appel d’offres.</p>
+        <p class="cr__aide">Produit par l’application à partir des informations du DAO soumises : il tient lieu de la pièce « Canevas de rapport d’évaluation ». Les tableaux seront remplis par la commission d’appel d’offres.</p>
       }
     </section>
   `,
@@ -107,7 +107,7 @@ export class CanevasRapportDoc {
           this.canevas.set(null);
           this.chargement.set(false);
           this.refus.set(corpsErreur<{ message?: string }>(e)?.message
-            ?? 'Le canevas n’est pas disponible : il faut une fiche DAO validée, hors contrat-cadre.');
+            ?? 'Le canevas n’est pas disponible : il faut des informations du DAO validées, hors contrat-cadre.');
         },
       });
       nettoyer(() => abonnement.unsubscribe());

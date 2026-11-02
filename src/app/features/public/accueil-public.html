@@ -49,7 +49,7 @@
         </dl>
       </div>
       <section class="pub-connexion" id="connexion" aria-labelledby="pub-connexion-titre" tabindex="-1">
-        <app-formulaire-connexion idTitre="pub-connexion-titre" accent="or" [sousTitre]="contenu().pour">
+        <app-formulaire-connexion idTitre="pub-connexion-titre" [sousTitre]="contenu().pour" [publicAttendu]="audience()">
           <p class="pub-connexion__bas">
             @if (contenu().cta; as cta) {
               <a [routerLink]="cta.lien">{{ cta.libelle }}</a>
@@ -69,6 +69,7 @@
       @for (c of contenu().cartes; track c.titre; let i = $index) {
         <article class="pub-carte">
           <h3><span class="pub-carte__n" aria-hidden="true">{{ i + 1 }}</span>{{ c.titre }}</h3>
+          @if (c.qui) { <p class="pub-carte__qui"><span class="cnm-sr-only">Qui agit : </span>{{ c.qui }}</p> }
           <!-- Sur une ligne, à dessein : un retour à la ligne entre un mot-clé et la ponctuation qui le suit devient
                un espace visible (« PDF , »). Les fragments portent eux-mêmes leurs espaces. -->
           <p>@for (f of c.texte; track $index) {@if (estMot(f)) {@if (f.lien) {<a class="pub-mot" [routerLink]="f.lien">{{ f.mot }}</a>} @else {<strong class="pub-mot pub-mot--fixe">{{ f.mot }}</strong>}} @else {{{ f }}}}</p>

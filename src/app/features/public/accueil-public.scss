@@ -73,27 +73,34 @@
   font-size: 16px;
   color: var(--texte-menu-secondaire);
 }
+/* ⚠️ 02/11 (pilote) — les onglets de public en sélecteur compact, centré dans l’en-tête (plus de pavé sur toute sa hauteur) :
+   un filet les entoure, l’onglet actif prend l’or de l’accent (texte sombre), les autres restent blancs sur le bleu nuit. */
 .pub-audience {
   display: flex;
-  align-self: stretch;
+  gap: 2px;
   margin-left: 1rem;
+  padding: 3px;
+  border: 1px solid var(--texte-menu-secondaire);
+  border-radius: 6px;
 }
 .pub-audience a {
   display: flex;
   align-items: center;
-  margin-top: 6px;
-  padding: 0 1rem;
+  justify-content: center;
+  height: 30px;
+  padding: 0 0.9rem;
   text-decoration: none;
   color: var(--texte-menu);
   font-size: 13px;
-  border-radius: 4px 4px 0 0;
+  border-radius: 4px;
+  white-space: nowrap;
 }
 .pub-audience a:hover:not([aria-current='page']) { background: var(--menu-survol); }
-.pub-audience a:focus-visible { outline: 2px solid var(--or); outline-offset: -2px; }
+.pub-audience a:focus-visible { outline: 2px solid var(--or); outline-offset: 1px; }
 .pub-audience a[aria-current='page'] {
   color: var(--texte);
   font-weight: 500;
-  background: var(--onglet-actif-fond);
+  background: var(--or);
 }
 /* Au large, le formulaire est à l’écran : le bouton ne sert que sur un écran étroit. */
 .pub-btn.pub-top__connexion {
@@ -265,6 +272,14 @@
   font-size: 13px;
   font-weight: 500;
 }
+/* ⚠️ 02/11 (pilote) — qui agit à l’étape : une petite ligne sous le titre. */
+.pub-carte .pub-carte__qui {
+  margin: -0.15rem 0 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--texte);
+  letter-spacing: 0.01em;
+}
 .pub-carte p {
   margin: 0;
   color: var(--texte-secondaire);
@@ -323,8 +338,7 @@
   }
   .pub-audience a {
     flex: 1 1 0;
-    justify-content: center;
-    padding: 0.55rem 0.5rem;
+    padding: 0 0.5rem;
   }
   .pub-marque__s {
     display: none;

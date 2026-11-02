@@ -161,3 +161,72 @@ a.fm__suivi-carte:hover, a.fm__suivi-carte:focus-visible { border-color: var(--p
 .fm__etat-ligne[data-genre='saisie'] { color: var(--p-700); }
 .fm__etat-ligne[data-genre='prmp'] { color: var(--warning-text); }
 .fm__etat-ligne[data-genre='clos'] { color: var(--n-500); }
+
+/* ⚠️ 02/11 (pilote, maquette « Appels d'offres », variante A) — la liste par étape et par plan. Couleurs de la palette seulement. */
+.fm-liste__outils { display: flex; flex-wrap: wrap; gap: 0.6rem 0.9rem; align-items: center; margin-bottom: 0.75rem; }
+.fm-liste__seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--bordure); border-radius: 6px; overflow: hidden; background: var(--carte-fond); }
+.fm-liste__seg button { border: 0; border-left: 1px solid var(--bordure); background: var(--carte-fond); color: var(--texte); padding: 0.3rem 0.8rem; font: inherit; font-size: 0.8125rem; cursor: pointer; }
+.fm-liste__seg button:first-child { border-left: 0; }
+.fm-liste__seg button[aria-pressed='true'] { background: var(--section-fond); color: var(--texte-menu); font-weight: 500; }
+.fm-liste__seg button:focus-visible { outline: 2px solid var(--bouton-principal); outline-offset: -2px; }
+.fm-liste__n { margin-left: 0.25rem; font-size: 0.72rem; opacity: 0.85; }
+.fm-liste__cherche { flex: 1 1 16rem; max-width: 24rem; }
+.fm-liste { table-layout: fixed; width: 100%; }
+.fm-liste__c-etape { width: 15rem; }
+.fm-liste__c-mt { width: 11rem; }
+.fm-liste__c-act { width: 14rem; }
+.fm-liste td { white-space: normal; vertical-align: top; }
+.fm-liste__plan th { padding: 0.4rem 0.9rem; background: var(--section-fond); color: var(--texte-menu); font-size: 0.8rem; font-weight: 500; text-align: left; text-transform: none; letter-spacing: 0; }
+.fm-liste__plan th span { font-weight: 400; color: var(--texte-menu-secondaire); }
+.fm-liste__obj { font-weight: 500; }
+.fm-liste__sous { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem 0.45rem; margin-top: 0.2rem; font-size: 0.75rem; color: var(--texte-secondaire); }
+.fm-liste__infos { display: inline-flex; flex-wrap: wrap; gap: 0.2rem 0.45rem; }
+.fm-liste__infos > span + span::before { content: '·'; margin-right: 0.45rem; color: var(--texte-secondaire); }
+.fm-liste__forme { padding: 0 0.35rem; border-radius: 3px; background: var(--neutre-fond); color: var(--neutre-texte); }
+.fm-liste__mt { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.fm-liste__suite { display: block; margin-top: 0.25rem; font-size: 0.75rem; color: var(--texte-secondaire); }
+.fm-liste .fm__recus { display: block; width: max-content; margin-top: 0.3rem; }
+/* La pastille d'étape : une couleur par étape (palette), un point devant. */
+.fm-liste__pas { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.05rem 0.55rem; border-radius: 999px; font-size: 0.75rem; font-weight: 500; }
+.fm-liste__pas::before { content: ''; flex: none; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.fm-liste__pas[data-etape='prep'] { background: var(--onglet-actif-fond); color: var(--menu-fond); }
+.fm-liste__pas[data-etape='saisie'] { background: var(--examen-fond); color: var(--examen-texte); }
+.fm-liste__pas[data-etape='cnm'] { background: var(--neutre-fond); color: var(--neutre-texte); }
+.fm-liste__pas[data-etape='lance'] { background: var(--favorable-fond); color: var(--favorable-texte); }
+.fm-liste__pas[data-etape='bloque'] { background: var(--neutre-fond); color: var(--texte-secondaire); }
+@media (max-width: 900px) {
+  .fm-liste { table-layout: auto; }
+  .fm-liste__c-etape, .fm-liste__c-mt, .fm-liste__c-act { width: auto; }
+}
+
+/* ⚠️ 02/11 (pilote, maquette « Informations du DAO », variante B) — la bande de chiffres et les deux grands onglets. */
+.fm-cles { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); margin: 0 0 0.9rem; background: var(--section-fond); color: var(--texte-menu); border-radius: 6px; }
+.fm-cles > div { min-width: 0; padding: 0.55rem 0.9rem; border-left: 1px solid var(--menu-survol); }
+.fm-cles > div:first-child { border-left: 0; }
+.fm-cles dt { font-size: 0.66rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--texte-menu-secondaire); }
+.fm-cles dd { margin: 0; font-size: 0.92rem; font-weight: 500; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.fm-cles dd small { font-size: 0.72rem; font-weight: 400; color: var(--texte-menu-secondaire); }
+.fm-cles--or dd { color: var(--or); }
+.fm-cles__jauge { display: block; height: 5px; margin-top: 0.3rem !important; border-radius: 3px; background: var(--menu-survol); overflow: hidden; }
+.fm-cles__jauge i { display: block; height: 100%; background: var(--or); }
+.fm-onglets { display: flex; gap: 4px; margin: 0 0 1rem; padding: 6px 6px 0; background: var(--tableau-entete); border: 1px solid var(--bordure); border-radius: 6px 6px 0 0; border-bottom: 2px solid var(--section-fond); }
+.fm-onglets button { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1.1rem; border: 1px solid var(--bordure); border-bottom: 0; border-top: 3px solid transparent; border-radius: 5px 5px 0 0;
+  background: var(--neutre-fond); color: var(--texte); font: inherit; font-size: 0.95rem; cursor: pointer; }
+.fm-onglets button:hover:not([aria-selected='true']) { background: var(--carte-fond); }
+.fm-onglets button[aria-selected='true'] { background: var(--section-fond); border-color: var(--section-fond); color: var(--texte-menu); font-weight: 500; border-top-color: var(--or); }
+.fm-onglets button:focus-visible { outline: 2px solid var(--bouton-principal); outline-offset: 2px; }
+.fm-onglets__n { padding: 0 0.45rem; border-radius: 8px; background: var(--or); color: var(--texte); font-size: 0.72rem; font-weight: 500; }
+/* Dans l'onglet « La procédure », seuls l'en-tête, les chiffres, les onglets, le suivi et le responsable restent. */
+.fm--procedure > :not(.fm__fil):not(.fm__entete):not(.fm-cles):not(.fm-onglets):not(.fm__suivi):not(.fm__resp) { display: none !important; }
+/* Dans son onglet, le suivi a la largeur : des cartes plus grandes, quatre par ligne au large. */
+.fm__suivi .fm__suivi-grille { grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: 0.75rem; }
+.fm__suivi .fm__suivi-carte { padding: 0.9rem 1rem; }
+/* Les jalons du suivi en couleur : vert fait ou ouvert, ocre à compléter, gris en lecture. */
+.fm__suivi-carte { border-left-color: var(--favorable-texte); }
+.fm__suivi-carte--ko { border-left-color: var(--or); background: var(--examen-fond); }
+.fm__suivi-carte--ko .fm__suivi-etat { color: var(--examen-texte); font-weight: 500; }
+.fm__suivi-carte app-icone { color: var(--section-fond); }
+@media (max-width: 900px) {
+  .fm-cles { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fm-cles > div:nth-child(odd) { border-left: 0; }
+}

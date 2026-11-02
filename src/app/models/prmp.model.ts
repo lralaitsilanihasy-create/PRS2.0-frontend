@@ -609,13 +609,13 @@ export function origineProduite(p: Pick<PieceJointeDossier, 'idDocumentFiche' | 
 
 /** Le repère court d'une pièce produite, et son infobulle. */
 export const REPERES_PIECE_PRODUITE: Readonly<Record<'FICHE' | 'ATTRIBUTION', { court: string; aide: string }>> = {
-  FICHE: { court: 'fiche DAO', aide: 'Produite par la fiche DAO : elle se corrige dans la fiche, pas ici.' },
+  FICHE: { court: 'informations du DAO', aide: 'Produite par les informations du DAO : elle s’y corrige, pas ici.' },
   ATTRIBUTION: { court: 'attribution', aide: 'Jointe d’office à la création du dossier de marché (séance, évaluation, attribution) : elle ne se retire ni ne se remplace.' },
 };
 
 /** Les refus d'un retrait ou d'un remplacement de pièce produite, nommés. */
 export function messagePieceProduite(code: string | null | undefined): string | null {
-  if (code === 'PIECE_PRODUITE_PAR_FICHE') return 'Cette pièce est produite par la fiche DAO : elle se corrige dans la fiche.';
+  if (code === 'PIECE_PRODUITE_PAR_FICHE') return 'Cette pièce est produite par les informations du DAO : elle s’y corrige.';
   if (code === 'PIECE_PRODUITE_PAR_APPLICATION') return 'Cette pièce est jointe d’office par l’application à la création du dossier de marché : elle ne se retire ni ne se remplace.';
   return null;
 }

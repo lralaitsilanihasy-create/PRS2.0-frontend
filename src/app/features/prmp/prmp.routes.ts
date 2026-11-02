@@ -51,21 +51,21 @@ export const PRMP_ROUTES: Routes = [
   // ⚠️ 19/10 (pilote) — « Dossier de marché — choisir la procédure » : l'analogue, pour le marché, de la liste des fiches DAO.
   { path: 'dossier-marche', loadComponent: () => import('./dossier-marche-procedures').then((m) => m.DossierMarcheProcedures), data: { title: 'Dossier de marché', concentration: true } },
   { path: 'dao', loadComponent: () => import('./fiche-marche/fiche-marche').then((m) => m.FicheMarcheEcran), data: { title: 'Appels d’offres', concentration: true } },
-  { path: 'dao/:idDmc', loadComponent: () => import('./fiche-marche/fiche-marche').then((m) => m.FicheMarcheEcran), data: { title: 'Fiche DAO', concentration: true, parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }] } },
+  { path: 'dao/:idDmc', loadComponent: () => import('./fiche-marche/fiche-marche').then((m) => m.FicheMarcheEcran), data: { title: 'Informations du DAO', concentration: true, parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }] } },
   // ⚠️ Soumission en ligne, lot 1 (04/10, §B8) — le registre des retraits du DAO par les candidats, PRMP de la fiche seule.
-  { path: 'dao/:idDmc/retraits', loadComponent: () => import('./retraits-dao').then((m) => m.RetraitsDao), data: { title: 'Retraits du DAO', parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }, { label: 'Fiche DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
+  { path: 'dao/:idDmc/retraits', loadComponent: () => import('./retraits-dao').then((m) => m.RetraitsDao), data: { title: 'Retraits du DAO', parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }, { label: 'Informations du DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
   // ⚠️ 18/10 (pilote) — « Reçus des frais » : tous les reçus à valider de la PRMP, depuis le menu ; décision sur place.
   { path: 'recus', loadComponent: () => import('./recus-hub').then((m) => m.RecusHub), data: { title: 'Reçus des frais de dossier' } },
   // ⚠️ V72 (06/10, retrait après paiement) — les reçus des frais de dossier, validés par la PRMP ou l'UGPM de la fiche.
-  { path: 'dao/:idDmc/recus', loadComponent: () => import('./recus-dao').then((m) => m.RecusDao), data: { title: 'Reçus des frais de dossier', parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }, { label: 'Fiche DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
+  { path: 'dao/:idDmc/recus', loadComponent: () => import('./recus-dao').then((m) => m.RecusDao), data: { title: 'Reçus des frais de dossier', parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }, { label: 'Informations du DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
   // ⚠️ Soumission en ligne, lot 3 (04/10, V68) — le registre des dépôts : le nombre seul avant la date limite.
   // ⚠️ R7 (V109, 13/10) — les questions des candidats avant la date limite : la PRMP répond, la réponse est diffusée.
-  { path: 'dao/:idDmc/questions', loadComponent: () => import('./questions-dao').then((m) => m.QuestionsDao), data: { title: 'Questions des candidats', parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }, { label: 'Fiche DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
-  { path: 'dao/:idDmc/depots', loadComponent: () => import('./depots-dao').then((m) => m.DepotsDao), data: { title: 'Dépôts des offres', parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }, { label: 'Fiche DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
+  { path: 'dao/:idDmc/questions', loadComponent: () => import('./questions-dao').then((m) => m.QuestionsDao), data: { title: 'Questions des candidats', parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }, { label: 'Informations du DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
+  { path: 'dao/:idDmc/depots', loadComponent: () => import('./depots-dao').then((m) => m.DepotsDao), data: { title: 'Dépôts des offres', parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }, { label: 'Informations du DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
   // ⚠️ Soumission en ligne, lot 2a (04/10, Q11) — la commission d'appel d'offres, désignée par la PRMP (remise électronique).
-  { path: 'dao/:idDmc/cao', loadComponent: () => import('./cao-ecran').then((m) => m.CaoEcran), data: { title: 'Commission d’appel d’offres', parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }, { label: 'Fiche DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
+  { path: 'dao/:idDmc/cao', loadComponent: () => import('./cao-ecran').then((m) => m.CaoEcran), data: { title: 'Commission d’appel d’offres', parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }, { label: 'Informations du DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
   // ⚠️ AMI en ligne, tranche AMI-a (07/10, V82) — l'appel à manifestation d'intérêt d'une fiche de prestations intellectuelles.
-  { path: 'dao/:idDmc/ami', loadComponent: () => import('./ami-dao').then((m) => m.AmiDao), data: { title: 'Appel à manifestation d’intérêt', parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }, { label: 'Fiche DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
+  { path: 'dao/:idDmc/ami', loadComponent: () => import('./ami-dao').then((m) => m.AmiDao), data: { title: 'Appel à manifestation d’intérêt', parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }, { label: 'Informations du DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
   // Création d'une UGPM par la PRMP (sous sa tutelle) — réservé PRMP (l'UGPM ne crée pas d'UGPM).
   { path: 'creer-ugpm', loadComponent: () => import('./creer-ugpm').then((m) => m.CreerUgpm), canActivate: [roleGuard], data: { roles: ['PRMP'] } },
   { path: 'mes-brouillons', loadComponent: () => import('./mes-brouillons').then((m) => m.MesBrouillons) },

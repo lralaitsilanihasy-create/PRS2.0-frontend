@@ -379,7 +379,7 @@ describe('Page dossier — étape en cours et gestes (lot L4-F3)', () => {
     /** ⚠️ 18/10 (pilote) — un dossier né d'une fiche n'a plus d'encart sur la page : l'état de la fiche est en tête de la modale « Fiche DAO ». */
     const ouvrirFiche = (): void => {
       expect(encart()).toBeNull();
-      Array.from(racine().querySelectorAll<HTMLButtonElement>('.pd-carte')).find((b) => texte(b.querySelector('.pd-carte__nom')) === 'Fiche DAO')?.click();
+      Array.from(racine().querySelectorAll<HTMLButtonElement>('.pd-carte')).find((b) => texte(b.querySelector('.pd-carte__nom')) === 'Informations du DAO')?.click();
       harness.detectChanges();
     };
 
@@ -399,8 +399,8 @@ describe('Page dossier — étape en cours et gestes (lot L4-F3)', () => {
     it('sans fiche, la PRMP rattache celle qu’elle a validée, et la page relit le dossier', async () => {
       await ouvrir('PRMP', '/prmp/dossier/42');
       repondre(reponse('PRMP', []), DAO());
-      expect(texte(encart())).toContain("Aucune fiche DAO n'est rattachée");
-      bouton('Rattacher une fiche DAO')?.click();
+      expect(texte(encart())).toContain("Aucune information du DAO n'est rattachée");
+      bouton('Rattacher les informations du DAO')?.click();
       harness.detectChanges();
       http.expectOne('/api/fiches-marche/rattachables').flush([
         { idDmc: 7, idDetail: 302873, refeDossierPpm: '00001/PPM-AGPM/CNM/2026', designationMarche: 'Fourniture de mobilier', version: 2, dateValidation: '2026-09-23T10:00:00' },
@@ -416,7 +416,7 @@ describe('Page dossier — étape en cours et gestes (lot L4-F3)', () => {
       harness.detectChanges();
       // Le dossier est relu : la page le redemande, avec ses gestes.
       expect(http.match('/api/dossiers/42').length).toBe(1);
-      expect(toast.success).toHaveBeenCalledWith('Fiche DAO rattachée à ce dossier.');
+      expect(toast.success).toHaveBeenCalledWith('Informations du DAO rattachées à ce dossier.');
     });
 
     it('dossier parti à la Commission, ou profil de contrôle : on lit la fiche, on ne la rattache plus', async () => {
@@ -431,7 +431,7 @@ describe('Page dossier — étape en cours et gestes (lot L4-F3)', () => {
       repondre(reponse('MEMBRE', []), DAO({ idDmc: 7, ficheMarche: RESUME }));
       ouvrirFiche();
       expect(texte(encart()?.querySelector('.fmd__etat'))).toBe('Validée');
-      expect(bouton('Rattacher une fiche DAO')).toBeUndefined();
+      expect(bouton('Rattacher les informations du DAO')).toBeUndefined();
       // La fiche s'ouvre dans l'espace PRMP : pas de lien pour qui ne peut pas y aller.
       expect(encart()?.querySelector('a[href="/prmp/dao/7"]')).toBeNull();
     });

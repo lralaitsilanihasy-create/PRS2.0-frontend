@@ -110,7 +110,7 @@ interface NoteEnCours {
       </div>
       @if (message(); as m) { <div class="alert alert-danger" role="alert"><span>{{ m }}</span></div> }
       <!-- ⚠️ R9c (14/10) — un dossier de marché soumis ferme l'AMI : les gestes se retirent. -->
-      <app-etape-close [dossier]="etapeClose()" [lienDossier]="!!lienAmi()" />
+      <app-etape-close [dossier]="etapeClose()" [lienDossier]="!!lienAmi()" [ami]="true" />
       @if (p.etat === 'EN_ATTENTE') {
         <p class="text-sm" role="status">Les expressions d’intérêt se lisent après la date limite. D’ici là, la commission peut signer ses déclarations.</p>
       }

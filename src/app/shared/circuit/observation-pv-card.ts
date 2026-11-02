@@ -67,13 +67,13 @@ export function decomposerObservation(lib: string): {
            observée telle qu'elle a été figée à la pose, et l'on mène à la fiche dans l'espace du lecteur. -->
       @if (obs().champFiche) {
         <div class="opv__fiche">
-          Information de la fiche DAO : <b>{{ obs().libelleChampFiche || obs().champFiche }}</b>@if (obs().lot) { — lot {{ obs().lot }} }
+          Information du DAO : <b>{{ obs().libelleChampFiche || obs().champFiche }}</b>@if (obs().lot) { — lot {{ obs().lot }} }
           @if (obs().valeurChampFiche) { · valeur observée « {{ obs().valeurChampFiche }} » }
           <!-- Lot C3 (V49) — la valeur d'aujourd'hui, quand la fiche a été revalidée depuis : le Vérificateur statue sans ouvrir la fiche. -->
           @if (actuelle(); as a) {
             <span class="opv__actuelle">→ actuelle « {{ a }} »@if (obs().versionFicheActuelle) { (version {{ obs().versionFicheActuelle }}) }</span>
           }
-          @if (lienFiche(); as lien) { <a class="opv__lien" [routerLink]="lien">Ouvrir la fiche</a> }
+          @if (lienFiche(); as lien) { <a class="opv__lien" [routerLink]="lien">Ouvrir les informations du DAO</a> }
         </div>
       }
       @if (obs().statut === 'MAINTENUE' && obs().precision) {

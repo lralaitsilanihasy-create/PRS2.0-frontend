@@ -41,7 +41,7 @@ export function documentsDuDossier(contenu: DossierContenuStore, manquantes = 0)
       { cle: 'presentation', libelle: 'Fiche de présentation', teinte: 'vert', resume: 'Identification, marché, procédure et cohérence avec l’AGPM' },
       { cle: 'plan', libelle: 'Plan de passation', teinte: 'bleu', resume: d.idDossierPlan
         ? `Plan n° ${d.idDossierPlan}${d.idPvPlan ? ` · PV n° ${d.idPvPlan} signé` : ' · PV non signé'}` : 'Plan hors de l’application' },
-      { cle: 'fiche-dao', libelle: 'Fiche DAO', resume: [f?.statut === 'VALIDEE' ? 'Validée' : 'Brouillon', version,
+      { cle: 'fiche-dao', libelle: 'Informations du DAO', resume: [f?.statut === 'VALIDEE' ? 'Validée' : 'Brouillon', version,
         f?.nbAttendus ? `${f.nbSaisis ?? 0} sur ${f.nbAttendus} informations` : ''].filter(Boolean).join(' · ') },
     );
     if (avis.length) {
@@ -58,7 +58,7 @@ export function documentsDuDossier(contenu: DossierContenuStore, manquantes = 0)
       { cle: 'presentation', libelle: 'Fiche de présentation', teinte: 'vert', resume: 'Identification, marché, procédure et attribution' },
       { cle: 'pv-cnm', libelle: 'PV de la Commission sur le DAO', resume: 'L’avis de la Commission sur le dossier d’appel d’offres',
         source: p.refeDossierMiseEnConcurrence ?? 'le dossier de mise en concurrence' },
-      { cle: 'fiche-dao', libelle: 'Fiche DAO', resume: 'Le dossier d’appel d’offres de la procédure', source: p.refeDossierMiseEnConcurrence ?? 'le dossier de mise en concurrence' },
+      { cle: 'fiche-dao', libelle: 'Informations du DAO', resume: 'Le dossier d’appel d’offres de la procédure', source: p.refeDossierMiseEnConcurrence ?? 'le dossier de mise en concurrence' },
       // ⚠️ 27/10 (« dossier-marche-remise-papier », P4) — remise papier : ni séance, ni évaluation, ni attribution dans l'application ;
       // leurs pièces papier se lisent dans « Pièces jointes ».
       ...(p.remisePapier ? [] : [

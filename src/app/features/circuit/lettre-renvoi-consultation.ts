@@ -181,7 +181,7 @@ import { LienDossier } from './page-dossier/lien-dossier';
                                et validée (ses documents rejoignent le dossier) ; le serveur refuse la transmission sans elle. -->
                           <p class="text-muted text-sm">
                             L'examen du dossier est <strong>suspendu</strong>. Pour un dossier d'appel d'offres, le complément est
-                            la <strong>fiche DAO révisée et validée</strong> : ouvrez-la, corrigez ce que la lettre relève, validez
+                            les <strong>informations du DAO révisées et validées</strong> : ouvrez-les, corrigez ce que la lettre relève, validez
                             la nouvelle version — ses documents rejoignent le dossier — puis transmettez : le dossier repartira en
                             <strong>réexamen</strong> chez le Membre attributaire, qui verra ce qui a changé.
                           </p>
@@ -501,7 +501,7 @@ export class LettreRenvoiConsultation {
         const code = codeErreur(e);
         this.toast.error(
           code === 'FICHE_NON_REVISEE'
-            ? "La fiche DAO n'a pas de version validée postérieure à celle que la Commission a examinée : révisez-la et validez-la avant de transmettre."
+            ? "Les informations du DAO n'ont pas de version validée postérieure à celle que la Commission a examinée : révisez-les et validez-les avant de transmettre."
             : e.message || 'Transmission des compléments impossible.',
         );
       },

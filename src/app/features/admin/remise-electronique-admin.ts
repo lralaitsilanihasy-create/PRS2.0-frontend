@@ -22,13 +22,13 @@ const NIVEAUX = ['Simple', 'Avancée', 'Qualifiée'] as const;
     <section class="rea">
       <header class="page-header">
         <div>
-          <div class="page-subtitle">Référentiels · défauts et bornes de la fiche DAO</div>
+          <div class="page-subtitle">Référentiels · défauts et bornes des informations du DAO</div>
           <h1 class="page-title">Remise électronique</h1>
         </div>
         <button type="button" class="btn btn-secondary btn-sm" (click)="charger()" [disabled]="loading()">Rafraîchir</button>
       </header>
       <p class="page-role">
-        Ce que la fiche DAO propose d'avance en mode électronique, et ce que ses contrôles exigent au minimum. Une valeur
+        Ce que les informations du DAO proposent d'avance en mode électronique, et ce que ses contrôles exigent au minimum. Une valeur
         par défaut se recopie dans une fiche à sa création ; une borne s'applique à chaque validation.
       </p>
 

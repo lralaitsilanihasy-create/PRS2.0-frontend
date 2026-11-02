@@ -15,9 +15,9 @@ import { DossierSoumis } from '../../models';
     @if (dossier(); as d) {
       <div class="alert alert-info ec" role="status">
         <span>
-          <strong>Étape close.</strong> Le dossier de marché n° {{ d.idDossier }} (lot {{ d.lot }}) est soumis à la Commission : la séance,
-          l’évaluation et l’AMI de la procédure ne se modifient plus. Seule une reprise de l’évaluation après avis défavorable, ou une
-          réattribution, les rouvre.
+          <strong>Étape close.</strong> Le dossier de marché n° {{ d.idDossier }} (lot {{ d.lot }}) est soumis à la Commission : la séance
+          d’ouverture et l’évaluation des offres{{ ami() ? ', ainsi que la présélection de l’AMI,' : '' }} ne se modifient plus. Seule une
+          reprise de l’évaluation après avis défavorable, ou une réattribution, les rouvre.
           @if (lienDossier()) { <a class="ec__lien" [routerLink]="['/prmp/dossier', d.idDossier]">Ouvrir le dossier de marché</a> }
         </span>
       </div>
@@ -29,4 +29,6 @@ export class EtapeClose {
   readonly dossier = input<DossierSoumis | null>(null);
   /** PRMP ou UGPM : le dossier de marché s'ouvre depuis leur espace. */
   readonly lienDossier = input(false);
+  /** ⚠️ 02/11 (pilote) — l'AMI n'existe qu'en prestations intellectuelles : seul l'écran de présélection de l'AMI le nomme. */
+  readonly ami = input(false);
 }

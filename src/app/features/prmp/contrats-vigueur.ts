@@ -201,7 +201,7 @@ function aujourdhui(): string {
                   <div class="cv__panneau" role="tabpanel" id="cv-pan-remises" aria-labelledby="cv-tab-remises" [hidden]="onglet() !== 'remises'">
                     @if ((prmp() || ugpm()) && c.etat === 'EN_VIGUEUR' && !remiseOuverte() && !chargementRemises()) {
                       <div class="cv__barre">
-                        <button type="button" class="btn btn-sm" [class.btn-primary]="c.alertes.includes('REMISE_A_LANCER')" [class.btn-outline]="!c.alertes.includes('REMISE_A_LANCER')" (click)="ouvrirFenetre('remise')">Lancer une remise en concurrence</button>
+                        <button type="button" class="btn btn-sm" [class.btn-primary]="c.alertes.includes('REMISE_A_LANCER')" [class.btn-nuit]="!c.alertes.includes('REMISE_A_LANCER')" (click)="ouvrirFenetre('remise')">Lancer une remise en concurrence</button>
                       </div>
                     }
                     @if (c.prochaineRemise; as p) {
@@ -262,7 +262,7 @@ function aujourdhui(): string {
                   <!-- ⚠️ 29/10 (« marche-a-commandes-champs », §B3) — les termes sont figés à la notification : après une révision de la fiche, la PRMP les relit. -->
                   @if (prmp() && c.etat === 'EN_VIGUEUR') {
                     <div class="cv__relecture">
-                      <button type="button" class="btn btn-outline btn-sm" [disabled]="occupe()" (click)="relire(c)">Relire depuis la fiche</button>
+                      <button type="button" class="btn btn-ocre btn-sm" [disabled]="occupe()" (click)="relire(c)">Relire depuis la fiche</button>
                       <span class="text-sm text-muted">Reprend la période, les montants et la reconduction de la dernière version validée de la fiche ; les bons, remises et réceptions restent intacts.</span>
                     </div>
                     @if (refusRelecture(); as m) { <div class="alert alert-danger" role="alert">{{ m }}</div> }
@@ -279,7 +279,7 @@ function aujourdhui(): string {
                     </dl>
                     @if (prmp() && reconductionOuverte(c)) {
                       <div class="cv__barre">
-                        <button type="button" class="btn btn-sm" [class.btn-primary]="c.alertes.includes('RECONDUCTION_A_DECIDER')" [class.btn-outline]="!c.alertes.includes('RECONDUCTION_A_DECIDER')" (click)="ouvrirFenetre('reconduction')">Décider la reconduction</button>
+                        <button type="button" class="btn btn-sm" [class.btn-primary]="c.alertes.includes('RECONDUCTION_A_DECIDER')" [class.btn-nuit]="!c.alertes.includes('RECONDUCTION_A_DECIDER')" (click)="ouvrirFenetre('reconduction')">Décider la reconduction</button>
                       </div>
                     }
                     @if (c.decisions.length) {
@@ -331,7 +331,7 @@ function aujourdhui(): string {
                   @if (refusLancement(); as m) { <div class="alert alert-danger" role="alert">{{ m }}</div> }
                 </div>
                 <div class="modal-footer">
-                  <button type="button" class="btn btn-outline" (click)="fenetre.set(null)">Annuler</button>
+                  <button type="button" class="btn btn-gris" (click)="fenetre.set(null)">Annuler</button>
                   <button type="button" class="btn btn-primary" [disabled]="!lr('objet').trim() || !lr('specifications').trim() || !lr('delaiExecution').trim() || occupe()" (click)="lancer(c)">Lancer et envoyer les lettres d’invitation</button>
                 </div>
               </div>
@@ -361,7 +361,7 @@ function aujourdhui(): string {
                   @if (refus(); as r) { <div class="alert alert-danger" role="alert">{{ r }}</div> }
                 </div>
                 <div class="modal-footer">
-                  <button type="button" class="btn btn-outline" (click)="fenetre.set(null)">Annuler</button>
+                  <button type="button" class="btn btn-gris" (click)="fenetre.set(null)">Annuler</button>
                   <button type="button" class="btn btn-primary" [disabled]="!decision() || !reference().trim() || !dateDecision() || occupe()" (click)="decider(c)">Enregistrer la décision</button>
                 </div>
               </div>
@@ -414,13 +414,19 @@ function aujourdhui(): string {
     .cv__ind-v { font-size: 1rem; font-weight: 500; overflow-wrap: anywhere; }
     .cv__ind-d { font-size: 0.75rem; color: var(--texte-secondaire); }
     .cv__ind--alerte .cv__ind-v { color: var(--examen-texte); }
-    .cv__onglets { display: flex; gap: 2px; border-bottom: 1px solid var(--bordure); overflow-x: auto; }
-    .cv__onglets button { border: 0; background: none; padding: 0.55rem 0.8rem; font-size: 0.85rem; cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; color: var(--texte-secondaire); }
-    .cv__onglets button[aria-selected='true'] { color: var(--texte); font-weight: 500; border-bottom-color: var(--section-fond); }
+    /* ⚠️ 02/11 (pilote) — de vrais onglets de classeur : une bande grise qui les porte, chaque onglet encadré, l'actif en blanc avec un filet
+       bleu nuit en haut et raccordé à son contenu (il « mange » la bordure du bas). */
+    .cv__onglets { display: flex; gap: 4px; margin-top: 0.75rem; padding: 6px 6px 0; background: var(--tableau-entete); border: 1px solid var(--bordure); border-bottom: 0; border-radius: 6px 6px 0 0; overflow-x: auto; }
+    .cv__onglets button {
+      position: relative; margin-bottom: -1px; padding: 0.5rem 0.9rem; border: 1px solid var(--bordure); border-bottom: 0; border-top: 3px solid transparent;
+      border-radius: 5px 5px 0 0; background: var(--neutre-fond); color: var(--texte); font: inherit; font-size: 0.85rem; cursor: pointer; white-space: nowrap;
+    }
+    .cv__onglets button:hover:not([aria-selected='true']) { background: var(--carte-fond); }
+    .cv__onglets button[aria-selected='true'] { z-index: 1; background: var(--carte-fond); border-top-color: var(--section-fond); font-weight: 500; padding-bottom: calc(0.5rem + 1px); }
     .cv__onglets button:focus-visible { outline: 2px solid var(--bouton-principal); outline-offset: -2px; }
     .cv__compte { margin-left: 0.35rem; padding: 0 0.4rem; border-radius: 8px; font-size: 0.72rem; background: var(--neutre-fond); color: var(--neutre-texte); }
     .cv__compte--att { background: var(--examen-fond); color: var(--examen-texte); }
-    .cv__panneau { display: flex; flex-direction: column; gap: 0.6rem; padding-top: 0.8rem; }
+    .cv__panneau { display: flex; flex-direction: column; gap: 0.6rem; padding: 0.9rem 0.9rem 1rem; border: 1px solid var(--bordure); border-radius: 0 0 6px 6px; background: var(--carte-fond); }
     .cv__panneau[hidden] { display: none; }
     .cv__barre { display: flex; gap: 0.5rem; flex-wrap: wrap; }
     .cv__note { margin: 0; }

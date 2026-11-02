@@ -63,7 +63,7 @@ export function quorumLibelle(s: Seance): string {
           <div class="page-subtitle">Procédure n° {{ idDmc }} · {{ conduite() ? 'responsable de la procédure' : 'lecture' }}</div>
           <h1 class="page-title">Séance d'ouverture des plis</h1>
         </div>
-        @if (lienFiche()) { <a class="btn btn-outline btn-sm" [routerLink]="lienFiche()!">Fiche DAO</a> }
+        @if (lienFiche()) { <a class="btn btn-outline btn-sm" [routerLink]="lienFiche()!">Informations du DAO</a> }
       </header>
 
       @if (chargement()) {
@@ -73,16 +73,26 @@ export function quorumLibelle(s: Seance): string {
       } @else if (erreur()) {
         <app-etat-erreur message="La séance n'a pas pu être chargée." (reessayer)="charger()" />
       } @else if (seance(); as s) {
+        @if (s.heureOuverture || (s.ouverteDans != null && s.ouverteDans > 0)) {
         <div class="se__etat">
-          <span class="badge" [class.badge-success]="s.etat === 'DECHIFFREE' || s.etat === 'CLOSE'" [class.badge-info]="s.etat === 'OUVERTE' || s.etat === 'PV_A_SIGNER'" [class.badge-danger]="s.etat === 'ILLISIBLE'" [class.badge-neutral]="s.etat === 'A_VENIR'">{{ etats[s.etat] }}</span>
+          <!-- ⚠️ 02/11 (variante B) — l'état et le quorum se lisent dans la bande de chiffres, juste dessous. -->
           @if (s.heureOuverture) { <span class="text-sm">Heure d'ouverture : <strong>{{ dateHeure(s.heureOuverture) }}</strong></span> }
           @if (s.ouverteDans != null && s.ouverteDans > 0) { <span class="text-sm text-muted">dans {{ duree(s.ouverteDans) }}</span> }
-          <span class="text-sm">Quorum : <strong>{{ quorum() }}</strong> détenteurs{{ s.secoursEmploye ? ' (part de secours employée)' : '' }}</span>
         </div>
+        }
         @if (message(); as m) { <div class="alert alert-danger" role="alert">{{ m }}</div> }
         <!-- ⚠️ R9c (14/10) — un dossier de marché soumis ferme la séance : la conduite passe en lecture. -->
         <app-etape-close [dossier]="etapeClose()" [lienDossier]="!!lienFiche()" />
 
+        <!-- ⚠️ 02/11 (pilote, maquette « Séance d'ouverture », variante B) — les chiffres de la séance. -->
+        <dl class="se-cles">
+          <div><dt>Offres reçues</dt><dd>{{ s.offres.length }}</dd></div>
+          <div><dt>Quorum</dt><dd>{{ quorum() }}@if (s.secoursEmploye) { <small> · part de secours employée</small> }</dd></div>
+          <div><dt>PV d’ouverture</dt><dd>{{ s.pv?.signe ? 'signé' : s.pv?.produit ? 'à signer' : 'non produit' }}@if (s.pv?.signeLe) { <small> · le {{ dateHeure(s.pv!.signeLe!) }}</small> }</dd></div>
+          <div><dt>État</dt><dd>{{ etats[s.etat] }}</dd></div>
+        </dl>
+
+        @if (!comparatif()) {
         <div class="se__grille">
           <section class="card se__bloc" aria-labelledby="se-membres">
             <h2 id="se-membres" class="se__h2">Membres de la commission</h2>
@@ -115,6 +125,7 @@ export function quorumLibelle(s: Seance): string {
             } @else { <p class="text-sm text-muted">Aucune offre déposée : la séance conduit à un PV de carence.</p> }
           </section>
         </div>
+        }
 
         @if (conduite()) {
           <div class="se__actions">
@@ -157,7 +168,32 @@ export function quorumLibelle(s: Seance): string {
         @if (offresOuvertes(s)) {
           <h2 class="se__h2">Lecture des offres</h2>
           <!-- Arbitrage du pilote (04/10) : les pièces s'ouvrent pour les membres de la CAO seulement, depuis /cao. -->
-          <app-lecture-seance [idDmc]="idDmc" [piecesOuvrables]="false" [projection]="projection()" />
+          <app-lecture-seance [idDmc]="idDmc" [piecesOuvrables]="false" [projection]="projection()" [comparatif]="comparatif()">
+            @if (comparatif()) {
+              <!-- ⚠️ 02/11 (variante B) — à côté du comparatif : la séance (membres, signatures du PV) et ses gestes. -->
+              <div cote class="se-cote">
+                <section class="se-cote__carte" aria-labelledby="se-membres-cote">
+                  <h3 id="se-membres-cote" class="se-cote__t">La séance</h3>
+                  <ul class="se__membres">
+                    @for (m of s.membres; track m.im) { <li><span><strong>{{ m.nom }}</strong>{{ m.president ? ' — président' : '' }}{{ m.present ? ' · présent' : ' · absent' }}</span></li> }
+                  </ul>
+                  @if (s.autres.length) { <p class="text-sm">Autres présents : {{ autresTexte() }}</p> }
+                </section>
+                @if (s.pv?.produit) {
+                  <section class="se-cote__carte" aria-label="Signatures du PV d'ouverture">
+                    <app-signatures-pv [idDmc]="idDmc" [pv]="s.pv" [membres]="s.membres" [vue]="conduite() ? 'responsable' : 'lecture'" (geste)="seance.set($event)" />
+                  </section>
+                }
+                <section class="se-cote__carte" aria-label="Gestes">
+                  <h3 class="se-cote__t">Gestes</h3>
+                  @if (s.pv?.produit) { <button type="button" class="btn btn-pdf btn-sm" [disabled]="travail()" (click)="telechargerPv()">PV d’ouverture (PDF)</button> }
+                  @if (s.etat === 'CLOSE') { <a class="btn btn-nuit btn-sm" [routerLink]="['/procedure', idDmc, 'evaluation']">Évaluation des offres</a> }
+                  @if (conduite() && s.etat === 'DECHIFFREE') { <button type="button" class="btn btn-ocre btn-sm" (click)="projection.set(true)">Projeter la lecture</button> }
+                  @if (s.pv?.publie) { <span class="text-sm text-muted">Publié sur la procédure en ligne (extrait sans les alertes).</span> }
+                </section>
+              </div>
+            }
+          </app-lecture-seance>
         }
 
         @if (conduite() && s.etat === 'DECHIFFREE') {
@@ -171,7 +207,7 @@ export function quorumLibelle(s: Seance): string {
             </div>
           </section>
         }
-        @if (s.pv?.produit) {
+        @if (s.pv?.produit && !comparatif()) {
           <!-- ⚠️ V70 (§B2) : le PV se signe par les membres présents, depuis leur espace ; publié à la dernière signature. -->
           <section class="card se__bloc" aria-label="Signatures du PV d'ouverture">
             <app-signatures-pv [idDmc]="idDmc" [pv]="s.pv" [membres]="s.membres" [vue]="conduite() ? 'responsable' : 'lecture'" (geste)="seance.set($event)" />
@@ -198,6 +234,18 @@ export function quorumLibelle(s: Seance): string {
     @media (prefers-reduced-motion: reduce) { .se__pv-cta:hover:not(:disabled) { transform: none; } }
 
     .se { display: flex; flex-direction: column; gap: 1rem; }
+    /* ⚠️ 02/11 (pilote, variante B) — les chiffres de la séance, et la colonne de la séance à côté du comparatif. */
+    .se-cles { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); margin: 0; background: var(--section-fond); color: var(--texte-menu); border-radius: 6px; }
+    .se-cles > div { min-width: 0; padding: 0.55rem 0.9rem; border-left: 1px solid var(--menu-survol); }
+    .se-cles > div:first-child { border-left: 0; }
+    .se-cles dt { font-size: 0.66rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--texte-menu-secondaire); }
+    .se-cles dd { margin: 0; font-size: 0.95rem; font-weight: 500; }
+    .se-cles dd small { font-size: 0.72rem; font-weight: 400; color: var(--texte-menu-secondaire); }
+    .se-cote { display: flex; flex-direction: column; gap: 12px; }
+    .se-cote__carte { display: flex; flex-direction: column; gap: 8px; padding: 0.75rem 0.9rem; border: 1px solid var(--bordure); border-radius: 6px; background: var(--carte-fond); }
+    .se-cote__carte .btn { justify-content: center; }
+    .se-cote__t { margin: 0; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texte-secondaire); }
+    @media (max-width: 900px) { .se-cles { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); } .se-cles > div:nth-child(odd) { border-left: 0; } }
     .se__etat { display: flex; gap: 0.9rem; align-items: center; flex-wrap: wrap; }
     .se__grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 1rem; }
     .se__bloc { padding: 0.9rem 1.1rem; display: flex; flex-direction: column; gap: 0.5rem; }
@@ -235,6 +283,8 @@ export class SeanceEcran implements OnInit, OnDestroy {
   readonly motifSecours = signal('');
   readonly observations = signal('');
   readonly projection = signal(false);
+  /** ⚠️ 02/11 (pilote, variante B) — offres ouvertes, hors projection : le tableau comparatif, la séance à côté. */
+  readonly comparatif = computed(() => { const s = this.seance(); return !!s && offresOuvertes(s) && !this.projection(); });
   readonly autreNom = signal('');
   readonly autreQualite = signal('');
   private sondage: ReturnType<typeof setInterval> | undefined;

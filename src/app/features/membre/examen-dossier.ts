@@ -1317,7 +1317,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       if (d?.idDmc == null && d?.procedure) return [
         { cle: 'presentation' as const, libelle: 'Fiche de présentation', nombre: null },
         { cle: 'pv-cnm' as const, libelle: 'PV de la CNM (DAO)', nombre: null },
-        { cle: 'dao' as const, libelle: 'Fiche DAO', nombre: null },
+        { cle: 'dao' as const, libelle: 'Informations du DAO', nombre: null },
         // ⚠️ 27/10 (P4) — remise papier : la séance, l'évaluation et l'attribution n'existent pas dans l'application.
         ...(d.procedure.remisePapier ? [] : [
           { cle: 'seance' as const, libelle: 'Séance d’ouverture', nombre: null },
@@ -1334,7 +1334,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       return [
         { cle: 'presentation' as const, libelle: 'Fiche de présentation', nombre: null },
         ...(d.idDossierPlan ? [{ cle: 'plan' as const, libelle: 'Plan de passation', nombre: null }] : []),
-        { cle: 'dao' as const, libelle: 'Fiche DAO', nombre: null },
+        { cle: 'dao' as const, libelle: 'Informations du DAO', nombre: null },
         ...(this.pieceAvis() ? [{ cle: 'avis' as const, libelle: lettre ? 'Lettre d’invitation' : 'Avis spécifique', nombre: null }] : []),
         { cle: 'bordereau' as const, libelle: 'Bordereau estimatif', nombre: null },
         ...(d.ficheMarche?.typeMarche !== 'CONTRAT_CADRE' ? [{ cle: 'canevas' as const, libelle: 'Canevas de rapport', nombre: null }] : []),
@@ -1347,7 +1347,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       { cle: 'ppm' as const, libelle: 'Plan de passation', nombre: this.lignesDuPlan().length },
       ...(this.agpmDoc().length || this.hasEtapeAgpm() ? [{ cle: 'agpm' as const, libelle: "Projet d'AGPM", nombre: this.agpmDoc().length }] : []),
       // ⚠️ Lot B — le dossier soumis PRODUIT par une fiche DAO la porte (`idDmc`) : elle se lit et s'observe ici.
-      ...(this.dossier()?.idDmc != null ? [{ cle: 'dao' as const, libelle: 'Fiche DAO', nombre: null }] : []),
+      ...(this.dossier()?.idDmc != null ? [{ cle: 'dao' as const, libelle: 'Informations du DAO', nombre: null }] : []),
       { cle: 'pieces' as const, libelle: 'Pièces jointes', nombre: this.nbPieces() },
     ];
   });
@@ -2331,7 +2331,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       this.allerEtape(this.etapeDossierIdx());
       if (this.etape() === avant && avant < this.etapeDossierIdx()) {
         this.toast.info(
-          "La grille du dossier s'ouvrira après les pièces — l'examen est séquentiel. La fiche DAO reste consultable ici.",
+          "La grille du dossier s'ouvrira après les pièces — l'examen est séquentiel. Les informations du DAO restent consultables ici.",
         );
       }
     } else if (o === 'pieces' && this.nbPieces() > 0 && !this.estEtapePiece() && !this.toutesPiecesStatuees()) {

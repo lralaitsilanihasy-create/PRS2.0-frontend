@@ -467,7 +467,7 @@ export const LIBELLES_ELEMENT_GRILLE: Readonly<Record<string, string>> = {
   evaluation: 'Rapport d’évaluation',
   attribution: 'Attribution',
   bordereau: 'Bordereau estimatif',
-  dao: 'Fiche DAO',
+  dao: 'Informations du DAO',
 };
 /** Les points de l'élément ; `null` quand l'élément n'en a pas de propres (toute la grille s'affiche). */
 export function pointsDeLElement<T extends { libelPointCtrl?: string | null }>(element: string | null, points: readonly T[]): T[] | null {

@@ -182,8 +182,8 @@ function aujourdhui(): string {
             }
             <div class="rb__actions">
               @if (r.pvDisponible) {
-                <button type="button" class="btn btn-outline btn-sm" (click)="ouvrir(service.pv(r.id))">Procès-verbal (PDF)</button>
-                <button type="button" class="btn btn-ghost btn-sm" (click)="enregistrer(service.pv(r.id, 'docx'), 'pv-reception-bon-' + d.numero + '.docx')">Word</button>
+                <button type="button" class="btn btn-pdf btn-sm" (click)="ouvrir(service.pv(r.id))">Procès-verbal (PDF)</button>
+                <button type="button" class="btn btn-word btn-sm" (click)="enregistrer(service.pv(r.id, 'docx'), 'pv-reception-bon-' + d.numero + '.docx')">Word</button>
               }
               @if (president() && definitiveDue(d, r)) {
                 <button type="button" class="btn btn-primary btn-sm" [disabled]="occupe()" (click)="geste(service.ouvrirDefinitive(d.idBon, r.id), 'La réception définitive de cette livraison est ouverte : établissez son procès-verbal.')">Ouvrir la réception définitive de cette livraison</button>
@@ -237,7 +237,7 @@ function aujourdhui(): string {
             <div class="rb__ligne rb__form">
               <label class="form-group"><span class="form-label">Livré le</span><input class="form-control" type="date" [max]="aujourdhui" [value]="champ('livre')" (input)="poser('livre', $any($event.target).value)" /></label>
               <label class="form-group rb__large"><span class="form-label">Observations (facultatives)</span><input class="form-control" type="text" [value]="champ('obsLivraison')" (input)="poser('obsLivraison', $any($event.target).value)" /></label>
-              <button type="button" class="btn btn-outline btn-sm" [disabled]="occupe() || !livreesValides(d)" (click)="declarer(d)">Déclarer la livraison</button>
+              <button type="button" class="btn btn-nuit btn-sm" [disabled]="occupe() || !livreesValides(d)" (click)="declarer(d)">Déclarer la livraison</button>
             </div>
           </details>
         }

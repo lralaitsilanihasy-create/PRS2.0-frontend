@@ -14,6 +14,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { NavItem, cheminAFaire, entreesParInterim, navFlat, navFor } from '../../core/navigation/navigation';
 import { piedMenu, sectionsMenu } from '../../core/navigation/groupes-menu';
 import { barreDuMenu } from '../../core/navigation/barre-menu';
+import { accueilApresDeconnexion } from '../../core/navigation/accueil-public.guard';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { DossiersRefreshStore } from '../../features/prmp/dossiers-refresh.store';
 import {
@@ -660,8 +661,10 @@ export class MainLayout {
     });
   }
 
+  /** ⚠️ 02/11 (pilote) — la déconnexion mène au portail public, sur l'onglet du profil (lu avant la déconnexion). */
   logout(): void {
+    const accueil = accueilApresDeconnexion(this.auth.role());
     this.auth.logout();
-    void this.router.navigateByUrl('/login');
+    void this.router.navigateByUrl(accueil);
   }
 }

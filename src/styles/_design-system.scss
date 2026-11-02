@@ -641,6 +641,33 @@ textarea:focus-visible {
 
     &:hover:not(:disabled) { background: var(--retard-fond); }
   }
+
+  /* ⚠️ 02/11/2026 (pilote, « mettre de couleurs à tous les boutons ») — un bouton plein par type de geste, texte blanc sauf le gris :
+     PDF vert, Word bleu, geste secondaire bleu nuit, ajouter ou relire ocre, retirer ou annuler un objet rouge, fermer sans rien faire
+     gris. Contrastes mesurés par scripts/contrastes-coquille.mjs. */
+  &.btn-pdf,
+  &.btn-word,
+  &.btn-nuit,
+  &.btn-ocre,
+  &.btn-rouge {
+    color: var(--texte-menu);
+    font-weight: 500;
+
+    &:hover:not(:disabled) { filter: brightness(0.92); }
+  }
+  &.btn-pdf { background: var(--favorable-texte); border-color: var(--favorable-texte); }
+  &.btn-word { background: var(--bouton-principal); border-color: var(--bouton-principal); }
+  &.btn-nuit { background: var(--section-fond); border-color: var(--section-fond); }
+  &.btn-ocre { background: var(--examen-texte); border-color: var(--examen-texte); }
+  &.btn-rouge { background: var(--retard-texte); border-color: var(--retard-texte); }
+  &.btn-gris {
+    background: var(--neutre-fond);
+    color: var(--neutre-texte);
+    border-color: var(--neutre-fond);
+    font-weight: 500;
+
+    &:hover:not(:disabled) { filter: brightness(0.95); }
+  }
 }
 
 /* ══════════════════════════════════════════

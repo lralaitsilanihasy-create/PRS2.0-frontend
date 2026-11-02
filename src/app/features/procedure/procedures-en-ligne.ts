@@ -160,7 +160,7 @@ const LIBELLES_SEANCE: Readonly<Record<string, string>> = {
                       }
                     }
                     @if (admin()) {
-                      <a class="btn btn-sm" [class.btn-primary]="!p.responsable" [class.btn-outline]="!!p.responsable" [routerLink]="['/admin', 'dao', p.idDmc]">{{ p.responsable ? 'Ouvrir la fiche' : 'Désigner le responsable' }}</a>
+                      <a class="btn btn-sm" [class.btn-primary]="!p.responsable" [class.btn-outline]="!!p.responsable" [routerLink]="['/admin', 'dao', p.idDmc]">{{ p.responsable ? 'Ouvrir les informations du DAO' : 'Désigner le responsable' }}</a>
                       @if (p.responsable?.im === monMatricule()) {
                         <a class="btn btn-sm btn-outline" [routerLink]="['/procedure', p.idDmc, 'parametres-internes']">Paramètres et cérémonie</a>
                         @if (p.etatSeance || p.etat === 'CLOSE') { <a class="btn btn-sm btn-outline" [routerLink]="['/procedure', p.idDmc, 'seance']">Séance</a> }

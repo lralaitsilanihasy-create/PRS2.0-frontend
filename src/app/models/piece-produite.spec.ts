@@ -8,7 +8,7 @@ describe('Pièce produite par l’application (19/10, V137)', () => {
   });
 
   it('les deux refus sont nommés, les autres laissés au message par défaut', () => {
-    expect(messagePieceProduite('PIECE_PRODUITE_PAR_FICHE')).toContain('fiche DAO');
+    expect(messagePieceProduite('PIECE_PRODUITE_PAR_FICHE')).toContain('informations du DAO');
     expect(messagePieceProduite('PIECE_PRODUITE_PAR_APPLICATION')).toContain('dossier de marché');
     expect(messagePieceProduite('AUTRE')).toBeNull();
   });

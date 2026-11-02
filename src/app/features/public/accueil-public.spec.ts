@@ -1,11 +1,13 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
+import { vi } from 'vitest';
 import { Router, UrlTree, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { AuthService } from '../../core/auth/auth.service';
-import { accueilPublicGuard } from '../../core/navigation/accueil-public.guard';
+import { accueilApresDeconnexion, accueilPublicGuard } from '../../core/navigation/accueil-public.guard';
 import { AccueilPublic } from './accueil-public';
 import { CONTENU_PUBLIC, audienceDepuis } from './accueil-public-libelles';
 
@@ -14,12 +16,12 @@ describe('Entrée publique — /accueil/:audience (proposition 2026-09-22, arbit
   const racine = (): HTMLElement => harness.routeNativeElement as HTMLElement;
   const texte = (el: Element | null | undefined): string => (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
 
-  async function ouvrir(url: string): Promise<void> {
+  async function ouvrir(url: string, auth: object = {}): Promise<void> {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([{ path: 'accueil/:audience', component: AccueilPublic }]),
         provideHttpClient(), provideHttpClientTesting(),
-        { provide: AuthService, useValue: { isAuthenticated: () => false, role: () => null } },
+        { provide: AuthService, useValue: { isAuthenticated: () => false, role: () => null, ...auth } },
       ],
     });
     harness = await RouterTestingHarness.create();
@@ -42,7 +44,11 @@ describe('Entrée publique — /accueil/:audience (proposition 2026-09-22, arbit
     expect(racine().querySelectorAll('.pub-repere').length).toBe(3);
     // ⚠️ 02/11 (pilote) — six étapes : le résumé des processus de la PRMP et de l'UGPM.
     expect(Array.from(racine().querySelectorAll('.pub-carte h3')).map(texte)).toEqual([
-      '1Planifier', '2Préparer l’appel d’offres', '3Recevoir les offres', '4Évaluer et attribuer', '5Exécuter le contrat', '6Suivre et recevoir les PV',
+      '1Planifier', '2Préparer l’appel d’offres', '3Ouvrir la procédure en ligne', '4Ouvrir et évaluer les offres', '5Exécuter le contrat', '6Suivre et recevoir les PV',
+    ]);
+    // Chaque étape dit qui agit, d'après le rattachement des profils de l'onglet.
+    expect(Array.from(racine().querySelectorAll('.pub-carte__qui')).map((e) => texte(e).replace('Qui agit : ', ''))).toEqual([
+      'UGPM, PRMP', 'UGPM, PRMP', 'Responsable de procédure, dépositaire, PRMP', 'Commission d’appel d’offres', 'PRMP, commission de réception', 'PRMP, UGPM',
     ]);
     // Mots-clés = liens vers l'écran concerné (derrière la session, authGuard mène à la connexion puis y revient).
     const mots = Array.from(racine().querySelectorAll<HTMLAnchorElement>('.pub-carte a.pub-mot'));
@@ -66,6 +72,21 @@ describe('Entrée publique — /accueil/:audience (proposition 2026-09-22, arbit
     await ouvrir('/accueil/candidat');
     expect(Array.from(racine().querySelectorAll('.pub-hero__actions a')).map((a) => a.getAttribute('href'))).toEqual(['/candidat/procedures']);
     expect((racine().querySelector('.pub-connexion__bas a') as HTMLAnchorElement).getAttribute('href')).toBe('/candidat/inscription');
+  });
+
+  it('02/11 — chaque public ne se connecte que depuis son onglet : un compte de la CNM est refusé sur « PRMP & UGPM », avec le lien vers « CNM »', async () => {
+    const logout = vi.fn();
+    await ouvrir('/accueil/prmp', { authenticate: () => of({ role: 'PRESIDENT' }), logout });
+    const saisir = (sel: string, v: string): void => { const c = racine().querySelector(sel) as HTMLInputElement; c.value = v; c.dispatchEvent(new Event('input')); };
+    saisir('#connexion input[autocomplete="username"]', 'PRES001');
+    saisir('#connexion input[autocomplete="current-password"]', 'secret');
+    (racine().querySelector('#connexion button[type="submit"]') as HTMLButtonElement).click();
+    harness.detectChanges();
+    expect(logout).toHaveBeenCalled();
+    expect(texte(racine().querySelector('#connexion [role="alert"]'))).toContain('Ce compte relève de l’espace « CNM »');
+    expect((racine().querySelector('#connexion .login-form__vers') as HTMLAnchorElement).getAttribute('href')).toBe('/accueil/commission');
+    expect((racine().querySelector('#connexion input[autocomplete="current-password"]') as HTMLInputElement).value).toBe('');
+    expect(TestBed.inject(Router).url).toBe('/accueil/prmp');
   });
 
   it('la connexion du portail est celle de /login : identifiants envoyés au service d’authentification', async () => {
@@ -110,5 +131,15 @@ describe('accueilPublicGuard — un connecté est renvoyé à son « À faire »
     TestBed.resetTestingModule();
     const admin = garde(true, 'ADMINISTRATEUR');
     expect(TestBed.inject(Router).serializeUrl(admin as UrlTree)).toBe('/');
+  });
+});
+
+describe('accueilApresDeconnexion — la déconnexion mène au portail, sur l’onglet du profil (02/11)', () => {
+  it('PRMP, UGPM, Responsable de procédure, CAO, dépositaire : « PRMP & UGPM » ; CNM et Administrateur : « CNM » ; candidat : « Entreprises »', () => {
+    for (const r of ['PRMP', 'UGPM', 'RESPONSABLE_PROCEDURE', 'MEMBRE_CAO', 'DEPOSITAIRE', null]) expect(accueilApresDeconnexion(r), String(r)).toBe('/accueil/prmp');
+    for (const r of ['PRESIDENT', 'CHEF_COMMISSION', 'MEMBRE', 'SECRETAIRE', 'VERIFICATEUR', 'ASSISTANT_CONTROLEUR', 'ADMINISTRATEUR', 'CHARGE_PUBLICATION']) {
+      expect(accueilApresDeconnexion(r), r).toBe('/accueil/commission');
+    }
+    expect(accueilApresDeconnexion('CANDIDAT')).toBe('/accueil/candidat');
   });
 });

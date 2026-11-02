@@ -3,6 +3,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 import { catchError, forkJoin, map, of } from 'rxjs';
 
+import { dateFr } from '../../../core/interim/interim-libelles';
 import { urlBlobSure } from '../../../core/securite/fichiers-surs';
 import { Cao, CoteConformite, DemandeEvaluation, Evaluation, IndicateursPrix, Lecture, OffreEvaluee, PvExamen, Seance, SpecificationOffre } from '../../../models';
 import { AttributionService, CaoService, DossierService, EvaluationService, ProceduresEnLigneService, PvExamenService, SeanceService } from '../../../services';
@@ -771,21 +772,64 @@ const LIBELLES_AVIS: Readonly<Record<string, string>> = { FAV: 'favorable', FAVR
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, EtatErreur],
   template: `
-    <section class="pmd" aria-label="PV de la Commission sur le dossier de mise en concurrence">
-      <h3 class="pmd__titre">PV de la Commission sur le dossier de mise en concurrence</h3>
+    <!-- ⚠️ 02/11 (pilote) — le PV lu comme un document : l'avis en tête (pastille de couleur), la frise de son circuit avec ses dates,
+         les signataires et la synthèse des observations ; le dossier de mise en concurrence en lien discret. -->
+    <section class="pmd pvc" aria-label="PV de la Commission sur le dossier de mise en concurrence">
       @if (erreur()) {
         <app-etat-erreur message="Le PV n'a pas pu être lu." (reessayer)="charger()" />
       } @else if (pv(); as p) {
-        <dl class="pmd__faits">
-          <div><dt>Référence</dt><dd class="cnm-mono">{{ p.refePv || ('PV n° ' + p.idPv) }}</dd></div>
-          <div><dt>Avis</dt><dd><strong>{{ avis(p.idAvis) }}</strong></dd></div>
-          <div><dt>Signé le</dt><dd>{{ p.dateSignatureMembre || p.datePv || '—' }}</dd></div>
-          <div><dt>Membre</dt><dd>{{ p.nomMembreCoSignataire || p.imCtrlMembre || '—' }}</dd></div>
-          <div><dt>Visé par</dt><dd>{{ p.nomDispatcheur || p.imCtrlPresident || '—' }}</dd></div>
-        </dl>
-        @if (!p.documentDisponible) { <p class="pmd__aide">Ce PV n'a pas de document PDF : aucun modèle officiel n'existe pour le PV d'un dossier de mise en concurrence.</p> }
+        <header class="pvc-tete">
+          <div class="pvc-tete__g">
+            <span class="pvc-sur">PV de la CNM sur le dossier de mise en concurrence</span>
+            <h3 class="pvc-ref">{{ p.refePv || ('PV n° ' + p.idPv) }}</h3>
+            @if (refeMec()) { <span class="pvc-sous">Dossier {{ refeMec() }}</span> }
+          </div>
+          <div class="pvc-avis" [attr.data-avis]="p.idAvis || null">
+            <span class="pvc-avis__k">Avis</span>
+            <span class="pvc-avis__v">{{ avis(p.idAvis) }}</span>
+          </div>
+        </header>
+
+        <ol class="pvc-frise" aria-label="Circuit du PV">
+          @for (e of etapes(); track e.libelle) {
+            <li class="pvc-pas" [class.pvc-pas--fait]="!!e.date">
+              <span class="pvc-pas__pt" aria-hidden="true"></span>
+              <span class="pvc-pas__l">{{ e.libelle }}</span>
+              <span class="pvc-pas__d">{{ e.date ? date(e.date) : '—' }}</span>
+              @if (e.qui) { <span class="pvc-pas__q">{{ e.qui }}</span> }
+            </li>
+          }
+        </ol>
+
+        <div class="pvc-corps">
+          <section class="pvc-bloc" aria-labelledby="pvc-sig">
+            <h4 class="pvc-bloc__t" id="pvc-sig">Signataires</h4>
+            @if (signataires().length) {
+              <dl class="pvc-liste">
+                @for (s of signataires(); track s.role) { <div><dt>{{ s.role }}</dt><dd>{{ s.nom }}</dd></div> }
+              </dl>
+            } @else {
+              <p class="pvc-aide">Les noms des contrôleurs ne sont pas communiqués à votre profil.</p>
+            }
+            @if (p.nbNavettes) { <p class="pvc-aide">{{ p.nbNavettes }} navette{{ p.nbNavettes > 1 ? 's' : '' }} avant le visa.</p> }
+          </section>
+          <section class="pvc-bloc" aria-labelledby="pvc-obs">
+            <h4 class="pvc-bloc__t" id="pvc-obs">Synthèse des observations</h4>
+            @if (p.syntheseObservations?.trim()) {
+              <p class="pvc-texte">{{ p.syntheseObservations }}</p>
+            } @else {
+              <p class="pvc-aide">{{ p.idAvis === 'FAV' ? 'Aucune observation : l’avis est favorable sans réserve.' : 'Aucune synthèse saisie.' }}</p>
+            }
+          </section>
+        </div>
+
+        <footer class="pvc-pied">
+          @if (!p.documentDisponible) { <span class="pvc-aide">Pas de document PDF : aucun modèle officiel n’existe pour le PV d’un dossier de mise en concurrence.</span> }
+          @if (idDossierMec()) { <a class="btn btn-outline btn-sm" [routerLink]="['/dossier', idDossierMec()]">Ouvrir le dossier de mise en concurrence</a> }
+        </footer>
+      } @else {
+        <p class="pvc-aide" role="status">Chargement du PV…</p>
       }
-      @if (idDossierMec()) { <a class="btn btn-outline btn-sm" [routerLink]="['/dossier', idDossierMec()]">Ouvrir le dossier de mise en concurrence{{ refeMec() ? ' ' + refeMec() : '' }}</a> }
     </section>
   `,
   styleUrl: './procedure-marche-docs.scss',
@@ -800,6 +844,32 @@ export class PvCnmDoc implements OnInit {
   readonly pv = signal<PvExamen | null>(null);
   readonly erreur = signal(false);
   avis(c: string | null | undefined): string { return c ? LIBELLES_AVIS[c] ?? c : '—'; }
+  readonly date = dateFr;
+
+  /** La frise du circuit du PV : chaque étape et sa date (absente : pas encore franchie, ou non tracée). */
+  readonly etapes = computed(() => {
+    const p = this.pv();
+    if (!p) return [];
+    const vise = p.nomDispatcheur ? p.nomDispatcheur + (p.viseParInterim && p.interimDe ? ' (par intérim de ' + p.interimDe + ')' : '') : null;
+    return [
+      { libelle: 'Projet soumis', date: p.dateSoumissionInitiale ?? null, qui: null },
+      { libelle: 'Visé', date: p.dateAcceptation ?? null, qui: vise },
+      { libelle: 'Signé par le Membre', date: p.dateSignatureMembre ?? null, qui: p.nomMembreCoSignataire ?? null },
+      { libelle: p.dateSignatureCc && !p.dateSignaturePresident ? 'Signé par le Chef de commission' : 'Signé par le Président', date: p.dateSignaturePresident ?? p.dateSignatureCc ?? null, qui: null },
+      { libelle: 'Archivé', date: p.dateArchivage ?? null, qui: null },
+    ];
+  });
+
+  /** Les signataires dont le nom est servi (la PRMP et l'UGPM n'en reçoivent aucun). */
+  readonly signataires = computed(() => {
+    const p = this.pv();
+    if (!p) return [];
+    return [
+      { role: 'Membre co-signataire', nom: p.nomMembreCoSignataire ?? null },
+      { role: 'Chef de commission co-signataire', nom: p.nomCcCoSignataire ?? null },
+      { role: 'Visa', nom: p.nomDispatcheur ? p.nomDispatcheur + (p.viseParInterim && p.interimDe ? ' — par intérim de ' + p.interimDe : '') : null },
+    ].filter((s): s is { role: string; nom: string } => !!s.nom);
+  });
 
   ngOnInit(): void { this.charger(); }
 

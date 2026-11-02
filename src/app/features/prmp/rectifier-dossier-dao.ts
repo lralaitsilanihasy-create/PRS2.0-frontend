@@ -114,7 +114,7 @@ type EtatRevision = 'a-ouvrir' | 'en-cours' | 'validee';
                 <div class="rd-gestes">
                   <!-- ⚠️ 28/10 (pilote) — la version validée est figée ; la corriger encore, c'est ouvrir la suivante. -->
                   <button type="button" [class]="changees().length ? 'btn btn-outline btn-sm' : 'btn btn-primary btn-sm'" [disabled]="saving()" (click)="ouvrirRevision()">{{ saving() ? 'Ouverture…' : 'Corriger encore — ouvrir une nouvelle version' }}</button>
-                  <a class="btn btn-outline btn-sm" [routerLink]="['/prmp/dao', f.idDmc]">Voir la fiche et ses documents →</a>
+                  <a class="btn btn-outline btn-sm" [routerLink]="['/prmp/dao', f.idDmc]">Voir les informations du DAO et leurs documents →</a>
                 </div>
               }
             }

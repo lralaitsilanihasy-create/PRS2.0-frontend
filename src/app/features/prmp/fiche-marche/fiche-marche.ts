@@ -83,6 +83,9 @@ import {
   typeOutille,
   avecDefauts,
   gesteLigne,
+  etapeLigne,
+  ETAPES_LIGNE,
+  EtapeLigne,
 } from './fiche-marche-modele';
 import { LIBELLES_ETAT_CAO, LIBELLES_ETAT_CEREMONIE } from '../../cao/libelles-cao';
 
@@ -615,6 +618,51 @@ export class FicheMarcheEcran {
   /** ⚠️ 19/10 (« etat-fiche-liste ») — le bouton et le repère d'une ligne qui a une fiche (règle dans le modèle). */
   readonly geste = gesteLigne;
 
+  // ── ⚠️ 02/11 (pilote, maquette « Appels d'offres », variante A) — la liste se lit par étape et par plan ──────────────────
+  readonly etapesLigne = ETAPES_LIGNE;
+  readonly etapeDe = etapeLigne;
+  /** Le filtre par étape (« Toutes » par défaut) et la recherche par objet ou référence. */
+  readonly filtreEtape = signal<EtapeLigne | 'tous'>('tous');
+  readonly rechercheLigne = signal('');
+  compteEtape(cle: EtapeLigne | 'tous'): number {
+    return this.eligiblesAffichees().filter((l) => cle === 'tous' || etapeLigne(l) === cle).length;
+  }
+  /** Les lignes filtrées, regroupées sous leur plan de passation (dans l'ordre servi). */
+  readonly groupesLignes = computed(() => {
+    const f = this.filtreEtape();
+    const q = this.rechercheLigne().trim().toLowerCase();
+    const lignes = this.eligiblesAffichees().filter((l) => (f === 'tous' || etapeLigne(l) === f)
+      && (!q || [l.designationMarche, l.refeDossier, l.dossier?.refeDossier].some((t) => (t ?? '').toLowerCase().includes(q))));
+    const groupes: { plan: string; lignes: LigneEligible[] }[] = [];
+    for (const l of lignes) {
+      const plan = l.refeDossier || `#${l.idDossier}`;
+      const g = groupes.find((x) => x.plan === plan);
+      if (g) g.lignes.push(l); else groupes.push({ plan, lignes: [l] });
+    }
+    return groupes;
+  });
+  /** Le texte de la pastille d'étape : le repère servi (« Brouillon », « Dossier clôturé »…), sinon le nom de l'étape. */
+  pastilleEtape(l: LigneEligible): string {
+    if (!l.dejaDao) return this.ligneBloquee(l) ? 'Pas encore pris en charge' : 'À préparer';
+    return gesteLigne(l).repere ?? ETAPES_LIGNE.find((e) => e.cle === etapeLigne(l))!.libelle;
+  }
+
+  /** ⚠️ 02/11 (pilote, variante B) — l'onglet ouvert : la fiche, ou le suivi de la procédure. */
+  readonly ongletFiche = signal<'fiche' | 'procedure'>('fiche');
+  /** Les onglets n'ont de sens que si la procédure a un suivi à montrer. */
+  readonly ongletsFiche = computed(() => this.idDmc() != null && this.suiviVisible());
+  /** Les jalons non aboutis que la fiche sert : commission incomplète, cérémonie non close. */
+  readonly jalonsAFaire = computed(() => {
+    const f = this.fiche();
+    if (!f || !this.modeElectronique()) return 0;
+    return (f.cao && f.cao !== 'COMPLETE' ? 1 : 0) + (f.ceremonie && f.ceremonie !== 'CLOSE' ? 1 : 0);
+  });
+  /** La date de validation de la version affichée (liste des versions figées). */
+  readonly dateValidation = computed(() => {
+    const v = this.versions().find((x) => x.version === this.fiche()?.version)?.dateValidation;
+    return v ? this.dateHeureMigration(v) : null;
+  });
+
   /** ⚠️ 19/10 — « Suivi de la procédure » : seulement s'il a quelque chose à montrer (un état ou un écran de la procédure). */
   readonly suiviVisible = computed(() => {
     const f = this.fiche();
@@ -742,9 +790,9 @@ export class FicheMarcheEcran {
   /** Ce qui bloque cette ligne, en clair : la catégorie d'abord, elle emporte tout le référentiel. */
   raisonLigneBloquee(l: LigneEligible): string {
     if (l.categorieOutillee === false) {
-      return `La fiche DAO ne prépare pour l'instant que les marchés de fournitures et services${this.categorieDe(l) ? ` ; celui-ci est de catégorie « ${this.categorieDe(l)} »` : ''}.`;
+      return `Les informations du DAO ne préparent pour l'instant que les marchés de fournitures et services${this.categorieDe(l) ? ` ; celui-ci est de catégorie « ${this.categorieDe(l)} »` : ''}.`;
     }
-    if (l.formeOutillee === false) return 'La fiche DAO ne prend pas encore en charge cette forme de marché.';
+    if (l.formeOutillee === false) return 'Les informations du DAO ne prennent pas encore en charge cette forme de marché.';
     return '';
   }
 
@@ -1223,7 +1271,7 @@ export class FicheMarcheEcran {
         this.etape.set(6);
         // ⚠️ 28/10 (V144) — la réponse part sans attendre Word : le message dit où en est le DAO complet.
         const suite = phraseDaoComplet(f.daoComplet);
-        this.toast.success(`Fiche DAO validée — version ${f.version} figée.${suite ? ' ' + suite.texte : ''}`);
+        this.toast.success(`Informations du DAO validées — version ${f.version} figée.${suite ? ' ' + suite.texte : ''}`);
         // Lot 2 : la validation produit les documents ; on les relit pour les offrir tout de suite.
         this.ficheService.documents(id).pipe(catchError(() => of(null))).subscribe((d) => {
           this.documents.set(sansAvis(d ?? []));

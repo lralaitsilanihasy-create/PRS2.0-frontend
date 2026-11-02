@@ -36,6 +36,7 @@ import {
   resumeCadrage,
   rubriqueOuverte,
   gesteLigne,
+  etapeLigne,
 } from './fiche-marche-modele';
 
 const champ = (p: Partial<ChampFiche> & Pick<ChampFiche, 'code' | 'bloc' | 'rubrique'>): ChampFiche => ({
@@ -576,8 +577,8 @@ describe('sansObjet', () => {
 
 describe('Ligne de la liste : bouton et repère selon la fiche et son dossier (19/10)', () => {
   it('sans état servi : « Ouvrir la fiche », sans repère', () => {
-    expect(gesteLigne({ fiche: null, dossier: null })).toEqual({ bouton: 'Ouvrir la fiche', repere: null, genre: null });
-    expect(gesteLigne({})).toEqual({ bouton: 'Ouvrir la fiche', repere: null, genre: null });
+    expect(gesteLigne({ fiche: null, dossier: null })).toEqual({ bouton: 'Ouvrir les informations du DAO', repere: null, genre: null });
+    expect(gesteLigne({})).toEqual({ bouton: 'Ouvrir les informations du DAO', repere: null, genre: null });
   });
   it('brouillon, révision, validée sans dossier, dossier en brouillon : on continue', () => {
     expect(gesteLigne({ fiche: { statut: 'BROUILLON', version: 1 }, dossier: null })).toMatchObject({ bouton: 'Continuer la saisie', repere: 'Brouillon' });
@@ -589,5 +590,16 @@ describe('Ligne de la liste : bouton et repère selon la fiche et son dossier (1
     expect(gesteLigne({ fiche: { statut: 'VALIDEE', version: 1 }, dossier: { idDossier: 1, refeDossier: 'R', statut: 'EN_ATTENTE_DECISION_PRMP' } })).toMatchObject({ bouton: 'Rectifier', genre: 'prmp' });
     expect(gesteLigne({ fiche: { statut: 'VALIDEE', version: 1 }, dossier: { idDossier: 1, refeDossier: 'R', statut: 'DISPATCHE' } })).toMatchObject({ bouton: 'Consulter', genre: 'cnm' });
     expect(gesteLigne({ fiche: { statut: 'VALIDEE', version: 1 }, dossier: { idDossier: 1, refeDossier: '00003/DAOO-CC/CNM/2026', statut: 'CLOTURE' } })).toEqual({ bouton: 'Consulter', repere: 'Dossier clôturé', genre: 'clos' });
+  });
+});
+
+describe('Ligne de la liste : son étape (02/11, variante A)', () => {
+  it('à préparer, en préparation (saisie, rendu à rectifier), à la CNM, lancé', () => {
+    expect(etapeLigne({ dejaDao: false })).toBe('prep');
+    expect(etapeLigne({ dejaDao: true, fiche: null, dossier: null })).toBe('saisie');
+    expect(etapeLigne({ dejaDao: true, fiche: { statut: 'BROUILLON', version: 1 }, dossier: null })).toBe('saisie');
+    expect(etapeLigne({ dejaDao: true, fiche: { statut: 'VALIDEE', version: 1 }, dossier: { idDossier: 1, refeDossier: 'R', statut: 'EN_ATTENTE_DECISION_PRMP' } })).toBe('saisie');
+    expect(etapeLigne({ dejaDao: true, fiche: { statut: 'VALIDEE', version: 1 }, dossier: { idDossier: 1, refeDossier: 'R', statut: 'DISPATCHE' } })).toBe('cnm');
+    expect(etapeLigne({ dejaDao: true, fiche: { statut: 'VALIDEE', version: 1 }, dossier: { idDossier: 1, refeDossier: 'R', statut: 'CLOTURE' } })).toBe('lance');
   });
 });

@@ -26,8 +26,8 @@ import { LettresInvitation } from '../../../shared/prmp/lettres-invitation';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, Icone, AvisSpecifique, LettresInvitation],
   template: `
-    <section class="fmd" [class.fmd--modale]="enModale()" [attr.aria-labelledby]="enModale() ? null : 'fmd-titre'" [attr.aria-label]="enModale() ? 'État de la fiche DAO' : null">
-      @if (!enModale()) { <h2 class="fmd__titre" id="fmd-titre"><app-icone nom="file" [taille]="16" />Fiche DAO</h2> }
+    <section class="fmd" [class.fmd--modale]="enModale()" [attr.aria-labelledby]="enModale() ? null : 'fmd-titre'" [attr.aria-label]="enModale() ? 'État des informations du DAO' : null">
+      @if (!enModale()) { <h2 class="fmd__titre" id="fmd-titre"><app-icone nom="file" [taille]="16" />Informations du DAO</h2> }
 
       @if (dossier().ficheMarche; as f) {
         <p class="fmd__ligne">
@@ -44,7 +44,7 @@ import { LettresInvitation } from '../../../shared/prmp/lettres-invitation';
         </p>
         @if (f.designationMarche) { <p class="fmd__obj">{{ f.designationMarche }}</p> }
         <div class="fmd__actions">
-          @if (lienFiche(f.idDmc); as lien) { <a class="btn btn-secondary btn-sm" [routerLink]="lien">Ouvrir la fiche</a> }
+          @if (lienFiche(f.idDmc); as lien) { <a class="btn btn-secondary btn-sm" [routerLink]="lien">Ouvrir les informations du DAO</a> }
           @if (peutRattacher()) { <button type="button" class="btn btn-outline btn-sm" [disabled]="occupe()" (click)="detacher()">Détacher</button> }
         </div>
         <!-- ⚠️ 30/09 (AV-3, Q5) — l'avis spécifique se lit aussi d'ici, au plus près du PV. PRMP et UGPM seulement :
@@ -52,11 +52,11 @@ import { LettresInvitation } from '../../../shared/prmp/lettres-invitation';
         <!-- 01/10 (AV-4) — chacun se tait hors de sa catégorie (CATEGORIE_SANS_AVIS / CATEGORIE_SANS_LETTRE). -->
         @if (domaine() && !enModale()) { <app-avis-specifique [idDmc]="f.idDmc" [projetDansOnglet]="true" /><app-lettres-invitation [idDmc]="f.idDmc" [projetDansOnglet]="true" /> }
       } @else if (peutRattacher()) {
-        <p class="fmd__vide">Aucune fiche DAO n'est rattachée à ce dossier. Rattachez celle que vous avez déjà validée, ou préparez-en une depuis la ligne du plan de passation.</p>
+        <p class="fmd__vide">Aucune information du DAO n'est rattachée à ce dossier. Rattachez celles que vous avez déjà validées, ou préparez-les depuis la ligne du plan de passation.</p>
         @if (!choix()) {
           <div class="fmd__actions">
-            <button type="button" class="btn btn-secondary btn-sm" [disabled]="occupe()" (click)="ouvrirChoix()">Rattacher une fiche DAO</button>
-            <a class="btn btn-outline btn-sm" routerLink="/prmp/dao">Préparer une fiche</a>
+            <button type="button" class="btn btn-secondary btn-sm" [disabled]="occupe()" (click)="ouvrirChoix()">Rattacher les informations du DAO</button>
+            <a class="btn btn-outline btn-sm" routerLink="/prmp/dao">Préparer les informations du DAO</a>
           </div>
         } @else {
           <div class="fmd__choix">
@@ -79,7 +79,7 @@ import { LettresInvitation } from '../../../shared/prmp/lettres-invitation';
           </div>
         }
       } @else {
-        <p class="fmd__vide">Aucune fiche DAO n'est rattachée à ce dossier.</p>
+        <p class="fmd__vide">Aucune information du DAO n'est rattachée à ce dossier.</p>
       }
     </section>
   `,
@@ -166,7 +166,7 @@ export class FicheMarcheDossier {
       next: () => {
         this.occupe.set(false);
         this.choix.set(false);
-        this.toast.success('Fiche DAO rattachée à ce dossier.');
+        this.toast.success('Informations du DAO rattachées à ce dossier.');
         this.liaisonChangee.emit();
       },
       error: (e: ApiError) => {
@@ -182,7 +182,7 @@ export class FicheMarcheDossier {
     this.dossiers.detacherFicheMarche(this.dossier().idDossier).subscribe({
       next: () => {
         this.occupe.set(false);
-        this.toast.success('Fiche DAO détachée. Le dossier reste en brouillon.');
+        this.toast.success('Informations du DAO détachées. Le dossier reste en brouillon.');
         this.liaisonChangee.emit();
       },
       error: (e: ApiError) => {

@@ -78,3 +78,47 @@
 .pme-c42 { width: 52%; }
 .pme-groupe th { padding: 4px 8px 2px; background: none; font-size: 10.5px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: var(--texte-secondaire); text-align: left; }
 @media (max-width: 52rem) { .pme-deux, .pme-offre { grid-template-columns: minmax(0, 1fr); } .pmd-frise--cinq { grid-template-columns: 1fr 1fr; } }
+
+/* ⚠️ 02/11 (pilote) — le PV de la CNM sur le dossier de mise en concurrence : en-tête et avis, frise du circuit, signataires et synthèse. */
+.pvc { gap: 1rem; }
+.pvc-tete { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 0.75rem 1.5rem; padding-bottom: 0.9rem; border-bottom: 1px solid var(--bordure); }
+.pvc-tete__g { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+.pvc-sur { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texte-secondaire); }
+.pvc-ref { margin: 0; font-size: 1.15rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+.pvc-sous { font-size: 0.8rem; color: var(--texte-secondaire); }
+.pvc-avis { display: flex; flex-direction: column; align-items: flex-end; gap: 0.15rem; padding: 0.45rem 0.9rem; border-radius: 6px; background: var(--neutre-fond); color: var(--neutre-texte); }
+.pvc-avis[data-avis='FAV'] { background: var(--favorable-fond); color: var(--favorable-texte); }
+.pvc-avis[data-avis='FAVR'] { background: var(--examen-fond); color: var(--examen-texte); }
+.pvc-avis[data-avis='DEF'] { background: var(--retard-fond); color: var(--retard-texte); }
+.pvc-avis__k { font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.pvc-avis__v { font-size: 1.05rem; font-weight: 500; }
+.pvc-avis__v::first-letter { text-transform: uppercase; }
+/* La frise : un point par étape, relié au suivant ; vert quand l'étape est datée. */
+.pvc-frise { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 0; padding: 0; list-style: none; }
+.pvc-pas { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.15rem; padding-top: 1.35rem; text-align: center; font-size: 0.8rem; color: var(--texte-secondaire); }
+.pvc-pas::after { content: ''; position: absolute; top: 0.45rem; left: 50%; width: 100%; height: 2px; background: var(--bordure); }
+.pvc-pas:last-child::after { display: none; }
+.pvc-pas__pt { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 1rem; height: 1rem; border-radius: 50%; border: 2px solid var(--bordure-champ); background: var(--carte-fond); z-index: 1; }
+.pvc-pas--fait .pvc-pas__pt { border-color: var(--favorable-texte); background: var(--favorable-texte); }
+.pvc-pas--fait::after { background: var(--favorable-texte); }
+.pvc-pas--fait { color: var(--texte); }
+.pvc-pas__l { font-weight: 500; }
+.pvc-pas__d { font-variant-numeric: tabular-nums; }
+.pvc-pas__q { font-size: 0.75rem; color: var(--texte-secondaire); overflow-wrap: anywhere; }
+.pvc-corps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem; }
+.pvc-bloc { border: 1px solid var(--bordure); border-radius: 6px; padding: 0.75rem 0.9rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.pvc-bloc__t { margin: 0; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texte-secondaire); }
+.pvc-liste { margin: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.pvc-liste > div { display: grid; grid-template-columns: minmax(9rem, 40%) minmax(0, 1fr); gap: 0.75rem; font-size: 0.875rem; }
+.pvc-liste dt { color: var(--texte-secondaire); }
+.pvc-liste dd { margin: 0; }
+.pvc-texte { margin: 0; font-size: 0.875rem; white-space: pre-line; }
+.pvc-aide { margin: 0; font-size: 0.8rem; color: var(--texte-secondaire); }
+.pvc-pied { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem 1rem; padding-top: 0.75rem; border-top: 1px solid var(--bordure); }
+@media (max-width: 52rem) {
+  .pvc-corps { grid-template-columns: minmax(0, 1fr); }
+  .pvc-frise { grid-template-columns: minmax(0, 1fr); gap: 0.4rem; }
+  .pvc-pas { flex-direction: row; flex-wrap: wrap; align-items: baseline; padding: 0 0 0 1.6rem; text-align: left; gap: 0.2rem 0.5rem; }
+  .pvc-pas::after { display: none; }
+  .pvc-pas__pt { left: 0.5rem; top: 0.15rem; }
+}

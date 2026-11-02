@@ -52,7 +52,7 @@ import { CeremonieResponsable } from './ceremonie-responsable';
         <div class="alert alert-warning" role="status">
           <span><strong>Accès réservé au responsable de la procédure.</strong> Vous n'êtes pas désigné responsable de cette
           procédure : ses paramètres internes ne vous sont pas servis, même en lecture. La désignation se fait par
-          l'Administrateur, depuis la fiche DAO.</span>
+          l'Administrateur, depuis les informations du DAO.</span>
         </div>
       } @else if (contratAbsent()) {
         <div class="alert alert-info" role="status">

@@ -28,6 +28,7 @@ interface ConfigEspace {
   entree: Lien | null;
   piedLien: Lien | null;
   /** Où mène la déconnexion : les procédures publiques pour le candidat ; la connexion pour le membre de CAO, dont rien n'est public. */
+  /** ⚠️ 02/11 (pilote) — la déconnexion mène au portail public (candidat : « Entreprises » ; CAO et dépositaire : « PRMP & UGPM »). */
   apresDeconnexion: string;
 }
 
@@ -49,7 +50,7 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
     ],
     entree: { label: 'Créer un compte', path: '/candidat/inscription' },
     piedLien: { label: "À propos de l'espace candidat", path: '/accueil/candidat' },
-    apresDeconnexion: '/candidat/procedures',
+    apresDeconnexion: '/accueil/candidat',
   },
   cao: {
     role: 'MEMBRE_CAO',
@@ -66,7 +67,7 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
     ],
     entree: { label: 'Activer mon compte', path: '/cao/activation' },
     piedLien: null,
-    apresDeconnexion: '/login',
+    apresDeconnexion: '/accueil/prmp',
   },
   depositaire: {
     role: 'DEPOSITAIRE',
@@ -79,7 +80,7 @@ const ESPACES: Readonly<Record<CleEspaceExterne, ConfigEspace>> = {
     ],
     entree: { label: 'Activer mon compte', path: '/depositaire/activation' },
     piedLien: null,
-    apresDeconnexion: '/login',
+    apresDeconnexion: '/accueil/prmp',
   },
 };
 

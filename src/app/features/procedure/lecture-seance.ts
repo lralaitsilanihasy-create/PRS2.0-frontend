@@ -32,7 +32,75 @@ const LIBELLES_INTEGRITE: Readonly<Record<string, string>> = {
     } @else if (lecture(); as l) {
       <div class="ls" [class.ls--projection]="projection()">
         @if (!l.offres.length && !l.nonOuvertes.length) { <p class="empty-state-title">Aucune offre n'a été déposée.</p> }
-        @if (onglets()) {
+        @if (comparatif() && !projection() && l.offres.length) {
+          <!-- ⚠️ 02/11 (pilote, maquette « Séance d'ouverture », variante B) — les offres côte à côte, une colonne chacune ; une ligne par
+               information, en ocre là où une alerte touche l'offre. À côté, les alertes regroupées par type et ce que l'hôte projette
+               (la séance : membres, signatures, gestes). -->
+          <div class="ls__comp">
+            <div class="ls__comp-table">
+              <table class="ls__table ls__table--comp" aria-label="Comparaison des offres lues">
+                <thead>
+                  <tr>
+                    <th scope="col">Information</th>
+                    @for (o of l.offres; track o.idOffre) { <th scope="col" class="ls__comp-o">n° {{ o.numero ?? '?' }} · {{ o.entreprise.raisonSociale }}{{ o.lot ? ' — lot ' + o.lot : '' }}</th> }
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="ls__comp-fort"><th scope="row">Montant TTC</th>@for (o of l.offres; track o.idOffre) { <td class="ls__num">{{ insecable(montant(o.acteEngagement?.montantTtc)) }}</td> }</tr>
+                  <tr><th scope="row">Montant HT</th>@for (o of l.offres; track o.idOffre) { <td class="ls__num">{{ insecable(montant(o.acteEngagement?.montantHt)) }}</td> }</tr>
+                  @if (avecBordereau(l.offres)) {
+                    <tr><th scope="row">Bordereau recalculé</th>@for (o of l.offres; track o.idOffre) {
+                      <td class="ls__num">@if (o.formulaires && o.totaux; as t) {
+                        @if (ecart(o.acteEngagement?.montantTtc, t.ttc); as e) { <span class="ls__pastille ls__pastille--ecart">écart de {{ montant(e) }}</span> }
+                        @else { <span class="ls__pastille ls__pastille--ok">✓ concorde</span> }
+                      } @else { — }</td> }</tr>
+                    <tr><th scope="row">Au minimum (TTC)</th>@for (o of l.offres; track o.idOffre) { <td class="ls__num">{{ o.totaux?.htMin != null ? insecable(montant(o.totaux?.ttcMin)) : '—' }}</td> }</tr>
+                  }
+                  <tr><th scope="row">Délai</th>@for (o of l.offres; track o.idOffre) { <td class="ls__num">{{ o.acteEngagement ? o.acteEngagement.delai + ' ' + (o.acteEngagement.delaiUnite === 'MOIS' ? 'mois' : 'jours') : '—' }}</td> }</tr>
+                  <tr><th scope="row">Validité</th>@for (o of l.offres; track o.idOffre) {
+                    <td class="ls__num">{{ o.acteEngagement ? o.acteEngagement.validiteJours + ' jours' : '—' }}@if (validiteDe(o.numero); as v) { <small class="ls__expire">expire le {{ v.expire ?? '—' }}</small> }</td> }</tr>
+                  <tr><th scope="row">Rabais</th>@for (o of l.offres; track o.idOffre) { <td class="ls__num">{{ o.rabais?.lecture || (isTexte(o.acteEngagement?.rabais) ? o.acteEngagement?.rabais : '') || 'aucun' }}</td> }</tr>
+                  <tr><th scope="row">Garantie</th>@for (o of l.offres; track o.idOffre) { <td class="ls__num" [class.ls__comp-alerte]="aAlerte(o, 'GARANTIE_INSUFFISANTE')">{{ insecable(garantie(o)) }}</td> }</tr>
+                  @for (g of alertesGroupees(); track g.type) {
+                    <tr><th scope="row">{{ g.libelle }}</th>@for (o of l.offres; track o.idOffre) {
+                      <td class="ls__num" [class.ls__comp-alerte]="aAlerte(o, g.type)">{{ aAlerte(o, g.type) ? insecable(messageAlerte(o, g.type)) : '—' }}</td> }</tr>
+                  }
+                  <tr><th scope="row">Intégrité</th>@for (o of l.offres; track o.idOffre) {
+                    <td class="ls__num"><span class="badge" [class.badge-success]="o.integrite === 'INTACTE'" [class.badge-danger]="o.integrite !== 'INTACTE'">{{ integrites[o.integrite] ?? o.integrite }}</span></td> }</tr>
+                  <tr><th scope="row">Identité</th>@for (o of l.offres; track o.idOffre) {
+                    <td class="ls__num">NIF <span class="cnm-mono">{{ o.entreprise.nif }}</span>
+                      <small class="ls__expire">{{ o.entreprise.verification ? (statutsNif[o.entreprise.verification.statut] ?? o.entreprise.verification.statut) : 'non vérifié' }}</small></td> }</tr>
+                  @if (avecFrais(l.offres)) {
+                    <tr><th scope="row">Frais de dossier</th>@for (o of l.offres; track o.idOffre) { <td class="ls__num">{{ o.fraisDossier ? (o.fraisDossier.regle ? 'réglés' : 'aucun reçu validé') : '—' }}</td> }</tr>
+                  }
+                  @if (avecManques(l.offres)) {
+                    <tr><th scope="row">Pièces manquantes</th>@for (o of l.offres; track o.idOffre) { <td class="ls__num" [class.ls__comp-alerte]="o.piecesManquantes.length">{{ o.piecesManquantes.length ? o.piecesManquantes.join(' ; ') : '—' }}</td> }</tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <aside class="ls__comp-cote">
+              <ng-content select="[cote]" />
+              @if (alertesGroupees().length) {
+                <section class="ls__comp-carte" aria-labelledby="ls-alertes">
+                  <h4 id="ls-alertes" class="ls__comp-t">Alertes de la séance</h4>
+                  @for (g of alertesGroupees(); track g.type) {
+                    <div class="ls__comp-al"><strong>{{ g.libelle }}</strong>
+                      @if (g.messages.length === 1) { <span>{{ insecable(g.messages[0]) }}</span> }
+                      <span class="ls__comp-q">{{ g.numeros.length === l.offres.length ? (l.offres.length > 1 ? 'les ' + l.offres.length + ' offres' : 'l’offre') : 'offre' + (g.numeros.length > 1 ? 's' : '') + ' n° ' + g.numeros.join(', ') }}</span>
+                    </div>
+                  }
+                </section>
+              }
+            </aside>
+          </div>
+          @if (l.nonOuvertes.length) {
+            <h3 class="ls__h3">Offres non ouvertes</h3>
+            <ul class="ls__non">
+              @for (n of l.nonOuvertes; track $index) { <li>N° {{ n.numero ?? '—' }} · {{ n.entreprise }} — {{ n.etat }}{{ n.motif ? ' : ' + n.motif : '' }}</li> }
+            </ul>
+          }
+        } @else if (onglets()) {
           <!-- ⚠️ 31/10 (pilote, maquette « Séance d'ouverture », variante B) — la fenêtre de la page du dossier : à gauche ce que l'hôte
                projette (présents, plis hors délai) et la synthèse ; à droite, une offre par onglet. Rien ne défile. -->
           <div class="ls__deux">
@@ -257,6 +325,24 @@ const LIBELLES_INTEGRITE: Readonly<Record<string, string>> = {
     .ls__deux .ls__lu-ttc { font-size: 1.35rem; }
     .ls__expire { display: block; font-size: 11px; color: var(--texte-secondaire); }
     @media (max-width: 52rem) { .ls__deux { grid-template-columns: minmax(0, 1fr); } }
+    /* ⚠️ 02/11 (pilote, variante B) — le comparatif : les offres en colonnes, la séance et les alertes à côté. */
+    .ls__comp { display: grid; grid-template-columns: minmax(0, 1fr) 19rem; gap: 12px; align-items: start; }
+    .ls__comp-table { overflow-x: auto; border: 1px solid var(--bordure); border-radius: 6px; background: var(--carte-fond); }
+    .ls__table--comp th[scope='row'] { text-align: left; font-weight: 400; color: var(--texte-secondaire); background: var(--carte-fond); text-transform: none; letter-spacing: 0; font-size: var(--text-sm); white-space: nowrap; }
+    .ls__table--comp thead th { background: var(--section-fond); color: var(--texte-menu); text-transform: none; letter-spacing: 0; font-size: 0.8rem; font-weight: 500; white-space: normal; }
+    .ls__table--comp th.ls__comp-o { text-align: right; }
+    .ls__table--comp { table-layout: fixed; min-width: 40rem; }
+    .ls__table--comp th[scope='row'], .ls__table--comp thead th:first-child { width: 10.5rem; white-space: normal; }
+    .ls__table--comp td { border-top: 1px solid var(--bordure); white-space: normal !important; overflow-wrap: anywhere; }
+    .ls__comp-fort td, .ls__comp-fort th[scope='row'] { font-size: 0.95rem; font-weight: 500 !important; color: var(--texte) !important; }
+    .ls__comp-alerte { background: var(--examen-fond); color: var(--examen-texte); }
+    .ls__comp-cote { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+    .ls__comp-carte { display: flex; flex-direction: column; gap: 8px; padding: 0.75rem 0.9rem; border: 1px solid var(--bordure); border-radius: 6px; background: var(--carte-fond); }
+    .ls__comp-t { margin: 0; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texte-secondaire); }
+    .ls__comp-al { display: flex; flex-direction: column; gap: 3px; padding: 0.5rem 0.65rem; border-left: 4px solid var(--or); border-radius: 4px; background: var(--examen-fond); color: var(--examen-texte); font-size: var(--text-sm); }
+    .ls__comp-al strong { color: var(--texte); font-weight: 500; }
+    .ls__comp-q { font-size: 0.75rem; }
+    @media (max-width: 64rem) { .ls__comp { grid-template-columns: minmax(0, 1fr); } }
     .ls--projection { font-size: 1.25rem; }
     .ls--projection .ls__titre { font-size: 1.5rem; }
     .ls--projection .ls__table, .ls--projection .ls__ae { font-size: 1.15rem; }
@@ -269,6 +355,8 @@ export class LectureSeance implements OnInit {
   readonly projection = input(false);
   /** ⚠️ 31/10 (pilote, variante B) — une offre par onglet, la synthèse à côté : la fenêtre de la page du dossier. */
   readonly onglets = input(false);
+  /** ⚠️ 02/11 (pilote, variante B) — les offres côte à côte (écran de la séance, hors projection). */
+  readonly comparatif = input(false);
   /** Les validités calculées par l'hôte (date limite + durée, prorogations) : la date d'expiration s'affiche avec la validité. */
   readonly validites = input<readonly { numero: number | null; expire: string | null; prorogations: readonly unknown[] }[]>([]);
   readonly offreChoisie = signal<string | null>(null);
@@ -352,6 +440,40 @@ export class LectureSeance implements OnInit {
   /** ⚠️ 31/10 (pilote) — un montant ne se coupe jamais : espaces insécables entre ses groupes de chiffres et devant son unité. */
   insecable(texte: string | null | undefined): string {
     return (texte ?? '').replace(/(\d) (?=\d{3}(?!\d))/g, '$1\u00A0').replace(/(\d) (?=(Ar|Ariary|%)(?![\p{L}]))/gu, '$1\u00A0');
+  }
+
+  /** ⚠️ 02/11 (variante B) — les alertes regroupées par type : les offres touchées, et leurs messages distincts. */
+  readonly alertesGroupees = computed(() => {
+    const groupes = new Map<string, { type: string; libelle: string; numeros: (number | string)[]; messages: string[] }>();
+    for (const o of this.lecture()?.offres ?? []) {
+      for (const a of o.alertes) {
+        const g = groupes.get(a.type) ?? { type: a.type, libelle: this.libelleAlerte(a.type), numeros: [], messages: [] };
+        if (!g.numeros.includes(o.numero ?? '?')) g.numeros.push(o.numero ?? '?');
+        if (!g.messages.includes(a.message)) g.messages.push(a.message);
+        groupes.set(a.type, g);
+      }
+    }
+    return [...groupes.values()];
+  });
+
+  aAlerte(o: OffreLue, type: string): boolean {
+    return o.alertes.some((a) => a.type === type);
+  }
+
+  messageAlerte(o: OffreLue, type: string): string {
+    return o.alertes.filter((a) => a.type === type).map((a) => a.message).join(' ; ');
+  }
+
+  avecBordereau(offres: readonly OffreLue[]): boolean {
+    return offres.some((o) => !!o.formulaires && !!o.totaux);
+  }
+
+  avecFrais(offres: readonly OffreLue[]): boolean {
+    return offres.some((o) => !!o.fraisDossier);
+  }
+
+  avecManques(offres: readonly OffreLue[]): boolean {
+    return offres.some((o) => o.piecesManquantes.length > 0);
   }
 
   libelleAlerte(type: string): string {

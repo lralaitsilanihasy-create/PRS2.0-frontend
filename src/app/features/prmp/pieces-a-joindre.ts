@@ -71,7 +71,7 @@ export function piecesAJoindre(exigees: TypePieceJointe[], deposees: PieceJointe
               @for (f of l.fichiers; track f.idPiece) {
                 <div class="paj__fichier">
                   <span>{{ f.nomFichier || ('Pièce #' + f.idPiece) }}</span>
-                  @if (produite(f); as o) { <span class="paj__meta" [title]="reperes[o].aide">{{ o === 'FICHE' ? 'produite par la fiche DAO' : 'jointe d’office à l’attribution' }}</span> }
+                  @if (produite(f); as o) { <span class="paj__meta" [title]="reperes[o].aide">{{ o === 'FICHE' ? 'produite par les informations du DAO' : 'jointe d’office à l’attribution' }}</span> }
                   <button type="button" class="btn btn-ghost btn-sm" (click)="ouvrir(f)">Ouvrir</button>
                   @if (!produite(f)) {
                     <button type="button" class="btn btn-ghost btn-sm" [attr.aria-label]="'Retirer ' + (f.nomFichier || 'le fichier')" (click)="retirer(f)">Retirer</button>

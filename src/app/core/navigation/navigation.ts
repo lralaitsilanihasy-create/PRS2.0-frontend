@@ -340,7 +340,7 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     { label: 'Types de pièces jointes', path: '/admin/referentiels/type-piece-jointes', icon: 'table', colonne: 'Documents' },
     { label: 'Types de document DMC', path: '/admin/referentiels/type-dmc', icon: 'table', colonne: 'Documents' },
     { label: 'Mapping mode → document DMC', path: '/admin/referentiels/dmc-mapping', icon: 'table', colonne: 'Documents' },
-    { label: 'Champs de la fiche DAO', path: '/admin/referentiels/champs-fiche-marche', icon: 'table', colonne: 'Documents' },
+    { label: 'Champs des informations du DAO', path: '/admin/referentiels/champs-fiche-marche', icon: 'table', colonne: 'Documents' },
     { label: 'Motifs-types de la conclusion', path: '/admin/referentiels/motifs-types', icon: 'table', colonne: 'Documents' },
     { label: 'Règles d’anomalie', path: '/admin/referentiels/regle-anomalies', icon: 'table', colonne: 'Documents' },
     { label: 'Remise électronique', path: '/admin/referentiels/remise-electronique', icon: 'table', colonne: 'Passation en ligne' },

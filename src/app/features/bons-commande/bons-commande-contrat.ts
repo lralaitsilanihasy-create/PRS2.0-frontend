@@ -8,6 +8,7 @@ import { ouvrirBlobSur, telechargerBlob } from '../../core/securite/fichiers-sur
 import { ArticleFiche, BonCommande, Consommation, ContratVigueur } from '../../models';
 import { BonsCommandeService, FicheMarcheService } from '../../services';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
+import { Icone } from '../../shared/ui/icone';
 import { dateHeureFr } from '../candidat/libelles-candidat';
 import { ariary } from '../evaluation/libelles-evaluation';
 import { ReceptionsBonVue } from '../receptions/receptions-bon';
@@ -67,14 +68,14 @@ const LIGNE_VIDE = (): LigneSaisie => ({ idArticle: null, designation: '', unite
  */
 @Component({
   selector: 'app-bons-commande-contrat',
-  imports: [ReceptionsBonVue, ModaleDirective],
+  imports: [ReceptionsBonVue, ModaleDirective, Icone],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @let c = contrat();
     @if (chargement()) {
       <p class="text-sm text-muted" role="status">Chargement des bons de commande…</p>
     } @else if (erreurLecture(); as m) {
-      <div class="alert alert-danger" role="alert">{{ m }} <button type="button" class="btn btn-ghost btn-sm" (click)="charger()">Réessayer</button></div>
+      <div class="alert alert-danger" role="alert">{{ m }} <button type="button" class="btn btn-nuit btn-sm" (click)="charger()">Réessayer</button></div>
     } @else if (conso(); as k) {
       <dl class="bc__grille">
         <div><dt>Commandé sur la durée du contrat</dt><dd>{{ ariary(k.cumulHt) }} HT@if (k.cumulTtc) { · {{ ariary(k.cumulTtc) }} TTC }</dd></div>
@@ -124,13 +125,14 @@ const LIGNE_VIDE = (): LigneSaisie => ({ idArticle: null, designation: '', unite
                     </span>
                   </td>
                   <td><div class="bc__actions">
-                    <button type="button" class="btn btn-outline btn-sm" [attr.aria-label]="'Bon n° ' + b.numero + ' (PDF)'" (click)="ouvrir(service.document(b.id))">PDF</button>
-                    <button type="button" class="btn btn-ghost btn-sm" [attr.aria-label]="'Bon n° ' + b.numero + ' (Word)'" (click)="enregistrer(service.document(b.id, 'docx'), 'bon-commande-' + b.numero + '.docx')">Word</button>
+                    <!-- ⚠️ 02/11 (pilote) — des boutons qui se voient : encadrés, avec une icône ; « Annuler… » en rouge, c'est le geste qui défait. -->
+                    <button type="button" class="btn btn-pdf btn-sm bc__geste" [attr.aria-label]="'Bon n° ' + b.numero + ' (PDF)'" (click)="ouvrir(service.document(b.id))"><app-icone nom="file" [taille]="14" />PDF</button>
+                    <button type="button" class="btn btn-word btn-sm bc__geste" [attr.aria-label]="'Bon n° ' + b.numero + ' (Word)'" (click)="enregistrer(service.document(b.id, 'docx'), 'bon-commande-' + b.numero + '.docx')"><app-icone nom="download" [taille]="14" />Word</button>
                     @if (b.etat === 'EMIS') {
-                      <button type="button" class="btn btn-ghost btn-sm" [attr.aria-expanded]="reception() === b.id" [attr.aria-label]="'Réception du bon n° ' + b.numero" (click)="reception.set(reception() === b.id ? null : b.id)">Réception</button>
+                      <button type="button" class="btn btn-nuit btn-sm bc__geste bc__geste--reception" [class.bc__geste--ouvert]="reception() === b.id" [attr.aria-expanded]="reception() === b.id" [attr.aria-label]="'Réception du bon n° ' + b.numero" (click)="reception.set(reception() === b.id ? null : b.id)"><app-icone nom="check" [taille]="14" />Réception</button>
                     }
                     @if (prmp() && b.etat === 'EMIS') {
-                      <button type="button" class="btn btn-ghost btn-sm" [attr.aria-label]="'Annuler le bon n° ' + b.numero" (click)="annulation.set(annulation() === b.id ? null : b.id)">Annuler…</button>
+                      <button type="button" class="btn btn-rouge btn-sm bc__geste" [attr.aria-label]="'Annuler le bon n° ' + b.numero" (click)="annulation.set(annulation() === b.id ? null : b.id)"><app-icone nom="x" [taille]="14" />Annuler…</button>
                     }
                   </div></td>
                 </tr>
@@ -144,7 +146,7 @@ const LIGNE_VIDE = (): LigneSaisie => ({ idArticle: null, designation: '', unite
                   <tr><td colspan="5">
                     <div class="bc__ligne">
                       <label class="form-group bc__large"><span class="form-label">Motif de l’annulation du bon n° {{ b.numero }}</span><input class="form-control" type="text" [value]="motifAnnulation()" (input)="motifAnnulation.set($any($event.target).value)" /></label>
-                      <button type="button" class="btn btn-danger btn-sm" [disabled]="!motifAnnulation().trim() || occupe()" (click)="annuler(b)">Annuler le bon</button>
+                      <button type="button" class="btn btn-rouge btn-sm" [disabled]="!motifAnnulation().trim() || occupe()" (click)="annuler(b)">Annuler le bon</button>
                     </div>
                   </td></tr>
                 }
@@ -220,21 +222,21 @@ const LIGNE_VIDE = (): LigneSaisie => ({ idArticle: null, designation: '', unite
                       <td><input class="form-control form-control-sm bc__court" type="number" min="0" step="any" [attr.aria-label]="'Quantité de la ligne ' + (i + 1)" [value]="l.quantite" (input)="poserLigne(i, 'quantite', $any($event.target).value)" /></td>
                       <td><input class="form-control form-control-sm" type="number" min="0" step="any" [attr.aria-label]="'Prix unitaire de la ligne ' + (i + 1)" [value]="l.prix" (input)="poserLigne(i, 'prix', $any($event.target).value)" /></td>
                       <td class="bc__num">{{ montantLigne(l) != null ? ariary(montantLigne(l)) : '—' }}</td>
-                      <td>@if (lignes().length > 1) { <button type="button" class="btn btn-ghost btn-sm" [attr.aria-label]="'Retirer la ligne ' + (i + 1)" (click)="retirerLigne(i)">✕</button> }</td>
+                      <td>@if (lignes().length > 1) { <button type="button" class="btn btn-rouge btn-sm" [attr.aria-label]="'Retirer la ligne ' + (i + 1)" (click)="retirerLigne(i)">✕</button> }</td>
                     </tr>
                   }
                 </tbody>
               </table>
             </div>
             <div class="bc__ligne bc__pied">
-              <button type="button" class="btn btn-ghost btn-sm" (click)="ajouterLigne()">Ajouter un article</button>
+              <button type="button" class="btn btn-ocre btn-sm" (click)="ajouterLigne()">Ajouter un article</button>
               <span class="text-sm">Total HT saisi : <strong>{{ ariary(totalSaisi()) }}</strong>{{ prixManquants() ? ' (hors prix repris du bordereau)' : '' }}</span>
             </div>
             <label class="form-group"><span class="form-label">Observations (facultatives)</span><input class="form-control" type="text" [value]="entete().observations" (input)="poserEntete('observations', $any($event.target).value)" /></label>
             @if (refus(); as r) { <div class="alert alert-danger" role="alert">{{ r }}</div> }
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-outline" (click)="emissionOuverte.set(false)">Annuler</button>
+            <button type="button" class="btn btn-gris" (click)="emissionOuverte.set(false)">Annuler</button>
             <button type="button" class="btn btn-primary" [disabled]="!emissionComplete() || occupe()" (click)="emettre()">Émettre et notifier le bon</button>
           </div>
         </div>
@@ -258,7 +260,10 @@ const LIGNE_VIDE = (): LigneSaisie => ({ idArticle: null, designation: '', unite
     .bc__annule td { color: var(--n-500); }
     .bc__epuise td { color: var(--n-500); }
     .bc__depasse { color: var(--danger-text); }
-    .bc__actions { display: flex; flex-wrap: wrap; gap: 0.25rem; justify-content: flex-end; min-width: 8.5rem; }
+    .bc__actions { display: flex; flex-wrap: wrap; gap: 0.35rem; justify-content: flex-end; min-width: 8.5rem; }
+    .bc__geste { display: inline-flex; align-items: center; gap: 0.3rem; font-weight: 500; }
+    .bc__geste--ouvert { background: var(--menu-survol); border-color: var(--menu-survol); }
+    /* ⚠️ 02/11 (pilote) — les couleurs viennent du design commun (btn-pdf, btn-word, btn-nuit, btn-rouge). */
     .bc__form { display: flex; flex-direction: column; gap: 0.6rem; }
     .bc__contexte { margin: 0; }
     .bc__sous { display: block; font-size: 0.75rem; color: var(--texte-secondaire); }
