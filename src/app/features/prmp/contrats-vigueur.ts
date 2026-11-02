@@ -107,7 +107,7 @@ function aujourdhui(): string {
       } @else {
         <!-- ⚠️ 01/11 (pilote, maquette « Contrats en vigueur », variante A) — deux volets : la liste à gauche (échéance en jauge) ; à droite,
              le contrat en TABLEAU DE BORD : en-tête et geste principal, quatre indicateurs, puis des onglets (un seul bloc visible). -->
-        <app-deux-volets [ouvert]="!!selection()" [cle]="selection()?.id ?? null" libelleListe="Contrats" libelleDetail="Détail du contrat"
+        <app-deux-volets [ouvert]="!!selection()" [cle]="selection()?.id ?? null" [deroule]="true" libelleListe="Contrats" libelleDetail="Détail du contrat"
                          invite="Choisissez un contrat : son détail s’affiche ici.">
           <ul liste class="cv__liste">
             @for (c of visibles(); track c.id) {

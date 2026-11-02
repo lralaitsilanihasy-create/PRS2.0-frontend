@@ -14,14 +14,15 @@ import { ChangeDetectionStrategy, Component, ElementRef, effect, input, viewChil
  * </app-deux-volets>
  * ```
  *
- * Au large, le détail reste collé sous le menu et défile sur place. Sous 1 024 px, il passe sous la liste ; choisir un élément y
+ * Au large, le détail reste collé sous le menu et défile sur place — sauf `[deroule]="true"` (pilote, 01/11, « Contrats en vigueur ») :
+ * le détail s'affiche alors en entier, sans barre de défilement propre, et c'est la page qui défile. Sous 1 024 px, il passe sous la liste ; choisir un élément y
  * fait alors défiler la page (et y porte le focus, pour les lecteurs d'écran comme au clavier).
  */
 @Component({
   selector: 'app-deux-volets',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="dv">
+    <div class="dv" [class.dv--deroule]="deroule()">
       <section class="dv__liste" [attr.aria-label]="libelleListe()">
         <ng-content select="[liste]" />
       </section>
@@ -51,6 +52,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, effect, input, viewChil
       padding: 12px 16px 16px;
       outline: none;
     }
+    .dv--deroule .dv__detail { position: static; max-height: none; overflow: visible; }
     .dv__detail:focus-visible { box-shadow: inset 0 0 0 2px var(--bouton-principal); }
     .dv__invite { margin: 24px 0; text-align: center; font-size: 12.5px; color: var(--texte-secondaire); }
     @media (max-width: 64rem) {
@@ -67,6 +69,8 @@ export class DeuxVolets {
   readonly cle = input<unknown>(null);
   readonly libelleListe = input('Liste');
   readonly libelleDetail = input('Détail');
+  /** Le détail s'affiche en entier (la page défile) au lieu de défiler sur place sous le menu. */
+  readonly deroule = input(false);
   readonly invite = input('Choisissez un élément de la liste : son détail s’affiche ici.');
 
   private readonly detail = viewChild.required<ElementRef<HTMLElement>>('detail');
