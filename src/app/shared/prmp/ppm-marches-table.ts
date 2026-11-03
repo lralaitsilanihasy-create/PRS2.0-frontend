@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, TemplateRef, computed, contentChild, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, TemplateRef, computed, contentChild, inject, input, model, output, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { Marche, MarchePrevision, ServiceBeneficiaire, TypeChangementLigne } from '../../models';
 import {
@@ -245,8 +245,8 @@ export class PpmMarchesTable implements OnInit {
    * ligne au clic (une ligne à la fois). Sans effet sur un tableau d'examen (`rowStateFn`), dont le clic de ligne a son propre sens.
    */
   readonly detailTpl = contentChild<TemplateRef<unknown>>('detailLigne');
-  /** La ligne dont le détail est ouvert (`idDetail`), `null` = aucune. */
-  readonly ligneOuverte = signal<number | null>(null);
+  /** La ligne dont le détail est ouvert (`idDetail`), `null` = aucune. Liable (`[(ligneOuverte)]`) : l'écran du plan la garde d'une présentation à l'autre. */
+  readonly ligneOuverte = model<number | null>(null);
   /**
    * ⚠️ 03/11 (lot 2) — suivi d'une ligne, à la place du statut dans l'étiquette de marge (écran du plan) : libellé, précision, famille
    * de couleur. `null` (défaut) = le statut du marché, comme partout ailleurs.

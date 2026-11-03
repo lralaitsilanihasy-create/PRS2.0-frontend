@@ -6,16 +6,22 @@ import { Subscription, catchError, forkJoin, map, of } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { dateFr } from '../../../core/interim/interim-libelles';
 import { Dossier, Echeance, Marche, MarchePrevision, Ppm, ServiceBeneficiaire } from '../../../models';
-import { CapmService, EcheanceService, EntiteContractService, MarchePrevisionService, MarcheService, PpmService, ReferenceLookupService, ServiceBeneficiaireService } from '../../../services';
+import { CapmService, EcheanceService, EntiteContractService, ModePassationService, NatureService, MarchePrevisionService, MarcheService, PpmService, ReferenceLookupService, ServiceBeneficiaireService } from '../../../services';
 import { DossierService } from '../../../services/circuit.services';
 import { PpmMarchesTable } from '../../../shared/prmp/ppm-marches-table';
 import { DocumentVisionneuse } from '../../../shared/ui/document-visionneuse';
+import { DeuxVolets } from '../../../shared/ui/deux-volets';
+import { montantOfficiel } from '../../../shared/prmp/document-officiel';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { TitrePage } from '../../../shared/ui/titre-page';
 import { ChainesDuPlan, dossiersDeLaLigne } from '../../circuit/page-dossier/chaine-ligne';
 import { DetailLigne } from './detail-ligne';
 import { ETAPES_LIGNE, EtapeLigne, SuiviLigne, suiviDeLigne } from './suivi-ligne';
 import { LienDossier } from '../../circuit/page-dossier/lien-dossier';
+
+/** Présentation du plan retenue sur le poste (préférence d'affichage, pas une donnée). */
+type Presentation = 'document' | 'volets';
+const CLE_PRESENTATION = 'prs.plan.presentation';
 
 /** Statuts d'un plan signé, en vigueur tant qu'aucune mise à jour soumise ne le remplace (même règle que « Mettre à jour un PPM »). */
 const STATUTS_PLAN_SIGNE = new Set(['CLOTURE', 'DECISION_TRANSMISE_SIGMP']);
@@ -49,7 +55,7 @@ interface ContenuPlans {
 @Component({
   selector: 'app-plan-passation',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, TitrePage, EtatErreur, DocumentVisionneuse, PpmMarchesTable, DetailLigne],
+  imports: [RouterLink, TitrePage, EtatErreur, DocumentVisionneuse, PpmMarchesTable, DetailLigne, DeuxVolets],
   providers: [ChainesDuPlan],
   template: `
     <app-titre-page titre="Plan de passation"
@@ -108,14 +114,67 @@ interface ContenuPlans {
       </div>
       @if (!source.filiation() && source.chargement()) { <p class="text-muted pp__suivi-attente" role="status">Lecture du suivi des lignes…</p> }
 
-      <app-document-visionneuse [interrupteur]="true">
-        <app-ppm-marches-table [suiviFn]="suiviFn" [marches]="lignesAffichees()" [beneficiaires]="benefsDuPlan()" [previsions]="previsionsDuPlan()"
-          [messageVide]="filtre() ? 'Aucune ligne du plan à cette étape.' : 'Ce plan ne porte aucune ligne.'">
-          <ng-template #detailLigne let-m>
-            <app-detail-ligne [marche]="m" [previsions]="previsionsDe(m)" [echeances]="echeancesDe(m)" [capms]="capms()" />
-          </ng-template>
-        </app-ppm-marches-table>
-      </app-document-visionneuse>
+      <!-- ⚠️ 03/11 (lot 4) — deux présentations au choix ; la ligne choisie et le filtre suivent, le choix est retenu sur le poste. -->
+      <div class="pp__vues" role="group" aria-label="Présentation du plan">
+        <span class="pp__vues-l">Présentation</span>
+        <button type="button" class="btn btn-sm" [class.btn-primary]="presentation() === 'document'" [class.btn-outline]="presentation() !== 'document'"
+          [attr.aria-pressed]="presentation() === 'document'" (click)="choisirPresentation('document')">Document officiel</button>
+        <button type="button" class="btn btn-sm" [class.btn-primary]="presentation() === 'volets'" [class.btn-outline]="presentation() !== 'volets'"
+          [attr.aria-pressed]="presentation() === 'volets'" (click)="choisirPresentation('volets')">Deux volets</button>
+      </div>
+
+      @if (presentation() === 'document') {
+        <app-document-visionneuse [interrupteur]="true">
+          <app-ppm-marches-table [suiviFn]="suiviFn" [marches]="lignesAffichees()" [beneficiaires]="benefsDuPlan()" [previsions]="previsionsDuPlan()"
+            [(ligneOuverte)]="ligne" [messageVide]="filtre() ? 'Aucune ligne du plan à cette étape.' : 'Ce plan ne porte aucune ligne.'">
+            <ng-template #detailLigne let-m>
+              <app-detail-ligne [marche]="m" [previsions]="previsionsDe(m)" [echeances]="echeancesDe(m)" [capms]="capms()" />
+            </ng-template>
+          </app-ppm-marches-table>
+        </app-document-visionneuse>
+      } @else {
+        @let choisie = ligneVolets();
+        <app-deux-volets [ouvert]="!!choisie" [cle]="choisie?.idDetail" libelleListe="Lignes du plan" libelleDetail="Ligne choisie"
+          invite="Aucune ligne du plan à cette étape.">
+          <ul liste class="pp__liste">
+            @for (m of lignesAffichees(); track m.idDetail) {
+              @let s = suivis().get(m.idDetail);
+              <li>
+                <button type="button" class="pp__ligne" [attr.aria-pressed]="choisie?.idDetail === m.idDetail" (click)="ligne.set(m.idDetail)">
+                  <span class="pp__obj">{{ m.designationMarche }}</span>
+                  <span class="pp__mt">{{ montant(m) }}</span>
+                  <span class="pp__mode">{{ libelleMode(m) }}</span>
+                  @if (s) { <span class="pp__pill" [class]="'pp__pill--' + s.famille">{{ s.libelle }}</span> }
+                </button>
+              </li>
+            }
+          </ul>
+          <div detail>
+            @if (choisie; as m) {
+              <article class="pp__volet" aria-labelledby="pp-volet-t">
+                <h3 id="pp-volet-t" class="pp__volet-t">{{ m.designationMarche }}</h3>
+                @if (suivis().get(m.idDetail); as s) {
+                  <span class="pp__pill" [class]="'pp__pill--' + s.famille">{{ s.libelle }}{{ s.precision ? ' · ' + s.precision : '' }}</span>
+                }
+                <h4 class="pp__sous-t">Fiche officielle de la ligne</h4>
+                <table class="pp__fiche">
+                  <tbody>
+                    <tr><th scope="row">Nature</th><td>{{ libelleNature(m) }}</td></tr>
+                    <tr><th scope="row">Mode de passation</th><td>{{ libelleMode(m) }}</td></tr>
+                    <tr><th scope="row">Montant estimatif initial</th><td>{{ montant(m) }}</td></tr>
+                    @if (m.nouvMontEstim) { <tr><th scope="row">Nouveau montant estimatif</th><td>{{ montantNouveau(m) }}</td></tr> }
+                    <tr><th scope="row">Financement</th><td>{{ m.financement || '—' }}</td></tr>
+                    @for (b of benefsDe(m); track $index) {
+                      <tr><th scope="row">Bénéficiaire</th><td>{{ b.soaCode || '—' }} · compte {{ b.numCompte || '—' }} · {{ montantBenef(b) }}</td></tr>
+                    }
+                  </tbody>
+                </table>
+                <app-detail-ligne [marche]="m" [previsions]="previsionsDe(m)" [echeances]="echeancesDe(m)" [capms]="capms()" [empile]="true" />
+              </article>
+            }
+          </div>
+        </app-deux-volets>
+      }
     }
   `,
   styles: `
@@ -136,6 +195,29 @@ interface ContenuPlans {
     .pp__n { font-size: 1.05rem; font-weight: 500; }
     .pp__l { font-size: 0.75rem; color: var(--texte-secondaire); }
     .pp__suivi-attente { margin: 0; font-size: 0.8125rem; }
+    .pp__vues { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    .pp__vues-l { font-size: 0.75rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texte-secondaire); }
+    .pp__liste { list-style: none; margin: 0; padding: 0; }
+    .pp__ligne { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.15rem 0.75rem; text-align: left; padding: 0.55rem 0.75rem;
+      border: 0; border-bottom: 1px solid var(--bordure); background: var(--carte-fond); color: var(--texte); font: inherit; font-size: 0.8125rem; cursor: pointer; }
+    .pp__ligne:hover { background: var(--ligne-survol); }
+    .pp__ligne[aria-pressed='true'] { background: var(--onglet-actif-fond); box-shadow: inset 3px 0 0 var(--menu-fond); }
+    .pp__ligne:focus-visible { outline: 3px solid var(--bouton-principal); outline-offset: -3px; }
+    .pp__obj { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+    .pp__mt { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .pp__mode { font-size: 0.75rem; color: var(--texte-secondaire); }
+    .pp__pill { justify-self: end; width: fit-content; padding: 0 0.5rem; border-radius: 999px; font-size: 0.72rem; font-weight: 500; white-space: nowrap; }
+    .pp__pill--neutre { background: var(--neutre-fond); color: var(--neutre-texte); }
+    .pp__pill--examen { background: var(--examen-fond); color: var(--examen-texte); }
+    .pp__pill--favorable { background: var(--favorable-fond); color: var(--favorable-texte); }
+    .pp__volet { display: grid; gap: 0.6rem; }
+    .pp__volet .pp__pill { justify-self: start; }
+    .pp__volet-t { margin: 0; font-size: 1rem; font-weight: 500; }
+    .pp__sous-t { margin: 0.4rem 0 0; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texte-secondaire); }
+    .pp__fiche { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+    .pp__fiche th, .pp__fiche td { border: 1px solid var(--bordure); padding: 0.25rem 0.5rem; text-align: left; vertical-align: top; font-variant-numeric: tabular-nums; }
+    .pp__fiche th { width: 40%; background: var(--tableau-entete); font-weight: 500; }
+    .pp__volet app-detail-ligne { border: 1px solid var(--bordure); border-radius: 6px; overflow: hidden; }
     .pp__vide { padding: 1rem 1.25rem; display: grid; gap: 0.6rem; justify-items: start; }
     .pp__vide-t { margin: 0; font-size: 1rem; font-weight: 500; }
     .pp__vide p { margin: 0; color: var(--texte-secondaire); }
@@ -195,6 +277,16 @@ export class PlanPassation implements OnInit {
   /** Tant que le suivi n'est pas lu, l'étiquette garde le statut du marché. */
   readonly suiviFn = (m: Marche): SuiviLigne | null => (this.source.filiation() ? this.suivis().get(m.idDetail) ?? null : null);
   readonly filtre = signal<EtapeLigne | null>(null);
+  /** ⚠️ 03/11 (lot 4) — la ligne choisie, commune aux deux présentations (`null` : aucune ligne ouverte dans le document). */
+  readonly ligne = signal<number | null>(null);
+  readonly presentation = signal<Presentation>(PlanPassation.lirePresentation());
+  /** En deux volets, une ligne est toujours choisie : celle de l'écran si elle est affichée, sinon la première. */
+  readonly ligneVolets = computed(() => {
+    const lignes = this.lignesAffichees();
+    return lignes.find((m) => m.idDetail === this.ligne()) ?? lignes[0] ?? null;
+  });
+  private readonly natures = signal<Map<string, string>>(new Map());
+  private readonly modes = signal<Map<string, string>>(new Map());
   readonly compteurs = computed(() => {
     const n = new Map<EtapeLigne, number>();
     for (const s of this.suivis().values()) n.set(s.etape, (n.get(s.etape) ?? 0) + 1);
@@ -230,6 +322,7 @@ export class PlanPassation implements OnInit {
       const p = this.plan();
       untracked(() => {
         this.filtre.set(null);
+        this.ligne.set(null);
         if (p) this.source.charger(p.idDossier);
       });
     });
@@ -239,6 +332,8 @@ export class PlanPassation implements OnInit {
     this.charger();
     this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).subscribe((m) => this.entites.set(m));
     this.lookups.lookup(CapmService, 'idCapm', ['libelleProcessus']).subscribe((m) => this.capms.set(m));
+    this.lookups.lookup(NatureService, 'idNature', ['libelle']).subscribe((m) => this.natures.set(m));
+    this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).subscribe((m) => this.modes.set(m));
   }
 
   charger(): void {
@@ -268,6 +363,47 @@ export class PlanPassation implements OnInit {
         this.erreur.set(true);
       },
     });
+  }
+
+  choisirPresentation(p: Presentation): void {
+    this.presentation.set(p);
+    try {
+      localStorage.setItem(CLE_PRESENTATION, p);
+    } catch {
+      // Stockage indisponible (mode privé, quota) : le choix vaut pour la session.
+    }
+  }
+
+  private static lirePresentation(): Presentation {
+    try {
+      return localStorage.getItem(CLE_PRESENTATION) === 'volets' ? 'volets' : 'document';
+    } catch {
+      return 'document';
+    }
+  }
+
+  libelleMode(m: Marche): string {
+    return m.idMode != null ? this.modes().get(String(m.idMode)) ?? '—' : '—';
+  }
+
+  libelleNature(m: Marche): string {
+    return m.idNature != null ? this.natures().get(String(m.idNature)) ?? '—' : '—';
+  }
+
+  montant(m: Marche): string {
+    return montantOfficiel(m.montEstim);
+  }
+
+  montantNouveau(m: Marche): string {
+    return montantOfficiel(m.nouvMontEstim);
+  }
+
+  montantBenef(b: ServiceBeneficiaire): string {
+    return montantOfficiel(b.nouvMontBenef ?? b.ancMontBenef);
+  }
+
+  benefsDe(m: Marche): ServiceBeneficiaire[] {
+    return this.benefsDuPlan().filter((b) => b.idDetail === m.idDetail);
   }
 
   previsionsDe(m: Marche): MarchePrevision[] {
