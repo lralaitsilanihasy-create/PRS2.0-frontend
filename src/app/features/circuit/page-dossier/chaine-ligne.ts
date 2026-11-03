@@ -56,10 +56,16 @@ const normaliser = (s: string): string => s.normalize('NFD').replace(/[̀-ͯ]/g,
 
 /**
  * ⚠️ 03/11 (pilote) — ce qui reste à créer sur la ligne, pour la PRMP ou l'UGPM. `e` : la ligne dans `GET /api/dmcs/eligibles`
- * (absente = la ligne ne porte pas de fiche DAO) ; `modeLibelle` : le mode du plan ; `dejaRattache` : la filiation porte déjà un dossier
- * pour la ligne. La consultation de prix n'a pas d'étape tant que le pilote n'a pas dit quel dossier elle produit.
+ * (absente = la ligne ne porte pas de fiche DAO) ; `modeLibelle` : le mode du plan ; `noeuds` : les dossiers de la ligne dans la filiation
+ * (`dossiersDeLaLigne`, le plan en tête) ; `ligne` : la ligne, transmise à « Créer un dossier » pour y rattacher le dossier (B2, V163).
+ * La consultation de prix n'a pas d'étape tant que le pilote n'a pas dit quel dossier elle produit.
  */
-export function etapeACreer(e: LigneEligible | undefined, modeLibelle: string | null, dejaRattache: boolean): EtapeACreer | null {
+export function etapeACreer(
+  e: LigneEligible | undefined,
+  modeLibelle: string | null,
+  noeuds: readonly NoeudFiliation[] = [],
+  ligne: { idDetail: number; objet?: string | null } | null = null,
+): EtapeACreer | null {
   const mec = 'Mise en concurrence';
   const marche = 'Dossier de marché';
   if (e) {
@@ -77,10 +83,17 @@ export function etapeACreer(e: LigneEligible | undefined, modeLibelle: string | 
     if (lotsSansDossierMarche(e) > 0) return { intitule: marche, bouton: 'Créer le dossier de marché', commandes: ['/procedure', e.idDmc, 'evaluation'], params: null, note: null };
     return null;
   }
-  if (!dejaRattache && modeLibelle && normaliser(modeLibelle).includes('GRE A GRE')) {
-    // ⚠️ 03/11 (pilote) — le gré à gré affiche directement son geste, sans intitulé de famille ni avertissement. Tant que le rapport
-    // créé ne se rattache pas à sa ligne (demande « chaine-par-ligne », B2), le bouton reste proposé après la création.
-    return { intitule: '', bouton: 'Créer le rapport justificatif', commandes: ['/prmp/soumettre-dossier'], params: { famille: 'DMC', sousType: 'RJ' }, note: null };
+  if (modeLibelle && normaliser(modeLibelle).includes('GRE A GRE')) {
+    // ⚠️ 03/11 (pilote) — le gré à gré affiche directement son geste. Depuis V163 (« chaine-par-ligne », B2), le dossier créé se
+    // rattache à la ligne passée dans l'URL : le rapport, puis le marché, paraissent dans la chaîne et le geste suivant prend la place.
+    const lien = ligne ? { ligne: ligne.idDetail, ...(ligne.objet ? { objet: ligne.objet } : {}) } : {};
+    if (noeuds.some((n) => n.lien === 'MARCHE')) return null;
+    const rapport = noeuds.find((n) => n.lien === 'MISE_EN_CONCURRENCE');
+    if (!rapport) return { intitule: '', bouton: 'Créer le rapport justificatif', commandes: ['/prmp/soumettre-dossier'], params: { famille: 'DMC', sousType: 'RJ', ...lien }, note: null };
+    if (rapport.masque || rapport.statut !== 'CLOTURE') {
+      return { intitule: marche, bouton: null, commandes: [], params: null, note: 'Le marché de gré à gré se crée une fois le rapport justificatif examiné et clôturé.' };
+    }
+    return { intitule: '', bouton: 'Créer le marché de gré à gré', commandes: ['/prmp/soumettre-dossier'], params: { famille: 'DDM', sousType: 'MGG', ...lien }, note: null };
   }
   return null;
 }
@@ -231,7 +244,7 @@ export class ChaineLigne implements OnInit {
     const m = this.marche();
     const e = this.source.eligibles().find((x) => x.idDetail === m.idDetail);
     const mode = m.idMode != null ? this.source.modes().get(String(m.idMode)) ?? null : null;
-    return etapeACreer(e, mode, this.noeuds().length > 1);
+    return etapeACreer(e, mode, this.noeuds().slice(1), { idDetail: m.idDetail, objet: m.designationMarche ?? null });
   });
 
   ngOnInit(): void {

@@ -493,6 +493,14 @@ interface ApercuDossier {
         @case ('saisieDossier') {
           <form class="card sd__form cnm-form" [formGroup]="dossierForm" (ngSubmit)="creerDossier()" novalidate>
             <div class="alert alert-info">Dossier de <strong>{{ familleLabel() }}</strong>. Choisissez le sous-type précis parmi ceux de cette famille.</div>
+            @if (ligneOrigine(); as l) {
+              <!-- ⚠️ 03/11 (V163, B2) — le dossier se rattache à la ligne du plan d'où l'on vient. -->
+              <p class="sd__ligne-origine" data-testid="sd-ligne-origine">
+                Ce dossier sera rattaché à la ligne du plan{{ l.objet ? ' « ' + l.objet + ' »' : '' }} : il paraîtra dans la chaîne de la
+                procédure de cette ligne.
+              </p>
+              @if (err('idDetailOrigine')) { <p class="form-error" role="alert">{{ err('idDetailOrigine') }}</p> }
+            }
             <div class="cnm-form-grid">
               <label class="form-group">
                 <span class="form-label">Sous-type de dossier *</span>
@@ -971,6 +979,7 @@ interface ApercuDossier {
     .sd__apercu .modal-body { overflow-y: auto; }
     /* Documents de l'aperçu : feuille officielle partagée (styles/_document-officiel.scss, 2026-09-14). */
     .sd__fiche-justif { margin-top: 1rem; }
+    .sd__ligne-origine { margin: 0.75rem 0 0; padding: 0.6rem 0.85rem; border: 1px solid var(--bordure); border-radius: 6px; background: var(--ligne-survol); color: var(--texte); font-size: var(--text-sm); }
     /* Justification globale de la fiche (2026-09-01) — signalée tant qu'elle manque. */
     .sd__justif-globale { margin-top: 0.9rem; }
     .sd__justif-globale--manquante .form-label { color: var(--danger-text); }
@@ -1151,6 +1160,11 @@ export class SoumettreDossier {
   readonly renvoiMiseAJour = computed(() => this.estPrmp() && this.phase() === 'saisiePpm');
 
   readonly familleChoisie = signal<FamilleDossier>('DMC');
+  /**
+   * ⚠️ 03/11 (V163, « chaine-par-ligne », B2) — `&ligne=&objet=` depuis la chaîne d'une ligne du plan : le dossier créé s'y rattache
+   * (`idDetailOrigine`) et paraît ensuite dans cette chaîne.
+   */
+  readonly ligneOrigine = signal<{ idDetail: number; objet: string | null } | null>(null);
   readonly familleLabel = computed(() => (this.familleChoisie() === 'DMC' ? 'mise en concurrence' : 'marché'));
   /** Sous-types de la famille choisie (référentiel serveur, `GET /api/sous-type-dossiers/par-famille/{famille}`). */
   readonly sousTypesDeLaFamille = signal<SousTypeDossier[]>([]);
@@ -1337,7 +1351,10 @@ export class SoumettreDossier {
       this.choisirPpm();
     } else if (!reprendreId && (famille === 'DMC' || famille === 'DDM')) {
       // ⚠️ 03/11 (pilote) — `&sousType=` depuis la chaîne d'une ligne du plan (ex. RJ) : choisi d'avance s'il est de la famille.
-      this.choisirFamille(famille, this.route.snapshot.queryParamMap.get('sousType')?.toUpperCase() || null);
+      const q = this.route.snapshot.queryParamMap;
+      const ligne = Number(q.get('ligne'));
+      this.ligneOrigine.set(Number.isInteger(ligne) && ligne > 0 ? { idDetail: ligne, objet: q.get('objet') } : null);
+      this.choisirFamille(famille, q.get('sousType')?.toUpperCase() || null);
     }
   }
 
@@ -2287,6 +2304,7 @@ export class SoumettreDossier {
       .dossier({
         idSousType: v.idSousType as string,
         idEntiteContract: v.idEntiteContract as number,
+        ...(this.ligneOrigine() ? { idDetailOrigine: this.ligneOrigine()!.idDetail } : {}),
       })
       .subscribe({
         // `POST /api/saisies/dossier` est « sans contenu » : les pièces se déposent ensuite, une par une,

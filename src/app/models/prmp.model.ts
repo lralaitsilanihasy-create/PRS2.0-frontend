@@ -512,6 +512,12 @@ export interface MiseAJourRequest {
 export interface SaisieDossierRequest {
   idSousType: string;
   idEntiteContract: number;
+  /**
+   * ⚠️ 03/11 (V163, « chaine-par-ligne », B2) — la ligne du plan d'où naît le dossier (RJ, MGG…), facultative : le dossier paraît
+   * alors dans la filiation, sous cette ligne. 400 nominatif `idDetailOrigine` (ligne inconnue, retirée, hors des plans de la PRMP,
+   * ou déjà rattachée à un dossier de la même famille). Se pose à la création seulement.
+   */
+  idDetailOrigine?: number | null;
 }
 
 /** Bénéficiaire extrait d'un PPM PDF (import read-only ; pas encore consommé par la création). */
