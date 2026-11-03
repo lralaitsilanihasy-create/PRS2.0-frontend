@@ -125,6 +125,24 @@ présélection, arrêt de la liste, rapport signé). Ce qui change pour le restr
 - L'appel à candidatures peut être lancé dès le début d'année pour constituer une base réutilisable (art. 11-1). Ce point **n'est pas
   demandé dans ce lot**, il est seulement signalé.
 
+> ⚠️ **2026-11-03 — B4 livré (PRS20, V161) sur le chemin de l'AMI, avec trois précisions.**
+> - **Aucune route nouvelle** : l'appel à candidatures emprunte les routes de l'AMI (`/api/fiches-marche/{idDmc}/ami…`,
+>   `/api/amis-en-ligne`, `/api/candidat/amis/{idDmc}/expression`). `AmiDto` et `AmiPublic` servent **`nature`** : `AMI` ou
+>   `APPEL_CANDIDATURES`, fixée à la création selon la catégorie. L'écran de présélection de l'AMI se reprend tel quel, libellés
+>   adaptés à `nature`. L'avis (« Avis d'appel à candidatures ») et le rapport signé (« Procès-verbal de validation de la liste
+>   restreinte ») ont leur propre texte.
+> - **Règles propres** :
+>   - au moins trois candidats à l'arrêt (409 `MOINS_DE_TROIS_CANDIDATS`) ;
+>   - motif `PETIT_NOMBRE` : publication refusée (409 `APPEL_CANDIDATURES_DISPENSE`) ;
+>   - un appel publié satisfait le contrôle `LISTE_RESTREINTE` et interdit la saisie de la liste (409 `LISTE_PAR_APPEL_CANDIDATURES`) ;
+>   - le rapport signé est joint d'office au DAOR sous `PV_LISTE_RESTREINTE` ;
+>   - la liste arrêtée est servie par `…/liste-restreinte` (source `APPEL_CANDIDATURES`, `idCandidat` de chaque candidat) et reprise
+>     par la lettre.
+> - **Non livré** : le délai propre de l'appel à candidatures (Q6) n'est pas contrôlé, la date limite reste au choix de la PRMP ; le
+>   paramètre `PUBLICITE_AOR_CANDIDATURES` attend la réponse du juriste. La base réutilisable de début d'année n'est pas faite, comme
+>   prévu. La sélection directe par la PRMP (art. 11-2) passe par la liste saisie (B3).
+> - **Tests** : la jonction effective au DAOR n'est pas couverte par un test d'intégration ; l'avis, le refus pour petit nombre, l'arrêt
+>   à moins de trois et la liste servie à la fiche le sont.
 ## B5 — La décision autorisant le lancement (Q3)
 
 Manuel, § III.4 (projet de décision au DAOR) et § III.6 (décision signée et copie de la lettre avec accusé de réception, au marché).
@@ -206,6 +224,15 @@ que le candidat dispose des qualifications et capacités requises ». Il faut do
 
 À consigner : l'écart avec la loi (art. 56-I c), retenu par le pilote, à valider par le juriste.
 
+> ⚠️ **2026-11-03 — B8 vérifié (PRS20, documentation seule, aucun code).** Aucune règle du serveur ne rend d'office infructueux un AOR à
+> offre unique :
+> - la **séance** ne constate la carence qu'à zéro offre ;
+> - l'**évaluation** ne propose l'infructuosité que si aucune offre n'est qualifiée, et une offre unique qualifiée est proposée ;
+> - l'**attribution** ne laisse déclarer un lot infructueux que sur cette proposition, ou après un avis défavorable.
+>
+> Seule nuance : un **contrat-cadre à plusieurs titulaires** où il ne reste qu'un titulaire qualifié. Le rapport le constate et la PRMP
+> *peut* déclarer l'infructuosité (décret 2019-1064, art. 17) : c'est une faculté, pas une règle d'office. L'écart avec la loi, art.
+> 56-I c), est consigné dans `regles-gestion.md`, à valider par le juriste.
 ## Questions ouvertes
 
 | Q | Sujet |

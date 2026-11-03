@@ -5,6 +5,12 @@ import type { QuorumCao, SignataireAttendu } from './cao.model';
  * dans la fiche : il précède la demande de propositions et se fige à la publication.
  */
 
+/**
+ * ⚠️ V161 (03/11, « appel-offres-restreint », §B4) — `AMI` (prestations intellectuelles) ou `APPEL_CANDIDATURES` (appel d'offres
+ * restreint de fournitures ou de travaux), fixée par le serveur à la création selon la catégorie de la fiche. Mêmes routes, mêmes états.
+ */
+export type NatureAmi = 'AMI' | 'APPEL_CANDIDATURES';
+
 /** ⚠️ AMI-b : `INFRUCTUEUX` (art. 56-II), déclaré par la PRMP sans aucune expression qualifiée. */
 export type EtatAmi = 'BROUILLON' | 'PUBLIE' | 'DISPENSE' | 'INFRUCTUEUX';
 
@@ -44,6 +50,8 @@ export interface Ami {
   lectureOuverte: boolean;
   /** Le nombre d'expressions déposées, servi à tout moment — jamais leur contenu avant la date limite. */
   nombreExpressions: number;
+  /** ⚠️ V161 — absente des réponses antérieures : `AMI`. */
+  nature?: NatureAmi;
 }
 
 /** `PUT …/ami` — modifiable tant que l'AMI n'est pas publié. `dateLimite` : AAAA-MM-JJTHH:mm. */
@@ -68,6 +76,8 @@ export interface AmiPublic {
   publications: PublicationAmi[];
   publieLe: string | null;
   ouvert: boolean;
+  /** ⚠️ V161 — absente des réponses antérieures : `AMI`. */
+  nature?: NatureAmi;
   /** ⚠️ AMI-b (Q5) — la liste restreinte définitive, publiée ; vide avant. */
   liste?: RetenuPublic[];
 }
@@ -220,6 +230,8 @@ export interface Preselection {
   rapport: RapportPreselection | null;
   nombreRelances: number;
   motifInfructueux: string | null;
+  /** ⚠️ Demandé au backend le 03/11 (« nature-preselection ») — absente tant qu'il ne la sert pas : `AMI`. */
+  nature?: NatureAmi;
 }
 
 export interface NoteSaisie {

@@ -12,14 +12,15 @@ import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { Icone } from '../../shared/ui/icone';
 import { dateHeureFr, tailleLisible } from './libelles-candidat';
 import { tempsRestant } from './procedure-en-ligne-modele';
+import { capitale, libellesAppel } from '../ami/ami-libelles';
 
 /** Les refus du dépôt (AMI-a, V82). */
 const MESSAGES_DEPOT: Readonly<Record<string, string>> = {
-  LETTRE_OBLIGATOIRE: 'La lettre de manifestation d’intérêt est obligatoire.',
+  LETTRE_OBLIGATOIRE: 'La lettre est obligatoire.',
   PIECES_MANQUANTES: 'Des pièces attendues manquent',
   FORMAT_INVALIDE: 'Une pièce n’est ni un PDF, ni une image JPEG ou PNG.',
   FICHIER_INCONNU: 'Une pièce ne correspond à aucun fichier envoyé — rejoignez-la.',
-  EXPRESSION_ILLISIBLE: 'L’expression n’a pas pu être lue par le serveur.',
+  EXPRESSION_ILLISIBLE: 'Le dépôt n’a pas pu être lu par le serveur.',
   DATE_LIMITE_DEPASSEE: 'La date limite est passée : le dépôt est clos.',
   ENTREPRISE_NON_DECLAREE: 'Déclarez d’abord votre entreprise (ou votre cabinet) dans « Mon entreprise ».',
 };
@@ -63,14 +64,14 @@ interface LigneMembre {
     <nav class="aed__ariane" aria-label="Fil d'Ariane">
       <a routerLink="/candidat/procedures">Avis ouverts</a>
       <span aria-hidden="true">›</span>
-      <span aria-current="page">{{ ami()?.objet || ami()?.reference || 'Appel à manifestation d’intérêt' }}</span>
+      <span aria-current="page">{{ ami()?.objet || ami()?.reference || l().titre }}</span>
     </nav>
 
     @if (chargement()) {
       <p class="text-muted" role="status">Chargement de l’appel…</p>
     } @else if (introuvable()) {
       <div class="empty-state">
-        <p class="empty-state-title">Cet appel à manifestation d’intérêt n’est pas publié.</p>
+        <p class="empty-state-title">Cet appel n’est pas publié.</p>
         <p class="empty-state-text"><a routerLink="/candidat/procedures">Revenir aux avis ouverts</a>.</p>
       </div>
     } @else if (erreur()) {
@@ -80,7 +81,7 @@ interface LigneMembre {
       <header class="card aed__tete">
         <div>
           <p class="aed__ref">
-            <span>Appel à manifestation d’intérêt</span>
+            <span>{{ l().titre }}</span>
             @if (a.reference) { <span class="cnm-mono">{{ a.reference }}</span> }
             <span class="badge" [class.badge-success]="a.ouvert" [class.badge-neutral]="!a.ouvert">{{ a.ouvert ? 'Ouvert' : 'Clos' }}</span>
           </p>
@@ -122,7 +123,7 @@ interface LigneMembre {
         @if (a.liste?.length) {
           <section class="card aed__bloc aed__bloc--large" aria-labelledby="aed-liste">
             <h2 id="aed-liste" class="aed__h2">Liste restreinte</h2>
-            <p class="text-sm text-muted">Arrêtée par la commission : ces candidats sont invités à remettre une proposition.</p>
+            <p class="text-sm text-muted">Arrêtée par la commission : ces candidats sont invités à remettre {{ candidatures() ? 'une offre' : 'une proposition' }}.</p>
             <ol class="aed__liste">
               @for (r of a.liste; track r.rang) { <li><strong>{{ r.raisonSociale }}</strong>@if (r.nif) { <span class="text-xs text-muted"> · NIF {{ r.nif }}</span> }</li> }
             </ol>
@@ -130,7 +131,7 @@ interface LigneMembre {
         }
 
         <section class="card aed__bloc aed__bloc--large" aria-labelledby="aed-depot">
-          <h2 id="aed-depot" class="aed__h2">Votre expression d’intérêt</h2>
+          <h2 id="aed-depot" class="aed__h2">Votre {{ l().depot }}</h2>
           @if (!connecte()) {
             <p class="text-sm">Pour déposer, <a routerLink="/login" [queryParams]="{ returnUrl: '/candidat/amis/' + a.idDmc }">connectez-vous</a> avec votre compte candidat, ou <a routerLink="/candidat/inscription">créez un compte</a>.</p>
           } @else {
@@ -155,8 +156,8 @@ interface LigneMembre {
             }
 
             @if (a.ouvert && (formulaire() || !sienne())) {
-              <p class="text-sm text-muted">Personne ne lit votre expression avant la date limite. {{ sienne() ? 'Le nouveau dépôt remplace le précédent.' : 'Vous pourrez la remplacer ou la retirer jusqu’à la date limite.' }}</p>
-              <label class="form-label" for="aed-lettre">Lettre de manifestation d’intérêt</label>
+              <p class="text-sm text-muted">Personne ne lit votre {{ l().depot }} avant la date limite.@if (candidatures()) { Ni offre ni prix à ce stade : vos capacités, vos références et les pièces demandées. } {{ sienne() ? 'Le nouveau dépôt remplace le précédent.' : 'Vous pourrez la remplacer ou la retirer jusqu’à la date limite.' }}</p>
+              <label class="form-label" for="aed-lettre">{{ candidatures() ? 'Lettre de candidature' : 'Lettre de manifestation d’intérêt' }}</label>
               <textarea id="aed-lettre" class="form-control" rows="5" [value]="lettre()" (input)="lettre.set(valeur($event))"></textarea>
               <label class="form-label" for="aed-qualif">Qualifications (facultatif)</label>
               <textarea id="aed-qualif" class="form-control" rows="3" [value]="qualifications()" (input)="qualifications.set(valeur($event))"></textarea>
@@ -199,7 +200,7 @@ interface LigneMembre {
 
               @if (refus(); as r) { <div class="alert alert-danger" role="alert"><span>{{ r }}</span></div> }
               <div class="aed__actions barre-actions">
-                <button type="button" class="btn btn-primary" [disabled]="occupe() || !complet()" (click)="deposer()">{{ occupe() ? 'Dépôt…' : 'Déposer l’expression d’intérêt' }}</button>
+                <button type="button" class="btn btn-primary" [disabled]="occupe() || !complet()" (click)="deposer()">{{ occupe() ? 'Dépôt…' : 'Déposer ' + (candidatures() ? 'la candidature' : 'l’expression d’intérêt') }}</button>
                 @if (!complet()) { <span class="text-sm text-muted">La lettre et chaque pièce attendue sont requises.</span> }
               </div>
             }
@@ -257,6 +258,9 @@ export class AmiEnLigneDetail implements OnInit {
   readonly erreur = signal(false);
   readonly introuvable = signal(false);
   readonly ami = signal<AmiPublic | null>(null);
+  /** ⚠️ V161 (03/11, B4) — l'appel à candidatures d'un appel d'offres restreint, sur le chemin de l'AMI. */
+  readonly candidatures = computed(() => this.ami()?.nature === 'APPEL_CANDIDATURES');
+  readonly l = computed(() => libellesAppel(this.ami()?.nature));
   readonly sienne = signal<Expression | null>(null);
   readonly occupe = signal(false);
   readonly formulaire = signal(false);
@@ -283,6 +287,8 @@ export class AmiEnLigneDetail implements OnInit {
       next: (a) => {
         this.ami.set(a);
         this.chargement.set(false);
+        // ⚠️ V161 — le titre de l'onglet suit la nature de l'appel.
+        this.document.title = `${libellesAppel(a.nature).titre} — Espace candidat — PRS 2.0`;
         if (this.connecte()) this.chargerSienne();
       },
       error: (e: ApiError) => {
@@ -385,7 +391,7 @@ export class AmiEnLigneDetail implements OnInit {
         this.sienne.set(x);
         this.formulaire.set(false);
         this.fichiers.set({});
-        this.toast.success(`Expression d’intérêt déposée sous le n° ${x.numero}. L’accusé vous est aussi envoyé par courriel.`);
+        this.toast.success(`${capitale(this.l().depot)} déposée sous le n° ${x.numero}. L’accusé vous est aussi envoyé par courriel.`);
       },
       error: (e: ApiError) => {
         this.occupe.set(false);
@@ -402,7 +408,7 @@ export class AmiEnLigneDetail implements OnInit {
         this.occupe.set(false);
         this.sienne.set(null);
         this.formulaire.set(false);
-        this.toast.success('Expression d’intérêt retirée.');
+        this.toast.success(`${capitale(this.l().depot)} retirée.`);
       },
       error: (e: ApiError) => {
         this.occupe.set(false);

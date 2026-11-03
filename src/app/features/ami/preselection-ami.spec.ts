@@ -8,7 +8,8 @@ import { vi } from 'vitest';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ExpressionNotee, Preselection } from '../../models';
-import { PreselectionAmi } from './preselection-ami';
+import { PreselectionAmi, messagePreselection } from './preselection-ami';
+import { ApiError } from '../../core/errors/api-error';
 
 // AMI-b (07/10, V83) — la présélection : déclaration, notation, arrêt de la liste, relance.
 const URL = '/api/fiches-marche/50/ami';
@@ -124,5 +125,13 @@ describe('Présélection de l’AMI', () => {
     http.expectOne(`${URL}/preselection`).flush({ ...BASE, etat: 'EN_ATTENTE', expressions: [], nombreRelances: 1 });
     fixture.detectChanges();
     expect(racine().textContent).toContain('relancé 1 fois');
+  });
+});
+
+describe('Appel à candidatures du restreint (V161, demande du 02/11, B4)', () => {
+  it('nomme l’arrêt refusé à moins de trois candidatures qualifiées', () => {
+    const e = { status: 409, code: 'MOINS_DE_TROIS_CANDIDATS', raw: { error: { code: 'MOINS_DE_TROIS_CANDIDATS', details: { qualifiees: 2 } } } } as unknown as ApiError;
+    expect(messagePreselection(e, 'x')).toContain('Seules 2 candidatures sont qualifiées');
+    expect(messagePreselection(e, 'x')).toContain('au moins trois candidats');
   });
 });

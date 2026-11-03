@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { vi } from 'vitest';
 
 import { ToastService } from '../../../core/notifications/toast.service';
@@ -69,6 +70,21 @@ describe('Liste restreinte saisie (V156, demande du 02/11, B3)', () => {
     );
     fixture.detectChanges();
     expect(texte(racine().querySelectorAll('.lr__cand')[1].querySelector('.form-error'))).toContain('Compte candidat inconnu');
+  });
+
+  it('⚠️ V161 (B4) — la liste de l’appel à candidatures se lit sans se saisir ; la seconde voie est proposée tant que rien n’est saisi', () => {
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    monter({ source: 'APPEL_CANDIDATURES', libelleSource: 'Appel public à candidatures', candidats: [{ nom: 'A', adresse: 'a', idCandidat: 'C000000001' }, { nom: 'B', adresse: 'b' }, { nom: 'C', adresse: 'c' }] });
+    expect(racine().querySelector('input')).toBeNull();
+    expect(racine().querySelectorAll('.lr__lue li').length).toBe(3);
+    expect(texte(racine())).toContain('compte C000000001');
+    expect(racine().querySelector('.lr__appel')).toBeNull();
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    monter(null);
+    fixture.componentRef.setInput('lienAppel', ['/prmp', 'dao', 9, 'ami']);
+    fixture.detectChanges();
+    expect(racine().querySelector('.lr__appel a')?.getAttribute('href')).toBe('/prmp/dao/9/ami');
   });
 
   it('se lit sur une fiche figée', () => {

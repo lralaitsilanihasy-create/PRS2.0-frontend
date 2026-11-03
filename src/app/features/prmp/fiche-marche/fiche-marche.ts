@@ -312,10 +312,15 @@ export class FicheMarcheEcran {
     const id = this.idDmc();
     return id != null && ['PRMP', 'UGPM'].includes(this.auth.role() ?? '') && this.modeElectronique() ? ['/prmp', 'dao', id, 'cao'] : null;
   });
-  /** ⚠️ AMI-a (07/10, V82) — l'appel à manifestation d'intérêt : prestations intellectuelles seules, PRMP et UGPM. */
+  /**
+   * ⚠️ AMI-a (07/10, V82) — l'appel à manifestation d'intérêt : prestations intellectuelles, PRMP et UGPM.
+   * ⚠️ V161 (03/11, B4) — ou l'appel à candidatures d'un appel d'offres restreint, sauf au motif « petit nombre » (art. 13), qui en dispense.
+   */
   readonly lienAmi = computed<(string | number)[] | null>(() => {
     const id = this.idDmc();
-    return id != null && ['PRMP', 'UGPM'].includes(this.auth.role() ?? '') && this.categorie() === 'PRESTATIONS_INTELLECTUELLES' ? ['/prmp', 'dao', id, 'ami'] : null;
+    const f = this.fiche();
+    const appel = this.categorie() === 'PRESTATIONS_INTELLECTUELLES' || (!!f?.modeRestreint && f.motifRestreint?.motif !== 'PETIT_NOMBRE');
+    return id != null && ['PRMP', 'UGPM'].includes(this.auth.role() ?? '') && appel ? ['/prmp', 'dao', id, 'ami'] : null;
   });
   /** ⚠️ V72 (06/10) — les reçus des frais de dossier : PRMP et UGPM, remise électronique (l'écran dit s'il n'y en a aucun). */
   readonly lienRecus = computed<(string | number)[] | null>(() => {
@@ -1375,7 +1380,9 @@ export class FicheMarcheEcran {
           void this.router.navigate(['/prmp/dossier', deja]);
         } else if (e.code === 'LISTE_NON_ARRETEE') {
           // ⚠️ AMI-b (Q4) — le dossier de la demande de propositions attend la liste restreinte définitive ; le rapport signé y sera joint d'office.
-          this.toast.error('La liste restreinte de l’appel à manifestation d’intérêt n’est pas encore définitive : le dossier se crée après la signature du rapport de présélection.');
+          this.toast.error(this.categorie() === 'PRESTATIONS_INTELLECTUELLES'
+            ? 'La liste restreinte de l’appel à manifestation d’intérêt n’est pas encore définitive : le dossier se crée après la signature du rapport de présélection.'
+            : 'La liste restreinte de l’appel à candidatures n’est pas encore définitive : le dossier se crée après la signature du procès-verbal de validation de la liste.');
         } else {
           this.toast.error(e.message || 'Le dossier n’a pas pu être créé.');
         }

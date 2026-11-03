@@ -11,6 +11,7 @@ import { DossierSoumis, ExpressionNotee, Preselection } from '../../models';
 import { AmiService, AttributionService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr } from '../candidat/libelles-candidat';
+import { capitale, libellesAppel } from './ami-libelles';
 import { QuorumCaoVue, messageQuorum, suffixeQualite } from '../procedure/quorum-cao';
 import { EtapeClose } from '../evaluation/etapes-closes';
 
@@ -39,9 +40,19 @@ export const MESSAGES_PRESELECTION: Readonly<Record<string, string>> = {
   QUALIFIES_PRESENTS: 'Une expression au moins est qualifiée : l’appel n’est pas infructueux.',
 };
 
+/**
+ * ⚠️ V161 (03/11, « appel-offres-restreint », §B4) — l'appel à candidatures d'un appel d'offres restreint : la liste compte au moins
+ * trois candidats (loi, art. 38-II). `details.qualifiees` : le nombre de candidatures retenues.
+ */
+function messageMoinsDeTrois(e: ApiError): string {
+  const n = corpsErreur<{ details?: { qualifiees?: number } }>(e)?.details?.qualifiees;
+  return `${n != null ? (n > 1 ? `Seules ${n} candidatures sont qualifiées` : n === 1 ? 'Une seule candidature est qualifiée' : 'Aucune candidature n’est qualifiée') : 'Moins de trois candidatures sont qualifiées'} : la liste restreinte d’un appel d’offres restreint compte au moins trois candidats (art. 38-II). La PRMP relance l’appel à candidatures, ou saisit la liste sur la fiche.`;
+}
+
 export function messagePreselection(e: ApiError, defaut: string): string {
   const code = codeErreur(e);
   if (code === 'QUORUM_NON_ATTEINT') return messageQuorum(e);
+  if (code === 'MOINS_DE_TROIS_CANDIDATS') return messageMoinsDeTrois(e);
   if (code === 'NOTATION_INCOMPLETE') {
     const n = corpsErreur<{ details?: { expressions?: unknown[] } }>(e)?.details?.expressions ?? [];
     return `${MESSAGES_PRESELECTION['NOTATION_INCOMPLETE']}${n.length ? ' : n° ' + n.join(', ') : ''}.`;
@@ -90,7 +101,7 @@ interface NoteEnCours {
         <h1 class="page-title">Présélection des candidats</h1>
       </div>
       <div class="ps__entete">
-        @if (lienAmi()) { <a class="btn btn-outline btn-sm" [routerLink]="lienAmi()!">Appel à manifestation d’intérêt</a> }
+        @if (lienAmi()) { <a class="btn btn-outline btn-sm" [routerLink]="lienAmi()!">{{ l().titre }}</a> }
         @if (ps()) { <button type="button" class="btn btn-outline btn-sm" [disabled]="chargement()" (click)="charger()">Rafraîchir</button> }
       </div>
     </header>
@@ -100,7 +111,7 @@ interface NoteEnCours {
     } @else if (refuse()) {
       <div class="alert alert-info" role="status"><span>La présélection est réservée aux membres de la commission, à la PRMP et à l’UGPM de la fiche.</span></div>
     } @else if (absente()) {
-      <div class="alert alert-info" role="status"><span>L’appel à manifestation d’intérêt n’est pas publié : il n’y a rien à présélectionner.</span></div>
+      <div class="alert alert-info" role="status"><span>L’appel n’est pas publié : il n’y a rien à présélectionner.</span></div>
     } @else if (erreur()) {
       <app-etat-erreur message="La présélection n’a pas pu être chargée." (reessayer)="charger()" />
     } @else if (ps(); as p) {
@@ -112,7 +123,7 @@ interface NoteEnCours {
       <!-- ⚠️ R9c (14/10) — un dossier de marché soumis ferme l'AMI : les gestes se retirent. -->
       <app-etape-close [dossier]="etapeClose()" [lienDossier]="!!lienAmi()" [ami]="true" />
       @if (p.etat === 'EN_ATTENTE') {
-        <p class="text-sm" role="status">Les expressions d’intérêt se lisent après la date limite. D’ici là, la commission peut signer ses déclarations.</p>
+        <p class="text-sm" role="status">Les {{ l().depots }} se lisent après la date limite. D’ici là, la commission peut signer ses déclarations.</p>
       }
       @if (p.etat === 'INFRUCTUEUX') {
         <div class="alert alert-info" role="status"><span>Appel déclaré infructueux (art. 56-II) : {{ p.motifInfructueux }}</span></div>
@@ -145,11 +156,11 @@ interface NoteEnCours {
 
       @if (p.expressions.length) {
         <section class="card ps__bloc" aria-labelledby="ps-expr">
-          <h2 id="ps-expr" class="ps__h2">Expressions d’intérêt et classement</h2>
+          <h2 id="ps-expr" class="ps__h2">{{ capitale(l().depots) }} et classement</h2>
           <p class="text-sm text-muted">Qualifiée : notée sur tous les critères, non écartée, au moins la note minimale. Le classement suit le total sur 100.</p>
           <div class="cnm-table-wrap">
             <table class="cnm-table ps__table">
-              <caption class="cnm-sr-only">Expressions d'intérêt, classées</caption>
+              <caption class="cnm-sr-only">{{ capitale(l().depots) }}, classées</caption>
               <thead><tr><th scope="col">N°</th><th scope="col">Candidat</th><th scope="col" class="cnm-num">Total</th><th scope="col">Situation</th><th scope="col" class="cnm-num">Rang</th></tr></thead>
               <tbody>
                 @for (x of classees(); track x.id) {
@@ -207,7 +218,7 @@ interface NoteEnCours {
       @if (president() && p.etat === 'NOTATION') {
         <section class="card ps__bloc ps__president" aria-labelledby="ps-arret">
           <h2 id="ps-arret" class="ps__h2">Arrêter la liste restreinte</h2>
-          <p class="text-sm">{{ qualifiees() }} qualifiée{{ qualifiees() > 1 ? 's' : '' }} pour {{ p.nombreRetenus ?? 6 }} places. La liste prend les premières ; le rapport de présélection est alors produit et se signe.</p>
+          <p class="text-sm">{{ qualifiees() }} qualifiée{{ qualifiees() > 1 ? 's' : '' }} pour {{ p.nombreRetenus ?? 6 }} places. La liste prend les premières ; le {{ l().rapport }} est alors produit et se signe.@if (candidatures()) { Au moins trois candidats (art. 38-II). }</p>
           @if (qualifiees() < (p.nombreRetenus ?? 6)) {
             <label class="form-label" for="ps-motif-nombre">Motif du nombre retenu (moins de qualifiées que de places)</label>
             <textarea id="ps-motif-nombre" class="form-control" rows="2" [value]="motifNombre()" (input)="motifNombre.set(valeur($event))"></textarea>
@@ -239,14 +250,14 @@ interface NoteEnCours {
           @if (p.motifNombre) { <p class="text-sm"><strong>Motif du nombre :</strong> {{ p.motifNombre }}</p> }
           @if (p.observations) { <p class="text-sm"><strong>Observations :</strong> {{ p.observations }}</p> }
           @if (p.etat === 'DEFINITIVE') {
-            <p class="text-sm">Publiée sur la page de l’appel et notifiée à chaque candidat. Les lettres d’invitation vont désormais aux candidats de cette liste, et le dossier de la demande de propositions peut être créé : le rapport signé y est joint d’office.</p>
+            <p class="text-sm">Publiée sur la page de l’appel et notifiée à chaque candidat. Les lettres d’invitation vont désormais aux candidats de cette liste, et le {{ l().suite }} peut être créé : le {{ l().rapport }} signé y est joint d’office.</p>
           }
         </section>
       }
 
       @if (p.rapport; as r) {
         <section class="card ps__bloc" aria-labelledby="ps-rapport">
-          <h2 id="ps-rapport" class="ps__h2">Rapport de présélection</h2>
+          <h2 id="ps-rapport" class="ps__h2">{{ capitale(l().rapport) }}</h2>
           <p class="text-sm text-muted">Produit le {{ dateHeure(r.produitLe) }}{{ r.signe ? ' · signé de tous le ' + dateHeure(r.signeLe) : '' }}</p>
           <div class="ps__actions">
             <button type="button" class="btn btn-outline btn-sm" [disabled]="travail()" (click)="lireRapport('pdf')">Ouvrir le PDF</button>
@@ -263,7 +274,7 @@ interface NoteEnCours {
           @if (jeSigne()) {
             <label class="form-label" for="ps-obs-sig">Observation (facultative)</label>
             <input id="ps-obs-sig" class="form-control" [value]="observationSignature()" (input)="observationSignature.set(valeur($event))" />
-            <button type="button" class="btn btn-primary btn-sm ps__btn" [disabled]="travail()" (click)="signer()">Signer le rapport</button>
+            <button type="button" class="btn btn-primary btn-sm ps__btn" [disabled]="travail()" (click)="signer()">{{ candidatures() ? 'Signer le procès-verbal' : 'Signer le rapport' }}</button>
           }
           @if (presidentDeclare() && attendues().length) {
             <details class="ps__emp">
@@ -284,7 +295,7 @@ interface NoteEnCours {
       @if (prmp() && p.etat === 'NOTATION') {
         <section class="card ps__bloc" aria-labelledby="ps-prmp">
           <h2 id="ps-prmp" class="ps__h2">Relancer ou déclarer infructueux</h2>
-          <p class="text-sm">Avant l’arrêt de la liste : la relance rouvre le dépôt jusqu’à une nouvelle date limite (expressions et notes gardées) ; l’infructuosité (art. 56-II) n’est possible que sans aucune expression qualifiée.</p>
+          <p class="text-sm">Avant l’arrêt de la liste : la relance rouvre le dépôt jusqu’à une nouvelle date limite ({{ l().depots }} et notes gardées) ; l’infructuosité (art. 56-II) n’est possible que sans aucune {{ l().depot }} qualifiée.</p>
           <label class="form-label" for="ps-relance-date">Nouvelle date limite</label>
           <input id="ps-relance-date" class="form-control ps__court" type="datetime-local" [value]="relanceDate()" (input)="relanceDate.set(valeur($event))" />
           <label class="form-label" for="ps-prmp-motif">Motif</label>
@@ -358,6 +369,10 @@ export class PreselectionAmi implements OnInit {
   });
   readonly president = computed(() => this.decider() && !!this.maDeclaration()?.president);
   readonly prmp = computed(() => this.espace === 'interne' && this.auth.role() === 'PRMP' && !this.etapeClose());
+  /** ⚠️ V161 (§B4) — l'appel à candidatures du restreint ; `nature` absente (demande « nature-preselection » en cours) : AMI. */
+  readonly candidatures = computed(() => this.ps()?.nature === 'APPEL_CANDIDATURES');
+  readonly l = computed(() => libellesAppel(this.ps()?.nature));
+  readonly capitale = capitale;
   readonly lienAmi = computed(() => (this.espace === 'interne' && ['PRMP', 'UGPM'].includes(this.auth.role() ?? '') ? ['/prmp', 'dao', this.idDmc, 'ami'] : null));
   readonly qui = computed(() => {
     if (this.espace === 'cao') return this.maDeclaration()?.president ? 'président de la commission' : 'membre de la commission';
@@ -494,7 +509,7 @@ export class PreselectionAmi implements OnInit {
         this.travail.set(false);
         this.ordre.set([]);
         this.recevoir(p);
-        this.toast.success('Liste arrêtée : le rapport de présélection est produit et attend les signatures.');
+        this.toast.success(`Liste arrêtée : le ${this.l().rapport} est produit et attend les signatures.`);
       },
       error: (e: ApiError) => {
         this.travail.set(false);
@@ -508,7 +523,7 @@ export class PreselectionAmi implements OnInit {
   }
 
   signer(): void {
-    this.geste(this.service.signer(this.idDmc, this.observationSignature().trim() || null), 'Rapport signé.');
+    this.geste(this.service.signer(this.idDmc, this.observationSignature().trim() || null), this.candidatures() ? 'Procès-verbal signé.' : 'Rapport signé.');
   }
 
   empechement(): void {
@@ -534,7 +549,7 @@ export class PreselectionAmi implements OnInit {
       next: (blob) => {
         this.travail.set(false);
         if (format === 'pdf') ouvrirBlobSur(blob);
-        else telechargerBlob(blob, `rapport-preselection-${this.idDmc}.docx`);
+        else telechargerBlob(blob, `${this.candidatures() ? 'pv-liste-restreinte' : 'rapport-preselection'}-${this.idDmc}.docx`);
       },
       error: () => {
         this.travail.set(false);

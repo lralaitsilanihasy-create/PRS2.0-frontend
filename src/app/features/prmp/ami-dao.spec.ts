@@ -126,4 +126,26 @@ describe('Appel à manifestation d’intérêt, côté PRMP', () => {
     expect(racine().textContent).toContain('Cabinet de recette');
     expect(racine().textContent).toContain('Nous manifestons notre intérêt.');
   });
+
+  it('⚠️ V161 (03/11, B4) — l’appel à candidatures du restreint : ses mots, trois retenus au moins, renoncer plutôt que dispenser', () => {
+    monter();
+    http.expectOne(URL).flush({ ...BROUILLON, nature: 'APPEL_CANDIDATURES' });
+    fixture.detectChanges();
+    const texte = racine().textContent ?? '';
+    expect(racine().querySelector('h1')?.textContent).toContain('Appel à candidatures');
+    expect(texte).toContain('sans offre ni prix');
+    expect(texte).toContain('Critères de qualification');
+    expect(texte).toContain('Date limite de dépôt des candidatures');
+    expect((racine().querySelector('#ami-retenus') as HTMLInputElement).min).toBe('3');
+    expect(texte).toContain('Renoncer à l’appel à candidatures');
+    expect(texte).not.toContain('manifestation');
+  });
+
+  it('⚠️ V161 — avant sa création, la nature vient de la catégorie de la fiche', () => {
+    monter();
+    http.expectOne(URL).flush({ message: 'x' }, { status: 404, statusText: 'Not Found' });
+    fixture.componentInstance.fiche.set({ categorie: 'TRAVAUX' } as never);
+    fixture.detectChanges();
+    expect(racine().querySelector('h1')?.textContent).toContain('Appel à candidatures');
+  });
 });

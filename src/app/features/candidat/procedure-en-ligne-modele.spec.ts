@@ -112,4 +112,11 @@ describe('Liste des procédures (19/10, maquette)', () => {
     expect(avancementDepot(null, '2026-11-20', maintenant)).toBeNull();
     expect(joursAvant('2026-10-19T08:00', maintenant)).toBeNull();
   });
+
+  it('⚠️ V161 (03/11, B4) — un appel à candidatures paraît comme tel, rattaché à l’appel d’offres restreint', () => {
+    const appel = { ...ami, idDmc: 11, nature: 'APPEL_CANDIDATURES' as const };
+    const l = lignesProcedures([], [ami, appel], cats, maintenant);
+    expect(l.find((x) => x.cle === 'AMI-11')).toMatchObject({ categorie: 'Appel à candidatures', lots: 'Appel d’offres restreint', candidatures: true });
+    expect(l.find((x) => x.cle === 'AMI-9')).toMatchObject({ categorie: 'Manifestation d’intérêt', lots: 'Prestations intellectuelles', candidatures: false });
+  });
 });

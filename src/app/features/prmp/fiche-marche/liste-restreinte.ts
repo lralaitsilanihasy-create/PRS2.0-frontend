@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 
-import { ApiError, erreursParChamp } from '../../../core/errors/api-error';
+import { RouterLink } from '@angular/router';
+
+import { ApiError, codeErreur, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
 import { CandidatRestreint, ListeRestreinte, SourceListeRestreinte } from '../../../models';
 import { FicheMarcheService } from '../../../services/fiche-marche.services';
@@ -30,6 +32,7 @@ interface Ligne extends CandidatRestreint {
   selector: 'app-liste-restreinte',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [RouterLink],
   template: `
     <section class="lr" id="fm-liste-restreinte" aria-labelledby="lr-t" [class.lr--manque]="!liste() && !lecture()">
       <div class="lr__tete">
@@ -49,8 +52,18 @@ interface Ligne extends CandidatRestreint {
           <p class="lr__src">Aucune liste saisie.</p>
         }
       } @else if (liste()?.source === 'APPEL_CANDIDATURES') {
-        <p class="lr__src">Cette liste est arrêtée par la commission au terme de l’appel à candidatures en ligne : elle ne se saisit pas ici.</p>
+        <!-- ⚠️ V161 (03/11, B4) — la liste arrêtée par l'appel à candidatures en ligne, servie à la place d'une liste saisie. -->
+        <p class="lr__src">Arrêtée par la commission au terme de l’appel à candidatures en ligne (procès-verbal signé, joint d’office au dossier) : elle ne se saisit pas ici.</p>
+        <ol class="lr__lue">
+          @for (c of liste()!.candidats; track $index) {
+            <li><b>{{ c.nom }}</b>@if (c.adresse) { — {{ c.adresse }} }@if (c.idCandidat) { · compte {{ c.idCandidat }} }@if (c.nif) { · NIF {{ c.nif }} }</li>
+          }
+        </ol>
       } @else {
+        @if (lienAppel(); as lien) {
+          <!-- ⚠️ V161 (03/11, B4 ; décret, art. 11-1) — la seconde voie : un appel à candidatures en ligne constitue la liste. -->
+          <p class="lr__appel">Ou faites constituer la liste par un appel à candidatures en ligne : la commission arrête alors les candidats, et rien ne se saisit ici. <a class="btn btn-outline btn-sm" [routerLink]="lien">Appel à candidatures</a></p>
+        }
         <fieldset class="lr__sources">
           <legend class="lr__l">D’où viennent les candidats ?</legend>
           @for (s of sources; track s.code) {
@@ -137,6 +150,7 @@ interface Ligne extends CandidatRestreint {
     .lr__pied { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
     .lr__aide, .lr__src { margin: 0; font-size: 0.78rem; color: var(--texte-secondaire); }
     .lr__src { font-size: 0.86rem; color: var(--texte); }
+    .lr__appel { margin: 0; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; font-size: 0.86rem; color: var(--texte); }
     .lr__lue { margin: 0; padding-left: 1.4rem; font-size: 0.86rem; line-height: 1.6; }
     @media (max-width: 768px) {
       .lr__champs { grid-template-columns: 1fr; }
@@ -155,6 +169,8 @@ export class ListeRestreinteFiche {
   readonly liste = input<ListeRestreinte | null>(null);
   /** Fiche figée ou lecteur de la Commission : la liste se lit. */
   readonly lecture = input(false);
+  /** ⚠️ V161 (B4) — l'écran de l'appel à candidatures, proposé comme seconde voie ; nul quand il n'a pas cours (motif « petit nombre »). */
+  readonly lienAppel = input<(string | number)[] | null>(null);
   /** La liste vient d'être enregistrée : la page la reporte sur la fiche et relit son bilan. */
   readonly enregistre = output<ListeRestreinte>();
 
@@ -240,7 +256,10 @@ export class ListeRestreinteFiche {
         this.saving.set(false);
         const parChamp = erreursParChamp(e);
         this.erreurs.set(parChamp);
-        if (!parChamp.size) this.toast.error(e?.message ?? 'La liste n’a pas pu être enregistrée.');
+        if (parChamp.size) return;
+        this.toast.error(codeErreur(e) === 'LISTE_PAR_APPEL_CANDIDATURES'
+          ? 'Un appel à candidatures est publié : la liste restreinte sera celle qu’arrêtera la commission.'
+          : e?.message ?? 'La liste n’a pas pu être enregistrée.');
       },
     });
   }

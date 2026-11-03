@@ -1,4 +1,4 @@
-import { DocumentProcedureEnLigne, ProcedureEnLigne, RecuDao } from '../../models';
+import { DocumentProcedureEnLigne, NatureAmi, ProcedureEnLigne, RecuDao } from '../../models';
 import { maintenantServeur } from '../../core/horloge/heure-serveur';
 
 /**
@@ -200,6 +200,8 @@ export interface LigneProcedure {
   avancement: number | null;
   /** ⚠️ 01/11 — l'appel d'offres dont l'avis spécifique se lit en ligne (`avisSpecifique`) ; `null` sinon (AMI compris). */
   idDmcAvis: number | null;
+  /** ⚠️ V161 (03/11, B4) — un appel à candidatures d'appel d'offres restreint, sur le chemin de l'AMI. */
+  candidatures?: boolean;
 }
 
 export type FiltreProcedures = 'TOUTES' | 'OUVERTE' | 'A_VENIR';
@@ -234,6 +236,7 @@ export interface AmiLigne {
   dateLimite: string | null;
   publieLe: string | null;
   ouvert: boolean;
+  nature?: NatureAmi;
 }
 
 export function lignesProcedures(
@@ -251,13 +254,14 @@ export function lignesProcedures(
       etat: a.ouvert ? 'OUVERTE' : 'CLOSE',
       objet: a.objet || 'Objet non renseigné',
       autorite: a.autoriteContractante,
-      categorie: 'Manifestation d’intérêt',
-      lots: 'Prestations intellectuelles',
+      categorie: a.nature === 'APPEL_CANDIDATURES' ? 'Appel à candidatures' : 'Manifestation d’intérêt',
+      lots: a.nature === 'APPEL_CANDIDATURES' ? 'Appel d’offres restreint' : 'Prestations intellectuelles',
       dateLimite: a.dateLimite,
       dateOuverture: a.publieLe,
       joursRestants: a.ouvert ? joursAvant(a.dateLimite, maintenant) : null,
       avancement: a.ouvert ? avancementDepot(a.publieLe, a.dateLimite, maintenant) : null,
       idDmcAvis: null,
+      candidatures: a.nature === 'APPEL_CANDIDATURES',
     })),
     ...procedures.map((p): LigneProcedure => ({
       cle: `AO-${p.idDmc}`,

@@ -7,11 +7,12 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ApiError, codeErreur, corpsErreur } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur, telechargerBlob } from '../../core/securite/fichiers-surs';
-import { Ami, AmiCorps, Expression, PublicationAmi } from '../../models';
+import { Ami, AmiCorps, Expression, FicheMarche, NatureAmi, PublicationAmi } from '../../models';
 import { AmiService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr, tailleLisible } from '../candidat/libelles-candidat';
 import { EnteteProcedure } from './entete-procedure';
+import { capitale, libellesAppel } from '../ami/ami-libelles';
 
 /** Les refus nommés du contrat AMI-a (V82). */
 export const MESSAGES_AMI: Readonly<Record<string, string>> = {
@@ -20,7 +21,9 @@ export const MESSAGES_AMI: Readonly<Record<string, string>> = {
   NOTE_MINIMALE_INVALIDE: 'La note minimale se donne sur 100.',
   DATE_LIMITE_INVALIDE: 'La date limite doit être à venir.',
   NOMBRE_RETENUS_INVALIDE: 'Le nombre de candidats retenus va de 1 à 20.',
-  CATEGORIE_SANS_AMI: 'L’appel à manifestation d’intérêt est réservé aux prestations intellectuelles.',
+  CATEGORIE_SANS_AMI: 'L’appel à manifestation d’intérêt est réservé aux prestations intellectuelles, et l’appel à candidatures à l’appel d’offres restreint.',
+  // ⚠️ V161 (03/11, B4) — le motif « petit nombre de prestataires » dispense de l'appel à candidatures (décret, art. 13).
+  APPEL_CANDIDATURES_DISPENSE: 'Le petit nombre de prestataires dispense de l’appel à candidatures (art. 13) : saisissez la liste restreinte sur la fiche.',
   AMI_PUBLIE: 'L’appel est déjà publié : il ne se modifie plus.',
   AMI_DISPENSE: 'L’appel est dispensé de publicité : la liste restreinte se saisit aux lettres d’invitation.',
   PUBLICATION_OBLIGATOIRE: 'Déclarez au moins un support de publication, daté.',
@@ -55,6 +58,8 @@ interface LignePublication {
  * retenus (six par défaut), date limite ; la PRMP seule le publie (supports déclarés, avis signé) ou déclare la dispense de publicité.
  * Les expressions d'intérêt ne se lisent qu'après la date limite (arbitrage Q2) : avant, leur nombre seulement. La notation par la
  * commission et la liste restreinte viennent avec la tranche AMI-b.
+ * ⚠️ V161 (03/11, « appel-offres-restreint », §B4) — le même écran sert l'**appel à candidatures** d'un appel d'offres restreint : sa
+ * nature vient de l'appel, ou, avant sa création, de la catégorie de la fiche (lue par l'en-tête).
  */
 @Component({
   selector: 'app-ami-dao',
@@ -63,25 +68,33 @@ interface LignePublication {
   template: `
     <section class="ami">
       <header class="page-header">
-        <app-entete-procedure [idDmc]="idDmc" />
-        <h1 class="page-title">Appel à manifestation d’intérêt</h1>
+        <app-entete-procedure [idDmc]="idDmc" (lue)="fiche.set($event)" />
+        <h1 class="page-title">{{ l().titre }}</h1>
       </header>
-      <p class="page-role">
-        La liste restreinte des consultants invités à remettre une proposition naît de cet appel (art. 42-II) : les candidats déposent
-        leur expression d’intérêt en ligne, la commission les note sur les critères publiés et retient les meilleurs.
-      </p>
+      @if (candidatures()) {
+        <p class="page-role">
+          La liste restreinte des candidats invités à remettre une offre naît de cet appel (décret n° 2019-1310, art. 11-1) : les
+          entreprises déposent leur candidature en ligne, sans offre ni prix ; la commission les juge sur les critères de qualification
+          publiés et arrête une liste d’au moins trois candidats.
+        </p>
+      } @else {
+        <p class="page-role">
+          La liste restreinte des consultants invités à remettre une proposition naît de cet appel (art. 42-II) : les candidats déposent
+          leur expression d’intérêt en ligne, la commission les note sur les critères publiés et retient les meilleurs.
+        </p>
+      }
 
       @if (chargement()) {
         <p class="text-muted" role="status">Chargement de l’appel…</p>
       } @else if (erreur()) {
-        <app-etat-erreur message="L’appel à manifestation d’intérêt n’a pas pu être chargé." (reessayer)="charger()" />
+        <app-etat-erreur [message]="capitale(l().le) + ' n’a pas pu être chargé.'" (reessayer)="charger()" />
       } @else {
         @if (ami(); as a) {
           <p class="ami__etat">
             <span class="badge" [class.badge-warning]="a.etat === 'BROUILLON'" [class.badge-success]="a.etat === 'PUBLIE'" [class.badge-neutral]="a.etat === 'DISPENSE'" [class.badge-danger]="a.etat === 'INFRUCTUEUX'">{{ etats[a.etat] }}</span>
             @if (a.publieLe) { <span class="text-sm text-muted">publié le {{ dateHeure(a.publieLe) }}{{ a.publiePar ? ' par ' + a.publiePar : '' }}</span> }
             @if (a.etat === 'PUBLIE') {
-              <span class="text-sm"><strong>{{ a.nombreExpressions }}</strong> {{ a.nombreExpressions > 1 ? 'expressions déposées' : 'expression déposée' }}</span>
+              <span class="text-sm"><strong>{{ a.nombreExpressions }}</strong> {{ a.nombreExpressions > 1 ? l().depots + ' déposées' : l().depot + ' déposée' }}</span>
             }
           </p>
         }
@@ -91,12 +104,12 @@ interface LignePublication {
           <section class="card ami__bloc" aria-labelledby="ami-prep">
             <h2 id="ami-prep" class="ami__h2">{{ ami() ? 'Préparation' : 'Préparer l’appel' }}</h2>
             <div class="ami__ligne">
-              <label class="form-label" for="ami-limite">Date limite de dépôt des expressions</label>
+              <label class="form-label" for="ami-limite">Date limite de dépôt des {{ l().depots }}</label>
               <input id="ami-limite" class="form-control ami__court" type="datetime-local" [value]="dateLimite()" (input)="dateLimite.set(valeur($event))" />
             </div>
 
-            <h3 class="ami__h3">Critères de sélection <span class="text-sm" [class.ami__ko]="total() !== 100">— total {{ total() }} / 100</span></h3>
-            <p class="text-sm text-muted">L’aptitude, les références, l’expérience (art. 42-II) : chaque critère porte un poids, et les poids totalisent 100.</p>
+            <h3 class="ami__h3">{{ candidatures() ? 'Critères de qualification' : 'Critères de sélection' }} <span class="text-sm" [class.ami__ko]="total() !== 100">— total {{ total() }} / 100</span></h3>
+            <p class="text-sm text-muted">{{ candidatures() ? 'Les capacités techniques, financières et professionnelles, les garanties (art. 11-1)' : 'L’aptitude, les références, l’expérience (art. 42-II)' }} : chaque critère porte un poids, et les poids totalisent 100.</p>
             <table class="cnm-table ami__table">
               <caption class="cnm-sr-only">Critères de sélection</caption>
               <thead><tr><th scope="col">Critère</th><th scope="col" class="cnm-num">Poids</th><th scope="col">Précision</th><th scope="col"><span class="cnm-sr-only">Actions</span></th></tr></thead>
@@ -132,7 +145,7 @@ interface LignePublication {
               </div>
               <div>
                 <label class="form-label" for="ami-retenus">Candidats retenus sur la liste restreinte</label>
-                <input id="ami-retenus" class="form-control ami__court" type="number" min="1" max="20" [value]="nombreRetenus() ?? ''" (input)="nombreRetenus.set(nombre(valeur($event)))" />
+                <input id="ami-retenus" class="form-control ami__court" type="number" [min]="candidatures() ? 3 : 1" max="20" [value]="nombreRetenus() ?? ''" (input)="nombreRetenus.set(nombre(valeur($event)))" />
               </div>
             </div>
 
@@ -163,7 +176,7 @@ interface LignePublication {
               <ul>@for (p of a.publications; track $index) { <li>{{ p.support }}, le {{ date(p.date) }}{{ p.reference ? ' — ' + p.reference : '' }}</li> }</ul>
             }
             @if (a.etat === 'DISPENSE') {
-              <div class="alert alert-info" role="status"><span>Dispensé de publicité : {{ a.motifDispense }}. La liste restreinte se saisit aux lettres d’invitation de la fiche.</span></div>
+              <div class="alert alert-info" role="status"><span>{{ candidatures() ? 'Appel à candidatures non lancé' : 'Dispensé de publicité' }} : {{ a.motifDispense }}. La liste restreinte se saisit {{ candidatures() ? 'sur la fiche, à l’étape Cadrage' : 'aux lettres d’invitation de la fiche' }}.</span></div>
             }
           </section>
         }
@@ -198,31 +211,36 @@ interface LignePublication {
                 <button type="button" class="btn btn-primary" [disabled]="occupe() || !pubComplete()" (click)="publier()">Publier et signer l’avis</button>
               </div>
               <details class="ami__dispense">
-                <summary>Déclarer la dispense de publicité</summary>
-                <p class="text-sm">Sous le seuil réglementaire (art. 42-II), l’appel n’est pas publié : la liste restreinte se saisit aux lettres d’invitation.</p>
+                @if (candidatures()) {
+                  <summary>Renoncer à l’appel à candidatures</summary>
+                  <p class="text-sm">Petit nombre de prestataires (art. 13) ou sélection directe (art. 11-2) : l’appel n’est pas publié, et la liste restreinte se saisit sur la fiche, à l’étape Cadrage.</p>
+                } @else {
+                  <summary>Déclarer la dispense de publicité</summary>
+                  <p class="text-sm">Sous le seuil réglementaire (art. 42-II), l’appel n’est pas publié : la liste restreinte se saisit aux lettres d’invitation.</p>
+                }
                 <label class="form-label" for="ami-motif">Motif</label>
                 <textarea id="ami-motif" class="form-control" rows="2" [value]="motif()" (input)="motif.set(valeur($event))"></textarea>
-                <button type="button" class="btn btn-outline btn-sm" [disabled]="occupe() || !motif().trim()" (click)="dispenser()">Déclarer la dispense</button>
+                <button type="button" class="btn btn-outline btn-sm" [disabled]="occupe() || !motif().trim()" (click)="dispenser()">{{ candidatures() ? 'Renoncer à l’appel' : 'Déclarer la dispense' }}</button>
               </details>
             </section>
           }
 
           @if (a.etat === 'PUBLIE') {
             <section class="card ami__bloc" aria-labelledby="ami-expr">
-              <h2 id="ami-expr" class="ami__h2">Expressions d’intérêt</h2>
+              <h2 id="ami-expr" class="ami__h2">{{ capitale(l().depots) }}</h2>
               @if (a.lectureOuverte) {
                 <p><a class="btn btn-primary btn-sm" [routerLink]="['/procedure', idDmc, 'ami']">Présélection, liste restreinte et rapport</a></p>
               }
               @if (!a.lectureOuverte) {
                 <p class="text-sm" role="status">Elles se lisent après la date limite{{ a.dateLimite ? ', le ' + dateHeure(a.dateLimite) : '' }}. D’ici là, seul leur nombre est connu : {{ a.nombreExpressions }}.</p>
               } @else if (exprChargement()) {
-                <p class="text-muted" role="status">Chargement des expressions…</p>
+                <p class="text-muted" role="status">Chargement des {{ l().depots }}…</p>
               } @else if (exprErreur()) {
-                <app-etat-erreur message="Les expressions n’ont pas pu être chargées." (reessayer)="chargerExpressions()" />
+                <app-etat-erreur [message]="'Les ' + l().depots + ' n’ont pas pu être chargées.'" (reessayer)="chargerExpressions()" />
               } @else if (!expressions().length) {
-                <p class="text-muted">Aucune expression d’intérêt reçue.</p>
+                <p class="text-muted">Aucune {{ l().depot }} reçue.</p>
               } @else {
-                <p class="text-sm text-muted">La commission note les expressions et arrête la liste restreinte à l’écran de présélection.</p>
+                <p class="text-sm text-muted">La commission note les {{ l().depots }} et arrête la liste restreinte à l’écran de présélection.</p>
                 @for (x of expressions(); track x.id) {
                   <details class="ami__x">
                     <summary>
@@ -294,6 +312,17 @@ export class AmiDao implements OnInit {
   readonly dateHeure = dateHeureFr;
   readonly taille = tailleLisible;
   readonly estPrmp = computed(() => this.auth.role() === 'PRMP');
+  /** La fiche, lue par l'en-tête : avant la création de l'appel, sa catégorie en dit la nature (V161). */
+  readonly fiche = signal<FicheMarche | null>(null);
+  readonly nature = computed<NatureAmi>(() => {
+    const a = this.ami()?.nature;
+    if (a) return a;
+    const f = this.fiche();
+    return f && f.categorie !== 'PRESTATIONS_INTELLECTUELLES' ? 'APPEL_CANDIDATURES' : 'AMI';
+  });
+  readonly candidatures = computed(() => this.nature() === 'APPEL_CANDIDATURES');
+  readonly l = computed(() => libellesAppel(this.nature()));
+  readonly capitale = capitale;
   private readonly peutPreparer = computed(() => ['PRMP', 'UGPM'].includes(this.auth.role() ?? ''));
 
   readonly chargement = signal(true);

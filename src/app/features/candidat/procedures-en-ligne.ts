@@ -36,7 +36,7 @@ import { FiltreProcedures, compteursProcedures, filtrerProcedures, lignesProcedu
       <h1 class="page-title">Avis ouverts à la remise électronique</h1>
     </header>
     <p class="page-role">
-      Les appels d'offres et les appels à manifestation d'intérêt que vous pouvez retirer en ligne, la date limite la plus proche d'abord.
+      Les appels d'offres, les appels à manifestation d'intérêt et les appels à candidatures que vous pouvez retirer en ligne, la date limite la plus proche d'abord.
       @if (!connecte()) { Pour retirer un dossier, <a routerLink="/candidat/inscription">créez un compte</a> ou <a routerLink="/login" [queryParams]="{ returnUrl: '/candidat/procedures' }">connectez-vous</a>. }
     </p>
 
@@ -45,7 +45,7 @@ import { FiltreProcedures, compteursProcedures, filtrerProcedures, lignesProcedu
     } @else if (erreur()) {
       <app-etat-erreur message="Les procédures n'ont pas pu être chargées." (reessayer)="charger()" />
     } @else if (!lignes().length) {
-      <app-etat-vide-candidat icone="globe" titre="Aucun avis ouvert en ligne pour le moment" texte="Les appels d’offres et les appels à manifestation d’intérêt paraissent ici dès la publication de leur avis." />
+      <app-etat-vide-candidat icone="globe" titre="Aucun avis ouvert en ligne pour le moment" texte="Les appels d’offres, les appels à manifestation d’intérêt et les appels à candidatures paraissent ici dès la publication de leur avis." />
     } @else {
       @let c = compteurs();
       <section class="pel__compteurs" aria-label="En bref">
@@ -76,7 +76,7 @@ import { FiltreProcedures, compteursProcedures, filtrerProcedures, lignesProcedu
             <div class="pel__corps">
               <p class="pel__haut">
                 <span class="cnm-mono pel__ref">{{ l.reference }}</span>
-                <span class="pel__badge" [attr.data-etat]="l.etat">{{ libelleEtat(l.etat, l.genre) }}</span>
+                <span class="pel__badge" [attr.data-etat]="l.etat">{{ libelleEtat(l.etat, l.genre, l.candidatures) }}</span>
               </p>
               <h2 class="pel__objet"><a [routerLink]="l.lien">{{ l.objet }}</a></h2>
               <p class="pel__meta">
@@ -209,8 +209,8 @@ export class ProceduresEnLigne implements OnInit {
     });
   }
 
-  libelleEtat(etat: 'OUVERTE' | 'A_VENIR' | 'CLOSE', genre: 'AO' | 'AMI'): string {
-    return genre === 'AMI' ? (etat === 'OUVERTE' ? 'Manifestation ouverte' : 'Close') : this.etats[etat];
+  libelleEtat(etat: 'OUVERTE' | 'A_VENIR' | 'CLOSE', genre: 'AO' | 'AMI', candidatures = false): string {
+    return genre === 'AMI' ? (etat === 'OUVERTE' ? (candidatures ? 'Candidatures ouvertes' : 'Manifestation ouverte') : 'Close') : this.etats[etat];
   }
 
   ngOnInit(): void {

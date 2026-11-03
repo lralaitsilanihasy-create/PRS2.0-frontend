@@ -79,7 +79,7 @@
         <h2 id="fm-suivi" class="fm__suivi-titre">Suivi de la procédure — vert : fait ou ouvert · ocre : à compléter</h2>
         <div class="fm__suivi-grille">
           @if (lienAmi(); as lien) {
-            <a class="fm__suivi-carte" [routerLink]="lien"><app-icone nom="users" [taille]="18" /><span class="fm__suivi-nom">Appel à manifestation d’intérêt</span><span class="fm__suivi-etat">Liste restreinte</span></a>
+            <a class="fm__suivi-carte" [routerLink]="lien"><app-icone nom="users" [taille]="18" /><span class="fm__suivi-nom">{{ categorie() === 'PRESTATIONS_INTELLECTUELLES' ? 'Appel à manifestation d’intérêt' : 'Appel à candidatures' }}</span><span class="fm__suivi-etat">Liste restreinte</span></a>
           }
           @if (modeElectronique() && f.cao; as etat) {
             @if (lienCao(); as lien) {
@@ -424,7 +424,7 @@
                    (loi, art. 38-IV) avant tout le reste : sans lui, la fiche ne se valide pas. ⚠️ V156 (B3) — puis sa liste restreinte. -->
               @if (fiche()?.modeRestreint && idDmc(); as id) {
                 <app-motif-restreint [idDmc]="id" [motif]="fiche()?.motifRestreint ?? null" [lecture]="figee() || enLecture() || ecritureBloquee()" (enregistre)="motifEnregistre($event)" />
-                <app-liste-restreinte [idDmc]="id" [liste]="fiche()?.listeRestreinte ?? null" [lecture]="figee() || enLecture() || ecritureBloquee()" (enregistre)="listeEnregistree($event)" />
+                <app-liste-restreinte [idDmc]="id" [liste]="fiche()?.listeRestreinte ?? null" [lienAppel]="lienAmi()" [lecture]="figee() || enLecture() || ecritureBloquee()" (enregistre)="listeEnregistree($event)" />
               }
               @for (q of questions(); track q.cle) {
                 <div class="fm__q" [id]="'fq-' + q.cle" [class.fm__q--plan]="imposee(q.cle)" [class.fm__q--manque]="sansReponseCles().has(q.cle) && !figee()">
