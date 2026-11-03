@@ -41,6 +41,9 @@ export const PRMP_ROUTES: Routes = [
   { path: 'rectifier-dao/:idDossier', loadComponent: () => import('./rectifier-dossier-dao').then((m) => m.RectifierDossierDao), data: { title: 'Rectifier un dossier DAO' } },
   { path: 'dossiers-verifies', loadComponent: () => import('../circuit/dossiers-clotures').then((m) => m.DossiersClotures), data: { title: 'Dossiers vérifiés', titreMaj: 'Mettre à jour un PPM', source: 'prmp-clotures' } },
   { path: 'ppm', loadComponent: () => import('../../shared/crud/crud-page').then((m) => m.CrudPage), data: { crud: PPM_CONFIG } },
+  // ⚠️ 03/11 (pilote, maquette « espace PRMP ») — le plan de passation comme écran de travail : le dernier plan signé, ou celui de l'URL.
+  { path: 'plan', loadComponent: () => import('./plan-passation/plan-passation').then((m) => m.PlanPassation), data: { title: 'Plan de passation' } },
+  { path: 'plan/:idDossier', loadComponent: () => import('./plan-passation/plan-passation').then((m) => m.PlanPassation), data: { title: 'Plan de passation' } },
   { path: 'soumettre-dossier', loadComponent: () => import('./soumettre-dossier').then((m) => m.SoumettreDossier), data: { title: 'Créer un dossier' } },
   // Fiche DAO d'un appel d'offres (proposition DMC du 22/09, lot 1) — un FORMULAIRE depuis la ligne du PPM,
   // jamais un import de PDF. ⚠️ 01/11 — entrée « Appels d’offres » du menu Passation (titre de l'écran et fil d'Ariane alignés).
