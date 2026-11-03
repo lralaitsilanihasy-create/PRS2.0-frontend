@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { FicheMarche } from '../../models';
@@ -29,6 +29,8 @@ import { FicheMarcheService } from '../../services';
 })
 export class EnteteProcedure {
   readonly idDmc = input.required<number>();
+  /** ⚠️ 03/11 — la fiche lue, pour l'écran hôte (mode restreint du registre des dépôts) : pas de seconde lecture. */
+  readonly lue = output<FicheMarche>();
 
   private readonly service = inject(FicheMarcheService);
   private readonly auth = inject(AuthService);
@@ -38,7 +40,13 @@ export class EnteteProcedure {
   constructor() {
     effect(() => {
       const id = this.idDmc();
-      this.service.lire(id).subscribe({ next: (f) => this.fiche.set(f), error: () => this.fiche.set(null) });
+      this.service.lire(id).subscribe({
+        next: (f) => {
+          this.fiche.set(f);
+          this.lue.emit(f);
+        },
+        error: () => this.fiche.set(null),
+      });
     });
   }
 

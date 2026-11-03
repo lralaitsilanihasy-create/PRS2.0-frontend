@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { skipErrorToast } from '../core/errors/api-error';
-import { Accuse, AvisSpecifiquePublic, BesoinEnLigne, ConfirmationCandidat, ConfirmationCandidatCorps, CopieOffre, CreationOffreCorps, DecisionVerificationNif, DepotRecuCorps, DocumentProcedureEnLigne, Entreprise, EntrepriseCorps, ExclusionArmp, ExclusionArmpCorps, Horloge, InscriptionCandidat, InscriptionCandidatCorps, InvitationCandidat, Offre, OffreLue, PieceAttendue, PieceEntreprise, ProcedureEnLigne, RecuDao, StatutVerificationNif, TypePieceEntreprise, VerificationNif } from '../models';
+import { Accuse, AvisSpecifiquePublic, BesoinEnLigne, ConfirmationCandidat, ConfirmationCandidatCorps, CopieOffre, CreationOffreCorps, DecisionVerificationNif, DepotRecuCorps, DocumentProcedureEnLigne, Entreprise, EntrepriseCorps, ExclusionArmp, ExclusionArmpCorps, Horloge, InscriptionCandidat, InscriptionCandidatCorps, InvitationCandidat, Offre, OffreLue, OuvertureAnticipee, PieceAttendue, PieceEntreprise, ProcedureEnLigne, RecuDao, StatutVerificationNif, TypePieceEntreprise, VerificationNif } from '../models';
 
 /**
  * Soumission en ligne, lot 1 (demande du 04/10, §B2 à §B8 ; backend V63 à V65). Services BESPOKE : aucune de ces
@@ -279,6 +279,19 @@ export class InvitationsCandidatService {
 
   liste(): Observable<InvitationCandidat[]> {
     return this.http.get<InvitationCandidat[]>(this.base);
+  }
+
+  /**
+   * ⚠️ 03/11 (V160, « appel-offres-restreint », §B7) — la demande d'ouverture anticipée des plis vue par l'invité (son seul
+   * consentement) ; `null` sans demande, 404 hors invités. Silencieux.
+   */
+  ouvertureAnticipee(idDmc: number): Observable<OuvertureAnticipee | null> {
+    return this.http.get<OuvertureAnticipee | null>(`${this.base}/${idDmc}/ouverture-anticipee`, { context: skipErrorToast() });
+  }
+
+  /** Consentement écrit (`true`) ou refus (`false`) ; 400 `accord`, 403 `NON_INVITE`, 409 `ANTICIPATION_CLOSE`. */
+  consentirAnticipation(idDmc: number, accord: boolean): Observable<OuvertureAnticipee> {
+    return this.http.post<OuvertureAnticipee>(`${this.base}/${idDmc}/ouverture-anticipee/consentement`, { accord }, { context: skipErrorToast() });
   }
 
   /** `GET /{idDmc}/lettre` — 404 tant qu'elle n'est pas imprimée, ou à qui n'est pas invité. */

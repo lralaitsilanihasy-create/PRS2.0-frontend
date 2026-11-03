@@ -12,7 +12,7 @@ import { ouvrirBlobSur, telechargerBlob } from '../../../core/securite/fichiers-
 import { ApiError, codeErreur, corpsErreur, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
 import { NotificationsStore } from '../../../core/notifications/notifications.store';
-import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, CompteDesignable, DocumentDao, DocumentFiche, EtatParametresInternes, TypeChamp, FicheMarche, LigneEligible, ObservationPv, PRESENTATION_SOUS_TYPE_FICHE, ReferentielFiche, RubriqueFiche, TypeMarche, VersionFiche } from '../../../models';
+import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, CompteDesignable, DocumentDao, DocumentFiche, EtatParametresInternes, TypeChamp, FicheMarche, LigneEligible, ListeRestreinte, MotifRestreint, ObservationPv, PRESENTATION_SOUS_TYPE_FICHE, ReferentielFiche, RubriqueFiche, TypeMarche, VersionFiche } from '../../../models';
 import { ChampFicheMarcheService, DmcService, FicheMarcheService } from '../../../services/fiche-marche.services';
 import { DossierService, ObservationPvService } from '../../../services/circuit.services';
 import { statutDossierLabel } from '../../../shared/circuit/circuit-workflow';
@@ -21,6 +21,8 @@ import { LienDossier } from '../../circuit/page-dossier/lien-dossier';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { FicheBesoin } from './fiche-besoin';
 import { FicheMoyens } from './fiche-moyens';
+import { ListeRestreinteFiche } from './liste-restreinte';
+import { MotifRestreintFiche } from './motif-restreint';
 import { FichePieces } from './fiche-pieces';
 import { PpmIdentification } from './ppm-identification';
 import { CritereTechnique, FicheSousCriteres } from './fiche-sous-criteres';
@@ -131,6 +133,8 @@ function routeAbsente(e: HttpErrorResponse | ApiError): boolean {
     MigrationMode,
     FicheBesoin,
     FicheMoyens,
+    MotifRestreintFiche,
+    ListeRestreinteFiche,
     FichePieces,
     PpmIdentification,
     FicheSousCriteres,
@@ -938,6 +942,27 @@ export class FicheMarcheEcran {
    * Le besoin vient d'être enregistré : le bilan ne dit plus la vérité (« besoin incomplet » a pu tomber, ou
    * apparaître). On le relit sans bouger d'étape — la PRMP reste dans sa grille.
    */
+  /** ⚠️ 02/11 (V155, B2) — le motif du recours vient d’être écrit : on le reporte sur la fiche, puis le bilan se relit. */
+  motifEnregistre(m: MotifRestreint): void {
+    this.fiche.update((f) => (f ? { ...f, motifRestreint: m } : f));
+    this.besoinEnregistre();
+  }
+
+  /** ⚠️ 02/11 (V156, B3) — la liste restreinte vient d’être écrite : même chemin que le motif. */
+  listeEnregistree(l: ListeRestreinte): void {
+    this.fiche.update((f) => (f ? { ...f, listeRestreinte: l } : f));
+    this.besoinEnregistre();
+  }
+
+  /**
+   * ⚠️ 02/11 (B2, B3) — les bloquants `MOTIF_RESTREINT` et `LISTE_RESTREINTE` ne vivent dans aucun bloc : ils renvoient au cadrage,
+   * où le motif et la liste se saisissent (`ancre` : l’identifiant de leur section).
+   */
+  allerAuCadrage(ancre: string): void {
+    this.etape.set(1);
+    setTimeout(() => document.getElementById(ancre)?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 150);
+  }
+
   besoinEnregistre(): void {
     const id = this.idDmc();
     if (id == null) return;
@@ -1540,7 +1565,7 @@ export class FicheMarcheEcran {
 
   /** Le sigle court d'un document (badge de l'étape Documents) : « BORDEREAU_ESTIMATIF » s'affichait en toutes lettres (17/10). */
   sigleDocument(type: string): string {
-    return ({ DAO_COMPLET: 'DAO', BORDEREAU_ESTIMATIF: 'BE', DQE_ESTIMATIF: 'DQE', DESCRIPTIF_PLANS: 'DP', LETTRE_INVITATION: 'LI', AVIS_PROJET: 'AVIS', LETTRE_PROJET: 'LI' } as Record<string, string>)[type] ?? type;
+    return ({ DAO_COMPLET: 'DAO', BORDEREAU_ESTIMATIF: 'BE', DQE_ESTIMATIF: 'DQE', DESCRIPTIF_PLANS: 'DP', LETTRE_INVITATION: 'LI', AVIS_PROJET: 'AVIS', LETTRE_PROJET: 'LI', DECISION_AOR_PROJET: 'DÉC' } as Record<string, string>)[type] ?? type;
   }
 
   montant(v: number | null | undefined): string {

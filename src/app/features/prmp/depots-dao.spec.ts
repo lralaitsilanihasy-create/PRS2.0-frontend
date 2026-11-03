@@ -33,7 +33,11 @@ describe('Registre des dépôts — tentatives refusées (R9b)', () => {
     });
   }
 
-  afterEach(() => http.verify());
+  // La lecture de l'ouverture anticipée (V160) a sa propre spec : écartée ici.
+  afterEach(() => {
+    http.match((r) => r.url.endsWith('/ouverture-anticipee')).forEach((r) => r.flush(null));
+    http.verify();
+  });
 
   it('les liste à la seconde, avec le geste refusé ; un candidat sans entreprise reste nommé', () => {
     const el = monter();

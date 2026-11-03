@@ -9,6 +9,7 @@ import { AvisSpecifiquePublic, DocumentProcedureEnLigne, ProcedureEnLigne, RecuD
 import { OffresCandidatService, ProceduresEnLigneService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { Icone } from '../../shared/ui/icone';
+import { ConsentementAnticipation } from './consentement-anticipation';
 import { FraisDossier } from './frais-dossier';
 import { ResultatsPublics } from './resultats-publics';
 import { QuestionsProcedureVue } from './questions-procedure';
@@ -35,7 +36,7 @@ const LIBELLES_COURTS_AVIS: Readonly<Record<string, string>> = { COMPTE_PAIEMENT
 @Component({
   selector: 'app-procedure-en-ligne-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, EtatErreur, FraisDossier, ResultatsPublics, QuestionsProcedureVue, Icone],
+  imports: [RouterLink, EtatErreur, FraisDossier, ResultatsPublics, QuestionsProcedureVue, Icone, ConsentementAnticipation],
   template: `
     <nav class="ped__ariane" aria-label="Fil d'Ariane">
       <a routerLink="/candidat/procedures">Avis ouverts</a>
@@ -119,6 +120,8 @@ const LIBELLES_COURTS_AVIS: Readonly<Record<string, string>> = { COMPTE_PAIEMENT
 
       <div class="ped__corps">
         <div class="ped__principal">
+          <!-- ⚠️ 03/11 (V160, B7) — l'invité d'un appel d'offres restreint consent (ou non) à l'ouverture anticipée des plis. -->
+          @if (connecte() && p.categorie !== 'PRESTATIONS_INTELLECTUELLES') { <app-consentement-anticipation [idDmc]="p.idDmc" /> }
           @if (fichesAvis().length) {
             <div class="ped__fiches" aria-label="Mentions de l'avis spécifique">
               @for (fi of fichesAvis(); track fi.cle) {

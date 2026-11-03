@@ -2,9 +2,11 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import { ActivatedRoute } from '@angular/router';
 
 import { empreinteCourte, formaterEmpreinte } from '../../core/securite/cles-detenteur';
-import { Depots, EnveloppeOffre, EtatOffre } from '../../models';
+import { AuthService } from '../../core/auth/auth.service';
+import { Depots, EnveloppeOffre, EtatOffre, FicheMarche } from '../../models';
 import { FicheMarcheService } from '../../services';
 import { EnteteProcedure } from './entete-procedure';
+import { OuvertureAnticipeePanneau } from './ouverture-anticipee';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { dateHeureFr, tailleLisible } from '../candidat/libelles-candidat';
 
@@ -27,11 +29,11 @@ const LIBELLES_ENVELOPPE: Readonly<Record<EnveloppeOffre, string>> = { TECHNIQUE
 @Component({
   selector: 'app-depots-dao',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [EtatErreur, EnteteProcedure],
+  imports: [EtatErreur, EnteteProcedure, OuvertureAnticipeePanneau],
   template: `
     <section class="dd">
       <header class="page-header">
-        <app-entete-procedure [idDmc]="idDmc" />
+        <app-entete-procedure [idDmc]="idDmc" (lue)="fiche.set($event)" />
         <h1 class="page-title">Registre des dépôts</h1>
       </header>
       <p class="page-role">Les offres déposées en ligne. Avant la date limite, seul leur nombre est connu ; leur contenu, lui, ne s'ouvre qu'en séance, au quorum des membres de la commission.</p>
@@ -45,6 +47,8 @@ const LIBELLES_ENVELOPPE: Readonly<Record<EnveloppeOffre, string>> = { TECHNIQUE
       } @else if (registre(); as r) {
         <!-- ⚠️ V86 (PI-b) — une proposition de prestations intellectuelles (deux enveloppes) compte une fois. -->
         <p class="dd__nombre"><strong>{{ r.nombre }}</strong> {{ pi() ? (r.nombre > 1 ? 'propositions déposées' : 'proposition déposée') : r.nombre > 1 ? 'offres déposées' : 'offre déposée' }}{{ r.dateLimite ? (r.clos ? ' — dépôts clos le ' : ' — date limite : ') + dateHeure(r.dateLimite) : '' }}</p>
+        <!-- ⚠️ 03/11 (V160, B7) — appel d'offres restreint : l'ouverture anticipée, au consentement écrit de chaque invité. -->
+        <app-ouverture-anticipee [idDmc]="idDmc" [restreint]="!!fiche()?.modeRestreint" [clos]="r.clos" [prmp]="prmp()" />
         @if (!r.clos) {
           <p class="text-sm text-muted">Le détail des dépôts s'affichera à la date limite.</p>
         } @else if (r.depots?.length) {
@@ -106,6 +110,7 @@ const LIBELLES_ENVELOPPE: Readonly<Record<EnveloppeOffre, string>> = { TECHNIQUE
 export class DepotsDao implements OnInit {
   private readonly service = inject(FicheMarcheService);
   private readonly route = inject(ActivatedRoute);
+  private readonly auth = inject(AuthService);
 
   readonly idDmc = Number(this.route.snapshot.paramMap.get('idDmc'));
   readonly etats = LIBELLES_ETAT;
@@ -126,6 +131,9 @@ export class DepotsDao implements OnInit {
   readonly erreur = signal(false);
   readonly refuse = signal(false);
   readonly registre = signal<Depots | null>(null);
+  /** La fiche, lue par l'en-tête : son mode restreint ouvre l'ouverture anticipée (V160). */
+  readonly fiche = signal<FicheMarche | null>(null);
+  readonly prmp = computed(() => this.auth.role() === 'PRMP');
   /** ⚠️ V86 (PI-b) — un registre de propositions de prestations intellectuelles : chaque ligne porte son enveloppe. */
   readonly pi = computed(() => !!this.registre()?.depots?.some((d) => d.enveloppe));
 

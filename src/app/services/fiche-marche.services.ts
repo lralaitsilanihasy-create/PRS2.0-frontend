@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { skipErrorToast } from '../core/errors/api-error';
-import { ModeRemise, AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, Depots, DisponibiliteAvis, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, MaterielExige, MentionsDocument, ParametresInternes, ParametresInternesCorps, PersonnelExige, PieceExigee, ProcedureInterne, SousCritere, PublicationAvis, SpecificationsTechniques, PublicationLettres, RecuDao, ReferentielFiche, RetraitDao, TypeMarche, VersionFiche } from '../models';
+import { ModeRemise, AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CandidatRestreint, CategorieDao, ChampFiche, CompteDesignable, Depots, DisponibiliteAvis, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, ListeRestreinte, MaterielExige, MentionsDocument, MotifRestreint, ParametresInternes, ParametresInternesCorps, PersonnelExige, PieceExigee, ProcedureInterne, SousCritere, OuvertureAnticipee, PublicationAvis, PublicationAvisDeposee, SpecificationsTechniques, PublicationLettres, RecuDao, ReferentielFiche, RetraitDao, TypeMarche, VersionFiche } from '../models';
 import { CrudService } from './api/crud.service';
 
 /**
@@ -196,6 +196,27 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
   }
 
   /**
+   * ⚠️ 02/11 (V155, demande « appel-offres-restreint », B2) — le motif du recours au restreint de la version courante ;
+   * 400 nominatif (`motif`, `justification`), 409 `FICHE_VALIDEE` ou `MOTIF_HORS_RESTREINT`. La lecture vient avec la fiche.
+   */
+  enregistrerMotifRestreint(idDmc: number, corps: { motif: string; justification: string }): Observable<MotifRestreint> {
+    return this.http.put<MotifRestreint>(`${this.baseUrl}/${idDmc}/motif-restreint`, corps, { context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ 02/11 (V156, B3) — la liste restreinte de la version courante (nulle tant qu'elle n'est pas saisie) ; lue ici par les lettres
+   * d'invitation, qui n'ont pas la fiche sous la main.
+   */
+  listeRestreinte(idDmc: number): Observable<ListeRestreinte | null> {
+    return this.http.get<ListeRestreinte | null>(`${this.baseUrl}/${idDmc}/liste-restreinte`, { context: skipErrorToast() });
+  }
+
+  /** 400 nominatif (`source`, `candidats`, `candidats[i].nom`…), 409 `FICHE_VALIDEE` ou `LISTE_HORS_RESTREINT`. */
+  enregistrerListeRestreinte(idDmc: number, corps: { source: string; candidats: CandidatRestreint[] }): Observable<ListeRestreinte> {
+    return this.http.put<ListeRestreinte>(`${this.baseUrl}/${idDmc}/liste-restreinte`, corps, { context: skipErrorToast() });
+  }
+
+  /**
    * ⚠️ Lot 3 PI, tranche PI-a (V84) — les sous-critères des critères techniques ; `PUT` remplace la liste (brouillon
    * seulement : 409 `FICHE_VALIDEE`, `SOUS_CRITERES_HORS_PERIMETRE` hors prestations intellectuelles ; 400 par rang).
    */
@@ -320,6 +341,44 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
    */
   imprimerAvis(idDmc: number, corps: PublicationAvis): Observable<DocumentFiche[]> {
     return this.http.post<DocumentFiche[]>(`${this.baseUrl}/${idDmc}/avis-specifique`, corps, { context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ 03/11 (V160, §B7) — l'ouverture anticipée des plis d'un appel d'offres restreint : `null` sans demande (lecteurs de la fiche).
+   * Silencieux, comme les gestes : l'écran nomme chaque refus.
+   */
+  ouvertureAnticipee(idDmc: number): Observable<OuvertureAnticipee | null> {
+    return this.http.get<OuvertureAnticipee | null>(`${this.baseUrl}/${idDmc}/ouverture-anticipee`, { context: skipErrorToast() });
+  }
+
+  /** PRMP : sollicite chaque invité ; 409 `HORS_RESTREINT`, `DEPOTS_CLOS`, `SEANCE_DEJA_OUVERTE`, `DEJA_DEMANDEE`, `DEPOTS_INCOMPLETS` (`details.manquants`). */
+  demanderOuvertureAnticipee(idDmc: number): Observable<OuvertureAnticipee> {
+    return this.http.post<OuvertureAnticipee>(`${this.baseUrl}/${idDmc}/ouverture-anticipee`, null, { context: skipErrorToast() });
+  }
+
+  /** PRMP : `AAAA-MM-JJTHH:MM` ; 400 `nouvelleOuverture`, 409 `CONSENTEMENTS_INCOMPLETS`, `ANTICIPATION_REFUSEE`, `SEANCE_DEJA_OUVERTE`. */
+  fixerOuvertureAnticipee(idDmc: number, nouvelleOuverture: string): Observable<OuvertureAnticipee> {
+    return this.http.put<OuvertureAnticipee>(`${this.baseUrl}/${idDmc}/ouverture-anticipee/date`, { nouvelleOuverture }, { context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ 30/10 (V154, §B2) — la preuve de publication en vigueur de la procédure (journal de l'avis, ou ⚠️ V158 lettres avec accusé) ;
+   * 404 `PUBLICATION_AVIS_ABSENTE`. Silencieux.
+   */
+  publicationAvis(idDmc: number): Observable<PublicationAvisDeposee> {
+    return this.http.get<PublicationAvisDeposee>(`${this.baseUrl}/${idDmc}/publication-avis`, { context: skipErrorToast() });
+  }
+
+  publicationAvisContenu(idDmc: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${idDmc}/publication-avis/contenu`, { responseType: 'blob', context: skipErrorToast() });
+  }
+
+  /**
+   * Multipart `fichier` (PDF), `journal` (facultatif pour des lettres), `numero`, `dateParution` ; PRMP et UGPM. 400 nominatif,
+   * 409 `FICHE_NON_VALIDEE`, `AVIS_NON_PUBLIE` (avis pas imprimé, lettres pas produites). Remplace la précédente. Silencieux.
+   */
+  deposerPublicationAvis(idDmc: number, fd: FormData): Observable<PublicationAvisDeposee> {
+    return this.http.post<PublicationAvisDeposee>(`${this.baseUrl}/${idDmc}/publication-avis`, fd, { context: skipErrorToast() });
   }
 
   /**

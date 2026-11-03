@@ -6,12 +6,13 @@ import { catchError, forkJoin, of } from 'rxjs';
 import { ApiError, codeErreur, corpsErreur, erreursParChamp } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur, telechargerBlob } from '../../core/securite/fichiers-surs';
-import { CandidatInvite, DisponibiliteAvis, DocumentFiche, Preselection, RetenuAmi } from '../../models';
+import { CandidatInvite, DisponibiliteAvis, DocumentFiche, ListeRestreinte, Preselection, RetenuAmi } from '../../models';
 import { AmiService } from '../../services/ami.services';
 import { FicheMarcheService } from '../../services/fiche-marche.services';
 import { ModaleDirective } from '../a11y/modale.directive';
 import { erreurCandidat, horodatage, jjmmaaaa, lettresImprimees, messageDaoCompletAbsent, messageIndisponible } from './avis-specifique-modele';
 import { MentionsDocumentVue } from './mentions-document';
+import { PublicationAvisPanneau } from './publication-avis';
 
 /** Une ligne de la liste restreinte en cours de saisie (`id` : clé de suivi stable). */
 interface LigneCandidat extends CandidatInvite {
@@ -37,7 +38,7 @@ const ERREUR_DE = { nom: 'erreurNom', adresse: 'erreurAdresse', email: 'erreurEm
 @Component({
   selector: 'app-lettres-invitation',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ModaleDirective, MentionsDocumentVue],
+  imports: [ModaleDirective, MentionsDocumentVue, PublicationAvisPanneau],
   templateUrl: './lettres-invitation.html',
   styleUrl: './avis-specifique.scss',
 })
@@ -65,7 +66,14 @@ export class LettresInvitation implements OnInit {
   readonly documents = signal<DocumentFiche[]>([]);
   /** ⚠️ AMI-b — la liste restreinte définitive de l'AMI, s'il y en a une : elle remplace la saisie. */
   readonly listeAmi = signal<RetenuAmi[] | null>(null);
-  readonly nombreLettres = computed(() => this.listeAmi()?.length ?? this.candidats().length);
+  /**
+   * ⚠️ 02/11 (V156, demande « appel-offres-restreint », B3) — la liste restreinte saisie sur la fiche d’un appel d’offres restreint :
+   * le serveur la reprend dans son ordre et ignore la saisie de la modale, qui ne la propose donc plus (comme la liste de l’AMI).
+   */
+  readonly listeSaisie = signal<ListeRestreinte | null>(null);
+  /** Une liste arrêtée en amont (AMI ou fiche) : seules la date d’envoi et le lieu restent à saisir. */
+  readonly listeImposee = computed(() => !!this.listeAmi() || !!this.listeSaisie());
+  readonly nombreLettres = computed(() => this.listeAmi()?.length ?? this.listeSaisie()?.candidats.length ?? this.candidats().length);
   readonly imprimees = computed(() => lettresImprimees(this.documents()));
   readonly visible = computed(() => {
     const e = this.etat();
@@ -89,7 +97,7 @@ export class LettresInvitation implements OnInit {
 
   readonly complete = computed(
     () => this.dateEnvoi().trim() !== '' && this.lieu().trim() !== ''
-      && (!!this.listeAmi() || (this.candidats().length > 0 && this.candidats().every((c) => c.nom.trim() !== '' && c.adresse.trim() !== ''))),
+      && (this.listeImposee() || (this.candidats().length > 0 && this.candidats().every((c) => c.nom.trim() !== '' && c.adresse.trim() !== ''))),
   );
 
   readonly jj = jjmmaaaa;
@@ -107,12 +115,15 @@ export class LettresInvitation implements OnInit {
       docs: this.fiches.documents(id).pipe(catchError(() => of([] as DocumentFiche[]))),
       // Sans AMI publié (404), ou dispensé : la saisie, comme avant.
       preselection: this.amis.preselection(id).pipe(catchError(() => of(null as Preselection | null))),
+      // Hors appel d’offres restreint, ou liste pas encore saisie : rien (la saisie de la modale, comme avant).
+      liste: this.fiches.listeRestreinte(id).pipe(catchError(() => of(null as ListeRestreinte | null))),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ etat, docs, preselection }) => {
+      .subscribe(({ etat, docs, preselection, liste }) => {
         this.etat.set(etat);
         this.documents.set(docs);
         this.listeAmi.set(preselection?.etat === 'DEFINITIVE' && preselection.liste.length ? preselection.liste : null);
+        this.listeSaisie.set(liste?.candidats?.length ? liste : null);
         if (demande) {
           if (etat?.disponible && !this.lecture()) this.ouvrir();
           this.ouvertureTraitee.emit();
@@ -164,7 +175,7 @@ export class LettresInvitation implements OnInit {
       dateEnvoi: this.dateEnvoi().trim(),
       lieu: this.lieu().trim(),
       // ⚠️ PI-a (V84) — l'adresse électronique est facultative : vide, elle part nulle.
-      candidats: this.listeAmi() ? [] : this.candidats().map((c) => ({ nom: c.nom.trim(), adresse: c.adresse.trim(), email: c.email?.trim() || null })),
+      candidats: this.listeImposee() ? [] : this.candidats().map((c) => ({ nom: c.nom.trim(), adresse: c.adresse.trim(), email: c.email?.trim() || null })),
     };
     this.fiches
       .imprimerLettres(this.idDmc(), corps)
@@ -175,7 +186,7 @@ export class LettresInvitation implements OnInit {
           this.ouverte.set(false);
           this.documents.update((d) => [...produits, ...d]);
           this.etat.update((e) => (e && e.daoComplet === 'A_ASSEMBLER' ? { ...e, daoComplet: 'PRODUIT' } : e));
-          const n = this.listeAmi()?.length ?? corps.candidats.length;
+          const n = this.nombreLettres();
           this.toast.success(`${n} lettre${n > 1 ? 's' : ''} d’invitation imprimée${n > 1 ? 's' : ''} : en tête de la liste, en PDF et en Word.`);
         },
         error: (e: ApiError | HttpErrorResponse) => {

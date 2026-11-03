@@ -55,6 +55,9 @@
           </li>
         }
       </ul>
+      <!-- ⚠️ 02/11 (V158, B5 ; manuel, § III.6) — la copie des lettres avec accusé, déposée une fois : elle tient lieu de publication de
+           l’avis, et le dossier de marché la reprend d’office (pièce « lettres avec accusé »). -->
+      <app-publication-avis [idDmc]="idDmc()" [lettres]="true" [lecture]="lecture()" />
     }
   </section>
 }
@@ -91,6 +94,16 @@
               @for (r of liste; track r.idExpression) { <li>{{ r.raisonSociale }}</li> }
             </ol>
             <p class="avs__aide">Les adresses sont celles que chaque candidat a déclarées pour son entreprise ; chacun est averti en ligne et par courriel.</p>
+          </div>
+        } @else if (listeSaisie(); as l) {
+          <!-- ⚠️ 02/11 (V156, B3) — la liste restreinte saisie sur la fiche (appel d'offres restreint) : le serveur la reprend, dans son
+               ordre ; elle se corrige sur la fiche, pas ici. -->
+          <div class="lti__liste">
+            <p class="form-label">Liste restreinte de la fiche ({{ l.candidats.length }} candidat{{ l.candidats.length > 1 ? 's' : '' }}{{ l.libelleSource ? ' · ' + l.libelleSource : '' }})</p>
+            <ol>
+              @for (c of l.candidats; track $index) { <li>{{ c.nom }}</li> }
+            </ol>
+            <p class="avs__aide">Chaque candidat reçoit sa lettre à l’adresse saisie sur la fiche ; un courriel ou un compte candidat lui ouvre la procédure en ligne. La liste se corrige sur la fiche, par une révision.</p>
           </div>
         } @else {
           <fieldset class="lti__liste">

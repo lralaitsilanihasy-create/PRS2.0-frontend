@@ -13,6 +13,7 @@ import { ParametreCompteDaoService } from '../../services/parametres.services';
 import { ModaleDirective } from '../a11y/modale.directive';
 import { avisImprimes, champsVidesAvis, horodatage, jjmmaaaa, messageDaoCompletAbsent, messageDelaiPublicite, messageIndisponible } from './avis-specifique-modele';
 import { MentionsDocumentVue } from './mentions-document';
+import { PublicationAvisPanneau } from './publication-avis';
 
 type CleSaisie = 'datePublication' | 'supports';
 
@@ -32,7 +33,7 @@ type CleSaisie = 'datePublication' | 'supports';
 @Component({
   selector: 'app-avis-specifique',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ModaleDirective, MentionsDocumentVue],
+  imports: [ModaleDirective, MentionsDocumentVue, PublicationAvisPanneau],
   templateUrl: './avis-specifique.html',
   styleUrl: './avis-specifique.scss',
 })

@@ -420,6 +420,12 @@
                   <strong>enregistrez le cadrage</strong> pour l'aligner</span>}<span>.</span></span>
                 </div>
               }
+              <!-- ⚠️ 02/11 (V155, demande « appel-offres-restreint », B2) — une ligne en appel d'offres restreint dit son motif
+                   (loi, art. 38-IV) avant tout le reste : sans lui, la fiche ne se valide pas. ⚠️ V156 (B3) — puis sa liste restreinte. -->
+              @if (fiche()?.modeRestreint && idDmc(); as id) {
+                <app-motif-restreint [idDmc]="id" [motif]="fiche()?.motifRestreint ?? null" [lecture]="figee() || enLecture() || ecritureBloquee()" (enregistre)="motifEnregistre($event)" />
+                <app-liste-restreinte [idDmc]="id" [liste]="fiche()?.listeRestreinte ?? null" [lecture]="figee() || enLecture() || ecritureBloquee()" (enregistre)="listeEnregistree($event)" />
+              }
               @for (q of questions(); track q.cle) {
                 <div class="fm__q" [id]="'fq-' + q.cle" [class.fm__q--plan]="imposee(q.cle)" [class.fm__q--manque]="sansReponseCles().has(q.cle) && !figee()">
                   <div class="fm__q-tete">
@@ -752,6 +758,10 @@
                       @else { <span class="fm__ou">à compléter par le responsable de la procédure</span> }
                     } @else if (c.regle === 'RESPONSABLE_NON_DESIGNE') {
                       <span class="fm__ou">désignation par l'Administrateur, depuis la fiche</span>
+                    } @else if (c.regle === 'MOTIF_RESTREINT') {
+                      <button type="button" class="fm__lien" (click)="allerAuCadrage('fm-motif-restreint')">saisir le motif</button>
+                    } @else if (c.regle === 'LISTE_RESTREINTE') {
+                      <button type="button" class="fm__lien" (click)="allerAuCadrage('fm-liste-restreinte')">saisir la liste</button>
                     } @else if (c.bloc) { <button type="button" class="fm__lien" (click)="allerAuBloc(c.bloc)">corriger</button> }
                   </p>
                 }

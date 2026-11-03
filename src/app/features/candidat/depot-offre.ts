@@ -72,6 +72,9 @@ function motifDepot(e: unknown, enveloppe: EnveloppeOffre | null = null): string
       return 'L’envoi est arrivé incomplet ou altéré. Relancez le dépôt : rien n’a été déposé.';
     case 'LOT_INVALIDE':
       return 'Choisissez le lot pour lequel vous déposez.';
+    // ⚠️ 03/11 (V160, B7) — appel d'offres restreint : une ouverture anticipée des plis est demandée ou fixée.
+    case 'OUVERTURE_ANTICIPEE':
+      return 'Une ouverture anticipée des plis est en cours : les offres sont figées. Consultez la page de la procédure.';
     case 'FRAIS_NON_REGLES':
       return 'Les frais de dossier de ce lot ne sont pas réglés : faites d’abord valider votre reçu de paiement (page de la procédure, « Frais de dossier »).';
   }

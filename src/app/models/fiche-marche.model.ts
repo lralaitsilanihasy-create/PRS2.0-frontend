@@ -379,6 +379,48 @@ export interface DaoCompletFile {
   motif: string | null;
 }
 
+/** ⚠️ 02/11 (V155) — les quatre cas de la loi, art. 38-IV. */
+export type CodeMotifRestreint = 'URGENCE_AVEREE' | 'CONFIDENTIEL' | 'PRESTATAIRE_DEFAILLANT' | 'PETIT_NOMBRE';
+
+/**
+ * ⚠️ 02/11 (V155, B2) — `GET`/`PUT /api/fiches-marche/{idDmc}/motif-restreint` : le motif du recours à l'appel d'offres restreint
+ * d'une version de fiche, figé à la validation, recopié à la révision. En écriture : `{ motif, justification }` (4000 caractères au plus).
+ */
+export interface MotifRestreint {
+  motif: CodeMotifRestreint;
+  /** Le libellé du cas, servi par le serveur (« Urgence avérée »…). */
+  libelle?: string | null;
+  justification: string;
+  /** `AAAA-MM-JJTHH:MM:SS` — la dernière écriture. */
+  saisiLe?: string | null;
+}
+
+/** ⚠️ 02/11 (V156, B3) — d'où vient la liste restreinte ; `APPEL_CANDIDATURES` est posée par l'appel en ligne (B4), jamais saisie. */
+export type SourceListeRestreinte = 'APPEL_CANDIDATURES' | 'BASE_AUTORITE' | 'PREMIER_APPEL_OFFRES' | 'REGISTRE_ARMP' | 'ORGANISME_PROFESSIONNEL';
+
+/** Un candidat de la liste restreinte : nom et adresse obligatoires ; courriel ou compte candidat ouvrent la procédure en ligne. */
+export interface CandidatRestreint {
+  /** Servi (la position dans la liste), ignoré en écriture. */
+  rang?: number | null;
+  nom: string;
+  adresse: string;
+  email?: string | null;
+  /** Le numéro du compte candidat (`C000000001`), quand l'entreprise l'a communiqué. */
+  idCandidat?: string | null;
+  nif?: string | null;
+}
+
+/**
+ * ⚠️ 02/11 (V156, demande « appel-offres-restreint », B3) — `GET`/`PUT /api/fiches-marche/{idDmc}/liste-restreinte` : la liste de la
+ * version de fiche, trois candidats au moins, figée à la validation ; la lettre `LETTRE-AOR` la reprend dans son ordre.
+ */
+export interface ListeRestreinte {
+  source: SourceListeRestreinte;
+  libelleSource?: string | null;
+  candidats: CandidatRestreint[];
+  saisiLe?: string | null;
+}
+
 export interface FicheMarche {
   idFiche?: number | null;
   /** ⚠️ 28/10 (V144) — servi sur la lecture de la fiche et la réponse de la validation ; nul sans version validée. */
@@ -464,6 +506,12 @@ export interface FicheMarche {
   ceremonie?: EtatCeremonie | null;
   /** ⚠️ Lot 3 (V68) — les dépôts : le nombre, et s'ils sont clos (date limite passée) ; `null` en mode papier. */
   depots?: { nombre: number; clos: boolean } | null;
+  /** ⚠️ 02/11 (V155, demande « appel-offres-restreint », B2) — la ligne est en appel d'offres restreint (DAOR/DAORI, PI exclues). */
+  modeRestreint?: boolean | null;
+  /** ⚠️ 02/11 (V155, B2) — le motif du recours de la version courante ; nul tant qu'il n'est pas saisi. */
+  motifRestreint?: MotifRestreint | null;
+  /** ⚠️ 02/11 (V156, B3) — la liste restreinte de la version courante ; nulle tant qu'elle n'est pas saisie. */
+  listeRestreinte?: ListeRestreinte | null;
   /**
    * Clés (`CODE` ou `CODE#n`) dont la valeur a été **posée par le serveur** à l'enregistrement du bloc — en mode
    * électronique : ouverture des plis (date limite + délai), dates déduites (publication, assistance, dépôt de
@@ -729,6 +777,53 @@ export interface PublicationAvis {
   jmpDate?: string | null;
   journal?: string | null;
   referenceAgpm?: string | null;
+}
+
+/**
+ * ⚠️ 30/10 (V154, « pieces-ddm-donnees », §B2) — la preuve de publication déposée UNE fois sur la procédure, reprise d’office par le
+ * dossier de marché : le journal de l’avis (`JOURNAL`), ou ⚠️ 02/11 (V158, « appel-offres-restreint », §B5) la copie des lettres
+ * d’invitation avec accusé (`LETTRES_INVITATION`, prestations intellectuelles et appel d’offres restreint : journal facultatif,
+ * `dateParution` = date d’envoi). Un nouveau dépôt remplace le précédent.
+ */
+export interface PublicationAvisDeposee {
+  idPublication: number;
+  idDmc: number;
+  nature: 'JOURNAL' | 'LETTRES_INVITATION';
+  journal?: string | null;
+  numero?: string | null;
+  dateParution: string;
+  nomFichier?: string | null;
+  taille?: number | null;
+  deposePar?: string | null;
+  deposeLe?: string | null;
+}
+
+/**
+ * ⚠️ 03/11 (V160, « appel-offres-restreint », §B7 ; loi n° 2016-055, art. 38-VI) — l'ouverture anticipée des plis d'un appel d'offres
+ * restreint : `DEMANDEE` → `ACCORDEE` (tous ont consenti) → `FIXEE` (nouvelle heure), ou `REFUSEE` (un refus : la date initiale
+ * demeure, pas de nouvelle demande). Offres figées dès la demande (409 `OUVERTURE_ANTICIPEE`). Côté invité, son seul consentement.
+ * Heures `AAAA-MM-JJTHH:MM[:SS]`.
+ */
+export type EtatOuvertureAnticipee = 'DEMANDEE' | 'ACCORDEE' | 'FIXEE' | 'REFUSEE';
+
+export interface ConsentementAnticipation {
+  idCandidat: string;
+  nom: string;
+  /** `null` tant que l'invité n'a pas répondu. */
+  accord: boolean | null;
+  reponduLe?: string | null;
+}
+
+export interface OuvertureAnticipee {
+  idDmc: number;
+  etat: EtatOuvertureAnticipee;
+  ouvertureInitiale?: string | null;
+  nouvelleOuverture?: string | null;
+  demandeeLe?: string | null;
+  demandeePar?: string | null;
+  fixeeLe?: string | null;
+  fixeePar?: string | null;
+  consentements: ConsentementAnticipation[];
 }
 
 /**

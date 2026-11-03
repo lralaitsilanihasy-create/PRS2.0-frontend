@@ -100,6 +100,8 @@ describe('Avis spécifique — l’encart et la modale d’impression', () => {
   }
 
   afterEach(() => {
+    // La preuve de publication (app-publication-avis, V154 / V158) a sa propre spec : sa lecture est écartée ici.
+    http.match((r) => r.url.endsWith('/publication-avis')).forEach((r) => r.flush(null));
     try { http.verify(); } finally { TestBed.resetTestingModule(); }
   });
 

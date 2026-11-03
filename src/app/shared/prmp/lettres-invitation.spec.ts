@@ -56,7 +56,7 @@ describe('Lettres d’invitation — l’encart et la modale de la liste restrei
   const dispo = (d: Partial<DisponibiliteAvis>): DisponibiliteAvis =>
     ({ disponible: false, raison: null, idAvis: null, statutPv: null, statutDossier: null, idDossierSoumis: 100, ...d });
 
-  function monter(etat: DisponibiliteAvis, docs: DocumentFiche[] = [], preselection: object | null = null): void {
+  function monter(etat: DisponibiliteAvis, docs: DocumentFiche[] = [], preselection: object | null = null, listeFiche: object | null = null): void {
     toast = { success: vi.fn(), error: vi.fn() };
     TestBed.configureTestingModule({ imports: [LettresInvitation], providers: [provideHttpClient(), provideHttpClientTesting(), { provide: ToastService, useValue: toast }] });
     http = TestBed.inject(HttpTestingController);
@@ -68,9 +68,13 @@ describe('Lettres d’invitation — l’encart et la modale de la liste restrei
     const ps = http.expectOne('/api/fiches-marche/40/ami/preselection');
     if (preselection) ps.flush(preselection);
     else ps.flush({ message: 'x' }, { status: 404, statusText: 'Not Found' });
+    // ⚠️ V156 (B3) — la liste restreinte de la fiche : vide hors appel d’offres restreint.
+    http.expectOne('/api/fiches-marche/40/liste-restreinte').flush(listeFiche);
     rendre();
   }
   afterEach(() => {
+    // La preuve de publication (app-publication-avis, V154 / V158) a sa propre spec : sa lecture est écartée ici.
+    http.match((r) => r.url.endsWith('/publication-avis')).forEach((r) => r.flush(null));
     try { http.verify(); } finally { TestBed.resetTestingModule(); }
   });
 
@@ -143,6 +147,21 @@ describe('Lettres d’invitation — l’encart et la modale de la liste restrei
     bouton('Imprimer 2 lettres', modale())!.click();
     const req = http.expectOne('/api/fiches-marche/40/lettres-invitation');
     expect(req.request.body).toEqual({ dateEnvoi: '2026-10-20', lieu: 'Antananarivo', candidats: [] });
+    req.flush([], { status: 201, statusText: 'Created' });
+  });
+
+  it('⚠️ V156 (B3) : la liste restreinte saisie sur la fiche remplace la saisie de la modale', () => {
+    const liste = { source: 'REGISTRE_ARMP', libelleSource: 'Registre de l’ARMP', candidats: [{ rang: 1, nom: 'Alpha SARL', adresse: 'a' }, { rang: 2, nom: 'Bêta SA', adresse: 'b' }, { rang: 3, nom: 'Gamma', adresse: 'c' }] };
+    monter(dispo({ disponible: true, idAvis: 'FAV', statutPv: 'SIGNE' }), [], null, liste);
+    bouton('Imprimer les lettres d’invitation')!.click();
+    rendre();
+    expect(racine().querySelectorAll('.lti__candidat').length).toBe(0);
+    expect(texte(modale())).toContain('Liste restreinte de la fiche (3 candidats · Registre de l’ARMP)');
+    saisir(modale().querySelector('input[type="date"]'), '2026-11-10');
+    saisir(modale().querySelector('input[type="text"]'), 'Sambava');
+    bouton('Imprimer 3 lettres', modale())!.click();
+    const req = http.expectOne('/api/fiches-marche/40/lettres-invitation');
+    expect(req.request.body).toEqual({ dateEnvoi: '2026-11-10', lieu: 'Sambava', candidats: [] });
     req.flush([], { status: 201, statusText: 'Created' });
   });
 });

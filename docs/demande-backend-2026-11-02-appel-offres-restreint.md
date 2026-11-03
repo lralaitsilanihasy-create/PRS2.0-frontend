@@ -64,6 +64,18 @@ de la grille DAOR est le motif.
 
 Forme proposée, à votre choix : des champs de la fiche servis avec la version, comme les autres valeurs.
 
+> ⚠️ **2026-11-02 — B2 livré (PRS20, V155), avec quatre écarts de forme.**
+> - **Forme : une route propre, pas des champs du référentiel.** Les conditions du référentiel ne lisent que le cadrage, pas le mode du
+>   plan : des champs « motif » ne sauraient s'ouvrir pour le seul restreint. Le motif s'écrit par `PUT /api/fiches-marche/{idDmc}/
+>   motif-restreint` (`{ motif, justification }`) et se lit par `GET` ou dans `FicheMarcheDto.motifRestreint`, à côté du nouveau
+>   booléen `modeRestreint`. Il reste **par version**, comme les autres valeurs : figé à la validation, recopié à la révision.
+> - **Refus à la validation : 409 `CONTROLES_BLOQUANTS`, pas un 400.** Le manque est un contrôle **bloquant au bilan**
+>   (`MOTIF_RESTREINT`, champs `motif` et `justification`), visible avant de valider comme les autres manques. Le 400 nominatif est
+>   celui de l'écriture (`motif` inconnu, `justification` vide ou trop longue).
+> - **À l'examen** : pas de lien propre au point de la grille. La Commission lit le motif dans la fiche de présentation (section
+>   `PROCEDURE`, lignes `MOTIF_RESTREINT` et `JUSTIFICATION_RESTREINT` « Justification (si DAOR) »), comme le reste de la fiche.
+> - **Pièces justificatives** : une pièce du dossier, `JUSTIFICATIF_AOR`, **facultative**, ajoutée aux listes DAOR et DAORI ; elles ne
+>   sont pas portées par la fiche.
 ## B3 — La liste restreinte, saisie (Q2, première voie)
 
 Décret, art. 11-2 et 13 ; loi, art. 38-II.
@@ -83,6 +95,17 @@ Décret, art. 11-2 et 13 ; loi, art. 38-II.
   et les invités sont écrits à l'impression.
 - La liste se lit au dossier DAOR et à l'examen (point « Constitution de la liste restreinte »).
 
+> ⚠️ **2026-11-02 — B3 livré (PRS20, V156), trois précisions.**
+> - **Où** : `GET` / `PUT /api/fiches-marche/{idDmc}/liste-restreinte` (`{ source, candidats[{ nom, adresse, email, idCandidat, nif }] }`)
+>   et `FicheMarcheDto.listeRestreinte`. La liste est **par version de fiche**, comme le motif (B2) : figée à la validation, recopiée à
+>   la révision ; contrôle bloquant `LISTE_RESTREINTE` au bilan. Trois candidats au moins (400 `candidats`), nom et adresse obligatoires,
+>   doublons refusés.
+> - **`APPEL_CANDIDATURES` ne se saisit pas** (400 `source`) : c'est la source que posera l'appel à candidatures en ligne (B4). Les quatre
+>   autres sources se saisissent.
+> - **La lettre** : `candidats` du corps de `POST …/lettres-invitation` est **ignoré** dès que la version validée porte sa liste (seuls
+>   `dateEnvoi` et `lieu` restent saisis). Un candidat avec `idCandidat` est rattaché d'emblée à son compte et notifié ; sinon son
+>   adresse électronique, comme avant. La lecture « au dossier et à l'examen » passe par la fiche de présentation (ligne
+>   `LISTE_RESTREINTE`). Pas de contrôle croisé motif / source : la grille l'indique, le serveur ne l'impose pas.
 ## B4 — L'appel à candidatures en ligne (Q2, seconde voie)
 
 Décret, art. 11-1. Même chemin que l'AMI en ligne (`AmiService`, `AmiPreselectionService`, `/api/fiches-marche/{idDmc}/ami`,
@@ -116,6 +139,19 @@ Manuel, § III.4 (projet de décision au DAOR) et § III.6 (décision signée et
   Le manuel le prévoit ; à ajouter aux pièces si ce n'est pas fait.
 - Le texte du modèle est à proposer au pilote pour relecture.
 
+> ⚠️ **2026-11-02 — B5 livré (PRS20, V158-V159), avec un modèle provisoire et deux écarts.**
+> - **Le projet** : produit à la validation d'une version en mode restreint (motif, justification, liste restreinte, « PROJET » en
+>   filigrane) et joint d'office au dossier DAOR. ⚠️ **Écart de nom** : il est joint sous la pièce **`DECISION_AO_RESTR`**, qui existe
+>   depuis V95, et non sous un nouveau code `DECISION_AOR`. Cette pièce est désormais exigée aux DAOR, DAORI et DAOR-CC. Il est listé
+>   avec les projets de publication (« Projet de décision autorisant l'appel d'offres restreint »).
+> - **Le modèle est provisoire** (Q7) : son texte est à relire par le pilote. Le pied de page le dit.
+> - ⚠️ **Écart — où se joint la version signée.** Elle se dépose au **dossier de marché** (MAOR, MAORI, MAOR-CC), où
+>   `DECISION_AO_RESTR` est exigée depuis V95, et non à la place du projet sur le DAOR. Le DAOR est examiné avec le projet (manuel,
+>   § III.4) ; la décision est signée après l'avis de la Commission, quand le DAOR n'accepte plus de pièce. Le bouton « joindre la
+>   version signée » relève donc de l'écran du dossier de marché.
+> - **Lettres avec accusé** : pour un AOR, `POST /api/fiches-marche/{idDmc}/publication-avis` attend désormais des lettres
+>   (`LETTRES_INVITATION`, sans journal), comme en PI. Au dossier de marché, la pièce `LETTRES_ACCUSE` est **fournie** par ce dépôt,
+>   déjà présente aux listes MAOR et MAORI. Les MPI en profitent aussi.
 ## B6 — Les délais du restreint
 
 Décret, art. 2-2, 2-3 b) et 14.
@@ -127,6 +163,18 @@ Décret, art. 2-2, 2-3 b) et 14.
 - La circulaire 2024 prévoit aussi 5 jours dans le cadre des « cent jours du Président ». C'est une mesure exceptionnelle : elle n'est
   **pas** demandée.
 
+> ⚠️ **2026-11-02 — B6 livré (PRS20, V157), avec deux écarts et une question au pilote (Q8).**
+> - **Livré** : `PUBLICITE_AOR` passe à **20 jours** (décret, art. 14). Le paramètre n'est mis à jour que si l'Administrateur ne l'avait
+>   jamais modifié. Nouveau paramètre `PUBLICITE_AOR_URGENCE`, **10 jours**, lu quand le motif du recours (B2) est `URGENCE_AVEREE`.
+>   Le contrôle `DELAI_PUBLICITE` du bilan en tient compte.
+> - **Écart 1 — toujours signalé, pas bloquant.** Ces deux délais restent des paramètres administrables : un manque est un
+>   avertissement, comme pour tous les délais hors la loi (arbitrage Q6 du pilote, 13/10). Le serveur ne renverse pas cet arbitrage
+>   seul ; voir Q8.
+> - **Écart 2 — le départ du délai.** Au bilan, le départ reste la date de publication prévue (`B04-SE-17`), à défaut le lancement du
+>   plan. La date d'envoi des lettres n'est contrôlée ni à l'impression ni contre l'ouverture des plis : un paramètre non bloquant n'y
+>   arrêterait rien. Si Q8 rend le délai bloquant, les deux contrôles suivront.
+> - **Q8 (au pilote)** : le décret fixe 20 jours au moins (10 en urgence avérée). Faut-il rendre ce délai **bloquant**, comme les délais
+>   de la loi (validation de la fiche, puis impression des lettres contre leur date d'envoi) ?
 ## B7 — L'ouverture anticipée des plis (Q4)
 
 Loi, art. 38-VI ; décret, art. 14 ; guide de la CAO, § 4.5.1.
@@ -139,6 +187,15 @@ Loi, art. 38-VI ; décret, art. 14 ; guide de la CAO, § 4.5.1.
 - Un refus, ou une absence de réponse, laisse la date initiale.
 - À lire au PV d'ouverture : la mention de l'ouverture anticipée et des consentements.
 
+> ⚠️ **2026-11-03 — B7 livré (PRS20, V160), trois précisions.**
+> - **Routes** : côté PRMP, `GET` / `POST /api/fiches-marche/{idDmc}/ouverture-anticipee` et `PUT …/ouverture-anticipee/date`
+>   (`{ nouvelleOuverture }`). Côté invité, `GET /api/candidat/invitations/{idDmc}/ouverture-anticipee` et `POST …/consentement`
+>   (`{ accord: true | false }`). États : `DEMANDEE` → `ACCORDEE` → `FIXEE`, ou `REFUSEE`.
+> - **Offres figées dès la demande** (précision ajoutée) : tant que la demande n'est pas refusée, le candidat ne dépose, ne remplace ni ne
+>   retire plus (409 `OUVERTURE_ANTICIPEE`). Sans cette garde, une offre pourrait changer après le consentement des autres.
+> - **Un refus clôt la demande** (`REFUSEE`) : la date initiale demeure et une nouvelle demande n'est pas admise. La séance s'ouvre à la
+>   date fixée, avant la date limite ; ses rappels suivent cette date, et le PV d'ouverture mentionne l'anticipation et chaque
+>   consentement écrit. La part de secours n'a rien de propre : elle suit la séance. Les prestations intellectuelles sont exclues.
 ## B8 — Une seule offre reçue (Q1)
 
 Circulaire 2024 : « une seule offre remise n'implique pas nécessairement le rejet de l'offre si celle-ci est conforme et acceptable et
@@ -167,3 +224,14 @@ que le candidat dispose des qualifications et capacités requises ». Il faut do
 - **B5** : la décision s'ajoute aux documents du dossier ; un bouton permet de joindre la version signée.
 - **B7** : dans la séance, « Proposer l'ouverture anticipée » quand tout le monde a déposé ; côté candidat, « Consentir ».
 - Tous les nouveaux champs sont lus comme facultatifs : tant qu'un lot n'est pas livré, l'écran garde son comportement actuel.
+
+> ⚠️ **2026-11-02 — B1 livré (PRS20) ; B2 à B8 à suivre, dans l'ordre demandé.**
+> - **B1** — règle corrigée : une procédure est « sur invitation » quand le modèle de lettre l'est, catégorie **et mode du plan**
+>   (`ModelesDao.sigleLettre(catégorie, restreint)`). Un AOR de fournitures ou de travaux en remise électronique est lancé par ses
+>   lettres `LETTRE-AOR`, sort de la liste publique, répond 404 hors de ses invités, 403 `NON_INVITE` au retrait et au dépôt, et paraît
+>   dans `GET /api/candidat/invitations`. Les invités sont bien écrits à l'impression des lettres AOR (même chemin que la PI).
+> - **Écart avec le constat** : avant le correctif, un AOR lancé par ses seules lettres n'était **pas reconnu comme lancé** (seule la PI
+>   l'était) : il était introuvable de tous, invités compris, plutôt que public. Il n'était public que si un avis avait été imprimé.
+> - L'offre d'un AOR reste en **une enveloppe** : les deux enveloppes (technique, financière) restent propres aux prestations
+>   intellectuelles.
+> - Test d'intégration : un AOR de fournitures (mode « restreint »), invité et non invité.

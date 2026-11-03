@@ -355,7 +355,7 @@ export class MesOffres implements OnInit {
       error: (e: ApiError) => {
         this.enCours.set(null);
         const code = codeErreur(e);
-        this.message.set(code === 'DELAI_DEPASSE' ? 'La date limite est passée : l’offre ne peut plus être retirée.' : code === 'REMPLACEMENT_INTERDIT' ? 'Cette procédure n’autorise pas le retrait d’une offre déposée.' : e.message || 'Le retrait n’a pas abouti.');
+        this.message.set(code === 'DELAI_DEPASSE' ? 'La date limite est passée : l’offre ne peut plus être retirée.' : code === 'REMPLACEMENT_INTERDIT' ? 'Cette procédure n’autorise pas le retrait d’une offre déposée.' : code === 'OUVERTURE_ANTICIPEE' ? 'Une ouverture anticipée des plis est en cours : l’offre ne peut plus être retirée.' : e.message || 'Le retrait n’a pas abouti.');
       },
     });
   }
