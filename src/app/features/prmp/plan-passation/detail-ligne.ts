@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 
 import { maintenantServeur } from '../../../core/horloge/heure-serveur';
-import { Echeance, LigneEligible, Marche, MarchePrevision, NoeudFiliation } from '../../../models';
+import { Echeance, JalonReel, LigneEligible, Marche, MarchePrevision, NoeudFiliation } from '../../../models';
 import { statutDossierLabel } from '../../../shared/circuit/circuit-workflow';
 import { ChaineLigne, ChainesDuPlan, dossiersDeLaLigne } from '../../circuit/page-dossier/chaine-ligne';
 import { LIBELLES_ETAT_ATTRIBUTION } from '../../circuit/dossier/instantanes-vues';
@@ -51,29 +51,52 @@ export interface JalonLigne {
   processus: string;
   prevu: string;
   reel: string;
+  /** Ce qui donne la date réelle (le fait et sa date), en infobulle ; `null` pour une date d'échéance. */
+  source: string | null;
+  /** Le serveur ne connaît aucun fait pour ce processus : il n'a jamais de date réelle, et n'est pas compté en retard. */
+  sansFait: boolean;
   /** Jours de retard : prévu dépassé sans date réelle ; `null` sinon. */
   retard: number | null;
 }
+
+/**
+ * ⚠️ 03/11 (« jalons-reels », Q2 du backend) — les processus CAPM qu'aucun fait du serveur ne date (détermination des besoins,
+ * préparation du DAO, établissement du projet de marché…). Liste fixée par le backend dans sa réponse.
+ */
+export const PROCESSUS_SANS_FAIT: ReadonlySet<number> = new Set([101, 103, 104, 105, 110, 116, 121, 122, 130]);
 
 /**
  * ⚠️ 03/11 (lot 3) — les jalons de la ligne : la date prévue au plan (processus CAPM), la date réelle (`/api/echeances`, rapprochée
  * par le type de jalon comme le fait le calendrier des jalons), et le retard d'un jalon prévu passé sans date réelle. `aujourdhui` au
  * format ISO, lu sur l'heure du serveur.
  */
-export function jalonsDeLigne(previsions: readonly MarchePrevision[], capms: ReadonlyMap<string, string>, echeances: readonly Echeance[], aujourdhui: string): JalonLigne[] {
+export function jalonsDeLigne(
+  previsions: readonly MarchePrevision[],
+  capms: ReadonlyMap<string, string>,
+  echeances: readonly Echeance[],
+  aujourdhui: string,
+  reels: readonly JalonReel[] | null = null,
+): JalonLigne[] {
   return previsions
     .filter((p) => !p.sansObjet)
     .slice()
     .sort((a, b) => (a.dateDebut ?? '').localeCompare(b.dateDebut ?? ''))
     .map((p) => {
       const processus = capms.get(String(p.idCapm)) ?? `Processus ${p.idCapm}`;
+      // ⚠️ 03/11 (« jalons-reels ») — la date calculée par le serveur d'abord, à défaut celle de l'échéance (Q1).
+      const calculee = reels?.find((r) => r.idCapm === p.idCapm);
       const ech = echeances.find((x) => {
         const a = norm(x.typeJalon), b = norm(processus);
         return !!a && !!b && (a === b || a.includes(b) || b.includes(a));
       });
-      const reel = ech?.dateReelle ? dateFr(ech.dateReelle) : '';
+      const reel = calculee ? dateFr(calculee.dateReelle) : ech?.dateReelle ? dateFr(ech.dateReelle) : '';
+      // Sans fait possible (Q2), un jalon n'a jamais de date réelle : il n'est pas compté en retard — seulement si le serveur a répondu.
+      const sansFait = reels != null && !reel && PROCESSUS_SANS_FAIT.has(p.idCapm);
       const ecart = p.dateDebut ? joursEntre(aujourdhui, p.dateDebut) : 0;
-      return { processus, prevu: dateFr(p.dateDebut), reel, retard: !reel && p.dateDebut && ecart < 0 ? -ecart : null };
+      return {
+        processus, prevu: dateFr(p.dateDebut), reel, source: calculee?.source ?? null, sansFait,
+        retard: !reel && !sansFait && p.dateDebut && ecart < 0 ? -ecart : null,
+      };
     });
 }
 
@@ -129,7 +152,7 @@ const isoJour = (d: Date): string => `${d.getFullYear()}-${String(d.getMonth() +
               @for (j of jalonsVisibles(); track $index) {
                 <tr>
                   <td [attr.title]="j.processus">{{ intituleCourt(j.processus) }}</td><td class="dl__d">{{ j.prevu }}</td>
-                  <td class="dl__d">@if (j.reel) { {{ j.reel }} } @else if (j.retard) { <span class="dl__retard" title="Date réelle non renseignée">prévu dépassé de {{ j.retard }} j</span> } @else { — }</td>
+                  <td class="dl__d">@if (j.reel) { <span [attr.title]="j.source">{{ j.reel }}</span> } @else if (j.sansFait) { <span class="dl__nr">non renseigné</span> } @else if (j.retard) { <span class="dl__retard" title="Date réelle non renseignée">prévu dépassé de {{ j.retard }} j</span> } @else { — }</td>
                 </tr>
               }
             </tbody>
@@ -164,6 +187,7 @@ const isoJour = (d: Date): string => `${d.getFullYear()}-${String(d.getMonth() +
     .dl__alerte { margin: 0; padding: 0.35rem 0.5rem; border-radius: 5px; background: var(--retard-fond); color: var(--retard-texte); }
     .dl__retard { color: var(--retard-texte); font-weight: 500; }
     .dl__d { white-space: nowrap; }
+    .dl__nr { color: var(--texte-secondaire); }
     .dl__plus { justify-self: start; }
     .dl__jalons { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
     .dl__jalons th, .dl__jalons td { text-align: left; padding: 0.2rem 0.35rem; border-bottom: 1px solid var(--bordure); }
@@ -178,6 +202,8 @@ export class DetailLigne {
   readonly previsions = input<readonly MarchePrevision[]>([]);
   readonly echeances = input<readonly Echeance[]>([]);
   readonly capms = input<ReadonlyMap<string, string>>(new Map());
+  /** Dates réelles calculées par le serveur pour cette ligne ; `null` tant que la lecture n'a pas répondu (ou a échoué). */
+  readonly reels = input<readonly JalonReel[] | null>(null);
   /** Les trois blocs l'un sous l'autre (volet de droite). */
   readonly empile = input(false);
 
@@ -187,7 +213,7 @@ export class DetailLigne {
     const noeuds = f ? dossiersDeLaLigne(f, m).filter((n) => n.lien !== 'RACINE' && n.lien !== 'VERSION_SUIVANTE') : [];
     return faitsDeProcedure(m, this.source.eligibles().find((e) => e.idDetail === m.idDetail), noeuds);
   });
-  readonly jalons = computed(() => jalonsDeLigne(this.previsions(), this.capms(), this.echeances(), isoJour(maintenantServeur())));
+  readonly jalons = computed(() => jalonsDeLigne(this.previsions(), this.capms(), this.echeances(), isoJour(maintenantServeur()), this.reels()));
   readonly incoherence = computed(() => datesIncoherentes(this.previsions(), this.capms()));
   /** Tous les jalons, ou seulement les réalisés et les trois suivants (un plan d'appel d'offres en compte près de trente). */
   readonly tous = signal(false);

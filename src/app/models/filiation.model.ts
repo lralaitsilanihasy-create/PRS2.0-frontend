@@ -81,3 +81,15 @@ export interface EssentielDossier {
   /** `null` sans bon de commande ni acte de gestion. */
   suites: { bonsCommande: number; dernierBon: { numero: number | null; date: string | null } | null; actesGestion: number } | null;
 }
+
+/**
+ * ⚠️ 03/11 (demande « jalons-reels », B1, PRS20) — `GET /api/dossiers/{idPlan}/jalons-reels` : la date réelle d'un processus CAPM
+ * d'une ligne du plan, calculée à la lecture sur les faits du serveur (réception, avis, PV signé, avis imprimé, séance, attribution…).
+ * `source` dit le fait et sa date, en clair. Seuls les processus dont le fait existe sont servis.
+ */
+export interface JalonReel {
+  idDetail: number;
+  idCapm: number;
+  dateReelle: string;
+  source: string | null;
+}

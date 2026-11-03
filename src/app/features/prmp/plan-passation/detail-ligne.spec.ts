@@ -15,8 +15,20 @@ describe('Détail d’une ligne du plan', () => {
   });
 
   it('par défaut, les jalons réalisés et les trois suivants', () => {
-    const j = (reel: string) => ({ processus: 'x', prevu: '01/01/2026', reel, retard: null });
+    const j = (reel: string) => ({ processus: 'x', prevu: '01/01/2026', reel, source: null, sansFait: false, retard: null });
     expect(prochainsJalons([j('a'), j(''), j(''), j(''), j(''), j('b')], 3).map((x) => x.reel)).toEqual(['a', '', '', '', 'b']);
+  });
+
+  it('⚠️ jalons-reels — la date calculée prime, sa source en infobulle ; un processus sans fait n’est pas en retard', () => {
+    const prev = [p(101, '2025-12-21'), p(106, '2026-01-30'), p(111, '2026-03-06')];
+    const noms = new Map([['101', 'Détermination des besoins'], ['106', 'Transmission du DAO/DC à la CNM'], ['111', 'Lancement du DAO/DC']]);
+    const reels = [{ idDetail: 1, idCapm: 106, dateReelle: '2026-06-02', source: 'Réception du dossier 00002/DAOO-CC/CNM/2026, le 02/06/2026' }];
+    const j = jalonsDeLigne(prev, noms, [], '2026-11-03', reels);
+    expect(j[0]).toMatchObject({ sansFait: true, retard: null, reel: '' });
+    expect(j[1]).toMatchObject({ reel: '02/06/2026', source: reels[0].source, retard: null });
+    expect(j[2].retard).toBe(242);
+    // Sans réponse du serveur, rien n'est « sans fait » : le prévu dépassé reste signalé.
+    expect(jalonsDeLigne(prev, noms, [], '2026-11-03', null)[0].retard).toBe(317);
   });
 
   it('signale l’attribution prévue avant le lancement (RNS 13)', () => {

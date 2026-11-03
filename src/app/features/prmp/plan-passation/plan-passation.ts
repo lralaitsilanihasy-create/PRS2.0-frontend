@@ -5,7 +5,7 @@ import { Subscription, catchError, forkJoin, map, of } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { dateFr } from '../../../core/interim/interim-libelles';
-import { Dossier, Echeance, Marche, MarchePrevision, Ppm, ServiceBeneficiaire } from '../../../models';
+import { Dossier, Echeance, JalonReel, Marche, MarchePrevision, Ppm, ServiceBeneficiaire } from '../../../models';
 import { CapmService, EcheanceService, EntiteContractService, ModePassationService, NatureService, MarchePrevisionService, MarcheService, PpmService, ReferenceLookupService, ServiceBeneficiaireService } from '../../../services';
 import { DossierService } from '../../../services/circuit.services';
 import { PpmMarchesTable } from '../../../shared/prmp/ppm-marches-table';
@@ -128,7 +128,7 @@ interface ContenuPlans {
           <app-ppm-marches-table [suiviFn]="suiviFn" [marches]="lignesAffichees()" [beneficiaires]="benefsDuPlan()" [previsions]="previsionsDuPlan()"
             [(ligneOuverte)]="ligne" [messageVide]="filtre() ? 'Aucune ligne du plan à cette étape.' : 'Ce plan ne porte aucune ligne.'">
             <ng-template #detailLigne let-m>
-              <app-detail-ligne [marche]="m" [previsions]="previsionsDe(m)" [echeances]="echeancesDe(m)" [capms]="capms()" />
+              <app-detail-ligne [marche]="m" [previsions]="previsionsDe(m)" [echeances]="echeancesDe(m)" [capms]="capms()" [reels]="reelsDe(m)" />
             </ng-template>
           </app-ppm-marches-table>
         </app-document-visionneuse>
@@ -169,7 +169,7 @@ interface ContenuPlans {
                     }
                   </tbody>
                 </table>
-                <app-detail-ligne [marche]="m" [previsions]="previsionsDe(m)" [echeances]="echeancesDe(m)" [capms]="capms()" [empile]="true" />
+                <app-detail-ligne [marche]="m" [previsions]="previsionsDe(m)" [echeances]="echeancesDe(m)" [capms]="capms()" [reels]="reelsDe(m)" [empile]="true" />
               </article>
             }
           </div>
@@ -244,6 +244,9 @@ export class PlanPassation implements OnInit {
   private readonly entites = signal<Map<string, string>>(new Map());
   /** Processus CAPM : identifiant → libellé (jalons du détail d'une ligne). */
   readonly capms = signal<Map<string, string>>(new Map());
+  /** ⚠️ 03/11 (« jalons-reels ») — dates réelles du plan affiché, par ligne ; `null` tant qu'elles ne sont pas lues (ou si la route manque). */
+  private readonly reels = signal<Map<number, JalonReel[]> | null>(null);
+  private abonnementReels = new Subscription();
   private readonly idDemande = toSignal(this.route.paramMap.pipe(map((p) => (p.get('idDossier') ? Number(p.get('idDossier')) : null))), { initialValue: null });
 
   readonly plans = computed(() => this.contenu()?.plans ?? []);
@@ -316,7 +319,10 @@ export class PlanPassation implements OnInit {
   private abonnement = new Subscription();
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => this.abonnement.unsubscribe());
+    inject(DestroyRef).onDestroy(() => {
+      this.abonnement.unsubscribe();
+      this.abonnementReels.unsubscribe();
+    });
     // Le suivi des lignes se lit dès l'affichage d'un plan (filiation + lignes éligibles), une fois par plan ; le filtre repart à zéro.
     effect(() => {
       const p = this.plan();
@@ -324,6 +330,7 @@ export class PlanPassation implements OnInit {
         this.filtre.set(null);
         this.ligne.set(null);
         if (p) this.source.charger(p.idDossier);
+        this.chargerReels(p?.idDossier ?? null);
       });
     });
   }
@@ -408,6 +415,26 @@ export class PlanPassation implements OnInit {
 
   previsionsDe(m: Marche): MarchePrevision[] {
     return this.previsionsDuPlan().filter((p) => p.idDetail === m.idDetail);
+  }
+
+  reelsDe(m: Marche): JalonReel[] | null {
+    const r = this.reels();
+    return r ? r.get(m.idDetail) ?? [] : null;
+  }
+
+  private chargerReels(idPlan: number | null): void {
+    this.abonnementReels.unsubscribe();
+    this.reels.set(null);
+    if (idPlan == null) return;
+    this.abonnementReels = this.dossiers.jalonsReels(idPlan).subscribe({
+      next: (rows) => {
+        const m = new Map<number, JalonReel[]>();
+        for (const r of rows ?? []) m.set(r.idDetail, [...(m.get(r.idDetail) ?? []), r]);
+        this.reels.set(m);
+      },
+      // Route absente (serveur pas encore à jour) ou refus : le détail garde les dates des échéances, sans erreur affichée.
+      error: () => this.reels.set(null),
+    });
   }
 
   echeancesDe(m: Marche): Echeance[] {

@@ -9,6 +9,7 @@ import {
   EvenementHistorique,
   EssentielDossier,
   FiliationDossier,
+  JalonReel,
   CanevasRapport,
   FichePresentationDao,
   AFaire,
@@ -162,6 +163,14 @@ export class DossierService extends CrudService<Dossier> {
    */
   filiation(idDossier: number): Observable<FiliationDossier> {
     return this.http.get<FiliationDossier>(`${this.baseUrl}/${idDossier}/filiation`, { context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ 03/11 (« jalons-reels », B1) — `GET /api/dossiers/{idPlan}/jalons-reels` : les dates réelles des jalons des lignes du plan,
+   * calculées par le serveur. Silencieux : sans elles, l'écran du plan garde les seules dates des échéances.
+   */
+  jalonsReels(idPlan: number): Observable<JalonReel[]> {
+    return this.http.get<JalonReel[]>(`${this.baseUrl}/${idPlan}/jalons-reels`, { context: skipErrorToast() });
   }
 
   /** ⚠️ 31/10 (B2) — `GET /api/dossiers/{id}/historique` : tout ce qui s'est passé sur ce dossier, trié par date. Silencieux. */
