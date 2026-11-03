@@ -95,11 +95,12 @@ export const TITRES_GROUPES: Readonly<Record<CleGroupe, string | null>> = {
 export const ORDRE_GROUPES: readonly CleGroupe[] = [
   'accueil',
   'travail',
+  // ⚠️ 03/11 (pilote) — « Plan de passation » juste après « À faire », avant Dossiers.
+  'planification',
   'dossiers',
   'passation',
   'execution',
   'decisions',
-  'planification',
   'archivage',
   'acces',
   'pilotage',
@@ -131,6 +132,7 @@ export const GROUPES_PAR_CHEMIN: Readonly<Record<string, { groupe: CleGroupe }>>
   // ── Passation (31/10) ──
   dao: { groupe: 'passation' },
   recus: { groupe: 'passation' },
+  'dossier-marche': { groupe: 'passation' },
   // ⚠️ 06/10 — entrée DYNAMIQUE (main-layout) : le responsable d'au moins une procédure en ligne.
   '/procedures-en-ligne': { groupe: 'travail' },
   // ⚠️ Lot MS-1 (V124, 16/10) — les contrats-cadres et marchés à commandes notifiés (PRMP, UGPM).
@@ -154,6 +156,8 @@ export const GROUPES_PAR_CHEMIN: Readonly<Record<string, { groupe: CleGroupe }>>
 
   // ── Planification (PRMP) ──
   calendrier: { groupe: 'planification' },
+  // ⚠️ 03/11 (pilote) — le plan de passation, écran de travail de la PRMP et de l'UGPM : seule entrée de la rubrique, donc lien direct.
+  plan: { groupe: 'planification' },
 
   // ── Archivage (Assistant contrôleur) ──
   'lettre-renvois': { groupe: 'archivage' },

@@ -155,23 +155,24 @@ describe('sectionsMenu — dérivation des rubriques', () => {
     expect(secretaire[1].items.map((i) => i.label)).toEqual(['Dossiers']);
   });
 
-  it('UGPM : Mon travail · Dossiers · Passation · Exécution — les rubriques de la PRMP, sans Décisions ni Calendrier (31/10)', () => {
+  it('UGPM : Mon travail · Plan de passation · Dossiers · Passation · Exécution — le plan en tête, sans Décisions (03/11)', () => {
     const sections = sectionsMenu(navFor('UGPM'));
-    expect(sections.map((s) => s.titre)).toEqual(['Mon travail', 'Dossiers', 'Passation', 'Exécution']);
-    expect(sections[1].items.map((i) => i.label)).toEqual(['Tous mes dossiers', 'Créer un dossier', 'Mes brouillons']);
-    expect(sections[2].items.map((i) => i.label)).toEqual(['Appels d’offres', 'Reçus des frais de dossier']);
-    expect(sections[3].items.map((i) => i.label)).toEqual(['Contrats en vigueur']);
+    expect(sections.map((s) => s.titre)).toEqual(['Mon travail', 'Planification', 'Dossiers', 'Passation', 'Exécution']);
+    expect(sections[1].items.map((i) => i.label)).toEqual(['Plan de passation']);
+    expect(sections[2].items.map((i) => i.label)).toEqual(['Tous mes dossiers', 'Créer un dossier', 'Mes brouillons']);
+    expect(sections[3].items.map((i) => i.label)).toEqual(['Appels d’offres en cours', 'Reçus des frais de dossier', 'Dossiers de marché']);
+    expect(sections[4].items.map((i) => i.label)).toEqual(['Contrats en vigueur']);
   });
 
-  it('PRMP : les rubriques suivent le cycle du marché — Dossiers · Passation · Exécution · Décisions · Planification (31/10)', () => {
+  it('PRMP : le plan de passation juste après « À faire », puis le cycle du marché (pilote, 03/11)', () => {
     const sections = sectionsMenu(navFor('PRMP'));
-    expect(sections.map((s) => s.titre)).toEqual(['Mon travail', 'Dossiers', 'Passation', 'Exécution', 'Décisions', 'Planification']);
+    expect(sections.map((s) => s.titre)).toEqual(['Mon travail', 'Planification', 'Dossiers', 'Passation', 'Exécution', 'Décisions']);
     expect(sections[0].items.map((i) => i.label)).toEqual(['À faire']);
-    expect(sections[1].items.map((i) => i.label)).toEqual(['Tous mes dossiers', 'Créer un dossier', 'Mettre à jour un PPM']);
-    expect(sections[2].items.map((i) => i.label)).toEqual(['Appels d’offres', 'Reçus des frais de dossier']);
-    expect(sections[3].items.map((i) => i.label)).toEqual(['Contrats en vigueur']);
-    expect(sections[4].items.map((i) => i.label)).toEqual(['PV et lettres de renvoi', 'Demandes de retrait']);
-    expect(sections[5].items.map((i) => i.label)).toEqual(['Calendrier des jalons']);
+    expect(sections[1].items.map((i) => i.label)).toEqual(['Plan de passation']);
+    expect(sections[2].items.map((i) => i.label)).toEqual(['Tous mes dossiers', 'Créer un dossier']);
+    expect(sections[3].items.map((i) => i.label)).toEqual(['Appels d’offres en cours', 'Reçus des frais de dossier', 'Dossiers de marché']);
+    expect(sections[4].items.map((i) => i.label)).toEqual(['Contrats en vigueur']);
+    expect(sections[5].items.map((i) => i.label)).toEqual(['PV et lettres de renvoi', 'Demandes de retrait']);
   });
 
   it('Membre : Mon travail · Dossiers · Décisions', () => {

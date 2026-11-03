@@ -631,7 +631,10 @@ export class FicheMarcheEcran {
   readonly etapesLigne = ETAPES_LIGNE;
   readonly etapeDe = etapeLigne;
   /** Le filtre par étape (« Toutes » par défaut) et la recherche par objet ou référence. */
-  readonly filtreEtape = signal<EtapeLigne | 'tous'>('tous');
+  // ⚠️ 03/11 (pilote) — `?etape=lance` depuis le menu (« Appels d'offres en cours ») : la liste s'ouvre sur cette étape.
+  readonly filtreEtape = signal<EtapeLigne | 'tous'>(
+    ETAPES_LIGNE.find((e) => e.cle === this.route.snapshot?.queryParamMap?.get('etape'))?.cle ?? 'tous',
+  );
   readonly rechercheLigne = signal('');
   compteEtape(cle: EtapeLigne | 'tous'): number {
     return this.eligiblesAffichees().filter((l) => cle === 'tous' || etapeLigne(l) === cle).length;

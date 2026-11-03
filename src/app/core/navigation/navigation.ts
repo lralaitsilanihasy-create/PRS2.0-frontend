@@ -169,6 +169,8 @@ function menuCommission(base: '/president' | '/cc'): NavItem[] {
 export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
   PRMP: [
     entreeAFaire('prmp'),
+    // ⚠️ 03/11 (pilote, maquette « espace PRMP ») — le plan de passation devient l'écran de travail : entrée directe, avant Dossiers.
+    { label: 'Plan de passation', path: '/prmp/plan', icon: 'calendar' },
     // ⚠️ Demande pilote (2026-09-06) — l'entrée du tableau de bord devient le suivi des délais.
     // ⚠️ 31/10 (pilote) — « Tous mes dossiers », en tête de la rubrique Dossiers (naguère « Suivi des dossiers CNM »).
     { label: 'Tous mes dossiers', path: '/prmp/tableau-de-bord', icon: 'clock' },
@@ -183,13 +185,16 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     { label: 'Créer un dossier', path: '/prmp/soumettre-dossier', icon: 'plus' },
     // ⚠️ Route AUTONOME `dossiers-verifies` (pas l'enfant `dossiers/verifies` qui s'affiche SOUS les
     // cartes de « Mes dossiers ») : l'écran ne montre QUE le tableau des vérifiés en mode mise à jour.
-    { label: 'Mettre à jour un PPM', path: '/prmp/dossiers-verifies', queryParams: { maj: 1 }, icon: 'edit' },
+    // ⚠️ 03/11 (pilote) — « Mettre à jour un PPM » sort du menu : c'est le bouton « Mettre à jour le plan » de l'écran du plan (route conservée).
     // ⚠️ Demande pilote (2026-10-06) — les fiches DAO et la soumission en ligne n'avaient pas d'entrée de menu (on y
     // venait par la page d'un dossier) : l'écran des lignes éligibles et des fiches ouvertes, d'où partent la commission,
     // les dépôts, les retraits, les reçus des frais et la séance.
-    { label: 'Appels d’offres', path: '/prmp/dao', icon: 'clip' },
+    // ⚠️ 03/11 (pilote) — renommé « Appels d'offres en cours », ouvert sur les procédures lancées : préparer une fiche part de la ligne du plan.
+    { label: 'Appels d’offres en cours', path: '/prmp/dao', queryParams: { etape: 'lance' }, icon: 'clip' },
     // ⚠️ 18/10 (pilote) — les reçus des frais de dossier n'étaient atteignables que par la fiche : entrée propre, pastille propre.
     { label: 'Reçus des frais de dossier', path: '/prmp/recus', icon: 'hash' },
+    // ⚠️ 03/11 (pilote) — l'écran existait sans entrée de menu.
+    { label: 'Dossiers de marché', path: '/prmp/dossier-marche', icon: 'folder' },
     // ⚠️ Lot MS-1 (V124, 16/10) — les contrats-cadres et marchés à commandes notifiés (titulaires, échéances, reconductions).
     { label: 'Contrats en vigueur', path: '/prmp/contrats-en-vigueur', icon: 'history' },
     // « Créer compte UGPM » : déplacé dans le PIED de la barre latérale (à la place de la carte profil,
@@ -202,7 +207,7 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     { label: 'PV et lettres de renvoi', path: '/prmp/resultat-examen', icon: 'file' },
     { label: 'Demandes de retrait', path: '/prmp/retraits', icon: 'undo' },
     // ⚠️ 01/11 (pilote, « les mots du menu ») — le nom de l'écran : les dates prévues et réelles de chaque jalon du plan.
-    { label: 'Calendrier des jalons', path: '/prmp/calendrier', icon: 'calendar' },
+    // ⚠️ 03/11 (pilote) — « Calendrier des jalons » sort du menu : bouton de l'écran du plan, jalons dans le détail de chaque ligne (route conservée).
     // ⚠️ Spec notifications (2026-08-02) — écran transverse, présent dans TOUS les profils.
     { label: 'Notifications', path: '/notifications', icon: 'bell' },
   ],
@@ -212,6 +217,8 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
   // est réservé PRMP (403). « Dossiers vérifiés » (GET /api/dossiers?statut=CLOTURE, scopé) est OK.
   UGPM: [
     entreeAFaire('prmp'),
+    // ⚠️ 03/11 (pilote) — le même écran du plan, sans les gestes réservés à la PRMP.
+    { label: 'Plan de passation', path: '/prmp/plan', icon: 'calendar' },
     // ⚠️ Demande pilote (2026-09-13) — écran partagé du PRMP ouvert à l'UGPM en VUE SEULE (actions
     // Soumettre/Rectifier/Compléter masquées, cf. `estPrmp` dans suivi-delais). Libellé « Tous les
     // dossiers » côté UGPM (le PRMP garde « Suivi des dossiers CNM », son cadrage délais).
@@ -219,9 +226,11 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     { label: 'Créer un dossier', path: '/prmp/soumettre-dossier', icon: 'plus' },
     { label: 'Mes brouillons', path: '/prmp/mes-brouillons', icon: 'edit' },
     // ⚠️ 2026-10-06 — comme la PRMP : l'UGPM saisit la fiche, la commission et valide les reçus des frais.
-    { label: 'Appels d’offres', path: '/prmp/dao', icon: 'clip' },
+    { label: 'Appels d’offres en cours', path: '/prmp/dao', queryParams: { etape: 'lance' }, icon: 'clip' },
     // ⚠️ 18/10 (pilote) — les reçus des frais de dossier n'étaient atteignables que par la fiche : entrée propre, pastille propre.
     { label: 'Reçus des frais de dossier', path: '/prmp/recus', icon: 'hash' },
+    // ⚠️ 03/11 (pilote) — le serveur ouvre la création du dossier de marché à l'UGPM de la fiche (attribution, remise papier).
+    { label: 'Dossiers de marché', path: '/prmp/dossier-marche', icon: 'folder' },
     // ⚠️ Lot MS-1 (16/10) — en lecture : la reconduction se décide par la PRMP.
     { label: 'Contrats en vigueur', path: '/prmp/contrats-en-vigueur', icon: 'history' },
     // ⚠️ Demande pilote (2026-09-13) — « Dossiers vérifiés » RETIRÉ du menu UGPM : les dossiers vérifiés
