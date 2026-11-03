@@ -1336,7 +1336,8 @@ export class SoumettreDossier {
     if (!reprendreId && famille === 'DDP') {
       this.choisirPpm();
     } else if (!reprendreId && (famille === 'DMC' || famille === 'DDM')) {
-      this.choisirFamille(famille);
+      // ⚠️ 03/11 (pilote) — `&sousType=` depuis la chaîne d'une ligne du plan (ex. RJ) : choisi d'avance s'il est de la famille.
+      this.choisirFamille(famille, this.route.snapshot.queryParamMap.get('sousType')?.toUpperCase() || null);
     }
   }
 
@@ -1397,7 +1398,7 @@ export class SoumettreDossier {
   }
 
   /** Ouvre la saisie d'un dossier hors planification pour la **famille** choisie (`DMC` / `DDM`). */
-  choisirFamille(f: FamilleDossier): void {
+  choisirFamille(f: FamilleDossier, sousTypeVoulu: string | null = null): void {
     this.formError.set(null);
     this.familleChoisie.set(f);
     // Repart d'une sélection vierge : le sous-type précédent pourrait ne pas appartenir à la nouvelle famille.
@@ -1406,7 +1407,10 @@ export class SoumettreDossier {
     // Sous-types de la famille (référentiel serveur) — alimente le select du formulaire.
     this.sousTypesDeLaFamille.set([]);
     this.sousTypeService.parFamille(f).subscribe({
-      next: (rows) => this.sousTypesDeLaFamille.set(rows),
+      next: (rows) => {
+        this.sousTypesDeLaFamille.set(rows);
+        if (sousTypeVoulu && rows.some((r) => r.idSousType === sousTypeVoulu)) this.dossierForm.controls.idSousType.setValue(sousTypeVoulu);
+      },
       error: () => this.sousTypesDeLaFamille.set([]),
     });
     // Pièces attendues : celles de la famille à l'entrée, puis celles du sous-type dès qu'il est choisi (M2).

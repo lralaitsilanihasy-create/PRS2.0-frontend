@@ -97,6 +97,11 @@ export function lotsPapierACreer(l: Pick<LigneEligible, 'lots' | 'dossiersMarche
         <strong class="cnm-mono">{{ st }}</strong>.
         <a routerLink="/prmp/dossier-marche">Voir toutes les procédures</a>
       </p>
+    } @else if (dmc() != null) {
+      <p class="dm__filtre" data-testid="dm-filtre-dmc">
+        La procédure de la ligne choisie dans le plan.
+        <a class="btn btn-outline btn-sm" routerLink="/prmp/dossier-marche">Voir toutes les procédures</a>
+      </p>
     }
 
     @if (chargement()) {
@@ -219,7 +224,12 @@ export class DossierMarcheProcedures implements OnInit {
   readonly chargement = signal(true);
   readonly erreur = signal(false);
   private readonly eligibles = signal<LigneEligible[]>([]);
-  readonly lignes = computed(() => proceduresPourMarche(this.eligibles(), this.sousType()));
+  /** ⚠️ 03/11 (pilote) — `?dmc=` depuis la chaîne d'une ligne du plan : la seule procédure de cette ligne. */
+  readonly dmc = toSignal(this.route.queryParamMap.pipe(map((q) => (q.get('dmc') ? Number(q.get('dmc')) : null))), { initialValue: null });
+  readonly lignes = computed(() => {
+    const dmc = this.dmc();
+    return proceduresPourMarche(this.eligibles(), this.sousType()).filter((l) => dmc == null || l.idDmc === dmc);
+  });
   readonly mec = (st: string): string => SOUS_TYPE_MEC_DU_MARCHE[st] ?? '—';
   readonly statutLibelle = statutDossierLabel;
   readonly date = dateHeureFr;

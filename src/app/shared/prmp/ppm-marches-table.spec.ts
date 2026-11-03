@@ -349,3 +349,47 @@ describe("PpmMarchesTable — colonne d'outils des écrans d'édition", () => {
     expect(el.querySelector('.doc-ppm')?.classList).not.toContain('doc-gouttiere-d');
   });
 });
+
+@Component({
+  selector: 'app-hote-ppm-detail-test',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [PpmMarchesTable],
+  template: `
+    <app-ppm-marches-table [marches]="marches" [beneficiaires]="benefs">
+      <ng-template #detailLigne let-m><p class="detail">Chaîne de {{ m.idDetail }}</p></ng-template>
+    </app-ppm-marches-table>
+  `,
+})
+class HotePpmDetailTest {
+  readonly marches = MARCHES;
+  readonly benefs = BENEFS;
+}
+
+describe('PpmMarchesTable — détail d’une ligne (03/11, chaîne de la procédure)', () => {
+  it('ouvre le détail sous la ligne au clic, une ligne à la fois ; l’étiquette de statut est le bouton du clavier', async () => {
+    await TestBed.configureTestingModule({
+      imports: [HotePpmDetailTest],
+      providers: [{ provide: ReferenceLookupService, useValue: lookupStub }],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(HotePpmDetailTest);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('.detail')).toBeNull();
+
+    (el.querySelector('tbody tr') as HTMLElement).click();
+    fixture.detectChanges();
+    expect(el.querySelector('tr.doc-detail-ligne .detail')?.textContent).toContain('Chaîne de 1');
+    expect(el.querySelector('tr.doc-detail-ligne td')?.getAttribute('colspan')).toBe('13');
+
+    const boutons = el.querySelectorAll<HTMLButtonElement>('button.doc-statut--bouton');
+    expect(boutons.length).toBe(2);
+    expect(boutons[0].getAttribute('aria-expanded')).toBe('true');
+    boutons[1].click();
+    fixture.detectChanges();
+    expect(el.querySelectorAll('.detail').length).toBe(1);
+    expect(el.querySelector('.detail')?.textContent).toContain('Chaîne de 2');
+    boutons[1].click();
+    fixture.detectChanges();
+    expect(el.querySelector('.detail')).toBeNull();
+  });
+});

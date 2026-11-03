@@ -34,6 +34,7 @@ import {
 } from '../../services';
 import { DatePipe } from '@angular/common';
 import { PpmMarchesTable } from './ppm-marches-table';
+import { ChaineLigne, ChainesDuPlan } from '../../features/circuit/page-dossier/chaine-ligne';
 import { PpmSaisieGrid } from './ppm-saisie-grid';
 import { PpmFormFactory } from './ppm-form-factory';
 import { dateAvis, statutsAdmissibles } from './statut-marche';
@@ -91,7 +92,10 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
     FichePresentationDoc,
     AgpmDoc,
     DocumentVisionneuse,
+    ChaineLigne,
   ],
+  // ⚠️ 03/11 (pilote) — la chaîne de chaque ligne du plan : filiation et lignes éligibles lues une fois pour tout le tableau.
+  providers: [ChainesDuPlan],
   template: `
     <div class="modal-backdrop modal-backdrop--sans-flou" [class.closing]="closing()">
       @if (loading()) {
@@ -403,7 +407,10 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
                 <!-- ⚠️ 2026-09-14 (décision des chefs) — le plan dans sa feuille officielle ; statut et
                      versionnement en annotations, masquables. -->
                 <app-document-visionneuse [interrupteur]="true" [(annotations)]="annotationsDoc">
-                  <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()" />
+                  <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()">
+                    <!-- ⚠️ 03/11 (pilote) — un clic sur une ligne ouvre sa chaîne : ses dossiers, et l’étape suivante à créer. -->
+                    <ng-template #detailLigne let-m><app-chaine-ligne [marche]="m" /></ng-template>
+                  </app-ppm-marches-table>
                 </app-document-visionneuse>
               }
             </div>

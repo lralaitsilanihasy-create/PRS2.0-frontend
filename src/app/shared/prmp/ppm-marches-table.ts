@@ -125,7 +125,8 @@ const CLASSE_COLONNE: Readonly<Record<ChampPpmOfficiel, string>> = {
             @for (b of m.beneficiaires; track $index; let first = $first) {
               <tr
                 [class]="classeLigne(m)"
-                [class.doc-ligne--cliquable]="!!rowStateFn() && etatLigne !== 'hors'"
+                [class.doc-ligne--cliquable]="(!!rowStateFn() && etatLigne !== 'hors') || (!!detailTpl() && !!m.source)"
+                [class.doc-ligne--ouverte]="ligneOuverte() === m.idDetail"
                 [attr.title]="annot() ? detailDe(m) : null"
                 (click)="onRowClick(m)"
               >
@@ -174,7 +175,12 @@ const CLASSE_COLONNE: Readonly<Record<ChampPpmOfficiel, string>> = {
                       } @else {
                         <span class="doc-texte" [appTexteCesure]="valeur(m, b, c.champ)"></span>
                       }
-                      @if (c.champ === 'attribution' && avecStatutsEnMarge() && m.statut) {
+                      @if (c.champ === 'attribution' && avecStatutsEnMarge() && m.statut && detailTpl() && m.source) {
+                        <!-- ⚠️ 03/11 (pilote) — l'étiquette de statut ouvre aussi la chaîne de la ligne : le geste du clavier. -->
+                        <button type="button" class="doc-annot doc-statut doc-statut--bouton" [attr.aria-expanded]="ligneOuverte() === m.idDetail"
+                          [attr.title]="'Statut du marché : ' + m.statut + ' — afficher la chaîne de la procédure'"
+                          (click)="basculer($event, m)"><span class="cnm-sr-only">Chaîne de la procédure de la ligne, statut : </span><span [appTexteCesure]="m.statut"></span></button>
+                      } @else if (c.champ === 'attribution' && avecStatutsEnMarge() && m.statut) {
                         <span class="doc-annot doc-statut" [attr.title]="'Statut du marché : ' + m.statut"><span class="cnm-sr-only">Statut du marché : </span><span [appTexteCesure]="m.statut"></span></span>
                       }
                     </td>
@@ -190,6 +196,13 @@ const CLASSE_COLONNE: Readonly<Record<ChampPpmOfficiel, string>> = {
                     }
                   </td>
                 }
+              </tr>
+            }
+            @if (ligneOuverte() === m.idDetail && m.source && detailTpl(); as tpl) {
+              <tr class="doc-detail-ligne">
+                <td [attr.colspan]="colonnes.length + (actionsTpl() ? 1 : 0)">
+                  <ng-container [ngTemplateOutlet]="tpl" [ngTemplateOutletContext]="{ $implicit: m.source }" />
+                </td>
               </tr>
             }
           } @empty {
@@ -217,6 +230,13 @@ export class PpmMarchesTable implements OnInit {
   readonly lignes = input<LignePpmOfficielle[] | null>(null);
   /** Colonne d'outils optionnelle, HORS document : template projeté `#rowActions` (contexte = le `Marche`). */
   readonly actionsTpl = contentChild<TemplateRef<unknown>>('rowActions');
+  /**
+   * ⚠️ 03/11 (pilote) — détail d'une ligne, HORS document : template projeté `#detailLigne` (contexte = le `Marche`), ouvert sous la
+   * ligne au clic (une ligne à la fois). Sans effet sur un tableau d'examen (`rowStateFn`), dont le clic de ligne a son propre sens.
+   */
+  readonly detailTpl = contentChild<TemplateRef<unknown>>('detailLigne');
+  /** La ligne dont le détail est ouvert (`idDetail`), `null` = aucune. */
+  readonly ligneOuverte = signal<number | null>(null);
   /**
    * État d'examen optionnel d'une ligne (examen séquentiel) → marqueur dans la marge gauche :
    * `current` (en cours), `done-ras`, `done-obs`, `pending` (à examiner), `hors` (hors examen).
@@ -489,6 +509,13 @@ export class PpmMarchesTable implements OnInit {
   /** Clic sur une ligne : ne réémet que si un état séquentiel est actif ET la ligne n'est pas hors examen. */
   onRowClick(m: LigneAffichee): void {
     if (m.source && this.rowStateFn() && this.etatDe(m) !== 'hors') this.rowClick.emit(m.source);
+    else if (m.source && this.detailTpl()) this.ligneOuverte.update((id) => (id === m.idDetail ? null : m.idDetail));
+  }
+
+  /** ⚠️ 03/11 — l'étiquette de statut (bouton) : même bascule que le clic de ligne, sans le compter deux fois. */
+  basculer(ev: Event, m: LigneAffichee): void {
+    ev.stopPropagation();
+    this.ligneOuverte.update((id) => (id === m.idDetail ? null : m.idDetail));
   }
 
   private lbl(map: Map<string, string>, id?: number): string {

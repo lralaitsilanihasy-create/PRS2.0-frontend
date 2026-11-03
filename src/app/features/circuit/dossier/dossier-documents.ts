@@ -23,6 +23,7 @@ import { DossierVersions } from './dossier-versions';
 import { FichePresentationDaoDoc } from './fiche-presentation-dao';
 import { PlanDuDossierDao } from './plan-du-dossier-dao';
 import { FicheMarcheDossier } from '../page-dossier/fiche-marche-dossier';
+import { ChaineLigne, ChainesDuPlan } from '../page-dossier/chaine-ligne';
 import { avecProcedure, ficheDuDossier } from './dossier-pieces';
 import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marche-docs';
 
@@ -34,7 +35,9 @@ import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marc
 @Component({
   selector: 'app-dossier-documents',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PpmMarchesTable, FichePresentationDoc, AgpmDoc, DocumentVisionneuse, DossierPieces, DossierVersions, DossierInstantanes, ControlesDossier, CalendrierAnnuel, PublicationAgpmPanneau, FicheDaoDoc, FichePresentationDaoDoc, PlanDuDossierDao, CanevasRapportDoc, BordereauEstimatifDoc, AvisSpecifiqueDoc, FicheMarcheDossier, SeanceMarcheDoc, EvaluationMarcheDoc, PvCnmDoc],
+  imports: [PpmMarchesTable, FichePresentationDoc, AgpmDoc, DocumentVisionneuse, DossierPieces, DossierVersions, DossierInstantanes, ControlesDossier, CalendrierAnnuel, PublicationAgpmPanneau, FicheDaoDoc, FichePresentationDaoDoc, PlanDuDossierDao, CanevasRapportDoc, BordereauEstimatifDoc, AvisSpecifiqueDoc, FicheMarcheDossier, SeanceMarcheDoc, EvaluationMarcheDoc, PvCnmDoc, ChaineLigne],
+  // ⚠️ 03/11 (pilote) — la chaîne de chaque ligne du plan : filiation et lignes éligibles lues une fois pour tout le tableau.
+  providers: [ChainesDuPlan],
   host: { '[class.dc-documents--borne]': 'panneauBorne()' },
   template: `
     @if (contenu.estPpm()) {
@@ -84,7 +87,10 @@ import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marc
           <!-- ⚠️ V118 (15/10) — la publication de l'AGPM se dépose une fois sur le plan contrôlé ; chaque dossier du plan la reprend. -->
           <app-publication-agpm [idDossier]="contenu.dossier().idDossier" [plan]="true" />
           <app-document-visionneuse [interrupteur]="true" [(annotations)]="annotationsDoc" [class.doc-entete-collante]="panneauBorne() || enteteCollante()">
-            <app-ppm-marches-table [marches]="contenu.marches()" [beneficiaires]="contenu.serviceBenefs()" [previsions]="contenu.previsions()" [changements]="contenu.changements()" [legendeTitre]="contenu.legendeChangements()" [detailsChangements]="contenu.detailsChangements()" />
+            <app-ppm-marches-table [marches]="contenu.marches()" [beneficiaires]="contenu.serviceBenefs()" [previsions]="contenu.previsions()" [changements]="contenu.changements()" [legendeTitre]="contenu.legendeChangements()" [detailsChangements]="contenu.detailsChangements()">
+              <!-- ⚠️ 03/11 (pilote) — un clic sur une ligne ouvre sa chaîne : ses dossiers, et l’étape suivante à créer. -->
+              <ng-template #detailLigne let-m><app-chaine-ligne [marche]="m" /></ng-template>
+            </app-ppm-marches-table>
           </app-document-visionneuse>
         </div>
       }

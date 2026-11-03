@@ -567,6 +567,23 @@ app-document-visionneuse {
   -webkit-line-clamp: 2;
   line-clamp: 2;
 }
+/* ⚠️ 03/11 (pilote) — l'étiquette ouvre la chaîne de la ligne : un bouton, même rendu. */
+.doc-statut--bouton {
+  cursor: pointer;
+  appearance: none;
+}
+.doc-statut--bouton:hover { border-width: 2px; }
+.doc-statut--bouton:focus-visible { outline: 3px solid var(--bouton-principal); outline-offset: 1px; }
+.doc-table tr.doc-ligne--ouverte > td { background: var(--ligne-survol); }
+/* La chaîne, sous la ligne : hors document (pas de bordure noire), sur toute la largeur. */
+.doc-table tr.doc-detail-ligne > td {
+  padding: 0;
+  border: 1px solid var(--bordure);
+  background: var(--carte-fond);
+  font-family: var(--font-base);
+  text-align: left;
+}
+
 /* Dans un écran d'édition, la colonne d'outils occupe la marge : l'étiquette s'y range, en tête. */
 .doc-table td.doc-hors-feuille .doc-statut {
   position: static;
