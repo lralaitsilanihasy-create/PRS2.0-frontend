@@ -5,14 +5,15 @@ import { Subscription, catchError, forkJoin, map, of } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { dateFr } from '../../../core/interim/interim-libelles';
-import { Dossier, Marche, MarchePrevision, Ppm, ServiceBeneficiaire } from '../../../models';
-import { EntiteContractService, MarchePrevisionService, MarcheService, PpmService, ReferenceLookupService, ServiceBeneficiaireService } from '../../../services';
+import { Dossier, Echeance, Marche, MarchePrevision, Ppm, ServiceBeneficiaire } from '../../../models';
+import { CapmService, EcheanceService, EntiteContractService, MarchePrevisionService, MarcheService, PpmService, ReferenceLookupService, ServiceBeneficiaireService } from '../../../services';
 import { DossierService } from '../../../services/circuit.services';
 import { PpmMarchesTable } from '../../../shared/prmp/ppm-marches-table';
 import { DocumentVisionneuse } from '../../../shared/ui/document-visionneuse';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { TitrePage } from '../../../shared/ui/titre-page';
-import { ChaineLigne, ChainesDuPlan, dossiersDeLaLigne } from '../../circuit/page-dossier/chaine-ligne';
+import { ChainesDuPlan, dossiersDeLaLigne } from '../../circuit/page-dossier/chaine-ligne';
+import { DetailLigne } from './detail-ligne';
 import { ETAPES_LIGNE, EtapeLigne, SuiviLigne, suiviDeLigne } from './suivi-ligne';
 import { LienDossier } from '../../circuit/page-dossier/lien-dossier';
 
@@ -37,6 +38,7 @@ interface ContenuPlans {
   marches: Marche[];
   benefs: ServiceBeneficiaire[];
   previsions: MarchePrevision[];
+  echeances: Echeance[];
 }
 
 /**
@@ -47,7 +49,7 @@ interface ContenuPlans {
 @Component({
   selector: 'app-plan-passation',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, TitrePage, EtatErreur, DocumentVisionneuse, PpmMarchesTable, ChaineLigne],
+  imports: [RouterLink, TitrePage, EtatErreur, DocumentVisionneuse, PpmMarchesTable, DetailLigne],
   providers: [ChainesDuPlan],
   template: `
     <app-titre-page titre="Plan de passation"
@@ -109,7 +111,9 @@ interface ContenuPlans {
       <app-document-visionneuse [interrupteur]="true">
         <app-ppm-marches-table [suiviFn]="suiviFn" [marches]="lignesAffichees()" [beneficiaires]="benefsDuPlan()" [previsions]="previsionsDuPlan()"
           [messageVide]="filtre() ? 'Aucune ligne du plan à cette étape.' : 'Ce plan ne porte aucune ligne.'">
-          <ng-template #detailLigne let-m><app-chaine-ligne [marche]="m" /></ng-template>
+          <ng-template #detailLigne let-m>
+            <app-detail-ligne [marche]="m" [previsions]="previsionsDe(m)" [echeances]="echeancesDe(m)" [capms]="capms()" />
+          </ng-template>
         </app-ppm-marches-table>
       </app-document-visionneuse>
     }
@@ -143,6 +147,7 @@ export class PlanPassation implements OnInit {
   private readonly marcheService = inject(MarcheService);
   private readonly benefService = inject(ServiceBeneficiaireService);
   private readonly previsionService = inject(MarchePrevisionService);
+  private readonly echeanceService = inject(EcheanceService);
   private readonly lookups = inject(ReferenceLookupService);
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
@@ -155,6 +160,8 @@ export class PlanPassation implements OnInit {
   readonly erreur = signal(false);
   private readonly contenu = signal<ContenuPlans | null>(null);
   private readonly entites = signal<Map<string, string>>(new Map());
+  /** Processus CAPM : identifiant → libellé (jalons du détail d'une ligne). */
+  readonly capms = signal<Map<string, string>>(new Map());
   private readonly idDemande = toSignal(this.route.paramMap.pipe(map((p) => (p.get('idDossier') ? Number(p.get('idDossier')) : null))), { initialValue: null });
 
   readonly plans = computed(() => this.contenu()?.plans ?? []);
@@ -231,6 +238,7 @@ export class PlanPassation implements OnInit {
   ngOnInit(): void {
     this.charger();
     this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).subscribe((m) => this.entites.set(m));
+    this.lookups.lookup(CapmService, 'idCapm', ['libelleProcessus']).subscribe((m) => this.capms.set(m));
   }
 
   charger(): void {
@@ -243,9 +251,11 @@ export class PlanPassation implements OnInit {
       marches: this.marcheService.list(),
       benefs: this.benefService.list().pipe(catchError(() => of([] as ServiceBeneficiaire[]))),
       previsions: this.previsionService.list().pipe(catchError(() => of([] as MarchePrevision[]))),
+      // Dates réelles des jalons : silencieuses, le détail montre alors les seules dates prévues.
+      echeances: this.echeanceService.list().pipe(catchError(() => of([] as Echeance[]))),
     }).subscribe({
       next: (r) => {
-        this.contenu.set({ plans: plansEnVigueur(r.dossiers, r.ppms), ppms: r.ppms, marches: r.marches, benefs: r.benefs, previsions: r.previsions });
+        this.contenu.set({ plans: plansEnVigueur(r.dossiers, r.ppms), ppms: r.ppms, marches: r.marches, benefs: r.benefs, previsions: r.previsions, echeances: r.echeances });
         this.chargement.set(false);
         // Un identifiant d'URL qui n'est pas un plan en vigueur : on montre le plus récent, à sa propre adresse.
         const id = this.idDemande();
@@ -258,6 +268,14 @@ export class PlanPassation implements OnInit {
         this.erreur.set(true);
       },
     });
+  }
+
+  previsionsDe(m: Marche): MarchePrevision[] {
+    return this.previsionsDuPlan().filter((p) => p.idDetail === m.idDetail);
+  }
+
+  echeancesDe(m: Marche): Echeance[] {
+    return (this.contenu()?.echeances ?? []).filter((e) => e.idDetail === m.idDetail);
   }
 
   /** « 00001/PPM-AGPM · 2026 » : le numéro du plan et son exercice. */
