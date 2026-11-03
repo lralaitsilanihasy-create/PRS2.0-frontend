@@ -81,6 +81,7 @@ const CLASSE_COLONNE: Readonly<Record<ChampPpmOfficiel, string>> = {
       class="doc-ppm"
       [class.doc-gouttiere-g]="avecMarqueurs()"
       [class.doc-gouttiere-d]="avecStatutsEnMarge()"
+      [class.doc-suivi]="!!suiviFn()"
       [class.doc-annotations-masquees]="!annot()"
     >
       <!-- Légende du versionnement (annotation) : seulement si au moins une ligne diffère de la
@@ -177,9 +178,18 @@ const CLASSE_COLONNE: Readonly<Record<ChampPpmOfficiel, string>> = {
                       }
                       @if (c.champ === 'attribution' && avecStatutsEnMarge() && m.statut && detailTpl() && m.source) {
                         <!-- ⚠️ 03/11 (pilote) — l'étiquette de statut ouvre aussi la chaîne de la ligne : le geste du clavier. -->
-                        <button type="button" class="doc-annot doc-statut doc-statut--bouton" [attr.aria-expanded]="ligneOuverte() === m.idDetail"
-                          [attr.title]="'Statut du marché : ' + m.statut + ' — afficher la chaîne de la procédure'"
-                          (click)="basculer($event, m)"><span class="cnm-sr-only">Chaîne de la procédure de la ligne, statut : </span><span [appTexteCesure]="m.statut"></span></button>
+                        @let suivi = suiviDe(m);
+                        @if (suivi) {
+                          <!-- ⚠️ 03/11 (lot 2) — l'écran du plan remplace le statut par le suivi de la ligne (étape, ce qui la porte). -->
+                          <button type="button" class="doc-annot doc-statut doc-statut--bouton" [class]="'doc-statut--' + suivi.famille"
+                            [attr.aria-expanded]="ligneOuverte() === m.idDetail"
+                            [attr.title]="suivi.libelle + (suivi.precision ? ' · ' + suivi.precision : '') + ' — statut du marché : ' + m.statut + ' — afficher la chaîne de la procédure'"
+                            (click)="basculer($event, m)"><span class="cnm-sr-only">Chaîne de la procédure de la ligne, étape : </span>{{ suivi.libelle }}@if (suivi.precision) {<span class="doc-statut__precision">{{ suivi.precision }}</span>}</button>
+                        } @else {
+                          <button type="button" class="doc-annot doc-statut doc-statut--bouton" [attr.aria-expanded]="ligneOuverte() === m.idDetail"
+                            [attr.title]="'Statut du marché : ' + m.statut + ' — afficher la chaîne de la procédure'"
+                            (click)="basculer($event, m)"><span class="cnm-sr-only">Chaîne de la procédure de la ligne, statut : </span><span [appTexteCesure]="m.statut"></span></button>
+                        }
                       } @else if (c.champ === 'attribution' && avecStatutsEnMarge() && m.statut) {
                         <span class="doc-annot doc-statut" [attr.title]="'Statut du marché : ' + m.statut"><span class="cnm-sr-only">Statut du marché : </span><span [appTexteCesure]="m.statut"></span></span>
                       }
@@ -237,6 +247,16 @@ export class PpmMarchesTable implements OnInit {
   readonly detailTpl = contentChild<TemplateRef<unknown>>('detailLigne');
   /** La ligne dont le détail est ouvert (`idDetail`), `null` = aucune. */
   readonly ligneOuverte = signal<number | null>(null);
+  /**
+   * ⚠️ 03/11 (lot 2) — suivi d'une ligne, à la place du statut dans l'étiquette de marge (écran du plan) : libellé, précision, famille
+   * de couleur. `null` (défaut) = le statut du marché, comme partout ailleurs.
+   */
+  readonly suiviFn = input<((m: Marche) => { libelle: string; precision: string | null; famille: 'neutre' | 'examen' | 'favorable' } | null) | null>(null);
+
+  suiviDe(m: LigneAffichee): { libelle: string; precision: string | null; famille: 'neutre' | 'examen' | 'favorable' } | null {
+    const f = this.suiviFn();
+    return f && m.source ? f(m.source) : null;
+  }
   /**
    * État d'examen optionnel d'une ligne (examen séquentiel) → marqueur dans la marge gauche :
    * `current` (en cours), `done-ras`, `done-obs`, `pending` (à examiner), `hors` (hors examen).

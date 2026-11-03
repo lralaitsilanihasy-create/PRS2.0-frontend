@@ -573,6 +573,14 @@ app-document-visionneuse {
   appearance: none;
 }
 .doc-statut--bouton:hover { border-width: 2px; }
+/* ⚠️ 03/11 (lot 2) — le suivi de la ligne (écran du plan) : familles de couleur des badges, libellé puis précision. */
+.doc-statut--neutre { background: var(--neutre-fond); color: var(--neutre-texte); border-color: var(--bordure-champ); }
+.doc-statut--examen { background: var(--examen-fond); color: var(--examen-texte); border-color: var(--examen-texte); }
+.doc-statut--favorable { background: var(--favorable-fond); color: var(--favorable-texte); border-color: var(--favorable-texte); }
+.doc-statut__precision { display: block; font-weight: 400; }
+/* Le suivi tient en deux courtes lignes (« Informations du DAO / Brouillon ») : la marge droite s'élargit pour lui. */
+.doc-ppm.doc-suivi { --doc-gouttiere-d: 8.5rem; }
+.doc-ppm.doc-suivi .doc-statut { -webkit-line-clamp: 3; line-clamp: 3; max-height: none; }
 .doc-statut--bouton:focus-visible { outline: 3px solid var(--bouton-principal); outline-offset: 1px; }
 .doc-table tr.doc-ligne--ouverte > td { background: var(--ligne-survol); }
 /* La chaîne, sous la ligne : hors document (pas de bordure noire), sur toute la largeur. */

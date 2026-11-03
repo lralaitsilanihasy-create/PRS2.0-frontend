@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription, catchError, forkJoin, map, of } from 'rxjs';
@@ -12,7 +12,8 @@ import { PpmMarchesTable } from '../../../shared/prmp/ppm-marches-table';
 import { DocumentVisionneuse } from '../../../shared/ui/document-visionneuse';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { TitrePage } from '../../../shared/ui/titre-page';
-import { ChaineLigne, ChainesDuPlan } from '../../circuit/page-dossier/chaine-ligne';
+import { ChaineLigne, ChainesDuPlan, dossiersDeLaLigne } from '../../circuit/page-dossier/chaine-ligne';
+import { ETAPES_LIGNE, EtapeLigne, SuiviLigne, suiviDeLigne } from './suivi-ligne';
 import { LienDossier } from '../../circuit/page-dossier/lien-dossier';
 
 /** Statuts d'un plan signé, en vigueur tant qu'aucune mise à jour soumise ne le remplace (même règle que « Mettre à jour un PPM »). */
@@ -92,9 +93,22 @@ interface ContenuPlans {
         </div>
       </section>
 
+      <!-- ⚠️ 03/11 (lot 2) — combien de lignes à chaque étape ; un compteur filtre le plan sur son étape. -->
+      <div class="pp__etapes" role="group" aria-label="Filtrer les lignes par étape">
+        <button type="button" class="pp__etape" [attr.aria-pressed]="filtre() === null" (click)="filtre.set(null)">
+          <span class="pp__n">{{ marchesDuPlan().length }}</span><span class="pp__l">Toutes les lignes</span>
+        </button>
+        @for (e of compteurs(); track e.cle) {
+          <button type="button" class="pp__etape" [attr.aria-pressed]="filtre() === e.cle" [disabled]="!e.n" (click)="filtre.set(filtre() === e.cle ? null : e.cle)">
+            <span class="pp__n">{{ e.n }}</span><span class="pp__l">{{ e.libelle }}</span>
+          </button>
+        }
+      </div>
+      @if (!source.filiation() && source.chargement()) { <p class="text-muted pp__suivi-attente" role="status">Lecture du suivi des lignes…</p> }
+
       <app-document-visionneuse [interrupteur]="true">
-        <app-ppm-marches-table [marches]="marchesDuPlan()" [beneficiaires]="benefsDuPlan()" [previsions]="previsionsDuPlan()"
-          messageVide="Ce plan ne porte aucune ligne.">
+        <app-ppm-marches-table [suiviFn]="suiviFn" [marches]="lignesAffichees()" [beneficiaires]="benefsDuPlan()" [previsions]="previsionsDuPlan()"
+          [messageVide]="filtre() ? 'Aucune ligne du plan à cette étape.' : 'Ce plan ne porte aucune ligne.'">
           <ng-template #detailLigne let-m><app-chaine-ligne [marche]="m" /></ng-template>
         </app-ppm-marches-table>
       </app-document-visionneuse>
@@ -107,6 +121,17 @@ interface ContenuPlans {
     .pp__ref { margin: 0; font-size: 1.05rem; font-weight: 500; color: var(--texte); }
     .pp__meta { margin: 0; font-size: 0.8125rem; color: var(--texte-secondaire); }
     .pp__plans, .pp__gestes { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .pp__etapes { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); border: 1px solid var(--bordure); border-radius: 8px; overflow: hidden; background: var(--carte-fond); }
+    .pp__etape { display: grid; gap: 0.1rem; justify-items: start; text-align: left; padding: 0.55rem 0.8rem; border: 0; border-right: 1px solid var(--bordure); background: var(--carte-fond); color: var(--texte); font: inherit; cursor: pointer; }
+    .pp__etape:last-child { border-right: 0; }
+    .pp__etape:hover:not(:disabled) { background: var(--ligne-survol); }
+    .pp__etape[aria-pressed='true'] { background: var(--onglet-actif-fond); box-shadow: inset 0 -3px 0 var(--menu-fond); }
+    .pp__etape:disabled { cursor: default; }
+    .pp__etape:disabled .pp__n, .pp__etape:disabled .pp__l { color: var(--texte-secondaire); }
+    .pp__etape:focus-visible { outline: 3px solid var(--bouton-principal); outline-offset: -3px; }
+    .pp__n { font-size: 1.05rem; font-weight: 500; }
+    .pp__l { font-size: 0.75rem; color: var(--texte-secondaire); }
+    .pp__suivi-attente { margin: 0; font-size: 0.8125rem; }
     .pp__vide { padding: 1rem 1.25rem; display: grid; gap: 0.6rem; justify-items: start; }
     .pp__vide-t { margin: 0; font-size: 1rem; font-weight: 500; }
     .pp__vide p { margin: 0; color: var(--texte-secondaire); }
@@ -123,6 +148,7 @@ export class PlanPassation implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   readonly lien = inject(LienDossier);
+  readonly source = inject(ChainesDuPlan);
 
   readonly estPrmp = computed(() => this.auth.role() === 'PRMP');
   readonly chargement = signal(true);
@@ -147,6 +173,30 @@ export class PlanPassation implements OnInit {
     return p ? (this.contenu()?.marches ?? []).filter((m) => m.idDossier === p.idDossier && !m.supprimee) : [];
   });
   private readonly idsLignes = computed(() => new Set(this.marchesDuPlan().map((m) => m.idDetail)));
+  /** ⚠️ 03/11 (lot 2) — le suivi de chaque ligne (idDetail), lu sur la filiation du plan et les lignes éligibles. */
+  readonly suivis = computed(() => {
+    const f = this.source.filiation();
+    const eligibles = new Map(this.source.eligibles().map((e) => [e.idDetail, e]));
+    const modes = this.source.modes();
+    const r = new Map<number, SuiviLigne>();
+    for (const m of this.marchesDuPlan()) {
+      const noeuds = f ? dossiersDeLaLigne(f, m).filter((n) => n.lien !== 'RACINE' && n.lien !== 'VERSION_SUIVANTE') : [];
+      r.set(m.idDetail, suiviDeLigne(eligibles.get(m.idDetail), noeuds, m.idMode != null ? modes.get(String(m.idMode)) ?? null : null));
+    }
+    return r;
+  });
+  /** Tant que le suivi n'est pas lu, l'étiquette garde le statut du marché. */
+  readonly suiviFn = (m: Marche): SuiviLigne | null => (this.source.filiation() ? this.suivis().get(m.idDetail) ?? null : null);
+  readonly filtre = signal<EtapeLigne | null>(null);
+  readonly compteurs = computed(() => {
+    const n = new Map<EtapeLigne, number>();
+    for (const s of this.suivis().values()) n.set(s.etape, (n.get(s.etape) ?? 0) + 1);
+    return ETAPES_LIGNE.map((e) => ({ ...e, n: this.source.filiation() ? n.get(e.cle) ?? 0 : 0 }));
+  });
+  readonly lignesAffichees = computed(() => {
+    const f = this.filtre();
+    return f ? this.marchesDuPlan().filter((m) => this.suivis().get(m.idDetail)?.etape === f) : this.marchesDuPlan();
+  });
   readonly benefsDuPlan = computed(() => (this.contenu()?.benefs ?? []).filter((b) => this.idsLignes().has(b.idDetail)));
   readonly previsionsDuPlan = computed(() => (this.contenu()?.previsions ?? []).filter((x) => this.idsLignes().has(x.idDetail)));
 
@@ -168,6 +218,14 @@ export class PlanPassation implements OnInit {
 
   constructor() {
     inject(DestroyRef).onDestroy(() => this.abonnement.unsubscribe());
+    // Le suivi des lignes se lit dès l'affichage d'un plan (filiation + lignes éligibles), une fois par plan ; le filtre repart à zéro.
+    effect(() => {
+      const p = this.plan();
+      untracked(() => {
+        this.filtre.set(null);
+        if (p) this.source.charger(p.idDossier);
+      });
+    });
   }
 
   ngOnInit(): void {
