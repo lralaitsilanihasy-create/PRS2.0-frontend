@@ -7,6 +7,10 @@ import { Icone } from '../../../shared/ui/icone';
 import { LIBELLES_GESTES, libelleGeste } from './a-faire-libelles';
 import { delaiLigne, echeanceTexte, faitsApercu, friseDossier, referenceLigne } from './a-faire-modele';
 import { cibleDossier } from './a-faire-navigation';
+import { lienVersLePlan } from '../../prmp/plan-passation/cible-dossier';
+
+/** Les espaces qui ont l'écran du plan de passation (`/<espace>/plan`). */
+const ESPACES_DU_PLAN: ReadonlySet<string> = new Set(['prmp', 'president', 'cc', 'membre']);
 
 /**
  * Aperçu du dossier sélectionné (colonne droite de la maquette `Main`) : identité, frise des sept
@@ -63,7 +67,13 @@ import { cibleDossier } from './a-faire-navigation';
       }
 
       <div class="ap__actions">
-        @if (consultationSeule()) {
+        @if (lienSuivi(); as plan) {
+          <!-- ⚠️ 04/11 (pilote) — « Suivre l'avancement à la CNM » mène à la ligne du plan de passation du dossier ; la page
+               du dossier reste à un clic par la référence, en tête du panneau (pas de second bouton : refusé, doublon). -->
+          <a class="btn btn-primary ap__principal" [routerLink]="plan.commandes" [queryParams]="plan.params">
+            <app-icone [nom]="geste().icone" [taille]="16" />{{ geste().long }}
+          </a>
+        } @else if (consultationSeule()) {
           <a class="btn btn-primary ap__principal" [routerLink]="lien().commandes" [queryParams]="lien().queryParams">
             <app-icone [nom]="geste().icone" [taille]="16" />{{ geste().long }}
           </a>
@@ -100,6 +110,15 @@ export class AFaireApercu {
   readonly lien = computed(() => {
     const cible = cibleDossier(this.tache().dossier.idDossier, this.espace(), this.retour());
     return { commandes: cible.type === 'route' ? cible.commandes : [], queryParams: cible.type === 'route' ? cible.queryParams : {} };
+  });
+  /**
+   * ⚠️ 04/11 (pilote) — SUIVRE : la ligne du plan du dossier (`lienVersLePlan`, la règle de « Tous mes dossiers ») ; `null` pour un
+   * plan qui n'est pas encore en vigueur, ou un espace sans écran du plan — le bouton garde alors la page du dossier.
+   */
+  readonly lienSuivi = computed(() => {
+    const t = this.tache();
+    if (t.geste !== 'SUIVRE' || !ESPACES_DU_PLAN.has(this.espace())) return null;
+    return lienVersLePlan({ idDossier: t.dossier.idDossier, idTypeDossier: t.dossier.idTypeDossier ?? '', statut: t.dossier.statut }, '/' + this.espace());
   });
   /** Rien à faire sur ce dossier (VOIR, SUIVRE) : l'action principale EST le lien de consultation. */
   readonly consultationSeule = computed(() => this.tache().geste === 'VOIR' || this.tache().geste === 'SUIVRE');

@@ -124,6 +124,31 @@ describe('Accueil « À faire » (écran)', () => {
     expect((apercu.querySelector('.ap__ref a') as HTMLAnchorElement).getAttribute('href')).toBe('/president/dossier/1002?returnUrl=%2Fpresident%2Fa-faire');
   });
 
+  it('04/11 — « Suivre l’avancement à la CNM » mène à la ligne du plan ; un plan pas encore en vigueur garde la page du dossier', async () => {
+    const avecType = (type: string) => () => {
+      const r = exempleAFairePrmp();
+      return of({ ...r, taches: r.taches.map((t) => (t.geste === 'SUIVRE' ? { ...t, dossier: { ...t.dossier, idTypeDossier: type, idSousType: type === 'DMC' ? 'DAOO' : t.dossier.idSousType } } : t)) });
+    };
+    const ouvrirSuivi = (): HTMLElement => {
+      (tous('.af-l__corps').find((b) => texte(b).includes('00018/MTP')) as HTMLElement).click();
+      rendre();
+      return racine().querySelector('app-a-faire-apercu') as HTMLElement;
+    };
+    await monter('PRMP', avecType('DMC'), '/prmp/a-faire');
+    let apercu = ouvrirSuivi();
+    const principal = apercu.querySelector('.ap__principal') as HTMLAnchorElement;
+    expect(texte(principal)).toBe('Suivre l’avancement à la CNM'.replace('’', "'"));
+    expect(principal.getAttribute('href')).toBe('/prmp/plan?dossier=1018');
+    // Un seul bouton : la page du dossier reste à un clic par la référence, en tête du panneau.
+    expect(apercu.querySelectorAll('.ap__actions a, .ap__actions button').length).toBe(1);
+    expect((apercu.querySelector('.ap__ref a') as HTMLAnchorElement).getAttribute('href')).toBe('/prmp/dossier/1018?returnUrl=%2Fprmp%2Fa-faire');
+    TestBed.resetTestingModule();
+
+    await monter('PRMP', avecType('DDP'), '/prmp/a-faire');
+    apercu = ouvrirSuivi();
+    expect((apercu.querySelector('.ap__principal') as HTMLAnchorElement).getAttribute('href')).toBe('/prmp/dossier/1018?returnUrl=%2Fprmp%2Fa-faire');
+  });
+
   it("aperçu PRMP : ni acteurs ni faits internes, compteur en pause", async () => {
     await monter('PRMP', () => of(exempleAFairePrmp()), '/prmp/a-faire');
     expect(texte(racine().querySelector('.af__lead'))).toBe('Bonjour Mamy. 2 dossiers attendent une action de votre part.');
