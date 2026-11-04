@@ -41,7 +41,8 @@ import { FichePresentation } from './fiche-presentation';
         </p>
       }
 
-      <h4 class="doc-sous-titre">1. Liste des marchés à passer par mode dérogatoire avec justifications</h4>
+      <section class="fp-sec">
+      <div class="fp-sec__tete"><h4 class="doc-sous-titre fp-sec__t">1. Liste des marchés à passer par mode dérogatoire avec justifications</h4><span class="fp-sec__resume">{{ resume(fiche().derogatoires) }}</span></div>
       @if (fiche().derogatoires.length) {
         <table class="doc-table doc-table--fiche">
           <colgroup><col style="width: 34%" /><col style="width: 14%" /><col style="width: 18%" /><col style="width: 34%" /></colgroup>
@@ -59,12 +60,15 @@ import { FichePresentation } from './fiche-presentation';
               </tr>
             }
           </tbody>
+          <tfoot><tr class="fp-total"><td>Total</td><td class="doc-num">{{ montantFr(total(fiche().derogatoires)) }}</td><td colspan="2"></td></tr></tfoot>
         </table>
       } @else {
-        <p class="doc-paragraphe">Aucun marché à passer par mode dérogatoire.</p>
+        <p class="doc-paragraphe fp-vide">Aucun marché à passer par mode dérogatoire.</p>
       }
+      </section>
 
-      <h4 class="doc-sous-titre">2. Liste des marchés à délais aménagés avec justifications</h4>
+      <section class="fp-sec">
+      <div class="fp-sec__tete"><h4 class="doc-sous-titre fp-sec__t">2. Liste des marchés à délais aménagés avec justifications</h4><span class="fp-sec__resume">{{ resume(fiche().delaisAmenages) }}</span></div>
       @if (fiche().delaisAmenages.length) {
         <table class="doc-table doc-table--fiche">
           <colgroup><col style="width: 28%" /><col style="width: 13%" /><col style="width: 16%" /><col style="width: 15%" /><col style="width: 28%" /></colgroup>
@@ -83,12 +87,15 @@ import { FichePresentation } from './fiche-presentation';
               </tr>
             }
           </tbody>
+          <tfoot><tr class="fp-total"><td>Total</td><td class="doc-num">{{ montantFr(total(fiche().delaisAmenages)) }}</td><td colspan="3"></td></tr></tfoot>
         </table>
       } @else {
-        <p class="doc-paragraphe">Aucun marché à délais aménagés.</p>
+        <p class="doc-paragraphe fp-vide">Aucun marché à délais aménagés.</p>
       }
+      </section>
 
-      <h4 class="doc-sous-titre">3. Liste des contrats-cadres</h4>
+      <section class="fp-sec">
+      <div class="fp-sec__tete"><h4 class="doc-sous-titre fp-sec__t">3. Liste des contrats-cadres</h4><span class="fp-sec__resume">{{ resume(fiche().contratsCadres) }}</span></div>
       @if (fiche().contratsCadres.length) {
         <table class="doc-table doc-table--fiche">
           <colgroup><col style="width: 40%" /><col style="width: 18%" /><col style="width: 22%" /><col style="width: 20%" /></colgroup>
@@ -106,13 +113,15 @@ import { FichePresentation } from './fiche-presentation';
               </tr>
             }
           </tbody>
+          <tfoot><tr class="fp-total"><td>Total</td><td class="doc-num">{{ montantFr(total(fiche().contratsCadres)) }}</td><td colspan="2"></td></tr></tfoot>
         </table>
       } @else {
-        <p class="doc-paragraphe">Aucun contrat-cadre.</p>
+        <p class="doc-paragraphe fp-vide">Aucun contrat-cadre.</p>
       }
+      </section>
 
       @if (fiche().nbMarchesConcernes > 0 || justificationFiche() || motifMaj()) {
-        <p class="doc-paragraphe doc-justif"><u>Justification :</u>&ngsp;
+        <p class="doc-paragraphe doc-justif"><span class="fp-justif-k">Justification</span>
           @if (justificationFiche()) { {{ justificationFiche() }} } @else { <span class="doc-a-completer">À compléter</span> }
           @if (motifMaj()) { — <strong>Motif de la mise à jour :</strong> {{ motifMaj() }} }
         </p>
@@ -133,8 +142,22 @@ import { FichePresentation } from './fiche-presentation';
   // ⚠️ 2026-09-14 (décision des chefs) — plus d'en-têtes VERTS (demande pilote du 06/09, qui
   // remplaçait l'orange du 02/09) ni de tableau « cnm-table » : la fiche reprend la feuille
   // officielle commune (styles/_document-officiel.scss), en-têtes gris clair et bordures noires.
+  // ⚠️ 04/11 (pilote, maquette « fiche de présentation », variante A) — chaque liste sous un bandeau bleu nuit qui dit son nombre de
+  // marchés et son total ; une ligne de total ; une ligne sur deux teintée ; la justification en encadré. Intitulés et colonnes inchangés.
   styles: `
-    .doc-justif { margin-top: 0.9rem; }
+    .fp-sec { margin-top: 1rem; }
+    .fp-sec__tete { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; align-items: baseline; justify-content: space-between;
+      padding: 0.5rem 0.85rem; border-radius: 6px 6px 0 0; background: var(--menu-fond); }
+    .fp-sec__t { margin: 0; color: var(--texte-menu); font-weight: 500; }
+    .fp-sec__resume { font-size: 0.8125rem; color: var(--texte-menu-secondaire); font-variant-numeric: tabular-nums; }
+    .fp-sec table { margin-top: 0; }
+    .fp-sec tbody tr:nth-child(even) td { background: var(--ligne-survol); }
+    .fp-total td { background: var(--tableau-entete); font-weight: 500; }
+    .fp-vide { margin: 0; padding: 0.6rem 0.85rem; border: 1px solid var(--bordure); border-top: 0; border-radius: 0 0 6px 6px;
+      color: var(--texte-secondaire); font-style: italic; }
+    .doc-justif { margin-top: 1rem; padding: 0.7rem 0.9rem; border-left: 4px solid var(--menu-fond); border-radius: 0 6px 6px 0; background: var(--onglet-actif-fond); }
+    .fp-justif-k { display: block; margin-bottom: 0.2rem; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--texte-secondaire); }
   `,
 })
 export class FichePresentationDoc {
@@ -187,6 +210,17 @@ export class FichePresentationDoc {
   cliquer(ev: MouseEvent, idDetail: number, champ: ChampFicheOfficiel, valeur: string): void {
     if (!this.observable()) return;
     this.celluleClick.emit({ idDetail, champ, idBenef: null, valeur, element: ev.currentTarget as HTMLElement });
+  }
+
+  /** ⚠️ 04/11 (variante A) — la somme des montants d'une liste. */
+  total(lignes: readonly { montant?: number }[]): number {
+    return lignes.reduce((t, l) => t + (l.montant ?? 0), 0);
+  }
+
+  /** Le bandeau d'une liste : « 2 marchés · 193 200 000 000,00 Ar », ou « aucun ». */
+  resume(lignes: readonly { montant?: number }[]): string {
+    const n = lignes.length;
+    return n ? `${n} marché${n > 1 ? 's' : ''} · ${this.montantFr(this.total(lignes))} Ar` : 'aucun';
   }
 
   /** Montant au format du document officiel (« — » si absent) — même rendu que le plan de passation. */

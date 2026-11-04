@@ -37,6 +37,17 @@ describe('FichePresentationDoc — feuille officielle', () => {
     fixture.detectChanges();
   });
 
+  it('⚠️ 04/11 (variante A) — un bandeau par liste (intitulé officiel, nombre, total), une ligne de total, « aucun » pour une liste vide', () => {
+    const bandeaux = Array.from(racine().querySelectorAll('.fp-sec__tete')).map((b) => (b.textContent ?? '').replace(/\s+/g, ' ').trim());
+    expect(bandeaux.length).toBe(3);
+    expect(bandeaux[0]).toContain('1. Liste des marchés à passer par mode dérogatoire avec justifications');
+    expect(bandeaux[0]).toContain('1 marché · 85 000 000,00 Ar');
+    expect(bandeaux[2]).toContain('aucun');
+    const totaux = Array.from(racine().querySelectorAll('tfoot .fp-total')).map((t) => Array.from(t.querySelectorAll('td')).slice(0, 2).map((c) => (c.textContent ?? '').trim()));
+    expect(totaux).toEqual([['Total', '85 000 000,00'], ['Total', '85 000 000,00']]);
+    expect(racine().querySelector('.fp-vide')?.textContent?.trim()).toBe('Aucun contrat-cadre.');
+  });
+
   it("pose le titre officiel et des tableaux au format du document, en-têtes non colorés", () => {
     expect(racine().querySelector('.doc-titre')?.textContent?.trim()).toBe('FICHE DE PRESENTATION');
     const tables = Array.from(racine().querySelectorAll('table'));

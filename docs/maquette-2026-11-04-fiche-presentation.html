@@ -1,0 +1,222 @@
+<title>Fiche de présentation du plan</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Maquettes du 04/11/2026 — l'onglet « Fiche de présentation » de l'écran du plan (plan 00001/PPM-AGPM/CNM/2026).
+     Règle : le document garde sa STRUCTURE officielle (nature, trois listes, leurs colonnes et intitulés, justification) ; seule la
+     présentation change. Palette : bloc « DESIGN INSTITUTIONNEL » de styles.scss ; deux graisses ; aucun texte bleu ; ni dégradé ni ombre. */
+  :root {
+    color-scheme: light;
+    --menu-fond: #0C3A5B; --menu-sec: #A9BCCD; --onglet-actif-fond: #EAF2FF; --page-fond: #E9EEF3; --carte-fond: #FFFFFF;
+    --tableau-entete: #EEF1F4; --ligne-survol: #F7F8FA; --bordure: #D9DEE3; --bordure-champ: #868E96; --texte: #1F2328;
+    --texte-secondaire: #5F6368; --or: #F5B800; --retard-fond: #FDE2E2; --retard-texte: #8A1C1C; --examen-fond: #FFF1C2;
+    --examen-texte: #6B4E00; --favorable-fond: #E3F4EA; --favorable-texte: #1E6B3A; --neutre-fond: #ECEEF1; --neutre-texte: #3F464D;
+    --police: 'Segoe UI', Roboto, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page-fond); color: var(--texte); font: 14px/1.5 var(--police); }
+  .page { max-width: 1180px; margin: 0 auto; padding-block: 24px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 34px; }
+  h1 { margin: 0; font-size: 1.5rem; font-weight: 500; text-wrap: balance; }
+  h2 { margin: 0; font-size: 1.1rem; font-weight: 500; }
+  p { margin: 0; max-width: 78ch; }
+  .intro, .discret { color: var(--texte-secondaire); }
+  .discret { font-size: 0.8125rem; }
+  .variante { display: grid; gap: 10px; }
+  .variante__tete { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: baseline; }
+  .lettre { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--menu-fond); color: #fff; font-weight: 500; }
+  .pour { font-size: 0.8125rem; color: var(--texte-secondaire); }
+  .avis { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 6px 16px; font-size: 0.8125rem; }
+  .avis b { font-weight: 500; } .plus { color: var(--favorable-texte); } .moins { color: var(--retard-texte); }
+  .doc { display: grid; gap: 16px; padding: 22px 24px; border: 1px solid var(--bordure); border-radius: 8px; background: var(--carte-fond); min-width: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+  th, td { text-align: left; padding: 7px 10px; border: 1px solid var(--bordure); vertical-align: top; }
+  th { background: var(--tableau-entete); font-weight: 500; font-size: 0.75rem; }
+  td.m, th.m { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .defile { overflow-x: auto; }
+  .k { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texte-secondaire); }
+  .pill { display: inline-block; padding: 0 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 500; white-space: nowrap; }
+  .p-ex { background: var(--examen-fond); color: var(--examen-texte); } .p-ne { background: var(--neutre-fond); color: var(--neutre-texte); }
+  .p-fa { background: var(--favorable-fond); color: var(--favorable-texte); } .p-bl { background: var(--onglet-actif-fond); color: var(--texte); }
+
+  /* A — sections à bandeau */
+  .A .titre { text-align: center; font-size: 1.05rem; font-weight: 500; letter-spacing: 0.04em; }
+  .A .nature { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; justify-content: center; }
+  .A .sec { border: 1px solid var(--bordure); border-radius: 8px; overflow: hidden; }
+  .A .sec__tete { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; justify-content: space-between; padding: 9px 14px; background: var(--menu-fond); color: #fff; }
+  .A .sec__tete b { font-weight: 500; }
+  .A .sec__tete span { color: var(--menu-sec); font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
+  .A .sec table th, .A .sec table td { border-left: 0; border-right: 0; }
+  .A .sec table tr:last-child td { border-bottom: 0; }
+  .A .sec tbody tr:nth-child(even) td { background: var(--ligne-survol); }
+  .A .vide { padding: 12px 14px; color: var(--texte-secondaire); font-style: italic; }
+  .A .total td { background: var(--tableau-entete) !important; font-weight: 500; }
+  .A .justif { padding: 12px 14px; border-left: 4px solid var(--menu-fond); background: var(--onglet-actif-fond); border-radius: 0 6px 6px 0; }
+
+  /* B — chiffres en tête */
+  .B .chiffres { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 10px; }
+  .B .chiffre { display: grid; gap: 2px; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--bordure); }
+  .B .chiffre b { font-size: 1.15rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .B .chiffre span { font-size: 0.8125rem; color: var(--texte-secondaire); }
+  .B .c1 { background: var(--examen-fond); border-color: #F0D98A; } .B .c2 { background: var(--neutre-fond); } .B .c3 { background: var(--onglet-actif-fond); border-color: #BFD3F2; }
+  .B .sec { display: grid; gap: 8px; }
+  .B .sec h3 { margin: 0; font-size: 0.95rem; font-weight: 500; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .B .num { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--menu-fond); color: #fff; font-size: 0.8rem; }
+
+  /* C — feuille officielle */
+  .C .feuille { max-width: 820px; margin: 0 auto; padding: 36px 44px; background: var(--carte-fond); border: 1px solid var(--bordure); display: grid; gap: 14px; }
+  .C .rep { display: grid; grid-template-columns: 1fr auto; gap: 4px 20px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .C .rep .droite { text-align: right; }
+  .C .filet { height: 3px; background: linear-gradient(90deg, transparent, transparent); border-top: 1px solid var(--texte); border-bottom: 1px solid var(--texte); height: 4px; }
+  .C .titre { text-align: center; font-size: 1.1rem; font-weight: 500; letter-spacing: 0.08em; }
+  .C h3 { margin: 6px 0 0; font-size: 0.875rem; font-weight: 500; }
+  .C table th { background: transparent; border-color: var(--texte-secondaire); }
+  .C table td { border-color: var(--bordure-champ); }
+  .C .signature { display: grid; justify-items: end; gap: 34px; margin-top: 10px; font-size: 0.8125rem; }
+
+  /* D — tableau unique à groupes */
+  .D .groupe td { background: var(--menu-fond); color: #fff; font-weight: 500; }
+  .D .groupe td span { color: var(--menu-sec); font-weight: 400; margin-left: 10px; }
+  .D .groupe.vide td { background: var(--neutre-fond); color: var(--texte); }
+  .D .groupe.vide td span { color: var(--texte-secondaire); }
+  .D .barre { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+  .D .filtres { display: flex; flex-wrap: wrap; gap: 6px; }
+  .D .filtre { padding: 4px 10px; border: 1px solid var(--bordure-champ); border-radius: 999px; font-size: 0.8125rem; background: var(--carte-fond); }
+  .D .filtre.on { background: var(--menu-fond); border-color: var(--menu-fond); color: #fff; }
+</style>
+
+<div class="page">
+  <header>
+    <h1>La fiche de présentation du plan : quatre présentations</h1>
+    <p class="intro">Maquettes du 4 novembre 2026, sur le plan 00001/PPM-AGPM/CNM/2026 du Ministère des Travaux publics. Toutes gardent la structure officielle de la fiche — nature du dossier, les trois listes avec leurs colonnes, la justification — et ne changent que sa lecture.</p>
+  </header>
+
+  <!-- A -->
+  <section class="variante A">
+    <div class="variante__tete"><span class="lettre">A</span><h2>Sections à bandeau, totaux par liste</h2><span class="pour">Chaque liste a son bandeau bleu nuit, son nombre de marchés et son total.</span></div>
+    <div class="doc">
+      <div class="titre">FICHE DE PRÉSENTATION</div>
+      <div class="nature"><span class="k">Nature du dossier</span><b style="font-weight:500">Projet de plan de passation des marchés de l'année 2026, initial</b></div>
+      <div class="sec">
+        <div class="sec__tete"><b>1. Marchés à passer par mode dérogatoire, avec justifications</b><span>2 marchés · 193 200 000 000,00 Ar</span></div>
+        <div class="defile"><table>
+          <thead><tr><th>Objet du marché</th><th class="m">Montant estimatif</th><th>Mode de passation</th><th>Justification</th></tr></thead>
+          <tbody>
+            <tr><td>Travaux de réhabilitation de la RNS 13 dans la Ville de Fort Dauphin et dans la Ville de Betroka</td><td class="m">40 000 000 000,00</td><td>Marché de gré à gré PPP</td><td>test just</td></tr>
+            <tr><td>Travaux d'aménagement de la route reliant : Ilempona (PK 0+000) au Pont de Belanitra (PK 62+721) dans la Région Vakinankaratra</td><td class="m">153 200 000 000,00</td><td>Marché de gré à gré</td><td>Global just test</td></tr>
+            <tr class="total"><td>Total</td><td class="m">193 200 000 000,00</td><td colspan="2"></td></tr>
+          </tbody></table></div>
+      </div>
+      <div class="sec">
+        <div class="sec__tete"><b>2. Marchés à délais aménagés, avec justifications</b><span>aucun</span></div>
+        <div class="vide">Aucun marché à délais aménagés.</div>
+      </div>
+      <div class="sec">
+        <div class="sec__tete"><b>3. Contrats-cadres</b><span>6 marchés · 260 400 000 000,00 Ar</span></div>
+        <div class="defile"><table>
+          <thead><tr><th>Objet du marché</th><th class="m">Montant estimatif</th><th>Mode de passation</th><th class="m">Délai de remise des offres</th></tr></thead>
+          <tbody>
+            <tr><td>Travaux de réhabilitation de la route RIP 71 vers Ambohimiarina (Contrat Cadre) (Relance)</td><td class="m">2 400 000 000,00</td><td>Consultation de prix ouverte</td><td class="m">10 jours</td></tr>
+            <tr><td>Travaux de réhabilitation de la route RNT 36 reliant Carrefour RNP4 - Ampanotokana - Miantso - Firavahana - Fenoarivobe (Contrat cadre)</td><td class="m">150 000 000 000,00</td><td>Appel d'offres ouvert</td><td class="m">13 jours</td></tr>
+            <tr><td>Travaux de réhabilitation de la route reliant Ivohibe et Antambohobe dans la région Ihorombe (Contrat Cadre)</td><td class="m">65 000 000 000,00</td><td>Appel d'offres ouvert</td><td class="m">13 jours</td></tr>
+            <tr><td>Travaux de réhabilitation de la route reliant croisement RN25 jusqu'à Nosy Varika de la RNS11 (Contrat cadre)</td><td class="m">16 000 000 000,00</td><td>Appel d'offres ouvert</td><td class="m">12 jours</td></tr>
+            <tr><td>Travaux d'aménagement de la voie rapide dans la Commune Urbaine de Sambava (contrat cadre)</td><td class="m">15 000 000 000,00</td><td>Appel d'offres ouvert</td><td class="m">14 jours</td></tr>
+            <tr><td>Travaux d'entretien périodique des voies urbaines de la Commune de Sambava (contrat cadre)</td><td class="m">12 000 000 000,00</td><td>Appel d'offres ouvert</td><td class="m">14 jours</td></tr>
+            <tr class="total"><td>Total</td><td class="m">260 400 000 000,00</td><td colspan="2"></td></tr>
+          </tbody></table></div>
+      </div>
+      <div class="justif"><span class="k">Justification</span><br />test</div>
+    </div>
+    <div class="avis"><span class="plus"><b>+</b> chaque liste se repère à son bandeau ; le nombre et le total se lisent sans calculer ; une ligne sur deux teintée</span><span class="moins"><b>−</b> ajoute deux informations (nombre, total) que la fiche officielle ne porte pas</span></div>
+  </section>
+
+  <!-- B -->
+  <section class="variante B">
+    <div class="variante__tete"><span class="lettre">B</span><h2>Trois chiffres en tête, puis les listes</h2><span class="pour">L'essentiel de la fiche avant le détail.</span></div>
+    <div class="doc">
+      <div style="display:flex;flex-wrap:wrap;gap:8px 14px;align-items:baseline;justify-content:space-between"><span style="font-size:1.05rem;font-weight:500">Fiche de présentation</span><span class="discret">Projet de plan de passation des marchés de l'année 2026, initial</span></div>
+      <div class="chiffres">
+        <div class="chiffre c1"><span>Mode dérogatoire</span><b>2 marchés</b><span>193 200 000 000 Ar · justifiés</span></div>
+        <div class="chiffre c2"><span>Délais aménagés</span><b>aucun</b><span>—</span></div>
+        <div class="chiffre c3"><span>Contrats-cadres</span><b>6 marchés</b><span>260 400 000 000 Ar · 10 à 14 jours de remise</span></div>
+      </div>
+      <div class="sec"><h3><span class="num">1</span>Marchés à passer par mode dérogatoire, avec justifications <span class="pill p-ex">2</span></h3>
+        <div class="defile"><table><thead><tr><th>Objet du marché</th><th class="m">Montant estimatif</th><th>Mode de passation</th><th>Justification</th></tr></thead><tbody>
+          <tr><td>Travaux de réhabilitation de la RNS 13 dans la Ville de Fort Dauphin et dans la Ville de Betroka</td><td class="m">40 000 000 000,00</td><td>Marché de gré à gré PPP</td><td>test just</td></tr>
+          <tr><td>Travaux d'aménagement de la route reliant : Ilempona (PK 0+000) au Pont de Belanitra (PK 62+721)…</td><td class="m">153 200 000 000,00</td><td>Marché de gré à gré</td><td>Global just test</td></tr>
+        </tbody></table></div></div>
+      <div class="sec"><h3><span class="num">2</span>Marchés à délais aménagés, avec justifications <span class="pill p-ne">0</span></h3><p class="discret">Aucun marché à délais aménagés.</p></div>
+      <div class="sec"><h3><span class="num">3</span>Contrats-cadres <span class="pill p-bl">6</span></h3>
+        <div class="defile"><table><thead><tr><th>Objet du marché</th><th class="m">Montant estimatif</th><th>Mode de passation</th><th class="m">Délai de remise des offres</th></tr></thead><tbody>
+          <tr><td>Travaux de réhabilitation de la route RIP 71 vers Ambohimiarina (Contrat Cadre) (Relance)</td><td class="m">2 400 000 000,00</td><td>Consultation de prix ouverte</td><td class="m">10 jours</td></tr>
+          <tr><td>Travaux de réhabilitation de la route RNT 36 reliant Carrefour RNP4 - … - Fenoarivobe (Contrat cadre)</td><td class="m">150 000 000 000,00</td><td>Appel d'offres ouvert</td><td class="m">13 jours</td></tr>
+          <tr><td colspan="4" class="discret" style="text-align:center">… 4 autres contrats-cadres</td></tr>
+        </tbody></table></div></div>
+      <p><span class="k">Justification</span> — test</p>
+    </div>
+    <div class="avis"><span class="plus"><b>+</b> on sait en trois chiffres ce que la Commission devra regarder de près (dérogations, délais, contrats-cadres)</span><span class="moins"><b>−</b> les chiffres répètent les listes juste en dessous</span></div>
+  </section>
+
+  <!-- C -->
+  <section class="variante C">
+    <div class="variante__tete"><span class="lettre">C</span><h2>La feuille officielle</h2><span class="pour">La fiche telle qu'on l'imprime et la signe : page centrée, en-tête administratif, signature.</span></div>
+    <div class="doc" style="background:var(--page-fond);border:0;padding:0">
+      <div class="feuille">
+        <div class="rep"><span>Ministère des Travaux Publics</span><span class="droite">Repoblikan'i Madagasikara</span><span>Personne responsable des marchés publics</span><span class="droite">Fitiavana – Tanindrazana – Fandrosoana</span></div>
+        <div class="filet"></div>
+        <div class="titre">FICHE DE PRÉSENTATION</div>
+        <p><u>Nature du dossier</u> : <b style="font-weight:500">Projet de plan de passation des marchés de l'année 2026, initial</b></p>
+        <h3>1. Liste des marchés à passer par mode dérogatoire avec justifications</h3>
+        <div class="defile"><table><thead><tr><th>Objet du marché</th><th class="m">Montant estimatif</th><th>Mode de passation</th><th>Justification</th></tr></thead><tbody>
+          <tr><td>Travaux de réhabilitation de la RNS 13 dans la Ville de Fort Dauphin et dans la Ville de Betroka</td><td class="m">40 000 000 000,00</td><td>Marché de gré à gré PPP</td><td>test just</td></tr>
+          <tr><td>Travaux d'aménagement de la route reliant : Ilempona au Pont de Belanitra…</td><td class="m">153 200 000 000,00</td><td>Marché de gré à gré</td><td>Global just test</td></tr>
+        </tbody></table></div>
+        <h3>2. Liste des marchés à délais aménagés avec justifications</h3>
+        <p>Aucun marché à délais aménagés.</p>
+        <h3>3. Liste des contrats-cadres</h3>
+        <div class="defile"><table><thead><tr><th>Objet du marché</th><th class="m">Montant estimatif</th><th>Mode de passation</th><th class="m">Délai de remise des offres</th></tr></thead><tbody>
+          <tr><td>Travaux de réhabilitation de la route RIP 71 vers Ambohimiarina (Contrat Cadre) (Relance)</td><td class="m">2 400 000 000,00</td><td>Consultation de prix ouverte</td><td class="m">10 jours</td></tr>
+          <tr><td colspan="4" class="discret" style="text-align:center">… 5 autres contrats-cadres</td></tr>
+        </tbody></table></div>
+        <p><u>Justification</u> : test</p>
+        <div class="signature"><span>Fait à Antananarivo, le 28/10/2026</span><span>La Personne responsable des marchés publics<br /><b style="font-weight:500">RANDRIANARIVO La Personne</b></span></div>
+      </div>
+    </div>
+    <div class="avis"><span class="plus"><b>+</b> fidèle au papier signé : la PRMP et la Commission reconnaissent la pièce</span><span class="moins"><b>−</b> en-tête et signature sont reconstitués (à valider) ; moins lisible à l'écran qu'un tableau d'application</span></div>
+  </section>
+
+  <!-- D -->
+  <section class="variante D">
+    <div class="variante__tete"><span class="lettre">D</span><h2>Un seul tableau, groupé par liste</h2><span class="pour">Les trois listes l'une sous l'autre dans un tableau, avec un filtre par liste.</span></div>
+    <div class="doc">
+      <div class="barre"><span style="font-size:1.05rem;font-weight:500">Fiche de présentation · plan de l'année 2026, initial</span>
+        <div class="filtres"><span class="filtre on">Toutes (8)</span><span class="filtre">Dérogatoires (2)</span><span class="filtre">Délais aménagés (0)</span><span class="filtre">Contrats-cadres (6)</span></div></div>
+      <div class="defile"><table>
+        <thead><tr><th>Objet du marché</th><th class="m">Montant estimatif</th><th>Mode de passation</th><th>Justification ou délai de remise</th></tr></thead>
+        <tbody>
+          <tr class="groupe"><td colspan="4">1. Marchés à passer par mode dérogatoire, avec justifications<span>2 marchés · 193 200 000 000,00 Ar</span></td></tr>
+          <tr><td>Travaux de réhabilitation de la RNS 13 dans la Ville de Fort Dauphin et dans la Ville de Betroka</td><td class="m">40 000 000 000,00</td><td>Marché de gré à gré PPP</td><td>test just</td></tr>
+          <tr><td>Travaux d'aménagement de la route reliant : Ilempona au Pont de Belanitra…</td><td class="m">153 200 000 000,00</td><td>Marché de gré à gré</td><td>Global just test</td></tr>
+          <tr class="groupe vide"><td colspan="4">2. Marchés à délais aménagés, avec justifications<span>aucun</span></td></tr>
+          <tr class="groupe"><td colspan="4">3. Contrats-cadres<span>6 marchés · 260 400 000 000,00 Ar</span></td></tr>
+          <tr><td>Travaux de réhabilitation de la route RIP 71 vers Ambohimiarina (Contrat Cadre) (Relance)</td><td class="m">2 400 000 000,00</td><td>Consultation de prix ouverte</td><td>10 jours</td></tr>
+          <tr><td>Travaux de réhabilitation de la route RNT 36 reliant Carrefour RNP4 - … (Contrat cadre)</td><td class="m">150 000 000 000,00</td><td>Appel d'offres ouvert</td><td>13 jours</td></tr>
+          <tr><td colspan="4" class="discret" style="text-align:center">… 4 autres contrats-cadres</td></tr>
+        </tbody></table></div>
+      <p><span class="k">Justification</span> — test</p>
+    </div>
+    <div class="avis"><span class="plus"><b>+</b> compact, colonnes alignées d'une liste à l'autre, filtre rapide</span><span class="moins"><b>−</b> la 4ᵉ colonne change de sens selon la liste (justification ou délai) : écart à la structure officielle</span></div>
+  </section>
+
+  <section class="variante">
+    <h2>En résumé</h2>
+    <div class="doc defile" style="padding:0"><table>
+      <thead><tr><th>Variante</th><th>Ce qui change</th><th>Fidélité à la fiche officielle</th></tr></thead>
+      <tbody>
+        <tr><td><b style="font-weight:500">A — Bandeaux et totaux</b></td><td>bandeau bleu nuit par liste, nombre et total, lignes alternées, justification en encadré</td><td>structure intacte ; deux informations ajoutées</td></tr>
+        <tr><td><b style="font-weight:500">B — Chiffres en tête</b></td><td>trois chiffres de synthèse, listes numérotées dessous</td><td>structure intacte ; synthèse ajoutée</td></tr>
+        <tr><td><b style="font-weight:500">C — Feuille officielle</b></td><td>page centrée, en-tête administratif, signature</td><td>la plus fidèle au papier</td></tr>
+        <tr><td><b style="font-weight:500">D — Tableau groupé</b></td><td>un seul tableau à groupes, filtre par liste</td><td>écart : colonne commune à deux sens</td></tr>
+      </tbody>
+    </table></div>
+    <p class="discret">Ma recommandation : <b>A</b>. Elle respecte la règle des documents officiels (structure gardée, présentation de l'application) et rend la fiche plus lisible à l'écran ; les totaux aident la Commission sans rien retirer.</p>
+  </section>
+</div>
