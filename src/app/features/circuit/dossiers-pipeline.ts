@@ -10,7 +10,6 @@ import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
 import { lienVersLePlan } from '../prmp/plan-passation/cible-dossier';
 import { Dispatch, Dossier, Examen, Page, PvExamen, Reception, Verification } from '../../models';
 import {
-  ControleurService,
   DispatchService,
   DossierService,
   EntiteContractService,
@@ -23,11 +22,9 @@ import {
 } from '../../services';
 import {
   CIRCUIT_ETAPES,
-  CircuitTimeline,
   EtapeInfo,
   StatutBadge,
   ReputeApprouve,
-  etapeIndexForDossier,
   etapeSuivante,
   statutDossierLabel,
 } from '../../shared/circuit';
@@ -36,25 +33,21 @@ import { LienDossier } from './page-dossier/lien-dossier';
 import { DetailPvModal } from './detail-pv-modal';
 import { DispatchForm, DispatchItem } from './dispatch-form';
 import { ReceptionForm } from './reception-form';
-import { ApercuDossier } from './dossier/apercu-dossier';
-import { DeuxVolets } from '../../shared/ui/deux-volets';
 
-/** Affichage de la liste : deux volets (par défaut), frise ou tableau. */
-type VuePipeline = 'volets' | 'frise' | 'tableau';
 
 /**
  * Pipeline des dossiers (lecture seule) : liste filtrée par le backend selon le
  * profil/localité, avec statut et timeline du circuit. Réutilisé comme tableau de
  * bord par plusieurs profils ; le titre vient de `route.data.title`.
  *
- * Lot L4-F6 : la ligne (tableau) et la référence (frise) mènent à la PAGE du dossier ; la modale de
+ * Lot L4-F6 : la ligne du tableau mène à la PAGE du dossier ; la modale de
  * consultation quitte l'écran. Le `returnUrl` porte la page et le mot-clé, désormais dans l'URL — le
  * retour rend la liste telle qu'on l'a quittée.
  */
 @Component({
   selector: 'app-dossiers-pipeline',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, NgTemplateOutlet, StatutBadge, ReputeApprouve, CircuitTimeline, DetailPvModal, EtatErreur, DispatchForm, ReceptionForm, DeuxVolets, ApercuDossier],
+  imports: [RouterLink, NgTemplateOutlet, StatutBadge, ReputeApprouve, DetailPvModal, EtatErreur, DispatchForm, ReceptionForm],
   template: `
     <section class="pipeline">
       <header class="page-header pipeline__header">
@@ -62,11 +55,6 @@ type VuePipeline = 'volets' | 'frise' | 'tableau';
         <div>
           @if (perimetre) { <div class="page-subtitle">{{ perimetre }}</div> }
           <h1 class="page-title">{{ title }}</h1>
-        </div>
-        <div class="pipeline__vue" role="group" aria-label="Choix de l'affichage">
-          <button type="button" class="btn btn-sm" [class.btn-primary]="vue() === 'volets'" [class.btn-outline]="vue() !== 'volets'" [attr.aria-pressed]="vue() === 'volets'" (click)="setVue('volets')">Deux volets</button>
-          <button type="button" class="btn btn-sm" [class.btn-primary]="vue() === 'frise'" [class.btn-outline]="vue() !== 'frise'" [attr.aria-pressed]="vue() === 'frise'" (click)="setVue('frise')">Frise</button>
-          <button type="button" class="btn btn-sm" [class.btn-primary]="vue() === 'tableau'" [class.btn-outline]="vue() !== 'tableau'" [attr.aria-pressed]="vue() === 'tableau'" (click)="setVue('tableau')">Tableau</button>
         </div>
       </header>
 
@@ -77,38 +65,7 @@ type VuePipeline = 'volets' | 'frise' | 'tableau';
       } @else if (visibleDossiers().length === 0) {
         <p class="text-muted">{{ messageVide }}</p>
       } @else {
-        @if (vue() === 'volets') {
-        <!-- ⚠️ 31/10 (pilote, Espace de travail, lot 3c) — deux volets : les dossiers à gauche, l'aperçu du dossier choisi à
-             droite (ses gestes, sa frise, son identité), sans changer de page ; le premier est choisi d'office. -->
-        <app-deux-volets [ouvert]="!!selection()" [cle]="selection()?.idDossier ?? null" libelleListe="Dossiers" libelleDetail="Aperçu du dossier"
-                         invite="Choisissez un dossier : son aperçu s’affiche ici.">
-          <ul liste class="pipeline__volet">
-            @for (d of visibleDossiers(); track d.idDossier) {
-              <li class="pv-item" [class.pv-item--on]="selection()?.idDossier === d.idDossier">
-                <button type="button" class="pv-ligne" [attr.aria-pressed]="selection()?.idDossier === d.idDossier" (click)="choisi.set(d.idDossier)">
-                  <span class="pv-ligne__ref">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</span>
-                  <span class="pv-ligne__ent">{{ entiteLabel(d) }}</span>
-                  <span class="pv-ligne__bas">
-                    <app-statut-badge [statut]="d.statut" [label]="badgeLabel(d.statut)" />
-                    @if (cibleVerif(d); as c) { <span class="pipeline__cible" [class.pipeline__cible--moi]="c.moi">{{ c.moi ? 'À vérifier par vous' : 'À vérifier par ' + c.nom }}</span> }
-                  </span>
-                </button>
-              </li>
-            }
-          </ul>
-          <div detail>
-            @for (d of selectionListe(); track d.idDossier) {
-              @let info = etapeInfo(d);
-              <app-apercu-dossier [dossier]="d" [lien]="lien.commandes(d.idDossier)" [params]="lien.params(retour())">
-                <span gestes class="pv-gestes"><ng-container [ngTemplateOutlet]="actionsTpl" [ngTemplateOutletContext]="{ $implicit: d, info }" /></span>
-                @if (showTimeline) {
-                  <div frise class="pv-frise"><app-circuit-timeline [active]="etape(d)" [sublabels]="sublabels(d)" [acteurs]="acteurs(d)" /></div>
-                }
-              </app-apercu-dossier>
-            }
-          </div>
-        </app-deux-volets>
-        } @else if (vue() === 'tableau') {
+        <!-- ⚠️ 04/11 (pilote) — « Deux volets » et « Frise » supprimés : la liste des dossiers est un tableau, chez tous les profils. -->
         <div class="pipeline__search">
           <input
             type="search"
@@ -164,7 +121,11 @@ type VuePipeline = 'volets' | 'frise' | 'tableau';
                        Lot L4-F6 : il mène à la PAGE du dossier, avec le retour vers cette liste. -->
                   <!-- ⚠️ 04/11 (pilote) — chez le Président et le CC, la ligne mène au PLAN, sur la ligne du dossier (comme « Tous mes dossiers »
                        de la PRMP) ; la page du dossier reste à un clic dans le volet de la ligne, et les gestes dans la colonne Actions. -->
-                  <td><a class="lien-ligne" [routerLink]="lienLigne(d).commandes" [queryParams]="lienLigne(d).params">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</a></td>
+                  <td>
+                    <a class="lien-ligne" [routerLink]="lienLigne(d).commandes" [queryParams]="lienLigne(d).params">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</a>
+                    <!-- ⚠️ Rattachements (2026-09-01) — badge de CIBLAGE seulement (chaîne incomplète : rien), jamais une garde. -->
+                    @if (cibleVerif(d); as c) { <span class="pipeline__cible" [class.pipeline__cible--moi]="c.moi">{{ c.moi ? 'À vérifier par vous' : 'À vérifier par ' + c.nom }}</span> }
+                  </td>
                   <td style="white-space:nowrap;">{{ dateReceptionFmt(d) || '—' }}</td>
                   <td>{{ typeDossierLabel(d) }}</td>
                   <td>{{ entiteLabel(d) }}</td>
@@ -182,33 +143,6 @@ type VuePipeline = 'volets' | 'frise' | 'tableau';
             </tbody>
           </table>
         </div>
-      } @else {
-        <ul class="pipeline__list">
-          @for (d of visibleDossiers(); track d.idDossier) {
-            <li class="dossier-card">
-              @let info = etapeInfo(d);
-              <div class="dossier-card__head">
-                <a class="dossier-card__ref lien-ligne" [routerLink]="lienLigne(d).commandes" [queryParams]="lienLigne(d).params">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}@if (source) { · {{ entiteLabel(d) }}}</a>
-                <!-- ⚠️ Rattachements (2026-09-01) — badge de CIBLAGE seulement : null = chaîne
-                     incomplète, rien à afficher ; et aucune action n'est retirée sur les dossiers
-                     ciblés sur un collègue (pas de garde serveur). -->
-                @if (cibleVerif(d); as c) {
-                  <span class="pipeline__cible" [class.pipeline__cible--moi]="c.moi">
-                    {{ c.moi ? 'À vérifier par vous' : 'À vérifier par ' + c.nom }}
-                  </span>
-                }
-                <div class="dossier-card__head-right">
-                  <app-statut-badge [statut]="d.statut" [label]="badgeLabel(d.statut)" /><app-repute-approuve [le]="d.reputeApprouveLe" [court]="true" />
-                  <ng-container [ngTemplateOutlet]="actionsTpl" [ngTemplateOutletContext]="{ $implicit: d, info }" />
-                </div>
-              </div>
-              @if (showTimeline) {
-                <app-circuit-timeline [active]="etape(d)" [sublabels]="sublabels(d)" [acteurs]="acteurs(d)" />
-              }
-            </li>
-          }
-        </ul>
-        }
 
         <!-- File de travail sans endpoint paginé : le reste est déjà chargé, on le RÉVÈLE. -->
         @if (resteARendre() > 0) {
@@ -229,7 +163,7 @@ type VuePipeline = 'volets' | 'frise' | 'tableau';
       }
     </section>
 
-    <!-- Actions d'un dossier — partagées par la frise (cartes) et le tableau (colonne Actions). -->
+    <!-- Actions d'un dossier — colonne Actions du tableau. -->
     <ng-template #actionsTpl let-d let-info="info">
       <!-- « Voir détails » retiré (2026-09-12) : la consultation s'ouvre en cliquant la ligne / la carte. -->
       <!-- Actions contextuelles du TABLEAU DE BORD (2026-09-12) : l'action à faire par dossier, selon
@@ -287,20 +221,7 @@ type VuePipeline = 'volets' | 'frise' | 'tableau';
   `,
   styles: `
     /* ⚠️ 31/10 (Espace de travail, lot 3c) — volet de gauche : des lignes compactes ; la ligne choisie porte l'onglet actif. */
-    .pipeline__volet { list-style: none; margin: 0; padding: 0; }
-    .pv-item { border-bottom: 1px solid var(--bordure); }
-    .pv-item--on { background: var(--onglet-actif-fond); box-shadow: inset 3px 0 0 var(--menu-fond); }
-    .pv-ligne { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: flex; flex-direction: column; gap: 0.2rem; padding: 0.55rem 0.8rem; }
-    .pv-ligne:hover { background: var(--ligne-survol); }
-    .pv-item--on .pv-ligne:hover { background: transparent; }
-    .pv-ligne:focus-visible { outline: 2px solid var(--bouton-principal); outline-offset: -2px; }
-    .pv-ligne__ref { font-weight: 500; }
-    .pv-ligne__ent { font-size: var(--text-sm); color: var(--texte-secondaire); overflow-wrap: anywhere; }
-    .pv-ligne__bas { display: flex; flex-wrap: wrap; gap: 0.3rem 0.5rem; align-items: center; }
-    .pv-gestes { display: contents; }
-    .pv-frise { padding: 6px 0 2px; }
     .pipeline__header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-    .pipeline__vue { display: inline-flex; gap: 0.35rem; }
     .pipeline__search { margin-bottom: 0.75rem; }
     .pipeline__search .form-control { max-width: 32rem; }
     .empty-cell { text-align: center; color: var(--n-400); padding: 1.5rem; }
@@ -319,50 +240,6 @@ type VuePipeline = 'volets' | 'frise' | 'tableau';
     .lien-ligne::after { content: ''; position: absolute; inset: 0; }
     /* Les boutons d'action passent AU-DESSUS de l'overlay → cliquables indépendamment du clic-ligne. */
     .table-card table tr.ligne-clic .btn { position: relative; z-index: 1; }
-    .pipeline__list {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-    /* Carte de dossier : relief doux + élévation au survol, cohérent avec le design system.
-       position:relative ancre l'overlay du bouton-référence (clic n'importe où sur la carte ouvre le détail). */
-    .dossier-card {
-      position: relative;
-      background: var(--carte-fond);
-      border: 1px solid var(--n-200);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-sm);
-      padding: 0.9rem 1.15rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-      transition: var(--transition);
-      cursor: pointer;
-    }
-    .dossier-card:hover { border-color: var(--p-200); box-shadow: var(--shadow-lg); transform: translateY(-1px); }
-    /* Boutons d'action de la carte AU-DESSUS de l'overlay (cliquables indépendamment). */
-    .dossier-card .btn { position: relative; z-index: 1; }
-    .dossier-card__head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.75rem;
-      flex-wrap: wrap;
-    }
-    .dossier-card__head-right {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-    .dossier-card__ref {
-      font-weight: 500;
-      color: var(--n-800);
-      font-size: var(--text-md);
-    }
     /* Badge de ciblage (rattachements) : discret pour un collègue, accentué pour « les miens ». */
     .pipeline__cible {
       font-size: var(--text-sm);
@@ -373,6 +250,7 @@ type VuePipeline = 'volets' | 'frise' | 'tableau';
       padding: 0.1rem 0.55rem;
       white-space: nowrap;
     }
+    td .pipeline__cible { display: inline-block; margin-left: 0.5rem; }
     .pipeline__cible--moi {
       color: var(--p-700);
       background: var(--p-50);
@@ -421,24 +299,6 @@ export class DossiersPipeline {
   }
   private readonly entiteMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
-  /** Matricule → « nom prénoms » (référentiel des contrôleurs, en cache) : acteurs de la frise. */
-  private readonly controleurMap = signal<Map<string, string>>(new Map());
-  /**
-   * Affichage : deux volets (liste + aperçu, par défaut depuis le 31/10 — Espace de travail), frise (cartes) ou tableau ; choix
-   * mémorisé par navigateur (localStorage).
-   */
-  readonly vue = signal<VuePipeline>(this.lireVue());
-  /** Deux volets : le dossier choisi (le premier de la liste tant que rien n'est choisi, ou si le choisi n'y est plus). */
-  readonly choisi = signal<number | null>(null);
-  readonly selection = computed(() => {
-    const liste = this.visibleDossiers();
-    return liste.find((d) => d.idDossier === this.choisi()) ?? liste[0] ?? null;
-  });
-  /** Le dossier choisi en liste d'un élément : l'aperçu est recréé (et son contenu relu) quand il change. */
-  readonly selectionListe = computed(() => {
-    const d = this.selection();
-    return d ? [d] : [];
-  });
   /** Recherche par mot-clé du tableau (filtre client sur les colonnes affichées). */
   readonly recherche = signal(this.route.snapshot.queryParamMap.get('q') ?? '');
   /**
@@ -453,8 +313,6 @@ export class DossiersPipeline {
 
   protected readonly title = (this.route.snapshot.data['title'] as string) ?? 'Dossiers';
   protected readonly perimetre = (this.route.snapshot.data['perimetre'] as string | undefined) ?? null;
-  /** Frise du circuit par dossier ; désactivable via `route.data.timeline === false`. */
-  protected readonly showTimeline = (this.route.snapshot.data['timeline'] as boolean | undefined) ?? true;
   /** Bouton « Examiner » par dossier ; activé via `route.data.examenAction === true` (écran Examens). */
   protected readonly showExamenAction = (this.route.snapshot.data['examenAction'] as boolean | undefined) ?? false;
   /** Bouton « Vérifier » par dossier ; activé via `route.data.verifAction === true` (file Vérificateur). */
@@ -755,11 +613,6 @@ export class DossiersPipeline {
     this.lookups
       .lookup(LocaliteService, 'idLocalite', ['libelleLocalite'])
       .subscribe((m) => this.localiteMap.set(m));
-    // ⚠️ 2026-09-13 — noms des acteurs de la frise (infobulle au survol) : même référentiel que les
-    // écrans PV, chargé UNE fois et partagé (cache `ReferenceLookupService`).
-    this.lookups
-      .lookup(ControleurService, 'imControleur', ['nomCont', 'prenomsCont'])
-      .subscribe((m) => this.controleurMap.set(m));
     // Suppression d'un dossier propagée depuis un autre écran → retrait local immédiat de sa carte.
     this.dossiersRefresh.supprime$
       .pipe(takeUntilDestroyed())
@@ -1000,25 +853,6 @@ export class DossiersPipeline {
     });
   });
 
-  /** Lecture du choix d'affichage mémorisé (tolère un localStorage indisponible/bloqué). */
-  private lireVue(): VuePipeline {
-    try {
-      const v = localStorage.getItem('cnm-pipeline-vue');
-      return v === 'tableau' || v === 'frise' ? v : 'volets';
-    } catch {
-      return 'volets';
-    }
-  }
-  /** Bascule l'affichage et mémorise le choix (best-effort). */
-  setVue(v: VuePipeline): void {
-    this.vue.set(v);
-    try {
-      localStorage.setItem('cnm-pipeline-vue', v);
-    } catch {
-      /* localStorage indisponible : le choix ne persiste pas, sans conséquence. */
-    }
-  }
-
   /** Libellé contextuel du badge dans la file Vérificateur : « En attente PRMP » pour EN_ATTENTE_DECISION_PRMP. */
   badgeLabel(statut?: string): string | null {
     return statut === 'EN_ATTENTE_DECISION_PRMP' ? 'En attente PRMP' : null;
@@ -1067,36 +901,6 @@ export class DossiersPipeline {
     return map;
   });
 
-  etape(d: Dossier): number {
-    return etapeIndexForDossier(d.statut);
-  }
-
-  /**
-   * Libellés sous chaque point : date d'étape franchie ; sinon, statut sur l'étape en cours.
-   *
-   * ⚠️ Calculés UNE fois par jeu de données, pas à chaque appel : ce tableau est passé en entrée
-   * à `app-circuit-timeline` (OnPush). Reconstruit à chaque cycle, il changeait d'identité et
-   * forçait le re-rendu de la frise de CHAQUE ligne du pipeline (AUDIT.md P6).
-   */
-  private readonly sublabelsByDossier = computed(() => {
-    const dates = this.datesByDossier();
-    const map = new Map<number, string[]>();
-    for (const d of this.visibleDossiers()) {
-      const datesDossier = dates.get(d.idDossier) ?? [];
-      const active = etapeIndexForDossier(d.statut);
-      map.set(
-        d.idDossier,
-        CIRCUIT_ETAPES.map((_, i) =>
-          datesDossier[i]
-            ? DossiersPipeline.dateCourte(datesDossier[i] as string)
-            : i === active
-              ? statutDossierLabel(d.statut)
-              : '',
-        ),
-      );
-    }
-    return map;
-  });
   /**
    * `dd/MM/yyyy` depuis une date/heure serveur (`yyyy-MM-dd[THH:mm]` ou `yyyy-MM-dd HH:mm`) : on
    * lit les 10 premiers caractères (la partie date, quel que soit le séparateur d'heure).
@@ -1105,92 +909,6 @@ export class DossiersPipeline {
     const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
     return m ? `${m[3]}/${m[2]}/${m[1]}` : s;
   }
-  /** Référence STABLE (voir `sublabelsByDossier`) — ne jamais reconstruire le tableau ici. */
-  private static readonly SANS_LIBELLE: string[] = [];
-  sublabels(d: Dossier): string[] {
-    return this.sublabelsByDossier().get(d.idDossier) ?? DossiersPipeline.SANS_LIBELLE;
-  }
-
-  /**
-   * ⚠️ Demande pilote (2026-09-13) — au survol de chaque point de la frise, l'ACTEUR de l'étape.
-   * Source PRIORITAIRE : `acteursEtapes` du DTO (backend, en lot, indépendant de la portée — le
-   * Président « toutes localités » et la PRMP y lisent l'attributaire alors que leurs jointures sont
-   * vides). Repli clé par clé sur la jointure locale (réception → dispatch → examen → PV → vérif,
-   * matricules résolus par le référentiel des contrôleurs) tant que le champ n'est pas servi — même
-   * schéma que `datesEtapes`, pour que l'infobulle et la date d'un point viennent de la même source.
-   * Une phrase par étape (« Examiné par … ») lève l'ambiguïté « qui a fait quoi » ; entrée vide =
-   * pas de bulle. Mémoïsé comme `sublabelsByDossier` : référence stable pour l'OnPush de la frise.
-   */
-  private readonly acteursByDossier = computed(() => {
-    const noms = this.controleurMap();
-    const recs = this.receptions();
-    const disps = this.dispatchs();
-    const exs = this.examens();
-    const pvs = this.pvs();
-    const verifs = this.verifications();
-    const nom = (im?: string | null): string => (im ? (noms.get(im) ?? '') : '');
-    const map = new Map<number, string[]>();
-    for (const d of this.visibleDossiers()) {
-      const rOfD = recs.filter((r) => r.idDossier === d.idDossier);
-      const recIds = new Set(rOfD.map((r) => r.idReception));
-      const dOfD = disps.filter((x) => recIds.has(x.idReception));
-      const dispIds = new Set(dOfD.map((x) => x.idDispatch));
-      const eOfD = exs.filter((e) => e.idDispatch != null && dispIds.has(e.idDispatch));
-      const exIds = new Set(eOfD.map((e) => e.idExamen));
-      const pOfD = pvs.filter((p) => exIds.has(p.idExamen));
-      const pvIds = new Set(pOfD.map((p) => p.idPv));
-      const vOfD = verifs.filter((v) => recIds.has(v.idReception) || (v.idPv != null && pvIds.has(v.idPv)));
-      const recInit = rOfD.find((r) => r.numPassage === 1) ?? rOfD[0];
-      const pv = pOfD[0];
-      // Signataires EFFECTIFS du PV (part datée), dans l'ordre Membre · CC · Président.
-      const parts: [string | null | undefined, string | null | undefined][] = [
-        [pv?.dateSignatureMembre, pv?.imCtrlMembre],
-        [pv?.dateSignatureCc, pv?.imCtrlCc],
-        [pv?.dateSignaturePresident, pv?.imCtrlPresident],
-      ];
-      const signataires = parts.filter(([date]) => !!date).map(([, im]) => nom(im)).filter(Boolean).join(' · ');
-      // Noms par JOINTURE, alignés sur CIRCUIT_ETAPES (RECEPTION, DISPATCH, EXAMEN, PROJET_PV, PV_SIGNE,
-      // VERIFICATION, CLOTURE) — repli quand le DTO ne sert pas la clé.
-      const parJointure = [
-        nom(recInit?.imCtrlRecept),
-        nom(dOfD[0]?.imCtrlMembre),
-        nom(eOfD[0]?.imCtrlMembre),
-        nom(pv?.imCtrlMembre),
-        signataires,
-        nom(vOfD[0]?.imCtrlVerif),
-        nom((vOfD.find((v) => v.obsLevees) ?? vOfD[0])?.imCtrlVerif),
-      ];
-      // ⚠️ Acteurs du DTO (`acteursEtapes`, noms nus) PRIORITAIRES ; repli clé par clé sur la jointure.
-      const parDto = d.acteursEtapes;
-      map.set(
-        d.idDossier,
-        CIRCUIT_ETAPES.map((e, i) =>
-          DossiersPipeline.phrase(DossiersPipeline.PREFIXES_ACTEUR[i], (parDto?.[e.key] ?? undefined) || parJointure[i]),
-        ),
-      );
-    }
-    return map;
-  });
-  /** Préfixe de l'infobulle par étape, aligné sur `CIRCUIT_ETAPES` (le backend sert des noms nus). */
-  private static readonly PREFIXES_ACTEUR: readonly string[] = [
-    'Réceptionné par',
-    'Attribué à',
-    'Examiné par',
-    'Projet de PV rédigé par',
-    'Signé par',
-    'Vérifié par',
-    'Clôturé par',
-  ];
-  /** « Préfixe Nom » ; chaîne vide (aucune infobulle) quand le nom est inconnu. */
-  private static phrase(prefixe: string, nom: string): string {
-    return nom ? `${prefixe} ${nom}` : '';
-  }
-  /** Référence STABLE (voir `acteursByDossier`) — ne jamais reconstruire le tableau ici. */
-  private static readonly SANS_ACTEUR: string[] = [];
-  acteurs(d: Dossier): string[] {
-    return this.acteursByDossier().get(d.idDossier) ?? DossiersPipeline.SANS_ACTEUR;
-  }
-
   etapeInfo(d: Dossier): EtapeInfo {
     return etapeSuivante(d.statut);
   }

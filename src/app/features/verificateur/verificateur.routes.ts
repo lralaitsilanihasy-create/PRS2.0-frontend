@@ -20,7 +20,7 @@ export const VERIFICATEUR_ROUTES: Routes = [
   {
     path: 'a-verifier',
     loadComponent: () => import('../circuit/dossiers-pipeline').then((m) => m.DossiersPipeline),
-    data: { title: 'Dossiers à vérifier', timeline: false, source: 'a-verifier', verifAction: true },
+    data: { title: 'Dossiers à vérifier', source: 'a-verifier', verifAction: true },
   },
   {
     path: 'verifies',
