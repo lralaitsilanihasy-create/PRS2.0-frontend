@@ -205,6 +205,8 @@ export class MainLayout {
 
   /** Rubrique dont le menu déroulant est ouvert (une seule à la fois), `null` sinon. */
   readonly rubriqueOuverte = signal<string | null>(null);
+  /** ⚠️ 04/11 (pilote) — le menu sous le nom de l'utilisateur (créer un compte UGPM, mot de passe, déconnexion). */
+  readonly menuUtilisateurOuvert = signal(false);
   private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
 
   basculerRubrique(cle: string): void {
@@ -212,6 +214,10 @@ export class MainLayout {
   }
   /** Échap ferme le menu déroulant ouvert et rend le focus à son bouton (sans effet si aucun n'est ouvert). */
   fermerRubrique(): void {
+    if (this.menuUtilisateurOuvert()) {
+      this.menuUtilisateurOuvert.set(false);
+      this.hote.nativeElement.querySelector<HTMLButtonElement>('.entete__utilisateur')?.focus();
+    }
     const cle = this.rubriqueOuverte();
     if (!cle) return;
     this.rubriqueOuverte.set(null);
@@ -219,6 +225,8 @@ export class MainLayout {
   }
   /** Un clic hors du menu ferme le déroulant ouvert. */
   clicDocument(ev: Event): void {
+    const compte = this.hote.nativeElement.querySelector('.entete__compte');
+    if (this.menuUtilisateurOuvert() && compte && ev.target instanceof Node && !compte.contains(ev.target)) this.menuUtilisateurOuvert.set(false);
     if (!this.rubriqueOuverte()) return;
     const menu = this.hote.nativeElement.querySelector('.menu');
     if (menu && ev.target instanceof Node && !menu.contains(ev.target)) this.rubriqueOuverte.set(null);
@@ -601,7 +609,6 @@ export class MainLayout {
             // ces clés restent mappées pour le menu UGPM et les réintroductions éventuelles — un
             // compteur sans item correspondant n'affiche simplement rien.
             c['/prmp/mes-brouillons'] = compteurs['brouillons'] ?? 0;
-            c['/prmp/ppm-marches'] = compteurs['ppmMarches'] ?? 0;
             // ⚠️ Demande pilote (2026-09-13) — plus de pastille sur « Mettre à jour un PPM »
             // (`/prmp/dossiers-verifies`) : le compteur serveur `dossiersVerifies` n'est plus affiché.
             // Lettres SIGNE que l'agent connecté n'a pas encore lues (⚠️ 2026-08-27 : décompte par
@@ -609,7 +616,6 @@ export class MainLayout {
             c['/prmp/resultat-examen'] = compteurs['lettresRenvoi'] ?? 0;
             // Demandes passées à ACCEPTEE/REFUSEE depuis ma dernière consultation (calcul serveur).
             c['/prmp/retraits'] = compteurs['demandesRetraitNouvelles'] ?? 0;
-            this.alerts.update((a) => ({ ...a, '/prmp/a-rectifier': compteurs['dossiersARectifier'] ?? 0 }));
             // ⚠️ 06/10 — les reçus des frais de dossier en attente (un candidat attend pour retirer et déposer).
             // ⚠️ 09/10 (attribution 2d-1, V91) — s'y ajoutent les gestes d'attribution qui attendent la PRMP : lots à attribuer,
             // lots signables, avis d'attribution à publier, explications sans réponse (on y arrive par la fiche, puis l'évaluation).

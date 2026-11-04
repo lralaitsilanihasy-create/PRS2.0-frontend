@@ -398,7 +398,7 @@ export class RectifierDossier {
   private readonly examenPieceVersPiece = signal<Map<number, number>>(new Map());
   /** idPiece dont la version corrigée est en cours d'envoi (null sinon). */
   readonly uploadPiece = signal<number | null>(null);
-  readonly returnUrl = signal('/prmp/a-rectifier');
+  readonly returnUrl = signal('/prmp/tableau-de-bord');
   /** ⚠️ Règle pilote (2026-09-06) : justification GLOBALE de la fiche — seule saisie hors import. */
   readonly justifFiche = signal('');
 

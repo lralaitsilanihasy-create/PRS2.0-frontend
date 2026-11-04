@@ -89,23 +89,18 @@ describe('GROUPES_PAR_CHEMIN — la table elle-même', () => {
     }
   });
 
-  it('« Notifications » est dans le pied des DIX menus ; Messagerie la rejoint chez le Président et le CC (31/10)', () => {
+  it('⚠️ 04/11 — « Notifications » a quitté les menus (la cloche y mène) ; seule Messagerie reste au pied, chez le Président et le CC', () => {
     for (const role of ROLES) {
       const pied = piedMenu(NAV_BY_ROLE[role]);
-      const attendu = role === 'PRESIDENT' || role === 'CHEF_COMMISSION' ? ['Messagerie', 'Notifications'] : ['Notifications'];
+      const attendu = role === 'PRESIDENT' || role === 'CHEF_COMMISSION' ? ['Messagerie'] : [];
       expect(pied.map((i) => i.label), role).toEqual(attendu);
     }
   });
 });
 
 describe('sectionsMenu — dérivation des rubriques', () => {
-  it('« Notifications » quitte les rubriques : elle n’apparaît qu’une fois, dans le pied', () => {
-    for (const role of ROLES) {
-      const menu = NAV_BY_ROLE[role];
-      const dansSections = sectionsMenu(menu).flatMap((s) => s.items.map((i) => i.path));
-      expect(dansSections.filter((p) => p === '/notifications'), role).toEqual([]);
-      expect(piedMenu(menu).filter((i) => i.path === '/notifications').length, role).toBe(1);
-    }
+  it('⚠️ 04/11 — « Notifications » n’est plus dans aucun menu : la cloche de l’en-tête et son « Voir toutes les notifications » y mènent', () => {
+    for (const role of ROLES) expect(NAV_BY_ROLE[role].filter((i) => i.path === '/notifications'), role).toEqual([]);
   });
 
   it('aucune entrée n’est perdue ni dupliquée : sections + pied = le menu', () => {

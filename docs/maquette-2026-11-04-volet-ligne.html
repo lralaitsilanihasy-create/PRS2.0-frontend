@@ -1,0 +1,304 @@
+<title>Volet d'une ligne du plan</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Maquettes du 04/11/2026 — le volet d'une ligne du plan de passation (Maintirano), quatre organisations.
+     Palette : bloc « DESIGN INSTITUTIONNEL » de styles.scss ; deux graisses ; aucun texte bleu ; ni dégradé ni ombre portée.
+     Mise en page : une colonne de lecture, chaque variante dans un cadre de la largeur du volet. Un seul thème, celui de l'application. */
+  :root {
+    color-scheme: light;
+    --menu-fond: #0C3A5B; --onglet-actif-fond: #EAF2FF; --page-fond: #E9EEF3; --carte-fond: #FFFFFF;
+    --tableau-entete: #EEF1F4; --ligne-survol: #F7F8FA; --bordure: #D9DEE3; --bordure-champ: #868E96;
+    --texte: #1F2328; --texte-secondaire: #5F6368; --bouton-principal: #2557D6; --or: #F5B800;
+    --retard-fond: #FDE2E2; --retard-texte: #8A1C1C; --examen-fond: #FFF1C2; --examen-texte: #6B4E00;
+    --favorable-fond: #E3F4EA; --favorable-texte: #1E6B3A; --neutre-fond: #ECEEF1; --neutre-texte: #3F464D;
+    --police: 'Segoe UI', Roboto, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page-fond); color: var(--texte); font: 14px/1.5 var(--police); }
+  .page { max-width: 1180px; margin: 0 auto; padding-block: 24px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 32px; }
+  h1 { margin: 0; font-size: 1.5rem; font-weight: 500; text-wrap: balance; }
+  h2 { margin: 0; font-size: 1.1rem; font-weight: 500; }
+  p { margin: 0; max-width: 75ch; }
+  .intro { color: var(--texte-secondaire); }
+  .variante { display: grid; gap: 10px; }
+  .variante__tete { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: baseline; }
+  .lettre { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--menu-fond); color: #fff; font-weight: 500; }
+  .pour { font-size: 0.8125rem; color: var(--texte-secondaire); }
+  .avis { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 8px 16px; font-size: 0.8125rem; }
+  .avis b { font-weight: 500; }
+  .plus { color: var(--favorable-texte); } .moins { color: var(--retard-texte); }
+
+  .volet { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--bordure); border-radius: 8px; background: var(--carte-fond); min-width: 0; }
+  .tete { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; align-items: start; }
+  .tete h3 { margin: 0; font-size: 1.05rem; font-weight: 500; }
+  .mt { font-size: 1.05rem; font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .mt small { font-size: 0.75rem; color: var(--texte-secondaire); }
+  .sous { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; font-size: 0.8125rem; color: var(--texte-secondaire); }
+  .pill { display: inline-block; padding: 0 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 500; white-space: nowrap; }
+  .pill--fav { background: var(--favorable-fond); color: var(--favorable-texte); }
+  .pill--exa { background: var(--examen-fond); color: var(--examen-texte); }
+  .pill--neu { background: var(--neutre-fond); color: var(--neutre-texte); }
+  .pill--ret { background: var(--retard-fond); color: var(--retard-texte); }
+  .k { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texte-secondaire); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border: 1px solid var(--bordure-champ); border-radius: 6px; background: var(--carte-fond); color: var(--texte); font: inherit; font-size: 0.8125rem; white-space: nowrap; cursor: pointer; }
+  .btn--plein { background: var(--bouton-principal); border-color: var(--bouton-principal); color: #fff; }
+  .btn--lien { border-color: transparent; padding-inline: 4px; text-decoration: underline; text-decoration-color: #B0B5BB; text-underline-offset: 3px; }
+  .n { padding: 0 7px; border-radius: 20px; background: var(--neutre-fond); color: var(--neutre-texte); font-size: 0.7rem; }
+  .rang { display: flex; flex-wrap: wrap; gap: 6px; }
+  .carte { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--bordure); border-radius: 8px; min-width: 0; }
+  .d { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .discret { color: var(--texte-secondaire); font-size: 0.8125rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--bordure); }
+  th { background: var(--tableau-entete); font-weight: 500; font-size: 0.72rem; }
+  .defile { overflow-x: auto; }
+
+  /* A — frise des phases */
+  .frise { display: grid; grid-template-columns: repeat(6, minmax(7.5rem, 1fr)); gap: 0; overflow-x: auto; padding-bottom: 4px; }
+  .phase { position: relative; display: grid; gap: 3px; padding: 22px 8px 0; text-align: center; font-size: 0.75rem; }
+  .phase::before { content: ''; position: absolute; top: 8px; left: 0; right: 0; height: 3px; background: var(--bordure); }
+  .phase:first-child::before { left: 50%; } .phase:last-child::before { right: 50%; }
+  .phase--fait::before { background: var(--favorable-texte); }
+  .phase__pt { position: absolute; top: 2px; left: calc(50% - 8px); width: 16px; height: 16px; border-radius: 50%; background: var(--carte-fond); border: 3px solid var(--bordure-champ); }
+  .phase--fait .phase__pt { border-color: var(--favorable-texte); background: var(--favorable-texte); }
+  .phase--cours .phase__pt { border-color: var(--or); background: var(--examen-fond); }
+  .phase b { font-weight: 500; font-size: 0.8125rem; }
+  .phase--active { background: var(--onglet-actif-fond); border-radius: 6px 6px 0 0; }
+  .phase-detail { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--bordure); border-radius: 0 0 8px 8px; background: var(--onglet-actif-fond); }
+  .groupe { display: grid; gap: 6px; }
+
+  /* B — deux colonnes */
+  .deux { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 12px; }
+  .elts { list-style: none; margin: 0; padding: 0; display: grid; }
+  .elts li { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 6px 4px; border-bottom: 1px solid var(--bordure); font-size: 0.8125rem; }
+  .elts li:last-child { border-bottom: 0; }
+  .elts li span:last-child { color: var(--texte-secondaire); font-size: 0.75rem; }
+  .elts li::after { content: '›'; color: var(--texte-secondaire); }
+  .chrono { list-style: none; margin: 0; padding: 0; display: grid; }
+  .chrono li { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 8px; align-items: start; padding: 4px 0; font-size: 0.8125rem; position: relative; }
+  .chrono li::before { content: ''; width: 10px; height: 10px; margin-top: 5px; border-radius: 50%; border: 2px solid var(--bordure-champ); background: var(--carte-fond); }
+  .chrono li.fait::before { border-color: var(--favorable-texte); background: var(--favorable-texte); }
+  .chrono li.prochain::before { border-color: var(--or); background: var(--examen-fond); }
+  .chrono .ecart { font-size: 0.72rem; }
+
+  /* C — onglets */
+  .onglets { display: flex; flex-wrap: wrap; gap: 0; border-bottom: 1px solid var(--bordure); }
+  .onglet { padding: 8px 14px; border: 1px solid transparent; border-bottom: 0; border-radius: 6px 6px 0 0; font-size: 0.875rem; color: var(--texte-secondaire); }
+  .onglet--on { border-color: var(--bordure); background: var(--carte-fond); color: var(--texte); font-weight: 500; margin-bottom: -1px; }
+  .onglet .n { margin-left: 4px; }
+  .grille-elts { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 8px; }
+  .tuile { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--bordure); border-radius: 8px; background: var(--ligne-survol); }
+  .tuile b { font-weight: 500; font-size: 0.875rem; }
+  .tuile span { font-size: 0.75rem; color: var(--texte-secondaire); }
+
+  /* D — tableau de bord */
+  .chiffres { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 8px; }
+  .chiffre { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--bordure); border-radius: 8px; }
+  .chiffre b { font-size: 1.05rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .chiffre span { font-size: 0.75rem; color: var(--texte-secondaire); }
+  .suite { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 8px; background: var(--examen-fond); color: var(--examen-texte); font-size: 0.875rem; }
+  .suite b { font-weight: 500; }
+  .colonnes { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 12px; }
+  .colonnes h4 { margin: 0; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texte-secondaire); }
+
+  .bilan td:first-child { font-weight: 500; white-space: nowrap; }
+
+  /* ── Couleurs de fond et du menu (pilote, 04/11) ──────────────────────────────────────────────────────────────
+     L'en-tête de la ligne prend le bleu nuit du menu ; chaque bloc prend le fond de sa famille : bleu pâle (onglet actif) pour
+     la mise en concurrence et ce qui se lit, vert pour le marché et ce qui est fait, ocre pour ce qui vient, gris pour les archives. */
+  :root { --menu-texte-sec: #A9BCCD; --menu-survol: #1A527B; }
+  .volet { padding: 0; overflow: hidden; background: var(--page-fond); border-color: var(--menu-fond); }
+  .volet > *:not(.tete) { margin-inline: 16px; }
+  .volet > *:last-child { margin-bottom: 16px; }
+  .tete { padding: 14px 16px 12px; background: var(--menu-fond); color: #fff; }
+  .tete h3 { color: #fff; }
+  .tete .mt small, .tete .sous { color: var(--menu-texte-sec); }
+  .tete .pill--exa { background: var(--or); color: var(--texte); }
+  .carte { background: var(--carte-fond); }
+  .carte--dao { background: var(--onglet-actif-fond); border-color: #BFD3F2; }
+  .carte--marche { background: var(--favorable-fond); border-color: #B7DEC5; }
+  .carte--suite { background: var(--examen-fond); border-color: #F0D98A; }
+  .carte--archives { background: var(--neutre-fond); }
+  .carte .btn { background: var(--carte-fond); }
+  .bandeau { margin: -12px -12px 4px; padding: 8px 12px; border-radius: 8px 8px 0 0; background: var(--menu-fond); color: #fff; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: space-between; }
+  .bandeau .k { color: var(--menu-texte-sec); }
+  .bandeau b { font-weight: 500; }
+  .bandeau .btn--lien, .carte .bandeau .btn--lien { background: transparent; color: #fff; text-decoration-color: var(--menu-texte-sec); }
+  /* A — la frise sur fond bleu nuit, la phase active en bleu pâle */
+  .frise { background: var(--menu-fond); border-radius: 8px 8px 0 0; color: #fff; }
+  .phase { color: var(--menu-texte-sec); padding-bottom: 8px; }
+  .phase b { color: #fff; }
+  .phase::before { background: var(--menu-survol); }
+  .phase--fait::before { background: #5ED18A; }
+  .phase--fait .phase__pt { border-color: #5ED18A; background: #5ED18A; }
+  .phase__pt { background: var(--menu-fond); border-color: var(--menu-texte-sec); }
+  .phase--active { background: var(--onglet-actif-fond); color: var(--texte-secondaire); border-radius: 8px 8px 0 0; }
+  .phase--active b { color: var(--texte); }
+  .phase-detail { border-color: var(--onglet-actif-fond); }
+  /* C — l'onglet actif en bleu nuit, comme l'entrée active du menu */
+  .onglets { background: var(--carte-fond); border-radius: 8px 8px 0 0; padding: 6px 6px 0; border-bottom: 3px solid var(--menu-fond); }
+  .onglet--on { background: var(--menu-fond); border-color: var(--menu-fond); color: #fff; margin-bottom: 0; }
+  .onglet--on .pill--exa { background: var(--or); color: var(--texte); }
+  .tuile { background: var(--carte-fond); }
+  .tuile--fait { background: var(--favorable-fond); }
+  /* D — chiffres teintés, bandeau « Ensuite » en ocre, colonnes par usage */
+  .chiffre { background: var(--carte-fond); }
+  .chiffre--bleu { background: var(--onglet-actif-fond); }
+  .chiffre--vert { background: var(--favorable-fond); }
+  .chiffre--ocre { background: var(--examen-fond); }
+  .suite { border: 1px solid #F0D98A; }
+  .elts li { border-bottom-color: rgba(0, 0, 0, 0.08); }
+  @media (max-width: 52rem) { .deux { grid-template-columns: 1fr; } }
+</style>
+
+<div class="page">
+  <header>
+    <h1>Le volet d'une ligne du plan : quatre organisations</h1>
+    <p class="intro">Maquettes du 4 novembre 2026, sur la ligne des routes de Maintirano (appel d'offres ouvert, dossier de marché déposé). Les quatre gardent les mêmes données et les mêmes fenêtres ; elles changent ce qui se voit d'abord et comment on s'y retrouve.</p>
+  </header>
+
+  <!-- A -->
+  <section class="variante">
+    <div class="variante__tete"><span class="lettre">A</span><h2>La frise des phases</h2><span class="pour">On lit d'abord où en est la procédure, puis ce que chaque phase contient.</span></div>
+    <div class="volet">
+      <div class="tete">
+        <h3>Travaux de réhabilitation des routes dans la ville de Maintirano dans la Région Melaky</h3>
+        <span class="mt">8 000 000 000 <small>Ar</small></span>
+        <div class="sous"><span class="pill pill--exa">Dossier de marché · Initial</span><span>Travaux · Appel d'offres ouvert · RPI · 00-61-0-D10-00000, compte 2441</span></div>
+      </div>
+      <div>
+        <div class="frise">
+          <div class="phase phase--fait"><span class="phase__pt"></span><b>DAO</b><span class="d">validé 04/11</span></div>
+          <div class="phase phase--fait"><span class="phase__pt"></span><b>Commission CNM</b><span class="d">avis favorable 09/11</span></div>
+          <div class="phase phase--fait"><span class="phase__pt"></span><b>Publication</b><span class="d">avis 11/11</span></div>
+          <div class="phase phase--fait"><span class="phase__pt"></span><b>Offres</b><span class="d">3 · limite 14/12</span></div>
+          <div class="phase phase--fait"><span class="phase__pt"></span><b>Ouverture et évaluation</b><span class="d">rapport 18/12</span></div>
+          <div class="phase phase--cours phase--active"><span class="phase__pt"></span><b>Marché</b><span class="d">déposé 21/12</span></div>
+        </div>
+        <div class="phase-detail">
+          <div class="groupe"><span class="k">Marché · lot 1 — Dossier #100402 · référence à la réception</span>
+            <div class="rang"><span class="btn">Fiche de présentation</span><span class="btn">Attribution</span><span class="btn">Pièces jointes <span class="n">1</span></span><span class="btn">Écrans figés <span class="n">6</span></span><span class="btn">Contrôles <span class="n">3</span></span><span class="btn btn--lien">Ouvrir la page du dossier</span></div>
+          </div>
+          <div class="discret">Prochain jalon : <b>établissement du projet de marché</b>, prévu le 21/12/2026. <span class="btn btn--lien">Voir les 28 jalons</span></div>
+        </div>
+      </div>
+      <p class="discret">Un clic sur une autre phase montre ses éléments : « Offres » donne Reçus, Retraits, Questions, Dépôts ; « Ouverture et évaluation » donne Séance d'ouverture et Rapport d'évaluation ; « Commission CNM » donne le PV ; « DAO » donne Informations du DAO, Canevas, Bordereau.</p>
+    </div>
+    <div class="avis"><span class="plus"><b>+</b> l'avancement se lit d'un coup d'œil ; chaque bouton est rangé dans sa phase, plus par dossier</span><span class="moins"><b>−</b> une phase à la fois : il faut cliquer pour voir les autres ; les dates détaillées passent derrière « Voir les 28 jalons »</span></div>
+  </section>
+
+  <!-- B -->
+  <section class="variante">
+    <div class="variante__tete"><span class="lettre">B</span><h2>Deux colonnes : les dossiers, l'avancement</h2><span class="pour">Tout est visible sans cliquer ; la page tient sans défiler.</span></div>
+    <div class="volet">
+      <div class="tete">
+        <h3>Travaux de réhabilitation des routes dans la ville de Maintirano dans la Région Melaky</h3>
+        <span class="mt">8 000 000 000 <small>Ar</small></span>
+        <div class="sous"><span class="pill pill--exa">Dossier de marché · Initial</span><span>Travaux · Appel d'offres ouvert · RPI · 00-61-0-D10-00000, compte 2441</span></div>
+      </div>
+      <div class="deux">
+        <div style="display:grid;gap:10px;min-width:0">
+          <div class="carte carte--dao">
+            <div class="bandeau"><span><span class="k">Mise en concurrence</span> <b>00002/DAOO/CNM/2026</b> <span class="pill pill--fav">Clôturé</span></span><span class="btn btn--lien">Page du dossier</span></div>
+            <ul class="elts"><li><span>Informations du DAO</span><span>version 1</span></li><li><span>Canevas de rapport</span><span></span></li><li><span>Bordereau estimatif</span><span>8 000 000 000</span></li><li><span>Pièces jointes</span><span>2</span></li><li><span>Écrans figés</span><span>3</span></li></ul>
+            <span class="k">Procédure en ligne · 15/MTP/SG/PRMP.2026</span>
+            <ul class="elts"><li><span>Commission d'appel d'offres</span><span>2 membres</span></li><li><span>Reçus des frais</span><span>dossier gratuit</span></li><li><span>Retraits du DAO</span><span></span></li><li><span>Questions des candidats</span><span>0</span></li><li><span>Dépôts des offres</span><span>3 offres</span></li></ul>
+          </div>
+          <div class="carte carte--marche">
+            <div class="bandeau"><span><span class="k">Dossier de marché · lot 1</span> <b>#100402</b> <span class="pill pill--exa" style="background:var(--or);color:var(--texte)">Initial</span></span><span class="btn btn--lien">Page du dossier</span></div>
+            <ul class="elts"><li><span>Fiche de présentation</span><span></span></li><li><span>PV de la Commission sur le DAO</span><span>favorable</span></li><li><span>Séance d'ouverture</span><span>14/12</span></li><li><span>Rapport d'évaluation</span><span>signé 18/12</span></li><li><span>Attribution</span><span>Melaky BTP</span></li><li><span>Pièces jointes · Écrans figés · Contrôles</span><span>1 · 6 · 3</span></li></ul>
+          </div>
+        </div>
+        <div class="carte carte--suite" style="align-content:start">
+          <div class="bandeau"><span class="k">Avancement</span><span>8 jalons sur 28</span></div>
+          <ul class="chrono">
+            <li class="fait"><span>Transmission du DAO à la CNM</span><span class="d">05/11 <span class="ecart moins">+1 j</span></span></li>
+            <li class="fait"><span>Avis et PV de la CNM</span><span class="d">09/11 <span class="ecart moins">+3 j</span></span></li>
+            <li class="fait"><span>Lancement du DAO</span><span class="d">11/11</span></li>
+            <li class="fait"><span>Remise et ouverture des plis</span><span class="d">14/12</span></li>
+            <li class="fait"><span>Évaluation et classement</span><span class="d">18/12 <span class="ecart moins">+3 j</span></span></li>
+            <li class="prochain"><span><b style="font-weight:500">Projet de marché</b></span><span class="d">prévu 21/12</span></li>
+            <li><span>Contrôle de la CNM</span><span class="d">prévu 23/12</span></li>
+            <li><span>Notification</span><span class="d">prévu 30/12</span></li>
+          </ul>
+          <span class="btn btn--lien" style="justify-self:start">Voir les 28 jalons</span>
+        </div>
+      </div>
+    </div>
+    <div class="avis"><span class="plus"><b>+</b> tout le contenu de la ligne en un écran ; les retards sur le prévu se voient (+3 j)</span><span class="moins"><b>−</b> dense ; les listes d'éléments sont plus longues que des boutons</span></div>
+  </section>
+
+  <!-- C -->
+  <section class="variante">
+    <div class="variante__tete"><span class="lettre">C</span><h2>Des onglets par dossier</h2><span class="pour">Un dossier à la fois, ouvert sur le plus récent.</span></div>
+    <div class="volet">
+      <div class="tete">
+        <h3>Travaux de réhabilitation des routes dans la ville de Maintirano dans la Région Melaky</h3>
+        <span class="mt">8 000 000 000 <small>Ar</small></span>
+        <div class="sous"><span class="pill pill--exa">Dossier de marché · Initial</span><span>Travaux · Appel d'offres ouvert · RPI · 00-61-0-D10-00000, compte 2441</span></div>
+      </div>
+      <div>
+        <div class="onglets">
+          <span class="onglet">Mise en concurrence <span class="pill pill--fav">Clôturé</span></span>
+          <span class="onglet">Procédure en ligne <span class="n">3 offres</span></span>
+          <span class="onglet onglet--on">Dossier de marché · lot 1 <span class="pill pill--exa">Initial</span></span>
+          <span class="onglet">Jalons <span class="n">13 / 28</span></span>
+        </div>
+        <div class="carte carte--marche" style="border-top:0;border-radius:0 0 8px 8px">
+          <div class="sous" style="justify-content:space-between"><span><b style="color:var(--texte)">Dossier #100402</b> · référence à la réception · déposé le 21/12/2026</span><span class="btn">Ouvrir la page du dossier</span></div>
+          <div class="grille-elts">
+            <div class="tuile"><b>Fiche de présentation</b><span>identification, marché, attribution</span></div>
+            <div class="tuile tuile--fait"><b>PV de la Commission sur le DAO</b><span>avis favorable · 09/11</span></div>
+            <div class="tuile tuile--fait"><b>Séance d'ouverture</b><span>3 offres ouvertes · PV signé 14/12</span></div>
+            <div class="tuile tuile--fait"><b>Rapport d'évaluation</b><span>signé le 18/12</span></div>
+            <div class="tuile"><b>Attribution</b><span>Melaky BTP · 7 628 720 400 Ar HT</span></div>
+            <div class="tuile"><b>Pièces jointes</b><span>1 fichier</span></div>
+            <div class="tuile"><b>Écrans figés</b><span>6 écrans à la soumission</span></div>
+            <div class="tuile"><b>Contrôles</b><span>3 contrôles</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="avis"><span class="plus"><b>+</b> calme, aucune répétition ; chaque élément dit ce qu'il contient avant qu'on l'ouvre</span><span class="moins"><b>−</b> on ne voit qu'un dossier ; l'avancement n'est plus visible d'emblée</span></div>
+  </section>
+
+  <!-- D -->
+  <section class="variante">
+    <div class="variante__tete"><span class="lettre">D</span><h2>Le tableau de bord de la ligne</h2><span class="pour">Les chiffres et la prochaine action d'abord ; les documents ensuite.</span></div>
+    <div class="volet">
+      <div class="tete">
+        <h3>Travaux de réhabilitation des routes dans la ville de Maintirano dans la Région Melaky</h3>
+        <span class="mt">8 000 000 000 <small>Ar</small></span>
+        <div class="sous"><span class="pill pill--exa">Dossier de marché · Initial</span><span>Travaux · Appel d'offres ouvert · RPI · 00-61-0-D10-00000, compte 2441</span></div>
+      </div>
+      <div class="chiffres">
+        <div class="chiffre chiffre--vert"><span>Attributaire proposé</span><b>Melaky BTP SARL</b></div>
+        <div class="chiffre chiffre--vert"><span>Montant de l'offre (HT)</span><b>7 628 720 400</b><span class="plus">−4,6 % sur l'estimation</span></div>
+        <div class="chiffre chiffre--bleu"><span>Offres reçues</span><b>3</b><span>toutes conformes</span></div>
+        <div class="chiffre chiffre--ocre"><span>Retard sur le plan</span><b>+3 jours</b><span class="moins">évaluation : 18/12 pour 15/12</span></div>
+      </div>
+      <div class="suite"><b>Ensuite :</b> la Commission reçoit le dossier de marché, puis rend son avis — prévu le 23/12/2026. <span class="btn" style="margin-left:auto">Ouvrir la page du dossier</span></div>
+      <div class="colonnes">
+        <div class="carte carte--dao"><h4>À lire</h4><div class="rang"><span class="btn">Informations du DAO</span><span class="btn">Bordereau estimatif</span><span class="btn">PV de la CNM</span><span class="btn">Séance d'ouverture</span><span class="btn">Rapport d'évaluation</span><span class="btn">Attribution</span><span class="btn">Fiche de présentation</span></div></div>
+        <div class="carte carte--suite"><h4>À conduire</h4><div class="rang"><span class="btn">Commission d'appel d'offres</span><span class="btn">Reçus des frais</span><span class="btn">Questions</span><span class="btn">Dépôts <span class="n">3</span></span></div></div>
+        <div class="carte carte--archives"><h4>Archives du circuit</h4><div class="rang"><span class="btn">Pièces jointes <span class="n">3</span></span><span class="btn">Écrans figés <span class="n">9</span></span><span class="btn">Contrôles <span class="n">3</span></span></div></div>
+      </div>
+      <span class="btn btn--lien" style="justify-self:start">Voir les 28 jalons</span>
+    </div>
+    <div class="avis"><span class="plus"><b>+</b> on voit ce qui compte pour décider (qui, combien, quand, et la suite) ; les boutons sont rangés par usage</span><span class="moins"><b>−</b> les éléments ne sont plus rangés par dossier : leur dossier d'origine se lit dans la fenêtre</span></div>
+  </section>
+
+  <section class="variante">
+    <h2>En résumé</h2>
+    <div class="volet defile" style="background:var(--carte-fond);padding:0"><table class="bilan">
+      <thead><tr><th>Variante</th><th>Ce qu'on voit d'abord</th><th>Rangement des boutons</th><th>Jalons</th><th>Clics pour un document</th></tr></thead>
+      <tbody>
+        <tr><td>A — Frise</td><td>la phase en cours</td><td>par phase de la procédure</td><td>dans la frise, détail sur demande</td><td>1 à 2</td></tr>
+        <tr><td>B — Deux colonnes</td><td>tout</td><td>par dossier, en listes</td><td>chronologie à droite, écarts au prévu</td><td>1</td></tr>
+        <tr><td>C — Onglets</td><td>le dernier dossier</td><td>par dossier, en tuiles décrites</td><td>onglet à part</td><td>1 à 2</td></tr>
+        <tr><td>D — Tableau de bord</td><td>chiffres et prochaine étape</td><td>par usage : lire, conduire, archives</td><td>sur demande ; l'écart dans un chiffre</td><td>1</td></tr>
+      </tbody>
+    </table></div>
+    <p class="discret">Ma recommandation : <b>A</b> pour une PRMP qui suit plusieurs procédures et veut savoir où en est chacune, en combinant son bandeau « Prochain jalon » avec les écarts au prévu de B. Les quatre peuvent aussi se mêler : la frise de A en tête du tableau de bord de D, par exemple.</p>
+  </section>
+</div>

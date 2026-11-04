@@ -8,10 +8,12 @@ import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { Dossier, EchangeDto } from '../../models';
 import { DossierService, EntiteContractService, LocaliteService, ReferenceLookupService, SaisieService, SousTypeDossierService } from '../../services';
-import { MesDossiers } from '../prmp/mes-dossiers';
 import { StatutBadge } from '../../shared/circuit';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { LienDossier } from './page-dossier/lien-dossier';
+
+/** Statuts d'un dossier « vérifié » : la Commission a statué (dossier rectifié et resoumis compris). Naguère dans « Mes dossiers ». */
+const STATUTS_VERIFIES: ReadonlySet<string> = new Set(['EN_VERIFICATION', 'OBSERVATIONS_LEVEES', 'DECISION_TRANSMISE_SIGMP', 'CLOTURE']);
 
 /**
  * « Dossiers vérifiés / clôturés » (Vérificateur) et « Dossiers vérifiés » (PRMP) — LECTURE SEULE.
@@ -417,7 +419,7 @@ export class DossiersClotures {
           this.successeursSoumis.set(
             new Set(rows.filter((d) => d.idDossierParent != null && d.statut !== 'BROUILLON').map((d) => d.idDossierParent as number)),
           );
-          this.dossiers.set(rows.filter((d) => MesDossiers.STATUTS_VERIFIES.has(d.statut ?? '')));
+          this.dossiers.set(rows.filter((d) => STATUTS_VERIFIES.has(d.statut ?? '')));
           this.loading.set(false);
         },
         error: () => this.loading.set(false),

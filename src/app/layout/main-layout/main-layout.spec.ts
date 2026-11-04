@@ -215,9 +215,18 @@ describe('Coquille institutionnelle (design du 30/10/2026)', () => {
     expect(hote.querySelector('#menu-principal')).not.toBeNull();
   });
 
-  it('la PRMP garde « Créer compte UGPM » (naguère au pied de la barre latérale), dans l’en-tête', async () => {
-    const { hote } = await monter({ role: 'PRMP', login: 'PRMP001' });
-    expect(hote.querySelector('.entete a[href="/prmp/creer-ugpm"]')?.textContent?.trim()).toBe('Créer compte UGPM');
+  it('⚠️ 04/11 — « Créer un compte UGPM », « Changer mon mot de passe » et « Déconnexion » sont sous le nom de l’utilisateur', async () => {
+    const { hote, fixture } = await monter({ role: 'PRMP', login: 'PRMP001' });
+    const bouton = hote.querySelector<HTMLButtonElement>('.entete__utilisateur')!;
+    expect(bouton.getAttribute('aria-expanded')).toBe('false');
+    expect(hote.querySelector('#menu-utilisateur')).toBeNull();
+    bouton.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(bouton.getAttribute('aria-expanded')).toBe('true');
+    const items = Array.from(hote.querySelectorAll('#menu-utilisateur [role="menuitem"]')).map((e) => (e.textContent ?? '').trim());
+    expect(items).toEqual(['Créer un compte UGPM', 'Changer mon mot de passe', 'Déconnexion']);
+    expect(hote.querySelector('#menu-utilisateur a[href="/prmp/creer-ugpm"]')).not.toBeNull();
   });
 });
 
@@ -268,7 +277,7 @@ describe('Entrée active du menu (lot 5 F3 ; 30/10 : sous-pages et retour)', () 
   };
 
   it('pose aria-current="page" et la classe active sur l’entrée courante, et sur elle seule', async () => {
-    for (const url of ['/membre/tableau-de-bord', '/membre/a-faire', '/notifications']) {
+    for (const url of ['/membre/tableau-de-bord', '/membre/a-faire']) {
       const c = await courantes(url);
       expect(c.length, url).toBe(1);
       expect(c[0].getAttribute('href'), url).toBe(url);
@@ -295,7 +304,7 @@ describe('Entrée active du menu (lot 5 F3 ; 30/10 : sous-pages et retour)', () 
 describe('Menu horizontal par rubriques (design institutionnel, 30/10/2026)', () => {
   it('Président : À faire et Dossiers en direct, puis Décisions, Pilotage, Exercé par délégation, et Messagerie, Notifications à droite', async () => {
     const { hote } = await monter({ role: 'PRESIDENT', login: 'PRESID1', delegation: true });
-    expect(barre(hote)).toEqual(['À faire', 'Dossiers', 'Décisions', 'Pilotage', 'Exercé par délégation', 'Messagerie', 'Notifications']);
+    expect(barre(hote)).toEqual(['À faire', 'Dossiers', 'Décisions', 'Pilotage', 'Exercé par délégation', 'Messagerie']);
     expect(hote.querySelector('.menu__liste > li:last-child')?.classList).toContain('menu__entree--pied');
   });
 
@@ -303,17 +312,17 @@ describe('Menu horizontal par rubriques (design institutionnel, 30/10/2026)', ()
     const { hote } = await monter({ role: 'PRMP', login: 'PRMP001' });
     // ⚠️ 04/11 (redondances, temps 2) — « Appels d'offres en cours » et « Dossiers de marché » sont retirés : « Passation » n'a plus qu'une
     // entrée, rendue à plat.
-    expect(barre(hote)).toEqual(['À faire', 'Plan de passation', 'Dossiers', 'Reçus des frais de dossier', 'Contrats en vigueur', 'Décisions', 'Notifications']);
+    expect(barre(hote)).toEqual(['À faire', 'Plan de passation', 'Dossiers', 'Reçus des frais de dossier', 'Contrats en vigueur', 'Décisions']);
   });
 
-  it('Assistant contrôleur : les PV et lettres reçus forment la rubrique « Reçus » (31/10)', async () => {
+  it('Assistant contrôleur : quatre entrées, donc à plat (04/11 : « Notifications » quitte le menu, la rubrique « Reçus » s’efface)', async () => {
     const { hote } = await monter({ role: 'ASSISTANT_CONTROLEUR', login: 'ASSANT1' });
-    expect(barre(hote)).toEqual(['À faire', 'Dossiers', 'Reçus', 'Notifications']);
+    expect(barre(hote)).toEqual(['À faire', 'Dossiers', 'PV à archiver', 'Lettres de renvoi reçues']);
   });
 
   it('Administrateur : son accueil en direct, Accès, Règles du contrôle, Référentiels, Traces', async () => {
     const { hote } = await monter({ role: 'ADMINISTRATEUR', login: 'ADMIN01' });
-    expect(barre(hote)).toEqual(['Poste d’administration', 'Accès', 'Règles du contrôle', 'Référentiels', 'Traces', 'Notifications']);
+    expect(barre(hote)).toEqual(['Poste d’administration', 'Accès', 'Règles du contrôle', 'Référentiels', 'Traces']);
   });
 
   it('Référentiels : un menu en colonnes titrées, sur toute la largeur de la barre (31/10)', async () => {

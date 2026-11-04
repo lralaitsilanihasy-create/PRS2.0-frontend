@@ -1,5 +1,5 @@
 import { NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, Injector, OnInit, Type, computed, effect, inject, linkedSignal, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, Injector, OnInit, Type, afterRenderEffect, computed, effect, inject, linkedSignal, signal, untracked, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription, catchError, forkJoin, map, of } from 'rxjs';
@@ -18,7 +18,6 @@ import { AgpmDoc } from '../../../shared/prmp/agpm-doc';
 import { calculerAgpm } from '../../../shared/prmp/agpm';
 import { FichePresentationDoc } from '../../../shared/prmp/fiche-presentation-doc';
 import { calculerFichePresentation } from '../../../shared/prmp/fiche-presentation';
-import { CalendrierMarches } from '../calendrier-marches';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { StatutBadge } from '../../../shared/circuit';
 import { TitrePage } from '../../../shared/ui/titre-page';
@@ -28,6 +27,7 @@ import { DossierDocuments } from '../../circuit/dossier/dossier-documents';
 import { OngletDossier } from '../../circuit/dossier/documents-du-dossier';
 import { OuvertureElement, libelleElement } from './contenu-dossier-chaine';
 import { DetailLigne } from './detail-ligne';
+import { JalonsLigne, jalonsDuJour } from './jalons-ligne';
 import { CibleDossier, cibleDuDossier } from './cible-dossier';
 import { LienDossier } from '../../circuit/page-dossier/lien-dossier';
 import { CHARGEURS_ECRAN, OuvertureEcran, routeDeProcedure } from './ecrans-procedure';
@@ -37,8 +37,10 @@ import { ETAPES_LIGNE, EtapeLigne, SuiviLigne, TEINTE_ETAPE, TeinteLigne, suiviD
 const sansAccents = (s: string | null | undefined): string => (s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
 /** Présentation du plan retenue sur le poste (préférence d'affichage, pas une donnée). */
-type Presentation = 'document' | 'volets' | 'fiche' | 'agpm' | 'calendrier';
-const PRESENTATIONS: readonly Presentation[] = ['document', 'volets', 'fiche', 'agpm', 'calendrier'];
+// ⚠️ 04/11 (pilote) — l'onglet « Calendrier des jalons » est RETIRÉ : les jalons d'une ligne s'ouvrent en fenêtre depuis son bandeau.
+// Une présentation « calendrier » encore mémorisée retombe sur le document. La route /prmp/calendrier est retirée aussi (04/11).
+type Presentation = 'document' | 'volets' | 'fiche' | 'agpm';
+const PRESENTATIONS: readonly Presentation[] = ['document', 'volets', 'fiche', 'agpm'];
 const CLE_PRESENTATION = 'prs.plan.presentation';
 
 /** Statuts d'un plan signé, en vigueur tant qu'aucune mise à jour soumise ne le remplace (même règle que « Mettre à jour un PPM »). */
@@ -75,7 +77,7 @@ interface ContenuPlans {
 @Component({
   selector: 'app-plan-passation',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgTemplateOutlet, NgComponentOutlet, RouterLink, TitrePage, StatutBadge, EtatErreur, DocumentVisionneuse, PpmMarchesTable, DetailLigne, DeuxVolets, FichePresentationDoc, AgpmDoc, CalendrierMarches, ModaleDirective, DossierDocuments],
+  imports: [NgTemplateOutlet, NgComponentOutlet, RouterLink, TitrePage, StatutBadge, EtatErreur, DocumentVisionneuse, PpmMarchesTable, DetailLigne, DeuxVolets, FichePresentationDoc, AgpmDoc, ModaleDirective, DossierDocuments, JalonsLigne],
   providers: [ChainesDuPlan],
   template: `
     <!-- ⚠️ 03/11 (pilote, ergonomie) — un seul titre : le plan affiché, sa référence et son état dessous. -->
@@ -173,10 +175,12 @@ interface ContenuPlans {
             @if (lienDossier.disponible()) { <a [routerLink]="lienDossier.commandes(id)">Ouvrir la page du dossier</a> }</p>
         }
         @let choisie = ligneVolets();
-        <app-deux-volets [ouvert]="!!choisie" [cle]="choisie?.idDetail" libelleListe="Lignes du plan" libelleDetail="Ligne choisie"
+        <app-deux-volets [style.--dv-hauteur-detail.px]="hauteurDetail()" [ouvert]="!!choisie" [cle]="choisie?.idDetail" libelleListe="Lignes du plan" libelleDetail="Ligne choisie"
           invite="Aucune ligne ne correspond à ces filtres.">
-          <ul liste class="pp__liste">
-            @for (m of lignesAffichees(); track m.idDetail) {
+          <!-- ⚠️ 04/11 (pilote) — la liste des lignes est PAGINÉE (10 par page) ; la page suit la ligne choisie (choix, ?dossier=). -->
+          <div liste>
+          <ul class="pp__liste" #listeLignes>
+            @for (m of lignesDeLaPage(); track m.idDetail) {
               @let s = suivis().get(m.idDetail);
               <li>
                 <button type="button" class="pp__ligne" [attr.aria-pressed]="choisie?.idDetail === m.idDetail" (click)="ligne.set(m.idDetail)">
@@ -188,6 +192,14 @@ interface ContenuPlans {
               </li>
             }
           </ul>
+          @if (nbPages() > 1) {
+            <nav class="pp__pager" aria-label="Pages de la liste des lignes">
+              <button type="button" class="btn btn-secondary btn-sm" [disabled]="page() === 0" (click)="page.set(page() - 1)">Précédent</button>
+              <span class="pp__pager-info">Page {{ page() + 1 }} / {{ nbPages() }} · lignes {{ page() * parPage() + 1 }}–{{ min((page() + 1) * parPage(), lignesAffichees().length) }} sur {{ lignesAffichees().length }}</span>
+              <button type="button" class="btn btn-secondary btn-sm" [disabled]="page() + 1 >= nbPages()" (click)="page.set(page() + 1)">Suivant</button>
+            </nav>
+          }
+          </div>
           <div detail>
             @if (choisie; as m) {
               <article class="pp__volet" aria-labelledby="pp-volet-t">
@@ -200,8 +212,12 @@ interface ContenuPlans {
                     <span class="pp__pill" [class]="'pp__pill--' + s.famille">{{ s.libelle }}{{ s.precision ? ' · ' + s.precision : '' }}</span>
                   }
                   <p class="pp__volet-fiche" aria-label="Fiche officielle">{{ ficheEnLigne(m) }}</p>
+                  <!-- ⚠️ 04/11 (pilote) — les jalons de la ligne s'ouvrent en fenêtre ; le bouton dit où on en est. -->
+                  <button type="button" class="pp__btn-jalons" aria-haspopup="dialog" (click)="jalonsOuverts.set(true)">
+                    Jalons @if (resumeJalons(); as r) { <span class="pp__btn-n">{{ r.realises }} / {{ r.total }}</span> }
+                  </button>
                 </header>
-                <app-detail-ligne [marche]="m" [previsions]="previsionsDe(m)" [echeances]="echeancesDe(m)" [capms]="capms()" [reels]="reelsDe(m)" [empile]="true"
+                <app-detail-ligne [marche]="m"
                   (ouvrir)="ouvrirElement($event)" (ouvrirEcran)="ouvrirEcran($event)" />
               </article>
             }
@@ -247,6 +263,20 @@ interface ContenuPlans {
             </div>
           </div>
         }
+        <!-- ⚠️ 04/11 (pilote) — les jalons de la ligne, en fenêtre (hors du volet collant, comme les autres). -->
+        @if (jalonsOuverts() && choisie; as m) {
+          <div class="modal-backdrop">
+            <div class="modal modal-xl" role="dialog" aria-modal="true" [attr.aria-label]="'Jalons — ' + m.designationMarche" appModale (appModaleFermer)="jalonsOuverts.set(false)">
+              <div class="modal-header">
+                <h2 class="modal-title">Jalons <span class="pp__modale-ref">· {{ m.designationMarche }}</span></h2>
+                <button type="button" class="btn-close" aria-label="Fermer" (click)="jalonsOuverts.set(false)">✕</button>
+              </div>
+              <div class="modal-body">
+                <app-jalons-ligne [previsions]="previsionsDe(m)" [echeances]="echeancesDe(m)" [capms]="capms()" [reels]="reelsDe(m)" />
+              </div>
+            </div>
+          </div>
+        }
         <ng-template #elementTpl>
           <!-- Un renvoi de la liste des pièces (« fournies par l'application, dans leurs onglets ») change l'élément ouvert. -->
           <app-dossier-documents [ongletImpose]="elementModale()" (ongletDemande)="elementModale.set($event)" />
@@ -256,14 +286,12 @@ interface ContenuPlans {
           <app-fiche-presentation-doc [fiche]="fiche()" [exercice]="ppmDuPlan()?.exercice" [libelleVersion]="libelleVersionFiche()"
             [justificationFiche]="ppmDuPlan()?.justificationFiche" [motifMaj]="ppmDuPlan()?.motifMaj" />
         </app-document-visionneuse>
-      } @else if (presentation() === 'agpm') {
+      } @else {
         <app-document-visionneuse>
           <app-agpm-doc [lignes]="agpm()" [exercice]="ppmDuPlan()?.exercice" [entite]="entiteDuPlan()" [signataire]="ppmDuPlan()?.signataire"
             [dateInitiale]="ppmDuPlan()?.datePpmInit || ppmDuPlan()?.dateSignature" [numMajPrec]="ppmDuPlan()?.numMajPrec"
             [dateMajPrec]="ppmDuPlan()?.dateMajPrec" [numMaj]="ppmDuPlan()?.numMaj" />
         </app-document-visionneuse>
-      } @else {
-        <app-calendrier-marches [encastre]="true" [idDossier]="p.idDossier" [reels]="reelsDuPlan()" />
       }
       </div>
     }
@@ -287,7 +315,6 @@ interface ContenuPlans {
     .pp__onglet--bleu, .pp__panneau--bleu { --pp-c: var(--bouton-principal); --pp-f: var(--onglet-actif-fond); }
     .pp__onglet--vert, .pp__panneau--vert { --pp-c: var(--favorable-texte); --pp-f: var(--favorable-fond); }
     .pp__onglet--or, .pp__panneau--or { --pp-c: var(--or); --pp-f: var(--examen-fond); }
-    .pp__onglet--rouge, .pp__panneau--rouge { --pp-c: var(--retard-texte); --pp-f: var(--retard-fond); }
     .pp__panneau { display: grid; gap: 0.85rem; }
     .pp__plans, .pp__gestes { display: flex; flex-wrap: wrap; gap: 0.5rem; }
     /* ⚠️ 03/11 (pilote) — la barre d'outils du plan : étape (liste déroulante), recherche, nombre de lignes. */
@@ -307,6 +334,8 @@ interface ContenuPlans {
     .pp__suivi-attente { margin: 0; font-size: 0.8125rem; }
     .pp__aide { margin: 0; font-size: 0.8125rem; color: var(--texte-secondaire); }
     .pp__liste { list-style: none; margin: 0; padding: 0; }
+    .pp__pager { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; justify-content: space-between; padding: 0.6rem 0.75rem; border-top: 1px solid var(--bordure); }
+    .pp__pager-info { font-size: 0.75rem; color: var(--texte-secondaire); font-variant-numeric: tabular-nums; text-align: center; }
     .pp__ligne { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.15rem 0.75rem; text-align: left; padding: 0.55rem 0.75rem;
       border: 0; border-bottom: 1px solid var(--bordure); background: var(--carte-fond); color: var(--texte); font: inherit; font-size: 0.8125rem; cursor: pointer; }
     .pp__ligne:hover { background: var(--ligne-survol); }
@@ -321,11 +350,13 @@ interface ContenuPlans {
     .pp__pill--favorable { background: var(--favorable-fond); color: var(--favorable-texte); }
     .pp__volet { display: grid; gap: 0.6rem; }
     .pp__volet .pp__pill { justify-self: start; }
-    .pp__volet-entete { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.35rem 1rem; align-items: start; }
-    .pp__volet-t { margin: 0; font-size: 1.05rem; font-weight: 500; line-height: 1.35; }
+    /* ⚠️ 04/11 (pilote, variante B) — l'en-tête de la ligne sur le bleu nuit du menu. */
+    .pp__volet-entete { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.35rem 1rem; align-items: start; padding: 0.75rem 1rem; border-radius: 8px;
+      background: var(--menu-fond); color: var(--texte-menu); }
+    .pp__volet-t { margin: 0; font-size: 1.05rem; font-weight: 500; line-height: 1.35; color: var(--texte-menu); }
     .pp__volet-mt { font-size: 1.05rem; font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; }
-    .pp__volet-mt small { font-size: 0.75rem; color: var(--texte-secondaire); }
-    .pp__volet-entete .pp__pill { grid-column: 1 / -1; }
+    .pp__volet-mt small { font-size: 0.75rem; color: var(--texte-menu-secondaire); }
+    .pp__volet-entete .pp__pill { grid-column: 1; }
     /* La fenêtre d'un élément de dossier : celle de la page du dossier (« pd-docmodal »), presque plein écran, le corps seul défile. */
     .pp__modale { width: 96vw; max-width: 96vw; height: min(94vh, calc(100vh - 3rem)); max-height: min(94vh, calc(100vh - 3rem)); display: flex; flex-direction: column; }
     .pp__modale-ref { font-weight: 400; color: var(--texte-secondaire); font-size: 0.9rem; }
@@ -333,11 +364,17 @@ interface ContenuPlans {
     /* Un écran de page dans la fenêtre : ses marges, et pas son titre (la fenêtre le porte). */
     .pp__ecran { padding: 1rem 1.25rem; }
     .pp__ecran ::ng-deep .page-title { display: none; }
-    .pp__volet-fiche { grid-column: 1 / -1; margin: 0; font-size: 0.8125rem; overflow-wrap: anywhere; }
+    .pp__volet-fiche { grid-column: 1; margin: 0; font-size: 0.8125rem; overflow-wrap: anywhere; color: var(--texte-menu-secondaire); }
+    /* Le bouton « Jalons » du bandeau : clair sur le bleu nuit, en bas à droite. */
+    .pp__btn-jalons { grid-column: 2; grid-row: 2 / span 2; align-self: end; justify-self: end; display: inline-flex; gap: 0.45rem; align-items: center;
+      padding: 0.3rem 0.75rem; border: 1px solid var(--texte-menu-secondaire); border-radius: 6px; background: transparent; color: var(--texte-menu);
+      font: inherit; font-size: 0.8125rem; font-weight: 500; cursor: pointer; white-space: nowrap; }
+    .pp__btn-jalons:hover { background: var(--menu-survol); }
+    .pp__btn-jalons:focus-visible { outline: 2px solid var(--texte-menu); outline-offset: 2px; }
+    .pp__btn-n { padding: 0 0.45rem; border-radius: 20px; background: var(--carte-fond); color: var(--texte); font-size: 0.72rem; font-variant-numeric: tabular-nums; }
     .pp__fiche { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
     .pp__fiche th, .pp__fiche td { border: 1px solid var(--bordure); padding: 0.25rem 0.5rem; text-align: left; vertical-align: top; font-variant-numeric: tabular-nums; }
     .pp__fiche th { width: 40%; background: var(--tableau-entete); font-weight: 500; }
-    .pp__volet app-detail-ligne { border: 1px solid var(--bordure); border-radius: 6px; overflow: hidden; }
     .pp__vide { padding: 1rem 1.25rem; display: grid; gap: 0.6rem; justify-items: start; }
     .pp__vide-t { margin: 0; font-size: 1rem; font-weight: 500; }
     .pp__vide p { margin: 0; color: var(--texte-secondaire); }
@@ -473,6 +510,43 @@ export class PlanPassation implements OnInit {
       ...(benefs.get(m.idDetail) ?? []).flatMap((b) => [b.soaCode, b.numCompte]),
     ].filter(Boolean).join(' '))]));
   });
+  /** ⚠️ 04/11 (pilote) — la pagination de la liste des lignes (deux volets). */
+  /**
+   * ⚠️ 04/11 (pilote) — autant de lignes par page qu'il en tient dans la fenêtre, sous l'en-tête et les filtres, au-dessus de la
+   * pagination et du pied de page : la page ne défile pas. Mesuré après rendu et à chaque redimensionnement (`ajusterParPage`).
+   */
+  readonly parPage = signal(10);
+  /** La hauteur du volet de détail : la place sous le haut de la liste, au-dessus du pied de page (il défile seul au-delà). */
+  readonly hauteurDetail = signal<number | null>(null);
+  private readonly listeLignes = viewChild<ElementRef<HTMLElement>>('listeLignes');
+  protected readonly min = Math.min;
+  readonly nbPages = computed(() => Math.max(1, Math.ceil(this.lignesAffichees().length / this.parPage())));
+  /** La page : celle de la ligne choisie quand elle est dans la liste (choix, `?dossier=`), sinon la première ; filtres et recherche y ramènent. */
+  readonly page = linkedSignal<{ lignes: Marche[]; choisie: number | null; parPage: number }, number>({
+    source: () => ({ lignes: this.lignesAffichees(), choisie: this.ligne(), parPage: this.parPage() }),
+    computation: ({ lignes, choisie, parPage }) => {
+      const i = choisie == null ? -1 : lignes.findIndex((m) => m.idDetail === choisie);
+      return i < 0 ? 0 : Math.floor(i / parPage);
+    },
+  });
+  readonly lignesDeLaPage = computed(() => this.lignesAffichees().slice(this.page() * this.parPage(), (this.page() + 1) * this.parPage()));
+
+  /** La place sous le haut de la liste, moins la pagination et le pied de page, divisée par la hauteur d'une ligne (au moins 3). */
+  private ajusterParPage(): void {
+    const ul = this.listeLignes()?.nativeElement;
+    if (!ul) return;
+    const ligne = ul.querySelector('li') as HTMLElement | null;
+    const hauteurLigne = ligne?.offsetHeight || 78;
+    const haut = ul.getBoundingClientRect().top + window.scrollY;
+    const pied = (document.querySelector('.pied-page') as HTMLElement | null)?.offsetHeight ?? 24;
+    const pager = 48;
+    const disponible = window.innerHeight - haut - pied - pager - 10;
+    const n = Math.max(3, Math.floor(disponible / hauteurLigne));
+    const detail = Math.max(320, Math.floor(window.innerHeight - haut - pied - 20));
+    if (detail !== this.hauteurDetail()) this.hauteurDetail.set(detail);
+    if (n !== this.parPage()) this.parPage.set(n);
+  }
+
   readonly lignesAffichees = computed(() => {
     const f = this.filtre();
     const mots = sansAccents(this.recherche()).split(/\s+/).filter(Boolean);
@@ -508,7 +582,6 @@ export class PlanPassation implements OnInit {
     { cle: 'volets', libelle: 'Deux volets', teinte: 'bleu', n: this.marchesDuPlan().length },
     { cle: 'fiche', libelle: 'Fiche de présentation', teinte: 'vert', n: this.fiche().nbMarchesConcernes },
     { cle: 'agpm', libelle: 'Projet d’AGPM', teinte: 'or', n: this.agpm().length },
-    { cle: 'calendrier', libelle: 'Calendrier des jalons', teinte: 'rouge', n: null },
   ]);
   readonly ongletActif = computed(() => this.onglets().find((o) => o.cle === this.presentation()) ?? this.onglets()[0]);
   readonly titrePlan = computed(() => {
@@ -528,6 +601,19 @@ export class PlanPassation implements OnInit {
   private abonnement = new Subscription();
 
   constructor() {
+    // Le nombre de lignes par page suit la place disponible : après chaque rendu de la liste, et quand la fenêtre change de taille.
+    // Relu aussi quand ce qui précède la liste change (message de chargement du suivi, avis « sans ligne », lignes filtrées) : la
+    // liste remonte ou descend, et le nombre de lignes avec elle.
+    afterRenderEffect(() => {
+      this.source.chargement();
+      this.source.filiation();
+      this.cibleSansLigne();
+      this.lignesAffichees();
+      if (this.listeLignes()) this.ajusterParPage();
+    });
+    const surRedimension = (): void => this.ajusterParPage();
+    window.addEventListener('resize', surRedimension);
+    inject(DestroyRef).onDestroy(() => window.removeEventListener('resize', surRedimension));
     if (this.dossierDemande) this.chercherCible(this.dossierDemande);
     effect(() => {
       const c = this.cible();
@@ -682,6 +768,16 @@ export class PlanPassation implements OnInit {
     this.composantEcran.set(null);
   }
 
+  /** ⚠️ 04/11 (pilote) — la fenêtre des jalons de la ligne choisie ; refermée quand la ligne change. */
+  readonly jalonsOuverts = linkedSignal<Marche | null, boolean>({ source: () => this.ligneVolets(), computation: () => false });
+  /** « 10 / 28 » sur le bouton : jalons réalisés sur le total de la ligne choisie. */
+  readonly resumeJalons = computed(() => {
+    const m = this.ligneVolets();
+    if (!m) return null;
+    const j = jalonsDuJour(this.previsionsDe(m), this.capms(), this.echeancesDe(m), this.reelsDe(m));
+    return j.length ? { realises: j.filter((x) => !!x.reel).length, total: j.length } : null;
+  });
+
   ouvrirElement(e: OuvertureElement): void {
     this.elementModale.set(e.cle);
     this.modale.set(e);
@@ -713,12 +809,6 @@ export class PlanPassation implements OnInit {
   previsionsDe(m: Marche): MarchePrevision[] {
     return this.previsionsDuPlan().filter((p) => p.idDetail === m.idDetail);
   }
-
-  /** Les dates réelles de tout le plan, pour l'onglet « Calendrier des jalons » ; `null` tant qu'elles ne sont pas lues. */
-  readonly reelsDuPlan = computed<JalonReel[] | null>(() => {
-    const r = this.reels();
-    return r ? [...r.values()].flat() : null;
-  });
 
   reelsDe(m: Marche): JalonReel[] | null {
     const r = this.reels();

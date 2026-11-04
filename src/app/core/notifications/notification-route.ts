@@ -101,7 +101,8 @@ export function routePourNotification(n: Notification, role: string | null): Cib
   }
   // — PRMP : PV signé et lettre de renvoi vivent dans le hub « Examen de dossiers » ; observations → à rectifier.
   if (type === 'PV_SIGNE' && role === 'PRMP') return { genre: 'route', commands: ['/prmp/resultat-examen/pv-definitifs'] };
-  if (type === 'OBSERVATION_VERIFICATION' && role === 'PRMP') return { genre: 'route', commands: ['/prmp/a-rectifier'] };
+  // ⚠️ 04/11 (pilote) — « Dossiers à rectifier » est retiré : « Tous mes dossiers » porte le compteur « à traiter » et « Rectifier ».
+  if (type === 'OBSERVATION_VERIFICATION' && role === 'PRMP') return { genre: 'route', commands: ['/prmp/tableau-de-bord'] };
   if (type === 'LETTRE_RENVOI_RECUE' && role === 'PRMP') {
     return { genre: 'route', commands: ['/prmp/resultat-examen/lettre-renvois'] };
   }
@@ -136,13 +137,8 @@ export function routePourNotification(n: Notification, role: string | null): Cib
     return { genre: 'route', commands: ['/assistant/pv-examens'] };
   }
   // — PRMP : pièces manquantes au dépôt → liste des déposés du type (action « Compléter les pièces »).
-  if (type === 'PIECES_MANQUANTES_DEPOT' && role === 'PRMP') {
-    return {
-      genre: 'route-type-dossier',
-      versCommands: (t) => ['/prmp/dossiers', t, 'soumis'],
-      repli: ['/prmp/dossiers'],
-    };
-  }
+  // ⚠️ 04/11 (pilote) — « Mes dossiers » est retiré : « Tous mes dossiers » porte « Compléter les pièces ».
+  if (type === 'PIECES_MANQUANTES_DEPOT' && role === 'PRMP') return { genre: 'route', commands: ['/prmp/tableau-de-bord'] };
   // — Membre : compléments transmis après lettre de renvoi → réexamen du dossier.
   if (type === 'COMPLEMENTS_TRANSMIS' && role === 'MEMBRE' && n.idDossier != null) {
     return { genre: 'route', commands: ['/membre/examiner', String(n.idDossier)] };

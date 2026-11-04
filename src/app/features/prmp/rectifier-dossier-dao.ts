@@ -379,6 +379,6 @@ export class RectifierDossierDao {
   retour(): void {
     const u = this.returnUrl;
     if (u && u.startsWith('/')) void this.router.navigateByUrl(u);
-    else void this.router.navigate(['/prmp/a-rectifier']);
+    else void this.router.navigate(['/prmp/tableau-de-bord']);
   }
 }

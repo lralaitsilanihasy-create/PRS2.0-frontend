@@ -10,13 +10,16 @@ describe('Détail d’une ligne du plan', () => {
     const ech: Echeance[] = [{ idEcheance: 1, idDetail: 1, typeJalon: 'Lancement', datePrevue: '2026-03-06', dateReelle: '2026-03-10' }];
     const j = jalonsDeLigne([p(12, '2026-04-17'), p(10, '2026-03-06'), p(11, '2026-04-07', true)], capms, ech, '2026-11-03');
     expect(j.map((x) => x.processus)).toEqual(['LANCEMENT', 'ATTRIBUTION']);
-    expect(j[0]).toMatchObject({ prevu: '06/03/2026', reel: '10/03/2026', retard: null });
+    expect(j[0]).toMatchObject({ prevu: '06/03/2026', reel: '10/03/2026', retard: null, ecart: 4 });
     expect(j[1]).toMatchObject({ reel: '', retard: 200 });
   });
 
   it('par défaut, les jalons réalisés et les trois suivants', () => {
     const j = (reel: string) => ({ processus: 'x', prevu: '01/01/2026', reel, source: null, sansFait: false, retard: null });
     expect(prochainsJalons([j('a'), j(''), j(''), j(''), j(''), j('b')], 3).map((x) => x.reel)).toEqual(['a', '', '', '', 'b']);
+    // ⚠️ 04/11 — un jalon « non renseigné » (aucun fait ne le date) ne prend pas la place d'un prochain jalon.
+    const nr = { ...j(''), processus: 'nr', sansFait: true };
+    expect(prochainsJalons([j('a'), nr, nr, j(''), j(''), j(''), j('')], 3).map((x) => x.processus)).toEqual(['x', 'nr', 'nr', 'x', 'x', 'x']);
   });
 
   it('⚠️ jalons-reels — la date calculée prime, sa source en infobulle ; un processus sans fait n’est pas en retard', () => {

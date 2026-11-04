@@ -147,7 +147,6 @@ function menuCommission(base: '/president' | '/cc'): NavItem[] {
     { label: 'Statistiques', path: `${base}/statistiques`, icon: 'board' },
     { label: 'Messagerie', path: `${base}/messagerie`, icon: 'message' },
     // ⚠️ Spec notifications (2026-08-02) — écran transverse, chemin absolu commun à tous les profils.
-    { label: 'Notifications', path: '/notifications', icon: 'bell' },
   ];
 }
 
@@ -210,7 +209,6 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     // ⚠️ 01/11 (pilote, « les mots du menu ») — le nom de l'écran : les dates prévues et réelles de chaque jalon du plan.
     // ⚠️ 03/11 (pilote) — « Calendrier des jalons » sort du menu : bouton de l'écran du plan, jalons dans le détail de chaque ligne (route conservée).
     // ⚠️ Spec notifications (2026-08-02) — écran transverse, présent dans TOUS les profils.
-    { label: 'Notifications', path: '/notifications', icon: 'bell' },
   ],
   // UGPM : agit sous sa PRMP de tutelle — saisit/édite des brouillons, ne soumet pas
   // (bouton masqué + backend 403). Sous-ensemble curé des écrans PRMP dont les endpoints
@@ -236,7 +234,6 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     // ⚠️ Demande pilote (2026-09-13) — « Dossiers vérifiés » RETIRÉ du menu UGPM : les dossiers vérifiés
     // sont visibles dans « Tous les dossiers » (avec leur badge de statut). Route conservée (le PRMP s'en
     // sert pour « Mettre à jour un PPM », /prmp/dossiers-verifies?maj=1).
-    { label: 'Notifications', path: '/notifications', icon: 'bell' },
   ],
   // ⚠️ Président et Chef de commission partagent EXACTEMENT le même menu : ne pas éditer l'un des deux
   // isolément, modifier `menuCommission()` (source unique).
@@ -251,7 +248,6 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     { label: 'Dossiers', path: '/secretaire/tableau-de-bord', icon: 'folder' },
     // Messagerie retirée du menu pour le moment (demande pilote 2026-09-04) — route conservée.
     // { label: 'Messagerie', path: '/secretaire/messagerie', icon: 'message' },
-    { label: 'Notifications', path: '/notifications', icon: 'bell' },
   ],
   MEMBRE: [
     entreeAFaire('membre'),
@@ -268,7 +264,6 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     { label: 'PV et lettres de renvoi', path: '/membre/resultat-examen', icon: 'file' },
     // Messagerie retirée du menu pour le moment (demande pilote 2026-09-04) — route conservée.
     // { label: 'Messagerie', path: '/membre/messagerie', icon: 'message' },
-    { label: 'Notifications', path: '/notifications', icon: 'bell' },
   ],
   VERIFICATEUR: [
     entreeAFaire('verificateur'),
@@ -279,7 +274,6 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     { label: 'Dossiers vérifiés / clôturés', path: '/verificateur/verifies', icon: 'check' },
     // Messagerie retirée du menu pour le moment (demande pilote 2026-09-04) — route conservée.
     // { label: 'Messagerie', path: '/verificateur/messagerie', icon: 'message' },
-    { label: 'Notifications', path: '/notifications', icon: 'bell' },
   ],
   ASSISTANT_CONTROLEUR: [
     entreeAFaire('assistant'),
@@ -291,18 +285,15 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     { label: 'Lettres de renvoi reçues', path: '/assistant/lettre-renvois', icon: 'mail' },
     // Messagerie retirée du menu pour le moment (demande pilote 2026-09-04) — route conservée.
     // { label: 'Messagerie', path: '/assistant/messagerie', icon: 'message' },
-    { label: 'Notifications', path: '/notifications', icon: 'bell' },
   ],
   CHARGE_PUBLICATION: [
     { label: 'Publications', path: '/publication/publications', icon: 'globe' },
     { label: 'Documents publics', path: '/publication/documents', icon: 'clip' },
-    { label: 'Notifications', path: '/notifications', icon: 'bell' },
   ],
   // ⚠️ 28/10 (arbitrage du pilote ; PRS20 2d20acf, V145) — le responsable de procédure : ses procédures (paramètres internes,
   // cérémonie, séance, évaluation s'ouvrent depuis la liste) et ses notifications. Rien du circuit de contrôle.
   RESPONSABLE_PROCEDURE: [
     { label: 'Mes procédures en ligne', path: '/procedures-en-ligne', icon: 'key' },
-    { label: 'Notifications', path: '/notifications', icon: 'bell' },
   ],
   // ⚠️ Refonte ergonomique, lot 6 F1 (2026-09-17) — l'ordre de déclaration suit les rubriques cibles
   // du plan (`docs/plan-refonte-L6-espace-admin.md`, §3) : accueil, Accès, Règles du contrôle,
@@ -373,7 +364,6 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     // connexions est un ONGLET du Journal (`/admin/audit?journal=connexions`), en lecture seule.
     // L'écran d'origine était un CRUD *modifiable* sur un journal de preuve, et le serveur a retiré
     // `/api/session-utilisateurs` le 2026-09-17 (404). Rien à décommenter : la route n'existe plus.
-    { label: 'Notifications', path: '/notifications', icon: 'bell' },
   ],
 };
 

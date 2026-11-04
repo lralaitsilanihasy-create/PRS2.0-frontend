@@ -8,7 +8,6 @@ import { roleGuard } from '../../core/auth/auth.guard';
 
 
 
-import { PPM_CONFIG } from '../circuit/circuit-resources.config';
 
 
 
@@ -34,13 +33,11 @@ export const PRMP_ROUTES: Routes = [
     loadComponent: () => import('./suivi-delais').then((m) => m.SuiviDelais),
     data: { title: 'Tous mes dossiers' },
   },
-  { path: 'a-rectifier', loadComponent: () => import('./dossiers-a-rectifier').then((m) => m.DossiersARectifier) },
   // Formulaire restreint de rectification en place (en-tête PPM + lignes marché) ; returnUrl en query param.
   { path: 'rectifier/:idDossier', loadComponent: () => import('./rectifier-dossier').then((m) => m.RectifierDossier) },
   // ⚠️ Lot C1 (26/09) — un dossier DAO se rectifie par la révision de sa fiche, pas par le ré-import d'un plan.
   { path: 'rectifier-dao/:idDossier', loadComponent: () => import('./rectifier-dossier-dao').then((m) => m.RectifierDossierDao), data: { title: 'Rectifier un dossier DAO' } },
   { path: 'dossiers-verifies', loadComponent: () => import('../circuit/dossiers-clotures').then((m) => m.DossiersClotures), data: { title: 'Dossiers vérifiés', titreMaj: 'Mettre à jour un PPM', source: 'prmp-clotures' } },
-  { path: 'ppm', loadComponent: () => import('../../shared/crud/crud-page').then((m) => m.CrudPage), data: { crud: PPM_CONFIG } },
   // ⚠️ 03/11 (pilote, maquette « espace PRMP ») — le plan de passation comme écran de travail : le dernier plan signé, ou celui de l'URL.
   { path: 'plan', loadComponent: () => import('./plan-passation/plan-passation').then((m) => m.PlanPassation), data: { title: 'Plan de passation' } },
   { path: 'plan/:idDossier', loadComponent: () => import('./plan-passation/plan-passation').then((m) => m.PlanPassation), data: { title: 'Plan de passation' } },
@@ -54,21 +51,21 @@ export const PRMP_ROUTES: Routes = [
   // ⚠️ 19/10 (pilote) — « Dossier de marché — choisir la procédure » : l'analogue, pour le marché, de la liste des fiches DAO.
   { path: 'dossier-marche', loadComponent: () => import('./dossier-marche-procedures').then((m) => m.DossierMarcheProcedures), data: { title: 'Dossier de marché', concentration: true } },
   { path: 'dao', loadComponent: () => import('./fiche-marche/fiche-marche').then((m) => m.FicheMarcheEcran), data: { title: 'Appels d’offres', concentration: true } },
-  { path: 'dao/:idDmc', loadComponent: () => import('./fiche-marche/fiche-marche').then((m) => m.FicheMarcheEcran), data: { title: 'Informations du DAO', concentration: true, parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }] } },
+  { path: 'dao/:idDmc', loadComponent: () => import('./fiche-marche/fiche-marche').then((m) => m.FicheMarcheEcran), data: { title: 'Informations du DAO', concentration: true, parents: [{ label: 'Plan de passation', chemin: ['/prmp/plan'] }] } },
   // ⚠️ Soumission en ligne, lot 1 (04/10, §B8) — le registre des retraits du DAO par les candidats, PRMP de la fiche seule.
-  { path: 'dao/:idDmc/retraits', loadComponent: () => import('./retraits-dao').then((m) => m.RetraitsDao), data: { title: 'Retraits du DAO', parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }, { label: 'Informations du DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
+  { path: 'dao/:idDmc/retraits', loadComponent: () => import('./retraits-dao').then((m) => m.RetraitsDao), data: { title: 'Retraits du DAO', parents: [{ label: 'Plan de passation', chemin: ['/prmp/plan'] }, { label: 'Informations du DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
   // ⚠️ 18/10 (pilote) — « Reçus des frais » : tous les reçus à valider de la PRMP, depuis le menu ; décision sur place.
   { path: 'recus', loadComponent: () => import('./recus-hub').then((m) => m.RecusHub), data: { title: 'Reçus des frais de dossier' } },
   // ⚠️ V72 (06/10, retrait après paiement) — les reçus des frais de dossier, validés par la PRMP ou l'UGPM de la fiche.
-  { path: 'dao/:idDmc/recus', loadComponent: () => import('./recus-dao').then((m) => m.RecusDao), data: { title: 'Reçus des frais de dossier', parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }, { label: 'Informations du DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
+  { path: 'dao/:idDmc/recus', loadComponent: () => import('./recus-dao').then((m) => m.RecusDao), data: { title: 'Reçus des frais de dossier', parents: [{ label: 'Plan de passation', chemin: ['/prmp/plan'] }, { label: 'Informations du DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
   // ⚠️ Soumission en ligne, lot 3 (04/10, V68) — le registre des dépôts : le nombre seul avant la date limite.
   // ⚠️ R7 (V109, 13/10) — les questions des candidats avant la date limite : la PRMP répond, la réponse est diffusée.
-  { path: 'dao/:idDmc/questions', loadComponent: () => import('./questions-dao').then((m) => m.QuestionsDao), data: { title: 'Questions des candidats', parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }, { label: 'Informations du DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
-  { path: 'dao/:idDmc/depots', loadComponent: () => import('./depots-dao').then((m) => m.DepotsDao), data: { title: 'Dépôts des offres', parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }, { label: 'Informations du DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
+  { path: 'dao/:idDmc/questions', loadComponent: () => import('./questions-dao').then((m) => m.QuestionsDao), data: { title: 'Questions des candidats', parents: [{ label: 'Plan de passation', chemin: ['/prmp/plan'] }, { label: 'Informations du DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
+  { path: 'dao/:idDmc/depots', loadComponent: () => import('./depots-dao').then((m) => m.DepotsDao), data: { title: 'Dépôts des offres', parents: [{ label: 'Plan de passation', chemin: ['/prmp/plan'] }, { label: 'Informations du DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
   // ⚠️ Soumission en ligne, lot 2a (04/10, Q11) — la commission d'appel d'offres, désignée par la PRMP (remise électronique).
-  { path: 'dao/:idDmc/cao', loadComponent: () => import('./cao-ecran').then((m) => m.CaoEcran), data: { title: 'Commission d’appel d’offres', parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }, { label: 'Informations du DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
+  { path: 'dao/:idDmc/cao', loadComponent: () => import('./cao-ecran').then((m) => m.CaoEcran), data: { title: 'Commission d’appel d’offres', parents: [{ label: 'Plan de passation', chemin: ['/prmp/plan'] }, { label: 'Informations du DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
   // ⚠️ AMI en ligne, tranche AMI-a (07/10, V82) — l'appel à manifestation d'intérêt d'une fiche de prestations intellectuelles.
-  { path: 'dao/:idDmc/ami', loadComponent: () => import('./ami-dao').then((m) => m.AmiDao), data: { title: 'Appel à manifestation d’intérêt', parents: [{ label: 'Appels d’offres', chemin: ['/prmp/dao'] }, { label: 'Informations du DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
+  { path: 'dao/:idDmc/ami', loadComponent: () => import('./ami-dao').then((m) => m.AmiDao), data: { title: 'Appel à manifestation d’intérêt', parents: [{ label: 'Plan de passation', chemin: ['/prmp/plan'] }, { label: 'Informations du DAO', chemin: ['/prmp/dao', ':idDmc'] }] } },
   // Création d'une UGPM par la PRMP (sous sa tutelle) — réservé PRMP (l'UGPM ne crée pas d'UGPM).
   { path: 'creer-ugpm', loadComponent: () => import('./creer-ugpm').then((m) => m.CreerUgpm), canActivate: [roleGuard], data: { roles: ['PRMP'] } },
   { path: 'mes-brouillons', loadComponent: () => import('./mes-brouillons').then((m) => m.MesBrouillons) },
@@ -83,34 +80,10 @@ export const PRMP_ROUTES: Routes = [
   // son prédécesseur). Créée depuis « Dossiers vérifiés » ; le PPM en vigueur reste intact jusqu'à la
   // soumission de cette version.
   { path: 'mise-a-jour/:idDossier', loadComponent: () => import('./mise-a-jour-ppm').then((m) => m.MiseAJourPpm) },
-  { path: 'ppm-marches', loadComponent: () => import('./mes-ppm-marches').then((m) => m.MesPpmMarches) },
-  // Accueil « Mes dossiers » : présente toutes les entrées (type → statut) en cartes.
-  // ⚠️ 2026-08-07 (demande user) — la liste d'une ligne s'ouvre SOUS les cartes, au même écran : les
-  // écrans de liste sont des routes ENFANTS, rendues dans le `router-outlet` de `MesDossiers`. Ils
-  // gardent ainsi leurs paramètres et données de route (type, groupe, source, titre), qu'un simple
-  // encastrement de composant aurait perdus. Les routes de premier niveau restent en place pour les
-  // liens profonds (notifications, bandeau de renvoi de la saisie).
-  {
-    path: 'dossiers',
-    loadComponent: () => import('./mes-dossiers').then((m) => m.MesDossiers),
-    children: [
-      // ⚠️ `encastre` (2026-08-07, demande user) — l'écran est rendu SOUS les cartes : il n'a plus
-      // à proposer son propre bouton « ← Mes dossiers », on y est déjà.
-      { path: 'a-rectifier', loadComponent: () => import('./dossiers-a-rectifier').then((m) => m.DossiersARectifier), data: { encastre: true } },
-      {
-        path: 'verifies',
-        loadComponent: () => import('../circuit/dossiers-clotures').then((m) => m.DossiersClotures),
-        data: { title: 'Dossiers vérifiés', source: 'prmp-clotures', encastre: true },
-      },
-      // Liste générique par type de dossier × groupe de statut (brouillon | soumis).
-      // ⚠️ Déclarée APRÈS les segments littéraux : « a-rectifier » ne doit pas être pris pour un type.
-      { path: ':type/:groupe', loadComponent: () => import('./dossiers-liste').then((m) => m.DossiersListe), data: { encastre: true } },
-    ],
-  },
+  // ⚠️ 04/11 (pilote, liens inutiles) — « Mes dossiers » (cartes type × statut et ses listes), « Dossiers à rectifier », « PPM et
+  // marchés », la gestion générique des PPM et le calendrier des jalons sont RETIRÉS : « Tous mes dossiers » (filtres, Rectifier,
+  // Compléter les pièces) et le plan (jalons de chaque ligne) les remplacent ; plus rien n'y menait.
   { path: 'retraits', loadComponent: () => import('./retraits').then((m) => m.PrmpRetraits), data: { title: 'Demandes de retrait' } },
-  // ⚠️ 2026-08-12 (demande user) — le calendrier montre l'objet de chaque ligne des dossiers de
-  // planification avec ses processus CAPM (remplace le CRUD « échéances », vide pour la PRMP).
-  { path: 'calendrier', loadComponent: () => import('./calendrier-marches').then((m) => m.CalendrierMarches), data: { title: 'Calendrier des jalons' } },
   // ⚠️ 2026-08-12 (demande user) — hub « Examen de dossiers » (même composant que Président/CC, variante
   // PRMP à deux cartes) : SES lettres de renvoi et SES PV définitifs, listes rendues sous les cartes.
   {

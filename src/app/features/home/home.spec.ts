@@ -75,8 +75,8 @@ describe("Accueil — atterrissage sur « À faire », avec repli", () => {
     const page = fixture.nativeElement as HTMLElement;
     const cartes = Array.from(page.querySelectorAll('.home-card'));
     // ⚠️ Lot 6 F1 (2026-09-17) — les cartes « Vos modules » suivent le menu (`navFlat`). ⚠️ 31/10 — le menu compte
-    // 45 entrées, dont 30 référentiels réunis en UNE carte « Référentiels » : 16 cartes.
-    expect(cartes.length).toBe(16);
+    // 45 entrées, dont 30 référentiels réunis en UNE carte « Référentiels » : 16 cartes. ⚠️ 04/11 — « Notifications » quitte le menu : 15.
+    expect(cartes.length).toBe(15);
     expect(cartes.filter((c) => c.textContent?.includes('Référentiels')).length).toBe(1);
     expect(cartes.every((c) => c.querySelector('app-icone svg path'))).toBe(true);
     expect(page.querySelector('.portail-banner app-icone svg')).not.toBeNull();

@@ -187,14 +187,9 @@ interface ApercuDossier {
               <span class="sd__choix-desc">Demande de proposition d'un bailleur, dossier de pré-qualification — un type + une localité, pièces jointes selon le type. L'appel d'offres, la consultation de prestations intellectuelles et le rapport justificatif d'un gré à gré se préparent depuis leur ligne du plan.</span>
               <span class="sd__choix-go">Commencer<span class="sd__choix-arrow" aria-hidden="true">›</span></span>
             </button>
-            <button type="button" class="sd__choix-card sd__choix-card--marche" (click)="choisirFamille('DDM')">
-              <span class="sd__choix-head">
-                <span class="sd__choix-ic" aria-hidden="true">📝</span>
-                <span class="sd__choix-titre">Dossier de marché</span>
-              </span>
-              <span class="sd__choix-desc">Marché sur appel d'offres ou de prestations intellectuelles — il naît de l'attribution du lot : vous choisissez la procédure, puis le lot. Le marché de gré à gré se crée depuis sa ligne du plan.</span>
-              <span class="sd__choix-go">Commencer<span class="sd__choix-arrow" aria-hidden="true">›</span></span>
-            </button>
+            <!-- ⚠️ 04/11 (pilote) — la carte « Dossier de marché » est RETIRÉE : tout marché naît de sa ligne du plan (attribution du lot,
+                 ou gré à gré après le rapport). Le formulaire reste, atteint par la ligne (?famille=DDM&sousType=MGG&ligne=) ou la reprise
+                 d'un brouillon. -->
           </div>
           <!-- ⚠️ 04/11 (pilote, maquette « menu PRMP recentré », temps 1) — ce qui se rattache à une ligne du plan se crée DEPUIS la ligne
                (V163 : le dossier entre dans sa chaîne) ; créé d'ici sans ligne, il n'y paraîtrait jamais. -->
@@ -204,7 +199,7 @@ interface ApercuDossier {
               <li><b>Informations du DAO</b> — bouton « Préparer les informations du DAO » d'une ligne à lancer</li>
               <li><b>Rapport justificatif</b> d'un gré à gré — bouton « Créer le rapport justificatif » de la ligne</li>
               <li><b>Marché de gré à gré</b> — une fois le rapport clôturé, sur la même ligne</li>
-              <li><b>Dossier de marché</b> — à l'attribution du lot, depuis la ligne lancée</li>
+              <li><b>Dossier de marché</b> (appel d'offres, prestations intellectuelles) — bouton « Créer le dossier de marché » de la ligne lancée, à l'attribution du lot, en remise électronique comme en remise papier</li>
             </ul>
             <a class="btn btn-outline" routerLink="/prmp/plan">Ouvrir le plan de passation</a>
           </section>
@@ -919,7 +914,6 @@ interface ApercuDossier {
     /* Bandeau d'accent coloré en haut de carte (distinct par type). */
     .sd__choix-card::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 4px; background: var(--grad-primary); }
     .sd__choix-card--concurrence::before { background: var(--bouton-principal); }
-    .sd__choix-card--marche::before { background: var(--or); }
     .sd__choix-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--c-300); }
     .sd__choix-head { display: flex; align-items: center; gap: 0.8rem; }
     .sd__choix-ic {
@@ -930,12 +924,10 @@ interface ApercuDossier {
       box-shadow: none;
     }
     .sd__choix-card--concurrence .sd__choix-ic { background: var(--bouton-principal); box-shadow: none; }
-    .sd__choix-card--marche .sd__choix-ic { background: var(--or); box-shadow: none; }
     .sd__choix-titre { font-size: var(--text-lg); font-weight: 500; color: var(--n-800); }
     .sd__choix-desc { color: var(--n-500); font-size: var(--text-sm); line-height: 1.5; }
     .sd__choix-go { margin-top: auto; display: inline-flex; align-items: center; gap: 0.3rem; font-weight: 500; font-size: var(--text-sm); color: var(--c-600); }
     .sd__choix-card--concurrence .sd__choix-go { color: var(--texte); }
-    .sd__choix-card--marche .sd__choix-go { color: var(--examen-texte); }
     .sd__choix-arrow { font-size: 1.15rem; line-height: 1; transition: transform 0.16s ease; }
     .sd__choix-card:hover .sd__choix-arrow { transform: translateX(4px); }
     @media (max-width: 40rem) { .sd__choix { grid-template-columns: 1fr; } }

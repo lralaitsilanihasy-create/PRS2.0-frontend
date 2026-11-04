@@ -131,7 +131,7 @@ describe('RectifierDossierDao — la révision de la fiche corrige un dossier DA
     expect(bouton(/resoumettre/).disabled).toBe(false);
     bouton(/resoumettre/).click();
     expect(resoumettre).toHaveBeenCalledWith(100353, { motifRectification: 'Garantie de soumission du lot 2 ramenée à 2 % du maximum.' });
-    expect(navigate).toHaveBeenCalledWith(['/prmp/a-rectifier']);
+    expect(navigate).toHaveBeenCalledWith(['/prmp/tableau-de-bord']);
   });
 
   it("prend `versionSoumise` du serveur quand il la sert (B1), avant tout repli", async () => {

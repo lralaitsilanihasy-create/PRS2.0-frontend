@@ -47,7 +47,8 @@ import { ChangeDetectionStrategy, Component, ElementRef, effect, input, viewChil
       position: sticky;
       top: calc(var(--hauteur-menu) + 8px);
       min-width: 0;
-      max-height: calc(100vh - var(--hauteur-menu) - 16px);
+      /* ⚠️ 04/11 — un écran peut fixer la hauteur du détail à la place qui reste sous ses filtres (le plan : la page ne défile pas). */
+      max-height: var(--dv-hauteur-detail, calc(100vh - var(--hauteur-menu) - 16px));
       overflow-y: auto;
       padding: 12px 16px 16px;
       outline: none;

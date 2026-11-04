@@ -79,7 +79,7 @@ export function numeroProcedure(e: Pick<LigneEligible, 'numeroProcedure' | 'mode
   template: `
     <div class="pl" role="group" [attr.aria-label]="'Procédure en ligne' + (numero() ? ' ' + numero() : '')">
       <div class="pl__tete">
-        <span class="pl__k">Procédure en ligne</span>
+        <span class="pl__k">Procédure en ligne{{ numero() ? ' · ' : '' }}</span>
         @if (numero(); as n) { <span class="pl__r">{{ n }}</span> }
         @if (etat()) { <span class="pl__etat">{{ etat() }}</span> }
       </div>
@@ -87,24 +87,30 @@ export function numeroProcedure(e: Pick<LigneEligible, 'numeroProcedure' | 'mode
         <!-- ⚠️ 04/11 (pilote) — chaque écran s'ouvre en FENÊTRE, rendue par l'écran du plan (hors du volet collant) ; la fiche DAO reste une page. -->
         @for (l of liens(); track l.libelle) {
           @if (l.ecran; as ecran) {
-            <button type="button" class="btn btn-outline btn-sm" aria-haspopup="dialog" (click)="demander(ecran, l.libelle)">{{ l.libelle }}@if (l.n) { <span class="pl__n">{{ l.n }}</span> }</button>
+            <button type="button" class="onglets-dossier__tab pl__b" aria-haspopup="dialog" (click)="demander(ecran, l.libelle)">{{ l.libelle }}@if (l.n) { <span class="pl__n">{{ l.n }}</span> }</button>
           } @else {
-            <a class="btn btn-outline btn-sm" [routerLink]="l.commandes">{{ l.libelle }}@if (l.n) { <span class="pl__n">{{ l.n }}</span> }</a>
+            <a class="onglets-dossier__tab pl__b" [routerLink]="l.commandes">{{ l.libelle }}@if (l.n) { <span class="pl__n">{{ l.n }}</span> }</a>
           }
         }
       </div>
     </div>
   `,
   styles: `
+    /* ⚠️ 04/11 (variante B) — un groupe du dossier de mise en concurrence, intitulé comme « À lire » et « Archives du circuit ». */
     :host { display: block; }
-    .pl { display: grid; gap: 0.5rem; padding-top: 0.6rem; border-top: 1px solid var(--bordure); }
-    /* Seule, en carte (fiche sans dossier) : la carte de l'hôte fait le cadre. */
-    :host(.dl__carte) .pl { padding-top: 0; border-top: 0; }
-    .pl__tete { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: baseline; }
+    .pl { display: grid; gap: 0.35rem; }
+    /* Seule (fiche sans dossier) : sa propre carte, bandeau bleu nuit et corps bleu pâle, comme un dossier de mise en concurrence. */
+    :host(.dl__seule) .pl { gap: 0; border: 1px solid var(--menu-fond); border-radius: 8px; overflow: hidden; background: var(--onglet-actif-fond); }
+    :host(.dl__seule) .pl__tete { padding: 0.5rem 0.9rem; background: var(--menu-fond); }
+    :host(.dl__seule) .pl__k, :host(.dl__seule) .pl__etat { color: var(--texte-menu-secondaire); }
+    :host(.dl__seule) .pl__r { color: var(--texte-menu); }
+    :host(.dl__seule) .pl__liens { padding: 0.7rem 0.9rem 0.85rem; }
+    .pl__tete { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline; }
     .pl__k { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texte-secondaire); }
-    .pl__r { font-weight: 500; }
-    .pl__etat { font-size: 0.8125rem; color: var(--texte-secondaire); }
+    .pl__r { font-size: 0.8125rem; font-weight: 500; }
+    .pl__etat { font-size: 0.75rem; color: var(--texte-secondaire); }
     .pl__liens { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .pl__b { border-radius: 6px; text-decoration: none; }
     .pl__n { display: inline-block; margin-left: 0.45rem; padding: 0.05rem 0.45rem; border-radius: 20px; background: var(--neutre-fond); color: var(--neutre-texte); font-size: 0.7rem; }
   `,
 })

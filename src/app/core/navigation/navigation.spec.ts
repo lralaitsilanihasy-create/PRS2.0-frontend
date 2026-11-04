@@ -111,6 +111,7 @@ describe('Icônes du menu (refonte ergonomique, lot 5 — 2026-09-15)', () => {
     for (const role of ['PRESIDENT', 'CHEF_COMMISSION', 'SECRETAIRE', 'MEMBRE', 'VERIFICATEUR', 'ASSISTANT_CONTROLEUR', 'PRMP', 'UGPM'] as const) {
       expect(icone(role, 'À faire')).toBe('inbox');
     }
-    for (const role of Object.keys(NAV_BY_ROLE) as RoleInterne[]) expect(icone(role, 'Notifications')).toBe('bell');
+    // ⚠️ 04/11 — « Notifications » n'est plus une entrée de menu (la cloche de l'en-tête).
+    for (const role of Object.keys(NAV_BY_ROLE) as RoleInterne[]) expect(icone(role, 'Notifications')).toBeUndefined();
   });
 });

@@ -52,19 +52,30 @@
         </button>
       }
       <app-notification-center (voirDossier)="dossierNotification.set($event)" />
-      <div class="entete__utilisateur">
-        <span class="entete__avatar" aria-hidden="true">{{ initials() }}</span>
-        <span class="entete__nom">{{ displayName() || login() }}</span>
-        <!-- La classe garde le code du profil ; le texte, lui, est le libellé français. -->
-        <span [class]="'profile-badge ' + role()">{{ roleLibelle() }}</span>
+      <!-- ⚠️ 04/11 (pilote, liens inutiles) — le nom de l'utilisateur ouvre ses gestes rares : « Créer compte UGPM » (PRMP), « Mot de
+           passe », « Déconnexion » ; naguère trois boutons de premier plan dans l'en-tête. Échap ou un clic ailleurs le referme. -->
+      <div class="entete__compte">
+        <button type="button" class="entete__utilisateur" aria-haspopup="menu" aria-controls="menu-utilisateur"
+          [attr.aria-expanded]="menuUtilisateurOuvert()" (click)="menuUtilisateurOuvert.set(!menuUtilisateurOuvert())">
+          <span class="entete__avatar" aria-hidden="true">{{ initials() }}</span>
+          <span class="entete__nom">{{ displayName() || login() }}</span>
+          <!-- La classe garde le code du profil ; le texte, lui, est le libellé français. -->
+          <span [class]="'profile-badge ' + role()">{{ roleLibelle() }}</span>
+          <app-icone class="entete__chevron" nom="chev" [taille]="12" />
+        </button>
+        @if (menuUtilisateurOuvert()) {
+          <ul class="entete__menu" id="menu-utilisateur" role="menu" aria-label="Mon compte">
+            @if (role() === 'PRMP') {
+              <li role="none"><a role="menuitem" class="entete__menu-item" routerLink="/prmp/creer-ugpm" (click)="menuUtilisateurOuvert.set(false)">Créer un compte UGPM</a></li>
+            }
+            <li role="none"><button type="button" role="menuitem" class="entete__menu-item" (click)="menuUtilisateurOuvert.set(false); motDePasseOuvert.set(true)">Changer mon mot de passe</button></li>
+            <li role="none"><button type="button" role="menuitem" class="entete__menu-item" (click)="menuUtilisateurOuvert.set(false); logout()">Déconnexion</button></li>
+          </ul>
+        }
       </div>
-      @if (role() === 'PRMP') {
-        <!-- « Créer compte UGPM » (demande user 2026-08-02) : naguère au pied de la barre latérale. -->
-        <a class="btn btn-outline btn-sm" routerLink="/prmp/creer-ugpm" routerLinkActive="active" ariaCurrentWhenActive="page">Créer compte UGPM</a>
-      }
-      <button type="button" class="btn btn-outline btn-sm" (click)="motDePasseOuvert.set(true)">Mot de passe</button>
+    } @else {
+      <button type="button" class="btn btn-outline btn-sm" (click)="logout()">Déconnexion</button>
     }
-    <button type="button" class="btn btn-outline btn-sm" (click)="logout()">Déconnexion</button>
   </div>
 </header>
 

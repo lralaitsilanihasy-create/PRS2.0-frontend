@@ -14,8 +14,8 @@ describe('Routage d’une notification', () => {
     expect(routePourNotification(n({ typeNotif: 'PV_A_VERIFIER', idDossier: 42 }), 'VERIFICATEUR')).toEqual({ genre: 'route', commands: ['/verificateur/verifier', '42'] });
     expect(routePourNotification(n({ typeNotif: 'PRET_DISPATCH', idDossier: 42 }), 'PRESIDENT')).toEqual({ genre: 'route', commands: ['/president/tableau-de-bord'] });
     expect(routePourNotification(n({ typeNotif: 'DEMANDE_RETRAIT_A_VALIDER', idDossier: 42 }), 'CHEF_COMMISSION')).toEqual({ genre: 'route', commands: ['/cc/retraits'] });
-    expect(routePourNotification(n({ typeNotif: 'OBSERVATION_VERIFICATION', idDossier: 42 }), 'PRMP')).toEqual({ genre: 'route', commands: ['/prmp/a-rectifier'] });
-    expect(routePourNotification(n({ typeNotif: 'PIECES_MANQUANTES_DEPOT', idDossier: 42 }), 'PRMP')).toMatchObject({ genre: 'route-type-dossier' });
+    expect(routePourNotification(n({ typeNotif: 'OBSERVATION_VERIFICATION', idDossier: 42 }), 'PRMP')).toEqual({ genre: 'route', commands: ['/prmp/tableau-de-bord'] });
+    expect(routePourNotification(n({ typeNotif: 'PIECES_MANQUANTES_DEPOT', idDossier: 42 }), 'PRMP')).toEqual({ genre: 'route', commands: ['/prmp/tableau-de-bord'] });
   });
 
   it('type non mappé avec dossier : la page du dossier, dans l’espace du connecté', () => {

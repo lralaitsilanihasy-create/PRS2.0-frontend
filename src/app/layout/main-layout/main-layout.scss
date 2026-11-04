@@ -99,11 +99,53 @@
   &:focus-visible { outline: 2px solid var(--or); outline-offset: 1px; }
 }
 
+/* ⚠️ 04/11 (pilote) — le nom de l'utilisateur est un bouton qui ouvre « Mon compte ». */
+.entete__compte { position: relative; min-width: 0; }
 .entete__utilisateur {
   display: flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
+  padding: 3px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--texte-menu);
+  font: inherit;
+  cursor: pointer;
+
+  &:hover, &[aria-expanded='true'] { background: var(--menu-survol); }
+  &:focus-visible { outline: 2px solid var(--or); outline-offset: 1px; }
+}
+.entete__chevron { color: var(--texte-menu-secondaire); transform: rotate(90deg); }
+.entete__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 1050;
+  min-width: 14rem;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  background: var(--carte-fond);
+  border: 1px solid var(--bordure);
+  border-radius: 6px;
+}
+.entete__menu-item {
+  display: block;
+  width: 100%;
+  padding: 8px 14px;
+  border: 0;
+  background: transparent;
+  color: var(--texte);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover { background: var(--ligne-survol); }
+  &:focus-visible { outline: 2px solid var(--bouton-principal); outline-offset: -2px; }
 }
 .entete__avatar {
   display: grid;

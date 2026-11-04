@@ -154,18 +154,24 @@ Inventaire, décisions du pilote (Q1-Q6) et plan : `docs/design-institutionnel-i
   4 entrées ou moins reste à plat ; « À faire » et l'accueil de l'Administrateur restent directs, comme une
   rubrique d'une seule entrée ; délégation et intérim sont toujours des déroulants à leur nom.
 - **Rangement des menus (pilote, 31/10)** : la barre suit la journée de travail — « À faire », Dossiers, puis le cycle
-  du marché (Passation, Exécution), Décisions, Pilotage ; Messagerie et Notifications à droite. La liste de tous les
+  du marché (Passation, Exécution), Décisions, Pilotage ; Messagerie à droite. ⚠️ Depuis le 04/11, « Notifications » n'est plus une entrée de menu (la cloche
+  de l'en-tête et son « Voir toutes les notifications » y mènent), et « Créer compte UGPM », « Mot de passe », « Déconnexion » sont
+  rangés sous le nom de l'utilisateur (menu « Mon compte » de l'en-tête). La liste de tous les
   dossiers du périmètre s'appelle « Dossiers » chez tous les profils (« Tous mes dossiers » chez la PRMP et l'UGPM).
   Un menu long se range en **colonnes titrées** : `NavItem.colonne` (Accès et Référentiels de l'Administrateur) ; une
   rubrique de plus de trois colonnes s'ouvre sur toute la largeur de la barre.
 - **Plan de passation (pilote, 03/11)** — chez la PRMP et l'UGPM, « Plan de passation » (`/prmp/plan`, rubrique `planification`)
   vient **juste après « À faire », avant Dossiers** : c'est leur écran de travail (document officiel ou deux volets au choix,
   suivi et détail de chaque ligne). Ce qui concerne une ligne part du plan ; le menu garde le plan et les listes qui traversent
-  toutes les lignes. « Mettre à jour un PPM » et « Calendrier des jalons » sont des boutons du plan, plus des entrées de menu ;
+  toutes les lignes. « Mettre à jour un PPM » est un bouton du plan, plus une entrée de menu ; les jalons d'une ligne s'ouvrent en fenêtre par le bouton
+  « Jalons » de son bandeau (l'onglet « Calendrier des jalons » est retiré le 04/11, route conservée) ;
   Passation = « Reçus des frais de dossier » seule, donc à plat. « Dossiers de marché » et « Appels d'offres en cours » sont RETIRÉS
   depuis le 04/11 (redondances, maquette `docs/maquette-2026-11-04-menu-prmp.html`) : la ligne du plan crée le dossier de marché, le plan
   s'ouvre filtré par `?etape=lancee`, et la rangée « Procédure en ligne » du volet (`procedure-ligne.ts`, sous la barre du dossier de mise
   en concurrence) mène à la fiche, à la commission, aux dépôts, aux reçus, à la séance et à l'évaluation. La route `/prmp/dao` reste.
+  ⚠️ 04/11 (liens inutiles) : « Mes dossiers », « Dossiers à rectifier », « PPM et marchés », la gestion générique des PPM et le
+  calendrier des jalons sont SUPPRIMÉS (« Tous mes dossiers » et le plan les remplacent ; leurs notifications y mènent) ; le fil
+  d'Ariane des écrans d'une fiche DAO remonte au plan.
 - **Espace de travail (pilote, 31/10)** — l'application est COMPACTE (en-tête bleu nuit fondu avec le menu de 36 px, pied
   réduit ; la connexion, l'inscription, le portail public et les espaces externes portent le même en-tête) :
   - une liste dont l'élément s'ouvre se présente en **deux volets** : `app-deux-volets` (`shared/ui/deux-volets.ts`), la
