@@ -95,25 +95,24 @@ interface ContenuPlans {
     } @else if (!plan()) {
       <section class="pp__vide card" aria-labelledby="pp-vide-t">
         <h2 id="pp-vide-t" class="pp__vide-t">Aucun plan signé</h2>
-        <p>Un plan paraît ici une fois contrôlé et clôturé par la Commission. Saisissez-le, puis soumettez-le.</p>
+        <p>Un plan paraît ici une fois contrôlé et clôturé par la Commission.@if (estPrmp()) { Saisissez-le, puis soumettez-le. }</p>
         @if (estPrmp()) {
           <a class="btn btn-primary btn-sm" routerLink="/prmp/soumettre-dossier" [queryParams]="{ famille: 'DDP' }">Saisir un plan de passation</a>
         }
       </section>
     } @else {
       @let p = plan()!;
+      <!-- ⚠️ 04/11 (pilote) — plusieurs plans en vigueur (le Président et le CC voient ceux de leur localité) : une liste, par entité. -->
       @if (plans().length > 1) {
         <div class="pp__entete">
-          @if (plans().length > 1) {
-            <div class="pp__plans" role="group" aria-label="Plan affiché">
-              @for (x of plans(); track x.idDossier) {
-                <a class="btn btn-sm" [class.btn-primary]="x.idDossier === p.idDossier" [class.btn-outline]="x.idDossier !== p.idDossier"
-                  [routerLink]="['/prmp/plan', x.idDossier]" [attr.aria-current]="x.idDossier === p.idDossier ? 'page' : null">
-                  {{ libellePlanCourt(x) }}
-                </a>
+          <label class="pp__champ pp__champ--plan">
+            <span class="pp__champ-l">Plan affiché</span>
+            <select class="form-control pp__select" [value]="p.idDossier" (change)="choisirPlan($any($event.target).value)">
+              @for (x of plansTries(); track x.idDossier) {
+                <option [value]="x.idDossier" [selected]="x.idDossier === p.idDossier">{{ libellePlanLong(x) }}</option>
               }
-            </div>
-          }
+            </select>
+          </label>
         </div>
       }
 
@@ -321,6 +320,7 @@ interface ContenuPlans {
     .pp__outils { display: flex; flex-wrap: wrap; gap: 0.5rem 0.9rem; align-items: flex-end; }
     .pp__champ { display: grid; gap: 0.2rem; min-width: 0; }
     .pp__champ-l { font-size: 0.75rem; font-weight: 500; color: var(--texte-secondaire); }
+    .pp__champ--plan { flex: 1 1 24rem; max-width: 40rem; }
     .pp__select { min-width: 15rem; }
     .pp__champ--recherche { flex: 1 1 18rem; max-width: 30rem; }
     .pp__resultat { margin: 0 0 0.45rem; font-size: 0.8125rem; color: var(--texte-secondaire); }
@@ -679,7 +679,7 @@ export class PlanPassation implements OnInit {
         // Un identifiant d'URL qui n'est pas un plan en vigueur : on montre le plus récent, à sa propre adresse.
         const id = this.idDemande();
         if (id != null && !this.plans().some((p) => p.idDossier === id) && this.plans().length) {
-          void this.router.navigate(['/prmp/plan'], { replaceUrl: true });
+          void this.router.navigate([this.espace, 'plan'], { replaceUrl: true });
         }
       },
       error: () => {
@@ -835,6 +835,22 @@ export class PlanPassation implements OnInit {
   }
 
   /** « 00001/PPM-AGPM · 2026 » : le numéro du plan et son exercice. */
+  /** ⚠️ 04/11 — l'espace de l'écran (« /prmp », « /president », « /cc ») : ses liens restent dans l'espace d'où l'on vient. */
+  private readonly espace = '/' + (this.router.url.split(/[/?#]/)[1] || 'prmp');
+
+  choisirPlan(id: string): void {
+    void this.router.navigate([this.espace, 'plan', Number(id)]);
+  }
+
+  /** Les plans, rangés par entité puis par référence. */
+  readonly plansTries = computed(() => [...this.plans()].sort((a, b) => this.libellePlanLong(a).localeCompare(this.libellePlanLong(b))));
+
+  /** « MINISTERE DES TRAVAUX PUBLICS — 00001/PPM-AGPM · 2026 » : l'entité d'abord, pour qui voit les plans de toute une localité. */
+  libellePlanLong(d: Dossier): string {
+    const entite = d.idEntiteContract != null ? this.entites().get(String(d.idEntiteContract))?.trim() : null;
+    return entite ? `${entite} — ${this.libellePlanCourt(d)}` : this.libellePlanCourt(d);
+  }
+
   libellePlanCourt(d: Dossier): string {
     const exercice = this.contenu()?.ppms.find((x) => x.idDossier === d.idDossier)?.exercice;
     const ref = (d.refeDossier ?? `Dossier ${d.idDossier}`).split('/CNM/')[0];

@@ -143,6 +143,8 @@ function menuCommission(base: '/president' | '/cc'): NavItem[] {
     // entrée ajoutée plus haut) ; les deux accès coexistent.
     // ⚠️ Demande pilote (2026-09-04) — « Rapports », « Statistiques » et « Messagerie » avaient été retirés du menu ;
     // ⚠️ 31/10 (pilote) — REMIS : Rapports et Statistiques dans Pilotage, Messagerie à droite près des notifications.
+    // ⚠️ 04/11 (pilote) — les plans de passation de la localité, en consultation : avancement de chaque ligne, dossiers, jalons.
+    { label: 'Plans de passation', path: `${base}/plan`, icon: 'calendar' },
     { label: 'Rapports', path: `${base}/rapports`, icon: 'board' },
     { label: 'Statistiques', path: `${base}/statistiques`, icon: 'board' },
     { label: 'Messagerie', path: `${base}/messagerie`, icon: 'message' },

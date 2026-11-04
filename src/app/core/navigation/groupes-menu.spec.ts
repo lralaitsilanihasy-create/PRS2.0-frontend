@@ -261,6 +261,7 @@ describe('sectionsMenu — dérivation des rubriques', () => {
         'Répartition des dossiers par contrôleur',
         'Mon intérim', // intérim désigné (2026-09-21) : qui agit à la place du P/CC absent
         'Chaînes de contrôle',
+        'Plans de passation', // ⚠️ 04/11 (pilote) — les plans de la localité, en consultation
         'Rapports', // ⚠️ 31/10 (pilote) — remis au menu
         'Statistiques',
       ]);

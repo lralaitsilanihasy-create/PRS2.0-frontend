@@ -31,6 +31,9 @@ import { sortieProtegeeGuard } from '../../core/navigation/sortie-protegee';
 /** Espace Président (lazy, sous roleGuard PRESIDENT). */
 export const PRESIDENT_ROUTES: Routes = [
   { path: '', redirectTo: 'tableau-de-bord', pathMatch: 'full' },
+  // ⚠️ 04/11 (pilote) — l'écran du plan de passation, en consultation (Président) : les plans en vigueur de la localité, une entité à la fois.
+  { path: 'plan', loadComponent: () => import('../prmp/plan-passation/plan-passation').then((m) => m.PlanPassation), data: { title: 'Plans de passation' } },
+  { path: 'plan/:idDossier', loadComponent: () => import('../prmp/plan-passation/plan-passation').then((m) => m.PlanPassation), data: { title: 'Plans de passation' } },
   // Refonte ergonomique (2026-09-15) — accueil « À faire » : les gestes que le serveur attribue au connecté
   // (demande 2026-09-14-accueil-a-faire). Monté dans l'espace pour que chaque geste y reste.
   { path: 'a-faire', loadComponent: () => import('../home/a-faire').then((m) => m.AFaireEcran), data: { title: 'À faire' } },

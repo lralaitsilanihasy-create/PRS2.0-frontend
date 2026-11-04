@@ -401,6 +401,7 @@ describe('Menu horizontal par rubriques (design institutionnel, 30/10/2026)', ()
       '/president/repartition-dispatch',
       '/president/interim',
       '/president/chaines-controle',
+      '/president/plan',
       '/president/rapports',
       '/president/statistiques',
     ]);
