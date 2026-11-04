@@ -179,17 +179,6 @@
 /* Pastille du profil, sur l’en-tête sombre. */
 .entete__utilisateur .profile-badge { background: var(--menu-survol); color: var(--texte-menu); }
 
-/* Pastille « Heure de recette » (24/10) : famille « examen ». */
-.entete__recette {
-  padding: 2px 9px;
-  border-radius: 20px;
-  background: var(--examen-fond);
-  color: var(--examen-texte);
-  font-size: 11px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
 /* ── Menu principal : barre horizontale, collée en haut à la lecture ── */
 .menu {
   position: sticky;
