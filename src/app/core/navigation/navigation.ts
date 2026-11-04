@@ -254,6 +254,8 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
   ],
   MEMBRE: [
     entreeAFaire('membre'),
+    // ⚠️ 04/11 (pilote) — les plans de passation de la localité, en consultation, avant Dossiers (comme chez le Président et le CC).
+    { label: 'Plans de passation', path: '/membre/plan', icon: 'calendar' },
     // ⚠️ Demande pilote (2026-09-12) — même libellé que le P/CC (« Tous les dossiers »), même écran (le
     // pipeline `tableau-de-bord`) ; route inchangée.
     { label: 'Dossiers', path: '/membre/tableau-de-bord', icon: 'folder' },

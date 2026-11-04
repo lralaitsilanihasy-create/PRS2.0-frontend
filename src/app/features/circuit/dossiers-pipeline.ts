@@ -411,8 +411,8 @@ export class DossiersPipeline {
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
   /** Lot L4-F6 : lien vers la page du dossier, retour vers cette liste (page et mot-clé compris). */
   protected readonly lien = inject(LienDossier);
-  /** ⚠️ 04/11 (pilote) — le Président et le CC ouvrent le plan depuis « Dossiers » (leur liste de tous les dossiers, sans source). */
-  private readonly versLePlan = computed(() => ['PRESIDENT', 'CHEF_COMMISSION'].includes(this.auth.role() ?? '') && this.source === undefined);
+  /** ⚠️ 04/11 (pilote) — le Président, le CC et le Membre ouvrent le plan depuis « Dossiers » (leur liste de tous les dossiers, sans source). */
+  private readonly versLePlan = computed(() => ['PRESIDENT', 'CHEF_COMMISSION', 'MEMBRE'].includes(this.auth.role() ?? '') && this.source === undefined);
 
   /** Où mène une ligne : le plan, sur la ligne du dossier (Président, CC) ; sinon la page du dossier, avec le retour vers la liste. */
   lienLigne(d: Dossier): { commandes: (string | number)[]; params: Params } {

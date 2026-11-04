@@ -39,7 +39,7 @@ export function lienVersLePlan(
   d: Pick<Dossier, 'idDossier' | 'idTypeDossier' | 'statut'>,
   espace = '/prmp',
 ): { commandes: (string | number)[]; params: Record<string, number> } | null {
-  // ⚠️ 04/11 — `espace` : « /prmp », « /president » ou « /cc », qui ont tous l'écran du plan.
+  // ⚠️ 04/11 — `espace` : « /prmp », « /president », « /cc » ou « /membre », qui ont tous l'écran du plan.
   if (d.idTypeDossier === 'DDP') return STATUTS_PLAN_EN_VIGUEUR.has(d.statut ?? '') ? { commandes: [espace + '/plan', d.idDossier], params: {} } : null;
   return { commandes: [espace + '/plan'], params: { dossier: d.idDossier } };
 }

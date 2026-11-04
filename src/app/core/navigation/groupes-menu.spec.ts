@@ -172,11 +172,12 @@ describe('sectionsMenu — dérivation des rubriques', () => {
     expect(sections[5].items.map((i) => i.label)).toEqual(['PV et lettres de renvoi', 'Demandes de retrait']);
   });
 
-  it('Membre : Mon travail · Dossiers · Décisions', () => {
+  it('Membre : Mon travail · Planification · Dossiers · Décisions (04/11 : plans avant Dossiers)', () => {
     const sections = sectionsMenu(navFor('MEMBRE'));
-    expect(sections.map((s) => s.titre)).toEqual(['Mon travail', 'Dossiers', 'Décisions']);
-    expect(sections[1].items.map((i) => i.label)).toEqual(['Dossiers']);
-    expect(sections[2].items.map((i) => i.label)).toEqual(['PV et lettres de renvoi']);
+    expect(sections.map((s) => s.titre)).toEqual(['Mon travail', 'Planification', 'Dossiers', 'Décisions']);
+    expect(sections[1].items.map((i) => i.label)).toEqual(['Plans de passation']);
+    expect(sections[2].items.map((i) => i.label)).toEqual(['Dossiers']);
+    expect(sections[3].items.map((i) => i.label)).toEqual(['PV et lettres de renvoi']);
   });
 
   it('Assistant contrôleur : Mon travail · Dossiers · Reçus (les PV d’abord, 31/10)', () => {
