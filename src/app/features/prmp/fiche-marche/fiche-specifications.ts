@@ -38,28 +38,33 @@ function motif(e: unknown): string {
       @if (chargement()) {
         <p class="sp__aide" role="status">Chargement…</p>
       } @else {
-        @if (actuel(); as s) {
-          <p class="sp__fichier">
-            <strong>{{ s.nomFichier }}</strong>
-            <span class="sp__meta">{{ poids(s.taille) }}@if (s.deposeLe) { · déposé le {{ date(s.deposeLe) }} }</span>
-            <button type="button" class="btn btn-sm btn-outline" [disabled]="occupe()" (click)="ouvrir()">Ouvrir le PDF</button>
-          </p>
-        } @else {
-          <p class="sp__absent" role="status">Aucun PDF : la pièce « Descriptif technique et plans des travaux » manquera au dossier.</p>
-        }
-        @if (erreur(); as e) { <p class="form-error" role="alert">{{ e }}</p> }
-        @if (!lecture()) {
-          <div class="sp__actions">
-            <label class="sp__choix">
-              <span class="cnm-sr-only">PDF du devis descriptif et des plans</span>
-              <input type="file" accept=".pdf,application/pdf" [disabled]="occupe()" (change)="deposer($event)" />
-            </label>
+        <!-- ⚠️ 04/11 (pilote, « rectifier la mise en forme ») — le fichier et ses gestes sur une seule ligne, dans un cadre ; le champ
+             de fichier natif (« Choisir un fichier · Aucun fichier choisi ») est caché derrière un bouton à son nom. -->
+        <div class="sp__carte" [class.sp__carte--vide]="!actuel()">
+          @if (actuel(); as s) {
+            <span class="sp__nom">
+              <strong>{{ s.nomFichier }}</strong>
+              <span class="sp__meta">{{ poids(s.taille) }}@if (s.deposeLe) { · déposé le {{ date(s.deposeLe) }} }</span>
+            </span>
+          } @else {
+            <span class="sp__absent" role="status">Aucun PDF : la pièce « Descriptif technique et plans des travaux » manquera au dossier.</span>
+          }
+          <span class="sp__actions">
             @if (actuel()) {
-              <button type="button" class="btn btn-sm btn-outline sp__retirer" [disabled]="occupe()" (click)="retirer()">Retirer</button>
+              <button type="button" class="btn btn-sm btn-outline" [disabled]="occupe()" (click)="ouvrir()">Ouvrir le PDF</button>
             }
-          </div>
-          @if (occupe()) { <p class="sp__aide" role="status">Envoi…</p> }
-        }
+            @if (!lecture()) {
+              <label class="btn btn-sm sp__choix" [class.btn-primary]="!actuel()" [class.btn-outline]="!!actuel()" [class.sp__choix--occupe]="occupe()">
+                {{ occupe() ? 'Envoi…' : actuel() ? 'Remplacer le PDF' : 'Déposer le PDF' }}
+                <input type="file" class="cnm-sr-only" accept=".pdf,application/pdf" [disabled]="occupe()" (change)="deposer($event)" />
+              </label>
+              @if (actuel()) {
+                <button type="button" class="btn btn-sm btn-outline sp__retirer" [disabled]="occupe()" (click)="retirer()">Retirer</button>
+              }
+            }
+          </span>
+        </div>
+        @if (erreur(); as e) { <p class="form-error" role="alert">{{ e }}</p> }
       }
     </section>
   `,
@@ -68,10 +73,15 @@ function motif(e: unknown): string {
     .sp__titre { margin: 0; font-size: 1rem; }
     .sp__clause { font-size: 0.78rem; font-weight: 500; color: var(--n-500); margin-left: 0.4rem; }
     .sp__aide { margin: 0; font-size: 0.85rem; color: var(--n-500); }
-    .sp__absent { margin: 0; font-size: 0.85rem; color: var(--warning-text); }
-    .sp__fichier { margin: 0; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
-    .sp__meta { font-size: 0.8rem; color: var(--n-500); }
-    .sp__actions { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+    .sp__absent { font-size: 0.85rem; color: var(--warning-text); }
+    .sp__carte { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; padding: 0.6rem 0.8rem; border: 1px solid var(--bordure); border-radius: 6px; background: var(--carte-fond); }
+    .sp__carte--vide { border-style: dashed; }
+    .sp__nom { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.6rem; min-width: 0; overflow-wrap: anywhere; }
+    .sp__meta { font-size: 0.8rem; color: var(--n-500); font-variant-numeric: tabular-nums; }
+    .sp__actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    .sp__choix { position: relative; cursor: pointer; margin: 0; }
+    .sp__choix:focus-within { outline: 2px solid var(--bouton-principal); outline-offset: 2px; }
+    .sp__choix--occupe { opacity: 0.6; pointer-events: none; }
     .sp__retirer { color: var(--retard-texte); }
   `,
 })

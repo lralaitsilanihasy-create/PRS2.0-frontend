@@ -437,6 +437,10 @@
                     [lecture]="figee() || enLecture()"
                     (enregistre)="besoinEnregistre()"
                   />
+                  @if (descriptifSousLeBesoin()) {
+                    <!-- ⚠️ 04/11 — pas de bloc des pièces (contrat-cadre de travaux) : le devis descriptif et les plans se déposent ici. -->
+                    <div class="fm__descriptif"><app-fiche-specifications [idDmc]="idDmc()!" [lecture]="figee() || enLecture()" /></div>
+                  }
                 } @else if (rendu(bloc) === 'MOYENS') {
                   <!-- ⚠️ 03/10 (lot 3 du chantier b) — matériel et personnel exigés des travaux, en listes. -->
                   <app-fiche-moyens [idDmc]="idDmc()!" [lecture]="figee() || enLecture()" (enregistre)="besoinEnregistre()" />

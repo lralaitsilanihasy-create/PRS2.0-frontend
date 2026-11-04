@@ -605,6 +605,28 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     expect(racine().querySelector('.fm__bloc-modif')).toBeNull();
   });
 
+  it('04/11 — travaux sans bloc des pièces (contrat-cadre) : le PDF du devis descriptif se dépose sous le besoin, et « B14 » y mène', () => {
+    monter('PRMP', 42);
+    ouvrir(REF_BESOIN, fiche({ nbLots: 1, saisieParLot: false, categorie: 'TRAVAUX', valeurs: {} }));
+    fixture.componentInstance.allerAuBloc('B14');
+    rendre();
+    expect(fixture.componentInstance.blocCourant()?.code).toBe('B12');
+    http.expectOne('/api/fiches-marche/42/articles').flush([]);
+    http.expectOne('/api/fiches-marche/42/specifications').flush({ message: 'Not found' }, { status: 404, statusText: 'Not Found' });
+    rendre();
+    expect(racine().querySelector('app-fiche-specifications')).not.toBeNull();
+    TestBed.resetTestingModule();
+
+    // En fournitures, rien sous le besoin : les spécifications SONT le besoin.
+    monter('PRMP', 42);
+    ouvrir(REF_BESOIN, fiche({ nbLots: 1, saisieParLot: false, valeurs: {} }));
+    fixture.componentInstance.allerAuBloc('B12');
+    rendre();
+    http.expectOne('/api/fiches-marche/42/articles').flush([]);
+    rendre();
+    expect(racine().querySelector('app-fiche-specifications')).toBeNull();
+  });
+
   it('garde des listes (03/10) : une liste modifiée suspend le départ ; « Abandonner » part, « Enregistrer et continuer » enregistre puis part', async () => {
     monter('PRMP', 42);
     ouvrir(REF_BESOIN, fiche({ nbLots: 1, saisieParLot: false, valeurs: {} }));

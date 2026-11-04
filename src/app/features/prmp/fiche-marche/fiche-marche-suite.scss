@@ -29,6 +29,8 @@
 .fm__prog { display: block; height: 6px; border-radius: 3px; background: var(--n-200); margin-top: 0.35rem; overflow: hidden; }
 .fm__prog i { display: block; height: 100%; background: var(--bouton-principal); }
 .fm__vide { text-align: center; color: var(--n-500); padding: 1.5rem; }
+/* ⚠️ 04/11 — le dépôt du devis descriptif sous le besoin (contrat-cadre de travaux) : la marge du besoin, au-dessus du pied du bloc. */
+.fm__descriptif { padding: 0 1.1rem 0.9rem; }
 
 // Choix de la ligne : largeurs fixes, la désignation seule se replie (les `td` du design system sont `nowrap`).
 .fm__lignes { table-layout: fixed; }

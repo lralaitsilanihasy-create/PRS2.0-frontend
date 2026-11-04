@@ -24,6 +24,7 @@ import { FicheMoyens } from './fiche-moyens';
 import { ListeRestreinteFiche } from './liste-restreinte';
 import { MotifRestreintFiche } from './motif-restreint';
 import { FichePieces } from './fiche-pieces';
+import { FicheSpecifications } from './fiche-specifications';
 import { PpmIdentification } from './ppm-identification';
 import { CritereTechnique, FicheSousCriteres } from './fiche-sous-criteres';
 import { ListeASauver } from './liste-a-sauver';
@@ -132,6 +133,7 @@ function routeAbsente(e: HttpErrorResponse | ApiError): boolean {
     MotifRestreintFiche,
     ListeRestreinteFiche,
     FichePieces,
+    FicheSpecifications,
     PpmIdentification,
     FicheSousCriteres,
     ImportDao,
@@ -396,6 +398,12 @@ export class FicheMarcheEcran {
   /** Le fuseau de l'heure de référence (`B04-SE-04`), affiché à côté des heures saisies en mode électronique. */
   readonly fuseau = computed(() => (this.modeElectronique() ? String(this.valeurs()['B04-SE-04'] ?? '') : ''));
   readonly blocs = computed(() => blocsASaisir(this.referentiel(), this.typeMarche()));
+  /**
+   * ⚠️ 04/11 (constat du pilote, contrat-cadre de travaux de Sambava) — le référentiel du contrat-cadre ne sert pas de bloc des
+   * pièces de l'offre (B14, rendu `PIECES`), où se dépose le PDF du devis descriptif et des plans ; le serveur l'attend pourtant
+   * de toute fiche de travaux. Sans ce bloc, le dépôt se fait sous le besoin (DQE), et le contrôle qui le réclame y mène.
+   */
+  readonly descriptifSousLeBesoin = computed(() => this.fiche()?.categorie === 'TRAVAUX' && !this.blocs().some((b) => b.rendu === 'PIECES'));
   readonly blocCourant = computed<BlocFiche | null>(() => this.blocs()[this.blocIdx()] ?? null);
   /**
    * ⚠️ 03/10 — accès direct aux blocs : le bloc courant porte-t-il des saisies non enregistrées ? Comparé à la dernière
@@ -1076,7 +1084,9 @@ export class FicheMarcheEcran {
   }
 
   allerAuBloc(code: string): void {
-    const i = this.blocs().findIndex((b) => b.code === code);
+    let i = this.blocs().findIndex((b) => b.code === code);
+    // Le contrôle du devis descriptif nomme le bloc des pièces : absent, c'est sous le besoin que le PDF se dépose.
+    if (i < 0 && this.descriptifSousLeBesoin()) i = this.blocs().findIndex((b) => b.rendu === 'BESOIN');
     if (i < 0) return;
     this.quitterLeBloc(() => {
       this.blocIdx.set(i);
