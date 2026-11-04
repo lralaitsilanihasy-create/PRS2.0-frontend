@@ -9,6 +9,7 @@ import { AnomalieTranscription, Capm, Compte, FORME_MARCHE_LIBELLES, FormeMarche
 import { PpmFormFactory } from './ppm-form-factory';
 import { calculerFichePresentation } from './fiche-presentation';
 import { dateAvis, statutsAdmissibles } from './statut-marche';
+import { proposerDatesManquantes } from './proposer-dates';
 
 /**
  * Un champ d'une ligne importée qui diffère du dossier examiné (rectification, 2026-08-15).
@@ -45,6 +46,23 @@ export const OBJET_MARCHE_MAX = 4000;
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, ModaleDirective, MontantFrDirective, AutosizeDirective],
   template: `
+    <!-- ⚠️ 04/11 (pilote, option A) — les dates manquantes du calendrier, proposées entre les dates connues de chaque ligne ; la PRMP les
+         revoit dans « CAPM » (lignes surlignées) et les valide. -->
+    @if (marcheControls().length) {
+      <div class="sd__proposer">
+        <button type="button" class="btn btn-secondary btn-sm" (click)="proposerToutesLesDates()">Proposer les dates manquantes</button>
+        @if (bilanProposition(); as b) {
+          <span class="sd__proposer-bilan" role="status">{{ b }}</span>
+        } @else {
+          <span class="form-hint">Répartit les processus non datés de chaque ligne entre ses dates connues, dans l'ordre du modèle CAPM.</span>
+        }
+      </div>
+    }
+    @if (nbLignesProposees()) {
+      <div class="alert alert-warning sd__soa">
+        <div class="sd__warn-title">Dates proposées sur {{ nbLignesProposees() }} ligne(s) — à revoir : ouvrez « CAPM » de chaque ligne (les dates proposées y sont surlignées), corrigez-les au besoin, puis validez.</div>
+      </div>
+    }
     @if (nbAutoCorrige()) {
       <div class="alert sd__soa sd__alert-ok">
         <div class="sd__warn-title">✓ {{ nbAutoCorrige() }} ligne(s) auto-corrigée(s) par le système (fragments recollés, montants réalignés) — à confirmer.</div>
@@ -203,6 +221,9 @@ export const OBJET_MARCHE_MAX = 4000;
                       @if (!datesSaisies(g)) {
                         <span class="sd__dates-manq">⚠ Dates manquantes</span>
                       }
+                      @if (proposeesDe(g).size) {
+                        <span class="sd__dates-prop">Dates proposées, à revoir</span>
+                      }
                       <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirLots(g)"
                         [class.sd__lot-warn]="aAnomalieLot(g)"
                         [title]="lotsExplicites(g) ? '' : 'Lot unique par défaut = objet du marché ; cliquez pour le modifier ou en ajouter.'">
@@ -291,7 +312,11 @@ export const OBJET_MARCHE_MAX = 4000;
               complet. Les <strong>dates de début du PDF</strong> ne sont pas modifiables ; la <strong>date de fin</strong> (optionnelle) est
               pré-proposée à la veille du début suivant.</p>
             @if (procRestants(); as n) {
-              <p class="form-hint sd-proc-restants" role="status">{{ n }} processus ni daté{{ n > 1 ? 's' : '' }} ni sans objet : le plan ne pourra pas être soumis en l’état.</p>
+              <p class="form-hint sd-proc-restants" role="status">{{ n }} processus ni daté{{ n > 1 ? 's' : '' }} ni sans objet : le plan ne pourra pas être soumis en l’état.
+                <button type="button" class="btn btn-secondary btn-sm" (click)="proposerDansLaFenetre()">Proposer les dates manquantes</button></p>
+            }
+            @if (proposeesFenetre().size) {
+              <p class="form-hint sd-proc-proposees">Les dates surlignées sont <strong>proposées</strong> : vérifiez-les, corrigez-les au besoin, puis validez.</p>
             }
             <div class="sd-proc-head" aria-hidden="true">
               <span>Processus</span>
@@ -302,7 +327,7 @@ export const OBJET_MARCHE_MAX = 4000;
             </div>
             @for (ctrl of procControls(); track ctrl.get('uid')!.value) {
               @if (titrePhase($index); as t) { <div class="sd-proc-phase">{{ t }}</div> }
-              <div class="sd-proc-row" [formGroup]="ctrl">
+              <div class="sd-proc-row" [class.sd-proc-row--proposee]="proposeesFenetre().has(ctrl.get('idCapm')!.value)" [formGroup]="ctrl">
                 <span class="sd-proc-lib" [title]="libelleProc(ctrl)">{{ libelleProc(ctrl) }}</span>
                 <input class="form-control sd-proc-date" type="date" formControlName="dateDebut" [attr.aria-label]="'Début : ' + libelleProc(ctrl)" />
                 <input class="form-control sd-proc-date" type="date" formControlName="dateFin" [attr.aria-label]="'Fin : ' + libelleProc(ctrl)" />
@@ -452,7 +477,12 @@ export const OBJET_MARCHE_MAX = 4000;
     .sd-proc-head, .sd-proc-row { display: grid; grid-template-columns: minmax(0, 1fr) 9.5rem 9.5rem 5rem 2.4rem; gap: 0.5rem; align-items: center; }
     .sd-proc-so { justify-self: center; width: 1.1rem; height: 1.1rem; }
     .sd-proc-motif { padding: 0 0 0.3rem 1rem; }
-    .sd-proc-restants { color: var(--warning-text); font-weight: 500; }
+    .sd-proc-restants { color: var(--warning-text); font-weight: 500; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+    .sd-proc-row--proposee .sd-proc-date { background: var(--examen-fond); }
+    .sd-proc-proposees { margin: 0; }
+    .sd__proposer { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; margin-bottom: 0.75rem; }
+    .sd__proposer-bilan { font-size: var(--text-sm); color: var(--texte); }
+    .sd__dates-prop { display: inline-block; font-size: var(--text-xs); font-weight: 500; color: var(--examen-texte); background: var(--examen-fond); border-radius: 999px; padding: 0.1rem 0.45rem; }
     .sd-proc-head { margin-top: 0.6rem; font-size: var(--text-xs); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--n-400); }
     .sd-proc-head-date { text-align: center; }
     .sd-proc-row { padding: 0.15rem 0; }
@@ -602,6 +632,12 @@ export class PpmSaisieGrid {
   private readonly procErreurs = signal<Record<number, string>>({});
   /** Erreur globale du modal CAPM (ex. aucun processus daté). */
   readonly erreurDates = signal<string | null>(null);
+  /** ⚠️ 04/11 (option A) — par ligne (uid), les processus dont la date a été proposée et pas encore revue (validée dans « CAPM »). */
+  readonly proposees = signal<ReadonlyMap<number, ReadonlySet<number>>>(new Map());
+  readonly nbLignesProposees = computed(() => this.proposees().size);
+  readonly bilanProposition = signal<string | null>(null);
+  /** Les processus proposés de la ligne ouverte dans « CAPM ». */
+  readonly proposeesFenetre = signal<ReadonlySet<number>>(new Set());
   readonly lotsCible = signal<FormGroup | null>(null);
   readonly lotsForm = this.fb.array([] as FormGroup[]);
 
@@ -952,10 +988,22 @@ export class PpmSaisieGrid {
   ouvrirDates(g: FormGroup): void {
     this.procErreurs.set({});
     this.erreurDates.set(null);
-    // Grille effective de la ligne : modèle spécifique à son mode (ex. Appel d'offres ouvert) sinon communs.
-    const effectifs = this.factory.capmsEffectifs(this.capms(), this.modesList(), g.get('modeLibelle')?.value as string);
+    const { effectifs, groupes } = this.calendrierDe(g);
     this.datesCapms.set(effectifs);
     this.datesForm.clear();
+    groupes.forEach((grp) => this.datesForm.push(grp));
+    this.proposerFins(); // fins pré-proposées à la veille du début suivant (débuts fixes)
+    this.proposeesFenetre.set(this.proposeesDe(g));
+    this.datesCible.set(g);
+  }
+  /**
+   * Le calendrier d'une ligne, tel que « CAPM » le présente : chaque processus de la grille effective de son mode (modèle spécifique
+   * sinon communs), avec ses dates ; les dates posées hors grille sont remappées par mot-clé, ou gardées à la suite.
+   */
+  private calendrierDe(g: FormGroup): { effectifs: Capm[]; groupes: FormGroup[] } {
+    // Grille effective de la ligne : modèle spécifique à son mode (ex. Appel d'offres ouvert) sinon communs.
+    const effectifs = this.factory.capmsEffectifs(this.capms(), this.modesList(), g.get('modeLibelle')?.value as string);
+    const groupes: FormGroup[] = [];
     // TOUS les processus du modèle sont affichés (comme le document CAPM) ; seuls les datés seront enregistrés.
     interface Existant { dateDebut: string; dateFin: string; sansObjet?: boolean; motifSansObjet?: string }
     const existants = new Map<number, Existant>();
@@ -984,7 +1032,7 @@ export class PpmSaisieGrid {
       // Date de début issue du PDF (non vide) → verrouillée (non modifiable) ; une saisie manuelle reste éditable.
       if (ex?.dateDebut) grp.get('dateDebut')!.disable();
       if (ex?.sansObjet) { grp.get('dateDebut')!.disable(); grp.get('dateFin')!.disable(); }
-      this.datesForm.push(grp);
+      groupes.push(grp);
     };
     for (const c of effectifs) {
       const ex = existants.get(c.idCapm);
@@ -993,8 +1041,77 @@ export class PpmSaisieGrid {
     }
     // Dates restées sans équivalent dans la grille effective : conservées à la suite (jamais perdues).
     for (const [idCapm, ex] of existants) pousser(idCapm, ex);
-    this.proposerFins(); // fins pré-proposées à la veille du début suivant (débuts fixes)
-    this.datesCible.set(g);
+    return { effectifs, groupes };
+  }
+
+  /** Les processus proposés d'une ligne, pas encore revus. */
+  proposeesDe(g: FormGroup): ReadonlySet<number> {
+    return this.proposees().get(this.uidDe(g)) ?? new Set();
+  }
+  private marquerProposees(g: FormGroup, ids: ReadonlySet<number> | null): void {
+    const m = new Map(this.proposees());
+    if (ids && ids.size) m.set(this.uidDe(g), ids);
+    else m.delete(this.uidDe(g));
+    this.proposees.set(m);
+  }
+  /** Le calendrier dans l'ordre de la grille, tel que la proposition le lit. */
+  private aProposer(groupes: FormGroup[]): { idCapm: number; dateDebut: string; sansObjet: boolean }[] {
+    return groupes
+      .map((c) => c.getRawValue() as { idCapm: number | null; dateDebut: string; sansObjet: boolean })
+      .filter((v): v is { idCapm: number; dateDebut: string; sansObjet: boolean } => v.idCapm != null)
+      .map((v) => ({ idCapm: v.idCapm, dateDebut: v.dateDebut ?? '', sansObjet: !!v.sansObjet }));
+  }
+
+  /** ⚠️ 04/11 (option A) — dans « CAPM » : propose les débuts manquants de la ligne ouverte (surlignés), puis les fins. */
+  proposerDansLaFenetre(): void {
+    const dates = proposerDatesManquantes(this.aProposer(this.procControls()));
+    if (!dates.size) {
+      this.erreurDates.set('Aucune date connue sur cette ligne : datez au moins un processus pour situer le calendrier.');
+      return;
+    }
+    for (const c of this.procControls()) {
+      const d = dates.get(c.get('idCapm')!.value as number);
+      if (d) c.get('dateDebut')!.setValue(d);
+    }
+    this.proposerFins();
+    this.proposeesFenetre.set(new Set([...this.proposeesFenetre(), ...dates.keys()]));
+  }
+
+  /**
+   * ⚠️ 04/11 (option A) — pour toutes les lignes : les débuts manquants proposés entre les dates connues, enregistrés dans la ligne et
+   * marqués « à revoir » jusqu'à la validation de son « CAPM ». Une ligne sans aucune date connue est laissée telle quelle.
+   */
+  proposerToutesLesDates(): void {
+    let nbDates = 0;
+    let nbLignes = 0;
+    let sansAncre = 0;
+    for (const g of this.marcheControls()) {
+      const { groupes } = this.calendrierDe(g);
+      const lus = this.aProposer(groupes);
+      if (!lus.some((x) => !x.dateDebut && !x.sansObjet)) continue;
+      const dates = proposerDatesManquantes(lus);
+      if (!dates.size) { sansAncre++; continue; }
+      for (const c of groupes) {
+        const d = dates.get(c.get('idCapm')!.value as number);
+        if (d) c.get('dateDebut')!.setValue(d);
+      }
+      const arr = g.get('processus') as FormArray;
+      arr.clear();
+      groupes
+        .filter((c) => { const v = c.getRawValue() as { dateDebut: string; sansObjet: boolean }; return !!v.dateDebut || !!v.sansObjet; })
+        .forEach((c) => arr.push(this.factory.processusGroup(c.getRawValue())));
+      g.markAsDirty();
+      this.marquerProposees(g, new Set([...this.proposeesDe(g), ...dates.keys()]));
+      nbDates += dates.size;
+      nbLignes++;
+    }
+    const pl = (n: number, mot: string): string => `${n} ${mot}${n > 1 ? 's' : ''}`;
+    const reste = sansAncre ? `${pl(sansAncre, 'ligne')} sans aucune date connue, à dater à la main` : '';
+    this.bilanProposition.set(
+      nbLignes
+        ? `${pl(nbDates, 'date')} proposée${nbDates > 1 ? 's' : ''} sur ${pl(nbLignes, 'ligne')}${reste ? ' ; ' + reste : ''}.`
+        : reste ? `Rien à proposer : ${reste}.` : 'Toutes les lignes sont déjà datées.',
+    );
   }
   annulerDates(): void {
     this.procErreurs.set({});
@@ -1037,6 +1154,7 @@ export class PpmSaisieGrid {
     arr.clear();
     [...datees, ...sansObjet].forEach((c) => arr.push(this.factory.processusGroup(c.getRawValue())));
     g.markAsDirty();
+    this.marquerProposees(g, null); // revues et validées
     this.datesCible.set(null);
   }
 
