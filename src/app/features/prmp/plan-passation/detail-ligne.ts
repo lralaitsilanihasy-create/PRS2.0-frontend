@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, output } from '@angular/core';
 
 import { Echeance, JalonReel, LigneEligible, Marche, MarchePrevision, NoeudFiliation } from '../../../models';
 import { ChaineLigne, ChainesDuPlan, dossiersDeLaLigne } from '../../circuit/page-dossier/chaine-ligne';
@@ -121,23 +121,23 @@ export function datesIncoherentes(previsions: readonly MarchePrevision[], capms:
   template: `
     <!-- ⚠️ 04/11 (pilote, redondances) — plus de carte « Procédure » ni de chaîne : les contenus des dossiers disent tout. Reste l'étape
          « à créer » (ou « Aucune procédure lancée »), que la chaîne n'affiche que s'il y a lieu ; puis la barre des éléments de CHAQUE
-         dossier (pilote, 04/11 : chaque élément s'ouvre en MODALE, rien ne s'étale sur l'écran), l'une sous l'autre — chacune ne se lit
-         qu'à l'approche de l'écran (@defer), pour que J/K ne déclenche pas toutes les lectures. ⚠️ 04/11 (pilote) — les jalons ne sont
+         dossier (pilote, 04/11 : chaque élément s'ouvre en MODALE, rien ne s'étale sur l'écran), l'une sous l'autre. ⚠️ 04/11 (pilote,
+         « l'affichage n'est pas simultané ») — les barres se lisent toutes ensemble et ne paraissent qu'une fois TOUTES lues (UNE
+         SEULE VAGUE) : chacune arrivait à son heure, la dernière décalant le bas de l'écran. ⚠️ 04/11 (pilote) — les jalons ne sont
          plus ici : le bouton « Jalons » du bandeau de la ligne les ouvre en fenêtre (« JalonsLigne »). -->
     <div class="dl">
       <app-chaine-ligne class="dl__carte" [marche]="marche()" [maillons]="false" />
       <!-- ⚠️ 04/11 (pilote, temps 1) — la procédure en ligne d'une fiche qui n'a pas encore son dossier : sa rangée, seule ; avec le
            dossier, elle se loge sous la barre de celui-ci (plus bas). -->
       @if (procedureSeule(); as pr) { <app-procedure-ligne class="dl__seule" [ligne]="pr" (ouvrir)="ouvrirEcran.emit($event)" /> }
+      @if (contenus().length && !toutesPretes()) {
+        <p class="dl__carte dl__vide" role="status">Chargement des dossiers de la ligne…</p>
+      }
       @for (n of contenus(); track n.idDossier) {
-        <div class="dl__contenu" [id]="'dl-contenu-' + n.idDossier">
-          @defer (on viewport) {
-            <app-contenu-dossier-chaine [idDossier]="n.idDossier!" [intitule]="intitule(n)" [teinte]="teinte(n)" [ongletsMasques]="masquesDe(n)" (ouvrir)="ouvrir.emit($event)">
-              @if (procedureDe(n); as pr) { <app-procedure-ligne [ligne]="pr" (ouvrir)="ouvrirEcran.emit($event)" /> }
-            </app-contenu-dossier-chaine>
-          } @placeholder {
-            <p class="dl__carte dl__vide">{{ intitule(n) }} — chargement des éléments du dossier…</p>
-          }
+        <div class="dl__contenu" [class.dl__contenu--attente]="!toutesPretes()" [id]="'dl-contenu-' + n.idDossier">
+          <app-contenu-dossier-chaine [idDossier]="n.idDossier!" [intitule]="intitule(n)" [teinte]="teinte(n)" [ongletsMasques]="masquesDe(n)" (ouvrir)="ouvrir.emit($event)" (pret)="marquerPrete($event)">
+            @if (procedureDe(n); as pr) { <app-procedure-ligne [ligne]="pr" (ouvrir)="ouvrirEcran.emit($event)" /> }
+          </app-contenu-dossier-chaine>
         </div>
       }
     </div>
@@ -148,6 +148,7 @@ export function datesIncoherentes(previsions: readonly MarchePrevision[], capms:
     .dl__carte { display: grid; gap: 0.6rem; align-content: start; min-width: 0; padding: 0.75rem 0.9rem; border: 1px solid var(--bordure); border-radius: 8px; background: var(--carte-fond); }
     .dl__vide { margin: 0; color: var(--texte-secondaire); }
     .dl__contenu { min-width: 0; }
+    .dl__contenu--attente { display: none; }
   `,
 })
 export class DetailLigne {
@@ -166,6 +167,12 @@ export class DetailLigne {
   });
   /** ⚠️ 04/11 (pilote) — les dossiers dont le contenu s'affiche : ceux du périmètre, dans l'ordre de la chaîne. */
   readonly contenus = computed(() => this.noeuds().filter((n) => !n.masque && n.idDossier != null));
+  /** Les barres qui ont tout lu ; remis à zéro quand la ligne (donc la liste des dossiers) change. */
+  private readonly pretes = linkedSignal<string, ReadonlySet<number>>({ source: () => this.contenus().map((n) => n.idDossier).join(','), computation: () => new Set() });
+  readonly toutesPretes = computed(() => this.contenus().every((n) => this.pretes().has(n.idDossier!)));
+  marquerPrete(id: number): void {
+    this.pretes.update((s) => new Set(s).add(id));
+  }
 
   /** La teinte de la carte d'un dossier : bleu pâle la mise en concurrence, vert le marché, gris le reste (actes de gestion). */
   teinte(n: NoeudFiliation): 'dao' | 'marche' | 'autre' {

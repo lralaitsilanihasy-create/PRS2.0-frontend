@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { Dossier } from '../../../models';
@@ -130,6 +130,21 @@ export class ContenuDossierChaine implements OnInit {
 
   /** L'élément à ouvrir en fenêtre, avec le magasin de ce dossier : l'écran hôte rend la fenêtre hors du volet. */
   readonly ouvrir = output<OuvertureElement>();
+  /**
+   * ⚠️ 04/11 (pilote, « l'affichage n'est pas simultané ») — émis une fois, quand la barre a tout lu (ou a échoué) : le volet attend
+   * toutes ses barres pour les montrer ensemble, au lieu de les voir arriver l'une après l'autre et décaler le bas de l'écran.
+   */
+  readonly pret = output<number>();
+  private preteEmise = false;
+  constructor() {
+    effect(() => {
+      const fini = this.erreur() || (!!this.dossier() && this.storeCharge() && !this.contenu.loading());
+      if (fini && !this.preteEmise) {
+        this.preteEmise = true;
+        untracked(() => this.pret.emit(this.idDossier()));
+      }
+    });
+  }
 
   readonly dossier = signal<Dossier | null>(null);
   readonly erreur = signal(false);
@@ -141,7 +156,7 @@ export class ContenuDossierChaine implements OnInit {
   readonly aLire = computed(() => this.documents().filter((o) => !ARCHIVES.has(o.cle)));
   /** Le dossier non nul pour le store, qui n'est chargé qu'une fois le dossier servi. */
   private readonly dossierCharge = computed<Dossier>(() => this.dossier()!);
-  private storeCharge = false;
+  private readonly storeCharge = signal(false);
 
   ngOnInit(): void {
     this.lire();
@@ -152,9 +167,9 @@ export class ContenuDossierChaine implements OnInit {
     const s = this.dossiers.lire(this.idDossier()).subscribe({
       next: (d) => {
         this.dossier.set(d);
-        if (!this.storeCharge) {
-          this.storeCharge = true;
+        if (!this.storeCharge()) {
           this.contenu.charger(this.dossierCharge);
+          this.storeCharge.set(true);
         }
       },
       error: () => this.erreur.set(true),
