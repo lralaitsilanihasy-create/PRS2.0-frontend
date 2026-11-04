@@ -320,8 +320,9 @@
       </div>
       <div class="modal-body bs__col">
         <p class="bs__etat">
-          Copiez dans Excel les lignes du DQE — colonnes <b>n° de prix, désignation, unité, quantité</b> —, puis collez-les ici.
-          Les lignes « 500 OUVRAGES » deviennent des séries ; l'en-tête et les totaux sont écartés.
+          Copiez dans Excel les lignes du DQE — colonnes <b>n° de prix, désignation, unité, quantité</b>, et si vous l'avez le
+          <b>prix unitaire estimé</b> en cinquième colonne —, puis collez-les ici. Les lignes « 500 OUVRAGES » deviennent des séries ;
+          l'en-tête et les totaux sont écartés. Un n° de prix déjà présent dans le lot n'est pas ajouté deux fois : son prix est complété.
         </p>
         <label class="bs__f bs__f--large">
           <span>Lignes copiées</span>
@@ -336,11 +337,11 @@
               <table>
                 <caption class="bs__sr">Aperçu des articles reconnus</caption>
                 <thead>
-                  <tr><th scope="col">Série</th><th scope="col">N°</th><th scope="col">Désignation</th><th scope="col">Unité</th><th scope="col">Quantité</th></tr>
+                  <tr><th scope="col">Série</th><th scope="col">N°</th><th scope="col">Désignation</th><th scope="col">Unité</th><th scope="col">Quantité</th><th scope="col">Prix unitaire</th></tr>
                 </thead>
                 <tbody>
                   @for (a of collage().articles; track $index) {
-                    <tr><td>{{ a.serie }}</td><td>{{ a.numeroPrix }}</td><td>{{ a.designation }}</td><td>{{ a.unite }}</td><td class="bs__c-q">{{ a.quantite }}</td></tr>
+                    <tr><td>{{ a.serie }}</td><td>{{ a.numeroPrix }}</td><td>{{ a.designation }}</td><td>{{ a.unite }}</td><td class="bs__c-q">{{ a.quantite }}</td><td class="bs__c-q">{{ a.prixUnitaireEstime == null ? '—' : montantAr(a.prixUnitaireEstime) }}</td></tr>
                   }
                 </tbody>
               </table>
@@ -357,8 +358,14 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline" (click)="fermerCollage()">Annuler</button>
-        <button type="button" class="btn btn-primary" [disabled]="!collage().articles.length" (click)="ajouterCollage()">
-          Ajouter {{ collage().articles.length }} article(s)@if (lotAffiche(); as n) { au lot {{ n }}}
+        @let bilan = collageBilan();
+        @if (bilan.sansEffet) {
+          <span class="bs__etat">{{ bilan.sansEffet }} article(s) déjà présent(s), sans prix à compléter : ignoré(s).</span>
+        }
+        <button type="button" class="btn btn-primary" [disabled]="!bilan.nouveaux.length && !bilan.prix.length" (click)="ajouterCollage()">
+          @if (bilan.nouveaux.length || !bilan.prix.length) { Ajouter {{ bilan.nouveaux.length }} article(s)@if (lotAffiche(); as n) { au lot {{ n }}} }
+          @if (bilan.nouveaux.length && bilan.prix.length) { et }
+          @if (bilan.prix.length) { {{ bilan.nouveaux.length ? 'compléter' : 'Compléter' }} {{ bilan.prix.length }} prix }
         </button>
       </div>
     </div>

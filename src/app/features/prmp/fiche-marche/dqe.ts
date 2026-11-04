@@ -7,7 +7,8 @@ import { ArticleFiche } from '../../../models';
  * lit ; rien ne part au serveur avant « Enregistrer ».
  *
  * Formes reconnues, celles des deux DAO réels :
- * - **article** : `n° | désignation | unité | quantité` (les colonnes suivantes — prix, montant — sont ignorées) ;
+ * - **article** : `n° | désignation | unité | quantité`, puis le **prix unitaire estimé** s'il suit (⚠️ 04/11, pilote : 42 prix
+ *   à recopier à la main, c'est trop) ; un prix illisible est laissé vide, jamais deviné ; le montant, au-delà, est ignoré ;
  * - **intertitre de série** : un n° et un libellé sans unité ni quantité (« 500 | OUVRAGES »), ou une cellule seule
  *   (« SERIE 600 : CHAUSSEES ») ; il s'applique aux articles qui suivent ;
  * - **en-tête, totaux** (« N° | Désignation… », « Sous-total série 500 », « TOTAL HT ») : écartés, et dits.
@@ -15,7 +16,7 @@ import { ArticleFiche } from '../../../models';
  */
 
 /** Un article lu dans le collage, prêt à rejoindre la grille. */
-export type ArticleColle = Pick<ArticleFiche, 'numeroPrix' | 'designation' | 'unite' | 'quantite' | 'serie' | 'serieLibelle' | 'libelleBordereau'>;
+export type ArticleColle = Pick<ArticleFiche, 'numeroPrix' | 'designation' | 'unite' | 'quantite' | 'serie' | 'serieLibelle' | 'libelleBordereau' | 'prixUnitaireEstime'>;
 
 export interface LigneEcartee {
   /** Rang de la ligne dans le collage, à partir de 1. */
@@ -112,7 +113,7 @@ export function lireCollage(texte: string): LectureCollage {
       continue;
     }
 
-    const [numero, designation, unite, quantite] = cellules;
+    const [numero, designation, unite, quantite, prix] = cellules;
     // Un n° et un libellé, sans unité ni quantité : l'intertitre d'une série (« 500 | OUVRAGES »).
     if (numero && designation && !unite && !quantite) {
       serie = { code: numero.replace(/\.$/, ''), libelle: designation };
@@ -124,6 +125,7 @@ export function lireCollage(texte: string): LectureCollage {
     else if (q == null || q < 0) ecarter(`quantité illisible (« ${quantite ?? ''} »)`);
     else {
       const u = normaliserUnite(unite);
+      const pu = lireNombre(prix ?? '');
       articles.push({
         numeroPrix: numero || null,
         designation,
@@ -132,6 +134,7 @@ export function lireCollage(texte: string): LectureCollage {
         serie: serie?.code ?? serieDuNumero(numero),
         serieLibelle: serie?.libelle ?? null,
         libelleBordereau: libelleBordereauPropose(u),
+        prixUnitaireEstime: pu != null && pu >= 0 ? pu : null,
       });
     }
   }

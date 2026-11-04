@@ -365,4 +365,30 @@ describe('Besoin de la fiche DAO (bloc B12, livraison V45 du 25/09)', () => {
     expect(toast.info).toHaveBeenCalledWith("1 article(s) ajouté(s) — à vérifier avant d'enregistrer.");
   });
 
+  it('04/11 — la colonne du prix unitaire est lue ; recoller un n° déjà présent complète son prix au lieu de l’ajouter', () => {
+    monter({ nbLots: 1, saisieParLot: false, categorie: 'TRAVAUX' });
+    ouvrir([]);
+    const coller = (lignesCollees: string[]): void => {
+      bouton('Coller depuis le tableur').click();
+      rendre();
+      const zone = racine().querySelector('textarea') as HTMLTextAreaElement;
+      zone.value = lignesCollees.join('\n');
+      zone.dispatchEvent(new Event('input'));
+      rendre();
+    };
+    // Premier collage sans prix.
+    coller(['620\tRemblai d’emprunt\tm3\t1 520,00', '621\tCouche de base\tm3\t300']);
+    bouton('Ajouter 2 article(s)').click();
+    rendre();
+    const c = fixture.componentInstance;
+    expect(c.lignes().map((l) => l.prixUnitaireEstime ?? null)).toEqual([null, null]);
+    // Recollé avec les prix, plus un article nouveau : deux prix complétés, un ajout, aucun doublon.
+    coller(['620\tRemblai d’emprunt\tm3\t1 520,00\t26 000\t39 520 000', '621\tCouche de base\tm3\t300\t165 000,00', '622\tImprégnation\tm2\t900\t6500']);
+    expect(texte(racine().querySelector('.modal tbody tr td:last-child'))).toBe('26 000 Ar');
+    bouton('Ajouter 1 article(s) et compléter 2 prix').click();
+    rendre();
+    expect(c.lignes().map((l) => [l.numeroPrix, l.prixUnitaireEstime])).toEqual([['620', 26000], ['621', 165000], ['622', 6500]]);
+    expect(toast.info).toHaveBeenLastCalledWith("1 article(s) ajouté(s), 2 prix complété(s) — à vérifier avant d'enregistrer.");
+  });
+
 });

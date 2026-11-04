@@ -111,6 +111,20 @@ export class FicheBesoin implements ListeASauver {
   readonly collageOuvert = signal(false);
   readonly collageTexte = signal('');
   readonly collage = computed(() => lireCollage(this.collageTexte()));
+  /**
+   * ⚠️ 04/11 (pilote) — un article collé dont le n° de prix est déjà dans le lot ne s'ajoute pas une seconde fois : il
+   * **complète** l'article existant de son prix (recoller le DQE avec sa colonne de prix, après un premier collage sans).
+   */
+  readonly collageBilan = computed(() => {
+    const deja = new Set(this.duLot().map((l) => l.numeroPrix?.trim()).filter(Boolean));
+    const lus = this.collage().articles;
+    const existants = lus.filter((a) => !!a.numeroPrix && deja.has(a.numeroPrix.trim()));
+    return {
+      nouveaux: lus.filter((a) => !existants.includes(a)),
+      prix: existants.filter((a) => a.prixUnitaireEstime != null),
+      sansEffet: existants.filter((a) => a.prixUnitaireEstime == null).length,
+    };
+  });
 
   /** Les lots déjà garnis, hors lot courant : les seuls dont la copie ait un sens. */
   /**
@@ -274,14 +288,27 @@ export class FicheBesoin implements ListeASauver {
     this.collageOuvert.set(false);
   }
 
-  /** Les articles lus s'ajoutent à la fin du lot ; rien ne part au serveur avant « Enregistrer ». */
+  /**
+   * Les articles nouveaux s'ajoutent à la fin du lot ; ceux dont le n° y est déjà reçoivent le prix collé. Rien ne part au
+   * serveur avant « Enregistrer ».
+   */
   ajouterCollage(): void {
     const lot = this.lotAffiche();
-    const lus = this.collage().articles.map((a) => ({ ...a, cle: ++this.cles, lot, caracteristiques: [], sousDetail: false, ouverte: false }));
-    if (!lus.length) return;
-    this.lignes.update((l) => [...l, ...lus]);
+    const { nouveaux, prix } = this.collageBilan();
+    if (!nouveaux.length && !prix.length) return;
+    const prixPar = new Map(prix.map((a) => [a.numeroPrix!.trim(), a.prixUnitaireEstime]));
+    const duLot = new Set(this.duLot().map((l) => l.cle));
+    const ajout = nouveaux.map((a) => ({ ...a, cle: ++this.cles, lot, caracteristiques: [], sousDetail: false, ouverte: false }));
+    this.lignes.update((l) => [
+      ...l.map((x) => (duLot.has(x.cle) && x.numeroPrix && prixPar.has(x.numeroPrix.trim()) ? { ...x, prixUnitaireEstime: prixPar.get(x.numeroPrix.trim()) } : x)),
+      ...ajout,
+    ]);
     this.collageOuvert.set(false);
-    this.toast.info(`${lus.length} article(s) ajouté(s)${lot ? ` au lot ${lot}` : ''} — à vérifier avant d'enregistrer.`);
+    const dits = [
+      ajout.length ? `${ajout.length} article(s) ajouté(s)${lot ? ` au lot ${lot}` : ''}` : '',
+      prix.length ? `${prix.length} prix complété(s)` : '',
+    ].filter(Boolean);
+    this.toast.info(`${dits.join(', ')} — à vérifier avant d'enregistrer.`);
   }
 
   saisirNombre(ligne: LigneBesoin, champ: 'quantiteMin' | 'quantiteMax' | 'quantite' | 'plafond' | 'prixUnitaireEstime', ev: Event): void {

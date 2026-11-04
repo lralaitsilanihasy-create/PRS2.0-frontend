@@ -56,6 +56,8 @@ describe('DQE des travaux — lecture d’un collage de tableur', () => {
   });
 
   it('une quantité illisible écarte la ligne, et le dit — jamais une quantité devinée', () => {
+    expect(lireCollage('531\tBéton\tm³\t12\t1 250 000,50\t15 006 006').articles[0].prixUnitaireEstime).toBe(1250000.5);
+    expect(lireCollage('532\tBéton\tm³\t12\tP.M.').articles[0].prixUnitaireEstime).toBeNull();
     const { articles, ecartees } = lireCollage('530\tBéton\tm³\tà définir');
     expect(articles).toEqual([]);
     expect(ecartees[0]).toEqual({ rang: 1, texte: '530 · Béton · m³ · à définir', raison: 'quantité illisible (« à définir »)' });
