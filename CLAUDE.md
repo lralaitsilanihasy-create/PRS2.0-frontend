@@ -168,7 +168,9 @@ Inventaire, décisions du pilote (Q1-Q6) et plan : `docs/design-institutionnel-i
   Passation = « Reçus des frais de dossier » seule, donc à plat. « Dossiers de marché » et « Appels d'offres en cours » sont RETIRÉS
   depuis le 04/11 (redondances, maquette `docs/maquette-2026-11-04-menu-prmp.html`) : la ligne du plan crée le dossier de marché, le plan
   s'ouvre filtré par `?etape=lancee`, et la rangée « Procédure en ligne » du volet (`procedure-ligne.ts`, sous la barre du dossier de mise
-  en concurrence) mène à la fiche, à la commission, aux dépôts, aux reçus, à la séance et à l'évaluation. La route `/prmp/dao` reste.
+  en concurrence) mène à la fiche, à la commission, aux dépôts, aux reçus, à la séance et à l'évaluation. ⚠️ 04/11 : la LISTE « Appels
+  d'offres » (`/prmp/dao` sans fiche) est retirée — `/prmp/dao?ligne=` crée ou rouvre la fiche de la ligne, sans `ligne` (ou ligne non
+  éligible) l'écran renvoie au plan ; la fiche (`/prmp/dao/:idDmc`) et ses écrans restent.
   ⚠️ 04/11 (liens inutiles) : « Mes dossiers », « Dossiers à rectifier », « PPM et marchés », la gestion générique des PPM et le
   calendrier des jalons sont SUPPRIMÉS (« Tous mes dossiers » et le plan les remplacent ; leurs notifications y mènent) ; le fil
   d'Ariane des écrans d'une fiche DAO remonte au plan.

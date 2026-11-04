@@ -535,8 +535,8 @@ interface ApercuDossier {
                  localité comprises. Ce formulaire reste le SECOURS d'un DAO préparé hors de l'application — replié,
                  nommé comme tel, jamais présenté à égalité. Les autres sous-types (consultation, gré à gré…) n'ont
                  pas de fiche : pour eux, le formulaire est le seul chemin et reste déplié. -->
-            <!-- ⚠️ 14/10 (constat du pilote) — l'encadré parle du sous-type choisi, et le bouton le transmet : la liste des
-                 lignes ne propose que celles dont la fiche produira CE sous-type (le serveur le déduit du mode de la ligne). -->
+            <!-- ⚠️ 14/10 (constat du pilote) — l'encadré parle du sous-type choisi. ⚠️ 04/11 (pilote) — la liste « Appels d'offres »
+                 est retirée : la ligne se choisit dans le plan, dont le volet propose « Préparer les informations du DAO ». -->
             @if (appelOffres() && presentation(); as pr) {
               <section class="sd__fiche" data-testid="sd-dao-fiche" aria-labelledby="sd-fiche-t">
                 <h2 class="sd__sub" id="sd-fiche-t">{{ pr.titre }}</h2>
@@ -546,7 +546,7 @@ interface ApercuDossier {
                   la fiche, <strong>le dossier à soumettre est créé pour vous</strong> : entité contractante et localité comprises,
                   sans les ressaisir ici.
                 </p>
-                <a class="btn btn-primary" routerLink="/prmp/dao" [queryParams]="{ sousType: sousTypeChoisi() }">Choisir la ligne du plan de passation</a>
+                <a class="btn btn-primary" routerLink="/prmp/plan">Choisir la ligne dans le plan de passation</a>
               </section>
             }
 

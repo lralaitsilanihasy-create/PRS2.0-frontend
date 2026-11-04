@@ -56,7 +56,7 @@ import { LettresInvitation } from '../../../shared/prmp/lettres-invitation';
         @if (!choix()) {
           <div class="fmd__actions">
             <button type="button" class="btn btn-secondary btn-sm" [disabled]="occupe()" (click)="ouvrirChoix()">Rattacher les informations du DAO</button>
-            <a class="btn btn-outline btn-sm" routerLink="/prmp/dao">Préparer les informations du DAO</a>
+            <a class="btn btn-outline btn-sm" routerLink="/prmp/plan">Préparer depuis le plan de passation</a>
           </div>
         } @else {
           <div class="fmd__choix">

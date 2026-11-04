@@ -12,7 +12,7 @@ import { ouvrirBlobSur, telechargerBlob } from '../../../core/securite/fichiers-
 import { ApiError, codeErreur, corpsErreur, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
 import { NotificationsStore } from '../../../core/notifications/notifications.store';
-import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, CompteDesignable, DocumentDao, DocumentFiche, EtatParametresInternes, TypeChamp, FicheMarche, LigneEligible, ListeRestreinte, MotifRestreint, ObservationPv, PRESENTATION_SOUS_TYPE_FICHE, ReferentielFiche, RubriqueFiche, TypeMarche, VersionFiche } from '../../../models';
+import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, CompteDesignable, DocumentDao, DocumentFiche, EtatParametresInternes, TypeChamp, FicheMarche, LigneEligible, ListeRestreinte, MotifRestreint, ObservationPv, ReferentielFiche, RubriqueFiche, TypeMarche, VersionFiche } from '../../../models';
 import { ChampFicheMarcheService, DmcService, FicheMarcheService } from '../../../services/fiche-marche.services';
 import { DossierService, ObservationPvService } from '../../../services/circuit.services';
 import { statutDossierLabel } from '../../../shared/circuit/circuit-workflow';
@@ -84,10 +84,6 @@ import {
   rubriqueOuverte,
   typeOutille,
   avecDefauts,
-  gesteLigne,
-  etapeLigne,
-  ETAPES_LIGNE,
-  EtapeLigne,
 } from './fiche-marche-modele';
 import { LIBELLES_ETAT_CAO, LIBELLES_ETAT_CEREMONIE } from '../../cao/libelles-cao';
 
@@ -195,22 +191,20 @@ export class FicheMarcheEcran {
   readonly libellesTypes = LIBELLES_TYPES_MARCHE;
   readonly libellesCategories = LIBELLES_CATEGORIES;
 
-  /** `null` = `/prmp/dao` : choix de la ligne du PPM. */
+  /** `null` = `/prmp/dao?ligne=` : la fiche de la ligne est créée ou rouverte, puis l'écran y passe. */
   readonly idDmc = toSignal(this.route.paramMap.pipe(map((p) => (p.get('idDmc') ? Number(p.get('idDmc')) : null))), { initialValue: null as number | null });
   /**
-   * Raccourci H3 depuis « Mes PPM & marchés » : `?dossier=` restreint le choix à un PPM, `?ligne=` ouvre la ligne d'emblée.
+   * `?ligne=` (depuis la ligne du plan) : la fiche de cette ligne, créée au besoin.
    * ⚠️ Lot C2 (26/09) — depuis « Rectifier un dossier DAO » : `?champ=B05-GS-03%232` ouvre la fiche SUR l'information
    * visée par une observation du PV (bloc, cellule, défilement), `?reviser` ouvre d'abord la révision si la fiche est figée.
    */
   private readonly raccourci = toSignal(
     this.route.queryParamMap.pipe(map((q) => ({
-      dossier: q.get('dossier') ? Number(q.get('dossier')) : null,
       ligne: q.get('ligne') ? Number(q.get('ligne')) : null,
       champ: q.get('champ')?.toUpperCase() || null,
       reviser: q.has('reviser'),
-      sousType: q.get('sousType')?.toUpperCase() || null,
     }))),
-    { initialValue: { dossier: null as number | null, ligne: null as number | null, champ: null as string | null, reviser: false, sousType: null as string | null } },
+    { initialValue: { ligne: null as number | null, champ: null as string | null, reviser: false } },
   );
   /** L'information que l'écran a été ouvert pour montrer (`?champ=`) : sa cellule est mise en évidence. */
   readonly visee = signal<string | null>(null);
@@ -228,34 +222,12 @@ export class FicheMarcheEcran {
     }
     return m;
   });
-  readonly filtreDossier = computed(() => this.raccourci().dossier);
-  /**
-   * ⚠️ 14/10 (constat du pilote) — `?sousType=` depuis « Créer dossier » : seules les lignes dont la fiche produira ce
-   * sous-type sont proposées (`sousType` servi par le serveur). Le libellé vient du référentiel des sous-types produits par une fiche.
-   */
-  readonly filtreSousType = computed(() => this.raccourci().sousType);
-  readonly raisonSousTypeFiltre = computed(() => PRESENTATION_SOUS_TYPE_FICHE[this.filtreSousType() ?? '']?.raison ?? 'le sous-type se déduit de la ligne');
-  readonly libelleSousTypeFiltre = computed(() => { const t = this.filtreSousType(); return t ? (PRESENTATION_SOUS_TYPE_FICHE[t]?.libelle ?? t) : null; });
-
   readonly loading = signal(true);
   readonly erreur = signal(false);
   readonly saving = signal(false);
   /** Le serveur ne sert pas (encore) le contrat : structure de l'esquisse à l'écran, rien n'est enregistrable. */
   readonly contratAbsent = signal(false);
 
-  readonly eligibles = signal<LigneEligible[]>([]);
-  /** Lignes montrées : celles du PPM demandé par le raccourci, sinon toutes. */
-  readonly eligiblesAffichees = computed(() => {
-    const d = this.filtreDossier();
-    const t = this.filtreSousType();
-    const t2 = t === 'DAO' ? 'DAOO' : t;
-    return this.eligibles().filter((l) => (d == null || l.idDossier === d) && (t2 == null || l.sousType === t2));
-  });
-  readonly refDossierFiltre = computed(() => {
-    const d = this.filtreDossier();
-    const l = d == null ? null : this.eligibles().find((x) => x.idDossier === d);
-    return l ? l.refeDossier || `#${l.idDossier}` : d == null ? null : `#${d}`;
-  });
   readonly referentiel = signal<ReferentielFiche>(REFERENTIEL_ESQUISSE);
   readonly fiche = signal<FicheMarche | null>(null);
   /** Versions figées (`GET …/versions`, B5) — la plus récente en tête. */
@@ -624,41 +596,6 @@ export class FicheMarcheEcran {
     return !!s && !['BROUILLON', 'EN_ATTENTE_DECISION_PRMP', 'EN_ATTENTE_PIECES', 'EN_ATTENTE_COMPLEMENTS_DEPOT'].includes(s);
   });
   readonly libelleStatutDossier = computed(() => statutDossierLabel(this.dossierSoumis()?.statut));
-  /** ⚠️ 19/10 (« etat-fiche-liste ») — le bouton et le repère d'une ligne qui a une fiche (règle dans le modèle). */
-  readonly geste = gesteLigne;
-
-  // ── ⚠️ 02/11 (pilote, maquette « Appels d'offres », variante A) — la liste se lit par étape et par plan ──────────────────
-  readonly etapesLigne = ETAPES_LIGNE;
-  readonly etapeDe = etapeLigne;
-  /** Le filtre par étape (« Toutes » par défaut) et la recherche par objet ou référence. */
-  // ⚠️ 03/11 (pilote) — `?etape=lance` depuis le menu (« Appels d'offres en cours ») : la liste s'ouvre sur cette étape.
-  readonly filtreEtape = signal<EtapeLigne | 'tous'>(
-    ETAPES_LIGNE.find((e) => e.cle === this.route.snapshot?.queryParamMap?.get('etape'))?.cle ?? 'tous',
-  );
-  readonly rechercheLigne = signal('');
-  compteEtape(cle: EtapeLigne | 'tous'): number {
-    return this.eligiblesAffichees().filter((l) => cle === 'tous' || etapeLigne(l) === cle).length;
-  }
-  /** Les lignes filtrées, regroupées sous leur plan de passation (dans l'ordre servi). */
-  readonly groupesLignes = computed(() => {
-    const f = this.filtreEtape();
-    const q = this.rechercheLigne().trim().toLowerCase();
-    const lignes = this.eligiblesAffichees().filter((l) => (f === 'tous' || etapeLigne(l) === f)
-      && (!q || [l.designationMarche, l.refeDossier, l.dossier?.refeDossier].some((t) => (t ?? '').toLowerCase().includes(q))));
-    const groupes: { plan: string; lignes: LigneEligible[] }[] = [];
-    for (const l of lignes) {
-      const plan = l.refeDossier || `#${l.idDossier}`;
-      const g = groupes.find((x) => x.plan === plan);
-      if (g) g.lignes.push(l); else groupes.push({ plan, lignes: [l] });
-    }
-    return groupes;
-  });
-  /** Le texte de la pastille d'étape : le repère servi (« Brouillon », « Dossier clôturé »…), sinon le nom de l'étape. */
-  pastilleEtape(l: LigneEligible): string {
-    if (!l.dejaDao) return this.ligneBloquee(l) ? 'Pas encore pris en charge' : 'À préparer';
-    return gesteLigne(l).repere ?? ETAPES_LIGNE.find((e) => e.cle === etapeLigne(l))!.libelle;
-  }
-
   /** ⚠️ 02/11 (pilote, variante B) — l'onglet ouvert : la fiche, ou le suivi de la procédure. */
   readonly ongletFiche = signal<'fiche' | 'procedure'>('fiche');
   /** Les onglets n'ont de sens que si la procédure a un suivi à montrer. */
@@ -737,12 +674,18 @@ export class FicheMarcheEcran {
         .eligibles()
         .pipe(catchError((e: HttpErrorResponse) => (routeAbsente(e) ? (this.contratAbsent.set(true), of([] as LigneEligible[])) : (this.erreur.set(true), of([] as LigneEligible[])))))
         .subscribe((l) => {
-          this.eligibles.set(l);
           this.loading.set(false);
-          // `?ligne=` (raccourci H3) : la ligne demandée est éligible → on l'ouvre sans passer par la liste.
+          if (this.contratAbsent() || this.erreur()) return;
+          // ⚠️ 04/11 (pilote) — plus de liste : la ligne demandée s'ouvre, sinon retour au plan, avec la raison.
           const demandee = this.raccourci().ligne;
           const cible = demandee == null ? null : l.find((x) => x.idDetail === demandee);
-          if (cible) this.choisirLigne(cible);
+          if (cible && (cible.dejaDao || !this.ligneBloquee(cible))) {
+            this.choisirLigne(cible);
+            return;
+          }
+          if (cible) this.toast.warning(this.raisonLigneBloquee(cible));
+          else if (demandee != null) this.toast.warning('Cette ligne du plan n’est pas éligible aux informations du DAO : il faut une ligne d’un PPM au PV signé dont le mode est un appel d’offres.');
+          void this.router.navigate(['/prmp/plan'], { replaceUrl: true });
         });
       return;
     }
@@ -787,10 +730,6 @@ export class FicheMarcheEcran {
 
   // ── Étape 1 : la ligne du PPM ────────────────────────────────────────────────────────────────
 
-  /** Libellé de la forme d'une ligne éligible (lot 1c) ; vide si le serveur ne la sert pas encore. */
-  formeDe(l: LigneEligible): string {
-    return l.formeMarche ? this.libellesTypes[l.formeMarche] : '';
-  }
   /** Libellé de la catégorie d'une ligne éligible (lot 5) ; vide si le serveur ne la sert pas. */
   categorieDe(l: LigneEligible): string {
     return l.categorie ? this.libellesCategories[l.categorie] : '';
@@ -1472,7 +1411,7 @@ export class FicheMarcheEcran {
         this.saving.set(false);
         this.confirmSuppression.set(false);
         this.toast.success('Fiche supprimée : la ligne du plan redevient préparable.');
-        void this.router.navigate(['/prmp/dao']);
+        void this.router.navigate(['/prmp/plan']);
       },
       error: (e: ApiError) => {
         this.saving.set(false);
@@ -1556,7 +1495,7 @@ export class FicheMarcheEcran {
   allerA(i: number): void {
     // Le rail ne remonte jamais avant la ligne, ni au-delà de ce que la fiche permet.
     if (i === 0) {
-      void this.router.navigate(['/prmp/dao']);
+      void this.router.navigate(['/prmp/plan']);
       return;
     }
     if (!this.fiche() && i > 1) return;
@@ -1576,10 +1515,6 @@ export class FicheMarcheEcran {
   /** Le sigle court d'un document (badge de l'étape Documents) : « BORDEREAU_ESTIMATIF » s'affichait en toutes lettres (17/10). */
   sigleDocument(type: string): string {
     return ({ DAO_COMPLET: 'DAO', BORDEREAU_ESTIMATIF: 'BE', DQE_ESTIMATIF: 'DQE', DESCRIPTIF_PLANS: 'DP', LETTRE_INVITATION: 'LI', AVIS_PROJET: 'AVIS', LETTRE_PROJET: 'LI', DECISION_AOR_PROJET: 'DÉC' } as Record<string, string>)[type] ?? type;
-  }
-
-  montant(v: number | null | undefined): string {
-    return v == null ? '—' : `${new Intl.NumberFormat('fr-FR').format(v)} Ar`;
   }
 
   /** Aucune valeur saisie : l'import du DAO est proposé en tête du cadrage (sinon, un bouton « Réimporter »). */

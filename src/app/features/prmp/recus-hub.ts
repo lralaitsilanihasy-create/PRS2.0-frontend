@@ -42,7 +42,7 @@ interface FicheRecus {
       } @else if (!fiches().length) {
         <div class="empty-state">
           <p class="empty-state-title">Aucun appel d’offres n’a encore de fiche.</p>
-          <p class="empty-state-text">Les reçus se déposent sur une fiche validée en remise électronique, à dossier payant. <a routerLink="/prmp/dao">Voir les appels d’offres</a>.</p>
+          <p class="empty-state-text">Les reçus se déposent sur une fiche validée en remise électronique, à dossier payant. <a routerLink="/prmp/plan">Voir le plan de passation</a>.</p>
         </div>
       } @else {
         <app-carte-indicateurs [indicateurs]="indicateurs()" />

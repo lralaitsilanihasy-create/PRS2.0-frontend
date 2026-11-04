@@ -143,7 +143,7 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
   let fixture: ComponentFixture<FicheMarcheEcran>;
   let http: HttpTestingController;
   let params: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
-  let toast: { success: ReturnType<typeof vi.fn>; error: ReturnType<typeof vi.fn>; info: ReturnType<typeof vi.fn> };
+  let toast: { success: ReturnType<typeof vi.fn>; error: ReturnType<typeof vi.fn>; info: ReturnType<typeof vi.fn>; warning: ReturnType<typeof vi.fn> };
   let navigate: ReturnType<typeof vi.fn>;
 
   const racine = (): HTMLElement => fixture.nativeElement as HTMLElement;
@@ -160,7 +160,7 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
   let revision: WritableSignal<number>;
   function monter(role: Role, idDmc: number | null, query: Record<string, string> = {}): void {
     revision = signal(0);
-    toast = { success: vi.fn(), error: vi.fn(), info: vi.fn() };
+    toast = { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() };
     params = new BehaviorSubject(convertToParamMap(idDmc == null ? {} : { idDmc: String(idDmc) }));
     TestBed.configureTestingModule({
       providers: [
@@ -207,85 +207,42 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
 
   afterEach(() => http.verify());
 
-  it('choix de la ligne : lignes éligibles, « Préparer » crée le DMC puis ouvre la fiche, « Reprendre » ouvre l’existante', () => {
-    monter('PRMP', null);
-    http.expectOne('/api/dmcs/eligibles').flush(LIGNES);
-    rendre();
-    const lignes = Array.from(racine().querySelectorAll('tbody tr:not(.fm-liste__plan)'));
-    expect(lignes.length).toBe(3);
-    // ⚠️ 02/11 (pilote, variante A) — quatre colonnes ; nature, forme, mode et catégorie sous l'objet ; le plan en intertitre.
-    expect(Array.from(racine().querySelectorAll('thead th')).map((e) => texte(e))).toEqual(['Objet du marché', 'Étape', 'Montant estimatif', 'Action']);
-    expect(lignes.map((l) => texte(l.querySelector('.fm-liste__forme')))).toEqual(['Quantité fixe', 'Quantité fixe', 'Contrat-cadre']);
-    expect(lignes.every((l) => texte(l.querySelector('.fm-liste__sous')).includes('Fournitures et services'))).toBe(true);
-    expect(racine().querySelectorAll('.fm-liste__plan').length).toBeGreaterThanOrEqual(1);
-    // Le filtre par étape dit ses nombres ; « Lancés » vide la liste ici (aucune ligne n'a de dossier clôturé).
-    const filtres = Array.from(racine().querySelectorAll<HTMLButtonElement>('.fm-liste__seg button'));
-    expect(filtres.map((b) => texte(b))).toEqual(['Toutes 3', 'À préparer 2', 'En préparation 1', 'À la CNM 0', 'Lancés 0']);
-    filtres[4].click();
-    rendre();
-    expect(texte(racine().querySelector('tbody'))).toContain('Aucun appel d’offres ne correspond à ce filtre.');
-    filtres[0].click();
-    rendre();
-    const bloquee = lignes[2].querySelector('button') as HTMLButtonElement;
-    expect(texte(bloquee)).toBe('Pas encore pris en charge');
-    expect(bloquee.disabled).toBe(true);
-    expect(texte(lignes[0])).toContain('Fourniture de mobilier');
-    expect(texte(lignes[0])).toContain('420 000 000 Ar');
-    expect(racine().querySelector('.alert')).toBeNull();
-
-    bouton('Ouvrir les informations du DAO').click();
-    expect(navigate).toHaveBeenCalledWith(['/prmp/dao', 42]);
-
-    bouton('Préparer l’appel d’offres').click();
-    const post = http.expectOne('/api/dmcs/par-marche/7');
-    expect(post.request.method).toBe('POST');
-    post.flush({ idDmc: 51, idDetail: 7, idTypeDmc: 1, statut: 'A_PREPARER' });
-    expect(navigate).toHaveBeenLastCalledWith(['/prmp/dao', 51]);
-  });
-
-  it('raccourci H3 : ?dossier= restreint la liste à ce PPM ; ?ligne= ouvre la ligne d’emblée (création puis navigation)', () => {
-    monter('PRMP', null, { dossier: '3' });
-    http.expectOne('/api/dmcs/eligibles').flush([...LIGNES, { ...LIGNES[0], idDetail: 30, idDossier: 8, refeDossier: 'PPM-2026-008', designationMarche: 'Autre PPM' }]);
-    rendre();
-    expect(racine().querySelectorAll('tbody tr:not(.fm-liste__plan)').length).toBe(3);
-    expect(texte(racine().querySelector('.fm__filtre'))).toContain('Lignes du plan de passation PPM-2026-003');
-    expect((racine().querySelector('.fm__filtre a') as HTMLAnchorElement).getAttribute('href')).toBe('/prmp/dao');
-    TestBed.resetTestingModule();
-
+  // ⚠️ 04/11 (pilote) — la liste « Appels d'offres » est retirée : `/prmp/dao?ligne=` ouvre la fiche de la ligne, sinon le plan.
+  it('?ligne= : une ligne à préparer crée sa fiche puis l’ouvre ; une ligne qui a déjà la sienne s’ouvre, sans création', () => {
     monter('UGPM', null, { ligne: '7' });
     http.expectOne('/api/dmcs/eligibles').flush(LIGNES);
     const post = http.expectOne('/api/dmcs/par-marche/7');
+    expect(post.request.method).toBe('POST');
     post.flush({ idDmc: 51, idDetail: 7, idTypeDmc: 1, statut: 'A_PREPARER' });
     expect(navigate).toHaveBeenCalledWith(['/prmp/dao', 51]);
+    // Pendant ce temps, aucune liste : l'écran dit qu'il ouvre la ligne.
+    expect(racine().querySelector('table')).toBeNull();
     TestBed.resetTestingModule();
 
-    // Ligne demandée absente des éligibles : la liste s'affiche, rien n'est créé.
-    monter('UGPM', null, { ligne: '999' });
+    monter('PRMP', null, { ligne: '9' });
     http.expectOne('/api/dmcs/eligibles').flush(LIGNES);
-    rendre();
-    expect(navigate).not.toHaveBeenCalled();
-    expect(racine().querySelectorAll('tbody tr:not(.fm-liste__plan)').length).toBe(3);
+    expect(navigate).toHaveBeenCalledWith(['/prmp/dao', 42]);
   });
 
-  it('14/10 (pilote) — ?sousType= depuis « Créer dossier » : seules les lignes de ce sous-type, avec le bandeau qui le dit', () => {
-    const preq = { ...LIGNES[0], idDetail: 21, designationMarche: 'Pont (pré-qualification)', libelleMode: 'APPEL D’OFFRE AVEC PRE-QUALIFICATION', sousType: 'DAOOPREQUAL' };
-    const pi = { ...LIGNES[0], idDetail: 22, designationMarche: 'Étude', categorie: 'PRESTATIONS_INTELLECTUELLES' as const, sousType: 'DC' };
-    monter('PRMP', null, { sousType: 'DAOOPREQUAL' });
-    // Le sous-type de chaque ligne est servi par le serveur (backend e16a4f5) ; les lignes de LIGNES sont des DAOO.
-    http.expectOne('/api/dmcs/eligibles').flush([...LIGNES.map((l) => ({ ...l, sousType: 'DAOO' })), preq, pi]);
-    rendre();
-    const lignes = Array.from(racine().querySelectorAll('tbody tr:not(.fm-liste__plan)'));
-    expect(lignes.length).toBe(1);
-    expect(texte(lignes[0])).toContain('Pont (pré-qualification)');
-    expect(texte(racine().querySelector('[data-testid=fm-filtre-sous-type]'))).toContain('dossier d’appel d’offres ouvert avec pré-qualification');
+  it('sans ligne, ligne inconnue ou non prise en charge : retour au plan, avec la raison quand il y en a une', () => {
+    monter('PRMP', null);
+    http.expectOne('/api/dmcs/eligibles').flush(LIGNES);
+    expect(navigate).toHaveBeenCalledWith(['/prmp/plan'], { replaceUrl: true });
+    expect(toast.warning).not.toHaveBeenCalled();
     TestBed.resetTestingModule();
 
-    // Aucune ligne du sous-type : le message dit pourquoi, et où corriger.
-    monter('PRMP', null, { sousType: 'DAOR' });
-    http.expectOne('/api/dmcs/eligibles').flush(LIGNES.map((l) => ({ ...l, sousType: 'DAOO' })));
-    rendre();
-    expect(texte(racine().querySelector('.fm__vide'))).toContain('Aucune ligne éligible pour un dossier d’appel d’offres restreint');
-    expect(texte(racine().querySelector('.fm__vide'))).toContain('se corrige dans le plan de passation');
+    monter('PRMP', null, { ligne: '999' });
+    http.expectOne('/api/dmcs/eligibles').flush(LIGNES);
+    expect(toast.warning).toHaveBeenCalledWith(expect.stringContaining('pas éligible'));
+    expect(navigate).toHaveBeenCalledWith(['/prmp/plan'], { replaceUrl: true });
+    TestBed.resetTestingModule();
+
+    // Contrat-cadre non outillé : rien n'est créé, la raison est dite.
+    monter('PRMP', null, { ligne: '11' });
+    http.expectOne('/api/dmcs/eligibles').flush(LIGNES);
+    http.expectNone('/api/dmcs/par-marche/11');
+    expect(toast.warning).toHaveBeenCalledWith('Les informations du DAO ne prennent pas encore en charge cette forme de marché.');
+    expect(navigate).toHaveBeenCalledWith(['/prmp/plan'], { replaceUrl: true });
   });
 
   it('forme non prise en charge : page courte — la ligne se lit, aucun formulaire inutile n’est déroulé', () => {
@@ -411,8 +368,9 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     http.expectOne('/api/dmcs/eligibles').flush({ message: 'Failed to convert "eligibles"' }, { status: 400, statusText: 'Bad Request' });
     rendre();
     expect(texte(racine().querySelector('.alert'))).toContain('Contrat en attente du backend');
-    expect(texte(racine().querySelector('.fm__vide'))).toContain('Aucune ligne');
+    expect(texte(racine())).not.toContain('Ouverture de la ligne');
     expect(racine().querySelector('app-etat-erreur')).toBeNull();
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it('panne réelle (500) : état d’erreur avec « Réessayer », pas le bandeau de repli', () => {
@@ -421,10 +379,11 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     rendre();
     expect(racine().querySelector('.alert')).toBeNull();
     expect(racine().querySelector('app-etat-erreur')).not.toBeNull();
+    expect(navigate).not.toHaveBeenCalled();
     fixture.componentInstance.charger();
     http.expectOne('/api/dmcs/eligibles').flush(LIGNES);
     rendre();
-    expect(racine().querySelectorAll('tbody tr:not(.fm-liste__plan)').length).toBe(3);
+    expect(navigate).toHaveBeenCalledWith(['/prmp/plan'], { replaceUrl: true });
   });
 
   it('fiche sans contrat : structure de l’esquisse (8 blocs à saisir, comptes attendus), cadrage ouvert mais non enregistrable', () => {
@@ -1182,7 +1141,7 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     expect(del.request.method).toBe('DELETE');
     del.flush(null, { status: 204, statusText: 'No Content' });
     rendre();
-    expect(navigate).toHaveBeenCalledWith(['/prmp/dao']);
+    expect(navigate).toHaveBeenCalledWith(['/prmp/plan']);
     expect(toast.success).toHaveBeenCalledWith(expect.stringContaining('redevient préparable'));
   });
 
