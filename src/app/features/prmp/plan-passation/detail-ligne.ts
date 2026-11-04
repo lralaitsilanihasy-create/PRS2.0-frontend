@@ -6,6 +6,7 @@ import { ChaineLigne, ChainesDuPlan, dossiersDeLaLigne } from '../../circuit/pag
 import { OngletDossier } from '../../circuit/dossier/documents-du-dossier';
 import { ContenuDossierChaine, OuvertureElement } from './contenu-dossier-chaine';
 import { ProcedureLigne } from './procedure-ligne';
+import { OuvertureEcran } from './ecrans-procedure';
 import { LIBELLES_LIEN } from '../../circuit/dossier/historique-dossier';
 
 const dateFr = (iso?: string | null): string => {
@@ -122,12 +123,12 @@ const isoJour = (d: Date): string => `${d.getFullYear()}-${String(d.getMonth() +
       <app-chaine-ligne class="dl__carte" [marche]="marche()" [maillons]="false" />
       <!-- ⚠️ 04/11 (pilote, temps 1) — la procédure en ligne d'une fiche qui n'a pas encore son dossier : sa rangée, seule ; avec le
            dossier, elle se loge sous la barre de celui-ci (plus bas). -->
-      @if (procedureSeule(); as pr) { <app-procedure-ligne class="dl__carte" [ligne]="pr" /> }
+      @if (procedureSeule(); as pr) { <app-procedure-ligne class="dl__carte" [ligne]="pr" (ouvrir)="ouvrirEcran.emit($event)" /> }
       @for (n of contenus(); track n.idDossier) {
         <div class="dl__contenu" [id]="'dl-contenu-' + n.idDossier">
           @defer (on viewport) {
             <app-contenu-dossier-chaine [idDossier]="n.idDossier!" [intitule]="intitule(n)" [ongletsMasques]="masquesDe(n)" (ouvrir)="ouvrir.emit($event)">
-              @if (procedureDe(n); as pr) { <app-procedure-ligne [ligne]="pr" /> }
+              @if (procedureDe(n); as pr) { <app-procedure-ligne [ligne]="pr" (ouvrir)="ouvrirEcran.emit($event)" /> }
             </app-contenu-dossier-chaine>
           } @placeholder {
             <p class="dl__carte dl__vide">{{ intitule(n) }} — chargement des éléments du dossier…</p>
@@ -196,6 +197,8 @@ export class DetailLigne {
   readonly empile = input(false);
   /** Un élément d'un dossier à ouvrir en fenêtre — rendue par l'écran hôte, hors du volet collant. */
   readonly ouvrir = output<OuvertureElement>();
+  /** Un écran de la procédure en ligne à ouvrir en fenêtre — rendue par l'écran hôte, hors du volet collant. */
+  readonly ouvrirEcran = output<OuvertureEcran>();
 
   /** Les dossiers de la ligne, sans le plan (comme la chaîne). */
   readonly noeuds = computed(() => {

@@ -14,6 +14,7 @@ import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { ReputeApprouve, StatutBadge, traitementCnmTermine } from '../../shared/circuit';
 import { FamilleDossier, LIBELLES_FAMILLE, familleDossier } from '../circuit/dossier/famille-dossier';
 import { LienDossier } from '../circuit/page-dossier/lien-dossier';
+import { lienVersLePlan } from './plan-passation/cible-dossier';
 import { CompleterPiecesDepotModal } from './completer-pieces-depot-modal';
 import { DossiersRefreshStore } from './dossiers-refresh.store';
 
@@ -114,7 +115,15 @@ export function etatSuivi(d: Pick<Dossier, 'statut' | 'attentePrmp'>): EtatSuivi
                   <!-- Ligne cliquable : la référence est un vrai lien (nom accessible + clavier, Ctrl+clic
                        = nouvel onglet) dont la zone cliquable est étendue à la ligne (overlay ::after) —
                        pas de (click) sur <tr>. Lot L4-F6 : il mène à la PAGE du dossier. -->
-                  <td><a class="lien-ligne" [routerLink]="lien.commandes(d.idDossier)" [queryParams]="lien.params()">{{ referenceAffichee(d) }}</a></td>
+                  <!-- ⚠️ 04/11 (pilote) — la ligne mène au PLAN : un plan signé s'y ouvre, un dossier né d'une ligne ouvre le plan sur cette
+                       ligne ; un plan pas encore en vigueur garde sa page. La page du dossier reste à un clic, dans le volet de la ligne. -->
+                  <td>
+                    @if (lienPlan(d); as lp) {
+                      <a class="lien-ligne" [routerLink]="lp.commandes" [queryParams]="lp.params">{{ referenceAffichee(d) }}</a>
+                    } @else {
+                      <a class="lien-ligne" [routerLink]="lien.commandes(d.idDossier)" [queryParams]="lien.params()">{{ referenceAffichee(d) }}</a>
+                    }
+                  </td>
                   <td class="sdl-objet">@if (d.objetMarche) { {{ d.objetMarche }}@if (d.lot != null) { <span class="sdl-lot">· lot {{ d.lot }}</span> } } @else { — }</td>
                   <!-- Type de dossier en CODE concis (sous-type de la référence, ex. PPM-AGPM ; repli famille). -->
                   <td>{{ typeDossierLabel(d) }}</td>
@@ -251,6 +260,7 @@ export class SuiviDelais {
   private readonly lookups = inject(ReferenceLookupService);
   /** Lot L4-F6 : lien vers la page du dossier, retour vers ce suivi. */
   protected readonly lien = inject(LienDossier);
+  protected readonly lienPlan = lienVersLePlan;
 
   /** ⚠️ 18/10 (pilote) — le bouton d'impression : la page du dossier, fenêtre d'impression ouverte d'emblée. */
   paramsImpression(): Record<string, string> {
@@ -377,7 +387,9 @@ export class SuiviDelais {
   referenceAffichee(d: Dossier): string {
     if (d.refeDossier) return d.refeDossier;
     const st = d.idSousType ? this.sousTypes().get(d.idSousType) : null;
-    return st ? `${st} · brouillon` : `Dossier #${d.idDossier}`;
+    // ⚠️ 04/11 — déposé sans référence, il n'est plus un brouillon : il attend sa référence, donnée à la réception par la CNM.
+    const etat = d.statut === 'BROUILLON' ? 'brouillon' : 'référence à la réception';
+    return st ? `${st} · ${etat}` : `Dossier #${d.idDossier} · ${etat}`;
   }
 
   /** Type de dossier en CODE concis (`idSousType`, ex. « PPM-AGPM » ; repli famille `idTypeDossier`). */

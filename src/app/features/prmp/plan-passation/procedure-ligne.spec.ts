@@ -24,7 +24,7 @@ describe('liensProcedure', () => {
       attributions: [{ lot: 1, etat: 'PROPOSE', rapportSigneLe: '2026-12-18T15:00:00', propose: null }],
     }), 'PRMP');
     // Dossier clôturé : la fiche, figée, se lit dans la barre du dossier ; le dossier de marché manque encore, l'évaluation reste.
-    expect(libelles(l)).toEqual(['Commission d’appel d’offres', 'Dépôts des offres', 'Retraits du DAO', 'Questions des candidats', 'Reçus des frais', 'Séance d’ouverture', 'Évaluation des offres']);
+    expect(libelles(l)).toEqual(['Commission d’appel d’offres', 'Reçus des frais', 'Retraits du DAO', 'Questions des candidats', 'Dépôts des offres', 'Séance d’ouverture', 'Évaluation des offres']);
     expect(l.find((x) => x.libelle === 'Dépôts des offres')?.n).toBe('3 offres');
     expect(l.find((x) => x.libelle === 'Reçus des frais')?.n).toBe('2 à valider');
     expect(l.find((x) => x.libelle === 'Séance d’ouverture')?.commandes).toEqual(['/procedure', 10, 'seance']);
@@ -35,7 +35,7 @@ describe('liensProcedure', () => {
     const l = liensProcedure(ligne({
       fiche: { statut: 'VALIDEE', version: 1 }, dossier: { idDossier: 100401, refeDossier: null, statut: 'EN_EXAMEN' }, modeRemise: 'ELECTRONIQUE',
     }), 'UGPM');
-    expect(libelles(l)).toEqual(['Ouvrir la fiche DAO', 'Commission d’appel d’offres', 'Questions des candidats', 'Reçus des frais']);
+    expect(libelles(l)).toEqual(['Ouvrir la fiche DAO', 'Commission d’appel d’offres', 'Reçus des frais', 'Questions des candidats']);
   });
 
   it('le numéro de la procédure n’est affiché qu’après une première validation (avant, le serveur sert la référence du plan)', () => {
@@ -49,7 +49,14 @@ describe('liensProcedure', () => {
       attributions: [{ lot: 1, etat: 'AU_CONTROLE', rapportSigneLe: '2026-12-18T15:00:00', propose: null }],
       dossiersMarche: [{ lot: 1, idDossier: 100402, refeDossier: null, statut: 'SOUMIS' }],
     }), 'PRMP');
-    expect(libelles(l)).toEqual(['Commission d’appel d’offres', 'Dépôts des offres', 'Retraits du DAO', 'Questions des candidats', 'Reçus des frais']);
+    expect(libelles(l)).toEqual(['Commission d’appel d’offres', 'Reçus des frais', 'Retraits du DAO', 'Questions des candidats', 'Dépôts des offres']);
+  });
+
+  it('⚠️ 04/11 — chaque écran s’ouvre en fenêtre (sa clé) ; la fiche DAO reste une page', () => {
+    const l = liensProcedure(ligne({
+      fiche: { statut: 'VALIDEE', version: 1 }, dossier: { idDossier: 100401, refeDossier: null, statut: 'EN_EXAMEN' }, modeRemise: 'ELECTRONIQUE',
+    }), 'PRMP');
+    expect(l.map((x) => x.ecran ?? 'page')).toEqual(['page', 'cao', 'recus', 'retraits', 'questions', 'depots']);
   });
 
   it('remise papier : la fiche seule — rien ne se conduit en ligne', () => {

@@ -1,15 +1,18 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { LigneEligible } from '../../../models';
 import { LIBELLES_ETAT_ATTRIBUTION } from '../../circuit/dossier/instantanes-vues';
+import { EcranProcedure, OuvertureEcran } from './ecrans-procedure';
 
 /** Un écran de la procédure en ligne d'une ligne du plan : son nom, sa route, et ce qu'il y a à y voir (un compte, un état). */
 export interface LienProcedure {
   libelle: string;
   commandes: (string | number)[];
   n: string | null;
+  /** ⚠️ 04/11 (pilote) — l'écran qui s'ouvre en fenêtre ; absent : une page (la fiche DAO, son parcours de saisie). */
+  ecran?: EcranProcedure;
 }
 
 /** Statuts d'un dossier de mise en concurrence sorti du circuit avec un avis : la procédure est lancée. */
@@ -37,21 +40,23 @@ export function liensProcedure(e: LigneEligible, role: string | null): LienProce
   const dm = e.dossiersMarche ?? [];
   const marchesCrees = !!e.attributions?.length && e.attributions.every((a) => dm.some((d) => d.lot === a.lot));
   if (e.dossier && !clos) l.push({ libelle: 'Ouvrir la fiche DAO', commandes: dao(), n: null });
-  if (e.modeRemise !== 'PAPIER') l.push({ libelle: 'Commission d’appel d’offres', commandes: dao('cao'), n: null });
-  if (e.categorie === 'PRESTATIONS_INTELLECTUELLES') l.push({ libelle: 'Appel à manifestation d’intérêt', commandes: dao('ami'), n: null });
+  if (e.modeRemise !== 'PAPIER') l.push({ libelle: 'Commission d’appel d’offres', commandes: dao('cao'), n: null, ecran: 'cao' });
+  if (e.categorie === 'PRESTATIONS_INTELLECTUELLES') l.push({ libelle: 'Appel à manifestation d’intérêt', commandes: dao('ami'), n: null, ecran: 'ami' });
   if (!electronique || !publiable) return l;
+  // ⚠️ 04/11 (pilote) — dans l'ordre du processus : le candidat paie les frais (reçu validé), retire le DAO, pose ses questions
+  // (jusqu'à J−10), dépose son offre ; puis la séance d'ouverture et l'évaluation.
+  const recus = e.recusEnAttente ?? 0;
+  l.push({ libelle: 'Reçus des frais', commandes: dao('recus'), n: recus ? `${recus} à valider` : null, ecran: 'recus' });
+  if (prmp) l.push({ libelle: 'Retraits du DAO', commandes: dao('retraits'), n: null, ecran: 'retraits' });
+  l.push({ libelle: 'Questions des candidats', commandes: dao('questions'), n: null, ecran: 'questions' });
   if (prmp) {
     const n = e.nbOffres ?? 0;
-    l.push({ libelle: 'Dépôts des offres', commandes: dao('depots'), n: n ? `${n} offre${n > 1 ? 's' : ''}` : null });
-    l.push({ libelle: 'Retraits du DAO', commandes: dao('retraits'), n: null });
+    l.push({ libelle: 'Dépôts des offres', commandes: dao('depots'), n: n ? `${n} offre${n > 1 ? 's' : ''}` : null, ecran: 'depots' });
   }
-  l.push({ libelle: 'Questions des candidats', commandes: dao('questions'), n: null });
-  const recus = e.recusEnAttente ?? 0;
-  l.push({ libelle: 'Reçus des frais', commandes: dao('recus'), n: recus ? `${recus} à valider` : null });
   if (marchesCrees) return l;
-  if (clos) l.push({ libelle: 'Séance d’ouverture', commandes: ['/procedure', id, 'seance'], n: null });
+  if (clos) l.push({ libelle: 'Séance d’ouverture', commandes: ['/procedure', id, 'seance'], n: null, ecran: 'seance' });
   const a = e.attributions?.[0];
-  if (a) l.push({ libelle: 'Évaluation des offres', commandes: ['/procedure', id, 'evaluation'], n: LIBELLES_ETAT_ATTRIBUTION[a.etat] ?? a.etat });
+  if (a) l.push({ libelle: 'Évaluation des offres', commandes: ['/procedure', id, 'evaluation'], n: LIBELLES_ETAT_ATTRIBUTION[a.etat] ?? a.etat, ecran: 'evaluation' });
   return l;
 }
 
@@ -79,8 +84,13 @@ export function numeroProcedure(e: Pick<LigneEligible, 'numeroProcedure' | 'mode
         @if (etat()) { <span class="pl__etat">{{ etat() }}</span> }
       </div>
       <div class="pl__liens">
+        <!-- ⚠️ 04/11 (pilote) — chaque écran s'ouvre en FENÊTRE, rendue par l'écran du plan (hors du volet collant) ; la fiche DAO reste une page. -->
         @for (l of liens(); track l.libelle) {
-          <a class="btn btn-outline btn-sm" [routerLink]="l.commandes">{{ l.libelle }}@if (l.n) { <span class="pl__n">{{ l.n }}</span> }</a>
+          @if (l.ecran; as ecran) {
+            <button type="button" class="btn btn-outline btn-sm" aria-haspopup="dialog" (click)="demander(ecran, l.libelle)">{{ l.libelle }}@if (l.n) { <span class="pl__n">{{ l.n }}</span> }</button>
+          } @else {
+            <a class="btn btn-outline btn-sm" [routerLink]="l.commandes">{{ l.libelle }}@if (l.n) { <span class="pl__n">{{ l.n }}</span> }</a>
+          }
         }
       </div>
     </div>
@@ -102,7 +112,15 @@ export class ProcedureLigne {
   private readonly auth = inject(AuthService);
 
   readonly ligne = input.required<LigneEligible>();
+  /** Un écran de la procédure à ouvrir en fenêtre. */
+  readonly ouvrir = output<OuvertureEcran>();
   readonly liens = computed(() => liensProcedure(this.ligne(), this.auth.role()));
+
+  demander(cle: EcranProcedure, libelle: string): void {
+    const e = this.ligne();
+    const n = this.numero();
+    this.ouvrir.emit({ cle, idDmc: e.idDmc!, libelle, sousTitre: n ? `Procédure ${n}` : e.designationMarche });
+  }
   readonly numero = computed(() => numeroProcedure(this.ligne()));
   /** « remise électronique · fiche validée v1 » : ce que la ligne sait de sa procédure. */
   readonly etat = computed(() => {

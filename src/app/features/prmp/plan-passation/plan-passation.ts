@@ -1,5 +1,5 @@
-import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, Injector, OnInit, computed, effect, inject, linkedSignal, signal, untracked } from '@angular/core';
+import { NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, DestroyRef, Injector, OnInit, Type, computed, effect, inject, linkedSignal, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription, catchError, forkJoin, map, of } from 'rxjs';
@@ -28,6 +28,9 @@ import { DossierDocuments } from '../../circuit/dossier/dossier-documents';
 import { OngletDossier } from '../../circuit/dossier/documents-du-dossier';
 import { OuvertureElement, libelleElement } from './contenu-dossier-chaine';
 import { DetailLigne } from './detail-ligne';
+import { CibleDossier, cibleDuDossier } from './cible-dossier';
+import { LienDossier } from '../../circuit/page-dossier/lien-dossier';
+import { CHARGEURS_ECRAN, OuvertureEcran, routeDeProcedure } from './ecrans-procedure';
 import { ETAPES_LIGNE, EtapeLigne, SuiviLigne, TEINTE_ETAPE, TeinteLigne, suiviDeLigne } from './suivi-ligne';
 
 /** Texte comparable : minuscules, sans accents. */
@@ -72,7 +75,7 @@ interface ContenuPlans {
 @Component({
   selector: 'app-plan-passation',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgTemplateOutlet, RouterLink, TitrePage, StatutBadge, EtatErreur, DocumentVisionneuse, PpmMarchesTable, DetailLigne, DeuxVolets, FichePresentationDoc, AgpmDoc, CalendrierMarches, ModaleDirective, DossierDocuments],
+  imports: [NgTemplateOutlet, NgComponentOutlet, RouterLink, TitrePage, StatutBadge, EtatErreur, DocumentVisionneuse, PpmMarchesTable, DetailLigne, DeuxVolets, FichePresentationDoc, AgpmDoc, CalendrierMarches, ModaleDirective, DossierDocuments],
   providers: [ChainesDuPlan],
   template: `
     <!-- ⚠️ 03/11 (pilote, ergonomie) — un seul titre : le plan affiché, sa référence et son état dessous. -->
@@ -165,6 +168,10 @@ interface ContenuPlans {
             [messageVide]="filtre() || recherche().trim() ? 'Aucune ligne ne correspond à ces filtres.' : 'Ce plan ne porte aucune ligne.'" />
         </app-document-visionneuse>
       } @else if (presentation() === 'volets') {
+        @if (cibleSansLigne(); as id) {
+          <p class="pp__aide" role="status">Ce dossier n’est rattaché à aucune ligne de ce plan.
+            @if (lienDossier.disponible()) { <a [routerLink]="lienDossier.commandes(id)">Ouvrir la page du dossier</a> }</p>
+        }
         @let choisie = ligneVolets();
         <app-deux-volets [ouvert]="!!choisie" [cle]="choisie?.idDetail" libelleListe="Lignes du plan" libelleDetail="Ligne choisie"
           invite="Aucune ligne ne correspond à ces filtres.">
@@ -195,7 +202,7 @@ interface ContenuPlans {
                   <p class="pp__volet-fiche" aria-label="Fiche officielle">{{ ficheEnLigne(m) }}</p>
                 </header>
                 <app-detail-ligne [marche]="m" [previsions]="previsionsDe(m)" [echeances]="echeancesDe(m)" [capms]="capms()" [reels]="reelsDe(m)" [empile]="true"
-                  (ouvrir)="ouvrirElement($event)" />
+                  (ouvrir)="ouvrirElement($event)" (ouvrirEcran)="ouvrirEcran($event)" />
               </article>
             }
           </div>
@@ -214,6 +221,28 @@ interface ContenuPlans {
               </div>
               <div class="modal-body pp__modale-corps">
                 <ng-container *ngTemplateOutlet="elementTpl; injector: injecteurModale()" />
+              </div>
+            </div>
+          </div>
+        }
+        <!-- ⚠️ 04/11 (pilote) — un écran de la procédure en ligne (commission, reçus, retraits, questions, dépôts, séance, évaluation), en
+             fenêtre : le composant de sa page, chargé à la demande, avec la route de sa procédure (« routeDeProcedure »). -->
+        @if (ecran(); as ec) {
+          <div class="modal-backdrop">
+            <div class="modal pp__modale" role="dialog" aria-modal="true" [attr.aria-label]="ec.libelle + ' — ' + ec.sousTitre"
+              appModale (appModaleFermer)="fermerEcran()">
+              <div class="modal-header">
+                <h2 class="modal-title">{{ ec.libelle }} <span class="pp__modale-ref">· {{ ec.sousTitre }}</span></h2>
+                <button type="button" class="btn-close" aria-label="Fermer" (click)="fermerEcran()">✕</button>
+              </div>
+              <div class="modal-body pp__modale-corps pp__ecran">
+                @if (composantEcran(); as c) {
+                  <ng-container *ngComponentOutlet="c; injector: injecteurEcran()" />
+                } @else if (ecranEnErreur()) {
+                  <app-etat-erreur message="L’écran n’a pas pu être chargé." aide="Vérifiez votre connexion, puis réessayez." [reprise]="true" (reessayer)="ouvrirEcran(ec)" />
+                } @else {
+                  <p class="text-muted" role="status">Chargement…</p>
+                }
               </div>
             </div>
           </div>
@@ -301,6 +330,9 @@ interface ContenuPlans {
     .pp__modale { width: 96vw; max-width: 96vw; height: min(94vh, calc(100vh - 3rem)); max-height: min(94vh, calc(100vh - 3rem)); display: flex; flex-direction: column; }
     .pp__modale-ref { font-weight: 400; color: var(--texte-secondaire); font-size: 0.9rem; }
     .pp__modale-corps { flex: 1; overflow: auto; padding: 0; }
+    /* Un écran de page dans la fenêtre : ses marges, et pas son titre (la fenêtre le porte). */
+    .pp__ecran { padding: 1rem 1.25rem; }
+    .pp__ecran ::ng-deep .page-title { display: none; }
     .pp__volet-fiche { grid-column: 1 / -1; margin: 0; font-size: 0.8125rem; overflow-wrap: anywhere; }
     .pp__fiche { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
     .pp__fiche th, .pp__fiche td { border: 1px solid var(--bordure); padding: 0.25rem 0.5rem; text-align: left; vertical-align: top; font-variant-numeric: tabular-nums; }
@@ -343,8 +375,19 @@ export class PlanPassation implements OnInit {
   readonly plan = computed(() => {
     const plans = this.plans();
     const id = this.idDemande();
-    return plans.find((p) => p.idDossier === id) ?? plans[0] ?? null;
+    const cible = this.planCible();
+    return plans.find((p) => p.idDossier === id) ?? plans.find((p) => cible.includes(p.idDossier)) ?? plans[0] ?? null;
   });
+  /**
+   * ⚠️ 04/11 (pilote) — `?dossier=` depuis « Tous mes dossiers » : le plan s'ouvre en deux volets sur la ligne du dossier, retrouvée par
+   * sa filiation (`cibleDuDossier`) ; `planCible` = les versions du plan de cette filiation, `cible` = la ligne, consommée une fois choisie.
+   */
+  private readonly dossierDemande = Number(this.route.snapshot.queryParamMap.get('dossier')) || null;
+  private readonly planCible = signal<number[]>([]);
+  private readonly cible = signal<CibleDossier | null>(null);
+  /** Le dossier demandé n'a pas de ligne dans ce plan : l'écran le dit et mène à sa page. */
+  readonly cibleSansLigne = signal<number | null>(null);
+  protected readonly lienDossier = inject(LienDossier);
   readonly ppmDuPlan = computed(() => {
     const p = this.plan();
     return p ? this.contenu()?.ppms.find((x) => x.idDossier === p.idDossier) ?? null : null;
@@ -396,7 +439,7 @@ export class PlanPassation implements OnInit {
   readonly filtre = signal<EtapeLigne | null>(null);
   /** ⚠️ 03/11 (lot 4) — la ligne choisie, commune aux deux présentations (`null` : aucune ligne ouverte dans le document). */
   readonly ligne = signal<number | null>(null);
-  readonly presentation = signal<Presentation>(PlanPassation.lirePresentation());
+  readonly presentation = signal<Presentation>(this.route.snapshot.queryParamMap.get('dossier') ? 'volets' : PlanPassation.lirePresentation());
   private readonly injector = inject(Injector);
   /** ⚠️ 04/11 (pilote) — la fenêtre d'un élément de dossier, ouverte depuis une barre du volet ; refermée quand la ligne change. */
   readonly modale = linkedSignal<Marche | null, OuvertureElement | null>({ source: () => this.ligneVolets(), computation: () => null });
@@ -485,6 +528,23 @@ export class PlanPassation implements OnInit {
   private abonnement = new Subscription();
 
   constructor() {
+    if (this.dossierDemande) this.chercherCible(this.dossierDemande);
+    effect(() => {
+      const c = this.cible();
+      const p = this.plan();
+      const lignes = this.marchesDuPlan();
+      if (!c || !p || !c.plans.includes(p.idDossier) || !lignes.length) return;
+      untracked(() => {
+        this.cible.set(null);
+        const m = lignes.find((x) => x.idDetail === c.idDetail || (c.idLigneOrigine != null && x.idLigneOrigine === c.idLigneOrigine));
+        if (!m) { this.cibleSansLigne.set(this.dossierDemande); return; }
+        // Après l'effet du changement de plan, qui remet la ligne à zéro ; puis la ligne choisie vient à l'écran dans la liste.
+        setTimeout(() => {
+          this.ligne.set(m.idDetail);
+          setTimeout(() => document.querySelector('.pp__ligne[aria-pressed="true"]')?.scrollIntoView({ block: 'nearest' }));
+        });
+      });
+    });
     inject(DestroyRef).onDestroy(() => {
       this.abonnement.unsubscribe();
       this.abonnementReels.unsubscribe();
@@ -582,6 +642,44 @@ export class PlanPassation implements OnInit {
     const imputations = benefs.map((b) => `${b.soaCode || '—'}, compte ${b.numCompte || '—'}${benefs.length > 1 ? ' : ' + this.montantBenef(b) + ' Ar' : ''}`);
     return [this.libelleNature(m), this.libelleMode(m), m.financement || null, ...imputations, m.nouvMontEstim ? `montant initial ${this.montant(m)} Ar` : null]
       .filter(Boolean).join(' · ');
+  }
+
+  /** ⚠️ 04/11 (pilote) — l'écran de procédure ouvert en fenêtre ; refermé quand la ligne change. */
+  readonly ecran = linkedSignal<Marche | null, OuvertureEcran | null>({ source: () => this.ligneVolets(), computation: () => null });
+  readonly composantEcran = signal<Type<unknown> | null>(null);
+  readonly ecranEnErreur = signal(false);
+  readonly injecteurEcran = computed(() => {
+    const ec = this.ecran();
+    return ec ? Injector.create({ providers: [{ provide: ActivatedRoute, useValue: routeDeProcedure(ec.idDmc) }], parent: this.injector }) : this.injector;
+  });
+
+  /** Lit la filiation du dossier demandé (`?dossier=`), puis choisit son plan et sa ligne. */
+  private chercherCible(id: number): void {
+    this.dossiers.filiation(id).subscribe({
+      next: (f) => {
+        if (!f?.racine) { this.cibleSansLigne.set(id); return; }
+        const c = cibleDuDossier(f, id);
+        this.planCible.set(c.plans);
+        if (c.idDetail == null) this.cibleSansLigne.set(id);
+        else this.cible.set(c);
+      },
+      error: () => this.cibleSansLigne.set(id),
+    });
+  }
+
+  ouvrirEcran(e: OuvertureEcran): void {
+    this.composantEcran.set(null);
+    this.ecranEnErreur.set(false);
+    this.ecran.set(e);
+    CHARGEURS_ECRAN[e.cle]().then(
+      (c) => { if (this.ecran() === e) this.composantEcran.set(c); },
+      () => { if (this.ecran() === e) this.ecranEnErreur.set(true); },
+    );
+  }
+
+  fermerEcran(): void {
+    this.ecran.set(null);
+    this.composantEcran.set(null);
   }
 
   ouvrirElement(e: OuvertureElement): void {
