@@ -390,6 +390,9 @@ export class PlanPassation implements OnInit {
     return s ? { ...s, teinte: TEINTE_ETAPE[s.etape] } : null;
   };
   readonly teinte = TEINTE_ETAPE;
+  // ⚠️ 04/11 (pilote, temps 2) — `?etape=lancee` ouvre le plan sur cette étape : c'est ce que faisait « Appels d'offres en cours ».
+  // Consommée au premier plan affiché : l'effet qui charge un plan remet le filtre à zéro à chaque changement de plan.
+  private etapeDemandee: EtapeLigne | null = ETAPES_LIGNE.find((e) => e.cle === this.route.snapshot.queryParamMap.get('etape'))?.cle ?? null;
   readonly filtre = signal<EtapeLigne | null>(null);
   /** ⚠️ 03/11 (lot 4) — la ligne choisie, commune aux deux présentations (`null` : aucune ligne ouverte dans le document). */
   readonly ligne = signal<number | null>(null);
@@ -490,7 +493,8 @@ export class PlanPassation implements OnInit {
     effect(() => {
       const p = this.plan();
       untracked(() => {
-        this.filtre.set(null);
+        this.filtre.set(p ? this.etapeDemandee : null);
+        if (p) this.etapeDemandee = null;
         this.recherche.set('');
         this.ligne.set(null);
         if (p) this.source.charger(p.idDossier);

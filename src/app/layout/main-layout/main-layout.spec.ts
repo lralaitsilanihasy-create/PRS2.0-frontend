@@ -299,9 +299,11 @@ describe('Menu horizontal par rubriques (design institutionnel, 30/10/2026)', ()
     expect(hote.querySelector('.menu__liste > li:last-child')?.classList).toContain('menu__entree--pied');
   });
 
-  it('PRMP : À faire, Plan de passation en direct, Dossiers, Passation, Contrats en vigueur en direct, Décisions (03/11)', async () => {
+  it('PRMP : À faire, Plan de passation, Dossiers, Reçus des frais en direct (seul de « Passation »), Contrats en vigueur, Décisions (04/11)', async () => {
     const { hote } = await monter({ role: 'PRMP', login: 'PRMP001' });
-    expect(barre(hote)).toEqual(['À faire', 'Plan de passation', 'Dossiers', 'Passation', 'Contrats en vigueur', 'Décisions', 'Notifications']);
+    // ⚠️ 04/11 (redondances, temps 2) — « Appels d'offres en cours » et « Dossiers de marché » sont retirés : « Passation » n'a plus qu'une
+    // entrée, rendue à plat.
+    expect(barre(hote)).toEqual(['À faire', 'Plan de passation', 'Dossiers', 'Reçus des frais de dossier', 'Contrats en vigueur', 'Décisions', 'Notifications']);
   });
 
   it('Assistant contrôleur : les PV et lettres reçus forment la rubrique « Reçus » (31/10)', async () => {
@@ -430,13 +432,14 @@ describe('Menu horizontal par rubriques (design institutionnel, 30/10/2026)', ()
       '/prmp/recus',
     );
     const rubrique = (t: string) => Array.from(hote.querySelectorAll<HTMLButtonElement>('.nav-rubrique')).find((b) => texte(b).startsWith(t))!;
-    // ⚠️ 31/10 — les reçus sont dans « Passation » ; « Contrats en vigueur », seul de sa rubrique, est un lien direct qui porte sa pastille.
-    expect(texte(rubrique('Passation').querySelector('.nav-badge'))).toBe('2');
+    const direct = (t: string) => Array.from(hote.querySelectorAll<HTMLAnchorElement>('.menu__liste > li > a.nav-item')).find((a) => texte(a).startsWith(t))!;
+    // ⚠️ 04/11 (temps 2) — « Reçus des frais de dossier », seul de « Passation », est un lien direct : il porte sa pastille et l'état actif,
+    // comme « Contrats en vigueur » ; « Décisions » reste un déroulant qui somme ses entrées.
+    expect(texte(direct('Reçus des frais de dossier').querySelector('.nav-badge'))).toBe('2');
+    expect(direct('Reçus des frais de dossier').classList).toContain('active');
     expect(texte(rubrique('Décisions').querySelector('.nav-badge'))).toBe('4');
-    expect(rubrique('Passation').classList).toContain('active');
     expect(rubrique('Décisions').classList).not.toContain('active');
-    const contrats = Array.from(hote.querySelectorAll<HTMLAnchorElement>('.menu__liste > li > a.nav-item')).find((a) => texte(a).startsWith('Contrats en vigueur'))!;
-    expect(texte(contrats.querySelector('.nav-badge'))).toBe('1');
+    expect(texte(direct('Contrats en vigueur').querySelector('.nav-badge'))).toBe('1');
   });
 });
 

@@ -190,7 +190,8 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     // venait par la page d'un dossier) : l'écran des lignes éligibles et des fiches ouvertes, d'où partent la commission,
     // les dépôts, les retraits, les reçus des frais et la séance.
     // ⚠️ 03/11 (pilote) — renommé « Appels d'offres en cours », ouvert sur les procédures lancées : préparer une fiche part de la ligne du plan.
-    { label: 'Appels d’offres en cours', path: '/prmp/dao', queryParams: { etape: 'lance' }, icon: 'clip' },
+    // ⚠️ 04/11 (pilote, redondances, temps 2) — l'entrée SORT du menu : sa liste est le plan filtré sur « Lancée » (/prmp/plan?etape=lancee),
+    // et la rangée « Procédure en ligne » du volet mène aux écrans de la procédure. La route /prmp/dao reste (fiche, création depuis la ligne).
     // ⚠️ 18/10 (pilote) — les reçus des frais de dossier n'étaient atteignables que par la fiche : entrée propre, pastille propre.
     { label: 'Reçus des frais de dossier', path: '/prmp/recus', icon: 'hash' },
     // ⚠️ 04/11 (pilote, redondances, temps 1) — « Dossiers de marché » SORT du menu : la ligne du plan porte « Créer le dossier de
@@ -226,7 +227,7 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     { label: 'Créer un dossier', path: '/prmp/soumettre-dossier', icon: 'plus' },
     { label: 'Mes brouillons', path: '/prmp/mes-brouillons', icon: 'edit' },
     // ⚠️ 2026-10-06 — comme la PRMP : l'UGPM saisit la fiche, la commission et valide les reçus des frais.
-    { label: 'Appels d’offres en cours', path: '/prmp/dao', queryParams: { etape: 'lance' }, icon: 'clip' },
+    // ⚠️ 04/11 (pilote, redondances, temps 2) — « Appels d'offres en cours » sort du menu, comme chez la PRMP : le plan filtré sur « Lancée ».
     // ⚠️ 18/10 (pilote) — les reçus des frais de dossier n'étaient atteignables que par la fiche : entrée propre, pastille propre.
     { label: 'Reçus des frais de dossier', path: '/prmp/recus', icon: 'hash' },
     // ⚠️ 04/11 (pilote, redondances, temps 1) — « Dossiers de marché » sort du menu, comme chez la PRMP : la ligne du plan y mène.
