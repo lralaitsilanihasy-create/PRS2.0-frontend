@@ -173,13 +173,17 @@ Inventaire, décisions du pilote (Q1-Q6) et plan : `docs/design-institutionnel-i
   calendrier des jalons sont SUPPRIMÉS (« Tous mes dossiers » et le plan les remplacent ; leurs notifications y mènent) ; le fil
   d'Ariane des écrans d'une fiche DAO remonte au plan.
   ⚠️ 04/11 — le même écran du plan est ouvert au **Président**, au **Chef de commission** et au **Membre**, en consultation (`/president/plan`,
-  `/cc/plan`, `/membre/plan`, entrée « Plans de passation » en tête du menu, avant Dossiers ; leurs lignes de « Dossiers » y mènent) : plans en vigueur de la localité, choisis par entité ; ni « Mettre à jour le
+  `/cc/plan`, `/membre/plan`, entrée « Plans de passation » en tête du menu, avant Dossiers ; leurs lignes de « Dossiers » y mènent).
+  Avec plusieurs plans en vigueur, l'écran s'ouvre sur le **tableau des plans** (`tableau-plans.ts`, maquette
+  `docs/maquette-2026-11-04-plusieurs-plans.html`, variante B) ; le plan ouvert porte « ← Tous les plans (n) ». La colonne d'avancement
+  attend `DossierDto.avancementLignes` (demande `demande-backend-2026-11-04-avancement-plans.md`, B1) et n'apparaît qu'une fois servie : plans en vigueur de la localité, choisis par entité ; ni « Mettre à jour le
   plan », ni étape « à créer », ni rangée « Procédure en ligne » (gestes et écrans de la PRMP). Ses liens restent dans l'espace courant.
 - **Espace de travail (pilote, 31/10)** — l'application est COMPACTE (en-tête bleu nuit fondu avec le menu de 36 px, pied
   réduit ; la connexion, l'inscription, le portail public et les espaces externes portent le même en-tête) :
   - une liste dont l'élément s'ouvre se présente en **deux volets** : `app-deux-volets` (`shared/ui/deux-volets.ts`), la
     ligne est un `<button aria-pressed>` (c'est ce que parcourent J/K) ; un détail en modale peut s'y poser en mode intégré
-    (ex. `app-detail-pv-modal [integre]="true"`) ;
+    (ex. `app-detail-pv-modal [integre]="true"`) ; ⚠️ exception (pilote, 04/11) : « Dossiers » de la Commission
+    (`circuit/dossiers-pipeline.ts`) est un tableau seul — « Deux volets » et « Frise » supprimés, sa ligne mène au plan ;
   - le pied d'un **formulaire de page** porte la classe `.barre-actions` (collée au bas de la fenêtre) — jamais en modale ;
   - **raccourcis clavier** : `core/clavier/raccourcis-clavier.ts` (J/K, Entrée, /, ?), branchés dans la coquille.
 - **Composants partagés** (`shared/ui/`) : `app-titre-page`, `app-bloc`, `app-carte-indicateurs`,

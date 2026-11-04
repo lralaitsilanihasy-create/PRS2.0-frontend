@@ -1,0 +1,328 @@
+<title>Plans de plusieurs entités</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Mise en page : trois maquettes de l'écran « Plans de passation » (Président, CC, Membre), une à la fois, dans un cadre qui
+     reproduit la coquille de l'application ; sous chaque cadre, ce que la variante apporte et ce qu'elle coûte.
+     Palette : celle de l'application (bloc « DESIGN INSTITUTIONNEL » de styles.scss), volontairement en thème clair seul, comme l'application. */
+  :root {
+    color-scheme: light;
+    --menu-fond: #0C3A5B; --menu-survol: #1A527B; --section-fond: #082C47; --onglet-actif-fond: #EAF2FF;
+    --page-fond: #E9EEF3; --carte-fond: #FFFFFF; --tableau-entete: #EEF1F4; --ligne-survol: #F7F8FA;
+    --bordure: #D9DEE3; --bordure-champ: #868E96; --texte: #1F2328; --texte-secondaire: #5F6368;
+    --texte-menu: #FFFFFF; --texte-menu-secondaire: #A9BCCD; --bouton-principal: #2557D6;
+    --retard-fond: #FDE2E2; --retard-texte: #C62828; --examen-fond: #FFF1C2; --examen-texte: #7A5600;
+    --favorable-fond: #E3F4EA; --favorable-texte: #187547; --neutre-fond: #ECEEF1; --neutre-texte: #3C4043;
+    --suivi-lancer-fond: #7FB8F5; --suivi-examen-fond: #FFC93C; --suivi-favorable-fond: #5ED18A;
+    --police: 'Segoe UI', Roboto, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page-fond); color: var(--texte); font: 14px/1.45 var(--police); }
+  .page { max-width: 1240px; margin: 0 auto; padding-block: 24px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 18px; }
+  h1 { margin: 0; font-size: 1.4rem; font-weight: 500; text-wrap: balance; }
+  .intro { margin: 0; max-width: 72ch; color: var(--texte-secondaire); }
+  .choix { display: flex; flex-wrap: wrap; gap: 8px; }
+  .choix button { font: inherit; padding: 8px 14px; border-radius: 4px; border: 1px solid var(--bordure-champ); background: var(--carte-fond); color: var(--texte); cursor: pointer; display: grid; text-align: left; gap: 2px; }
+  .choix button b { font-weight: 500; }
+  .choix button span { font-size: 12px; color: var(--texte-secondaire); }
+  .choix button[aria-pressed="true"] { background: var(--menu-fond); border-color: var(--menu-fond); color: var(--texte-menu); }
+  .choix button[aria-pressed="true"] span { color: var(--texte-menu-secondaire); }
+  .choix button:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--bouton-principal); outline-offset: 2px; }
+  .reco { font-size: 11px; padding: 1px 6px; border-radius: 10px; background: var(--favorable-fond); color: var(--favorable-texte); justify-self: start; }
+  .choix button[aria-pressed="true"] .reco { background: var(--favorable-fond); color: var(--favorable-texte); }
+
+  /* Cadre « application » */
+  .cadre { border: 1px solid var(--bordure); border-radius: 6px; overflow: hidden; background: var(--page-fond); min-width: 0; }
+  .app-tete { background: var(--section-fond); color: var(--texte-menu); padding: 8px 14px; display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
+  .app-tete small { color: var(--texte-menu-secondaire); }
+  .app-menu { background: var(--menu-fond); display: flex; flex-wrap: wrap; font-size: 13px; }
+  .app-menu span { color: var(--texte-menu); padding: 7px 11px; }
+  .app-menu span.on { background: var(--onglet-actif-fond); color: var(--texte); }
+  .app-corps { padding: 14px; display: grid; gap: 12px; min-width: 0; }
+  .fil { font-size: 11px; color: var(--texte-secondaire); }
+  .titre { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; }
+  .titre h2 { margin: 0; font-size: 1.1rem; font-weight: 500; }
+  .sous { font-size: 12px; color: var(--texte-secondaire); font-variant-numeric: tabular-nums; }
+  .badge { font-size: 11px; padding: 1px 7px; border-radius: 10px; white-space: nowrap; }
+  .b-ok { background: var(--favorable-fond); color: var(--favorable-texte); }
+  .b-exa { background: var(--examen-fond); color: var(--examen-texte); }
+  .b-neu { background: var(--neutre-fond); color: var(--neutre-texte); }
+  .onglets { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--bordure); border-radius: 4px; background: var(--carte-fond); font-size: 12px; }
+  .onglets span { padding: 6px 11px; border-right: 1px solid var(--bordure); }
+  .onglets span:last-child { border-right: 0; }
+  .onglets span.on { background: var(--menu-fond); color: var(--texte-menu); }
+  .lien { background: none; border: 0; padding: 0; font: inherit; color: var(--texte); text-decoration: underline; text-decoration-color: var(--bordure-champ); cursor: pointer; }
+  .btn { font: inherit; font-size: 12px; padding: 5px 11px; border-radius: 4px; border: 1px solid var(--bordure-champ); background: var(--carte-fond); color: var(--texte); cursor: pointer; }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .champ { display: grid; gap: 3px; font-size: 11px; color: var(--texte-secondaire); font-weight: 500; }
+  .champ select, .champ input { font: inherit; font-size: 13px; font-weight: 400; color: var(--texte); padding: 5px 8px; border: 1px solid var(--bordure-champ); border-radius: 4px; background: var(--carte-fond); min-width: 0; }
+  .volets { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); border: 1px solid var(--bordure); background: var(--carte-fond); border-radius: 4px; min-height: 170px; }
+  .volets ul { list-style: none; margin: 0; padding: 0; border-right: 1px solid var(--bordure); }
+  .volets li { padding: 8px 10px; border-bottom: 1px solid var(--bordure); font-size: 12px; display: grid; gap: 2px; }
+  .volets li.on { background: var(--onglet-actif-fond); box-shadow: inset 3px 0 0 var(--menu-fond); }
+  .volets li small { color: var(--texte-secondaire); }
+  .detail { padding: 10px; }
+  .bandeau { background: var(--menu-fond); color: var(--texte-menu); border-radius: 4px; padding: 10px 12px; display: grid; gap: 4px; font-size: 12px; }
+  .bandeau b { font-weight: 500; font-size: 13px; }
+  .bandeau small { color: var(--texte-menu-secondaire); }
+  .note-ex { font-size: 11px; color: var(--texte-secondaire); font-style: italic; }
+
+  /* A — barre du plan affiché */
+  .barre-plan { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 12px; padding: 10px 12px; background: var(--carte-fond); border: 1px solid var(--bordure); border-left: 4px solid var(--menu-fond); border-radius: 4px; }
+  .barre-plan .champ { flex: 1 1 22rem; }
+  .compte { font-size: 12px; color: var(--texte-secondaire); align-self: center; font-variant-numeric: tabular-nums; }
+
+  /* B — tableau des plans */
+  .outils { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-end; }
+  .outils .champ:first-child { flex: 1 1 18rem; max-width: 26rem; }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--bordure); border-radius: 4px; background: var(--carte-fond); }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 860px; }
+  th { text-align: left; font-weight: 500; background: var(--tableau-entete); padding: 7px 9px; border-bottom: 1px solid var(--bordure); white-space: nowrap; }
+  td { padding: 7px 9px; border-bottom: 1px solid var(--bordure); vertical-align: middle; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover td { background: var(--ligne-survol); }
+  td.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  th.n { text-align: right; }
+  .avanc { display: grid; gap: 3px; min-width: 150px; }
+  .barre { display: flex; height: 8px; border-radius: 2px; overflow: hidden; background: var(--neutre-fond); }
+  .barre i { display: block; }
+  .i-lance { background: var(--suivi-favorable-fond); } .i-cnm { background: var(--suivi-examen-fond); } .i-alancer { background: var(--suivi-lancer-fond); }
+  .avanc small { color: var(--texte-secondaire); font-variant-numeric: tabular-nums; }
+  .legende { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11px; color: var(--texte-secondaire); }
+  .legende i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+  .retour { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+  .suite { border-top: 1px dashed var(--bordure-champ); padding-top: 12px; display: grid; gap: 10px; }
+  .suite-t { font-size: 11px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--texte-secondaire); }
+
+  /* C — trois niveaux */
+  .trois { display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 250px) minmax(0, 1fr); border: 1px solid var(--bordure); border-radius: 4px; background: var(--carte-fond); min-height: 220px; }
+  .trois > ul { list-style: none; margin: 0; padding: 0; border-right: 1px solid var(--bordure); }
+  .trois > ul li { padding: 7px 10px; border-bottom: 1px solid var(--bordure); font-size: 12px; display: grid; gap: 1px; }
+  .trois > ul li.on { background: var(--onglet-actif-fond); box-shadow: inset 3px 0 0 var(--menu-fond); }
+  .trois > ul li small { color: var(--texte-secondaire); font-variant-numeric: tabular-nums; }
+  .col-t { padding: 6px 10px; font-size: 11px; font-weight: 500; letter-spacing: .05em; text-transform: uppercase; color: var(--texte-secondaire); background: var(--tableau-entete); border-bottom: 1px solid var(--bordure); }
+
+  /* Bilan sous chaque cadre */
+  .bilan { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 12px; }
+  .bilan section { background: var(--carte-fond); border: 1px solid var(--bordure); border-radius: 4px; padding: 10px 14px; min-width: 0; }
+  .bilan h3 { margin: 0 0 6px; font-size: 13px; font-weight: 500; }
+  .bilan ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; color: var(--texte-secondaire); }
+  .bilan .plus h3 { color: var(--favorable-texte); }
+  .bilan .moins h3 { color: var(--retard-texte); }
+
+  @media (max-width: 760px) {
+    .volets, .trois { grid-template-columns: 1fr; }
+    .volets ul, .trois > ul { border-right: 0; border-bottom: 1px solid var(--bordure); }
+  }
+  @media (prefers-reduced-motion: no-preference) { .variante { animation: apparait .18s ease-out; } @keyframes apparait { from { opacity: .4; } to { opacity: 1; } } }
+</style>
+
+<div class="page">
+  <header style="display:grid;gap:6px">
+    <h1>Plans de passation de plusieurs entités</h1>
+    <p class="intro">Chez le Président, le Chef de commission et le Membre, l'écran du plan peut avoir à montrer les plans de toutes les entités de la localité. Trois présentations, sur le même exemple : la localité Centrale avec 8 plans 2026. Seul le plan du Ministère des Travaux publics (00001, 34 lignes) existe dans la base de recette ; les sept autres sont des exemples.</p>
+  </header>
+
+  <div class="choix" role="group" aria-label="Variante affichée">
+    <button type="button" id="b-a" data-v="a" aria-pressed="false"><b>A · Liste déroulante en tête</b><span>L'écran actuel, rendu visible</span></button>
+    <button type="button" id="b-b" data-v="b" aria-pressed="true"><b>B · Tableau des plans</b><span>Une ligne par plan, puis le plan</span><span class="reco">recommandée</span></button>
+    <button type="button" id="b-c" data-v="c" aria-pressed="false"><b>C · Entités, lignes, détail</b><span>Trois colonnes côte à côte</span></button>
+  </div>
+
+  <!-- ───────────── A ───────────── -->
+  <div class="variante" id="v-a" hidden>
+    <div class="cadre">
+      <div class="app-tete"><span>PRS 2.0 · Commission nationale des marchés</span><small>RANDRIANARISON Sitraka · Président</small></div>
+      <div class="app-menu"><span>À faire</span><span class="on">Plans de passation</span><span>Dossiers</span><span>Décisions</span><span>Pilotage</span></div>
+      <div class="app-corps">
+        <div class="fil">À faire › Plans de passation</div>
+        <div class="barre-plan">
+          <label class="champ">Plan affiché
+            <select id="a-plan"></select>
+          </label>
+          <button type="button" class="btn" id="a-prec" aria-label="Plan précédent">‹ Précédent</button>
+          <button type="button" class="btn" id="a-suiv" aria-label="Plan suivant">Suivant ›</button>
+          <span class="compte" id="a-compte"></span>
+        </div>
+        <div class="titre"><h2 id="a-titre"></h2><span class="badge b-ok">Clôturé</span></div>
+        <div class="sous" id="a-sous"></div>
+        <div class="onglets"><span>Document officiel</span><span class="on">Deux volets</span><span>Fiche de présentation</span><span>Projet d'AGPM</span></div>
+        <div class="volets">
+          <ul id="a-lignes"></ul>
+          <div class="detail"><div class="bandeau" id="a-bandeau"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="bilan">
+      <section class="plus"><h3>Ce qu'elle apporte</h3><ul><li>Presque rien à changer : c'est l'écran d'aujourd'hui, avec la liste mise en avant et le nombre de plans.</li><li>« Précédent / Suivant » pour passer d'une entité à l'autre sans rouvrir la liste.</li></ul></section>
+      <section class="moins"><h3>Ce qu'elle coûte</h3><ul><li>On ne voit qu'un plan à la fois : impossible de repérer d'un coup d'œil l'entité en retard.</li><li>Avec 30 entités, la liste déroulante devient longue à parcourir.</li></ul></section>
+    </div>
+  </div>
+
+  <!-- ───────────── B ───────────── -->
+  <div class="variante" id="v-b">
+    <div class="cadre">
+      <div class="app-tete"><span>PRS 2.0 · Commission nationale des marchés</span><small>RANDRIANARISON Sitraka · Président</small></div>
+      <div class="app-menu"><span>À faire</span><span class="on">Plans de passation</span><span>Dossiers</span><span>Décisions</span><span>Pilotage</span></div>
+      <div class="app-corps">
+        <div class="fil">À faire › Plans de passation</div>
+        <div class="titre"><h2>Plans de passation</h2><span class="sous" id="b-total"></span></div>
+        <div class="outils">
+          <label class="champ">Rechercher<input id="b-q" type="search" placeholder="Entité, référence…"></label>
+          <label class="champ">Exercice<select id="b-ex"><option>2026</option><option>2025</option></select></label>
+          <label class="champ">Trier par<select id="b-tri"><option value="entite">Entité</option><option value="retard">Lignes sans étape (le plus d'abord)</option><option value="montant">Montant (le plus élevé d'abord)</option></select></label>
+        </div>
+        <div class="legende"><span><i class="i-lance"></i>lancées ou au marché</span><span><i class="i-cnm"></i>en préparation ou à la Commission</span><span><i class="i-alancer"></i>à lancer</span><span><i style="background:var(--neutre-fond);border:1px solid var(--bordure)"></i>sans étape</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Entité contractante</th><th>Référence</th><th class="n">Lignes</th><th class="n">Montant (Ar)</th><th>Avancement des lignes</th><th>Clôturé le</th></tr></thead>
+            <tbody id="b-corps"></tbody>
+          </table>
+        </div>
+        <div class="suite" id="b-suite">
+          <div class="suite-t">Après un clic sur une ligne</div>
+          <div class="retour"><button type="button" class="lien" id="b-retour">← Tous les plans (8)</button><span class="fil" id="b-fil"></span></div>
+          <div class="titre"><h2 id="b-titre"></h2><span class="badge b-ok">Clôturé</span></div>
+          <div class="onglets"><span>Document officiel</span><span class="on">Deux volets</span><span>Fiche de présentation</span><span>Projet d'AGPM</span></div>
+          <p class="note-ex">La suite est l'écran actuel du plan, inchangé. Un clic sur une ligne de « Dossiers » y mène toujours directement, sur la ligne du dossier.</p>
+        </div>
+      </div>
+    </div>
+    <div class="bilan">
+      <section class="plus"><h3>Ce qu'elle apporte</h3><ul><li>Toute la localité d'un regard : nombre de lignes, montants, et où en sont les lignes de chaque entité.</li><li>Tri par lignes sans étape : l'entité qui n'a rien lancé remonte en tête.</li><li>Le plan lui-même ne change pas ; seul s'ajoute le lien « ← Tous les plans ».</li><li>Chez la PRMP (un seul plan), le tableau n'apparaît pas : l'écran s'ouvre sur son plan.</li></ul></section>
+      <section class="moins"><h3>Ce qu'elle coûte</h3><ul><li>Un clic de plus pour atteindre un plan depuis le menu.</li><li>L'avancement de chaque plan se calcule à partir de ses lignes : à mesurer sur une localité chargée (pas d'appel serveur nouveau, mais plus de données lues à l'ouverture).</li></ul></section>
+    </div>
+  </div>
+
+  <!-- ───────────── C ───────────── -->
+  <div class="variante" id="v-c" hidden>
+    <div class="cadre">
+      <div class="app-tete"><span>PRS 2.0 · Commission nationale des marchés</span><small>RANDRIANARISON Sitraka · Président</small></div>
+      <div class="app-menu"><span>À faire</span><span class="on">Plans de passation</span><span>Dossiers</span><span>Décisions</span><span>Pilotage</span></div>
+      <div class="app-corps">
+        <div class="fil">À faire › Plans de passation</div>
+        <div class="titre"><h2>Plans de passation</h2><span class="sous">Centrale · 2026</span></div>
+        <div class="trois">
+          <ul id="c-entites" aria-label="Entités"><li class="col-t">Entités</li></ul>
+          <ul id="c-lignes" aria-label="Lignes du plan"><li class="col-t">Lignes du plan</li></ul>
+          <div class="detail"><div class="bandeau" id="c-bandeau"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="bilan">
+      <section class="plus"><h3>Ce qu'elle apporte</h3><ul><li>Changer d'entité en un clic, sans quitter l'écran.</li></ul></section>
+      <section class="moins"><h3>Ce qu'elle coûte</h3><ul><li>Trois colonnes : le détail de la ligne n'a plus que la moitié de la largeur, et les onglets du plan (document officiel, fiche, AGPM) n'ont plus de place évidente.</li><li>Ne dit pas plus que A sur l'avancement de chaque entité.</li><li>Sous 1366 px, les colonnes s'empilent et l'écran défile.</li></ul></section>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Le plan 00001 du Ministère des Travaux publics est réel (base de recette) ; les sept autres sont des exemples.
+  const PLANS = [
+    { entite: 'MINISTERE DES TRAVAUX PUBLICS', ref: '00001/PPM-AGPM', lignes: 34, montant: 418400000000, lance: 1, cnm: 0, alancer: 0, clos: '28/10/2026', reel: true },
+    { entite: "MINISTERE DE L'EDUCATION NATIONALE", ref: '00004/PPM-AGPM', lignes: 52, montant: 96300000000, lance: 14, cnm: 6, alancer: 9, clos: '12/10/2026' },
+    { entite: 'MINISTERE DE LA SANTE PUBLIQUE', ref: '00007/PPM-AGPM', lignes: 41, montant: 71250000000, lance: 9, cnm: 4, alancer: 12, clos: '15/10/2026' },
+    { entite: "MINISTERE DE L'ECONOMIE ET DES FINANCES", ref: '00002/PPM-AGPM', lignes: 27, montant: 38900000000, lance: 11, cnm: 3, alancer: 5, clos: '05/10/2026' },
+    { entite: "MINISTERE DE L'EAU, DE L'ASSAINISSEMENT ET DE L'HYGIENE", ref: '00009/PPM', lignes: 18, montant: 54700000000, lance: 2, cnm: 1, alancer: 4, clos: '22/10/2026' },
+    { entite: "MINISTERE DE L'INTERIEUR", ref: '00011/PPM', lignes: 23, montant: 19800000000, lance: 6, cnm: 2, alancer: 8, clos: '19/10/2026' },
+    { entite: 'MINISTERE DE LA COMMUNICATION ET DE LA CULTURE', ref: '00013/PPM', lignes: 12, montant: 6400000000, lance: 0, cnm: 0, alancer: 3, clos: '30/10/2026' },
+    { entite: "MINISTERE DE L'AGRICULTURE ET DE L'ELEVAGE", ref: '00006/PPM-AGPM', lignes: 37, montant: 63100000000, lance: 8, cnm: 5, alancer: 10, clos: '09/10/2026' },
+  ];
+  const LIGNES = [
+    ["Fourniture d'habillement pour les nouveaux chauffeurs", 'Consultation des prix ouverte', '13 000 000,00'],
+    ['Travaux de réhabilitation de la route RIP 71', 'Consultation des prix ouverte', '2 400 000 000,00'],
+    ["Travaux d'urgence sur la RNT 15 (PK 193+800)", "Appel d'offres ouvert", '4 350 000 000,00'],
+    ['Travaux de réhabilitation des routes de Maintirano', "Appel d'offres ouvert", '8 000 000 000,00'],
+  ];
+  const nf = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 0 });
+  const sansEtape = (p) => p.lignes - p.lance - p.cnm - p.alancer;
+  const parEntite = [...PLANS].sort((a, b) => a.entite.localeCompare(b.entite));
+  const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  // Choix de la variante
+  const boutons = document.querySelectorAll('.choix button');
+  function montrer(v) {
+    boutons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === v)));
+    ['a', 'b', 'c'].forEach((x) => { document.getElementById('v-' + x).hidden = x !== v; });
+    try { localStorage.setItem('maquette-plans-variante', v); } catch (e) { /* sans mémoire : rien */ }
+  }
+  boutons.forEach((b) => b.addEventListener('click', () => montrer(b.dataset.v)));
+  let depart = 'b';
+  try { depart = localStorage.getItem('maquette-plans-variante') || 'b'; } catch (e) { /* défaut */ }
+  if (['a', 'b', 'c'].includes(location.hash.slice(1))) depart = location.hash.slice(1);
+  montrer(depart);
+
+  function remplirPlan(p, titreEl, sousEl) {
+    if (titreEl) titreEl.textContent = 'Plan de passation 2026 · ' + p.entite;
+    if (sousEl) sousEl.textContent = `${p.ref}/CNM/2026 · clôturé le ${p.clos} · ${p.lignes} lignes`;
+  }
+  function lignesHtml() {
+    return LIGNES.map((l, i) => `<li class="${i === 0 ? 'on' : ''}"><span>${esc(l[0])}</span><small>${esc(l[1])} · ${l[2]}</small></li>`).join('');
+  }
+  function bandeauHtml(p) {
+    return `<b>${esc(LIGNES[0][0])}</b><small>${esc(p.entite)} · ${esc(LIGNES[0][1])}</small><span><span class="badge b-neu">Sans étape définie</span></span>${p.reel ? '' : '<small>(exemple)</small>'}`;
+  }
+
+  // A
+  const aSel = document.getElementById('a-plan');
+  aSel.innerHTML = parEntite.map((p, i) => `<option value="${i}">${esc(p.entite)} — ${p.ref} · 2026${p.reel ? '' : ' (exemple)'}</option>`).join('');
+  function aAfficher(i) {
+    const p = parEntite[i];
+    aSel.value = String(i);
+    remplirPlan(p, document.getElementById('a-titre'), document.getElementById('a-sous'));
+    document.getElementById('a-compte').textContent = `Plan ${i + 1} sur ${parEntite.length} · localité Centrale`;
+    document.getElementById('a-lignes').innerHTML = lignesHtml();
+    document.getElementById('a-bandeau').innerHTML = bandeauHtml(p);
+    document.getElementById('a-prec').disabled = i === 0;
+    document.getElementById('a-suiv').disabled = i === parEntite.length - 1;
+  }
+  aSel.addEventListener('change', () => aAfficher(Number(aSel.value)));
+  document.getElementById('a-prec').addEventListener('click', () => aAfficher(Number(aSel.value) - 1));
+  document.getElementById('a-suiv').addEventListener('click', () => aAfficher(Number(aSel.value) + 1));
+  aAfficher(parEntite.findIndex((p) => p.reel));
+
+  // B
+  const bCorps = document.getElementById('b-corps');
+  function bRendre() {
+    const q = document.getElementById('b-q').value.trim().toLowerCase();
+    const tri = document.getElementById('b-tri').value;
+    let rows = PLANS.filter((p) => !q || (p.entite + ' ' + p.ref).toLowerCase().includes(q));
+    rows.sort(tri === 'retard' ? (a, b) => sansEtape(b) / b.lignes - sansEtape(a) / a.lignes
+      : tri === 'montant' ? (a, b) => b.montant - a.montant : (a, b) => a.entite.localeCompare(b.entite));
+    bCorps.innerHTML = rows.map((p) => {
+      const pc = (n) => (n / p.lignes) * 100;
+      return `<tr tabindex="0" data-ref="${p.ref}">
+        <td>${esc(p.entite)}${p.reel ? '' : ' <span class="note-ex">(exemple)</span>'}</td>
+        <td style="white-space:nowrap">${p.ref}/CNM/2026</td>
+        <td class="n">${p.lignes}</td>
+        <td class="n">${nf.format(p.montant)}</td>
+        <td><div class="avanc"><div class="barre" aria-hidden="true"><i class="i-lance" style="width:${pc(p.lance)}%"></i><i class="i-cnm" style="width:${pc(p.cnm)}%"></i><i class="i-alancer" style="width:${pc(p.alancer)}%"></i></div>
+          <small>${p.lance} lancée${p.lance > 1 ? 's' : ''} · ${p.cnm} à la Commission · ${p.alancer} à lancer · ${sansEtape(p)} sans étape</small></div></td>
+        <td style="white-space:nowrap">${p.clos}</td></tr>`;
+    }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--texte-secondaire)">Aucun plan ne correspond à la recherche.</td></tr>';
+    document.getElementById('b-total').textContent = `${rows.length} plan${rows.length > 1 ? 's' : ''} · localité Centrale · ${nf.format(rows.reduce((t, p) => t + p.montant, 0))} Ar`;
+  }
+  function bOuvrir(ref) {
+    const p = PLANS.find((x) => x.ref === ref);
+    remplirPlan(p, document.getElementById('b-titre'));
+    document.getElementById('b-fil').textContent = `À faire › Plans de passation › ${p.entite}`;
+    document.getElementById('b-suite').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+  bCorps.addEventListener('click', (e) => { const tr = e.target.closest('tr[data-ref]'); if (tr) bOuvrir(tr.dataset.ref); });
+  bCorps.addEventListener('keydown', (e) => { const tr = e.target.closest('tr[data-ref]'); if (tr && e.key === 'Enter') bOuvrir(tr.dataset.ref); });
+  ['b-q', 'b-tri'].forEach((id) => document.getElementById(id).addEventListener('input', bRendre));
+  document.getElementById('b-retour').addEventListener('click', () => document.querySelector('#v-b .table-wrap').scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
+  bRendre();
+  remplirPlan(PLANS[0], document.getElementById('b-titre'));
+  document.getElementById('b-fil').textContent = `À faire › Plans de passation › ${PLANS[0].entite}`;
+
+  // C
+  const cEnt = document.getElementById('c-entites');
+  function cAfficher(i) {
+    cEnt.innerHTML = '<li class="col-t">Entités</li>' + parEntite.map((p, j) =>
+      `<li class="${j === i ? 'on' : ''}"><button type="button" class="lien" data-i="${j}" style="text-decoration:none;text-align:left">${esc(p.entite)}</button><small>${p.lignes} lignes · ${p.ref}</small></li>`).join('');
+    document.getElementById('c-lignes').innerHTML = '<li class="col-t">Lignes du plan</li>' + lignesHtml();
+    document.getElementById('c-bandeau').innerHTML = bandeauHtml(parEntite[i]);
+  }
+  cEnt.addEventListener('click', (e) => { const b = e.target.closest('button[data-i]'); if (b) cAfficher(Number(b.dataset.i)); });
+  cAfficher(parEntite.findIndex((p) => p.reel));
+</script>

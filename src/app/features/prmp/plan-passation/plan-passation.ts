@@ -32,6 +32,7 @@ import { CibleDossier, cibleDuDossier } from './cible-dossier';
 import { LienDossier } from '../../circuit/page-dossier/lien-dossier';
 import { CHARGEURS_ECRAN, OuvertureEcran, routeDeProcedure } from './ecrans-procedure';
 import { ETAPES_LIGNE, EtapeLigne, SuiviLigne, TEINTE_ETAPE, TeinteLigne, suiviDeLigne } from './suivi-ligne';
+import { PlanResume, TableauPlans } from './tableau-plans';
 
 /** Texte comparable : minuscules, sans accents. */
 const sansAccents = (s: string | null | undefined): string => (s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -77,7 +78,7 @@ interface ContenuPlans {
 @Component({
   selector: 'app-plan-passation',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgTemplateOutlet, NgComponentOutlet, RouterLink, TitrePage, StatutBadge, EtatErreur, DocumentVisionneuse, PpmMarchesTable, DetailLigne, DeuxVolets, FichePresentationDoc, AgpmDoc, ModaleDirective, DossierDocuments, JalonsLigne],
+  imports: [NgTemplateOutlet, NgComponentOutlet, RouterLink, TitrePage, StatutBadge, EtatErreur, DocumentVisionneuse, PpmMarchesTable, DetailLigne, DeuxVolets, FichePresentationDoc, AgpmDoc, ModaleDirective, DossierDocuments, JalonsLigne, TableauPlans],
   providers: [ChainesDuPlan],
   template: `
     <!-- ⚠️ 03/11 (pilote, ergonomie) — un seul titre : le plan affiché, sa référence et son état dessous. -->
@@ -92,6 +93,10 @@ interface ContenuPlans {
       <p class="text-muted" role="status">Chargement du plan de passation…</p>
     } @else if (erreur()) {
       <app-etat-erreur message="Le plan de passation n’a pas pu être lu." (reessayer)="charger()" />
+    } @else if (modeListe()) {
+      <!-- ⚠️ 04/11 (pilote, maquette « plusieurs plans », variante B) — plusieurs plans en vigueur chez le Président, le CC ou le Membre :
+           l'écran s'ouvre sur le tableau des plans ; un clic ouvre le plan. -->
+      <app-tableau-plans [plans]="resumesPlans()" [espace]="espace" />
     } @else if (!plan()) {
       <section class="pp__vide card" aria-labelledby="pp-vide-t">
         <h2 id="pp-vide-t" class="pp__vide-t">Aucun plan signé</h2>
@@ -102,8 +107,11 @@ interface ContenuPlans {
       </section>
     } @else {
       @let p = plan()!;
-      <!-- ⚠️ 04/11 (pilote) — plusieurs plans en vigueur (le Président et le CC voient ceux de leur localité) : une liste, par entité. -->
-      @if (plans().length > 1) {
+      <!-- ⚠️ 04/11 (pilote) — plusieurs plans en vigueur : chez le Président, le CC et le Membre, le retour au tableau des plans (variante B) ;
+           chez la PRMP (ses plans de plusieurs exercices), la liste déroulante. -->
+      @if (plans().length > 1 && !estPrmp()) {
+        <p class="pp__retour"><a class="pp__retour-l" [routerLink]="[espace, 'plan']">← Tous les plans ({{ plans().length }})</a></p>
+      } @else if (plans().length > 1) {
         <div class="pp__entete">
           <label class="pp__champ pp__champ--plan">
             <span class="pp__champ-l">Plan affiché</span>
@@ -321,6 +329,8 @@ interface ContenuPlans {
     .pp__champ { display: grid; gap: 0.2rem; min-width: 0; }
     .pp__champ-l { font-size: 0.75rem; font-weight: 500; color: var(--texte-secondaire); }
     .pp__champ--plan { flex: 1 1 24rem; max-width: 40rem; }
+    .pp__retour { margin: 0 0 0.5rem; }
+    .pp__retour-l { color: var(--texte); text-decoration: underline; text-decoration-color: var(--lien-soulignement); }
     .pp__select { min-width: 15rem; }
     .pp__champ--recherche { flex: 1 1 18rem; max-width: 30rem; }
     .pp__resultat { margin: 0 0 0.45rem; font-size: 0.8125rem; color: var(--texte-secondaire); }
@@ -408,8 +418,38 @@ export class PlanPassation implements OnInit {
   private readonly idDemande = toSignal(this.route.paramMap.pipe(map((p) => (p.get('idDossier') ? Number(p.get('idDossier')) : null))), { initialValue: null });
 
   readonly plans = computed(() => this.contenu()?.plans ?? []);
-  /** Le plan de l'URL s'il est en vigueur, sinon le plus récent. */
+  /**
+   * ⚠️ 04/11 (pilote, variante B) — le tableau des plans : chez le Président, le CC et le Membre, quand la localité a plusieurs plans en
+   * vigueur et que l'URL n'en désigne aucun (ni plan, ni `?dossier=`).
+   */
+  readonly modeListe = computed(() => !this.estPrmp() && this.plans().length > 1 && this.idDemande() == null && this.dossierDemande == null);
+  /** Une ligne par plan : entité, référence, exercice, lignes non retirées, montant, clôture, et l'avancement servi par le serveur. */
+  readonly resumesPlans = computed<PlanResume[]>(() => {
+    const c = this.contenu();
+    if (!c) return [];
+    const parPlan = new Map<number, { n: number; montant: number }>();
+    for (const m of c.marches) {
+      if (m.supprimee || m.idDossier == null) continue;
+      const t = parPlan.get(m.idDossier) ?? { n: 0, montant: 0 };
+      parPlan.set(m.idDossier, { n: t.n + 1, montant: t.montant + (m.montEstim ?? 0) });
+    }
+    return this.plans().map((d) => {
+      const cloture = d.datesEtapes?.['CLOTURE'];
+      return {
+        idDossier: d.idDossier,
+        entite: (d.idEntiteContract != null ? this.entites().get(String(d.idEntiteContract))?.trim() : null) || '—',
+        reference: (d.refeDossier ?? `Dossier ${d.idDossier}`).split('/CNM/')[0],
+        exercice: c.ppms.find((x) => x.idDossier === d.idDossier)?.exercice ?? null,
+        lignes: parPlan.get(d.idDossier)?.n ?? 0,
+        montant: parPlan.get(d.idDossier)?.montant ?? 0,
+        cloture: cloture ? dateFr(cloture) : null,
+        avancement: d.avancementLignes ?? null,
+      };
+    });
+  });
+  /** Le plan de l'URL s'il est en vigueur, sinon le plus récent ; aucun tant que le tableau des plans est affiché. */
   readonly plan = computed(() => {
+    if (this.modeListe()) return null;
     const plans = this.plans();
     const id = this.idDemande();
     const cible = this.planCible();
@@ -569,11 +609,13 @@ export class PlanPassation implements OnInit {
   /** Le titre de la page : « Plan de passation 2026 » une fois le plan lu. */
   readonly titrePage = computed(() => {
     const exercice = this.ppmDuPlan()?.exercice;
+    if (this.modeListe()) return 'Plans de passation';
     return this.plan() && exercice ? `Plan de passation ${exercice}` : 'Plan de passation';
   });
   /** Sous le titre : la référence du plan, son entité, sa clôture et son nombre de lignes. */
   readonly sousTitrePage = computed(() => {
     const p = this.plan();
+    if (this.modeListe()) return 'Les plans en vigueur de votre périmètre : un clic ouvre le plan.';
     return p ? [p.refeDossier, this.metaPlan()].filter(Boolean).join(' · ') : 'Le plan signé tel qu’il a été contrôlé, et où en est chacune de ses lignes.';
   });
   /** ⚠️ 03/11 (pilote) — les cinq onglets, leur couleur (palette) et leur nombre (`null` : pas de nombre). */
@@ -835,8 +877,8 @@ export class PlanPassation implements OnInit {
   }
 
   /** « 00001/PPM-AGPM · 2026 » : le numéro du plan et son exercice. */
-  /** ⚠️ 04/11 — l'espace de l'écran (« /prmp », « /president », « /cc ») : ses liens restent dans l'espace d'où l'on vient. */
-  private readonly espace = '/' + (this.router.url.split(/[/?#]/)[1] || 'prmp');
+  /** ⚠️ 04/11 — l'espace de l'écran (« /prmp », « /president », « /cc », « /membre ») : ses liens restent dans l'espace d'où l'on vient. */
+  protected readonly espace = '/' + (this.router.url.split(/[/?#]/)[1] || 'prmp');
 
   choisirPlan(id: string): void {
     void this.router.navigate([this.espace, 'plan', Number(id)]);

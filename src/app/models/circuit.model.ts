@@ -44,6 +44,17 @@ export interface ProcedureDossierMarche {
   remisePapier?: boolean;
 }
 
+/** ⚠️ 04/11 (demande « avancement-plans », B1) — les lignes d'un plan, réparties par étape (chaque ligne dans une seule). */
+export interface AvancementLignes {
+  lignes: number;
+  marche: number;
+  commission: number;
+  lancee: number;
+  preparation: number;
+  lancer: number;
+  aucune: number;
+}
+
 export interface Dossier {
   idDossier: number;
   /** Famille de dossier (`tr_type_dossier` : DDP / DMC / DDM). */
@@ -169,6 +180,11 @@ export interface Dossier {
   objetMarche?: string | null;
   /** ⚠️ 03/11 (même demande) — le lot d'un dossier de marché ; `null` sinon. */
   lot?: number | null;
+  /**
+   * ⚠️ 04/11 (demande « avancement-plans », B1 — EN ATTENTE du backend) — sur un plan (DDP), servi en liste : le nombre de ses lignes
+   * non retirées et leur répartition par étape (une étape par ligne, règle de `suivi-ligne.ts`). Absent tant qu'il n'est pas servi.
+   */
+  avancementLignes?: AvancementLignes | null;
   /**
    * ⚠️ 17/10 (demande « pieces-dmc-par-les-donnees », B3) — sur la lecture unitaire d'un dossier né d'une fiche : le plan qui porte sa
    * ligne en vigueur, et le PV signé de son examen (absent tant qu'aucun n'est signé).
