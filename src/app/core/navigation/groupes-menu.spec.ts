@@ -252,16 +252,16 @@ describe('sectionsMenu — dérivation des rubriques', () => {
     expect(rubrique('/admin/referentiels/ministeres')).toBe('referentiels');
   });
 
-  it('Président et CC : Mon travail · Dossiers · Décisions · Pilotage · Exercé par délégation', () => {
+  it('Président et CC : Mon travail · Planification · Dossiers · Décisions · Pilotage · Exercé par délégation (04/11 : plans avant Dossiers)', () => {
     for (const role of ['PRESIDENT', 'CHEF_COMMISSION'] as const) {
       const sections = sectionsMenu(navFor(role));
-      expect(sections.map((s) => s.titre), role).toEqual(['Mon travail', 'Dossiers', 'Décisions', 'Pilotage', 'Exercé par délégation']);
-      expect(sections[2].items.map((i) => i.label), role).toEqual(['PV et lettres de renvoi', 'Demandes de retrait']);
-      expect(sections[3].items.map((i) => i.label), role).toEqual([
+      expect(sections.map((s) => s.titre), role).toEqual(['Mon travail', 'Planification', 'Dossiers', 'Décisions', 'Pilotage', 'Exercé par délégation']);
+      expect(sections[1].items.map((i) => i.label), role).toEqual(['Plans de passation']);
+      expect(sections[3].items.map((i) => i.label), role).toEqual(['PV et lettres de renvoi', 'Demandes de retrait']);
+      expect(sections[4].items.map((i) => i.label), role).toEqual([
         'Répartition des dossiers par contrôleur',
         'Mon intérim', // intérim désigné (2026-09-21) : qui agit à la place du P/CC absent
         'Chaînes de contrôle',
-        'Plans de passation', // ⚠️ 04/11 (pilote) — les plans de la localité, en consultation
         'Rapports', // ⚠️ 31/10 (pilote) — remis au menu
         'Statistiques',
       ]);

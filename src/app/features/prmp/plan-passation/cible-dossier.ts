@@ -35,7 +35,11 @@ const STATUTS_PLAN_EN_VIGUEUR: ReadonlySet<string> = new Set(['CLOTURE', 'DECISI
  * ligne ouvre le plan sur cette ligne (`?dossier=`, l'écran du plan la retrouve par la filiation). Un plan encore en brouillon ou à la
  * Commission n'est pas un plan en vigueur : il garde la page du dossier (`null`).
  */
-export function lienVersLePlan(d: Pick<Dossier, 'idDossier' | 'idTypeDossier' | 'statut'>): { commandes: (string | number)[]; params: Record<string, number> } | null {
-  if (d.idTypeDossier === 'DDP') return STATUTS_PLAN_EN_VIGUEUR.has(d.statut ?? '') ? { commandes: ['/prmp/plan', d.idDossier], params: {} } : null;
-  return { commandes: ['/prmp/plan'], params: { dossier: d.idDossier } };
+export function lienVersLePlan(
+  d: Pick<Dossier, 'idDossier' | 'idTypeDossier' | 'statut'>,
+  espace = '/prmp',
+): { commandes: (string | number)[]; params: Record<string, number> } | null {
+  // ⚠️ 04/11 — `espace` : « /prmp », « /president » ou « /cc », qui ont tous l'écran du plan.
+  if (d.idTypeDossier === 'DDP') return STATUTS_PLAN_EN_VIGUEUR.has(d.statut ?? '') ? { commandes: [espace + '/plan', d.idDossier], params: {} } : null;
+  return { commandes: [espace + '/plan'], params: { dossier: d.idDossier } };
 }

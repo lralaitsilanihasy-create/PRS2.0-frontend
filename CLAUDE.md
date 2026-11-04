@@ -173,7 +173,7 @@ Inventaire, décisions du pilote (Q1-Q6) et plan : `docs/design-institutionnel-i
   calendrier des jalons sont SUPPRIMÉS (« Tous mes dossiers » et le plan les remplacent ; leurs notifications y mènent) ; le fil
   d'Ariane des écrans d'une fiche DAO remonte au plan.
   ⚠️ 04/11 — le même écran du plan est ouvert au **Président** et au **Chef de commission**, en consultation (`/president/plan`,
-  `/cc/plan`, entrée « Plans de passation » sous Pilotage) : plans en vigueur de la localité, choisis par entité ; ni « Mettre à jour le
+  `/cc/plan`, entrée « Plans de passation » en tête du menu, avant Dossiers) : plans en vigueur de la localité, choisis par entité ; ni « Mettre à jour le
   plan », ni étape « à créer », ni rangée « Procédure en ligne » (gestes et écrans de la PRMP). Ses liens restent dans l'espace courant.
 - **Espace de travail (pilote, 31/10)** — l'application est COMPACTE (en-tête bleu nuit fondu avec le menu de 36 px, pied
   réduit ; la connexion, l'inscription, le portail public et les espaces externes portent le même en-tête) :

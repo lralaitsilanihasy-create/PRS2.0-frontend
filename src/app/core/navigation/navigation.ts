@@ -101,6 +101,9 @@ function menuCommission(base: '/president' | '/cc'): NavItem[] {
     // ⚠️ Demande pilote (2026-09-12) — « Tableau de bord » renommé « Tous les dossiers » (le pipeline
     // liste les dossiers du périmètre) ; route inchangée. S'applique à Président ET CC (menu partagé).
     // ⚠️ 31/10 (pilote) — « Dossiers » chez tous les profils : la liste de tous les dossiers du périmètre.
+    // ⚠️ 04/11 (pilote) — les plans de passation de la localité, en consultation, en entrée directe AVANT Dossiers (comme chez la PRMP) :
+    // avancement de chaque ligne, dossiers, jalons ; « Dossiers » y mène aussi, sur la ligne du dossier.
+    { label: 'Plans de passation', path: `${base}/plan`, icon: 'calendar' },
     { label: 'Dossiers', path: `${base}/tableau-de-bord`, icon: 'folder' },
     // ⚠️ Demande pilote (2026-09-12) — « Mes dossiers » RETIRÉ (P/CC) : « Tous les dossiers » porte
     // désormais toute action par dossier dans sa colonne Actions (dispatch, examen — délégation Membre
@@ -143,8 +146,6 @@ function menuCommission(base: '/president' | '/cc'): NavItem[] {
     // entrée ajoutée plus haut) ; les deux accès coexistent.
     // ⚠️ Demande pilote (2026-09-04) — « Rapports », « Statistiques » et « Messagerie » avaient été retirés du menu ;
     // ⚠️ 31/10 (pilote) — REMIS : Rapports et Statistiques dans Pilotage, Messagerie à droite près des notifications.
-    // ⚠️ 04/11 (pilote) — les plans de passation de la localité, en consultation : avancement de chaque ligne, dossiers, jalons.
-    { label: 'Plans de passation', path: `${base}/plan`, icon: 'calendar' },
     { label: 'Rapports', path: `${base}/rapports`, icon: 'board' },
     { label: 'Statistiques', path: `${base}/statistiques`, icon: 'board' },
     { label: 'Messagerie', path: `${base}/messagerie`, icon: 'message' },

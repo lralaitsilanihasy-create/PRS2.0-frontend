@@ -1,12 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
+import { lienVersLePlan } from '../prmp/plan-passation/cible-dossier';
 import { Dispatch, Dossier, Examen, Page, PvExamen, Reception, Verification } from '../../models';
 import {
   ControleurService,
@@ -161,7 +162,9 @@ type VuePipeline = 'volets' | 'frise' | 'tableau';
                   <!-- Toute la ligne ouvre le dossier : LIEN sur la référence (nom accessible + clavier,
                        Ctrl+clic = nouvel onglet) dont la zone cliquable est étendue à la ligne (::after).
                        Lot L4-F6 : il mène à la PAGE du dossier, avec le retour vers cette liste. -->
-                  <td><a class="lien-ligne" [routerLink]="lien.commandes(d.idDossier)" [queryParams]="lien.params(retour())">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</a></td>
+                  <!-- ⚠️ 04/11 (pilote) — chez le Président et le CC, la ligne mène au PLAN, sur la ligne du dossier (comme « Tous mes dossiers »
+                       de la PRMP) ; la page du dossier reste à un clic dans le volet de la ligne, et les gestes dans la colonne Actions. -->
+                  <td><a class="lien-ligne" [routerLink]="lienLigne(d).commandes" [queryParams]="lienLigne(d).params">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</a></td>
                   <td style="white-space:nowrap;">{{ dateReceptionFmt(d) || '—' }}</td>
                   <td>{{ typeDossierLabel(d) }}</td>
                   <td>{{ entiteLabel(d) }}</td>
@@ -185,7 +188,7 @@ type VuePipeline = 'volets' | 'frise' | 'tableau';
             <li class="dossier-card">
               @let info = etapeInfo(d);
               <div class="dossier-card__head">
-                <a class="dossier-card__ref lien-ligne" [routerLink]="lien.commandes(d.idDossier)" [queryParams]="lien.params(retour())">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}@if (source) { · {{ entiteLabel(d) }}}</a>
+                <a class="dossier-card__ref lien-ligne" [routerLink]="lienLigne(d).commandes" [queryParams]="lienLigne(d).params">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}@if (source) { · {{ entiteLabel(d) }}}</a>
                 <!-- ⚠️ Rattachements (2026-09-01) — badge de CIBLAGE seulement : null = chaîne
                      incomplète, rien à afficher ; et aucune action n'est retirée sur les dossiers
                      ciblés sur un collègue (pas de garde serveur). -->
@@ -408,6 +411,14 @@ export class DossiersPipeline {
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
   /** Lot L4-F6 : lien vers la page du dossier, retour vers cette liste (page et mot-clé compris). */
   protected readonly lien = inject(LienDossier);
+  /** ⚠️ 04/11 (pilote) — le Président et le CC ouvrent le plan depuis « Dossiers » (leur liste de tous les dossiers, sans source). */
+  private readonly versLePlan = computed(() => ['PRESIDENT', 'CHEF_COMMISSION'].includes(this.auth.role() ?? '') && this.source === undefined);
+
+  /** Où mène une ligne : le plan, sur la ligne du dossier (Président, CC) ; sinon la page du dossier, avec le retour vers la liste. */
+  lienLigne(d: Dossier): { commandes: (string | number)[]; params: Params } {
+    const plan = this.versLePlan() ? lienVersLePlan(d, this.espace) : null;
+    return plan ?? { commandes: this.lien.commandes(d.idDossier), params: this.lien.params(this.retour()) };
+  }
   private readonly entiteMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
   /** Matricule → « nom prénoms » (référentiel des contrôleurs, en cache) : acteurs de la frise. */

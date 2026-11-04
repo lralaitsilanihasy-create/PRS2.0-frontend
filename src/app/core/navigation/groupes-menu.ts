@@ -173,9 +173,6 @@ export const GROUPES_PAR_CHEMIN: Readonly<Record<string, { groupe: CleGroupe }>>
   //    journal de connexions n'est plus un « suivi », la communication n'est plus un « paramétrage »,
   //    et les réglages du moteur de contrôle ne sont plus noyés dans les nomenclatures.
   '/admin/tableau-de-bord': { groupe: 'accueil' },
-  // ⚠️ 04/11 (pilote) — chez le Président et le CC, le plan se consulte pour piloter (la PRMP l'a en tête de son menu : « plan »).
-  '/president/plan': { groupe: 'pilotage' },
-  '/cc/plan': { groupe: 'pilotage' },
   inscriptions: { groupe: 'acces' },
   comptes: { groupe: 'acces' },
   // ⚠️ 31/10 (pilote) — remontés dans « Accès » (atteints jusqu'ici par l'accueil et la page des comptes).

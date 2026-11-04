@@ -304,7 +304,8 @@ describe('Entrée active du menu (lot 5 F3 ; 30/10 : sous-pages et retour)', () 
 describe('Menu horizontal par rubriques (design institutionnel, 30/10/2026)', () => {
   it('Président : À faire et Dossiers en direct, puis Décisions, Pilotage, Exercé par délégation, et Messagerie, Notifications à droite', async () => {
     const { hote } = await monter({ role: 'PRESIDENT', login: 'PRESID1', delegation: true });
-    expect(barre(hote)).toEqual(['À faire', 'Dossiers', 'Décisions', 'Pilotage', 'Exercé par délégation', 'Messagerie']);
+    // ⚠️ 04/11 (pilote) — « Plans de passation » en entrée directe, avant Dossiers.
+    expect(barre(hote)).toEqual(['À faire', 'Plans de passation', 'Dossiers', 'Décisions', 'Pilotage', 'Exercé par délégation', 'Messagerie']);
     expect(hote.querySelector('.menu__liste > li:last-child')?.classList).toContain('menu__entree--pied');
   });
 
@@ -401,7 +402,6 @@ describe('Menu horizontal par rubriques (design institutionnel, 30/10/2026)', ()
       '/president/repartition-dispatch',
       '/president/interim',
       '/president/chaines-controle',
-      '/president/plan',
       '/president/rapports',
       '/president/statistiques',
     ]);

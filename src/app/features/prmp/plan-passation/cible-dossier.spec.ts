@@ -32,5 +32,8 @@ describe('lienVersLePlan', () => {
     expect(lienVersLePlan({ idDossier: 100390, idTypeDossier: 'DDP', statut: 'CLOTURE' })).toEqual({ commandes: ['/prmp/plan', 100390], params: {} });
     expect(lienVersLePlan({ idDossier: 100500, idTypeDossier: 'DDP', statut: 'BROUILLON' })).toBeNull();
     expect(lienVersLePlan({ idDossier: 100402, idTypeDossier: 'DDM', statut: 'SOUMIS' })).toEqual({ commandes: ['/prmp/plan'], params: { dossier: 100402 } });
+    // ⚠️ 04/11 — le Président et le CC ont l'écran du plan dans leur espace.
+    expect(lienVersLePlan({ idDossier: 100402, idTypeDossier: 'DDM', statut: 'SOUMIS' }, '/cc')).toEqual({ commandes: ['/cc/plan'], params: { dossier: 100402 } });
+    expect(lienVersLePlan({ idDossier: 100390, idTypeDossier: 'DDP', statut: 'CLOTURE' }, '/president')).toEqual({ commandes: ['/president/plan', 100390], params: {} });
   });
 });
