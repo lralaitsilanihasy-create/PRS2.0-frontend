@@ -1,0 +1,268 @@
+<title>Menu PRMP recentré</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Maquette du 04/11/2026 — le menu de la PRMP après l'analyse des redondances avec le plan de passation.
+     Palette : le bloc « DESIGN INSTITUTIONNEL » de styles.scss (menu bleu nuit, cartes blanches, 4 familles de statut).
+     Mise en page : une colonne de lecture, les écrans maquettés en pleine largeur dans des cadres gris. Un seul thème, celui de l'application. */
+  :root {
+    color-scheme: light;
+    --menu-fond: #0C3A5B; --menu-survol: #1A527B; --onglet-actif-fond: #EAF2FF;
+    --page-fond: #E9EEF3; --carte-fond: #FFFFFF; --tableau-entete: #EEF1F4; --ligne-survol: #F7F8FA;
+    --bordure: #D9DEE3; --bordure-champ: #868E96; --texte: #1F2328; --texte-secondaire: #5F6368;
+    --texte-menu: #FFFFFF; --texte-menu-secondaire: #A9BCCD; --bouton-principal: #2557D6;
+    --retard-fond: #FDE2E2; --retard-texte: #8A1C1C; --examen-fond: #FFF1C2; --examen-texte: #6B4E00;
+    --favorable-fond: #E3F4EA; --favorable-texte: #1E6B3A; --neutre-fond: #ECEEF1; --neutre-texte: #3F464D;
+    --nouveau: #2557D6;
+    --police: 'Segoe UI', Roboto, Arial, sans-serif; --police-marque: Georgia, 'Times New Roman', serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page-fond); color: var(--texte); font: 14px/1.5 var(--police); }
+  .page { max-width: 1180px; margin: 0 auto; padding-block: 24px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 28px; }
+  h1 { margin: 0; font-size: 1.5rem; font-weight: 500; text-wrap: balance; }
+  h2 { margin: 0; font-size: 1.05rem; font-weight: 500; }
+  h3 { margin: 0; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texte-secondaire); }
+  p { margin: 0; max-width: 72ch; }
+  .intro { color: var(--texte-secondaire); }
+  section { display: grid; gap: 12px; }
+  .ecran { border: 1px solid var(--bordure); border-radius: 8px; background: var(--carte-fond); overflow: hidden; }
+  .ecran__corps { padding: 14px 16px; display: grid; gap: 12px; }
+  .legende { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 0.8125rem; color: var(--texte-secondaire); }
+  .legende b { font-weight: 500; color: var(--texte); }
+  .nouveau { position: relative; }
+  .nouveau::before { content: 'nouveau'; position: absolute; top: -9px; left: 10px; padding: 0 6px; border-radius: 10px; background: var(--nouveau); color: #fff; font-size: 0.68rem; letter-spacing: 0.04em; text-transform: uppercase; }
+  .retire { text-decoration: line-through; color: var(--texte-menu-secondaire); }
+
+  /* La barre de menus de l'application (36 px, bleu nuit, onglet actif blanc). */
+  .barre { display: flex; flex-wrap: wrap; align-items: flex-end; min-height: 36px; padding-left: 8px; background: var(--menu-fond); color: var(--texte-menu); }
+  .barre__e { padding: 8px 12px 7px; font-size: 0.875rem; white-space: nowrap; }
+  .barre__e--actif { background: var(--carte-fond); color: var(--texte); border-radius: 4px 4px 0 0; }
+  .barre__e small { font-size: 0.7rem; margin-left: 4px; }
+  .barre__droite { margin-left: auto; }
+  .deroulants { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 16rem)); gap: 12px; padding: 12px 16px 16px; background: var(--ligne-survol); border-top: 1px solid var(--bordure); }
+  .deroulant { border: 1px solid var(--bordure); border-radius: 6px; background: var(--carte-fond); }
+  .deroulant h4 { margin: 0; padding: 8px 12px; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texte-secondaire); border-bottom: 1px solid var(--bordure); }
+  .deroulant ul { list-style: none; margin: 0; padding: 6px 0; }
+  .deroulant li { padding: 6px 12px; }
+  .deroulant li.retire { color: var(--texte-secondaire); }
+  .deroulant li span { display: block; font-size: 0.75rem; color: var(--texte-secondaire); text-decoration: none; }
+
+  /* Le volet d'une ligne du plan : en-tête, barres de dossier, jalons. */
+  .outils { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: end; }
+  .champ { display: grid; gap: 3px; font-size: 0.75rem; color: var(--texte-secondaire); }
+  .champ > span { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; padding: 0 10px; border: 1px solid var(--bordure-champ); border-radius: 5px; background: var(--carte-fond); color: var(--texte); font-size: 0.875rem; }
+  .champ--recherche > span { min-width: 20rem; color: var(--texte-secondaire); }
+  .volet-tete { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; align-items: start; }
+  .volet-tete h4 { margin: 0; font-size: 1.05rem; font-weight: 500; }
+  .montant { font-size: 1.05rem; font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .montant small { font-size: 0.75rem; color: var(--texte-secondaire); }
+  .pill { grid-column: 1 / -1; width: fit-content; padding: 0 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 500; }
+  .pill--favorable { background: var(--favorable-fond); color: var(--favorable-texte); }
+  .pill--examen { background: var(--examen-fond); color: var(--examen-texte); }
+  .pill--neutre { background: var(--neutre-fond); color: var(--neutre-texte); }
+  .fiche { grid-column: 1 / -1; font-size: 0.8125rem; }
+  .carte { display: grid; gap: 10px; padding: 12px 14px; border: 1px solid var(--bordure); border-radius: 8px; background: var(--carte-fond); }
+  .carte__tete { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+  .carte__titre { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
+  .k { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texte-secondaire); }
+  .r { font-weight: 500; }
+  .badge { padding: 1px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 500; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--bordure); border-radius: 6px; background: var(--carte-fond); color: var(--texte); font-size: 0.8125rem; white-space: nowrap; }
+  .btn--outline { border-color: var(--bordure-champ); }
+  .btn--principal { background: var(--bouton-principal); border-color: var(--bouton-principal); color: #fff; }
+  .btn .n { padding: 0 7px; border-radius: 20px; background: var(--neutre-fond); color: var(--neutre-texte); font-size: 0.7rem; }
+  .btn .n--examen { background: var(--examen-fond); color: var(--examen-texte); }
+  .btn .n--favorable { background: var(--favorable-fond); color: var(--favorable-texte); }
+  .elements { display: flex; flex-wrap: wrap; gap: 8px; }
+  .procedure { display: grid; gap: 8px; padding: 10px 12px 12px; border: 1px dashed var(--nouveau); border-radius: 6px; background: var(--onglet-actif-fond); }
+  .procedure .k { color: var(--texte); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+  th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--bordure); vertical-align: top; }
+  th { background: var(--tableau-entete); font-weight: 500; font-size: 0.72rem; }
+  td.d { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .tableau { overflow-x: auto; }
+
+  /* « Créer un dossier » : cartes de choix. */
+  .choix { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 12px; }
+  .choix__carte { display: grid; gap: 4px; padding: 12px 14px; border: 1px solid var(--bordure); border-radius: 8px; background: var(--carte-fond); }
+  .choix__carte b { font-weight: 500; }
+  .choix__carte span { font-size: 0.8125rem; color: var(--texte-secondaire); }
+  .choix--plan .choix__carte { background: var(--ligne-survol); border-style: dashed; }
+  .choix--plan a { color: var(--texte); font-size: 0.8125rem; text-decoration: underline; text-decoration-color: #B0B5BB; text-underline-offset: 3px; }
+  .bilan td:first-child { font-weight: 500; white-space: nowrap; }
+  .sort { padding: 1px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 500; white-space: nowrap; }
+  ol { margin: 0; padding-left: 1.2rem; display: grid; gap: 6px; max-width: 72ch; }
+  @media (max-width: 40rem) { .champ--recherche > span { min-width: 0; } .volet-tete { grid-template-columns: 1fr; } }
+</style>
+
+<div class="page">
+  <header>
+    <h1>Le menu de la PRMP recentré sur le plan de passation</h1>
+    <p class="intro">Maquette du 4 novembre 2026, d'après l'analyse des redondances entre le plan et les autres entrées du menu. Trois écrans sont touchés : la barre de menus, le volet d'une ligne lancée, et « Créer un dossier ».</p>
+  </header>
+
+  <section>
+    <h2>1. La barre de menus</h2>
+    <h3>Aujourd'hui</h3>
+    <div class="ecran">
+      <div class="barre">
+        <span class="barre__e">À faire</span><span class="barre__e barre__e--actif">Plan de passation</span><span class="barre__e">Dossiers ⌄</span>
+        <span class="barre__e">Passation ⌄</span><span class="barre__e">Contrats en vigueur</span><span class="barre__e">Décisions ⌄</span>
+        <span class="barre__e barre__droite">Notifications</span>
+      </div>
+      <div class="deroulants">
+        <div class="deroulant"><h4>Dossiers</h4><ul><li>Tous mes dossiers</li><li>Créer un dossier</li></ul></div>
+        <div class="deroulant"><h4>Passation</h4><ul><li>Appels d'offres en cours</li><li>Reçus des frais de dossier</li><li>Dossiers de marché</li></ul></div>
+        <div class="deroulant"><h4>Décisions</h4><ul><li>PV et lettres de renvoi</li><li>Demandes de retrait</li></ul></div>
+      </div>
+    </div>
+    <h3>Proposé</h3>
+    <div class="ecran">
+      <div class="barre">
+        <span class="barre__e">À faire</span><span class="barre__e barre__e--actif">Plan de passation</span><span class="barre__e">Dossiers ⌄</span>
+        <span class="barre__e">Reçus des frais de dossier</span><span class="barre__e">Contrats en vigueur</span><span class="barre__e">Décisions ⌄</span>
+        <span class="barre__e barre__droite">Notifications</span>
+      </div>
+      <div class="deroulants">
+        <div class="deroulant"><h4>Dossiers</h4><ul>
+          <li>Tous mes dossiers<span>la liste transversale : dates CNM, Soumettre, Rectifier</span></li>
+          <li>Créer un dossier<span>ce que le plan ne crée pas (voir 3)</span></li>
+        </ul></div>
+        <div class="deroulant"><h4>Passation <span style="text-transform:none;letter-spacing:0;font-weight:400">— rubrique dissoute</span></h4><ul>
+          <li class="retire">Appels d'offres en cours<span>= le plan, filtre « Lancée » (temps 2)</span></li>
+          <li>Reçus des frais de dossier<span>passe à plat dans la barre : seule entrée restante</span></li>
+          <li class="retire">Dossiers de marché<span>= le plan : filtre « Lancée », bouton « Créer le dossier de marché »</span></li>
+        </ul></div>
+        <div class="deroulant"><h4>Décisions</h4><ul><li>PV et lettres de renvoi</li><li>Demandes de retrait</li></ul></div>
+      </div>
+    </div>
+    <div class="legende"><b>Règle de la barre :</b> une rubrique d'une seule entrée s'affiche à plat, sans menu déroulant. La largeur de la barre sera revérifiée par <code>largeur-menu.mjs</code> sur les dix profils.</div>
+  </section>
+
+  <section>
+    <h2>2. Le plan : le volet d'une ligne lancée</h2>
+    <p>Ce qui existe reste en place. La barre du dossier de mise en concurrence gagne la rangée de la procédure en ligne, pour que « Appels d'offres en cours » puisse disparaître sans rien perdre.</p>
+    <div class="ecran"><div class="ecran__corps">
+      <div class="outils">
+        <div class="champ">Étape<span>Lancée (1) ⌄</span></div>
+        <div class="champ champ--recherche">Rechercher<span>Objet, mode, nature, compte, service bénéficiaire…</span></div>
+        <div class="champ">&nbsp;<span style="border:0;padding:0;color:var(--texte-secondaire)">1 ligne sur 34</span></div>
+        <span class="btn btn--outline">Effacer les filtres</span>
+      </div>
+      <div class="legende"><b>Le filtre « Lancée »</b> est exactement la liste qu'ouvre aujourd'hui « Appels d'offres en cours » (même source, même règle).</div>
+
+      <div class="volet-tete">
+        <h4>Travaux de réhabilitation des routes dans la ville de Maintirano dans la Région Melaky</h4>
+        <span class="montant">8 000 000 000,00 <small>Ar</small></span>
+        <span class="pill pill--favorable">Dossier de marché · soumis</span>
+        <span class="fiche">Travaux · Appel d'offres ouvert · RPI · 00-61-0-D10-00000, compte 2441</span>
+      </div>
+
+      <div class="carte">
+        <div class="carte__tete">
+          <div class="carte__titre"><span class="k">Mise en concurrence</span><span class="r">00002/DAOO/CNM/2026</span><span class="badge pill--favorable">Clôturé</span></div>
+          <span class="btn btn--outline">Ouvrir la page du dossier</span>
+        </div>
+        <div class="elements">
+          <span class="btn">Informations du DAO</span><span class="btn">Canevas de rapport</span><span class="btn">Bordereau estimatif</span>
+          <span class="btn">Pièces jointes <span class="n">2</span></span><span class="btn">Écrans figés <span class="n">3</span></span>
+        </div>
+        <div class="procedure nouveau">
+          <div class="carte__titre"><span class="k">Procédure en ligne</span><span class="r">15/MTP/SG/PRMP.2026</span><span style="font-size:0.8125rem;color:var(--texte-secondaire)">avis publié le 11/11/2026 · remise électronique · limite le 14/12/2026 à 09:00</span></div>
+          <div class="elements">
+            <span class="btn">Commission d'appel d'offres <span class="n">2 membres</span></span>
+            <span class="btn">Dépôts et retraits <span class="n n--favorable">3 offres</span></span>
+            <span class="btn">Questions des candidats <span class="n">0</span></span>
+            <span class="btn">Reçus des frais <span class="n">dossier gratuit</span></span>
+            <span class="btn">Séance d'ouverture <span class="n n--favorable">PV signé</span></span>
+            <span class="btn">Évaluation des offres <span class="n n--favorable">rapport signé</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="carte">
+        <div class="carte__tete">
+          <div class="carte__titre"><span class="k">Dossier de marché · lot 1</span><span class="r">Dossier #100402 · référence à la réception</span><span class="badge pill--examen">Initial</span></div>
+          <span class="btn btn--outline">Ouvrir la page du dossier</span>
+        </div>
+        <div class="elements">
+          <span class="btn">Fiche de présentation</span><span class="btn">PV de la Commission sur le DAO</span><span class="btn">Séance d'ouverture</span>
+          <span class="btn">Rapport d'évaluation</span><span class="btn">Attribution</span><span class="btn">Pièces jointes <span class="n">1</span></span>
+          <span class="btn">Écrans figés <span class="n">6</span></span><span class="btn">Contrôles <span class="n">3</span></span>
+        </div>
+      </div>
+
+      <div class="carte">
+        <div class="carte__tete"><h3>Jalons</h3><span class="btn btn--outline">Voir les 28 jalons</span></div>
+        <div class="tableau"><table>
+          <thead><tr><th>Jalon</th><th>Prévu</th><th>Réel</th></tr></thead>
+          <tbody>
+            <tr><td>Lancement du DAO/DC</td><td class="d">11/11/2026</td><td class="d"><b>11/11/2026</b></td></tr>
+            <tr><td>Remise des offres</td><td class="d">14/12/2026</td><td class="d"><b>14/12/2026</b></td></tr>
+            <tr><td>Évaluation et classement des offres</td><td class="d">15/12/2026</td><td class="d"><b>18/12/2026</b></td></tr>
+            <tr><td>Établissement du projet de marché</td><td class="d">21/12/2026</td><td class="d" style="color:var(--texte-secondaire)">non renseigné</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div></div>
+
+    <h3>Ce que la rangée montre selon l'étape de la ligne</h3>
+    <div class="ecran"><div class="tableau"><table>
+      <thead><tr><th>Étape de la ligne</th><th>Sous la barre du dossier de mise en concurrence</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pill pill--neutre">À lancer</span></td><td>pas de barre : le bouton « Préparer les informations du DAO », comme aujourd'hui</td></tr>
+        <tr><td><span class="pill pill--examen">En préparation</span></td><td>« Reprendre les informations du DAO » · Commission d'appel d'offres</td></tr>
+        <tr><td><span class="pill pill--examen">À la Commission</span></td><td>Commission d'appel d'offres (la fiche est figée pendant l'examen)</td></tr>
+        <tr><td><span class="pill pill--favorable">Lancée</span></td><td>Commission · Dépôts et retraits · Questions des candidats · Reçus des frais · Séance d'ouverture · Évaluation des offres</td></tr>
+        <tr><td><span class="pill pill--favorable">Dossier de marché</span></td><td>la même rangée, en lecture ; puis « Créer le dossier de marché » tant qu'un lot proposé n'a pas le sien</td></tr>
+      </tbody>
+    </table></div></div>
+  </section>
+
+  <section>
+    <h2>3. « Créer un dossier » : ce que le plan ne crée pas</h2>
+    <p>L'écran de choix garde trois familles. Les dossiers qui se rattachent à une ligne renvoient au plan : créés depuis la ligne, ils entrent dans sa chaîne ; créés d'ici sans ligne, ils n'y apparaîtraient jamais.</p>
+    <div class="ecran"><div class="ecran__corps">
+      <h3>Créer depuis ce menu</h3>
+      <div class="choix">
+        <div class="choix__carte"><b>Plan de passation</b><span>un nouveau plan (PPM, PPM-AGPM) ou sa mise à jour pour un exercice sans plan en vigueur</span></div>
+        <div class="choix__carte"><b>Consultation de prix</b><span>tant que son dossier n'est pas défini dans le plan (lignes « sans étape définie »)</span></div>
+        <div class="choix__carte"><b>Acte de gestion sur un marché</b><span>avenant, résiliation, réception : rattaché au marché choisi</span></div>
+      </div>
+      <h3>Se crée depuis le plan, sur sa ligne</h3>
+      <div class="choix choix--plan">
+        <div class="choix__carte"><b>Informations du DAO</b><span>bouton « Préparer les informations du DAO » d'une ligne à lancer</span><a href="#">Ouvrir le plan</a></div>
+        <div class="choix__carte"><b>Rapport justificatif (gré à gré)</b><span>bouton « Créer le rapport justificatif » de la ligne</span><a href="#">Ouvrir le plan</a></div>
+        <div class="choix__carte"><b>Marché de gré à gré</b><span>une fois le rapport clôturé, sur la même ligne</span><a href="#">Ouvrir le plan</a></div>
+        <div class="choix__carte"><b>Dossier de marché</b><span>à l'attribution du lot, depuis la ligne lancée</span><a href="#">Ouvrir le plan</a></div>
+      </div>
+    </div></div>
+  </section>
+
+  <section>
+    <h2>4. Le sort de chaque entrée</h2>
+    <div class="ecran"><div class="tableau"><table class="bilan">
+      <thead><tr><th>Entrée</th><th>Sort</th><th>Pourquoi</th></tr></thead>
+      <tbody>
+        <tr><td>À faire</td><td><span class="sort pill--favorable">inchangée</span></td><td>les gestes attribués par le serveur ; le plan dit la suite d'une ligne, l'accueil dit ce qui attend</td></tr>
+        <tr><td>Plan de passation</td><td><span class="sort pill--favorable">inchangée</span></td><td>l'écran de travail ; gagne la rangée de la procédure en ligne</td></tr>
+        <tr><td>Tous mes dossiers</td><td><span class="sort pill--favorable">gardée</span></td><td>seule liste transversale : plan, mises à jour, actes de gestion, dates CNM, Soumettre et Rectifier</td></tr>
+        <tr><td>Créer un dossier</td><td><span class="sort pill--examen">recentrée</span></td><td>plan, consultation de prix, acte de gestion ; le reste renvoie à la ligne du plan</td></tr>
+        <tr><td>Appels d'offres en cours</td><td><span class="sort pill--retard" style="background:var(--retard-fond);color:var(--retard-texte)">remplacée (temps 2)</span></td><td>la liste est le filtre « Lancée » du plan ; ses écrans de procédure passent dans la rangée du volet</td></tr>
+        <tr><td>Reçus des frais de dossier</td><td><span class="sort pill--favorable">gardée, à plat</span></td><td>une file de décisions transversale ; dernière entrée de « Passation », donc sans déroulant</td></tr>
+        <tr><td>Dossiers de marché</td><td><span class="sort" style="background:var(--retard-fond);color:var(--retard-texte)">retirée (temps 1)</span></td><td>tout ce qu'elle fait, la ligne du plan le fait ; la route reste pour le lien « Créer dossier »</td></tr>
+        <tr><td>Contrats en vigueur</td><td><span class="sort pill--favorable">inchangée</span></td><td>l'exécution, après la notification : rien de cela dans le plan</td></tr>
+        <tr><td>PV et lettres de renvoi</td><td><span class="sort pill--favorable">inchangée</span></td><td>transversal ; les lettres n'ont pas d'équivalent dans le plan</td></tr>
+        <tr><td>Demandes de retrait</td><td><span class="sort pill--favorable">inchangée</span></td><td>formulaire et suivi, transversal</td></tr>
+        <tr><td>Notifications</td><td><span class="sort pill--favorable">inchangée</span></td><td>transversal, tous profils</td></tr>
+      </tbody>
+    </table></div></div>
+  </section>
+
+  <section>
+    <h2>5. Mise en œuvre, en deux temps</h2>
+    <ol>
+      <li><b>Temps 1, sans perte.</b> Retirer « Dossiers de marché » du menu ; recentrer « Créer un dossier » ; ajouter la rangée de la procédure en ligne dans le volet du plan. « Appels d'offres en cours » reste en place pendant ce temps.</li>
+      <li><b>Temps 2, après recette de la rangée.</b> Remplacer « Appels d'offres en cours » par l'ouverture du plan filtré sur « Lancée » ; « Passation » n'ayant plus que les reçus, la barre les affiche à plat. Puis revérifier la largeur du menu sur les dix profils.</li>
+    </ol>
+  </section>
+</div>

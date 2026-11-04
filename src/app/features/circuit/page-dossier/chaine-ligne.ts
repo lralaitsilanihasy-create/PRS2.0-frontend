@@ -43,6 +43,15 @@ export function dossiersDeLaLigne(f: FiliationDossier, m: Pick<Marche, 'idDetail
   return [...plan, ...suites];
 }
 
+/**
+ * ⚠️ 04/11 (pilote) — ce qui tient lieu de référence à un dossier qui n'en a pas encore : « Brouillon #id » tant qu'il est en
+ * préparation ; déposé, il attend sa réception par la CNM, qui lui donne sa référence (comme les actes de gestion).
+ */
+export function referenceNoeud(ref: string | null | undefined, statut: string | null | undefined, idDossier: number | null): string {
+  if (ref) return ref;
+  return statut === 'BROUILLON' || statut == null ? `Brouillon #${idDossier}` : `Dossier #${idDossier} · référence à la réception`;
+}
+
 /** L'étape suivante de la ligne, à créer : son intitulé, le geste et l'écran qui la crée (ou pourquoi elle attend). */
 export interface EtapeACreer {
   intitule: string;
@@ -157,6 +166,7 @@ export class ChainesDuPlan {
   selector: 'app-chaine-ligne',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, StatutBadge],
+  host: { '[style.display]': 'affichable() ? null : "none"' },
   template: `
     <div class="cl">
       @if (source.chargement()) {
@@ -166,7 +176,7 @@ export class ChainesDuPlan {
           <button type="button" class="btn btn-outline btn-sm" (click)="reessayer()">Réessayer</button></p>
       } @else {
         <ol class="cl__chaine" [attr.aria-label]="'Chaîne de la ligne : ' + (marche().designationMarche ?? '')">
-          @for (n of noeuds(); track $index) {
+          @for (n of maillons() ? noeuds() : []; track $index) {
             <li class="cl__pas">
               @if (n.masque) {
                 <span class="cl__maillon cl__maillon--masque">
@@ -177,13 +187,13 @@ export class ChainesDuPlan {
                 <a class="cl__maillon" [routerLink]="lien.commandes(n.idDossier)" [queryParams]="lien.params()"
                   [attr.aria-label]="intitule(n) + ' — ouvrir le dossier ' + (n.refeDossier || n.idDossier)">
                   <span class="cl__k">{{ intitule(n) }}</span>
-                  <span class="cl__r">{{ n.refeDossier || 'Brouillon #' + n.idDossier }}</span>
+                  <span class="cl__r">{{ referenceNoeud(n.refeDossier, n.statut, n.idDossier) }}</span>
                   <app-statut-badge [statut]="n.statut" />
                 </a>
               } @else {
                 <span class="cl__maillon">
                   <span class="cl__k">{{ intitule(n) }}</span>
-                  <span class="cl__r">{{ n.refeDossier || 'Brouillon #' + n.idDossier }}</span>
+                  <span class="cl__r">{{ referenceNoeud(n.refeDossier, n.statut, n.idDossier) }}</span>
                   <app-statut-badge [statut]="n.statut" />
                 </span>
               }
@@ -200,7 +210,7 @@ export class ChainesDuPlan {
                 }
               </span>
             </li>
-          } @else if (noeuds().length <= 1) {
+          } @else if (!noeuds().length) {
             <li class="cl__pas"><span class="cl__info">Aucune procédure lancée sur cette ligne.</span></li>
           }
         </ol>
@@ -209,7 +219,7 @@ export class ChainesDuPlan {
   `,
   styles: `
     :host { display: block; }
-    .cl { padding: 0.6rem 0.75rem; background: var(--carte-fond); }
+    .cl { background: var(--carte-fond); }
     .cl__chaine { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
     .cl__pas { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
     .cl__pas:last-child .cl__fleche { display: none; }
@@ -234,17 +244,25 @@ export class ChaineLigne implements OnInit {
   readonly lien = inject(LienDossier);
 
   readonly marche = input.required<Marche>();
+  /**
+   * ⚠️ 04/11 (pilote) — faux dans le volet du plan, où le contenu de chaque dossier est affiché : les maillons ne sont plus rendus,
+   * seule reste l'étape « à créer » (ou « Aucune procédure lancée ») ; sans l'une ni l'autre, le composant ne s'affiche pas.
+   */
+  readonly maillons = input(true);
+  readonly affichable = computed(() => this.maillons() || this.source.chargement() || this.source.erreur() || !!this.etape() || !this.noeuds().length);
+  protected readonly referenceNoeud = referenceNoeud;
 
+  /** ⚠️ 03/11 (pilote) — les dossiers de la ligne, SANS le dossier de planification : la chaîne part de la mise en concurrence. */
   readonly noeuds = computed(() => {
     const f = this.source.filiation();
-    return f ? dossiersDeLaLigne(f, this.marche()) : [];
+    return f ? dossiersDeLaLigne(f, this.marche()).filter((n) => n.lien !== 'RACINE' && n.lien !== 'VERSION_SUIVANTE') : [];
   });
   readonly etape = computed(() => {
     if (!this.source.creation()) return null;
     const m = this.marche();
     const e = this.source.eligibles().find((x) => x.idDetail === m.idDetail);
     const mode = m.idMode != null ? this.source.modes().get(String(m.idMode)) ?? null : null;
-    return etapeACreer(e, mode, this.noeuds().slice(1), { idDetail: m.idDetail, objet: m.designationMarche ?? null });
+    return etapeACreer(e, mode, this.noeuds(), { idDetail: m.idDetail, objet: m.designationMarche ?? null });
   });
 
   ngOnInit(): void {

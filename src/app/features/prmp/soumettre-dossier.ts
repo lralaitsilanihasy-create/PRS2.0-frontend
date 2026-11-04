@@ -46,6 +46,7 @@ import {
   TypePieceJointeService,
 } from '../../services';
 import { maintenantServeur } from '../../core/horloge/heure-serveur';
+import { trierSousTypesCreables } from './sous-types-par-la-ligne';
 
 type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
 
@@ -182,7 +183,8 @@ interface ApercuDossier {
                 <span class="sd__choix-ic" aria-hidden="true">📢</span>
                 <span class="sd__choix-titre">Dossier de mise en concurrence</span>
               </span>
-              <span class="sd__choix-desc">Consultation, gré à gré… — un type + une localité, pièces jointes selon le type. L'appel d'offres, lui, se prépare dans ses informations du DAO.</span>
+              <!-- ⚠️ 04/11 (pilote, redondances, temps 1) — ce qui se rattache à une ligne du plan se crée depuis la ligne (bloc ci-dessous). -->
+              <span class="sd__choix-desc">Demande de proposition d'un bailleur, dossier de pré-qualification — un type + une localité, pièces jointes selon le type. L'appel d'offres, la consultation de prestations intellectuelles et le rapport justificatif d'un gré à gré se préparent depuis leur ligne du plan.</span>
               <span class="sd__choix-go">Commencer<span class="sd__choix-arrow" aria-hidden="true">›</span></span>
             </button>
             <button type="button" class="sd__choix-card sd__choix-card--marche" (click)="choisirFamille('DDM')">
@@ -190,10 +192,22 @@ interface ApercuDossier {
                 <span class="sd__choix-ic" aria-hidden="true">📝</span>
                 <span class="sd__choix-titre">Dossier de marché</span>
               </span>
-              <span class="sd__choix-desc">Marché / contrat — un type + une localité. Pièces jointes selon le type choisi.</span>
+              <span class="sd__choix-desc">Marché sur appel d'offres ou de prestations intellectuelles — il naît de l'attribution du lot : vous choisissez la procédure, puis le lot. Le marché de gré à gré se crée depuis sa ligne du plan.</span>
               <span class="sd__choix-go">Commencer<span class="sd__choix-arrow" aria-hidden="true">›</span></span>
             </button>
           </div>
+          <!-- ⚠️ 04/11 (pilote, maquette « menu PRMP recentré », temps 1) — ce qui se rattache à une ligne du plan se crée DEPUIS la ligne
+               (V163 : le dossier entre dans sa chaîne) ; créé d'ici sans ligne, il n'y paraîtrait jamais. -->
+          <section class="sd__plan" aria-labelledby="sd-plan-t">
+            <h2 class="sd__sub" id="sd-plan-t">Se crée depuis le plan de passation, sur sa ligne</h2>
+            <ul class="sd__plan-liste">
+              <li><b>Informations du DAO</b> — bouton « Préparer les informations du DAO » d'une ligne à lancer</li>
+              <li><b>Rapport justificatif</b> d'un gré à gré — bouton « Créer le rapport justificatif » de la ligne</li>
+              <li><b>Marché de gré à gré</b> — une fois le rapport clôturé, sur la même ligne</li>
+              <li><b>Dossier de marché</b> — à l'attribution du lot, depuis la ligne lancée</li>
+            </ul>
+            <a class="btn btn-outline" routerLink="/prmp/plan">Ouvrir le plan de passation</a>
+          </section>
         }
 
         @case ('saisiePpm') {
@@ -506,13 +520,17 @@ interface ApercuDossier {
                 <span class="form-label">Sous-type de dossier *</span>
                 <select class="form-control" formControlName="idSousType">
                   <option [ngValue]="null">— Sélectionner —</option>
-                  @for (t of sousTypesDeLaFamille(); track t.idSousType) {
+                  @for (t of sousTypesProposes(); track t.idSousType) {
                     <option [ngValue]="t.idSousType">{{ t.libelleSousType || t.idSousType }}</option>
                   }
                 </select>
                 @if (req(dossierForm, 'idSousType')) { <span class="form-error">Obligatoire.</span> }
                 @if (err('idSousType')) { <span class="form-error">{{ err('idSousType') }}</span> }
                 @if (!sousTypesDeLaFamille().length) { <span class="form-hint">Aucun sous-type dans la famille « {{ familleLabel() }} » (référentiel « Sous-types de dossier »).</span> }
+                <!-- ⚠️ 04/11 (temps 1) — les sous-types rattachés à une ligne se créent depuis le plan : retenus ici, nommés, avec le renvoi. -->
+                @if (sousTypesParLaLigne().length) {
+                  <span class="form-hint">{{ renvoiPlan() }} <a routerLink="/prmp/plan">Ouvrir le plan de passation</a></span>
+                }
               </label>
             </div>
 
@@ -921,6 +939,10 @@ interface ApercuDossier {
     .sd__choix-arrow { font-size: 1.15rem; line-height: 1; transition: transform 0.16s ease; }
     .sd__choix-card:hover .sd__choix-arrow { transform: translateX(4px); }
     @media (max-width: 40rem) { .sd__choix { grid-template-columns: 1fr; } }
+    /* ⚠️ 04/11 (temps 1) — ce qui se crée depuis le plan : un bloc informatif sous les cartes, jamais concurrent de l'action. */
+    .sd__plan { margin-top: 1.1rem; display: grid; gap: 0.6rem; justify-items: start; padding: 1rem 1.25rem; border: 1px dashed var(--bordure); border-radius: var(--radius-lg); background: var(--ligne-survol); }
+    .sd__plan-liste { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.3rem; color: var(--n-500); font-size: var(--text-sm); }
+    .sd__plan-liste b { font-weight: 500; color: var(--texte); }
     .sd__form { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; max-width: min(64rem, 96vw); }
     .sd__form--wide { max-width: min(100rem, 98vw); }
     .sd__import { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; padding-bottom: 0.75rem; border-bottom: 1px solid var(--c-100); }
@@ -1168,6 +1190,13 @@ export class SoumettreDossier {
   readonly familleLabel = computed(() => (this.familleChoisie() === 'DMC' ? 'mise en concurrence' : 'marché'));
   /** Sous-types de la famille choisie (référentiel serveur, `GET /api/sous-type-dossiers/par-famille/{famille}`). */
   readonly sousTypesDeLaFamille = signal<SousTypeDossier[]>([]);
+  /** ⚠️ 04/11 (pilote, temps 1) — sans ligne du plan (`?ligne=`), les sous-types qui se créent depuis la ligne ne sont pas proposés. */
+  readonly sousTypesProposes = computed(() => trierSousTypesCreables(this.sousTypesDeLaFamille(), !!this.ligneOrigine()).proposes);
+  readonly sousTypesParLaLigne = computed(() => trierSousTypesCreables(this.sousTypesDeLaFamille(), !!this.ligneOrigine()).parLaLigne);
+  /** Le renvoi, en une phrase par famille (la liste des sous-types retenus serait longue pour la mise en concurrence). */
+  readonly renvoiPlan = computed(() => this.familleChoisie() === 'DDM'
+    ? 'Le marché de gré à gré se crée depuis sa ligne du plan.'
+    : 'Les dossiers d’appel d’offres, la consultation de prestations intellectuelles et le rapport justificatif d’un gré à gré se créent depuis leur ligne du plan.');
   /** Localité (lecture seule) dérivée de l'entité contractante sélectionnée. */
   readonly localiteLabel = computed(() => {
     const id = this.selectedEntiteId();

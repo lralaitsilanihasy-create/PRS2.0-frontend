@@ -567,12 +567,6 @@ app-document-visionneuse {
   -webkit-line-clamp: 2;
   line-clamp: 2;
 }
-/* ⚠️ 03/11 (pilote) — l'étiquette ouvre la chaîne de la ligne : un bouton, même rendu. */
-.doc-statut--bouton {
-  cursor: pointer;
-  appearance: none;
-}
-.doc-statut--bouton:hover { border-width: 2px; }
 /* ⚠️ 03/11 (lot 2) — le suivi de la ligne (écran du plan) : familles de couleur des badges, libellé puis précision. */
 .doc-statut--neutre { background: var(--neutre-fond); color: var(--neutre-texte); border-color: var(--bordure-champ); }
 .doc-statut--examen { background: var(--examen-fond); color: var(--examen-texte); border-color: var(--examen-texte); }
@@ -581,16 +575,11 @@ app-document-visionneuse {
 /* Le suivi tient en deux courtes lignes (« Informations du DAO / Brouillon ») : la marge droite s'élargit pour lui. */
 .doc-ppm.doc-suivi { --doc-gouttiere-d: 8.5rem; }
 .doc-ppm.doc-suivi .doc-statut { -webkit-line-clamp: 3; line-clamp: 3; max-height: none; }
-.doc-statut--bouton:focus-visible { outline: 3px solid var(--bouton-principal); outline-offset: 1px; }
-.doc-table tr.doc-ligne--ouverte > td { background: var(--ligne-survol); }
-/* La chaîne, sous la ligne : hors document (pas de bordure noire), sur toute la largeur. */
-.doc-table tr.doc-detail-ligne > td {
-  padding: 0;
-  border: 1px solid var(--bordure);
-  background: var(--carte-fond);
-  font-family: var(--font-base);
-  text-align: left;
-}
+/* ⚠️ 03/11 (pilote) — la ligne teintée selon son étape (écran du plan), en couleurs vives : une annotation, masquée avec les autres. */
+/* Modèle M3 (pilote) : la ligne au fond PASTEL de son étape — bleu clair à lancer, ambre clair en préparation, vert clair lancée. */
+.doc-table tr.doc-suivi-ligne--lancer > td:not(.doc-hors-feuille) { background: var(--onglet-actif-fond); }
+.doc-table tr.doc-suivi-ligne--examen > td:not(.doc-hors-feuille) { background: var(--examen-fond); }
+.doc-table tr.doc-suivi-ligne--favorable > td:not(.doc-hors-feuille) { background: var(--favorable-fond); }
 
 /* Dans un écran d'édition, la colonne d'outils occupe la marge : l'étiquette s'y range, en tête. */
 .doc-table td.doc-hors-feuille .doc-statut {

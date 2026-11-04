@@ -351,45 +351,43 @@ describe("PpmMarchesTable — colonne d'outils des écrans d'édition", () => {
 });
 
 @Component({
-  selector: 'app-hote-ppm-detail-test',
+  selector: 'app-hote-ppm-teinte-test',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [PpmMarchesTable],
-  template: `
-    <app-ppm-marches-table [marches]="marches" [beneficiaires]="benefs">
-      <ng-template #detailLigne let-m><p class="detail">Chaîne de {{ m.idDetail }}</p></ng-template>
-    </app-ppm-marches-table>
-  `,
+  template: `<app-ppm-marches-table [marches]="marches" [beneficiaires]="benefs" [suiviFn]="suivi" [annotations]="annot()" />`,
 })
-class HotePpmDetailTest {
+class HotePpmTeinteTest {
   readonly marches = MARCHES;
   readonly benefs = BENEFS;
+  readonly annot = signal(true);
+  readonly suivi = (m: Marche) => (m.idDetail === 1
+    ? { libelle: 'Informations du DAO', precision: 'Brouillon', famille: 'examen' as const, teinte: 'examen' as const }
+    : { libelle: 'Sans étape définie', precision: null, famille: 'neutre' as const, teinte: null });
 }
 
-describe('PpmMarchesTable — détail d’une ligne (03/11, chaîne de la procédure)', () => {
-  it('ouvre le détail sous la ligne au clic, une ligne à la fois ; l’étiquette de statut est le bouton du clavier', async () => {
-    await TestBed.configureTestingModule({
-      imports: [HotePpmDetailTest],
-      providers: [{ provide: ReferenceLookupService, useValue: lookupStub }],
-    }).compileComponents();
-    const fixture = TestBed.createComponent(HotePpmDetailTest);
+describe('PpmMarchesTable — lignes teintées selon leur étape (pilote, 03/11)', () => {
+  it('modèle M3 : la ligne qui a une étape prend le fond pastel de sa famille, pas l’autre ; masqué avec les annotations', async () => {
+    await TestBed.configureTestingModule({ imports: [HotePpmTeinteTest], providers: [{ provide: ReferenceLookupService, useValue: lookupStub }] }).compileComponents();
+    const fixture = TestBed.createComponent(HotePpmTeinteTest);
+    fixture.detectChanges();
+    const rangees = (fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr');
+    expect(rangees[0].classList).toContain('doc-suivi-ligne--examen');
+    expect(rangees[1].className).not.toContain('doc-suivi-ligne');
+    fixture.componentInstance.annot.set(false);
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelector('tbody tr')!.className).not.toContain('doc-suivi-ligne');
+  });
+
+  it('le plan se consulte : ni la ligne ni son étiquette ne sont cliquables (pilote, 03/11)', async () => {
+    await TestBed.configureTestingModule({ imports: [HotePpmTeinteTest], providers: [{ provide: ReferenceLookupService, useValue: lookupStub }] }).compileComponents();
+    const fixture = TestBed.createComponent(HotePpmTeinteTest);
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.querySelector('.detail')).toBeNull();
-
-    (el.querySelector('tbody tr') as HTMLElement).click();
-    fixture.detectChanges();
-    expect(el.querySelector('tr.doc-detail-ligne .detail')?.textContent).toContain('Chaîne de 1');
-    expect(el.querySelector('tr.doc-detail-ligne td')?.getAttribute('colspan')).toBe('13');
-
-    const boutons = el.querySelectorAll<HTMLButtonElement>('button.doc-statut--bouton');
-    expect(boutons.length).toBe(2);
-    expect(boutons[0].getAttribute('aria-expanded')).toBe('true');
-    boutons[1].click();
-    fixture.detectChanges();
-    expect(el.querySelectorAll('.detail').length).toBe(1);
-    expect(el.querySelector('.detail')?.textContent).toContain('Chaîne de 2');
-    boutons[1].click();
-    fixture.detectChanges();
-    expect(el.querySelector('.detail')).toBeNull();
+    expect(el.querySelectorAll('tbody button').length).toBe(0);
+    expect(el.querySelector('tbody tr')!.classList).not.toContain('doc-ligne--cliquable');
+    const etiquette = el.querySelector('tbody .doc-statut') as HTMLElement;
+    expect(etiquette.tagName).toBe('SPAN');
+    expect(etiquette.classList).toContain('doc-statut--examen');
+    expect(etiquette.textContent).toContain('Informations du DAO');
   });
 });

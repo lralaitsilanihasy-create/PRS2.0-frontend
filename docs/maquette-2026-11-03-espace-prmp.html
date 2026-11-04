@@ -1,0 +1,593 @@
+<title>Espace PRMP réorganisé</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Maquette : quatre présentations du plan de passation comme écran de travail, mêmes données de recette ; palette institutionnelle seule. */
+:root {
+  --menu-fond: #0C3A5B; --section-fond: #082C47; --onglet-actif-fond: #EAF2FF;
+  --page-fond: #E9EEF3; --carte-fond: #FFFFFF; --tableau-entete: #EEF1F4; --ligne-survol: #F7F8FA;
+  --bordure: #D9DEE3; --bordure-champ: #868E96; --texte: #1F2328; --texte-secondaire: #5F6368;
+  --texte-menu: #FFFFFF; --texte-menu-secondaire: #A9BCCD; --or: #F5B800; --bouton-principal: #2557D6;
+  --retard-fond: #FDE2E2; --retard-texte: #C62828; --examen-fond: #FFF1C2; --examen-texte: #7A5600;
+  --favorable-fond: #E3F4EA; --favorable-texte: #187547; --neutre-fond: #ECEEF1; --neutre-texte: #3C4043;
+  --doc-trait: #1F2328; --bandeau-2: #C8102E; --bandeau-3: #007A3D;
+  --police: 'Segoe UI', Roboto, Arial, sans-serif; --police-marque: Georgia, 'Times New Roman', serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page-fond); color: var(--texte); font: 400 14px/1.5 var(--police); font-variant-numeric: tabular-nums; }
+.enveloppe { max-width: 1320px; margin: 0 auto; padding-block: 24px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 26px; }
+h1, h2, h3 { font-weight: 500; text-wrap: balance; margin: 0; }
+h1 { font-size: 1.6rem; } h2 { font-size: 1.2rem; } h3 { font-size: 1.05rem; }
+p { margin: 0; max-width: 82ch; }
+.surtitre { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--texte-secondaire); }
+.chapo { display: grid; gap: 8px; } .chapo p { color: var(--texte-secondaire); }
+.section { display: grid; gap: 14px; } .section > header { display: grid; gap: 4px; }
+.note { font-size: 0.8125rem; color: var(--texte-secondaire); }
+.carte { background: var(--carte-fond); border: 1px solid var(--bordure); border-radius: 8px; }
+
+/* Choix de la variante */
+.choix-variantes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.variante-btn { text-align: left; border: 1px solid var(--bordure-champ); border-radius: 8px; background: var(--carte-fond); color: var(--texte); padding: 10px 12px; font: inherit; cursor: pointer; display: grid; gap: 3px; }
+.variante-btn .lettre { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--texte-secondaire); }
+.variante-btn b { font-weight: 500; }
+.variante-btn span.d { font-size: 0.78rem; color: var(--texte-secondaire); }
+.variante-btn[aria-pressed="true"] { background: var(--menu-fond); border-color: var(--menu-fond); color: var(--texte-menu); }
+.variante-btn[aria-pressed="true"] .lettre, .variante-btn[aria-pressed="true"] span.d { color: var(--texte-menu-secondaire); }
+button:focus-visible { outline: 3px solid var(--bouton-principal); outline-offset: 2px; }
+
+/* Coquille */
+.appli { border-radius: 8px; overflow: hidden; border: 1px solid var(--bordure); background: var(--page-fond); }
+.bandeau { display: grid; grid-template-columns: 1fr 1fr 1fr; height: 4px; }
+.bandeau i:nth-child(1) { background: var(--carte-fond); } .bandeau i:nth-child(2) { background: var(--bandeau-2); } .bandeau i:nth-child(3) { background: var(--bandeau-3); }
+.entete { background: var(--section-fond); color: var(--texte-menu); display: flex; align-items: center; gap: 14px; padding: 8px 14px; flex-wrap: wrap; }
+.marque { font-family: var(--police-marque); font-size: 1.1rem; }
+.marque small { display: block; font-family: var(--police); font-size: 0.7rem; color: var(--texte-menu-secondaire); }
+.recherche { flex: 1 1 200px; max-width: 300px; border: 1px solid var(--texte-menu-secondaire); border-radius: 4px; padding: 3px 8px; font-size: 0.75rem; color: var(--texte-menu-secondaire); }
+.qui { margin-left: auto; font-size: 0.75rem; color: var(--texte-menu-secondaire); }
+.barre { background: var(--menu-fond); display: flex; flex-wrap: wrap; align-items: stretch; min-height: 36px; padding: 0 6px; }
+.barre .e { color: var(--texte-menu); padding: 8px 12px; font-size: 0.8125rem; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.barre .e.on { background: var(--onglet-actif-fond); color: var(--texte); }
+.barre .chev { font-size: 0.6rem; opacity: 0.8; }
+.barre .droite { margin-left: auto; }
+.pastille { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--or); color: var(--texte); font-size: 0.7rem; display: inline-flex; align-items: center; justify-content: center; }
+.ecran { padding: 16px; display: grid; gap: 12px; }
+.fil { font-size: 0.75rem; color: var(--texte-secondaire); }
+.titre-plan { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; }
+.titre-plan p { font-size: 0.8rem; color: var(--texte-secondaire); }
+.outils { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.choix { border: 1px solid var(--bordure-champ); background: var(--carte-fond); color: var(--texte); border-radius: 4px; padding: 4px 10px; font: inherit; font-size: 0.78rem; }
+.choix.on { background: var(--menu-fond); color: var(--texte-menu); border-color: var(--menu-fond); }
+.btn { border-radius: 4px; padding: 4px 10px; font: inherit; font-size: 0.76rem; font-weight: 500; border: 1px solid var(--bouton-principal); display: inline-block; }
+.btn.p { background: var(--bouton-principal); color: var(--texte-menu); }
+.btn.o { background: var(--carte-fond); color: var(--texte); border-color: var(--bordure-champ); }
+.boutons { display: flex; flex-wrap: wrap; gap: 6px; }
+.pill { display: inline-block; width: fit-content; padding: 0 7px; border-radius: 999px; font-size: 0.68rem; font-weight: 500; white-space: nowrap; }
+.pill.neutre { background: var(--neutre-fond); color: var(--neutre-texte); }
+.pill.examen { background: var(--examen-fond); color: var(--examen-texte); }
+.pill.favorable { background: var(--favorable-fond); color: var(--favorable-texte); }
+.pill.retard { background: var(--retard-fond); color: var(--retard-texte); }
+.bande { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); border: 1px solid var(--bordure); border-radius: 8px; overflow: hidden; background: var(--carte-fond); }
+.bande div { padding: 8px 12px; border-right: 1px solid var(--bordure); display: grid; gap: 1px; }
+.bande div:last-child { border-right: 0; }
+.bande .n { font-size: 1.05rem; font-weight: 500; }
+.bande .l { font-size: 0.74rem; color: var(--texte-secondaire); }
+.avis { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+.avis .carte { padding: 10px 14px; display: grid; gap: 4px; align-content: start; }
+.avis ul { margin: 0; padding-left: 18px; font-size: 0.82rem; display: grid; gap: 2px; }
+.reste { font-size: 0.78rem; color: var(--texte-secondaire); }
+
+/* Détail d'une ligne (commun) */
+.det { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr); font-size: 0.8rem; }
+.det > div { padding: 12px 14px; border-right: 1px solid var(--bordure); display: grid; gap: 8px; align-content: start; }
+.det > div:last-child { border-right: 0; }
+.det.empile { grid-template-columns: minmax(0, 1fr); }
+.det.empile > div { border-right: 0; border-bottom: 1px solid var(--bordure); }
+.chaine { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.chaine li { display: flex; gap: 6px; align-items: center; }
+.chaine li + li::before { content: "→"; color: var(--texte-secondaire); }
+.maillon { display: grid; gap: 1px; border: 1px solid var(--bordure); border-radius: 5px; background: var(--ligne-survol); padding: 5px 8px; }
+.maillon.acreer { border-style: dashed; background: var(--carte-fond); }
+.maillon .k { font-size: 0.68rem; color: var(--texte-secondaire); }
+.maillon .r { font-weight: 500; font-size: 0.78rem; }
+.faits { margin: 0; display: grid; gap: 4px; }
+.faits div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; border-bottom: 1px dotted var(--bordure); padding-bottom: 3px; }
+.faits dt { color: var(--texte-secondaire); } .faits dd { margin: 0; text-align: right; }
+.jalons { width: 100%; border-collapse: collapse; }
+.jalons th, .jalons td { text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--bordure); }
+.jalons th { background: var(--tableau-entete); font-weight: 500; font-size: 0.7rem; }
+.vigilance { padding: 6px 8px; border-radius: 5px; background: var(--retard-fond); color: var(--retard-texte); font-size: 0.76rem; }
+
+/* A — document officiel */
+.feuille { background: var(--carte-fond); border: 1px solid var(--bordure); border-radius: 6px; padding: 12px; overflow-x: auto; }
+.doc { border-collapse: collapse; width: 100%; min-width: 1180px; font-size: 0.74rem; }
+.doc th { background: var(--tableau-entete); border: 1px solid var(--doc-trait); padding: 4px 5px; font-weight: 500; font-size: 0.66rem; text-transform: uppercase; text-align: center; }
+.doc td { border: 1px solid var(--doc-trait); padding: 5px 6px; vertical-align: top; }
+.doc td.num, .doc td.date { text-align: right; white-space: nowrap; }
+.doc th.marge, .doc td.marge { border: 0; background: var(--carte-fond); padding: 4px 0 4px 8px; width: 170px; }
+.doc th.marge { color: var(--texte-secondaire); text-align: left; letter-spacing: 0.05em; }
+.doc tr.ouverte > td:not(.marge) { background: var(--ligne-survol); }
+.doc tr.cliquable { cursor: pointer; }
+.suivi { display: grid; gap: 2px; text-align: left; width: 100%; border: 1px solid var(--bordure-champ); border-radius: 5px; background: var(--carte-fond); padding: 4px 7px; font: inherit; font-size: 0.72rem; color: var(--texte); cursor: pointer; }
+.suivi[aria-expanded="true"] { border-color: var(--menu-fond); box-shadow: inset 3px 0 0 var(--menu-fond); }
+.suivi .ref { color: var(--texte-secondaire); font-size: 0.68rem; }
+tr.detail-ligne > td { border: 1px solid var(--bordure); background: var(--carte-fond); padding: 0; }
+
+/* B — deux volets */
+.volets { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+.liste { overflow: hidden; }
+.liste table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.liste th { background: var(--tableau-entete); text-align: left; font-weight: 500; padding: 6px 8px; font-size: 0.7rem; }
+.liste td { border-top: 1px solid var(--bordure); padding: 0; }
+.liste .ligne { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 118px 132px; gap: 8px; text-align: left; border: 0; background: var(--carte-fond); color: var(--texte); font: inherit; padding: 7px 8px; cursor: pointer; align-items: start; }
+.liste .ligne:hover { background: var(--ligne-survol); }
+.liste .ligne[aria-pressed="true"] { background: var(--onglet-actif-fond); box-shadow: inset 3px 0 0 var(--menu-fond); }
+.liste .ligne small { display: block; color: var(--texte-secondaire); font-size: 0.7rem; }
+.liste .mt { text-align: right; }
+.volet { overflow: hidden; }
+.volet header { padding: 12px 14px; border-bottom: 1px solid var(--bordure); display: grid; gap: 4px; }
+.officiel { width: 100%; border-collapse: collapse; font-size: 0.76rem; }
+.officiel th, .officiel td { border: 1px solid var(--bordure); padding: 3px 6px; text-align: left; }
+.officiel th { background: var(--tableau-entete); font-weight: 500; width: 44%; }
+
+/* C — par étapes */
+.colonnes { display: grid; grid-template-columns: repeat(6, minmax(170px, 1fr)); gap: 10px; overflow-x: auto; padding-bottom: 4px; }
+.col { background: var(--tableau-entete); border-radius: 8px; padding: 8px; display: grid; gap: 8px; align-content: start; min-height: 120px; }
+.col h4 { margin: 0; font-size: 0.75rem; font-weight: 500; display: flex; justify-content: space-between; }
+.col h4 span { color: var(--texte-secondaire); }
+.fiche { background: var(--carte-fond); border: 1px solid var(--bordure); border-radius: 6px; padding: 8px; display: grid; gap: 5px; font-size: 0.76rem; }
+.fiche .o { font-weight: 500; }
+.fiche .m { color: var(--texte-secondaire); font-size: 0.7rem; }
+.col .vide { font-size: 0.74rem; color: var(--texte-secondaire); }
+
+/* D — calendrier */
+.gantt { background: var(--carte-fond); border: 1px solid var(--bordure); border-radius: 6px; overflow-x: auto; }
+.gantt-g { min-width: 980px; display: grid; grid-template-columns: 300px minmax(0, 1fr); }
+.gantt .tete, .gantt .lig { display: contents; }
+.gantt .lab { padding: 7px 10px; border-top: 1px solid var(--bordure); font-size: 0.76rem; display: grid; gap: 2px; }
+.gantt .lab small { color: var(--texte-secondaire); font-size: 0.7rem; }
+.gantt .piste { position: relative; border-top: 1px solid var(--bordure); border-left: 1px solid var(--bordure); min-height: 46px; }
+.gantt .mois { position: relative; height: 26px; border-left: 1px solid var(--bordure); background: var(--tableau-entete); }
+.gantt .mois span { position: absolute; top: 5px; font-size: 0.68rem; color: var(--texte-secondaire); transform: translateX(4px); }
+.gantt .grille { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--bordure); }
+.gantt .auj { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--retard-texte); }
+.gantt .auj-l { position: absolute; top: 4px; font-size: 0.66rem; color: var(--retard-texte); transform: translateX(-104%); white-space: nowrap; }
+.gantt .barre-prev { position: absolute; top: 12px; height: 10px; background: var(--onglet-actif-fond); border: 1px solid var(--menu-fond); border-radius: 3px; }
+.gantt .barre-prev.inverse { background: var(--retard-fond); border-color: var(--retard-texte); }
+.gantt .pt { position: absolute; top: 9px; width: 9px; height: 16px; transform: translateX(-50%); border-radius: 2px; }
+.gantt .pt.l { background: var(--menu-fond); }
+.gantt .pt.a { background: var(--favorable-texte); }
+.gantt .etiq { position: absolute; top: 27px; font-size: 0.66rem; white-space: nowrap; }
+.legende { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.75rem; color: var(--texte-secondaire); }
+.legende i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+
+/* Bas de page */
+.defile { overflow-x: auto; }
+.tableau { width: 100%; min-width: 760px; border-collapse: collapse; font-size: 0.8rem; background: var(--carte-fond); }
+.tableau th { background: var(--tableau-entete); text-align: left; font-weight: 500; padding: 7px 10px; font-size: 0.75rem; }
+.tableau td { padding: 7px 10px; border-top: 1px solid var(--bordure); vertical-align: top; }
+.questions { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; counter-reset: q; }
+.questions li { padding: 12px 14px; display: grid; gap: 4px; counter-increment: q; }
+.questions li b { font-weight: 500; }
+.questions li b::before { content: "Q" counter(q) " — "; color: var(--texte-secondaire); }
+.questions .prop { font-size: 0.8rem; color: var(--texte-secondaire); }
+/* E — matrice */
+.mat { width: 100%; min-width: 900px; border-collapse: collapse; font-size: 0.76rem; background: var(--carte-fond); }
+.mat th { background: var(--tableau-entete); font-weight: 500; font-size: 0.7rem; padding: 6px; text-align: center; border: 1px solid var(--bordure); }
+.mat th:first-child, .mat td:first-child { text-align: left; width: 32%; }
+.mat td { border: 1px solid var(--bordure); padding: 6px; text-align: center; vertical-align: middle; }
+.mat td small { display: block; color: var(--texte-secondaire); font-size: 0.68rem; }
+.c-ok { background: var(--favorable-fond); color: var(--favorable-texte); }
+.c-cours { background: var(--examen-fond); color: var(--examen-texte); }
+.c-so { background: var(--ligne-survol); color: var(--texte-secondaire); }
+.c-inc { color: var(--texte-secondaire); }
+/* F — arborescence */
+.arbre { background: var(--carte-fond); border: 1px solid var(--bordure); border-radius: 6px; padding: 10px 12px; font-size: 0.8rem; }
+.arbre details { margin-left: 18px; }
+.arbre > details { margin-left: 0; }
+.arbre summary { cursor: pointer; padding: 4px 0; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.arbre summary::marker { color: var(--texte-secondaire); }
+.arbre .feuille-a { margin-left: 36px; padding: 3px 0; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.arbre .k { color: var(--texte-secondaire); font-size: 0.72rem; }
+/* G — tableau de bord */
+.tdb { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.tdb .carte { padding: 12px 14px; display: grid; gap: 8px; align-content: start; }
+.barres { display: grid; gap: 6px; }
+.barres .r { display: grid; grid-template-columns: 150px minmax(0, 1fr) 120px; gap: 8px; align-items: center; font-size: 0.76rem; }
+.barres .fond { height: 12px; background: var(--ligne-survol); border-radius: 3px; overflow: hidden; }
+.barres .val { height: 100%; background: var(--menu-fond); }
+.barres .v { text-align: right; color: var(--texte-secondaire); }
+.chiffres { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+.chiffres div { display: grid; }
+.chiffres .n { font-size: 1.25rem; font-weight: 500; }
+.chiffres .l { font-size: 0.74rem; color: var(--texte-secondaire); }
+/* H — groupé */
+.groupe-t { width: 100%; min-width: 860px; border-collapse: collapse; font-size: 0.76rem; background: var(--carte-fond); }
+.groupe-t th { background: var(--tableau-entete); font-weight: 500; padding: 6px 8px; text-align: left; border: 1px solid var(--doc-trait); font-size: 0.68rem; text-transform: uppercase; }
+.groupe-t td { border: 1px solid var(--doc-trait); padding: 5px 8px; vertical-align: top; }
+.groupe-t tr.g td { background: var(--section-fond); color: var(--texte-menu); border-color: var(--section-fond); font-weight: 500; }
+.groupe-t tr.st td { background: var(--tableau-entete); font-weight: 500; }
+.groupe-t .num { text-align: right; white-space: nowrap; }
+/* I — mosaïque */
+.mosaique { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.mosaique .fiche { padding: 10px 12px; gap: 6px; }
+.mosaique .mt { font-size: 1rem; font-weight: 500; }
+/* J — régions */
+.regions { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.region { background: var(--carte-fond); border: 1px solid var(--bordure); border-radius: 8px; padding: 10px 12px; display: grid; gap: 6px; align-content: start; }
+.region h4 { margin: 0; font-size: 0.85rem; font-weight: 500; display: flex; justify-content: space-between; }
+.region h4 span { color: var(--texte-secondaire); font-weight: 400; }
+.region.sans { background: var(--ligne-survol); }
+.region ul { margin: 0; padding-left: 16px; display: grid; gap: 4px; font-size: 0.76rem; }
+@media (max-width: 900px) { .volets { grid-template-columns: minmax(0, 1fr); } .det { grid-template-columns: minmax(0, 1fr); } .det > div { border-right: 0; border-bottom: 1px solid var(--bordure); } }
+</style>
+
+<div class="enveloppe">
+  <header class="chapo">
+    <span class="surtitre">Maquettes · profil PRMP · 3 novembre 2026 · version 3</span>
+    <h1>Le plan de passation comme écran de travail : dix présentations</h1>
+    <p>Dans toutes, le plan est au menu juste après « À faire », chaque ligne montre où elle en est, et le geste suivant part de
+      la ligne. Elles diffèrent par la manière de montrer les lignes. Mêmes données partout : le plan 00001/PPM-AGPM du Ministère des
+      Travaux Publics, en recette le 3 novembre ; 12 de ses 32 lignes sont reprises ici. Rien n'est codé.</p>
+  </header>
+
+  <section class="section" aria-labelledby="inv">
+    <header><span class="surtitre">1 · Analyse</span><h2 id="inv">Les écrans du profil PRMP, et où ils vont</h2>
+      <p class="note">Relevé dans l'application le 03/11 : les adresses de l'espace PRMP et les écrans communs qu'elle ouvre. « Contexte » = atteint depuis un autre écran, sans entrée de menu.
+        Le critère : ce qui concerne <b style="font-weight:500">une ligne</b> part du plan ; le menu garde le plan et les <b style="font-weight:500">listes qui traversent toutes les lignes</b> (reçus, retraits, PV, contrats).</p></header>
+    <div class="defile"><table class="tableau">
+      <thead><tr><th>Écran</th><th>Aujourd'hui</th><th>Proposé</th></tr></thead>
+      <tbody>
+        <tr><td colspan="3"><span class="surtitre">Le plan de passation</span></td></tr>
+        <tr><td><b style="font-weight:500">Plan de passation</b> (nouveau : document ou deux volets)</td><td>—</td><td><b style="font-weight:500">Menu, entrée directe après « À faire »</b></td></tr>
+        <tr><td>Mettre à jour un PPM (liste des plans vérifiés)</td><td>Menu › Dossiers</td><td>Bouton « Mettre à jour le plan » du plan ; retiré du menu</td></tr>
+        <tr><td>Calendrier des jalons</td><td>Menu, entrée seule</td><td>Bouton du plan, et jalons prévus / réels dans le détail de chaque ligne ; retiré du menu</td></tr>
+        <tr><td>Saisie d'un nouveau plan (import du PDF)</td><td>Menu › Dossiers › Créer un dossier › Planification</td><td>Inchangé, et bouton « Nouveau plan » sur l'écran du plan</td></tr>
+        <tr><td>Mes PPM &amp; marchés</td><td>Hors menu, plus atteint</td><td>Renvoi vers le plan</td></tr>
+        <tr><td>Liste brute des PPM</td><td>Hors menu</td><td>Renvoi vers le plan</td></tr>
+        <tr><td>Mise à jour d'un plan · vérification d'un PPM</td><td>Contexte</td><td>Inchangé</td></tr>
+        <tr><td colspan="3"><span class="surtitre">La ligne et sa procédure</span></td></tr>
+        <tr><td>Appels d'offres (fiches : à préparer, en préparation, à la CNM, lancés)</td><td>Menu › Passation</td><td>Renommé « Appels d'offres en cours », ouvert sur « Lancés » ; préparer une fiche part de la ligne du plan</td></tr>
+        <tr><td>Informations du DAO</td><td>Contexte (liste des appels d'offres)</td><td>Contexte, depuis la ligne du plan ou la liste</td></tr>
+        <tr><td>Retraits, questions, dépôts, reçus d'une procédure, CAO, AMI</td><td>Contexte (informations du DAO)</td><td>Inchangé</td></tr>
+        <tr><td>Séance, évaluation, paramètres internes</td><td>Contexte (procédure)</td><td>Inchangé</td></tr>
+        <tr><td>Reçus des frais de dossier (toutes procédures)</td><td>Menu › Passation</td><td>Inchangé : file de travail transversale</td></tr>
+        <tr><td>Dossier de marché (choisir la procédure)</td><td>Hors menu (lien du plan depuis le 03/11)</td><td><b style="font-weight:500">Menu › Passation › Dossiers de marché</b></td></tr>
+        <tr><td>Procédures en ligne (responsable désigné)</td><td>Entrée ajoutée au besoin</td><td>Inchangé</td></tr>
+        <tr><td colspan="3"><span class="surtitre">Les dossiers</span></td></tr>
+        <tr><td>Tous mes dossiers</td><td>Menu › Dossiers</td><td>Inchangé, + colonne « Objet du marché »</td></tr>
+        <tr><td>Créer un dossier</td><td>Menu › Dossiers</td><td>Inchangé ; depuis une ligne, le bouton de son étape suffit</td></tr>
+        <tr><td>Page d'un dossier · rectifier · rectifier un DAO</td><td>Contexte</td><td>Inchangé ; chaîne nommée par l'objet de la ligne</td></tr>
+        <tr><td>Mes dossiers (cartes) · dossiers à rectifier</td><td>Hors menu (notification, recherche)</td><td>Inchangé ; couverts par Tous mes dossiers</td></tr>
+        <tr><td>Mes brouillons</td><td>Hors menu (au menu de l'UGPM)</td><td>Inchangé</td></tr>
+        <tr><td colspan="3"><span class="surtitre">Décisions, exécution, compte</span></td></tr>
+        <tr><td>PV et lettres de renvoi · demandes de retrait</td><td>Menu › Décisions</td><td>Inchangé</td></tr>
+        <tr><td>Contrats en vigueur</td><td>Menu, entrée seule (rubrique Exécution)</td><td>Inchangé</td></tr>
+        <tr><td>À faire · notifications · créer un compte UGPM · mot de passe</td><td>Menu et en-tête</td><td>Inchangé</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="section" aria-labelledby="menus-r">
+    <header><span class="surtitre">2 · Menus réajustés</span><h2 id="menus-r">Même nombre d'entrées, rangées autour du plan</h2>
+      <p class="note">PRMP : 11 entrées avant comme après. La barre garde sept éléments, sa largeur ne bouge pas (à mesurer par <code>scripts/largeur-menu.mjs</code>).</p></header>
+    <div class="avis">
+      <div class="carte"><span class="surtitre">PRMP · aujourd'hui</span><ul>
+        <li>À faire</li>
+        <li>Dossiers ▾ Tous mes dossiers · Créer un dossier · Mettre à jour un PPM</li>
+        <li>Passation ▾ Appels d'offres · Reçus des frais de dossier</li>
+        <li>Contrats en vigueur</li>
+        <li>Décisions ▾ PV et lettres de renvoi · Demandes de retrait</li>
+        <li>Calendrier des jalons</li>
+        <li>Notifications (à droite)</li></ul></div>
+      <div class="carte"><span class="surtitre">PRMP · proposé</span><ul>
+        <li>À faire</li>
+        <li><b style="font-weight:500">Plan de passation</b> (entrée directe)</li>
+        <li>Dossiers ▾ Tous mes dossiers · Créer un dossier</li>
+        <li>Passation ▾ Appels d'offres en cours · Reçus des frais de dossier · <b style="font-weight:500">Dossiers de marché</b></li>
+        <li>Contrats en vigueur</li>
+        <li>Décisions ▾ PV et lettres de renvoi · Demandes de retrait</li>
+        <li>Notifications (à droite)</li></ul></div>
+      <div class="carte"><span class="surtitre">UGPM · proposé</span><ul>
+        <li>À faire</li>
+        <li><b style="font-weight:500">Plan de passation</b> (même écran, sans les gestes de la PRMP : soumettre, signer)</li>
+        <li>Dossiers ▾ Tous mes dossiers · Créer un dossier · Mes brouillons</li>
+        <li>Passation ▾ Appels d'offres en cours · Reçus des frais de dossier</li>
+        <li>Contrats en vigueur</li>
+        <li>Notifications (à droite)</li></ul>
+        <p class="note">« Dossiers de marché » pour l'UGPM : à confirmer, selon ce que le serveur lui permet.</p></div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="choisir">
+    <header><span class="surtitre">3 · L'écran du plan</span><h2 id="choisir">Choisir une présentation</h2></header>
+    <div class="choix-variantes" role="group" aria-label="Présentation" id="variantes">
+      <button class="variante-btn" type="button" data-v="AB" aria-pressed="true"><span class="lettre">Proposée · A et B</span><b>Document ou deux volets, au choix</b><span class="d">Deux boutons au-dessus du plan font passer de l'un à l'autre ; la ligne ouverte et le filtre suivent.</span></button>
+      <button class="variante-btn" type="button" data-v="A" aria-pressed="false"><span class="lettre">A</span><b>Le document officiel annoté</b><span class="d">Les 13 colonnes du plan signé ; le suivi en marge, le détail sous la ligne.</span></button>
+      <button class="variante-btn" type="button" data-v="B" aria-pressed="false"><span class="lettre">B</span><b>Deux volets</b><span class="d">Liste courte des lignes à gauche ; la ligne ouverte à droite, sa fiche officielle comprise.</span></button>
+      <button class="variante-btn" type="button" data-v="C" aria-pressed="false"><span class="lettre">C</span><b>Par étape</b><span class="d">Une colonne par étape ; chaque ligne y est une fiche, avec son geste.</span></button>
+      <button class="variante-btn" type="button" data-v="D" aria-pressed="false"><span class="lettre">D</span><b>Calendrier du plan</b><span class="d">Les jalons prévus de chaque ligne sur une frise, face à la date du jour.</span></button>
+      <button class="variante-btn" type="button" data-v="E" aria-pressed="false"><span class="lettre">E</span><b>Matrice d'avancement</b><span class="d">Une rangée par ligne, une colonne par étape de la procédure.</span></button>
+      <button class="variante-btn" type="button" data-v="F" aria-pressed="false"><span class="lettre">F</span><b>Arborescence</b><span class="d">Plan, lignes, dossiers, lots : des niveaux que l'on déplie.</span></button>
+      <button class="variante-btn" type="button" data-v="G" aria-pressed="false"><span class="lettre">G</span><b>Tableau de bord du plan</b><span class="d">Nombres et montants par étape et par mode, retards.</span></button>
+      <button class="variante-btn" type="button" data-v="H" aria-pressed="false"><span class="lettre">H</span><b>Plan groupé</b><span class="d">Le tableau du plan en sections repliables, avec sous-totaux.</span></button>
+      <button class="variante-btn" type="button" data-v="I" aria-pressed="false"><span class="lettre">I</span><b>Mosaïque de fiches</b><span class="d">Une carte par ligne, en grille.</span></button>
+      <button class="variante-btn" type="button" data-v="J" aria-pressed="false"><span class="lettre">J</span><b>Par région</b><span class="d">Les lignes rangées par la région que nomme leur objet.</span></button>
+    </div>
+  </section>
+
+  <section class="appli" aria-label="Maquette de l'écran">
+    <div class="bandeau" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="entete"><span class="marque"><small>Commission nationale des marchés</small>PRS 2.0</span><span class="recherche">Aller à un dossier (référence)…</span><span class="qui">Randrianarivo La Personne · PRMP</span></div>
+    <div class="barre">
+      <span class="e">À faire <span class="pastille">1</span></span><span class="e on">Plan de passation</span><span class="e">Dossiers <span class="chev">▼</span></span>
+      <span class="e">Passation <span class="pastille">2</span> <span class="chev">▼</span></span><span class="e">Contrats en vigueur</span><span class="e">Décisions <span class="chev">▼</span></span><span class="e droite">Notifications</span>
+    </div>
+    <div class="ecran">
+      <div class="fil">Plan de passation › 00001/PPM-AGPM/CNM/2026</div>
+      <div class="titre-plan"><h3>Plan de passation 2026 · 00001/PPM-AGPM/CNM/2026</h3>
+        <p>Ministère des Travaux Publics · avis favorable, PV 00001/PPM-AGPM/CNM/PV/2026 définitif · clôturé le 28/10/2026 · 32 lignes</p></div>
+      <div class="outils">
+        <span class="choix on">00001 · 32 lignes</span><span class="choix">00003</span><span class="choix">00005 · 2 lignes</span><span class="choix">00006</span>
+        <span class="boutons" style="margin-left:auto"><span class="btn o">Mettre à jour le plan</span><span class="btn o">Fiche de présentation</span><span class="btn o">Projet d'AGPM</span></span>
+      </div>
+      <div class="bande" aria-label="État des lignes du plan 00001">
+        <div><span class="n">32</span><span class="l">lignes</span></div>
+        <div><span class="n">6</span><span class="l">appels d'offres à préparer (3) ou en brouillon (3)</span></div>
+        <div><span class="n">1</span><span class="l">rapport justificatif en brouillon</span></div>
+        <div><span class="n">1</span><span class="l">mise en concurrence clôturée</span></div>
+        <div><span class="n">0</span><span class="l">dossier de marché</span></div>
+      </div>
+      <div id="vue"></div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="avis-t">
+    <header><h2 id="avis-t">Ce que vaut la présentation choisie</h2></header>
+    <div class="avis" id="avis"></div>
+  </section>
+
+  <section class="section" aria-labelledby="comp">
+    <header><span class="surtitre">Comparaison</span><h2 id="comp">Les dix côte à côte</h2></header>
+    <div class="defile"><table class="tableau">
+      <thead><tr><th>Présentation</th><th>Document signé visible</th><th>Ce qui reste à faire, d'un coup</th><th>Détail d'une ligne</th><th>Écran de 1366 px</th><th>Usage premier</th></tr></thead>
+      <tbody>
+        <tr><td><b style="font-weight:500">A et B au choix</b></td><td>Oui, d'un clic</td><td>En filtrant</td><td>Sous la ligne, ou à droite</td><td>Confortable (en deux volets)</td><td>Travail quotidien, selon la préférence</td></tr>
+        <tr><td>A · Document annoté</td><td>Oui, tel quel</td><td>En filtrant</td><td>Sous la ligne</td><td>Défile en largeur</td><td>Travail quotidien</td></tr>
+        <tr><td>B · Deux volets</td><td>Ligne par ligne</td><td>En filtrant</td><td>À droite, liste gardée</td><td>Confortable</td><td>Travail quotidien</td></tr>
+        <tr><td>C · Par étape</td><td>Non</td><td>Oui</td><td>Sur la fiche</td><td>Défile en largeur</td><td>Organiser la semaine</td></tr>
+        <tr><td>D · Calendrier</td><td>Non</td><td>Les retards</td><td>Peu</td><td>Défile en largeur</td><td>Tenir les délais</td></tr>
+        <tr><td>E · Matrice</td><td>Non</td><td>Oui, étape par étape</td><td>Les dates de chaque étape</td><td>Confortable</td><td>Suivre tout le plan</td></tr>
+        <tr><td>F · Arborescence</td><td>Non</td><td>Peu</td><td>Les dossiers, lots compris</td><td>Confortable</td><td>Retrouver un dossier</td></tr>
+        <tr><td>G · Tableau de bord</td><td>Non</td><td>En chiffres</td><td>Non</td><td>Confortable</td><td>Rendre compte</td></tr>
+        <tr><td>H · Plan groupé</td><td>Oui, regroupé</td><td>En groupant par étape</td><td>Non</td><td>Défile en largeur</td><td>Lire le plan par mode ou par nature</td></tr>
+        <tr><td>I · Mosaïque</td><td>Non</td><td>Moyen</td><td>Sur la carte</td><td>Confortable</td><td>Tablette</td></tr>
+        <tr><td>J · Par région</td><td>Non</td><td>Non</td><td>Non</td><td>Confortable</td><td>Vue territoriale (donnée de région à ajouter)</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Les présentations se combinent en onglets d'un même écran : par exemple A par défaut, avec E, D et G en onglets.</p>
+  </section>
+
+  <section class="section" aria-labelledby="q">
+    <header><span class="surtitre">À trancher</span><h2 id="q">Questions au pilote</h2></header>
+    <ol class="questions">
+      <li class="carte"><b>Quelle présentation par défaut, et lesquelles en onglets ?</b><span class="prop">Proposé : A et B au choix par deux boutons, le document officiel à l'ouverture ; E (matrice), D (calendrier) et G (tableau de bord) éventuellement en onglets.</span></li>
+      <li class="carte"><b>« Plan de passation » en tête du menu, avant « Dossiers » ?</b><span class="prop">Cela déplace l'ordre arrêté le 31/10.</span></li>
+      <li class="carte"><b>Quel dossier produit une ligne en consultation de prix ?</b><span class="prop">Trois lignes du plan 00001 sont dans ce mode ; sans réponse, elles restent « sans étape définie ».</span></li>
+      <li class="carte"><b>Les autres profils voient-ils ce plan en lecture ?</b><span class="prop">Proposé : oui pour le président, la commission et le vérificateur, sans boutons.</span></li>
+      <li class="carte"><b>Signaler les retards et les dates incohérentes ?</b><span class="prop">Réel : au 03/11/2026, aucune des lignes reprises n'est lancée alors que leur lancement était prévu le 06/03/2026 ; la RNS 13 prévoit son attribution avant son lancement.</span></li>
+    </ol>
+  </section>
+</div>
+
+<script>
+(function () {
+  // Lignes du plan 00001 relevées en recette le 03/11/2026. d = dates prévues au plan (lancement, ouverture des plis, attribution) ; null = non relevées.
+  var L = [
+    { e: 'aucune', nat: 'Fournitures', obj: 'Fourniture d’habillement pour les nouveaux chauffeurs et garde du corps du Ministre du MTP', mt: '13 000 000', mode: 'Consultation des Prix Ouverte', compte: '6111', d: ['06/03/2026', '16/03/2026', '27/03/2026'], suivi: ['Aucune étape définie', 'neutre', 'Consultation de prix'], chaine: [], proc: [], geste: null },
+    { e: 'prep', nat: 'Travaux', obj: 'Travaux de réhabilitation des routes dans la ville de Maintirano dans la Région Melaky', mt: '8 000 000 000', mode: 'Appel d’offres ouvert', compte: '2441', d: ['06/03/2026', '07/04/2026', '17/04/2026'], suivi: ['Informations du DAO', 'examen', 'Brouillon'], chaine: [['', 'Mise en concurrence', 'Informations du DAO en brouillon']], proc: [['Informations du DAO', 'Brouillon']], geste: ['Reprendre les informations du DAO'] },
+    { e: 'aucune', nat: 'Travaux', obj: 'Travaux de réhabilitation de la route RIP 71 vers Ambohimiarina (Contrat Cadre) (Relance)', mt: '2 400 000 000', mode: 'Consultation des Prix Ouverte', compte: '2441', d: ['06/03/2026', '16/03/2026', '26/03/2026'], suivi: ['Aucune étape définie', 'neutre', 'Consultation de prix'], chaine: [], proc: [], geste: null },
+    { e: 'aucune', nat: 'Travaux', obj: 'Travaux de réhabilitation de mise en œuvre de chaussée betonnée au Stationnement Sans Fil Tuléar sur la RNP7 entre PK 925+000 au PK 925+800', mt: '2 250 000 000', mode: 'Consultation des Prix Ouverte', compte: '2441', d: ['06/03/2026', '16/03/2026', '27/03/2026'], suivi: ['Aucune étape définie', 'neutre', 'Consultation de prix'], chaine: [], proc: [], geste: null },
+    { e: 'prep', nat: 'Travaux', obj: 'Travaux d’urgence sur la RNT 15 à l’entrée de Fanjakana (PK 193+800) et Beroroha (PK 211+000)', mt: '4 350 000 000', mode: 'Appel d’offres ouvert', compte: '2441', d: ['06/03/2026', '07/04/2026', '20/04/2026'], suivi: ['Informations du DAO', 'examen', 'Brouillon'], chaine: [['', 'Mise en concurrence', 'Informations du DAO en brouillon']], proc: [['Informations du DAO', 'Brouillon']], geste: ['Reprendre les informations du DAO'] },
+    { e: 'prep', nat: 'Travaux', obj: 'Travaux de réhabilitation de la RNS 13 dans la Ville de Fort Dauphin et dans la Ville de Betroka', mt: '40 000 000 000', mode: 'Marché de gré à gré PPP', compte: '2441', d: ['06/03/2026', '06/03/2026', '06/02/2026'], suivi: ['Rapport justificatif', 'examen', 'Brouillon · pièces 1/3'], chaine: [['', 'Rapport justificatif', 'Brouillon'], ['acreer', 'Marché de gré à gré', 'Après la clôture du rapport']], proc: [['Pièces du rapport', '1 sur 3'], ['Avis de la Commission', '—'], ['Contrat', '—']], geste: ['Compléter les pièces', 'Soumettre'], vigilance: 'L’attribution prévue (06/02/2026) précède le lancement prévu (06/03/2026).' },
+    { e: 'lancer', nat: 'Travaux', obj: 'Travaux d’aménagement de la route reliant : Ilempona (PK 0+000) au Pont de Belanitra (PK 62+721) dans la Région Vakinankaratra', mt: '153 200 000 000', mode: 'Marché de gré à gré', compte: '2441', d: ['06/03/2026', '06/03/2026', '06/03/2026'], suivi: ['À lancer', 'neutre', 'Gré à gré'], chaine: [['acreer', 'Rapport justificatif', 'À créer']], proc: [], geste: ['Créer le rapport justificatif'] },
+    { e: 'lancer', nat: 'Travaux', obj: 'Travaux de réhabilitation de la route RNT 36 reliant Carrefour RNP4 - Ampanotokana - Miantso - Firavahana - Fenoarivobe (Contrat cadre)', mt: '150 000 000 000', mode: 'Appel d’offres ouvert · contrat-cadre', d: null, suivi: ['À lancer', 'neutre', 'Appel d’offres'], chaine: [['acreer', 'Mise en concurrence', 'À préparer']], proc: [], geste: ['Préparer les informations du DAO'] },
+    { e: 'lancer', nat: 'Travaux', obj: 'Travaux de réhabilitation de la route reliant Ivohibe et Antambohobe dans la région Ihorombe (Contrat Cadre)', mt: '65 000 000 000', mode: 'Appel d’offres ouvert · contrat-cadre', d: null, suivi: ['À lancer', 'neutre', 'Appel d’offres'], chaine: [['acreer', 'Mise en concurrence', 'À préparer']], proc: [], geste: ['Préparer les informations du DAO'] },
+    { e: 'prep', nat: 'Travaux', obj: 'Travaux de réhabilitation de la route reliant croisement RN25 jusqu’à Nosy Varika de la RNS11 (Contrat cadre)', mt: '16 000 000 000', mode: 'Appel d’offres ouvert · contrat-cadre', d: null, suivi: ['Informations du DAO', 'examen', 'Brouillon'], chaine: [['', 'Mise en concurrence', 'Informations du DAO en brouillon']], proc: [['Informations du DAO', 'Brouillon']], geste: ['Reprendre les informations du DAO'] },
+    { e: 'lancer', nat: 'Travaux', obj: 'Travaux de réhabilitation de la route reliant Tsiatosika vers village Andranambolava Avaratra', mt: '23 100 000 000', mode: 'Appel d’offres ouvert', d: null, suivi: ['À lancer', 'neutre', 'Appel d’offres'], chaine: [['acreer', 'Mise en concurrence', 'À préparer']], proc: [], geste: ['Préparer les informations du DAO'] },
+    { e: 'lance', nat: 'Travaux', obj: 'Travaux d’aménagement de la voie rapide dans la Commune Urbaine de Sambava, croisement Menagisy vers Ambodisatrana (contrat cadre)', mt: '15 000 000 000', mode: 'Appel d’offres ouvert · contrat-cadre', d: null, suivi: ['Lancée', 'favorable', '00002/DAOO-CC · clôturé'], chaine: [['', 'Mise en concurrence', '00002/DAOO-CC/CNM/2026'], ['acreer', 'Dossier de marché', 'Après l’attribution']], proc: [['Dossier de mise en concurrence', 'Clôturé'], ['Avis spécifique', 'Imprimé']], geste: ['Ouvrir la procédure', 'Réimprimer l’avis'] }
+  ];
+  var ETAPES = [['aucune', 'Sans étape définie'], ['lancer', 'À lancer'], ['prep', 'En préparation'], ['cnm', 'À la Commission'], ['lance', 'Lancées'], ['marche', 'Marché']];
+  var AVIS = {
+    AB: [['Pour', ['Chacun travaille comme il préfère : le document signé, ou la liste avec la ligne ouverte à côté.', 'La ligne ouverte et le filtre sont gardés quand on change de présentation.', 'La présentation choisie est retenue pour la visite suivante (sur ce poste).', 'Les deux reposent sur les mêmes données : une seule lecture du plan.']], ['Contre', ['Deux présentations à maintenir et à recetter.', 'Il faut un choix par défaut à l’ouverture (proposé : le document officiel).']]],
+    A: [['Pour', ['Le plan reste le document signé, que tout le monde connaît.', 'Le suivi est une annotation qu’un interrupteur masque.', 'C’est le prolongement direct de ce qui est livré le 03/11.']], ['Contre', ['13 colonnes et une marge : défilement horizontal sur un écran de 1366 px.', 'Ce qui reste à faire ne saute pas aux yeux sans filtrer.']]],
+    B: [['Pour', ['La liste reste visible pendant qu’on lit une ligne ; J/K passent d’une ligne à l’autre.', 'Tient sans défilement sur un écran étroit.', 'Reprend le patron « deux volets » adopté le 31/10.']], ['Contre', ['Le plan n’est plus lu comme le document signé : ses 13 colonnes passent dans le volet.']]],
+    C: [['Pour', ['On voit d’un coup combien de lignes attendent à chaque étape, et lesquelles.', 'Le geste suivant est sur la fiche même.']], ['Contre', ['Le document officiel n’est plus à l’écran.', 'Six colonnes : défilement horizontal sur écran étroit.']]],
+    D: [['Pour', ['Les retards sur les dates prévues au plan sautent aux yeux.', 'Les dates incohérentes se voient (barre inversée, en rouge).', 'Prolonge le calendrier des jalons.']], ['Contre', ['Ne montre que les lignes dont les dates sont relevées.', 'Dit peu de chose sur les dossiers eux-mêmes : à combiner avec A ou B.']]],
+    E: [['Pour', ['Tout le plan d’un regard : chaque ligne, chaque étape, sa date.', 'Les étapes sans objet (le gré à gré n’a ni publication ni ouverture des plis) se distinguent des étapes à venir.', 'Tient en largeur sur un écran de 1366 px.']], ['Contre', ['Les colonnes sont celles de l’appel d’offres : les autres modes y laissent des cases « sans objet ».', 'Ne montre ni montants ni bénéficiaires.']]],
+    F: [['Pour', ['Montre la filiation complète : lots, dossiers de marché, actes de gestion.', 'Utile pour retrouver un dossier précis.']], ['Contre', ['On ne voit pas d’un coup où en est le plan.', 'Peu parlant pour les lignes sans dossier.']]],
+    G: [['Pour', ['Les chiffres pour rendre compte : nombre et montant par étape, par mode, retards.', 'Lisible par la hiérarchie sans connaître l’application.']], ['Contre', ['Ne sert pas au travail quotidien : pas de geste.', 'Les chiffres de la maquette ne portent que sur les 12 lignes reprises.']]],
+    H: [['Pour', ['Reste le document du plan, regroupé selon le besoin (mode, nature, étape).', 'Les sous-totaux de montant par groupe.']], ['Contre', ['Ne montre pas le détail d’une ligne.', 'Défile en largeur comme le document.']]],
+    I: [['Pour', ['Agréable sur tablette ou sur un grand écran.', 'Le geste suivant est sur chaque carte.']], ['Contre', ['Peu dense : 32 lignes demandent de défiler.', 'Comparer deux lignes est moins facile qu’en tableau.']]],
+    J: [['Pour', ['Vue territoriale, parlante pour un ministère qui travaille dans plusieurs régions.']], ['Contre', ['La région n’est pas une donnée du plan : ici, elle n’est lue que lorsque l’objet la nomme, soit 3 lignes sur 12.', 'À n’envisager qu’en ajoutant la région au plan (ou au service bénéficiaire).']]]
+  };
+  var COLS_E = ['Préparation', 'Commission', 'Publication', 'Ouverture des plis', 'Évaluation', 'Attribution', 'Contrat'];
+  // Une case : [classe, texte, précision]. Seuls les faits relevés en recette sont posés ; le reste est vide.
+  function matrice(l) {
+    var gre = /gr[ée] à gr[ée]/i.test(l.mode);
+    var so = ['c-so', 'sans objet', ''];
+    var vide = ['', '', ''];
+    if (l.e === 'aucune') return COLS_E.map(function () { return ['c-inc', '?', 'non définie']; });
+    if (l.e === 'lance') return [['c-ok', '✓', 'validées'], ['c-ok', '✓', 'clôturé 28/10/2026'], ['c-ok', '✓', 'avis imprimé'], vide, vide, vide, vide];
+    if (gre) return [l.e === 'prep' ? ['c-cours', 'en cours', 'rapport justificatif'] : vide, vide, so, so, so, vide, vide];
+    return [l.e === 'prep' ? ['c-cours', 'en cours', 'informations du DAO'] : vide, vide, vide, vide, vide, vide, vide];
+  }
+  function montant(l) { return Number(l.mt.replace(/\s/g, '')); }
+  function fmt(n) { return n.toLocaleString('fr-FR').replace(/ /g, ' '); }
+  function region(l) { var m = /r[ée]gion\s+([A-Z][\wéè-]+)/i.exec(l.obj); return m ? m[1] : null; }
+  var vue = document.getElementById('vue'), avis = document.getElementById('avis');
+  var etat = { v: 'AB', sous: 'A', ouverte: 5, filtre: '' };
+  function vueAB() {
+    var seg = '<div class="outils"><span class="surtitre">Présentation</span><div class="etapes" role="group" aria-label="Présentation du plan">' +
+      '<button type="button" class="choix' + (etat.sous === 'A' ? ' on' : '') + '" data-sous="A" aria-pressed="' + (etat.sous === 'A') + '">Document officiel</button>' +
+      '<button type="button" class="choix' + (etat.sous === 'B' ? ' on' : '') + '" data-sous="B" aria-pressed="' + (etat.sous === 'B') + '">Deux volets</button></div></div>';
+    return seg + (etat.sous === 'A' ? vueA() : vueB());
+  }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function pill(l) { return '<span class="pill ' + l.suivi[1] + '">' + esc(l.suivi[0]) + '</span>'; }
+  function detail(l, empile) {
+    var h = '<div class="det' + (empile ? ' empile' : '') + '"><div><span class="surtitre">Chaîne de la procédure</span><ol class="chaine"><li><span class="maillon"><span class="k">Plan</span><span class="r">00001/PPM-AGPM/CNM/2026</span><span class="pill favorable">Clôturé</span></span></li>';
+    l.chaine.forEach(function (c) { h += '<li><span class="maillon ' + c[0] + '"><span class="k">' + esc(c[1]) + '</span><span class="r">' + esc(c[2]) + '</span></span></li>'; });
+    h += '</ol>' + (l.geste ? '<div class="boutons">' + l.geste.map(function (b, k) { return '<span class="btn ' + (k ? 'o' : 'p') + '">' + esc(b) + '</span>'; }).join('') + '</div>' : '<p class="note">Le dossier qu’une consultation de prix produit reste à définir (question 3).</p>');
+    h += '</div><div><span class="surtitre">Procédure</span>' + (l.proc.length ? '<dl class="faits">' + l.proc.map(function (p) { return '<div><dt>' + esc(p[0]) + '</dt><dd>' + esc(p[1]) + '</dd></div>'; }).join('') + '</dl>' : '<p class="note">Rien encore : la procédure commence avec le premier dossier de la ligne.</p>');
+    h += '</div><div><span class="surtitre">Jalons</span>';
+    h += l.d ? '<table class="jalons"><thead><tr><th>Jalon</th><th>Prévu</th><th>Réel</th></tr></thead><tbody><tr><td>Lancement</td><td>' + l.d[0] + '</td><td>—</td></tr><tr><td>Ouverture des plis</td><td>' + l.d[1] + '</td><td>—</td></tr><tr><td>Attribution</td><td>' + l.d[2] + '</td><td>—</td></tr></tbody></table>' : '<p class="note">Dates prévues non relevées pour la maquette.</p>';
+    if (l.vigilance) h += '<div class="vigilance">' + esc(l.vigilance) + '</div>';
+    return h + '</div></div>';
+  }
+  function filtres() {
+    return '<div class="outils" role="group" aria-label="Filtrer par étape">' + [['', 'Toutes']].concat(ETAPES).map(function (e) { return '<button type="button" class="choix' + (etat.filtre === e[0] ? ' on' : '') + '" data-f="' + e[0] + '">' + e[1] + '</button>'; }).join('') + '</div>';
+  }
+  function garde(l) { return !etat.filtre || l.e === etat.filtre; }
+
+  function vueA() {
+    var h = filtres() + '<div class="feuille"><table class="doc"><thead><tr><th rowspan="2">Nature</th><th rowspan="2">Objet</th><th rowspan="2">Montant estimatif initial</th><th rowspan="2">Nouveau montant estimatif</th><th rowspan="2">Mode de passation</th><th rowspan="2">Financement</th><th colspan="4">Informations sur le bénéficiaire</th><th rowspan="2">Date prév. de lancement</th><th rowspan="2">Date prév. ouverture des plis</th><th rowspan="2">Date prév. d’attribution</th><th rowspan="2" class="marge">SUIVI</th></tr><tr><th>Service bénéficiaire</th><th>Compte</th><th>Montant par bénéficiaire</th><th>Nouveau montant par bénéficiaire</th></tr></thead><tbody>';
+    L.forEach(function (l, i) {
+      if (!l.d || !garde(l)) return;
+      var o = i === etat.ouverte;
+      h += '<tr class="cliquable' + (o ? ' ouverte' : '') + '" data-i="' + i + '"><td>' + esc(l.nat) + '</td><td>' + esc(l.obj) + '</td><td class="num">' + l.mt + ',00</td><td></td><td>' + esc(l.mode) + '</td><td>RPI</td><td>00-61-0-D10-00000</td><td>' + l.compte + '</td><td class="num">' + l.mt + ',00</td><td></td><td class="date">' + l.d[0] + '</td><td class="date">' + l.d[1] + '</td><td class="date">' + l.d[2] + '</td><td class="marge"><button type="button" class="suivi" data-i="' + i + '" aria-expanded="' + o + '">' + pill(l) + '<span class="ref">' + esc(l.suivi[2]) + '</span></button></td></tr>';
+      if (o) h += '<tr class="detail-ligne"><td colspan="13">' + detail(l) + '</td><td class="marge"></td></tr>';
+    });
+    return h + '</tbody></table><p class="reste">Les 7 lignes dont le document est relevé pour la maquette ; 25 autres dans le plan.</p></div>';
+  }
+  function vueB() {
+    var i0 = etat.ouverte >= 0 ? etat.ouverte : 0, l0 = L[i0];
+    var h = filtres() + '<div class="volets"><div class="carte liste"><table><thead><tr><th>Objet · mode · étape</th></tr></thead><tbody>';
+    L.forEach(function (l, i) {
+      if (!garde(l)) return;
+      h += '<tr><td><button type="button" class="ligne" data-i="' + i + '" aria-pressed="' + (i === i0) + '"><span>' + esc(l.obj) + '<small>' + esc(l.mode) + '</small></span><span class="mt">' + l.mt + ' Ar</span><span>' + pill(l) + '</span></button></td></tr>';
+    });
+    h += '</tbody></table></div><article class="carte volet"><header><span class="surtitre">Ligne du plan 00001</span><h3>' + esc(l0.obj) + '</h3><span>' + pill(l0) + '</span></header>';
+    h += '<div style="padding:12px 14px;display:grid;gap:6px"><span class="surtitre">Fiche officielle de la ligne</span><table class="officiel"><tbody>' +
+      [['Nature', l0.nat], ['Mode de passation', l0.mode], ['Montant estimatif initial', l0.mt + ',00'], ['Financement', 'RPI'], ['Service bénéficiaire', l0.compte ? '00-61-0-D10-00000' : '—'], ['Compte', l0.compte || '—'], ['Date prév. de lancement', l0.d ? l0.d[0] : '—'], ['Date prév. ouverture des plis', l0.d ? l0.d[1] : '—'], ['Date prév. d’attribution', l0.d ? l0.d[2] : '—']]
+        .map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+    return h + detail(l0, true) + '</article></div>';
+  }
+  function vueC() {
+    var h = '<div class="colonnes">';
+    ETAPES.forEach(function (e) {
+      var ls = L.map(function (l, i) { return [l, i]; }).filter(function (x) { return x[0].e === e[0]; });
+      h += '<div class="col"><h4>' + e[1] + ' <span>' + ls.length + '</span></h4>';
+      if (!ls.length) h += '<span class="vide">Aucune ligne reprise</span>';
+      ls.forEach(function (x) {
+        var l = x[0];
+        h += '<div class="fiche"><span class="o">' + esc(l.obj) + '</span><span class="m">' + esc(l.mode) + ' · ' + l.mt + ' Ar</span><span class="m">' + esc(l.suivi[2]) + '</span>' + (l.vigilance ? '<span class="pill retard">Dates incohérentes</span>' : '') + (l.geste ? '<span class="btn ' + 'p' + '">' + esc(l.geste[0]) + '</span>' : '') + '</div>';
+      });
+      h += '</div>';
+    });
+    return h + '</div><p class="reste">Les 12 lignes reprises pour la maquette ; les compteurs réels portent sur les 32 lignes du plan.</p>';
+  }
+  function jour(s) { var p = s.split('/'); return Date.UTC(+p[2], +p[1] - 1, +p[0]) / 864e5; }
+  function vueD() {
+    var debut = jour('01/02/2026'), fin = jour('30/11/2026'), auj = jour('03/11/2026'), span = fin - debut;
+    var x = function (d) { return ((d - debut) / span * 100).toFixed(2) + '%'; };
+    var mois = ['févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.'];
+    var grille = mois.map(function (m, k) { return '<span class="grille" style="left:' + x(jour('01/' + String(k + 2).padStart(2, '0') + '/2026')) + '"></span>'; }).join('');
+    var h = '<div class="legende"><span><i style="background:var(--menu-fond)"></i>Lancement prévu</span><span><i style="background:var(--favorable-texte)"></i>Attribution prévue</span><span><i style="background:var(--retard-fond);border:1px solid var(--retard-texte)"></i>Attribution avant lancement</span><span><i style="background:var(--retard-texte)"></i>Aujourd’hui, 03/11/2026</span></div>';
+    h += '<div class="gantt"><div class="gantt-g"><div class="lab" style="border-top:0;background:var(--tableau-entete)"><b style="font-weight:500">Ligne du plan</b></div><div class="mois">' + mois.map(function (m, k) { return '<span style="left:' + x(jour('01/' + String(k + 2).padStart(2, '0') + '/2026')) + '">' + m + '</span>'; }).join('') + '<span class="auj" style="left:' + x(auj) + '"></span></div>';
+    L.forEach(function (l) {
+      if (!l.d) return;
+      var la = jour(l.d[0]), at = jour(l.d[2]), g = Math.min(la, at), dr = Math.max(la, at), inv = at < la;
+      var retard = Math.round(auj - la);
+      h += '<div class="lab"><span>' + esc(l.obj) + '</span><small>' + esc(l.mode) + ' · ' + pill(l) + '</small></div><div class="piste">' + grille +
+        '<span class="barre-prev' + (inv ? ' inverse' : '') + '" style="left:' + x(g) + ';width:calc(' + x(dr) + ' - ' + x(g) + ' + 2px)"></span>' +
+        '<span class="pt l" style="left:' + x(la) + '" title="Lancement prévu ' + l.d[0] + '"></span><span class="pt a" style="left:' + x(at) + '" title="Attribution prévue ' + l.d[2] + '"></span>' +
+        '<span class="auj" style="left:' + x(auj) + '"></span>' +
+        '<span class="etiq" style="left:' + x(g) + '">' + (inv ? '<span class="pill retard">Attribution prévue avant le lancement</span> ' : '') + '<span class="pill retard">Non lancée, ' + retard + ' jours après le lancement prévu</span></span></div>';
+    });
+    return h + '</div></div><p class="reste">Les 7 lignes dont les dates prévues sont relevées ; aucune date réelle n’existe encore pour elles en recette.</p>';
+  }
+  function vueE() {
+    var h = '<div class="defile"><table class="mat"><thead><tr><th>Ligne du plan</th>' + COLS_E.map(function (c) { return '<th>' + c + '</th>'; }).join('') + '</tr></thead><tbody>';
+    L.forEach(function (l) {
+      h += '<tr><td>' + esc(l.obj) + '<small>' + esc(l.mode) + ' · ' + l.mt + ' Ar</small></td>' + matrice(l).map(function (c) { return '<td class="' + c[0] + '">' + esc(c[1]) + (c[2] ? '<small>' + esc(c[2]) + '</small>' : '') + '</td>'; }).join('') + '</tr>';
+    });
+    return h + '</tbody></table></div><p class="reste">Cases vides : étape à venir. « ? » : la consultation de prix n’a pas d’étapes définies (question 3). Seuls les faits relevés en recette sont posés.</p>';
+  }
+  function vueF() {
+    var h = '<div class="arbre"><details open><summary><b style="font-weight:500">Plan 00001/PPM-AGPM/CNM/2026</b><span class="pill favorable">Clôturé</span><span class="k">32 lignes, 12 reprises</span></summary>';
+    L.forEach(function (l, i) {
+      var docs = l.chaine.filter(function (c) { return c[0] !== 'acreer'; });
+      h += '<details' + (i === 5 || i === 11 ? ' open' : '') + '><summary>' + esc(l.obj) + ' ' + pill(l) + '</summary>';
+      if (!docs.length) h += '<div class="feuille-a k">Aucun dossier</div>';
+      docs.forEach(function (c) { h += '<div class="feuille-a"><span class="k">' + esc(c[1]) + '</span><span>' + esc(c[2]) + '</span></div>'; });
+      l.chaine.filter(function (c) { return c[0] === 'acreer'; }).forEach(function (c) { h += '<div class="feuille-a"><span class="k">À venir · ' + esc(c[1]) + '</span><span class="k">' + esc(c[2]) + '</span></div>'; });
+      h += '</details>';
+    });
+    return h + '</details></div>';
+  }
+  function vueG() {
+    var total = L.reduce(function (s, l) { return s + montant(l); }, 0);
+    var parEtape = ETAPES.map(function (e) { var ls = L.filter(function (l) { return l.e === e[0]; }); return [e[1], ls.length, ls.reduce(function (s, l) { return s + montant(l); }, 0)]; });
+    var modes = {}; L.forEach(function (l) { var k = /gr[ée] à gr[ée]/i.test(l.mode) ? 'Gré à gré' : /consultation/i.test(l.mode) ? 'Consultation de prix' : 'Appel d’offres ouvert'; modes[k] = modes[k] || [0, 0]; modes[k][0]++; modes[k][1] += montant(l); });
+    var max = Math.max.apply(null, parEtape.map(function (p) { return p[2]; }));
+    var nonLancees = L.filter(function (l) { return l.d && l.e !== 'lance'; }).length;
+    var lance = L.filter(function (l) { return l.e === 'lance'; }).reduce(function (s, l) { return s + montant(l); }, 0);
+    var h = '<div class="tdb"><div class="carte"><span class="surtitre">En bref (12 lignes reprises)</span><div class="chiffres">' +
+      '<div><span class="n">' + fmt(total) + '</span><span class="l">Ar au total</span></div>' +
+      '<div><span class="n">' + (lance / total * 100).toFixed(1).replace('.', ',') + ' %</span><span class="l">du montant déjà lancé</span></div>' +
+      '<div><span class="n">' + nonLancees + '</span><span class="l">lignes non lancées après leur date prévue</span></div>' +
+      '<div><span class="n">1</span><span class="l">ligne aux dates incohérentes</span></div></div></div>';
+    h += '<div class="carte"><span class="surtitre">Montant par étape</span><div class="barres">' + parEtape.map(function (p) { return '<div class="r"><span>' + p[0] + ' (' + p[1] + ')</span><span class="fond"><span class="val" style="display:block;width:' + (max ? p[2] / max * 100 : 0) + '%"></span></span><span class="v">' + fmt(p[2]) + ' Ar</span></div>'; }).join('') + '</div></div>';
+    h += '<div class="carte"><span class="surtitre">Par mode de passation</span><div class="barres">' + Object.keys(modes).map(function (k) { return '<div class="r"><span>' + k + ' (' + modes[k][0] + ')</span><span class="fond"><span class="val" style="display:block;width:' + (modes[k][1] / total * 100) + '%"></span></span><span class="v">' + fmt(modes[k][1]) + ' Ar</span></div>'; }).join('') + '</div></div></div>';
+    return h + '<p class="reste">Calculé sur les 12 lignes reprises pour la maquette ; l’écran calculera sur les 32 lignes du plan.</p>';
+  }
+  function vueH() {
+    var groupes = {};
+    L.forEach(function (l) { var k = /gr[ée] à gr[ée]/i.test(l.mode) ? 'Gré à gré' : /consultation/i.test(l.mode) ? 'Consultation des prix ouverte' : 'Appel d’offres ouvert'; (groupes[k] = groupes[k] || []).push(l); });
+    var h = '<div class="outils"><span class="choix on">Grouper par mode</span><span class="choix">par nature</span><span class="choix">par étape</span></div><div class="defile"><table class="groupe-t"><thead><tr><th>Nature</th><th>Objet</th><th>Mode de passation</th><th>Montant estimatif</th><th>Date prév. de lancement</th><th>Date prév. d’attribution</th><th>Suivi</th></tr></thead><tbody>';
+    Object.keys(groupes).forEach(function (k) {
+      var g = groupes[k], st = g.reduce(function (s, l) { return s + montant(l); }, 0);
+      h += '<tr class="g"><td colspan="7">▾ ' + k + ' · ' + g.length + ' lignes</td></tr>';
+      g.forEach(function (l) { h += '<tr><td>' + esc(l.nat) + '</td><td>' + esc(l.obj) + '</td><td>' + esc(l.mode) + '</td><td class="num">' + l.mt + ',00</td><td>' + (l.d ? l.d[0] : '—') + '</td><td>' + (l.d ? l.d[2] : '—') + '</td><td>' + pill(l) + '</td></tr>'; });
+      h += '<tr class="st"><td colspan="3">Sous-total · ' + k + '</td><td class="num">' + fmt(st) + ',00</td><td colspan="3"></td></tr>';
+    });
+    return h + '</tbody></table></div>';
+  }
+  function vueI() {
+    return '<div class="mosaique">' + L.map(function (l) {
+      return '<div class="fiche"><span class="m">' + esc(l.nat) + ' · ' + esc(l.mode) + '</span><span class="o">' + esc(l.obj) + '</span><span class="mt">' + l.mt + ' Ar</span>' + pill(l) + '<span class="m">' + esc(l.suivi[2]) + (l.d ? ' · lancement prévu ' + l.d[0] : '') + '</span>' + (l.vigilance ? '<span class="pill retard">Dates incohérentes</span>' : '') + (l.geste ? '<span class="btn p">' + esc(l.geste[0]) + '</span>' : '') + '</div>';
+    }).join('') + '</div>';
+  }
+  function vueJ() {
+    var r = {}, sans = [];
+    L.forEach(function (l) { var k = region(l); if (k) (r[k] = r[k] || []).push(l); else sans.push(l); });
+    var bloc = function (titre, ls, cls) { return '<div class="region ' + (cls || '') + '"><h4>' + esc(titre) + ' <span>' + ls.length + ' ligne' + (ls.length > 1 ? 's' : '') + '</span></h4><ul>' + ls.map(function (l) { return '<li>' + esc(l.obj) + ' ' + pill(l) + '</li>'; }).join('') + '</ul></div>'; };
+    return '<div class="regions">' + Object.keys(r).map(function (k) { return bloc('Région ' + k, r[k]); }).join('') + bloc('Région non nommée dans l’objet', sans, 'sans') + '</div><p class="reste">Schéma, pas une carte : le plan ne porte pas de région ; elle est lue ici dans le texte de l’objet, quand il la nomme.</p>';
+  }
+  function rendre() {
+    vue.innerHTML = { AB: vueAB, A: vueA, B: vueB, C: vueC, D: vueD, E: vueE, F: vueF, G: vueG, H: vueH, I: vueI, J: vueJ }[etat.v]();
+    avis.innerHTML = AVIS[etat.v].map(function (a) { return '<div class="carte"><span class="surtitre">' + a[0] + '</span><ul>' + a[1].map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul></div>'; }).join('');
+  }
+  document.getElementById('variantes').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    etat.v = b.getAttribute('data-v'); etat.filtre = '';
+    Array.prototype.forEach.call(this.querySelectorAll('button'), function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+    try { history.replaceState(null, '', '#' + etat.v); } catch (err) { /* sans effet */ }
+    rendre();
+  });
+  vue.addEventListener('click', function (e) {
+    var s = e.target.closest('[data-sous]');
+    if (s) { etat.sous = s.getAttribute('data-sous'); if (etat.sous === 'B' && etat.ouverte < 0) etat.ouverte = 0; rendre(); return; }
+    var f = e.target.closest('[data-f]');
+    if (f) { etat.filtre = f.getAttribute('data-f'); rendre(); return; }
+    var t = e.target.closest('[data-i]'); if (!t) return;
+    var i = Number(t.getAttribute('data-i'));
+    var enA = etat.v === 'A' || (etat.v === 'AB' && etat.sous === 'A');
+    etat.ouverte = enA && etat.ouverte === i ? -1 : i;
+    rendre();
+  });
+  var h = (location.hash || '').slice(1);
+  if (/^([A-J]|AB)$/.test(h)) { etat.v = h; Array.prototype.forEach.call(document.querySelectorAll('.variante-btn'), function (x) { x.setAttribute('aria-pressed', x.getAttribute('data-v') === h ? 'true' : 'false'); }); }
+  rendre();
+})();
+</script>

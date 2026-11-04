@@ -162,6 +162,14 @@ export interface Dossier {
    */
   ficheMarche?: FicheMarcheResume | null;
   /**
+   * ⚠️ 03/11 (demande « objet-dossier-liste », B1, PRS20 d5bd6fd2) — la désignation de la ligne du plan que le dossier réalise (fiche,
+   * ligne d'origine hors fiche, procédure d'un marché, marché d'un acte de gestion) ; `null` pour un plan. Servie AUSSI sur les listes,
+   * résolue en lot ; absente de la réponse de création (relue avec le dossier).
+   */
+  objetMarche?: string | null;
+  /** ⚠️ 03/11 (même demande) — le lot d'un dossier de marché ; `null` sinon. */
+  lot?: number | null;
+  /**
    * ⚠️ 17/10 (demande « pieces-dmc-par-les-donnees », B3) — sur la lecture unitaire d'un dossier né d'une fiche : le plan qui porte sa
    * ligne en vigueur, et le PV signé de son examen (absent tant qu'aucun n'est signé).
    */

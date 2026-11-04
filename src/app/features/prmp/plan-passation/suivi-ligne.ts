@@ -3,6 +3,16 @@ import { LigneEligible, NoeudFiliation } from '../../../models';
 /** Étape d'une ligne du plan, dans l'ordre de la procédure. */
 export type EtapeLigne = 'aucune' | 'lancer' | 'preparation' | 'commission' | 'lancee' | 'marche';
 
+/**
+ * ⚠️ 03/11 (pilote) — la couleur d'une ligne du plan selon son étape (familles de la palette) : rien pour une ligne sans étape,
+ * couleurs vives (pilote, 03/11 ; jetons --suivi-*-fond) : bleu pour une ligne à lancer, ambre tant qu'elle se prépare ou passe à la Commission, vert une fois lancée ou au marché.
+ */
+export type TeinteLigne = 'lancer' | 'examen' | 'favorable';
+
+export const TEINTE_ETAPE: Readonly<Record<EtapeLigne, TeinteLigne | null>> = {
+  aucune: null, lancer: 'lancer', preparation: 'examen', commission: 'examen', lancee: 'favorable', marche: 'favorable',
+};
+
 export const ETAPES_LIGNE: readonly { cle: EtapeLigne; libelle: string }[] = [
   { cle: 'aucune', libelle: 'Sans étape définie' },
   { cle: 'lancer', libelle: 'À lancer' },
@@ -25,7 +35,8 @@ const HORS_CIRCUIT = new Set(['BROUILLON', 'CLOTURE', 'DECISION_TRANSMISE_SIGMP'
 const CLOS = new Set(['CLOTURE', 'DECISION_TRANSMISE_SIGMP']);
 
 const normaliser = (s: string): string => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
-const ref = (n: NoeudFiliation): string => n.refeDossier || 'brouillon';
+/** La référence ; sans elle, « brouillon » ou, déposé mais pas encore reçu par la CNM, « soumis » (04/11). */
+const ref = (n: NoeudFiliation): string => n.refeDossier || (n.statut === 'BROUILLON' ? 'brouillon' : 'soumis');
 
 /**
  * ⚠️ 03/11 (pilote, maquette « espace PRMP », lot 2) — l'étape d'une ligne du plan, lue sur ses dossiers (`noeuds` : la filiation de

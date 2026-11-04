@@ -193,8 +193,8 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     { label: 'Appels d’offres en cours', path: '/prmp/dao', queryParams: { etape: 'lance' }, icon: 'clip' },
     // ⚠️ 18/10 (pilote) — les reçus des frais de dossier n'étaient atteignables que par la fiche : entrée propre, pastille propre.
     { label: 'Reçus des frais de dossier', path: '/prmp/recus', icon: 'hash' },
-    // ⚠️ 03/11 (pilote) — l'écran existait sans entrée de menu.
-    { label: 'Dossiers de marché', path: '/prmp/dossier-marche', icon: 'folder' },
+    // ⚠️ 04/11 (pilote, redondances, temps 1) — « Dossiers de marché » SORT du menu : la ligne du plan porte « Créer le dossier de
+    // marché » dès qu'un lot est proposé. La route reste (lien « Créer dossier » de la famille marché, remise papier).
     // ⚠️ Lot MS-1 (V124, 16/10) — les contrats-cadres et marchés à commandes notifiés (titulaires, échéances, reconductions).
     { label: 'Contrats en vigueur', path: '/prmp/contrats-en-vigueur', icon: 'history' },
     // « Créer compte UGPM » : déplacé dans le PIED de la barre latérale (à la place de la carte profil,
@@ -229,8 +229,7 @@ export const NAV_BY_ROLE: Record<RoleInterne, NavItem[]> = {
     { label: 'Appels d’offres en cours', path: '/prmp/dao', queryParams: { etape: 'lance' }, icon: 'clip' },
     // ⚠️ 18/10 (pilote) — les reçus des frais de dossier n'étaient atteignables que par la fiche : entrée propre, pastille propre.
     { label: 'Reçus des frais de dossier', path: '/prmp/recus', icon: 'hash' },
-    // ⚠️ 03/11 (pilote) — le serveur ouvre la création du dossier de marché à l'UGPM de la fiche (attribution, remise papier).
-    { label: 'Dossiers de marché', path: '/prmp/dossier-marche', icon: 'folder' },
+    // ⚠️ 04/11 (pilote, redondances, temps 1) — « Dossiers de marché » sort du menu, comme chez la PRMP : la ligne du plan y mène.
     // ⚠️ Lot MS-1 (16/10) — en lecture : la reconduction se décide par la PRMP.
     { label: 'Contrats en vigueur', path: '/prmp/contrats-en-vigueur', icon: 'history' },
     // ⚠️ Demande pilote (2026-09-13) — « Dossiers vérifiés » RETIRÉ du menu UGPM : les dossiers vérifiés

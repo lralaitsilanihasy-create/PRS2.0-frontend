@@ -1,0 +1,267 @@
+<title>Plan de passation : dispositions</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Six dispositions de l'écran « Plan de passation » (vue en deux volets), mêmes données de recette ; palette institutionnelle seule. */
+:root {
+  --menu-fond: #0C3A5B; --section-fond: #082C47; --onglet-actif-fond: #EAF2FF; --page-fond: #E9EEF3; --carte-fond: #FFFFFF;
+  --tableau-entete: #EEF1F4; --ligne-survol: #F7F8FA; --bordure: #D9DEE3; --bordure-champ: #868E96; --texte: #1F2328;
+  --texte-secondaire: #5F6368; --texte-menu: #FFFFFF; --texte-menu-secondaire: #A9BCCD; --or: #F5B800; --bouton-principal: #2557D6;
+  --retard-fond: #FDE2E2; --retard-texte: #C62828; --examen-fond: #FFF1C2; --examen-texte: #7A5600; --favorable-fond: #E3F4EA;
+  --favorable-texte: #187547; --neutre-fond: #ECEEF1; --neutre-texte: #3C4043;
+  --suivi-lancer-fond: #7FB8F5; --suivi-examen-fond: #FFC93C; --suivi-favorable-fond: #5ED18A;
+  --police: 'Segoe UI', Roboto, Arial, sans-serif; --police-marque: Georgia, 'Times New Roman', serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page-fond); color: var(--texte); font: 400 14px/1.45 var(--police); font-variant-numeric: tabular-nums; }
+.enveloppe { max-width: 1340px; margin: 0 auto; padding-block: 24px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 22px; }
+h1, h2, h3, h4 { font-weight: 500; margin: 0; text-wrap: balance; }
+h1 { font-size: 1.5rem; } h2 { font-size: 1.15rem; }
+p { margin: 0; max-width: 82ch; }
+.surtitre { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--texte-secondaire); }
+.note { font-size: 0.8125rem; color: var(--texte-secondaire); }
+button { font: inherit; }
+button:focus-visible { outline: 3px solid var(--bouton-principal); outline-offset: 2px; }
+.choix { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.choix button { text-align: left; border: 1px solid var(--bordure-champ); border-radius: 8px; background: var(--carte-fond); color: var(--texte); padding: 10px 12px; cursor: pointer; display: grid; gap: 3px; }
+.choix button b { font-weight: 500; }
+.choix button span { font-size: 0.78rem; color: var(--texte-secondaire); }
+.choix button[aria-pressed="true"] { background: var(--menu-fond); color: var(--texte-menu); border-color: var(--menu-fond); }
+.choix button[aria-pressed="true"] span { color: var(--texte-menu-secondaire); }
+.avis { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+.avis > div { background: var(--carte-fond); border: 1px solid var(--bordure); border-radius: 8px; padding: 10px 14px; display: grid; gap: 4px; }
+.avis ul { margin: 0; padding-left: 18px; font-size: 0.82rem; }
+
+.appli { border: 1px solid var(--bordure); border-radius: 8px; overflow: hidden; background: var(--page-fond); }
+.entete { background: var(--section-fond); color: var(--texte-menu); padding: 8px 14px; }
+.marque { font-family: var(--police-marque); font-size: 1.05rem; }
+.marque small { display: block; font-family: var(--police); font-size: 0.68rem; color: var(--texte-menu-secondaire); }
+.barre { background: var(--menu-fond); display: flex; flex-wrap: wrap; padding: 0 6px; }
+.barre span { color: var(--texte-menu); padding: 8px 12px; font-size: 0.8rem; }
+.barre span.on { background: var(--onglet-actif-fond); color: var(--texte); }
+.ecran { padding: 14px; display: grid; gap: 12px; }
+
+/* Briques communes */
+.titre { display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: space-between; align-items: flex-start; }
+.titre h3 { font-size: 1.1rem; display: flex; gap: 8px; align-items: center; }
+.titre p { font-size: 0.76rem; color: var(--texte-secondaire); }
+.pastille { font-size: 0.68rem; padding: 0 8px; border-radius: 999px; font-weight: 500; white-space: nowrap; }
+.p-neutre { background: var(--neutre-fond); color: var(--neutre-texte); }
+.p-examen { background: var(--examen-fond); color: var(--examen-texte); }
+.p-favorable { background: var(--favorable-fond); color: var(--favorable-texte); }
+.p-retard { background: var(--retard-fond); color: var(--retard-texte); }
+.btn { border-radius: 4px; padding: 4px 10px; font-size: 0.76rem; font-weight: 500; border: 1px solid var(--bordure-champ); background: var(--carte-fond); color: var(--texte); white-space: nowrap; }
+.btn.p { background: var(--bouton-principal); border-color: var(--bouton-principal); color: var(--texte-menu); }
+.segments { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--bordure-champ); border-radius: 6px; overflow: hidden; background: var(--carte-fond); }
+.segments > span { padding: 6px 12px; font-size: 0.78rem; border-right: 1px solid var(--bordure); display: inline-flex; gap: 6px; align-items: center; }
+.segments > span:last-child { border-right: 0; }
+.segments > span.on { background: var(--menu-fond); color: var(--texte-menu); font-weight: 500; }
+.dot { width: 0.55rem; height: 0.55rem; border-radius: 50%; display: inline-block; }
+.champ { display: grid; gap: 2px; }
+.champ label { font-size: 0.72rem; font-weight: 500; color: var(--texte-secondaire); }
+.ctl { border: 1px solid var(--bordure-champ); border-radius: 4px; background: var(--carte-fond); padding: 5px 8px; font-size: 0.78rem; min-width: 12rem; color: var(--texte); }
+.ctl.large { min-width: 18rem; color: var(--texte-secondaire); }
+.carte { background: var(--carte-fond); border: 1px solid var(--bordure); border-radius: 8px; padding: 10px 12px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.carte h4 { font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texte-secondaire); }
+.champs { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 6px 14px; }
+.champs div { display: grid; }
+.champs dt { font-size: 0.68rem; color: var(--texte-secondaire); }
+.champs dd { margin: 0; font-size: 0.8rem; font-weight: 500; }
+.jal { width: 100%; border-collapse: collapse; font-size: 0.76rem; }
+.jal th, .jal td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--bordure); }
+.jal th { background: var(--tableau-entete); font-weight: 500; font-size: 0.68rem; }
+.r { color: var(--retard-texte); font-weight: 500; }
+.nr { color: var(--texte-secondaire); }
+.creer { border: 1px dashed var(--bordure-champ); border-radius: 6px; padding: 8px 10px; display: grid; gap: 6px; justify-items: start; font-size: 0.78rem; }
+.liste { list-style: none; margin: 0; padding: 0; background: var(--carte-fond); border: 1px solid var(--bordure); border-radius: 8px; overflow: hidden; }
+.liste li { padding: 8px 10px; border-bottom: 1px solid var(--bordure); display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; font-size: 0.78rem; }
+.liste li:last-child { border-bottom: 0; }
+.liste li.on { background: var(--onglet-actif-fond); box-shadow: inset 3px 0 0 var(--menu-fond); }
+.liste .o { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.liste .m { font-size: 0.7rem; color: var(--texte-secondaire); }
+.liste .mt { text-align: right; white-space: nowrap; }
+.volets { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 12px; align-items: start; }
+.tete-detail { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; }
+.tete-detail h4.obj { font-size: 1rem; text-transform: none; letter-spacing: 0; color: var(--texte); }
+.tete-detail .mt { font-size: 1rem; font-weight: 500; white-space: nowrap; }
+.pile { display: grid; gap: 10px; }
+
+/* B — onglets internes du détail */
+.sous-onglets { display: flex; gap: 2px; border-bottom: 1px solid var(--bordure-champ); }
+.sous-onglets span { padding: 6px 12px; font-size: 0.78rem; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+.sous-onglets span.on { border-bottom-color: var(--menu-fond); font-weight: 500; }
+
+/* C — liste groupée par étape, bandeau d'action */
+.groupe { background: var(--tableau-entete); padding: 6px 10px !important; font-size: 0.72rem !important; font-weight: 500; display: flex !important; justify-content: space-between; letter-spacing: 0.04em; text-transform: uppercase; color: var(--texte-secondaire); }
+.action { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: 8px; background: var(--onglet-actif-fond); border: 1px solid var(--menu-fond); }
+.action b { font-weight: 500; }
+.deux { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+
+/* D — tableau compact et tiroir */
+.dense { width: 100%; border-collapse: collapse; background: var(--carte-fond); font-size: 0.76rem; border: 1px solid var(--bordure); }
+.dense th { background: var(--tableau-entete); text-align: left; padding: 6px 8px; font-weight: 500; font-size: 0.68rem; }
+.dense td { padding: 6px 8px; border-top: 1px solid var(--bordure); vertical-align: top; }
+.dense tr.on td { background: var(--onglet-actif-fond); }
+.dense .num { text-align: right; white-space: nowrap; }
+.avec-tiroir { position: relative; min-height: 560px; }
+.tiroir { position: absolute; top: 0; right: 0; bottom: 0; width: 46%; background: var(--carte-fond); border-left: 1px solid var(--bordure-champ); box-shadow: -8px 0 0 rgba(12, 58, 91, 0.06); padding: 12px; display: grid; gap: 10px; align-content: start; overflow: auto; }
+
+/* E — facettes à gauche */
+.trois { display: grid; grid-template-columns: 200px 300px minmax(0, 1fr); gap: 12px; align-items: start; }
+.facettes { background: var(--carte-fond); border: 1px solid var(--bordure); border-radius: 8px; padding: 10px; display: grid; gap: 12px; }
+.facettes h4 { font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texte-secondaire); }
+.facettes ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 0.76rem; }
+.facettes li { display: flex; justify-content: space-between; gap: 6px; }
+.facettes li span:first-child::before { content: "☐ "; }
+.facettes li.on span:first-child::before { content: "☑ "; }
+
+/* F — frise des jalons */
+.frise { list-style: none; margin: 0; padding: 0; display: grid; }
+.frise li { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 8px; }
+.frise .rail { display: flex; flex-direction: column; align-items: center; }
+.frise .pt { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--bordure-champ); background: var(--carte-fond); margin-top: 3px; }
+.frise .pt.fait { background: var(--favorable-texte); border-color: var(--favorable-texte); }
+.frise .pt.retard { border-color: var(--retard-texte); }
+.frise .tr { flex: 1; width: 2px; background: var(--bordure); min-height: 14px; }
+.frise li:last-child .tr { display: none; }
+.frise .t { padding-bottom: 10px; font-size: 0.78rem; }
+.frise .t small { display: block; color: var(--texte-secondaire); font-size: 0.7rem; }
+.frise .d { font-size: 0.72rem; text-align: right; white-space: nowrap; }
+.resume { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.resume div { background: var(--carte-fond); border: 1px solid var(--bordure); border-radius: 8px; padding: 8px 10px; display: grid; }
+.resume b { font-size: 1rem; font-weight: 500; }
+.resume span { font-size: 0.7rem; color: var(--texte-secondaire); }
+
+@media (max-width: 1000px) { .volets, .trois, .deux { grid-template-columns: minmax(0, 1fr); } .tiroir { position: static; width: auto; } }
+</style>
+
+<div class="enveloppe">
+  <header style="display:grid;gap:6px">
+    <span class="surtitre">Maquette · écran « Plan de passation », vue en deux volets · 3 novembre 2026</span>
+    <h1>Réorganiser l’écran du plan : six dispositions</h1>
+    <p class="note">Mêmes données réelles (plan 00001/PPM-AGPM/CNM/2026, ligne de Maintirano ouverte, recette du 03/11), mêmes couleurs.
+      Change l’organisation : où sont le filtre et la recherche, comment se présente la liste, comment se lit le détail. Rien n’est codé.</p>
+  </header>
+  <section style="display:grid;gap:10px" aria-labelledby="c">
+    <h2 id="c">Choisir une disposition</h2>
+    <div class="choix" id="choix" role="group" aria-label="Disposition"></div>
+  </section>
+  <section class="appli" aria-label="Maquette de l'écran">
+    <div class="entete"><span class="marque"><small>Commission nationale des marchés</small>PRS 2.0</span></div>
+    <div class="barre"><span>À faire</span><span class="on">Plan de passation</span><span>Dossiers ▾</span><span>Passation ▾</span><span>Contrats en vigueur</span><span>Décisions ▾</span></div>
+    <div class="ecran" id="ecran"></div>
+  </section>
+  <section style="display:grid;gap:10px" aria-labelledby="a">
+    <h2 id="a">Ce que vaut cette disposition</h2>
+    <div class="avis" id="avis"></div>
+  </section>
+</div>
+
+<script>
+(function () {
+  // Plan 00001, recette du 03/11/2026 : sept lignes relevées, la ligne de Maintirano ouverte.
+  var L = [
+    { o: 'Fourniture d’habillement pour les nouveaux chauffeurs et garde du corps du Ministre du MTP', mode: 'Consultation des Prix Ouverte', mt: '13 000 000,00', e: ['Sans étape définie', 'p-neutre'], g: 'aucune', j: '—' },
+    { o: 'Travaux de réhabilitation des routes dans la ville de Maintirano dans la Région Melaky', mode: 'Appel d’offres ouvert', mt: '8 000 000 000,00', e: ['Informations du DAO', 'p-examen'], g: 'prep', j: 'Lancement prévu le 06/03/2026', on: true },
+    { o: 'Travaux de réhabilitation de la route RIP 71 vers Ambohimiarina (Contrat Cadre) (Relance)', mode: 'Consultation des Prix Ouverte', mt: '2 400 000 000,00', e: ['Sans étape définie', 'p-neutre'], g: 'aucune', j: '—' },
+    { o: 'Travaux de réhabilitation de mise en œuvre de chaussée betonnée au Stationnement Sans Fil Tuléar sur la RNP7', mode: 'Consultation des Prix Ouverte', mt: '2 250 000 000,00', e: ['Sans étape définie', 'p-neutre'], g: 'aucune', j: '—' },
+    { o: 'Travaux d’urgence sur la RNT 15 à l’entrée de Fanjakana (PK 193+800) et Beroroha (PK 211+000)', mode: 'Appel d’offres ouvert', mt: '4 350 000 000,00', e: ['À lancer', 'p-neutre'], g: 'lancer', j: 'Lancement prévu le 06/03/2026' },
+    { o: 'Travaux de réhabilitation de la RNS 13 dans la Ville de Fort Dauphin et dans la Ville de Betroka', mode: 'Marché de gré à gré PPP', mt: '40 000 000 000,00', e: ['À lancer', 'p-neutre'], g: 'lancer', j: 'Lancement prévu le 06/03/2026' },
+    { o: 'Travaux d’aménagement de la route reliant : Ilempona (PK 0+000) au Pont de Belanitra (PK 62+721)', mode: 'Marché de gré à gré', mt: '153 200 000 000,00', e: ['À lancer', 'p-neutre'], g: 'lancer', j: 'Lancement prévu le 06/03/2026' },
+  ];
+  var JALONS = [
+    ['Détermination des besoins', '21/12/2025', null, 'nr'], ['Élaboration et publication de l’avis général', '05/01/2026', '27/10/2026', 'fait'],
+    ['Choix de la procédure', '10/01/2026', null, 'nr'], ['Établissement du DAO/DC', '20/01/2026', null, 'nr'],
+    ['Lancement du DAO', '06/03/2026', null, 'retard', 242], ['Ouverture des plis', '07/04/2026', null, 'retard', 210], ['Attribution', '17/04/2026', null, 'retard', 200],
+  ];
+  var D = [
+    { id: 'a', nom: 'A · Actuel', d: 'Onglets, puis étape et recherche, légende, liste à gauche, trois cartes empilées à droite.',
+      pour: ['C’est l’écran livré.', 'Tout le détail est visible en défilant.'], contre: ['Trois rangées d’outils avant la liste.', 'Le détail est long : les jalons sont tout en bas.'] },
+    { id: 'b', nom: 'B · Une barre, détail en onglets', d: 'Onglets du plan, étape et recherche sur UNE ligne ; le détail en trois onglets (Fiche, Procédure, Jalons).',
+      pour: ['La liste commence plus haut.', 'Plus de défilement dans le détail : on passe d’un onglet à l’autre.'], contre: ['On ne voit jamais fiche et jalons ensemble.'] },
+    { id: 'c', nom: 'C · Liste par étape, action en tête', d: 'La liste regroupée par étape avec ses nombres ; le détail commence par l’action à faire ; fiche et procédure côte à côte.',
+      pour: ['Ce qui reste à faire saute aux yeux, dans la liste et dans le détail.', 'Plus de liste déroulante d’étape : les groupes la remplacent.'], contre: ['Les 23 lignes sans étape font un long groupe (replié par défaut).'] },
+    { id: 'd', nom: 'D · Tableau compact et tiroir', d: 'Les lignes en tableau dense (objet, mode, montant, étape, prochain jalon) ; le détail glisse en tiroir sur la droite.',
+      pour: ['On compare les lignes d’un coup d’œil, prochain jalon compris.', 'Le tiroir se ferme : le tableau reprend toute la largeur.'], contre: ['Le tiroir couvre une partie du tableau quand il est ouvert.'] },
+    { id: 'e', nom: 'E · Filtres en colonne', d: 'Une colonne de filtres à gauche (étape, mode, nature, avec leurs nombres), la liste au milieu, le détail à droite.',
+      pour: ['Plusieurs filtres combinés (ex. à lancer + gré à gré).', 'Les nombres restent visibles en permanence.'], contre: ['Trois colonnes : le détail est plus étroit sur 1366 px.'] },
+    { id: 'f', nom: 'F · Détail autour des jalons', d: 'Le détail s’ouvre sur un résumé chiffré et la frise des jalons ; fiche et procédure en dessous.',
+      pour: ['Les retards et les dates réelles se lisent en premier.', 'La frise montre où en est la ligne dans le calendrier.'], contre: ['La fiche officielle passe au second plan.'] },
+  ];
+  var actif = 'b';
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  var DOTS = ['var(--menu-fond)', 'var(--bouton-principal)', 'var(--favorable-texte)', 'var(--or)', 'var(--retard-texte)'];
+  function titre() {
+    return '<div class="titre"><div><h3>Plan de passation 2026 <span class="pastille p-favorable">Clôturé</span></h3><p>00001/PPM-AGPM/CNM/2026 · MINISTERE DES TRAVAUX PUBLICS · clôturé le 28/10/2026 · 34 lignes</p></div><span class="btn">Mettre à jour le plan</span></div>';
+  }
+  function vues() {
+    return '<span class="segments">' + [['Document officiel', 34], ['Deux volets', 34], ['Fiche de présentation', 8], ['Projet d’AGPM', 9], ['Calendrier des jalons', null]].map(function (v, i) {
+      return '<span class="' + (i === 1 ? 'on' : '') + '"><span class="dot" style="background:' + DOTS[i] + '"></span>' + v[0] + (v[1] != null ? ' (' + v[1] + ')' : '') + '</span>';
+    }).join('') + '</span>';
+  }
+  function filtres(ligne) {
+    return '<div class="champ"><label>Étape</label><span class="ctl">Toutes les lignes (34) ▾</span></div><div class="champ"><label>Rechercher</label><span class="ctl large">Objet, mode, nature, compte…</span></div>' + (ligne ? '<span class="note">34 lignes sur 34</span>' : '');
+  }
+  function liste(groupe) {
+    if (!groupe) return '<ul class="liste">' + L.map(function (l) { return '<li class="' + (l.on ? 'on' : '') + '"><span class="o">' + esc(l.o) + '</span><span class="mt">' + l.mt + '</span><span class="m">' + esc(l.mode) + '</span><span class="pastille ' + l.e[1] + '">' + esc(l.e[0]) + '</span></li>'; }).join('') + '</ul>';
+    var G = [['prep', 'En préparation', 1], ['lancer', 'À lancer', 10], ['aucune', 'Sans étape définie', 23]];
+    return '<ul class="liste">' + G.map(function (g) {
+      var items = L.filter(function (l) { return l.g === g[0]; });
+      return '<li class="groupe"><span>' + (g[0] === 'aucune' ? '▸ ' : '▾ ') + g[1] + '</span><span>' + g[2] + '</span></li>' + (g[0] === 'aucune' ? '' : items.map(function (l) { return '<li class="' + (l.on ? 'on' : '') + '"><span class="o">' + esc(l.o) + '</span><span class="mt">' + l.mt + '</span><span class="m">' + esc(l.mode) + '</span></li>'; }).join(''));
+    }).join('') + '</ul>';
+  }
+  function tete() { return '<div class="tete-detail"><h4 class="obj">' + esc(L[1].o) + '</h4><span class="mt">8 000 000 000,00 Ar</span><span><span class="pastille p-examen">Informations du DAO · Brouillon</span></span></div>'; }
+  function fiche() { return '<div class="carte"><h4>Fiche officielle</h4><dl class="champs"><div><dt>Nature</dt><dd>Travaux</dd></div><div><dt>Mode de passation</dt><dd>Appel d’offres ouvert</dd></div><div><dt>Montant estimatif initial</dt><dd>8 000 000 000,00</dd></div><div><dt>Financement</dt><dd>RPI</dd></div><div style="grid-column:1/-1"><dt>Service bénéficiaire</dt><dd>00-61-0-D10-00000 · compte 2441 · 8 000 000 000,00</dd></div></dl></div>'; }
+  function procedure(sansAction) { return '<div class="carte"><h4>Procédure</h4>' + (sansAction ? '' : '<div class="creer"><span class="note">Mise en concurrence · à créer — le dossier naît de la validation des informations du DAO.</span><span class="btn p">Reprendre les informations du DAO</span></div>') + '<dl class="champs"><div><dt>Informations du DAO</dt><dd>brouillon · version 1</dd></div></dl></div>'; }
+  function jalons(n) {
+    return '<div class="carte"><h4>Jalons</h4><table class="jal"><thead><tr><th>Jalon</th><th>Prévu</th><th>Réel</th></tr></thead><tbody>' + JALONS.slice(0, n || 4).map(function (j) {
+      return '<tr><td>' + esc(j[0]) + '</td><td>' + j[1] + '</td><td>' + (j[2] ? '<b>' + j[2] + '</b>' : j[3] === 'retard' ? '<span class="r">prévu dépassé de ' + j[4] + ' j</span>' : '<span class="nr">non renseigné</span>') + '</td></tr>';
+    }).join('') + '</tbody></table><span class="btn" style="justify-self:start">Voir les 28 jalons</span></div>';
+  }
+  function legende() { return '<p class="note">Couleur des lignes : ■ à lancer ■ en préparation ou à la Commission ■ lancée ou au marché □ sans étape définie</p>'; }
+  var R = {
+    a: function () { return titre() + '<div>' + vues() + '</div><div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">' + filtres(true) + '</div>' + legende() + '<div class="volets">' + liste() + '<div class="pile">' + tete() + fiche() + procedure() + jalons() + '</div></div>'; },
+    b: function () {
+      return titre() + '<div style="display:flex;gap:10px 14px;flex-wrap:wrap;align-items:flex-end;justify-content:space-between">' + vues() + '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">' + filtres(false) + '</div></div>' +
+        '<div class="volets">' + liste() + '<div class="carte">' + tete() + '<div class="sous-onglets"><span>Fiche officielle</span><span class="on">Procédure</span><span>Jalons (28)</span></div>' +
+        '<div class="creer"><span class="note">Mise en concurrence · à créer — le dossier naît de la validation des informations du DAO.</span><span class="btn p">Reprendre les informations du DAO</span></div><dl class="champs"><div><dt>Informations du DAO</dt><dd>brouillon · version 1</dd></div></dl></div></div>';
+    },
+    c: function () {
+      return titre() + '<div style="display:flex;gap:10px 14px;flex-wrap:wrap;align-items:flex-end;justify-content:space-between">' + vues() + '<div class="champ"><label>Rechercher</label><span class="ctl large">Objet, mode, nature, compte…</span></div></div>' +
+        '<div class="volets">' + liste(true) + '<div class="pile">' + tete() + '<div class="action"><span><b>Prochaine action :</b> reprendre les informations du DAO (brouillon, version 1)</span><span class="btn p">Reprendre les informations du DAO</span></div>' +
+        '<div class="deux">' + fiche() + procedure(true) + '</div>' + jalons() + '</div></div>';
+    },
+    d: function () {
+      var rows = L.map(function (l) { return '<tr class="' + (l.on ? 'on' : '') + '"><td>' + esc(l.o) + '</td><td>' + esc(l.mode) + '</td><td class="num">' + l.mt + '</td><td><span class="pastille ' + l.e[1] + '">' + esc(l.e[0]) + '</span></td><td>' + esc(l.j) + '</td></tr>'; }).join('');
+      return titre() + '<div style="display:flex;gap:10px 14px;flex-wrap:wrap;align-items:flex-end;justify-content:space-between">' + vues() + '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">' + filtres(false) + '</div></div>' +
+        '<div class="avec-tiroir"><table class="dense"><thead><tr><th>Objet</th><th>Mode</th><th>Montant estimatif</th><th>Étape</th><th>Prochain jalon</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+        '<aside class="tiroir"><div style="display:flex;justify-content:space-between;gap:8px"><span class="surtitre">Ligne choisie</span><span class="btn">✕ Fermer</span></div>' + tete() + procedure() + jalons(3) + '</aside></div>';
+    },
+    e: function () {
+      var facettes = '<aside class="facettes"><div><h4>Étape</h4><ul><li><span>À lancer</span><span>10</span></li><li class="on"><span>En préparation</span><span>1</span></li><li><span>À la Commission</span><span>0</span></li><li><span>Lancée</span><span>0</span></li><li><span>Sans étape définie</span><span>23</span></li></ul></div>' +
+        '<div><h4>Mode</h4><ul><li><span>Appel d’offres ouvert</span><span>9</span></li><li><span>Gré à gré</span><span>2</span></li><li><span>Consultation de prix</span><span>23</span></li></ul></div><div><h4>Nature</h4><ul><li><span>Travaux</span><span>33</span></li><li><span>Fournitures</span><span>1</span></li></ul></div></aside>';
+      return titre() + '<div style="display:flex;gap:10px 14px;flex-wrap:wrap;align-items:flex-end;justify-content:space-between">' + vues() + '<div class="champ"><label>Rechercher</label><span class="ctl large">Objet, mode, nature, compte…</span></div></div>' +
+        '<div class="trois">' + facettes + '<ul class="liste">' + '<li class="on"><span class="o">' + esc(L[1].o) + '</span><span class="mt">' + L[1].mt + '</span><span class="m">' + esc(L[1].mode) + '</span><span class="pastille p-examen">Informations du DAO</span></li></ul><div class="pile">' + tete() + procedure() + jalons() + '</div></div>';
+    },
+    f: function () {
+      var frise = '<ul class="frise">' + JALONS.map(function (j) {
+        var cls = j[2] ? 'fait' : j[3] === 'retard' ? 'retard' : '';
+        return '<li><span class="rail"><span class="pt ' + cls + '"></span><span class="tr"></span></span><span class="t">' + esc(j[0]) + '<small>prévu le ' + j[1] + '</small></span><span class="d">' + (j[2] ? '<b>fait le ' + j[2] + '</b>' : j[3] === 'retard' ? '<span class="r">dépassé de ' + j[4] + ' j</span>' : '<span class="nr">non renseigné</span>') + '</span></li>';
+      }).join('') + '</ul>';
+      return titre() + '<div style="display:flex;gap:10px 14px;flex-wrap:wrap;align-items:flex-end;justify-content:space-between">' + vues() + '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">' + filtres(false) + '</div></div>' +
+        '<div class="volets">' + liste() + '<div class="pile">' + tete() +
+        '<div class="resume"><div><b>1 / 28</b><span>jalons réalisés</span></div><div><b class="r">3</b><span>jalons prévus dépassés</span></div><div><b>06/03/2026</b><span>lancement prévu</span></div><div><b>Informations du DAO</b><span>brouillon · version 1</span></div></div>' +
+        '<div class="deux"><div class="carte"><h4>Jalons</h4>' + frise + '</div><div class="pile">' + procedure() + fiche() + '</div></div></div></div>';
+    },
+  };
+  function rendre() {
+    document.getElementById('ecran').innerHTML = R[actif]();
+    var d = D.filter(function (x) { return x.id === actif; })[0];
+    document.getElementById('avis').innerHTML = '<div><span class="surtitre">Pour</span><ul>' + d.pour.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul></div><div><span class="surtitre">Contre</span><ul>' + d.contre.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul></div>';
+    Array.prototype.forEach.call(document.querySelectorAll('#choix button'), function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-d') === actif ? 'true' : 'false'); });
+  }
+  document.getElementById('choix').innerHTML = D.map(function (d) { return '<button type="button" data-d="' + d.id + '" aria-pressed="false"><b>' + esc(d.nom) + '</b><span>' + esc(d.d) + '</span></button>'; }).join('');
+  document.getElementById('choix').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; actif = b.getAttribute('data-d'); rendre(); });
+  rendre();
+})();
+</script>

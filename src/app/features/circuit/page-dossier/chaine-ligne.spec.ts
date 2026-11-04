@@ -1,5 +1,9 @@
-import { FiliationDossier, LigneEligible, NoeudFiliation } from '../../../models';
-import { dossiersDeLaLigne, etapeACreer } from './chaine-ligne';
+import { signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+
+import { FiliationDossier, LigneEligible, Marche, NoeudFiliation } from '../../../models';
+import { ChaineLigne, ChainesDuPlan, dossiersDeLaLigne, etapeACreer, referenceNoeud } from './chaine-ligne';
 
 /** ⚠️ 03/11 (pilote) — la chaîne d'une ligne du plan : ses dossiers, puis l'étape suivante à créer. */
 describe('dossiersDeLaLigne', () => {
@@ -70,5 +74,45 @@ describe('etapeACreer', () => {
     expect(etapeACreer(undefined, 'Gré à gré', [n('MISE_EN_CONCURRENCE', 'EN_EXAMEN')], ligne)).toMatchObject({ bouton: null, intitule: 'Dossier de marché' });
     expect(etapeACreer(undefined, 'Gré à gré', [n('MISE_EN_CONCURRENCE', 'CLOTURE')], ligne)).toMatchObject({ bouton: 'Créer le marché de gré à gré', params: { famille: 'DDM', sousType: 'MGG', ligne: 10 } });
     expect(etapeACreer(undefined, 'Gré à gré', [n('MISE_EN_CONCURRENCE', 'CLOTURE'), n('MARCHE', 'BROUILLON')], ligne)).toBeNull();
+  });
+});
+
+/** ⚠️ 04/11 (pilote) — dans le volet du plan, le contenu de chaque dossier est affiché : la chaîne n'en rend plus les maillons. */
+describe('ChaineLigne — choix d’un maillon', () => {
+  const noeud = (id: number, lien: string, enfants: NoeudFiliation[] = [], ligne: number | null = null): NoeudFiliation => ({
+    idDossier: id, refeDossier: `0000${id}`, idTypeDossier: null, idSousType: null, statut: 'CLOTURE', dateRef: null, lien, lot: null,
+    ligne: ligne == null ? null : { idDetail: ligne, objet: 'x' }, masque: false, enfants,
+  });
+  const source = {
+    chargement: signal(false), erreur: signal(false), creation: signal(false), eligibles: signal<LigneEligible[]>([]), modes: signal(new Map()),
+    filiation: signal<FiliationDossier | null>({ idDossierDemande: 1, racine: noeud(1, 'RACINE', [noeud(2, 'MISE_EN_CONCURRENCE', [noeud(3, 'MARCHE')], 10)]) }),
+    charger: () => undefined,
+  };
+
+  it('sans maillons : aucun dossier rendu ; sans étape à créer non plus, le composant s’efface (display none)', async () => {
+    TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: ChainesDuPlan, useValue: source }] });
+    const f = TestBed.createComponent(ChaineLigne);
+    f.componentRef.setInput('marche', { idDetail: 10, idDossier: 1, designationMarche: 'Routes' } as Marche);
+    await f.whenStable();
+    const hote = f.nativeElement as HTMLElement;
+    expect(hote.querySelectorAll('.cl__maillon').length).toBe(2);
+    expect(hote.style.display).toBe('');
+    f.componentRef.setInput('maillons', false);
+    await f.whenStable();
+    expect(hote.querySelectorAll('.cl__maillon').length).toBe(0);
+    expect(hote.style.display).toBe('none');
+    // Une ligne sans aucun dossier : « Aucune procédure lancée » reste visible.
+    f.componentRef.setInput('marche', { idDetail: 99, idDossier: 1, designationMarche: 'Rien' } as Marche);
+    await f.whenStable();
+    expect(hote.style.display).toBe('');
+    expect(hote.textContent).toContain('Aucune procédure lancée');
+  });
+});
+
+describe('referenceNoeud', () => {
+  it('la référence ; sans elle, brouillon, ou déposé en attente de sa référence', () => {
+    expect(referenceNoeud('00002/DAOO/CNM/2026', 'CLOTURE', 1)).toBe('00002/DAOO/CNM/2026');
+    expect(referenceNoeud(null, 'BROUILLON', 7)).toBe('Brouillon #7');
+    expect(referenceNoeud(null, 'SOUMIS', 100402)).toBe('Dossier #100402 · référence à la réception');
   });
 });

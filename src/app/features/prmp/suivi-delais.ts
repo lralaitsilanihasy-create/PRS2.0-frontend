@@ -9,7 +9,7 @@ import { messageSoumissionRefusee } from '../../shared/circuit/controles-libelle
 import { ToastService } from '../../core/notifications/toast.service';
 import { VacanceStore } from '../../core/vacance/vacance.store';
 import { Dossier, Reception } from '../../models';
-import { DossierService, EntiteContractService, LocaliteService, ReceptionService, ReferenceLookupService } from '../../services';
+import { DossierService, EntiteContractService, LocaliteService, ReceptionService, ReferenceLookupService, SousTypeDossierService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { ReputeApprouve, StatutBadge, traitementCnmTermine } from '../../shared/circuit';
 import { FamilleDossier, LIBELLES_FAMILLE, familleDossier } from '../circuit/dossier/famille-dossier';
@@ -97,6 +97,8 @@ export function etatSuivi(d: Pick<Dossier, 'statut' | 'attentePrmp'>): EtatSuivi
                    que le reste de l'app (libellés Initial/Numéroté/… via statutDossierLabel). -->
               <tr>
                 <th scope="col">Référence</th>
+                <!-- ⚠️ 03/11 (pilote, lot 6) — chaque dossier se nomme par l'objet de son marché. -->
+                <th scope="col">Objet du marché</th>
                 <th scope="col">Type</th>
                 <th scope="col">Entité contractante</th>
                 <th scope="col">Localité</th>
@@ -112,7 +114,8 @@ export function etatSuivi(d: Pick<Dossier, 'statut' | 'attentePrmp'>): EtatSuivi
                   <!-- Ligne cliquable : la référence est un vrai lien (nom accessible + clavier, Ctrl+clic
                        = nouvel onglet) dont la zone cliquable est étendue à la ligne (overlay ::after) —
                        pas de (click) sur <tr>. Lot L4-F6 : il mène à la PAGE du dossier. -->
-                  <td><a class="lien-ligne" [routerLink]="lien.commandes(d.idDossier)" [queryParams]="lien.params()">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</a></td>
+                  <td><a class="lien-ligne" [routerLink]="lien.commandes(d.idDossier)" [queryParams]="lien.params()">{{ referenceAffichee(d) }}</a></td>
+                  <td class="sdl-objet">@if (d.objetMarche) { {{ d.objetMarche }}@if (d.lot != null) { <span class="sdl-lot">· lot {{ d.lot }}</span> } } @else { — }</td>
                   <!-- Type de dossier en CODE concis (sous-type de la référence, ex. PPM-AGPM ; repli famille). -->
                   <td>{{ typeDossierLabel(d) }}</td>
                   <td class="sdl-entite">{{ entiteLabel(d) }}</td>
@@ -230,6 +233,8 @@ export function etatSuivi(d: Pick<Dossier, 'statut' | 'attentePrmp'>): EtatSuivi
        de clôture superposables. La référence et les dates restent d'un seul tenant. */
     .sdl-table th, .sdl-table td { padding-left: 0.6rem; padding-right: 0.6rem; }
     .sdl-table th { white-space: normal; vertical-align: bottom; }
+    .sdl-table td.sdl-objet { white-space: normal; min-width: 14rem; max-width: 26rem; line-height: 1.35; }
+    .sdl-lot { color: var(--texte-secondaire); white-space: nowrap; }
     .sdl-table td.sdl-entite { white-space: normal; min-width: 9rem; max-width: 15rem; line-height: 1.35; }
     .sdl-table td.sdl-fin { white-space: normal; min-width: 6.5rem; }
     .sdl-table td.sdl-fin .cnm-fin-cloture { display: inline-block; }
@@ -259,6 +264,8 @@ export class SuiviDelais {
   }
   /** Libellés d'entité contractante / localité (cache partagé) — colonnes du tableau, sans appel par ligne. */
   private readonly entiteMap = signal<Map<string, string>>(new Map());
+  /** Sous-type → libellé (« RJ » → « Rapport justificatif (gré à gré) ») : le nom d'un brouillon sans référence. */
+  private readonly sousTypes = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
   /** Libellé de section : « Domaine UGPM » pour un compte UGPM, « Domaine PRMP » sinon (écran partagé). */
   protected readonly domaine = this.auth.domainePrmpLabel;
@@ -309,7 +316,7 @@ export class SuiviDelais {
     const et = this.etatFiltre();
     return this.dossiers().filter((d) =>
       (!fm || familleDossier(d) === fm) && (!et || etatSuivi(d) === et)
-      && (!q || `${d.refeDossier ?? ''} ${d.idSousType ?? ''} ${d.idTypeDossier ?? ''} ${d.idDossier}`.toLowerCase().includes(q)));
+      && (!q || `${d.refeDossier ?? ''} ${d.idSousType ?? ''} ${d.idTypeDossier ?? ''} ${d.idDossier} ${d.objetMarche ?? ''}`.toLowerCase().includes(q)));
   });
   basculerEtat(e: EtatSuivi): void { this.etatFiltre.set(this.etatFiltre() === e ? null : e); }
   basculerFamille(f: FamilleDossier): void { this.familleFiltre.set(this.familleFiltre() === f ? null : f); }
@@ -319,6 +326,7 @@ export class SuiviDelais {
     // Libellés d'entité / localité (cache partagé) — colonnes « Entité contractante » / « Localité ».
     this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).subscribe((m) => this.entiteMap.set(m));
     this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']).subscribe((m) => this.localiteMap.set(m));
+    this.lookups.lookup(SousTypeDossierService, 'idSousType', ['libelleSousType']).subscribe((m) => this.sousTypes.set(m));
   }
 
   charger(): void {
@@ -360,6 +368,16 @@ export class SuiviDelais {
    */
   enregistrement(d: Dossier): string | null {
     return d.dateEnregistrement ?? this.receptions().get(d.idDossier)?.dateReception ?? null;
+  }
+
+  /**
+   * ⚠️ 03/11 (lot 6) — la référence, ou pour un brouillon (sans référence) son sous-type en clair : « Rapport justificatif · brouillon »
+   * plutôt que « Dossier #100400 ». L'objet du marché a sa propre colonne.
+   */
+  referenceAffichee(d: Dossier): string {
+    if (d.refeDossier) return d.refeDossier;
+    const st = d.idSousType ? this.sousTypes().get(d.idSousType) : null;
+    return st ? `${st} · brouillon` : `Dossier #${d.idDossier}`;
   }
 
   /** Type de dossier en CODE concis (`idSousType`, ex. « PPM-AGPM » ; repli famille `idTypeDossier`). */

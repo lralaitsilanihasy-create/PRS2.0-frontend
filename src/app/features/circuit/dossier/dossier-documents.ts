@@ -23,7 +23,6 @@ import { DossierVersions } from './dossier-versions';
 import { FichePresentationDaoDoc } from './fiche-presentation-dao';
 import { PlanDuDossierDao } from './plan-du-dossier-dao';
 import { FicheMarcheDossier } from '../page-dossier/fiche-marche-dossier';
-import { ChaineLigne, ChainesDuPlan } from '../page-dossier/chaine-ligne';
 import { avecProcedure, ficheDuDossier } from './dossier-pieces';
 import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marche-docs';
 
@@ -35,9 +34,7 @@ import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marc
 @Component({
   selector: 'app-dossier-documents',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PpmMarchesTable, FichePresentationDoc, AgpmDoc, DocumentVisionneuse, DossierPieces, DossierVersions, DossierInstantanes, ControlesDossier, CalendrierAnnuel, PublicationAgpmPanneau, FicheDaoDoc, FichePresentationDaoDoc, PlanDuDossierDao, CanevasRapportDoc, BordereauEstimatifDoc, AvisSpecifiqueDoc, FicheMarcheDossier, SeanceMarcheDoc, EvaluationMarcheDoc, PvCnmDoc, ChaineLigne],
-  // ⚠️ 03/11 (pilote) — la chaîne de chaque ligne du plan : filiation et lignes éligibles lues une fois pour tout le tableau.
-  providers: [ChainesDuPlan],
+  imports: [PpmMarchesTable, FichePresentationDoc, AgpmDoc, DocumentVisionneuse, DossierPieces, DossierVersions, DossierInstantanes, ControlesDossier, CalendrierAnnuel, PublicationAgpmPanneau, FicheDaoDoc, FichePresentationDaoDoc, PlanDuDossierDao, CanevasRapportDoc, BordereauEstimatifDoc, AvisSpecifiqueDoc, FicheMarcheDossier, SeanceMarcheDoc, EvaluationMarcheDoc, PvCnmDoc],
   host: { '[class.dc-documents--borne]': 'panneauBorne()' },
   template: `
     @if (contenu.estPpm()) {
@@ -87,10 +84,7 @@ import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marc
           <!-- ⚠️ V118 (15/10) — la publication de l'AGPM se dépose une fois sur le plan contrôlé ; chaque dossier du plan la reprend. -->
           <app-publication-agpm [idDossier]="contenu.dossier().idDossier" [plan]="true" />
           <app-document-visionneuse [interrupteur]="true" [(annotations)]="annotationsDoc" [class.doc-entete-collante]="panneauBorne() || enteteCollante()">
-            <app-ppm-marches-table [marches]="contenu.marches()" [beneficiaires]="contenu.serviceBenefs()" [previsions]="contenu.previsions()" [changements]="contenu.changements()" [legendeTitre]="contenu.legendeChangements()" [detailsChangements]="contenu.detailsChangements()">
-              <!-- ⚠️ 03/11 (pilote) — un clic sur une ligne ouvre sa chaîne : ses dossiers, et l’étape suivante à créer. -->
-              <ng-template #detailLigne let-m><app-chaine-ligne [marche]="m" /></ng-template>
-            </app-ppm-marches-table>
+            <app-ppm-marches-table [marches]="contenu.marches()" [beneficiaires]="contenu.serviceBenefs()" [previsions]="contenu.previsions()" [changements]="contenu.changements()" [legendeTitre]="contenu.legendeChangements()" [detailsChangements]="contenu.detailsChangements()" />
           </app-document-visionneuse>
         </div>
       }
@@ -311,11 +305,13 @@ export class DossierDocuments {
   readonly ongletChoisi = signal<OngletDossier | null>(null);
   /** ⚠️ 18/10 (pilote) — sur la page du dossier né d'une fiche, la modale impose l'élément ouvert : pas de barre d'onglets. */
   readonly ongletImpose = input<OngletDossier | null>(null);
+  /** ⚠️ 04/11 (pilote, plan de passation) — des éléments que l'hôte ne montre pas, parce que son écran les affiche déjà ailleurs. */
+  readonly ongletsMasques = input<readonly OngletDossier[]>([]);
   /** Un renvoi de la liste des pièces, en mode imposé : l'hôte change l'élément de sa modale. */
   readonly ongletDemande = output<OngletDossier>();
   /** La fiche a été détachée depuis la modale : l'hôte relit le dossier. */
   readonly liaisonChangee = output<void>();
-  readonly documents = computed<DocumentDuDossier[]>(() => documentsDuDossier(this.contenu));
+  readonly documents = computed<DocumentDuDossier[]>(() => documentsDuDossier(this.contenu).filter((o) => !this.ongletsMasques().includes(o.cle)));
   voirOnglet(o: OngletDossier): void {
     if (this.ongletImpose()) this.ongletDemande.emit(o);
     else this.ongletChoisi.set(o);
@@ -326,7 +322,8 @@ export class DossierDocuments {
   /** ⚠️ 20/10 — la fiche de la procédure : celle du dossier, ou celle dont procède le dossier de marché. */
   readonly idFiche = computed(() => ficheDuDossier(this.contenu.dossier()));
   readonly avecProc = computed(() => avecProcedure(this.contenu.dossier()));
-  readonly ongletProcedure = computed(() => this.ongletImpose() ?? this.ongletChoisi() ?? (this.avecProc() ? 'presentation' : 'pieces'));
+  // Ouverture sur le premier élément (la fiche de présentation d'un dossier né d'une fiche, sinon les pièces) — le premier VISIBLE, si l'hôte en masque.
+  readonly ongletProcedure = computed(() => this.ongletImpose() ?? this.ongletChoisi() ?? this.documents()[0]?.cle ?? 'pieces');
   readonly ongletsProcedure = computed(() => !this.ongletImpose()
     && (this.avecProc() || this.contenu.instantanesVisible() || this.contenu.controlesVisible()));
   private readonly pvService = inject(PvExamenService);

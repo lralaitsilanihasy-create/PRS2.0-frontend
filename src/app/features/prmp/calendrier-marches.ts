@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { NgTemplateOutlet } from '@angular/common';
 
@@ -35,6 +35,8 @@ interface AlerteJalon {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="cj">
+      <!-- ⚠️ 03/11 (pilote) — encastré dans l'écran du plan (onglet « Calendrier des jalons ») : ni en-tête de page ni introduction. -->
+      @if (!encastre()) {
       <header class="page-header">
         <div>
           <div class="page-subtitle">Domaine PRMP</div>
@@ -46,6 +48,7 @@ interface AlerteJalon {
         <strong>réelle</strong> de chaque processus <strong>CAPM</strong>, et une alerte quand un jalon est
         <strong>imminent</strong> ou <strong>en retard</strong>. Les dates prévues s'éditent dans le dossier, via « CAPM » sur la ligne.
       </p>
+      }
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
@@ -147,6 +150,11 @@ export class CalendrierMarches implements OnInit {
   /** Seuil d'imminence par défaut quand aucune règle d'alerte active ne vise le jalon. */
   private static readonly SEUIL_DEFAUT_JOURS = 7;
 
+  /** ⚠️ 03/11 (pilote) — encastré dans l'écran du plan : sans en-tête de page ni introduction. */
+  readonly encastre = input(false);
+  /** ⚠️ 03/11 — les seules lignes de ce plan (dossier) ; `null` = toutes les lignes des plans de la PRMP. */
+  readonly idDossier = input<number | null>(null);
+
   readonly loading = signal(true);
   private readonly capmsTous = signal<Capm[]>([]);
   private readonly marches = signal<Marche[]>([]);
@@ -181,7 +189,7 @@ export class CalendrierMarches implements OnInit {
     }
     const aujourdhui = this.isoJour(maintenantServeur());
     return this.marches()
-      .filter((m) => !m.supprimee)
+      .filter((m) => !m.supprimee && (this.idDossier() == null || m.idDossier === this.idDossier()))
       .map((m) => {
         const jalons: Record<number, { prevu?: string; prevuIso?: string; reel?: string }> = {};
         for (const p of prevParDetail.get(m.idDetail) ?? []) {

@@ -43,6 +43,11 @@
   --examen-fond: #FFF1C2;    --examen-texte: #7A5600;
   --favorable-fond: #E3F4EA; --favorable-texte: #187547;
   --neutre-fond: #ECEEF1;    --neutre-texte: #3C4043;
+  /* ⚠️ 03/11 (pilote, « couleurs vives ») — les lignes du plan de passation selon leur étape : à lancer, en préparation ou à la
+     Commission, lancée ou au marché. Fonds VIFS sous le texte courant (--texte), mesurés par scripts/contrastes-coquille.mjs. */
+  --suivi-lancer-fond: #7FB8F5;
+  --suivi-examen-fond: #FFC93C;
+  --suivi-favorable-fond: #5ED18A;
   --bandeau-1: #FFFFFF; --bandeau-2: #C8102E; --bandeau-3: #007A3D;
   /* ⚠️ 02/11 (pilote) — le portail public : un fond par public. PRMP & UGPM garde la bande du menu ; la CNM et les entreprises
      prennent le vert et le rouge du bandeau, assombris pour le blanc et l’or (scripts/contrastes-coquille.mjs). */

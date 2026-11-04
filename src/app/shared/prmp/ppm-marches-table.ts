@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, TemplateRef, computed, contentChild, inject, input, model, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, TemplateRef, computed, contentChild, inject, input, output, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { Marche, MarchePrevision, ServiceBeneficiaire, TypeChangementLigne } from '../../models';
 import {
@@ -126,8 +126,7 @@ const CLASSE_COLONNE: Readonly<Record<ChampPpmOfficiel, string>> = {
             @for (b of m.beneficiaires; track $index; let first = $first) {
               <tr
                 [class]="classeLigne(m)"
-                [class.doc-ligne--cliquable]="(!!rowStateFn() && etatLigne !== 'hors') || (!!detailTpl() && !!m.source)"
-                [class.doc-ligne--ouverte]="ligneOuverte() === m.idDetail"
+                [class.doc-ligne--cliquable]="!!rowStateFn() && etatLigne !== 'hors'"
                 [attr.title]="annot() ? detailDe(m) : null"
                 (click)="onRowClick(m)"
               >
@@ -176,20 +175,11 @@ const CLASSE_COLONNE: Readonly<Record<ChampPpmOfficiel, string>> = {
                       } @else {
                         <span class="doc-texte" [appTexteCesure]="valeur(m, b, c.champ)"></span>
                       }
-                      @if (c.champ === 'attribution' && avecStatutsEnMarge() && m.statut && detailTpl() && m.source) {
-                        <!-- ⚠️ 03/11 (pilote) — l'étiquette de statut ouvre aussi la chaîne de la ligne : le geste du clavier. -->
-                        @let suivi = suiviDe(m);
-                        @if (suivi) {
-                          <!-- ⚠️ 03/11 (lot 2) — l'écran du plan remplace le statut par le suivi de la ligne (étape, ce qui la porte). -->
-                          <button type="button" class="doc-annot doc-statut doc-statut--bouton" [class]="'doc-statut--' + suivi.famille"
-                            [attr.aria-expanded]="ligneOuverte() === m.idDetail"
-                            [attr.title]="suivi.libelle + (suivi.precision ? ' · ' + suivi.precision : '') + ' — statut du marché : ' + m.statut + ' — afficher la chaîne de la procédure'"
-                            (click)="basculer($event, m)"><span class="cnm-sr-only">Chaîne de la procédure de la ligne, étape : </span>{{ suivi.libelle }}@if (suivi.precision) {<span class="doc-statut__precision">{{ suivi.precision }}</span>}</button>
-                        } @else {
-                          <button type="button" class="doc-annot doc-statut doc-statut--bouton" [attr.aria-expanded]="ligneOuverte() === m.idDetail"
-                            [attr.title]="'Statut du marché : ' + m.statut + ' — afficher la chaîne de la procédure'"
-                            (click)="basculer($event, m)"><span class="cnm-sr-only">Chaîne de la procédure de la ligne, statut : </span><span [appTexteCesure]="m.statut"></span></button>
-                        }
+                      @if (c.champ === 'attribution' && avecStatutsEnMarge() && m.statut && suiviDe(m); as suivi) {
+                        <!-- ⚠️ 03/11 (pilote) — l'écran du plan remplace le statut par le suivi de la ligne (étape, ce qui la porte), teinté comme
+                             la ligne. Une ANNOTATION de consultation : ni la ligne ni son étiquette ne sont cliquables. -->
+                        <span class="doc-annot doc-statut" [class]="'doc-statut--' + suivi.famille"
+                          [attr.title]="suivi.libelle + (suivi.precision ? ' · ' + suivi.precision : '') + ' — statut du marché : ' + m.statut"><span class="cnm-sr-only">Étape de la ligne : </span>{{ suivi.libelle }}@if (suivi.precision) {<span class="doc-statut__precision">{{ suivi.precision }}</span>}</span>
                       } @else if (c.champ === 'attribution' && avecStatutsEnMarge() && m.statut) {
                         <span class="doc-annot doc-statut" [attr.title]="'Statut du marché : ' + m.statut"><span class="cnm-sr-only">Statut du marché : </span><span [appTexteCesure]="m.statut"></span></span>
                       }
@@ -206,13 +196,6 @@ const CLASSE_COLONNE: Readonly<Record<ChampPpmOfficiel, string>> = {
                     }
                   </td>
                 }
-              </tr>
-            }
-            @if (ligneOuverte() === m.idDetail && m.source && detailTpl(); as tpl) {
-              <tr class="doc-detail-ligne">
-                <td [attr.colspan]="colonnes.length + (actionsTpl() ? 1 : 0)">
-                  <ng-container [ngTemplateOutlet]="tpl" [ngTemplateOutletContext]="{ $implicit: m.source }" />
-                </td>
               </tr>
             }
           } @empty {
@@ -241,19 +224,12 @@ export class PpmMarchesTable implements OnInit {
   /** Colonne d'outils optionnelle, HORS document : template projeté `#rowActions` (contexte = le `Marche`). */
   readonly actionsTpl = contentChild<TemplateRef<unknown>>('rowActions');
   /**
-   * ⚠️ 03/11 (pilote) — détail d'une ligne, HORS document : template projeté `#detailLigne` (contexte = le `Marche`), ouvert sous la
-   * ligne au clic (une ligne à la fois). Sans effet sur un tableau d'examen (`rowStateFn`), dont le clic de ligne a son propre sens.
-   */
-  readonly detailTpl = contentChild<TemplateRef<unknown>>('detailLigne');
-  /** La ligne dont le détail est ouvert (`idDetail`), `null` = aucune. Liable (`[(ligneOuverte)]`) : l'écran du plan la garde d'une présentation à l'autre. */
-  readonly ligneOuverte = model<number | null>(null);
-  /**
    * ⚠️ 03/11 (lot 2) — suivi d'une ligne, à la place du statut dans l'étiquette de marge (écran du plan) : libellé, précision, famille
    * de couleur. `null` (défaut) = le statut du marché, comme partout ailleurs.
    */
-  readonly suiviFn = input<((m: Marche) => { libelle: string; precision: string | null; famille: 'neutre' | 'examen' | 'favorable' } | null) | null>(null);
+  readonly suiviFn = input<((m: Marche) => { libelle: string; precision: string | null; famille: 'neutre' | 'examen' | 'favorable'; teinte?: 'lancer' | 'examen' | 'favorable' | null } | null) | null>(null);
 
-  suiviDe(m: LigneAffichee): { libelle: string; precision: string | null; famille: 'neutre' | 'examen' | 'favorable' } | null {
+  suiviDe(m: LigneAffichee): { libelle: string; precision: string | null; famille: 'neutre' | 'examen' | 'favorable'; teinte?: 'lancer' | 'examen' | 'favorable' | null } | null {
     const f = this.suiviFn();
     return f && m.source ? f(m.source) : null;
   }
@@ -502,6 +478,8 @@ export class PpmMarchesTable implements OnInit {
       this.etatDe(m) === 'current' ? 'doc-ligne--courante' : '',
       chg ? 'doc-chg--' + chg.toLowerCase() : '',
       m.source?.supprimee ? 'doc-ligne--supprimee' : '',
+      // ⚠️ 03/11 (pilote, modèle M3) — la ligne au fond pastel de son étape (écran du plan) : une annotation, masquée avec les autres.
+      this.suiviDe(m)?.teinte ? 'doc-suivi-ligne--' + this.suiviDe(m)!.teinte : '',
     ]
       .filter(Boolean)
       .join(' ');
@@ -528,15 +506,11 @@ export class PpmMarchesTable implements OnInit {
   }
   /** Clic sur une ligne : ne réémet que si un état séquentiel est actif ET la ligne n'est pas hors examen. */
   onRowClick(m: LigneAffichee): void {
+    // ⚠️ 03/11 (pilote) — hors examen, le plan est une CONSULTATION : ni la ligne ni son étiquette ne s'ouvrent (le détail d'une ligne
+    // se lit dans la présentation « Deux volets » de l'écran du plan).
     if (m.source && this.rowStateFn() && this.etatDe(m) !== 'hors') this.rowClick.emit(m.source);
-    else if (m.source && this.detailTpl()) this.ligneOuverte.update((id) => (id === m.idDetail ? null : m.idDetail));
   }
 
-  /** ⚠️ 03/11 — l'étiquette de statut (bouton) : même bascule que le clic de ligne, sans le compter deux fois. */
-  basculer(ev: Event, m: LigneAffichee): void {
-    ev.stopPropagation();
-    this.ligneOuverte.update((id) => (id === m.idDetail ? null : m.idDetail));
-  }
 
   private lbl(map: Map<string, string>, id?: number): string {
     return id === null || id === undefined ? '' : map.get(String(id)) ?? `#${id}`;

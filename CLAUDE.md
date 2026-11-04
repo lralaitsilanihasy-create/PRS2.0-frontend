@@ -162,7 +162,9 @@ Inventaire, décisions du pilote (Q1-Q6) et plan : `docs/design-institutionnel-i
   vient **juste après « À faire », avant Dossiers** : c'est leur écran de travail (document officiel ou deux volets au choix,
   suivi et détail de chaque ligne). Ce qui concerne une ligne part du plan ; le menu garde le plan et les listes qui traversent
   toutes les lignes. « Mettre à jour un PPM » et « Calendrier des jalons » sont des boutons du plan, plus des entrées de menu ;
-  Passation = « Appels d'offres en cours » (`?etape=lance`), Reçus des frais de dossier, Dossiers de marché.
+  Passation = « Appels d'offres en cours » (`?etape=lance`), Reçus des frais de dossier — « Dossiers de marché » est RETIRÉ depuis le
+  04/11 (redondances, temps 1) : la ligne du plan crée le dossier de marché, et sa rangée « Procédure en ligne » (`procedure-ligne.ts`,
+  sous la barre du dossier de mise en concurrence) mène à la commission, aux dépôts, aux reçus, à la séance et à l'évaluation.
 - **Espace de travail (pilote, 31/10)** — l'application est COMPACTE (en-tête bleu nuit fondu avec le menu de 36 px, pied
   réduit ; la connexion, l'inscription, le portail public et les espaces externes portent le même en-tête) :
   - une liste dont l'élément s'ouvre se présente en **deux volets** : `app-deux-volets` (`shared/ui/deux-volets.ts`), la

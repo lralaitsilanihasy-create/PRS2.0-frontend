@@ -113,6 +113,19 @@ describe('DossierDocuments — écrans figés d’un dossier de procédure', () 
     expect(el.querySelector('app-dossier-instantanes')).toBeNull();
   });
 
+  it('⚠️ 04/11 (plan de passation) — un élément masqué par l’hôte n’est plus en onglet ; l’ouverture se fait sur le premier visible', () => {
+    const fixture = monter('MEMBRE', INSTANTANES);
+    fixture.componentRef.setInput('ongletsMasques', ['pieces']);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    // La barre du dossier seule : les écrans figés, ouverts, ont leurs propres onglets.
+    const barre = el.querySelector('[role="tablist"][aria-label="Éléments du dossier"]')!;
+    const titres = Array.from(barre.querySelectorAll('[role="tab"]')).map((b) => (b.textContent ?? '').replace(/\s+/g, ' ').trim());
+    expect(titres).toEqual(['Écrans figés 2']);
+    expect(el.querySelector('app-dossier-instantanes')).not.toBeNull();
+    expect(el.querySelector('app-dossier-pieces')).toBeNull();
+  });
+
   it('sans instantané ni contrôle, pas d’onglet : la section des pièces seule, comme avant', () => {
     const el = monter('MEMBRE', []).nativeElement as HTMLElement;
     expect(el.querySelector('[role="tablist"]')).toBeNull();

@@ -74,6 +74,10 @@ const PAIRES = [
   ['Pastille examen', 'examen-texte', 'examen-fond', TEXTE],
   ['Pastille favorable', 'favorable-texte', 'favorable-fond', TEXTE],
   ['Pastille neutre', 'neutre-texte', 'neutre-fond', TEXTE],
+  // ⚠️ 03/11 (pilote) — lignes du plan de passation teintées selon leur étape (couleurs vives).
+  ['Plan : ligne à lancer', 'texte', 'suivi-lancer-fond', TEXTE],
+  ['Plan : ligne en préparation ou à la Commission', 'texte', 'suivi-examen-fond', TEXTE],
+  ['Plan : ligne lancée ou au marché', 'texte', 'suivi-favorable-fond', TEXTE],
   ['Bandeau de section', 'or', 'section-fond', TEXTE],
   ['Lien d’évitement', 'texte-menu', 'bouton-principal', TEXTE],
   // ⚠️ 02/11 (pilote) — les boutons pleins par geste (design commun) : btn-pdf, btn-nuit, btn-ocre, btn-rouge, btn-gris (btn-word = bouton principal, ci-dessus).

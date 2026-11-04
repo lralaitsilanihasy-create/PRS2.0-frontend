@@ -160,7 +160,7 @@ describe('sectionsMenu — dérivation des rubriques', () => {
     expect(sections.map((s) => s.titre)).toEqual(['Mon travail', 'Planification', 'Dossiers', 'Passation', 'Exécution']);
     expect(sections[1].items.map((i) => i.label)).toEqual(['Plan de passation']);
     expect(sections[2].items.map((i) => i.label)).toEqual(['Tous mes dossiers', 'Créer un dossier', 'Mes brouillons']);
-    expect(sections[3].items.map((i) => i.label)).toEqual(['Appels d’offres en cours', 'Reçus des frais de dossier', 'Dossiers de marché']);
+    expect(sections[3].items.map((i) => i.label)).toEqual(['Appels d’offres en cours', 'Reçus des frais de dossier']);
     expect(sections[4].items.map((i) => i.label)).toEqual(['Contrats en vigueur']);
   });
 
@@ -170,7 +170,7 @@ describe('sectionsMenu — dérivation des rubriques', () => {
     expect(sections[0].items.map((i) => i.label)).toEqual(['À faire']);
     expect(sections[1].items.map((i) => i.label)).toEqual(['Plan de passation']);
     expect(sections[2].items.map((i) => i.label)).toEqual(['Tous mes dossiers', 'Créer un dossier']);
-    expect(sections[3].items.map((i) => i.label)).toEqual(['Appels d’offres en cours', 'Reçus des frais de dossier', 'Dossiers de marché']);
+    expect(sections[3].items.map((i) => i.label)).toEqual(['Appels d’offres en cours', 'Reçus des frais de dossier']);
     expect(sections[4].items.map((i) => i.label)).toEqual(['Contrats en vigueur']);
     expect(sections[5].items.map((i) => i.label)).toEqual(['PV et lettres de renvoi', 'Demandes de retrait']);
   });

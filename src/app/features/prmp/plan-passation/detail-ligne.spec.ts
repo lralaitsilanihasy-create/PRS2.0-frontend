@@ -1,5 +1,5 @@
-import { Echeance, LigneEligible, MarchePrevision, NoeudFiliation } from '../../../models';
-import { datesIncoherentes, faitsDeProcedure, jalonsDeLigne, prochainsJalons } from './detail-ligne';
+import { Echeance, MarchePrevision, NoeudFiliation } from '../../../models';
+import { datesIncoherentes, jalonsDeLigne, ongletsMasquesDe, prochainsJalons } from './detail-ligne';
 
 /** ⚠️ 03/11 (pilote, lot 3) — le détail d'une ligne du plan : faits de la procédure, jalons prévus et réels, dates incohérentes. */
 describe('Détail d’une ligne du plan', () => {
@@ -36,14 +36,14 @@ describe('Détail d’une ligne du plan', () => {
     expect(datesIncoherentes([p(10, '2026-03-06'), p(12, '2026-04-17')], capms)).toBeNull();
   });
 
-  it('les faits de la procédure : seulement ce qui existe', () => {
-    const e = { idDetail: 1, dejaDao: true, fiche: { statut: 'VALIDEE', version: 2 }, dossier: { idDossier: 5, refeDossier: '00002/DAOO-CC/CNM/2026', statut: 'CLOTURE' },
-      modeRemise: 'ELECTRONIQUE', nbOffres: 3, attributions: [{ lot: 1, etat: 'PROPOSE', rapportSigneLe: null, propose: null }] } as unknown as LigneEligible;
-    const f = faitsDeProcedure({ avisImprimeLe: '2026-10-28' }, e, []);
-    expect(f.map((x) => x[0])).toEqual(['Informations du DAO', 'Dossier de mise en concurrence', 'Remise des offres', 'Avis spécifique', 'Offres déposées', 'Attribution']);
-    expect(f[3][1]).toBe('imprimé le 28/10/2026');
-    const rj: NoeudFiliation = { idDossier: 9, refeDossier: null, idTypeDossier: 'DMC', idSousType: 'RJ', statut: 'BROUILLON', dateRef: null, lien: 'MISE_EN_CONCURRENCE', lot: null, ligne: null, masque: false, enfants: [] };
-    expect(faitsDeProcedure({}, undefined, [rj])[0][0]).toBe('Rapport justificatif');
-    expect(faitsDeProcedure({}, undefined, [])).toEqual([]);
+  it('⚠️ 04/11 (redondances) — les éléments masqués : le plan partout ; la fiche de présentation sauf au dernier dossier ; DAO et bordereau du marché quand le DAO est affiché', () => {
+    const noeud = (id: number, lien: string): NoeudFiliation => ({ idDossier: id, refeDossier: null, idTypeDossier: null, idSousType: null, statut: 'CLOTURE', dateRef: null, lien, lot: null, ligne: null, masque: false, enfants: [] });
+    const dao = noeud(1, 'MISE_EN_CONCURRENCE'), marche = noeud(2, 'MARCHE'), avenant = noeud(3, 'MODIFICATION');
+    expect(ongletsMasquesDe([dao, marche, avenant], dao)).toEqual(['plan', 'presentation']);
+    expect(ongletsMasquesDe([dao, marche, avenant], marche)).toEqual(['plan', 'fiche-dao', 'bordereau']);
+    expect(ongletsMasquesDe([dao, marche, avenant], avenant)).toEqual(['plan']);
+    // Le DAO seul (procédure en cours) garde sa fiche ; un marché sans DAO affiché (version antérieure du plan) garde ses informations du DAO.
+    expect(ongletsMasquesDe([dao], dao)).toEqual(['plan']);
+    expect(ongletsMasquesDe([marche], marche)).toEqual(['plan']);
   });
 });

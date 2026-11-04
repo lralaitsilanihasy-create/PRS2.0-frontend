@@ -1,0 +1,252 @@
+<title>Plan de passation : modèles de design</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Six traitements visuels du même écran (plan 00001, recette du 03/11) ; palette institutionnelle et couleurs vives du 03/11 seules. */
+:root {
+  --menu-fond: #0C3A5B; --section-fond: #082C47; --onglet-actif-fond: #EAF2FF; --page-fond: #E9EEF3; --carte-fond: #FFFFFF;
+  --tableau-entete: #EEF1F4; --ligne-survol: #F7F8FA; --bordure: #D9DEE3; --bordure-champ: #868E96; --texte: #1F2328;
+  --texte-secondaire: #5F6368; --texte-menu: #FFFFFF; --texte-menu-secondaire: #A9BCCD; --or: #F5B800; --bouton-principal: #2557D6;
+  --retard-fond: #FDE2E2; --retard-texte: #C62828; --examen-fond: #FFF1C2; --examen-texte: #7A5600; --favorable-fond: #E3F4EA;
+  --favorable-texte: #187547; --neutre-fond: #ECEEF1; --neutre-texte: #3C4043; --doc-trait: #1F2328;
+  --suivi-lancer-fond: #7FB8F5; --suivi-examen-fond: #FFC93C; --suivi-favorable-fond: #5ED18A;
+  --police: 'Segoe UI', Roboto, Arial, sans-serif; --police-marque: Georgia, 'Times New Roman', serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page-fond); color: var(--texte); font: 400 14px/1.5 var(--police); font-variant-numeric: tabular-nums; }
+.enveloppe { max-width: 1320px; margin: 0 auto; padding-block: 24px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 22px; }
+h1, h2, h3 { font-weight: 500; margin: 0; text-wrap: balance; }
+h1 { font-size: 1.5rem; } h2 { font-size: 1.15rem; }
+p { margin: 0; max-width: 80ch; }
+.surtitre { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--texte-secondaire); }
+.note { font-size: 0.8125rem; color: var(--texte-secondaire); }
+.choix-modeles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.modele-btn { text-align: left; border: 1px solid var(--bordure-champ); border-radius: 8px; background: var(--carte-fond); color: var(--texte); padding: 10px 12px; font: inherit; cursor: pointer; display: grid; gap: 3px; }
+.modele-btn b { font-weight: 500; }
+.modele-btn span { font-size: 0.78rem; color: var(--texte-secondaire); }
+.modele-btn[aria-pressed="true"] { background: var(--menu-fond); color: var(--texte-menu); border-color: var(--menu-fond); }
+.modele-btn[aria-pressed="true"] span { color: var(--texte-menu-secondaire); }
+button:focus-visible { outline: 3px solid var(--bouton-principal); outline-offset: 2px; }
+.avis { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+.avis .carte { background: var(--carte-fond); border: 1px solid var(--bordure); border-radius: 8px; padding: 10px 14px; display: grid; gap: 4px; }
+.avis ul { margin: 0; padding-left: 18px; font-size: 0.82rem; }
+
+/* Coquille commune */
+.appli { border: 1px solid var(--bordure); border-radius: 8px; overflow: hidden; background: var(--page-fond); }
+.entete { background: var(--section-fond); color: var(--texte-menu); padding: 8px 14px; display: flex; gap: 12px; align-items: center; }
+.marque { font-family: var(--police-marque); font-size: 1.05rem; }
+.marque small { display: block; font-family: var(--police); font-size: 0.68rem; color: var(--texte-menu-secondaire); }
+.barre { background: var(--menu-fond); display: flex; flex-wrap: wrap; padding: 0 6px; }
+.barre span { color: var(--texte-menu); padding: 8px 12px; font-size: 0.8rem; }
+.barre span.on { background: var(--onglet-actif-fond); color: var(--texte); }
+.ecran { padding: 14px; display: grid; gap: 12px; }
+.titre { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: flex-start; justify-content: space-between; }
+.titre h3 { font-size: 1.1rem; display: flex; gap: 10px; align-items: center; }
+.titre p { font-size: 0.78rem; color: var(--texte-secondaire); }
+.pastille { font-size: 0.7rem; padding: 0 8px; border-radius: 999px; background: var(--favorable-fond); color: var(--favorable-texte); font-weight: 500; }
+.btn { border-radius: 4px; padding: 4px 10px; font-size: 0.76rem; font-weight: 500; border: 1px solid var(--bordure-champ); background: var(--carte-fond); color: var(--texte); }
+.n { display: inline-block; min-width: 1.4rem; text-align: center; padding: 0 6px; border-radius: 999px; font-size: 0.7rem; font-weight: 500; border: 1px solid var(--bordure); background: var(--carte-fond); color: var(--texte); }
+
+/* Onglets — variantes */
+.onglets { display: flex; flex-wrap: wrap; gap: 6px; }
+.onglet { display: inline-flex; gap: 8px; align-items: center; padding: 7px 14px; font-size: 0.8rem; border: 1px solid var(--bordure); background: var(--carte-fond); color: var(--texte); }
+.onglet.on { font-weight: 500; }
+
+/* Compteurs — variantes */
+.compteurs { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.compteur { display: grid; gap: 1px; padding: 8px 10px; }
+.compteur b { font-size: 1.05rem; font-weight: 500; }
+.compteur span { font-size: 0.72rem; color: var(--texte-secondaire); display: inline-flex; gap: 5px; align-items: center; }
+.sw { width: 0.7rem; height: 0.7rem; border-radius: 2px; display: inline-block; }
+
+/* Le document */
+.feuille { background: var(--carte-fond); border: 1px solid var(--bordure); border-radius: 6px; padding: 10px; overflow-x: auto; }
+.doc { border-collapse: collapse; width: 100%; min-width: 1040px; font-size: 0.72rem; }
+.doc th { background: var(--tableau-entete); border: 1px solid var(--doc-trait); padding: 4px; font-weight: 500; font-size: 0.64rem; text-transform: uppercase; }
+.doc td { border: 1px solid var(--doc-trait); padding: 5px 6px; vertical-align: top; }
+.doc td.num { text-align: right; white-space: nowrap; }
+.doc td.marge { border: 0; padding: 4px 0 4px 8px; width: 150px; background: var(--carte-fond); }
+.etiq { display: grid; text-align: center; font-size: 0.66rem; line-height: 1.2; padding: 2px 4px; border-radius: 4px; border: 1px solid var(--bordure-champ); background: var(--neutre-fond); color: var(--neutre-texte); }
+.etiq small { font-size: 0.62rem; }
+.puce { display: inline-block; width: 0.65rem; height: 0.65rem; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+
+/* ===== M1 — l'écran actuel (référence) ===== */
+.m1 .onglet { border-top: 4px solid var(--c); border-radius: 6px 6px 0 0; }
+.m1 .onglet.on { background: var(--f); }
+.m1 .panneau { border: 1px solid var(--bordure); border-top: 3px solid var(--menu-fond); border-radius: 0 8px 8px 8px; padding: 10px; background: var(--onglet-actif-fond); display: grid; gap: 10px; }
+.m1 .compteurs { border: 1px solid var(--bordure); border-radius: 8px; background: var(--carte-fond); }
+.m1 .compteur + .compteur { border-left: 1px solid var(--bordure); }
+.m1 tr.t-lancer td:not(.marge) { background: var(--suivi-lancer-fond); }
+.m1 tr.t-examen td:not(.marge) { background: var(--suivi-examen-fond); }
+.m1 tr.t-lancer .etiq { background: var(--suivi-lancer-fond); color: var(--texte); border-color: var(--texte); }
+
+/* ===== M2 — onglets pleins, lignes à filet ===== */
+.m2 .onglet { border-radius: 999px; border: 0; background: var(--neutre-fond); }
+.m2 .onglet.on { background: var(--c); color: var(--cn); }
+.m2 .onglet.on .n { border-color: transparent; }
+.m2 .panneau { display: grid; gap: 10px; }
+.m2 .compteurs { gap: 8px; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
+.m2 .compteur { background: var(--carte-fond); border: 1px solid var(--bordure); border-radius: 8px; border-top: 4px solid var(--cc, var(--bordure)); }
+.m2 tr.t-lancer td:first-child { box-shadow: inset 6px 0 0 var(--suivi-lancer-fond); }
+.m2 tr.t-examen td:first-child { box-shadow: inset 6px 0 0 var(--suivi-examen-fond); }
+.m2 tr.t-lancer .etiq { background: var(--suivi-lancer-fond); color: var(--texte); border-color: var(--texte); }
+
+/* ===== M3 — segments sobres, lignes pastel ===== */
+.m3 .onglets { gap: 0; border: 1px solid var(--bordure-champ); border-radius: 6px; overflow: hidden; width: fit-content; max-width: 100%; }
+.m3 .onglet { border: 0; border-right: 1px solid var(--bordure); }
+.m3 .onglet:last-child { border-right: 0; }
+.m3 .onglet.on { background: var(--menu-fond); color: var(--texte-menu); }
+.m3 .onglet .puce { margin-right: 0; }
+.m3 .panneau { display: grid; gap: 10px; }
+.m3 .compteurs { background: var(--carte-fond); border: 1px solid var(--bordure); border-radius: 8px; }
+.m3 tr.t-lancer td:not(.marge) { background: var(--onglet-actif-fond); }
+.m3 tr.t-examen td:not(.marge) { background: var(--examen-fond); }
+
+/* ===== M4 — onglets verticaux à gauche ===== */
+.m4 .corps { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 12px; align-items: start; }
+.m4 .onglets { flex-direction: column; gap: 4px; }
+.m4 .onglet { justify-content: space-between; border-radius: 6px; border-left: 5px solid var(--c); }
+.m4 .onglet.on { background: var(--f); }
+.m4 .panneau { display: grid; gap: 10px; }
+.m4 .compteurs { background: var(--carte-fond); border: 1px solid var(--bordure); border-radius: 8px; }
+.m4 tr.t-lancer td:not(.marge) { background: var(--suivi-lancer-fond); }
+.m4 tr.t-examen td:not(.marge) { background: var(--suivi-examen-fond); }
+.m4 tr.t-lancer .etiq { background: var(--suivi-lancer-fond); color: var(--texte); border-color: var(--texte); }
+
+/* ===== M5 — tuiles d'indicateurs pleines, puces dans le document ===== */
+.m5 .onglet { border: 0; border-bottom: 3px solid transparent; background: transparent; }
+.m5 .onglet.on { border-bottom-color: var(--c); }
+.m5 .onglets { border-bottom: 1px solid var(--bordure-champ); gap: 2px; }
+.m5 .panneau { display: grid; gap: 10px; }
+.m5 .compteurs { gap: 8px; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
+.m5 .compteur { border-radius: 8px; background: var(--cf, var(--carte-fond)); border: 1px solid var(--bordure); }
+.m5 .compteur span { color: var(--texte); }
+
+/* ===== M6 — bandeau nuit, onglets clairs sur fond sombre ===== */
+.m6 .bandeau-plan { background: var(--section-fond); color: var(--texte-menu); border-radius: 8px 8px 0 0; padding: 12px 14px 0; display: grid; gap: 10px; }
+.m6 .bandeau-plan p { color: var(--texte-menu-secondaire); }
+.m6 .bandeau-plan .btn { background: transparent; color: var(--texte-menu); border-color: var(--texte-menu-secondaire); }
+.m6 .onglet { border: 0; border-radius: 6px 6px 0 0; background: transparent; color: var(--texte-menu); border-top: 3px solid var(--c); }
+.m6 .onglet.on { background: var(--carte-fond); color: var(--texte); }
+.m6 .panneau { background: var(--carte-fond); border: 1px solid var(--bordure); border-top: 0; border-radius: 0 0 8px 8px; padding: 10px; display: grid; gap: 10px; }
+.m6 .compteurs { background: var(--ligne-survol); border-radius: 8px; }
+.m6 tr.t-lancer td:not(.marge) { background: var(--suivi-lancer-fond); }
+.m6 tr.t-examen td:not(.marge) { background: var(--suivi-examen-fond); }
+.m6 tr.t-lancer .etiq { background: var(--suivi-lancer-fond); color: var(--texte); border-color: var(--texte); }
+
+@media (max-width: 900px) { .compteurs { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)) !important; } .m4 .corps { grid-template-columns: minmax(0, 1fr); } }
+</style>
+
+<div class="enveloppe">
+  <header style="display:grid;gap:6px">
+    <span class="surtitre">Maquette · écran « Plan de passation » · 3 novembre 2026</span>
+    <h1>Six modèles de design pour l’écran du plan</h1>
+    <p class="note">Même page, mêmes données (plan 00001/PPM-AGPM/CNM/2026, sept de ses 34 lignes, recette du 03/11), mêmes couleurs de la palette.
+      Seul change le traitement : les onglets, les compteurs et la manière de colorer les lignes. Rien n’est codé.</p>
+  </header>
+
+  <section style="display:grid;gap:10px" aria-labelledby="ch">
+    <h2 id="ch">Choisir un modèle</h2>
+    <div class="choix-modeles" id="modeles" role="group" aria-label="Modèle de design"></div>
+  </section>
+
+  <section class="appli" aria-label="Maquette de l'écran">
+    <div class="entete"><span class="marque"><small>Commission nationale des marchés</small>PRS 2.0</span></div>
+    <div class="barre"><span>À faire</span><span class="on">Plan de passation</span><span>Dossiers ▾</span><span>Passation ▾</span><span>Contrats en vigueur</span><span>Décisions ▾</span></div>
+    <div class="ecran" id="ecran"></div>
+  </section>
+
+  <section style="display:grid;gap:10px" aria-labelledby="av">
+    <h2 id="av">Ce que vaut ce modèle</h2>
+    <div class="avis" id="avis"></div>
+  </section>
+</div>
+
+<script>
+(function () {
+  var MODELES = [
+    { id: 'm1', nom: 'M1 · Actuel', d: 'Onglets à filet de couleur, panneau teinté, lignes pleines en couleurs vives.',
+      pour: ['C’est l’écran livré : rien à refaire.', 'La couleur des lignes se voit de loin.'], contre: ['Beaucoup de couleur à la fois : onglets, panneau, lignes.', 'Les lignes pleines chargent le document signé.'] },
+    { id: 'm2', nom: 'M2 · Onglets pleins, lignes à filet', d: 'L’onglet ouvert est plein de sa couleur ; les lignes gardent le blanc, un filet vif à gauche dit l’étape.',
+      pour: ['Le document officiel reste lisible comme sur papier.', 'L’onglet ouvert ne fait aucun doute.'], contre: ['Le filet est moins visible qu’un fond plein.'] },
+    { id: 'm3', nom: 'M3 · Segments sobres, lignes pastel', d: 'Un sélecteur segmenté bleu nuit ; une pastille de couleur par onglet ; lignes en pastel.',
+      pour: ['Le plus calme : convient à une consultation longue.', 'Proche des écrans « Appels d’offres » et « Tous mes dossiers ».'], contre: ['Les pastels se distinguent moins (c’est ce qui avait été jugé trop pâle).'] },
+    { id: 'm4', nom: 'M4 · Onglets verticaux', d: 'Les cinq vues en colonne à gauche, le contenu à droite sur toute la hauteur.',
+      pour: ['Libère la largeur en haut : le document commence plus haut.', 'Place pour ajouter d’autres vues plus tard.'], contre: ['Le tableau officiel perd 210 px de largeur sur un écran de 1366 px.'] },
+    { id: 'm5', nom: 'M5 · Tuiles d’indicateurs, puces', d: 'Compteurs en tuiles pleines de couleur ; dans le document, une puce de couleur devant l’objet.',
+      pour: ['Les nombres par étape sautent aux yeux.', 'Le document n’est presque pas touché.'], contre: ['La puce est petite : on lit l’étape plutôt qu’on ne la voit.'] },
+    { id: 'm6', nom: 'M6 · Bandeau nuit', d: 'Titre et onglets sur un bandeau bleu nuit, l’onglet ouvert blanc se soude au contenu.',
+      pour: ['Allure institutionnelle forte, dans la continuité de l’en-tête.', 'Les vues forment un tout avec le titre.'], contre: ['Un deuxième bandeau sombre sous le menu, assez lourd.'] },
+  ];
+  var ONGLETS = [
+    { l: 'Document officiel', n: 34, c: 'var(--menu-fond)', f: 'var(--onglet-actif-fond)', cn: 'var(--texte-menu)' },
+    { l: 'Deux volets', n: 34, c: 'var(--bouton-principal)', f: 'var(--onglet-actif-fond)', cn: 'var(--texte-menu)' },
+    { l: 'Fiche de présentation', n: 8, c: 'var(--favorable-texte)', f: 'var(--favorable-fond)', cn: 'var(--texte-menu)' },
+    { l: 'Projet d’AGPM', n: 9, c: 'var(--or)', f: 'var(--examen-fond)', cn: 'var(--texte)' },
+    { l: 'Calendrier des jalons', n: null, c: 'var(--retard-texte)', f: 'var(--retard-fond)', cn: 'var(--texte-menu)' },
+  ];
+  var COMPTEURS = [
+    ['34', 'Toutes les lignes', null, null], ['23', 'Sans étape définie', null, null], ['10', 'À lancer', 'var(--suivi-lancer-fond)', 'var(--suivi-lancer-fond)'],
+    ['1', 'En préparation', 'var(--suivi-examen-fond)', 'var(--suivi-examen-fond)'], ['0', 'À la Commission', 'var(--suivi-examen-fond)', null],
+    ['0', 'Lancée', 'var(--suivi-favorable-fond)', null], ['0', 'Dossier de marché', 'var(--suivi-favorable-fond)', null],
+  ];
+  // Lignes du plan 00001 relevées en recette (03/11).
+  var LIGNES = [
+    ['Fournitures', 'Fourniture d’habillement pour les nouveaux chauffeurs et garde du corps du Ministre du MTP', '13 000 000,00', 'Consultation des Prix Ouverte', '6111', '06/03/2026', '16/03/2026', '27/03/2026', null, 'Sans étape définie', 'Consultation des Prix Ouverte'],
+    ['Travaux', 'Travaux de réhabilitation des routes dans la ville de Maintirano dans la Région Melaky', '8 000 000 000,00', 'Appel d’offres ouvert', '2441', '06/03/2026', '07/04/2026', '17/04/2026', 'lancer', 'À lancer', 'Informations du DAO'],
+    ['Travaux', 'Travaux de réhabilitation de la route RIP 71 vers Ambohimiarina (Contrat Cadre) (Relance)', '2 400 000 000,00', 'Consultation des Prix Ouverte', '2441', '06/03/2026', '16/03/2026', '26/03/2026', null, 'Sans étape définie', 'Consultation des Prix Ouverte'],
+    ['Travaux', 'Travaux d’urgence sur la RNT 15 à l’entrée de Fanjakana (PK 193+800) et Beroroha (PK 211+000)', '4 350 000 000,00', 'Appel d’offres ouvert', '2441', '06/03/2026', '07/04/2026', '20/04/2026', 'lancer', 'À lancer', 'Informations du DAO'],
+    ['Travaux', 'Travaux de réhabilitation de la RNS 13 dans la Ville de Fort Dauphin et dans la Ville de Betroka', '40 000 000 000,00', 'MARCHE DE GRE A GRE PPP', '2441', '06/03/2026', '06/03/2026', '06/02/2026', 'lancer', 'À lancer', 'Rapport justificatif'],
+    ['Travaux', 'Travaux d’aménagement de la route reliant : Ilempona (PK 0+000) au Pont de Belanitra (PK 62+721) dans la Région Vakinankaratra', '153 200 000 000,00', 'MARCHE DE GRE A GRE', '2441', '06/03/2026', '06/03/2026', '06/03/2026', 'lancer', 'À lancer', 'Rapport justificatif'],
+  ];
+  var actif = 'm2';
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  var COULEUR_ETAPE = { lancer: 'var(--suivi-lancer-fond)', examen: 'var(--suivi-examen-fond)' };
+  function onglets() {
+    return '<div class="onglets" role="tablist" aria-label="Affichage du plan">' + ONGLETS.map(function (o, i) {
+      return '<span class="onglet' + (i === 0 ? ' on' : '') + '" role="tab" aria-selected="' + (i === 0) + '" style="--c:' + o.c + ';--f:' + o.f + ';--cn:' + o.cn + '">' +
+        (actif === 'm3' ? '<span class="puce" style="background:' + o.c + '"></span>' : '') + esc(o.l) + (o.n != null ? '<span class="n">' + o.n + '</span>' : '') + '</span>';
+    }).join('') + '</div>';
+  }
+  function compteurs() {
+    return '<div class="compteurs">' + COMPTEURS.map(function (c) {
+      var style = actif === 'm2' && c[2] ? '--cc:' + c[2] : actif === 'm5' && c[3] ? '--cf:' + c[3] : '';
+      return '<div class="compteur" style="' + style + '"><b>' + c[0] + '</b><span>' + (c[2] && actif !== 'm5' ? '<span class="sw" style="background:' + c[2] + '"></span>' : '') + esc(c[1]) + '</span></div>';
+    }).join('') + '</div>';
+  }
+  function documentOfficiel() {
+    var h = '<div class="feuille"><table class="doc"><thead><tr><th>Nature</th><th>Objet</th><th>Montant estimatif initial</th><th>Mode de passation</th><th>Financement</th><th>Service bénéficiaire</th><th>Compte</th><th>Montant par bénéficiaire</th><th>Date prév. de lancement</th><th>Date prév. ouverture des plis</th><th>Date prév. d’attribution</th><th></th></tr></thead><tbody>';
+    LIGNES.forEach(function (l) {
+      var puce = actif === 'm5' && l[8] ? '<span class="puce" style="background:' + COULEUR_ETAPE[l[8]] + '"></span>' : '';
+      h += '<tr class="' + (l[8] ? 't-' + l[8] : '') + '"><td>' + l[0] + '</td><td>' + puce + esc(l[1]) + '</td><td class="num">' + l[2] + '</td><td>' + esc(l[3]) + '</td><td>RPI</td><td>00-61-0-D10-00000</td><td>' + l[4] + '</td><td class="num">' + l[2] + '</td><td class="num">' + l[5] + '</td><td class="num">' + l[6] + '</td><td class="num">' + l[7] + '</td>' +
+        '<td class="marge"><span class="etiq">' + esc(l[9]) + '<small>' + esc(l[10]) + '</small></span></td></tr>';
+    });
+    return h + '</tbody></table><p class="note" style="padding-top:6px">… 28 autres lignes du plan.</p></div>';
+  }
+  function titre(sombre) {
+    return '<div class="titre"><div><h3>Plan de passation 2026 <span class="pastille">Clôturé</span></h3><p>00001/PPM-AGPM/CNM/2026 · MINISTERE DES TRAVAUX PUBLICS · clôturé le 28/10/2026 · 34 lignes</p></div><span class="btn">Mettre à jour le plan</span></div>';
+  }
+  function rendre() {
+    var e = document.getElementById('ecran');
+    var panneau = '<div class="panneau">' + compteurs() + documentOfficiel() + '</div>';
+    var h;
+    if (actif === 'm4') h = titre() + '<div class="corps">' + onglets() + panneau + '</div>';
+    else if (actif === 'm6') h = '<div><div class="bandeau-plan">' + titre() + onglets() + '</div>' + panneau + '</div>';
+    else h = titre() + onglets() + panneau;
+    e.className = 'ecran ' + actif;
+    e.innerHTML = h;
+    var m = MODELES.filter(function (x) { return x.id === actif; })[0];
+    document.getElementById('avis').innerHTML = '<div class="carte"><span class="surtitre">Pour</span><ul>' + m.pour.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul></div>' +
+      '<div class="carte"><span class="surtitre">Contre</span><ul>' + m.contre.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul></div>';
+    Array.prototype.forEach.call(document.querySelectorAll('.modele-btn'), function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-m') === actif ? 'true' : 'false'); });
+  }
+  document.getElementById('modeles').innerHTML = MODELES.map(function (m) {
+    return '<button type="button" class="modele-btn" data-m="' + m.id + '" aria-pressed="false"><b>' + esc(m.nom) + '</b><span>' + esc(m.d) + '</span></button>';
+  }).join('');
+  document.getElementById('modeles').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button'); if (!b) return;
+    actif = b.getAttribute('data-m'); rendre();
+  });
+  rendre();
+})();
+</script>
