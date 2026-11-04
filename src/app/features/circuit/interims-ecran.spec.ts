@@ -142,7 +142,8 @@ describe('Écran « Mon intérim » / « Intérims » (intérim désigné, 21/09
     rendre();
     const options = Array.from(racine().querySelectorAll<HTMLOptionElement>('select[formControlName="imInterimaire"] option')).map((o) => o.value).filter(Boolean);
     expect(options).toEqual(['CCANT02', 'MEMANT1']);
-    expect(texte(racine().querySelector('.it__moi'))).toBe('Titulaire absent : RAKOTO Hery (vous).');
+    // ⚠️ 04/11 — le titulaire est nommé dans l'en-tête de la fenêtre.
+    expect(texte(racine().querySelector('.dg__sous'))).toBe('Titulaire absent : RAKOTO Hery (vous)');
 
     const composant = fixture.componentInstance;
     composant.form.setValue({ imTitulaire: 'CCANT01', imInterimaire: 'MEMANT1', dateDebut: '2026-09-22', dateFin: '2026-09-30', motif: 'MISSION', reference: 'NS 2026-120' });
@@ -188,6 +189,30 @@ describe('Écran « Mon intérim » / « Intérims » (intérim désigné, 21/09
     composant.choisirPiece({ target: { files: [new File(['x'], 'photo.png', { type: 'image/png' })] } } as unknown as Event);
     rendre();
     expect(texte(racine().querySelector('.form-error'))).toContain('PDF attendu');
+    expect(bouton().disabled).toBe(true);
+  });
+
+  it('⚠️ 04/11 — le pied dit ce qui reste à renseigner ; la durée se calcule, des dates inversées bloquent', () => {
+    monter('CHEF_COMMISSION', 'CCANT01', false);
+    repondreChargement([], false);
+    (racine().querySelector('.page-header .btn-primary') as HTMLButtonElement).click();
+    rendre();
+    const reste = (): string => texte(racine().querySelector('.dg__reste'));
+    const bouton = (): HTMLButtonElement => racine().querySelector('form .btn-primary') as HTMLButtonElement;
+    expect(reste()).toBe('Reste à renseigner : intérimaire, date de fin, référence, pièce.');
+
+    const composant = fixture.componentInstance;
+    composant.form.patchValue({ imInterimaire: 'MEMANT1', dateDebut: '2026-12-22', dateFin: '2027-01-05', reference: 'NS 12' });
+    composant.choisirPiece({ target: { files: [new File(['%PDF-1.4'], 'note.pdf', { type: 'application/pdf' })] } } as unknown as Event);
+    rendre();
+    expect(texte(racine().querySelector('.dg__ligne'))).toBe('Durée : 15 jours, dates incluses.');
+    expect(texte(racine().querySelector('.dg__piece'))).toBe('note.pdf · 1 Ko');
+    expect(reste()).toBe('Prêt à désigner.');
+    expect(bouton().disabled).toBe(false);
+
+    composant.form.patchValue({ dateFin: '2026-12-01' });
+    rendre();
+    expect(texte(racine().querySelector('.dg__ligne--erreur'))).toBe('La date de fin précède la date de début.');
     expect(bouton().disabled).toBe(true);
   });
 

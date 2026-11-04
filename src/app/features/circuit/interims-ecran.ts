@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
@@ -168,66 +169,103 @@ const MOTIFS: readonly MotifInterim[] = ['CONGE', 'MISSION', 'MALADIE', 'VACANCE
       }
     </section>
 
-    <!-- Désignation : titulaire (soi, ou tout P/CC pour l'Admin), intérimaire admissible, période, motif, référence, pièce PDF. -->
+    <!-- Désignation : titulaire (soi, ou tout P/CC pour l'Admin), intérimaire admissible, période, motif, référence, pièce PDF.
+         ⚠️ 04/11 (pilote, « Améliorer ») — en-tête bleu nuit qui nomme le titulaire, fermeture ✕, trois étapes numérotées (qui, quand,
+         sur quelle pièce), durée calculée, pièce choisie confirmée, et au pied ce qu'il reste à renseigner tant que « Désigner » est inactif. -->
     @if (designationOuverte()) {
       <div class="modal-backdrop" [class.closing]="closingDesignation()">
-        <form class="modal confirm-modal cnm-form" [formGroup]="form" (ngSubmit)="designer()" role="dialog" aria-modal="true" aria-label="Désignation d'un intérimaire" appModale (appModaleFermer)="fermerDesignationAnime()" novalidate>
-          <div class="modal-header-plain"><span class="modal-title">Désigner un intérimaire</span></div>
-          <div class="modal-body">
-            @if (admin) {
+        <form class="modal cnm-form dg" [formGroup]="form" (ngSubmit)="designer()" role="dialog" aria-modal="true" aria-label="Désignation d'un intérimaire" appModale (appModaleFermer)="fermerDesignationAnime()" novalidate>
+          <div class="dg__tete">
+            <div>
+              <span class="modal-title-light dg__titre">Désigner un intérimaire</span>
+              @if (admin) {
+                <span class="dg__sous">En repli, pour un titulaire qui n'a rien déclaré</span>
+              } @else {
+                <span class="dg__sous">Titulaire absent : <b>{{ auth.nomAffichage() || moi }}</b> (vous)</span>
+              }
+            </div>
+            <button type="button" class="btn-close-light" aria-label="Fermer" (click)="fermerDesignationAnime()">✕</button>
+          </div>
+          <div class="modal-body dg__corps">
+            <fieldset class="dg__etape">
+              <legend class="dg__leg"><span class="dg__num" aria-hidden="true">1</span>{{ admin ? 'Qui est absent, qui le remplace' : 'Qui agit à votre place' }}</legend>
+              @if (admin) {
+                <label class="form-group">
+                  <span class="form-label required">Titulaire absent</span>
+                  <select class="form-control" formControlName="imTitulaire">
+                    <option value="" disabled>— Choisir —</option>
+                    @for (t of titulaires(); track t.imControleur) {
+                      <option [value]="t.imControleur">{{ nom(t) }} — {{ libelleRole(roleDe(t)) }}{{ localiteSuffixe(t.idLocalite) }}</option>
+                    }
+                  </select>
+                </label>
+              }
               <label class="form-group">
-                <span class="form-label required">Titulaire absent</span>
-                <select class="form-control" formControlName="imTitulaire">
+                <span class="form-label required">Intérimaire</span>
+                <select class="form-control" formControlName="imInterimaire">
                   <option value="" disabled>— Choisir —</option>
-                  @for (t of titulaires(); track t.imControleur) {
-                    <option [value]="t.imControleur">{{ nom(t) }} — {{ libelleRole(roleDe(t)) }}{{ localiteSuffixe(t.idLocalite) }}</option>
+                  @for (c of admissibles(); track c.imControleur) {
+                    <option [value]="c.imControleur">{{ nom(c) }} — {{ libelleRole(roleDe(c)) }}{{ localiteSuffixe(c.idLocalite) }}</option>
                   }
                 </select>
+                @if (aideAdmissibles()) { <span class="form-hint">{{ aideAdmissibles() }}</span> }
               </label>
-            } @else {
-              <p class="it__moi">Titulaire absent : <strong>{{ auth.nomAffichage() || moi }}</strong> (vous).</p>
-            }
-            <label class="form-group">
-              <span class="form-label required">Intérimaire</span>
-              <select class="form-control" formControlName="imInterimaire">
-                <option value="" disabled>— Choisir —</option>
-                @for (c of admissibles(); track c.imControleur) {
-                  <option [value]="c.imControleur">{{ nom(c) }} — {{ libelleRole(roleDe(c)) }}{{ localiteSuffixe(c.idLocalite) }}</option>
+            </fieldset>
+
+            <fieldset class="dg__etape">
+              <legend class="dg__leg"><span class="dg__num" aria-hidden="true">2</span>Pour quelle période, et pourquoi</legend>
+              <label class="form-group">
+                <span class="form-label required">Motif</span>
+                <select class="form-control" formControlName="motif">
+                  @for (m of motifs; track m) { <option [value]="m">{{ motifLabel(m) }}</option> }
+                </select>
+              </label>
+              <div class="dg__dates">
+                <label class="form-group">
+                  <span class="form-label required">Du</span>
+                  <input class="form-control" type="date" formControlName="dateDebut" />
+                </label>
+                <label class="form-group">
+                  <span class="form-label" [class.required]="finRequise()">Au</span>
+                  <input class="form-control" type="date" formControlName="dateFin" [min]="valeurs().dateDebut" />
+                </label>
+              </div>
+              @if (datesInversees()) {
+                <p class="dg__ligne dg__ligne--erreur" role="alert">La date de fin précède la date de début.</p>
+              } @else if (duree(); as n) {
+                <p class="dg__ligne">Durée : <b>{{ n }} jour{{ n > 1 ? 's' : '' }}</b>, dates incluses.</p>
+              } @else if (!finRequise()) {
+                <p class="dg__ligne">Fin facultative pour une vacance de poste : l'intérim court jusqu'à sa révocation.</p>
+              }
+            </fieldset>
+
+            <fieldset class="dg__etape">
+              <legend class="dg__leg"><span class="dg__num" aria-hidden="true">3</span>Sur quelle pièce</legend>
+              <label class="form-group">
+                <span class="form-label required">Référence de la note de service</span>
+                <input class="form-control" type="text" formControlName="reference" maxlength="100" />
+              </label>
+              <label class="form-group">
+                <span class="form-label required">Note de service ou décision (PDF, {{ pieceMaxMo }} Mo au plus)</span>
+                <input class="form-control dg__fichier" type="file" accept="application/pdf" (change)="choisirPiece($event)" />
+                @if (pieceErreur()) {
+                  <span class="form-error">{{ pieceErreur() }}</span>
+                } @else if (piece(); as f) {
+                  <span class="dg__piece"><app-icone nom="clip" [taille]="13" />{{ f.name }} · {{ tailleFichier(f.size) }}</span>
+                } @else {
+                  <span class="form-hint">Elle reste consultable par la commission.</span>
                 }
-              </select>
-              <span class="form-hint">{{ aideAdmissibles() }}</span>
-            </label>
-            <div class="it__dates">
-              <label class="form-group">
-                <span class="form-label required">Du</span>
-                <input class="form-control" type="date" formControlName="dateDebut" />
               </label>
-              <label class="form-group">
-                <span class="form-label" [class.required]="finRequise()">Au</span>
-                <input class="form-control" type="date" formControlName="dateFin" />
-                @if (!finRequise()) { <span class="form-hint">Facultatif pour une vacance de poste.</span> }
-              </label>
-            </div>
-            <label class="form-group">
-              <span class="form-label required">Motif</span>
-              <select class="form-control" formControlName="motif">
-                @for (m of motifs; track m) { <option [value]="m">{{ motifLabel(m) }}</option> }
-              </select>
-            </label>
-            <label class="form-group">
-              <span class="form-label required">Référence de la note de service</span>
-              <input class="form-control" type="text" formControlName="reference" maxlength="100" />
-            </label>
-            <label class="form-group">
-              <span class="form-label required">Pièce (PDF, {{ pieceMaxMo }} Mo au plus)</span>
-              <input class="form-control" type="file" accept="application/pdf" (change)="choisirPiece($event)" />
-              @if (pieceErreur()) { <span class="form-error">{{ pieceErreur() }}</span> }
-              <span class="form-hint">La note de service ou la décision qui désigne l'intérimaire ; elle reste consultable par la commission.</span>
-            </label>
+            </fieldset>
           </div>
-          <div class="modal-footer">
+          <div class="modal-footer dg__pied">
+            @if (manquants().length) {
+              <p class="dg__reste">Reste à renseigner : {{ manquants().join(', ') }}.</p>
+            } @else if (!datesInversees()) {
+              <p class="dg__reste dg__reste--pret">Prêt à désigner.</p>
+            }
             <button type="button" class="btn btn-outline" (click)="fermerDesignationAnime()">Annuler</button>
-            <button type="submit" class="btn btn-primary" [disabled]="saving() || form.invalid || !piece() || (finRequise() && !form.controls.dateFin.value)">
+            <button type="submit" class="btn btn-primary" [disabled]="saving() || manquants().length > 0 || datesInversees()">
               {{ saving() ? 'Enregistrement…' : 'Désigner' }}
             </button>
           </div>
@@ -278,13 +316,36 @@ const MOTIFS: readonly MotifInterim[] = ['CONGE', 'MISSION', 'MALADIE', 'VACANCE
     .it__piece { margin-left: 0.4rem; display: inline-flex; align-items: center; gap: 0.25rem; }
     .it__actions { justify-content: flex-end; }
     .it__empty { text-align: center; color: var(--n-400); padding: 1.5rem; }
-    .it__moi { margin: 0 0 0.75rem; }
-    .it__dates { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .dg { max-width: 600px; }
+    .dg__tete { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; padding: 16px 20px; background: var(--menu-fond); flex-shrink: 0; }
+    .dg__tete > div { display: flex; flex-direction: column; gap: 4px; }
+    .dg__titre { font-size: 1.15rem; }
+    .dg__sous { font-size: 0.8125rem; color: var(--texte-menu-secondaire); }
+    .dg__sous b { color: var(--texte-menu); font-weight: 500; }
+    .dg__corps { display: flex; flex-direction: column; gap: 0.9rem; }
+    .dg__etape { margin: 0; padding: 0.75rem 0.9rem 0.85rem; border: 1px solid var(--bordure); border-radius: 6px; display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
+    .dg__etape .form-group { margin: 0; }
+    .dg__leg { display: flex; align-items: center; gap: 0.5rem; padding: 0 0.35rem; font-weight: 500; color: var(--texte); }
+    .dg__num { display: inline-flex; align-items: center; justify-content: center; width: 1.35rem; height: 1.35rem; border-radius: 50%;
+      background: var(--menu-fond); color: var(--texte-menu); font-size: 0.75rem; }
+    .dg__dates { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .dg__ligne { margin: 0; font-size: 0.8125rem; color: var(--texte-secondaire); font-variant-numeric: tabular-nums; }
+    .dg__ligne b { color: var(--texte); font-weight: 500; }
+    .dg__ligne--erreur { color: var(--retard-texte); }
+    .dg__fichier { padding: 4px; }
+    .dg__fichier::file-selector-button { margin-right: 0.75rem; padding: 4px 12px; border: 1px solid var(--bordure-champ); border-radius: 4px;
+      background: var(--carte-fond); color: var(--texte); font: inherit; cursor: pointer; }
+    .dg__fichier::file-selector-button:hover { background: var(--tableau-entete); }
+    .dg__piece { display: inline-flex; align-items: center; gap: 0.35rem; align-self: flex-start; padding: 2px 8px; border-radius: 4px;
+      background: var(--favorable-fond); color: var(--favorable-texte); font-size: 0.8125rem; }
+    .dg__pied { align-items: center; }
+    .dg__reste { margin: 0 auto 0 0; font-size: 0.8125rem; color: var(--texte-secondaire); }
+    .dg__reste--pret { color: var(--favorable-texte); }
     .it__statut--actif { background: var(--success-bg); color: var(--success-text); }
     .it__statut--a_venir { background: var(--info-bg); color: var(--info-text); }
     .it__statut--acheve { background: var(--n-100); color: var(--n-500); }
     .it__statut--revoque { background: var(--danger-bg); color: var(--danger-text); }
-    @media (max-width: 640px) { .it__dates { grid-template-columns: 1fr; } }
+    @media (max-width: 640px) { .dg__dates { grid-template-columns: 1fr; } .dg__pied { flex-wrap: wrap; } }
   `,
 })
 export class InterimsEcran implements OnInit {
@@ -343,6 +404,34 @@ export class InterimsEcran implements OnInit {
   private readonly titulaire = computed(() => this.controleurs().find((c) => c.imControleur === (this.admin ? this.titulaireChoisi() : this.moi)) ?? null);
   readonly admissibles = computed(() => interimairesAdmissibles(this.titulaire(), this.controleurs(), (c) => this.roleDe(c)));
   readonly finRequise = computed(() => this.motifChoisi() !== 'VACANCE_POSTE');
+  /** Valeurs du formulaire en signal : la durée et ce qu'il reste à renseigner s'en déduisent. */
+  readonly valeurs = toSignal(this.form.valueChanges.pipe(map(() => this.form.getRawValue())), { initialValue: this.form.getRawValue() });
+  readonly datesInversees = computed(() => {
+    const { dateDebut, dateFin } = this.valeurs();
+    return !!dateDebut && !!dateFin && dateFin < dateDebut;
+  });
+  /** Nombre de jours, bornes incluses (`null` sans les deux dates). */
+  readonly duree = computed(() => {
+    const { dateDebut, dateFin } = this.valeurs();
+    if (!dateDebut || !dateFin || dateFin < dateDebut) return null;
+    const jour = (iso: string): number => {
+      const [a, m, j] = iso.split('-').map(Number);
+      return Date.UTC(a, m - 1, j) / 86_400_000;
+    };
+    return jour(dateFin) - jour(dateDebut) + 1;
+  });
+  /** Ce qui empêche encore de désigner, dans l'ordre de la fenêtre. */
+  readonly manquants = computed(() => {
+    const v = this.valeurs();
+    const r: string[] = [];
+    if (this.admin && !v.imTitulaire) r.push('titulaire');
+    if (!v.imInterimaire) r.push('intérimaire');
+    if (!v.dateDebut) r.push('date de début');
+    if (this.finRequise() && !v.dateFin) r.push('date de fin');
+    if (!v.reference.trim()) r.push('référence');
+    if (!this.piece()) r.push('pièce');
+    return r;
+  });
   readonly aideAdmissibles = computed(() => {
     const t = this.titulaire();
     if (!t) return this.admin ? "Choisissez d'abord le titulaire." : '';
@@ -417,6 +506,10 @@ export class InterimsEcran implements OnInit {
     if (!id) return '';
     return ` · ${this.localites().get(id) ?? id}`;
   }
+  /** « 245 Ko », « 1,2 Mo ». */
+  tailleFichier(octets: number): string {
+    return octets < 1024 * 1024 ? `${Math.max(1, Math.round(octets / 1024))} Ko` : `${(octets / 1024 / 1024).toFixed(1).replace('.', ',')} Mo`;
+  }
   periode(i: Interim): string {
     return periodeInterim(i);
   }
@@ -468,7 +561,7 @@ export class InterimsEcran implements OnInit {
   }
   designer(): void {
     const piece = this.piece();
-    if (this.form.invalid || !piece || (this.finRequise() && !this.form.controls.dateFin.value)) {
+    if (this.form.invalid || !piece || this.manquants().length || this.datesInversees()) {
       this.form.markAllAsTouched();
       return;
     }
