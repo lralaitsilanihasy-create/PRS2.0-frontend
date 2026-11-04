@@ -2,7 +2,8 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, si
 import { forkJoin } from 'rxjs';
 import { NgTemplateOutlet } from '@angular/common';
 
-import { Capm, Echeance, Marche, MarchePrevision, Ppm, RegleAlerte } from '../../models';
+import { Capm, Echeance, JalonReel, Marche, MarchePrevision, Ppm, RegleAlerte } from '../../models';
+import { PROCESSUS_SANS_FAIT } from './plan-passation/detail-ligne';
 import {
   CapmService,
   EcheanceService,
@@ -154,6 +155,11 @@ export class CalendrierMarches implements OnInit {
   readonly encastre = input(false);
   /** ⚠️ 03/11 — les seules lignes de ce plan (dossier) ; `null` = toutes les lignes des plans de la PRMP. */
   readonly idDossier = input<number | null>(null);
+  /**
+   * ⚠️ 04/11 (pilote, redondances) — les dates réelles calculées par le serveur (`jalons-reels`) pour le plan affiché : elles priment sur
+   * les échéances, comme dans la carte « Jalons » d'une ligne, pour que l'onglet et la carte disent la même date. `null` : échéances seules.
+   */
+  readonly reels = input<readonly JalonReel[] | null>(null);
 
   readonly loading = signal(true);
   private readonly capmsTous = signal<Capm[]>([]);
@@ -187,6 +193,9 @@ export class CalendrierMarches implements OnInit {
       l.push(e);
       echParDetail.set(e.idDetail, l);
     }
+    const reels = this.reels();
+    const reelsParDetail = new Map<number, JalonReel[]>();
+    for (const r of reels ?? []) reelsParDetail.set(r.idDetail, [...(reelsParDetail.get(r.idDetail) ?? []), r]);
     const aujourdhui = this.isoJour(maintenantServeur());
     return this.marches()
       .filter((m) => !m.supprimee && (this.idDossier() == null || m.idDossier === this.idDossier()))
@@ -198,14 +207,18 @@ export class CalendrierMarches implements OnInit {
         // Réel : échéance de la ligne dont le type de jalon correspond au processus (égalité de libellé
         // normalisé, sinon inclusion — même tolérance que la résolution CAPM à l'import).
         for (const c of this.capms()) {
+          const calculee = reelsParDetail.get(m.idDetail)?.find((r) => r.idCapm === c.idCapm)?.dateReelle;
           const ech = (echParDetail.get(m.idDetail) ?? []).find((e) => this.jalonCorrespond(e.typeJalon, c.libelleProcessus));
-          if (ech?.dateReelle && jalons[c.idCapm]) jalons[c.idCapm].reel = this.dateFr(ech.dateReelle);
-          else if (ech?.dateReelle) jalons[c.idCapm] = { reel: this.dateFr(ech.dateReelle) };
+          const date = calculee ?? ech?.dateReelle;
+          if (date && jalons[c.idCapm]) jalons[c.idCapm].reel = this.dateFr(date);
+          else if (date) jalons[c.idCapm] = { reel: this.dateFr(date) };
         }
         const alertes: AlerteJalon[] = [];
         for (const c of this.capms()) {
           const j = jalons[c.idCapm];
           if (!j?.prevuIso || j.reel) continue; // pas de prévu, ou jalon déjà réalisé → pas d'alerte
+          // Un processus qu'aucun fait du serveur ne date n'a jamais de date réelle : pas de retard (même règle que la carte « Jalons »).
+          if (reels != null && PROCESSUS_SANS_FAIT.has(c.idCapm)) continue;
           const ecart = this.joursEntre(aujourdhui, j.prevuIso);
           if (ecart < 0) alertes.push({ processus: this.libelleCourt(c.libelleProcessus), genre: 'retard', jours: -ecart });
           else if (ecart <= this.seuilPour(c.libelleProcessus)) {

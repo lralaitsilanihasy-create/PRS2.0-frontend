@@ -234,7 +234,7 @@ interface ContenuPlans {
             [dateMajPrec]="ppmDuPlan()?.dateMajPrec" [numMaj]="ppmDuPlan()?.numMaj" />
         </app-document-visionneuse>
       } @else {
-        <app-calendrier-marches [encastre]="true" [idDossier]="p.idDossier" />
+        <app-calendrier-marches [encastre]="true" [idDossier]="p.idDossier" [reels]="reelsDuPlan()" />
       }
       </div>
     }
@@ -615,6 +615,12 @@ export class PlanPassation implements OnInit {
   previsionsDe(m: Marche): MarchePrevision[] {
     return this.previsionsDuPlan().filter((p) => p.idDetail === m.idDetail);
   }
+
+  /** Les dates réelles de tout le plan, pour l'onglet « Calendrier des jalons » ; `null` tant qu'elles ne sont pas lues. */
+  readonly reelsDuPlan = computed<JalonReel[] | null>(() => {
+    const r = this.reels();
+    return r ? [...r.values()].flat() : null;
+  });
 
   reelsDe(m: Marche): JalonReel[] | null {
     const r = this.reels();

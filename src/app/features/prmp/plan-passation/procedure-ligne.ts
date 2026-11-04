@@ -21,6 +21,9 @@ const CLOS: ReadonlySet<string> = new Set(['CLOTURE', 'DECISION_TRANSMISE_SIGMP'
  * `lienCao`, `lienDepots`…) : remise électronique, au moins une version validée (`modeRemise` n'est servi qu'alors), dépôts et retraits
  * à la PRMP seule, commission dès la fiche (hors remise papier), séance une fois le dossier clôturé, évaluation dès qu'elle est ouverte.
  * La fiche elle-même n'y figure qu'avec son dossier : avant, c'est le bouton « Reprendre les informations du DAO » de la ligne.
+ * ⚠️ 04/11 (pilote, redondances) — la rangée ne répète pas les barres : la fiche sort une fois le dossier clôturé (figée, elle se lit dans
+ * « Informations du DAO » de sa barre) ; la séance et l'évaluation sortent quand chaque lot attribué a son dossier de marché, dont la barre
+ * porte « Séance d'ouverture » et « Rapport d'évaluation ». Tant que le dossier de marché manque, l'évaluation reste : c'est là qu'il se crée.
  */
 export function liensProcedure(e: LigneEligible, role: string | null): LienProcedure[] {
   if (!e.dejaDao || e.idDmc == null) return [];
@@ -30,7 +33,10 @@ export function liensProcedure(e: LigneEligible, role: string | null): LienProce
   const electronique = e.modeRemise === 'ELECTRONIQUE';
   const publiable = e.modeRemise != null;
   const l: LienProcedure[] = [];
-  if (e.dossier) l.push({ libelle: 'Ouvrir la fiche DAO', commandes: dao(), n: null });
+  const clos = !!e.dossier && CLOS.has(e.dossier.statut);
+  const dm = e.dossiersMarche ?? [];
+  const marchesCrees = !!e.attributions?.length && e.attributions.every((a) => dm.some((d) => d.lot === a.lot));
+  if (e.dossier && !clos) l.push({ libelle: 'Ouvrir la fiche DAO', commandes: dao(), n: null });
   if (e.modeRemise !== 'PAPIER') l.push({ libelle: 'Commission d’appel d’offres', commandes: dao('cao'), n: null });
   if (e.categorie === 'PRESTATIONS_INTELLECTUELLES') l.push({ libelle: 'Appel à manifestation d’intérêt', commandes: dao('ami'), n: null });
   if (!electronique || !publiable) return l;
@@ -42,7 +48,8 @@ export function liensProcedure(e: LigneEligible, role: string | null): LienProce
   l.push({ libelle: 'Questions des candidats', commandes: dao('questions'), n: null });
   const recus = e.recusEnAttente ?? 0;
   l.push({ libelle: 'Reçus des frais', commandes: dao('recus'), n: recus ? `${recus} à valider` : null });
-  if (e.dossier && CLOS.has(e.dossier.statut)) l.push({ libelle: 'Séance d’ouverture', commandes: ['/procedure', id, 'seance'], n: null });
+  if (marchesCrees) return l;
+  if (clos) l.push({ libelle: 'Séance d’ouverture', commandes: ['/procedure', id, 'seance'], n: null });
   const a = e.attributions?.[0];
   if (a) l.push({ libelle: 'Évaluation des offres', commandes: ['/procedure', id, 'evaluation'], n: LIBELLES_ETAT_ATTRIBUTION[a.etat] ?? a.etat });
   return l;

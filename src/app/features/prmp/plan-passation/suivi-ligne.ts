@@ -1,4 +1,5 @@
 import { LigneEligible, NoeudFiliation } from '../../../models';
+import { statutDossierLabel } from '../../../shared/circuit/circuit-workflow';
 
 /** Étape d'une ligne du plan, dans l'ordre de la procédure. */
 export type EtapeLigne = 'aucune' | 'lancer' | 'preparation' | 'commission' | 'lancee' | 'marche';
@@ -35,8 +36,11 @@ const HORS_CIRCUIT = new Set(['BROUILLON', 'CLOTURE', 'DECISION_TRANSMISE_SIGMP'
 const CLOS = new Set(['CLOTURE', 'DECISION_TRANSMISE_SIGMP']);
 
 const normaliser = (s: string): string => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
-/** La référence ; sans elle, « brouillon » ou, déposé mais pas encore reçu par la CNM, « soumis » (04/11). */
-const ref = (n: NoeudFiliation): string => n.refeDossier || (n.statut === 'BROUILLON' ? 'brouillon' : 'soumis');
+/**
+ * La référence ; sans elle, le statut sous le libellé de l'étiquette commune (« Brouillon », « Initial »…) — ⚠️ 04/11 (redondances) :
+ * l'en-tête de la ligne et la barre du dossier disent le même état, avec les mêmes mots.
+ */
+const ref = (n: NoeudFiliation): string => n.refeDossier || statutDossierLabel(n.statut ?? undefined);
 
 /**
  * ⚠️ 03/11 (pilote, maquette « espace PRMP », lot 2) — l'étape d'une ligne du plan, lue sur ses dossiers (`noeuds` : la filiation de
