@@ -365,6 +365,7 @@ interface ApercuDossier {
                 @if (req(ppmForm, 'idEntiteContract')) { <span class="form-error">Obligatoire.</span> }
                 @if (err('idEntiteContract')) { <span class="form-error">{{ err('idEntiteContract') }}</span> }
                 @if (!entites().length) { <span class="form-hint">Aucune entité rattachée à votre profil PRMP.</span> }
+                @if (entiteHorsPerimetre()) { <span class="form-error">Cette entité n'est pas une de vos entités contractantes : choisissez l'une des vôtres.</span> }
               </label>
               <label class="form-group">
                 <span class="form-label">Localité (dérivée de l'entité)</span>
@@ -492,7 +493,7 @@ interface ApercuDossier {
             <footer class="sd__foot">
               <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
               <button type="button" class="btn btn-secondary" (click)="ouvrirApercu()">Aperçu</button>
-              <button type="submit" class="btn btn-primary" [disabled]="submitting() || vacance() || !ppmFormValide || !benefsCoherents || lignesObjetTropLong().length > 0 || (grid()?.nbAValiderRestantes() ?? 0) > 0 || entiteSansLocalite() || justificationsFicheManquantes().length > 0">
+              <button type="submit" class="btn btn-primary" [disabled]="submitting() || vacance() || !ppmFormValide || !benefsCoherents || lignesObjetTropLong().length > 0 || (grid()?.nbAValiderRestantes() ?? 0) > 0 || entiteSansLocalite() || entiteHorsPerimetre() || justificationsFicheManquantes().length > 0">
                 {{ submitting() ? 'Création…' : 'Créer le dossier' }}
               </button>
             </footer>
@@ -886,9 +887,41 @@ interface ApercuDossier {
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-outline" (click)="fermerApercuAnime()">Fermer</button>
-              <button type="button" class="btn btn-primary" [disabled]="submitting() || vacance() || !ppmFormValide || !benefsCoherents || lignesObjetTropLong().length > 0 || (grid()?.nbAValiderRestantes() ?? 0) > 0 || entiteSansLocalite()" (click)="fermerApercu(); creerPpm()">
+              <button type="button" class="btn btn-primary" [disabled]="submitting() || vacance() || !ppmFormValide || !benefsCoherents || lignesObjetTropLong().length > 0 || (grid()?.nbAValiderRestantes() ?? 0) > 0 || entiteSansLocalite() || entiteHorsPerimetre()" (click)="fermerApercu(); creerPpm()">
                 Créer le dossier
               </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ⚠️ 04/11 (pilote) — le plan d'une autre entité n'est pas chargé ; si le PDF a été mal lu, on choisit l'une de ses entités. -->
+      @if (importRefuse(); as ir) {
+        <div class="modal-backdrop">
+          <div class="modal confirm-modal" role="alertdialog" aria-modal="true" aria-label="Plan d'une autre entité" appModale (appModaleFermer)="importRefuse.set(null)">
+            <div class="modal-header">
+              <span class="modal-title">Plan d'une autre entité</span>
+              <button type="button" class="btn-close" aria-label="Fermer" (click)="importRefuse.set(null)">✕</button>
+            </div>
+            <div class="modal-body sd__refus">
+              <p>Ce plan de passation est celui de <strong>{{ ir.entite }}</strong>, qui n'est pas une de vos entités contractantes.
+                Vous ne pouvez saisir que les plans de vos entités : le PDF n'a pas été chargé.</p>
+              @if (entites().length) {
+                <label class="form-group">
+                  <span class="form-label">Le PDF a été mal lu et c'est bien le plan de l'une de vos entités ? Choisissez-la :</span>
+                  <select class="form-control" (change)="entiteRemplacement.set($any($event.target).value ? +$any($event.target).value : null)">
+                    <option value="">— Sélectionner —</option>
+                    @for (e of entites(); track e.idEntiteContract) { <option [value]="e.idEntiteContract">{{ e.libelle }}</option> }
+                  </select>
+                </label>
+              }
+              <p class="form-hint">Si vous devez saisir le plan de cette entité, demandez à l'Administrateur de vous y rattacher.</p>
+            </div>
+            <div class="modal-footer">
+              @if (entites().length) {
+                <button type="button" class="btn btn-outline" [disabled]="entiteRemplacement() == null" (click)="continuerImportAvec()">Continuer avec cette entité</button>
+              }
+              <button type="button" class="btn btn-primary" (click)="importRefuse.set(null)">Compris</button>
             </div>
           </div>
         </div>
@@ -971,6 +1004,8 @@ interface ApercuDossier {
     .sd__warn-list { margin: 0; padding-left: 1rem; font-size: var(--text-sm); }
     /* Panneau des SOA inconnus : une ligne par code (code + libellé + enregistrer au référentiel). */
     .sd__soa { display: flex; flex-direction: column; gap: 0.4rem; }
+    .sd__refus { display: grid; gap: 0.75rem; }
+    .sd__refus p { margin: 0; }
     .sd__soa-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
     .sd__soa-code { font-weight: 500; flex: 0 0 auto; min-width: 11rem; }
     .sd__soa-row .form-control { flex: 1 1 14rem; min-width: 10rem; }
@@ -1108,6 +1143,27 @@ export class SoumettreDossier {
   });
   /** Nom de l'autorité contractante lue dans le PDF (contexte du panneau de résolution). */
   readonly autoriteImportee = signal<string | null>(null);
+  /**
+   * ⚠️ 04/11 (pilote) — le PDF lu est le plan d'une entité du référentiel qui n'est pas une des vôtres : l'import est suspendu (rien n'est
+   * chargé) ; la boîte de dialogue l'explique et, si le PDF a été mal lu, laisse choisir une de vos entités pour continuer.
+   */
+  readonly importRefuse = signal<{ resultat: SaisiePpmImportResult; entite: string } | null>(null);
+  readonly entiteRemplacement = signal<number | null>(null);
+  /** L'entité choisie au formulaire n'est pas une des vôtres : « Créer le dossier » reste inactif (le serveur répondrait 403, §3.1). */
+  readonly entiteHorsPerimetre = computed(() => {
+    const id = this.selectedEntiteId();
+    return id != null && this.entites().length > 0 && !this.entites().some((e) => e.idEntiteContract === id);
+  });
+
+  /** Le PDF a été mal lu : on continue l'import avec l'entité choisie parmi les vôtres. */
+  continuerImportAvec(): void {
+    const refus = this.importRefuse();
+    const id = this.entiteRemplacement();
+    if (!refus || id == null) return;
+    this.importRefuse.set(null);
+    this.appliquerImport({ ...refus.resultat, idEntiteContract: id });
+    this.toast.success('PPM importé — vérifiez les données pré-remplies avant de créer le dossier.');
+  }
 
   // ── Enregistrement d'une nouvelle entité contractante pendant l'import (modèle A : création directe PRMP + UGPM) ──
   /** Formulaire de création d'entité affiché dans le panneau de résolution. */
@@ -1969,8 +2025,16 @@ export class SoumettreDossier {
     this.importAvertissements.set([]);
     this.saisie.importPpm(file).subscribe({
       next: (r) => {
-        this.appliquerImport(r);
         this.importing.set(false);
+        // ⚠️ 04/11 (pilote) — le plan d'une entité du référentiel qui n'est pas la vôtre n'est PAS chargé : boîte de dialogue, formulaire
+        // intact. Le serveur refuserait la création (403, §3.1) ; « Enregistrer une nouvelle entité » ne vaut que pour une entité absente.
+        if (r.idEntiteContract != null && !this.entites().some((e) => e.idEntiteContract === r.idEntiteContract)) {
+          const fiche = this.entitesReferentiel.get(r.idEntiteContract);
+          this.importRefuse.set({ resultat: r, entite: fiche?.libelleEntite?.trim() || r.autoriteContractante?.trim() || `Entité n° ${r.idEntiteContract}` });
+          this.entiteRemplacement.set(null);
+          return;
+        }
+        this.appliquerImport(r);
         this.toast.success('PPM importé — vérifiez les données pré-remplies avant de créer le dossier.');
       },
       error: (e: ApiError) => {
