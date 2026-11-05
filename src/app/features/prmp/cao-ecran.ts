@@ -109,23 +109,38 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
                 <!-- ⚠️ 28/10 (arbitrage du pilote ; demande « decision-cao-obligatoire », PRS20 04e542b) — le PDF signé est obligatoire :
                      sans lui la commission reste INCOMPLETE et la fiche ne se valide pas en remise électronique (SE_CAO). -->
                 <span class="form-label required">Décision signée (PDF, {{ decisionMaxMo }} Mo au plus)</span>
-                @if (cao()?.decision?.fichier) {
-                  <span class="cao__pdf-ok">Jointe — en joindre une nouvelle la remplace.</span>
-                } @else {
-                  <span class="cao__pdf-ko">Non jointe : la commission n’est pas constituée sans elle, et la fiche ne peut pas être validée.</span>
-                }
-                <div class="cao__pdf-choix">
-                  <input class="form-control" type="file" accept="application/pdf" aria-label="Fichier PDF de la décision signée" (change)="choisirDecision($event)" />
-                  <button type="button" class="btn btn-secondary btn-sm" [disabled]="!fichier() || saving()" (click)="joindreDecision()">Joindre</button>
+                <!-- ⚠️ 05/11 (pilote, « améliorer ») — un seul geste : le choix du fichier le dépose. Le serveur refuse le dépôt tant que la
+                     commission n'est pas enregistrée (404) : le bouton attend donc le premier enregistrement, et le dit. -->
+                <div class="cao__pdf-carte" [class.cao__pdf-carte--vide]="!decisionJointe()">
+                  @if (decisionJointe()) {
+                    <span class="cao__pdf-ok">Jointe</span>
+                  } @else if (!caoEnregistree()) {
+                    <span class="cao__pdf-attente">À joindre une fois la commission enregistrée.</span>
+                  } @else {
+                    <span class="cao__pdf-ko">Non jointe : sans elle, la commission n’est pas constituée et la fiche ne peut pas être validée.</span>
+                  }
+                  <label class="btn btn-sm cao__pdf-btn" [class.btn-primary]="caoEnregistree() && !decisionJointe()" [class.btn-outline]="!caoEnregistree() || decisionJointe()"
+                         [class.cao__pdf-btn--off]="!caoEnregistree() || saving()">
+                    {{ envoiDecision() ? 'Envoi…' : decisionJointe() ? 'Remplacer le PDF' : 'Joindre le PDF' }}
+                    <input type="file" class="cnm-sr-only" accept="application/pdf" aria-label="PDF de la décision signée"
+                           [disabled]="!caoEnregistree() || saving()" (change)="choisirDecision($event)" />
+                  </label>
                 </div>
-                @if (fichierErreur(); as m) { <span class="form-error">{{ m }}</span> }
+                @if (fichierErreur(); as m) { <span class="form-error" role="alert">{{ m }}</span> }
               </div>
             </div>
           </section>
 
           <section class="cao__bloc-membres" aria-labelledby="cao-membres">
-            <h2 id="cao-membres" class="cao__h2">Membres</h2>
+            <h2 id="cao-membres" class="cao__h2">Membres @if (lignes().length) { <span class="cao__n">{{ lignes().length }}</span> }</h2>
             @if (erreurDe('membres'); as m) { <span class="form-error">{{ m }}</span> }
+            @if (!lignes().length && !fige()) {
+              <div class="cao__vide">
+                <p>Aucun membre désigné. La commission compte <strong>au moins deux membres, dont un président</strong> : des agents de votre
+                  entité et, au plus, un expert de l’objet du marché. Chacun reçoit son invitation par courriel à l’enregistrement.</p>
+                <button type="button" class="btn btn-primary btn-sm" (click)="ajouter()">Ajouter un membre</button>
+              </div>
+            }
             <ul class="cao__membres">
               @for (l of lignes(); track l.cle; let i = $index) {
                 <li class="card cao__membre" [class.cao__membre--president]="l.president" [class.cao__membre--ancien]="l.ancienExpertAdjoint">
@@ -217,12 +232,18 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
                 </li>
               }
             </ul>
+            @if (lignes().length && !fige()) {
+              <button type="button" class="btn btn-outline btn-sm cao__ajouter" (click)="ajouter()">+ Ajouter un membre</button>
+            }
           </section>
 
           @if (!fige()) {
             <div class="card cao__pied barre-actions">
-              <button type="button" class="btn btn-secondary btn-sm" (click)="ajouter()">Ajouter un membre</button>
-              <span class="text-sm text-muted">Au moins deux membres, un seul président ; un expert de l'objet au plus{{ nbExperts() ? ' (' + nbExperts() + ' saisi' + (nbExperts() > 1 ? 's' : '') + ')' : '' }}. Un membre nouveau reçoit son invitation à l'enregistrement ; un membre retiré l'est à l'enregistrement.</span>
+              <ul class="cao__regles" aria-label="Conditions de la commission">
+                @for (r of regles(); track r.texte) {
+                  <li [class.cao__regle--ok]="r.ok"><span class="cnm-sr-only">{{ r.ok ? 'Remplie : ' : 'À remplir : ' }}</span>{{ r.texte }}</li>
+                }
+              </ul>
               <button type="submit" class="btn btn-primary cao__enregistrer" [disabled]="saving()">{{ saving() ? 'Enregistrement…' : 'Enregistrer la commission' }}</button>
             </div>
           }
@@ -241,11 +262,19 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
     .cao__decision-grille { display: grid; grid-template-columns: minmax(0, 2fr) minmax(10rem, 1fr) minmax(0, 2fr); gap: 0.9rem 1.2rem; align-items: start; }
     .cao__lu { display: flex; flex-direction: column; gap: 0.25rem; }
     .cao__pdf { display: flex; flex-direction: column; gap: 0.3rem; }
-    .cao__pdf-ok { font-size: var(--text-sm); color: var(--success-text); font-weight: 500; }
+    .cao__pdf-carte { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 0.75rem; padding: 0.45rem 0.6rem; border: 1px solid var(--bordure); border-radius: 6px; background: var(--carte-fond); }
+    .cao__pdf-carte--vide { border-style: dashed; }
+    .cao__pdf-ok { font-size: var(--text-sm); color: var(--favorable-texte); font-weight: 500; }
     .cao__pdf-ko { font-size: var(--text-sm); color: var(--warning-text); }
-    .cao__pdf-choix { display: flex; gap: 0.5rem; align-items: center; }
-    .cao__pdf-choix .form-control { flex: 1; min-width: 0; }
+    .cao__pdf-attente { font-size: var(--text-sm); color: var(--texte-secondaire); }
+    .cao__pdf-btn { position: relative; margin: 0; cursor: pointer; }
+    .cao__pdf-btn:focus-within { outline: 2px solid var(--bouton-principal); outline-offset: 2px; }
+    .cao__pdf-btn--off { opacity: 0.55; pointer-events: none; }
     .cao__bloc-membres { display: flex; flex-direction: column; gap: 0.6rem; }
+    .cao__n { display: inline-block; margin-left: 0.35rem; padding: 0 0.45rem; border-radius: 999px; background: var(--neutre-fond); color: var(--neutre-texte); font-size: 0.75rem; letter-spacing: 0; vertical-align: middle; }
+    .cao__vide { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem 1rem; padding: 1rem 1.25rem; border: 1px dashed var(--bordure); border-radius: 6px; background: var(--carte-fond); }
+    .cao__vide p { margin: 0; flex: 1 1 28rem; font-size: var(--text-sm); color: var(--texte); }
+    .cao__ajouter { align-self: flex-start; }
     .cao__membres { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 26rem), 1fr)); gap: 0.8rem; }
     .cao__membre { padding: 0.9rem 1rem; display: flex; flex-direction: column; gap: 0.7rem; border-top: 3px solid var(--n-300); }
     .cao__membre--president { border-top-color: var(--p-600); }
@@ -263,7 +292,10 @@ const ORIGINES: readonly OrigineMembreCao[] = ['ENTITE_CONTRACTANTE', 'EXPERT_OB
     .cao__membre-pied { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; padding-top: 0.6rem; border-top: 1px solid var(--n-200); }
     .cao__case { display: inline-flex; gap: 0.4rem; align-items: center; font-size: var(--text-sm); font-weight: 500; margin-right: auto; }
     .cao__pied { padding: 0.8rem 1rem; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
-    .cao__pied .text-sm { flex: 1 1 20rem; }
+    .cao__regles { list-style: none; margin: 0 auto 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.3rem 1.1rem; font-size: var(--text-sm); color: var(--texte-secondaire); }
+    .cao__regles li::before { content: '○'; margin-right: 0.35rem; }
+    .cao__regles .cao__regle--ok { color: var(--favorable-texte); }
+    .cao__regles .cao__regle--ok::before { content: '✓'; }
     @media (max-width: 900px) { .cao__decision-grille { grid-template-columns: 1fr; } }
     @media (max-width: 520px) { .cao__champs { grid-template-columns: 1fr; } }
   `,
@@ -306,6 +338,21 @@ export class CaoEcran implements OnInit {
     return ((l.prenom.trim()[0] ?? '') + (l.nom.trim()[0] ?? '')).toUpperCase() || '?';
   }
   readonly nbExperts = computed(() => this.lignes().filter((l) => l.origine === 'EXPERT_OBJET').length);
+  /** La commission existe au serveur (au moins un enregistrement) : la décision signée peut alors y être jointe (404 sinon). */
+  readonly caoEnregistree = computed(() => !!this.cao() && this.cao()!.etat !== 'ABSENTE');
+  readonly decisionJointe = computed(() => !!this.cao()?.decision?.fichier);
+  readonly envoiDecision = signal(false);
+  /** ⚠️ 05/11 — les conditions de la commission, cochées au fil de la saisie (le serveur reste juge, à l'enregistrement). */
+  readonly regles = computed(() => {
+    const n = this.lignes().length;
+    const presidents = this.lignes().filter((l) => l.president).length;
+    return [
+      { texte: `Au moins deux membres (${n})`, ok: n >= 2 },
+      { texte: 'Un président désigné', ok: presidents === 1 },
+      { texte: `Un expert de l’objet au plus (${this.nbExperts()})`, ok: this.nbExperts() <= 1 },
+      { texte: 'Référence et date de la décision', ok: !!this.reference().trim() && !!this.dateDecision() },
+    ];
+  });
   private prochaineCle = 1;
 
   ngOnInit(): void {
@@ -447,32 +494,36 @@ export class CaoEcran implements OnInit {
     });
   }
 
+  /** Le choix du fichier le dépose aussitôt (un seul geste) ; le champ est vidé pour qu'un même fichier puisse être rechoisi. */
   choisirDecision(ev: Event): void {
-    const f = (ev.target as HTMLInputElement).files?.[0] ?? null;
-    if (!f) {
-      this.fichier.set(null);
-      this.fichierErreur.set(null);
-      return;
-    }
+    const champ = ev.target as HTMLInputElement;
+    const f = champ.files?.[0] ?? null;
+    champ.value = '';
+    if (!f) return;
     const erreur = validerFichier(f, TYPES_PDF, DECISION_MAX_MO);
     this.fichierErreur.set(erreur);
     this.fichier.set(erreur ? null : f);
+    if (!erreur) this.joindreDecision();
   }
 
   joindreDecision(): void {
     const f = this.fichier();
     if (!f || this.saving()) return;
     this.saving.set(true);
+    this.envoiDecision.set(true);
     this.fichierErreur.set(null);
     this.service.deposerDecision(this.idDmc, f).subscribe({
       next: (c) => {
         this.saving.set(false);
+        this.envoiDecision.set(false);
         this.fichier.set(null);
         this.poserCao(c);
         this.toast.success('Décision signée jointe.');
       },
       error: (e: ApiError) => {
         this.saving.set(false);
+        this.envoiDecision.set(false);
+        this.fichier.set(null);
         if (e.status === 404) this.fichierErreur.set("Enregistrez d'abord la commission, puis joignez la décision.");
         else if (e.status === 413) this.fichierErreur.set(`Fichier trop volumineux : ${DECISION_MAX_MO} Mo au plus.`);
         else this.fichierErreur.set(e.message || "Le fichier n'a pas été accepté.");
