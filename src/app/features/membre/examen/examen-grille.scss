@@ -393,3 +393,12 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* ⚠️ 05/11 (pilote, option 1) — grille réduite à un élément : le décompte RAS / observation est déjà dans la barre « n / n points
+   statués » ; seul le filtre « à renseigner » reste sous elle. */
+.grille__resume--court { margin-top: 0.25rem; }
+.grille__resume--court > span { display: none; }
+
+/* ⚠️ 05/11 (pilote) — le lien vers la partie du rapport d'évaluation qui sert le point. */
+.pt__partie { display: inline-block; margin-top: 0.35rem; border-color: var(--neutre-texte); background: var(--neutre-fond); color: var(--neutre-texte); }
+.pt__partie:hover { background: var(--onglet-actif-fond); color: var(--texte); }

@@ -52,7 +52,8 @@ import { ActionGrille, PointVue, VueGrille, codesCites, pluriel } from './examen
               <app-icone nom="chev" [taille]="16" />
             </button>
           </div>
-          <h2 id="grille-titre" class="grille__titre">{{ vue().titre }}</h2>
+          <!-- ⚠️ 05/11 (pilote, option 1) — grille réduite à un élément : le titre se lit (lecteurs d'écran), la ligne du filtre le dit à l'œil. -->
+          <h2 id="grille-titre" class="grille__titre" [class.cnm-sr-only]="!!vue().filtre">{{ vue().titre }}</h2>
           @if (vue().filtre; as f) {
             <div class="grille__filtre">
               <!-- ⚠️ 05/11 (pilote) — un élément déjà examiné au dossier de mise en concurrence n'a pas de point : on le dit. -->
@@ -79,7 +80,7 @@ import { ActionGrille, PointVue, VueGrille, codesCites, pluriel } from './examen
               </div>
               <span class="progres__txt"><b>{{ statues() }} / {{ vue().points.length }}</b> points statués@if (vue().resume.obs) { · {{ pluriel(vue().resume.obs, 'observation') }}}</span>
             </div>
-            <p class="grille__resume">
+            <p class="grille__resume" [class.grille__resume--court]="!!vue().filtre">
               <span><i class="rond rond--ras" aria-hidden="true"></i>{{ vue().resume.ras }} RAS</span>
               <span><i class="rond rond--obs" aria-hidden="true"></i>{{ pluriel(vue().resume.obs, 'observation') }}</span>
               <button type="button" class="filtre" [class.filtre--on]="seulsOuverts()" [attr.aria-pressed]="seulsOuverts()" [disabled]="!vue().resume.aRenseigner && !seulsOuverts()"
@@ -126,7 +127,7 @@ import { ActionGrille, PointVue, VueGrille, codesCites, pluriel } from './examen
             <!-- ⚠️ 18/10 (pilote, lot B) — une longue grille (plus de six points) ne déplie que le point en cours ; les autres tiennent
                  sur une ligne avec leur état, un clic (ou ↓ ↑) en ouvre un autre. -->
             @if (compact() && p.idPt !== ouvertEffectif()) {
-              <button type="button" class="pt-ligne" [class.pt-ligne--todo]="p.statut === null" (click)="action.emit({ type: 'ouvrir', idPt: p.idPt })">
+              <button type="button" class="pt-ligne" [attr.data-pt]="p.idPt" [class.pt-ligne--todo]="p.statut === null" (click)="action.emit({ type: 'ouvrir', idPt: p.idPt })">
                 <span class="pt__rang">{{ p.rang }}.</span><span class="pt-ligne__l">{{ p.libelle }}</span>
                 <span class="etat etat--{{ etat(p) }}">{{ libelleEtat(p) }}</span>
               </button>
@@ -160,6 +161,10 @@ import { ActionGrille, PointVue, VueGrille, codesCites, pluriel } from './examen
                     <span class="pt__absentes" [attr.title]="refs.listeAbsentes">{{ refs.absentes }} sans objet pour cette fiche</span>
                   }
                 </div>
+              }
+              @if (p.partie; as pa) {
+                <!-- ⚠️ 05/11 (pilote) — le point se lit dans une partie du rapport d'évaluation : un clic y mène. -->
+                <button type="button" class="pt__ref pt__partie" (click)="action.emit({ type: 'partie', cle: pa.cle })">Lire dans le rapport : {{ pa.cle }} · {{ pa.libelle }}</button>
               }
               @if (p.statut === null) {
                 <p class="pt__todo"><app-icone nom="alert" [taille]="13" />À renseigner</p>
@@ -263,7 +268,8 @@ export class ExamenGrille {
   readonly pointOuvert = input<number | null>(null);
   private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
   /** Plus de six points : la grille ne déplie que le point en cours. */
-  readonly compact = computed(() => this.vue().points.length > 6);
+  // ⚠️ 05/11 (pilote, option 1) — un point par ligne dès deux points : seul le point ouvert se déplie, la grille tient sans défiler.
+  readonly compact = computed(() => this.vue().points.length > 1);
   readonly ouvertEffectif = computed(() => {
     const pts = this.vue().points;
     const o = this.pointOuvert();
@@ -284,7 +290,7 @@ export class ExamenGrille {
     effect(() => {
       const id = this.ouvertEffectif();
       if (id == null || !this.compact()) return;
-      setTimeout(() => this.hote.nativeElement.querySelector('.pt--courant')?.scrollIntoView({ block: 'nearest' }));
+      setTimeout(() => this.hote.nativeElement.querySelector<HTMLElement>('.pt--courant')?.scrollIntoView?.({ block: 'nearest' }));
     });
   }
   etat(p: PointVue): 'ras' | 'obs' | 'vide' {

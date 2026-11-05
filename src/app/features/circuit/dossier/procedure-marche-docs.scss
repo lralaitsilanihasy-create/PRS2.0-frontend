@@ -122,3 +122,25 @@
   .pvc-pas::after { display: none; }
   .pvc-pas__pt { left: 0.5rem; top: 0.15rem; }
 }
+
+// ⚠️ 05/11 (pilote, tableau validé) — le rapport d'évaluation lu pour l'examen : huit parties nommant leurs points, ancrées (la grille y mène).
+.pre { gap: 0.9rem; }
+.pre__intro { margin: 0; font-size: var(--text-sm); display: flex; flex-wrap: wrap; gap: 0.3rem 0.6rem; align-items: baseline; }
+.pre__pdf { margin-left: auto; }
+.pre__sommaire { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.pre__som { font-size: 0.75rem; padding: 0.15rem 0.5rem; border: 1px solid var(--bordure); border-radius: 999px; background: var(--carte-fond); color: var(--texte); text-decoration: none; }
+.pre__som:hover { border-color: var(--bordure-champ); }
+.pre__som:focus-visible { outline: 2px solid var(--bouton-principal); outline-offset: 2px; }
+.pme-partie { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.6rem 0.8rem 0.8rem; border: 1px solid var(--bordure); border-radius: 8px; background: var(--carte-fond); scroll-margin-top: 0.5rem; }
+.pme-partie--visee { outline: 2px solid var(--examen-texte); outline-offset: -2px; }
+.pme-partie__tete { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.6rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--bordure); }
+.pme-partie__lettre { display: inline-grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: var(--menu-fond); color: var(--texte-menu); font-size: 0.8rem; font-weight: 500; }
+.pme-partie__titre { margin: 0; font-size: 0.9rem; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--texte); }
+.pme-partie__pts { margin-left: auto; font-size: 0.72rem; color: var(--texte-secondaire); }
+.pme-ctrl { margin: 0; padding: 0.35rem 0.6rem; border-left: 3px solid var(--neutre-texte); background: var(--neutre-fond); font-size: var(--text-sm); }
+.pme-ctrl--ok { border-left-color: var(--favorable-texte); background: var(--favorable-fond); }
+.pme-ctrl--ko { border-left-color: var(--retard-texte); background: var(--retard-fond); }
+.pre__manque { margin: 0; font-size: 0.78rem; color: var(--texte-secondaire); font-style: italic; }
+.pre__rejet { color: var(--retard-texte); }
+.pre .pmd__ecartee td { text-decoration: none; color: var(--texte-secondaire); }
+.pre__prop { padding: 0.4rem 0.6rem; background: var(--favorable-fond); border-radius: 4px; }

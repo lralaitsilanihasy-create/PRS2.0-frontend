@@ -177,6 +177,9 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
     rendre();
   };
   const choisirObservation = (idPt: number): void => {
+    // ⚠️ 05/11 — grille compacte dès deux points : un point replié s'ouvre d'abord (sa ligne).
+    const ligne = racine().querySelector<HTMLButtonElement>(`.pt-ligne[data-pt="${idPt}"]`);
+    if (ligne) { ligne.click(); rendre(); }
     const radio = racine().querySelector<HTMLInputElement>(`input[name="st-${idPt}"]:not(:checked)`) as HTMLInputElement;
     radio.checked = true;
     radio.dispatchEvent(new Event('change'));
@@ -364,6 +367,9 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
     rendre();
     expect(ecran.estEtapeAvis()).toBe(false);
     expect(texte('.grille__eyebrow')).toBe('Ligne 2 sur 3');
+    // ⚠️ 05/11 — grille compacte : le point observé se rouvre par sa ligne s'il est replié.
+    racine().querySelector<HTMLButtonElement>('.pt-ligne[data-pt="12"]')?.click();
+    rendre();
     expect((racine().querySelector('#obs-lire-12-0') as HTMLTextAreaElement).value).toBe('Lancement avant ouverture des plis');
 
     // Retour à la synthèse, soumission SANS synthèse : acceptée, avec l'avis du Membre.

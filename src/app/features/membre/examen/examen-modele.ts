@@ -434,6 +434,8 @@ export interface PointVue {
   erreur: string | null;
   /** « Observation » sans correction renseignée : vaudra RAS à la validation — annoncé sous le point. */
   seraRas: boolean;
+  /** ⚠️ 05/11 — la partie du rapport d'évaluation qui sert ce point (dossier de marché) ; la grille y mène. */
+  partie?: { cle: string; libelle: string } | null;
 }
 
 export interface PieceVue {
@@ -452,6 +454,8 @@ export interface PieceVue {
  * dossier de marché qui portent sur un élément lu en données, reconnus à leur libellé. Un élément sans point propre (fiche de
  * présentation, PV de la CNM) montre toute la grille.
  */
+/** ⚠️ 05/11 — la famille de l'examen : le dossier de MARCHÉ (né d'une attribution) ou le dossier né d'une FICHE (DAO…). */
+export type FamilleGrille = 'MARCHE' | 'FICHE';
 const POINTS_PAR_ELEMENT: Readonly<Record<string, RegExp>> = {
   // ⚠️ 05/11 (pilote) — repli tant que le référentiel ne sert pas `elements` (demande points-par-element) : le rattachement validé
   // par le pilote, reconnu au libellé. Seuls les éléments NOUVEAUX du dossier de marché portent des points.
@@ -462,11 +466,30 @@ const POINTS_PAR_ELEMENT: Readonly<Record<string, RegExp>> = {
   pieces: /CAO désignée|publicité effective/i,
 };
 /**
+ * ⚠️ 05/11 (pilote, demande points-par-element §B4) — la grille d'un dossier né d'une fiche : presque tout porte sur les informations
+ * du DAO ; l'avis, le bordereau, le canevas, la fiche de présentation et les pièces ont leurs quelques points. Repli au libellé.
+ */
+const POINTS_PAR_ELEMENT_FICHE: Readonly<Record<string, RegExp>> = {
+  presentation: /fiche de présentation cohérente/i,
+  avis: /avis spécifique conforme|délai de remise des offres|remise et ouverture|visite des lieux/i,
+  bordereau: /prix unitaires ou forfaitaires|spécifications et DQE/i,
+  canevas: /évaluation et attribution/i,
+  pieces: /AGPM contrôlé/i,
+};
+/** Au dossier né d'une fiche, tout point qui ne relève pas de l'avis seul ni des pièces seules porte sur les informations du DAO. */
+const HORS_DAO_FICHE = /avis spécifique conforme|AGPM contrôlé/i;
+/** ⚠️ 05/11 (pilote) — au dossier né d'une fiche, la ligne du plan de passation a été examinée au plan : une référence, sans point. */
+export const ELEMENTS_DEJA_EXAMINES_FICHE: ReadonlySet<string> = new Set(['plan']);
+/**
  * ⚠️ 05/11 (pilote) — « la grille de contrôle s'applique aux éléments du dossier qui n'ont pas encore passé en examen ». Le PV de la
  * CNM, les informations du DAO et le bordereau estimatif ont été examinés au dossier de mise en concurrence : ils se lisent en
  * référence, sans point propre.
  */
 export const ELEMENTS_DEJA_EXAMINES: ReadonlySet<string> = new Set(['pv-cnm', 'dao', 'bordereau']);
+/** Les éléments déjà examinés dans un dossier antérieur, selon la famille de l'examen. */
+export function elementsDejaExamines(famille: FamilleGrille): ReadonlySet<string> {
+  return famille === 'FICHE' ? ELEMENTS_DEJA_EXAMINES_FICHE : ELEMENTS_DEJA_EXAMINES;
+}
 export const LIBELLES_ELEMENT_GRILLE: Readonly<Record<string, string>> = {
   presentation: 'Fiche de présentation',
   seance: 'Séance d’ouverture',
@@ -476,21 +499,30 @@ export const LIBELLES_ELEMENT_GRILLE: Readonly<Record<string, string>> = {
   dao: 'Informations du DAO',
   'pv-cnm': 'PV de la CNM (DAO)',
   pieces: 'Pièces jointes',
+  plan: 'Plan de passation',
+  avis: 'Avis spécifique',
+  canevas: 'Canevas de rapport',
 };
 /** Le code serveur de l'élément (`PointsCtrl.elements`) de chaque onglet. */
 const CODE_ELEMENT: Readonly<Record<string, string>> = {
   presentation: 'PRESENTATION', 'pv-cnm': 'PV_CNM', dao: 'DAO', seance: 'SEANCE', evaluation: 'EVALUATION', attribution: 'ATTRIBUTION',
-  bordereau: 'BORDEREAU', pieces: 'PIECES',
+  bordereau: 'BORDEREAU', pieces: 'PIECES', plan: 'PLAN', avis: 'AVIS', canevas: 'CANEVAS',
 };
 /**
  * Les points de l'élément ; `[]` pour un élément déjà examiné (aucun point) ; `null` sans élément connu (toute la grille).
  * ⚠️ 05/11 — le rattachement du RÉFÉRENTIEL (`elements`, V166) fait foi dès qu'un point de la grille en porte un ; à défaut, le libellé.
  */
-export function pointsDeLElement<T extends { libelPointCtrl?: string | null; elements?: readonly string[] | null }>(element: string | null, points: readonly T[]): T[] | null {
-  if (element && ELEMENTS_DEJA_EXAMINES.has(element)) return [];
+export function pointsDeLElement<T extends { libelPointCtrl?: string | null; elements?: readonly string[] | null }>(
+  element: string | null, points: readonly T[], famille: FamilleGrille = 'MARCHE',
+): T[] | null {
+  if (element && elementsDejaExamines(famille).has(element)) return [];
   const code = element ? CODE_ELEMENT[element] : undefined;
   if (code && points.some((p) => p.elements?.length)) return points.filter((p) => p.elements?.includes(code));
-  const re = element ? POINTS_PAR_ELEMENT[element] : undefined;
+  if (famille === 'FICHE' && element === 'dao') {
+    const l = points.filter((x) => !HORS_DAO_FICHE.test(x.libelPointCtrl ?? ''));
+    return l.length ? l : null;
+  }
+  const re = element ? (famille === 'FICHE' ? POINTS_PAR_ELEMENT_FICHE : POINTS_PAR_ELEMENT)[element] : undefined;
   if (!re) return null;
   const l = points.filter((x) => re.test(x.libelPointCtrl ?? ''));
   return l.length ? l : null;
@@ -529,7 +561,9 @@ export type ActionGrille =
   | { type: 'ouvrir'; idPt: number }
   | { type: 'ref'; code: string }
   // ⚠️ 27/10 — basculer entre les points de l'onglet ouvert et toute la grille du dossier.
-  | { type: 'tousPoints' };
+  | { type: 'tousPoints' }
+  // ⚠️ 05/11 — lire la partie du rapport d'évaluation qui sert le point.
+  | { type: 'partie'; cle: string };
 
 /**
  * ⚠️ 18/10 (pilote, lot B) — les informations de la fiche DAO qu'un point de contrôle cite dans son texte : un champ

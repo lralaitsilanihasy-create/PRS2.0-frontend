@@ -111,3 +111,44 @@ L'administration des points ne propose pas encore le champ (le formulaire géné
 >   demanderait une table validée par le pilote, comme celle de B2.
 > - **Écart** : `DAO`, `BORDEREAU` et `PV_CNM` restent des codes **admis** à l'écriture : l'Administrateur peut encore les poser. Ce n'est
 >   pas un refus, puisque l'écran n'affiche rien sous eux. Dites-nous s'il faut les refuser au `PUT`/`POST`.
+## B4 — La grille d'un dossier né d'une fiche (DAO) rattachée à ses éléments (pilote, 05/11 : « valable pour l'examen de tout type de dossier »)
+
+L'examen d'un dossier né d'une fiche (DAOO lu en recette le 05/11, `GET /api/points-ctrls?sousType=DAOO`) a ses onglets : Fiche de
+présentation, Plan de passation, Informations du DAO, Avis spécifique, Bordereau estimatif, Canevas de rapport, Pièces jointes. Même
+principe qu'au dossier de marché : **la ligne du plan de passation est une référence déjà examinée**, sans point.
+
+- **Codes ajoutés** à `elements` : `PLAN`, `AVIS`, `CANEVAS` (en plus de `PRESENTATION`, `DAO`, `BORDEREAU`, `PIECES`). Aucun point sur `PLAN`.
+- **Rattachement validé par le pilote (05/11)**, par libellé, pour la grille DAOO (points communs et variantes contrat-cadre) :
+
+| Point | `elements` (principal d'abord) |
+|---|---|
+| Fiche de présentation cohérente | `PRESENTATION`, `DAO` |
+| Avis spécifique conforme | `AVIS` |
+| Délai de remise des offres | `AVIS`, `DAO` |
+| Remise et ouverture des plis | `AVIS`, `DAO` |
+| Visite des lieux | `AVIS`, `DAO` |
+| AGPM contrôlé et publié | `PIECES` |
+| Évaluation et attribution | `DAO`, `CANEVAS` |
+| Prix unitaires ou forfaitaires | `DAO`, `BORDEREAU` |
+| Spécifications et DQE | `DAO`, `BORDEREAU` |
+| **Tous les autres points de la grille** : Conformité au plan de passation, Allotissement, Montants et estimation, Garantie de soumission, Délais de la consultation, Candidats : pièces et capacités, Paiements, avance et garanties financières, Pénalités, garantie et dérogations, Exécution et livraison, Spécifications techniques, Cohérence des mentions du dossier, Conformité aux documents types, Offres anormales et quantités, Formulaires de soumission, Qualifications particulières proportionnées, Quantités fixes ou à commande, Spécifications neutres, Garantie décennale, Personnel et matériel exigés, Recours au contrat-cadre justifié, Critères d'élimination et d'attribution, Critères de conformité de l'offre, Pourcentages du règlement, Délais de remise (contrat-cadre) | `DAO` |
+
+- ⚠️ Un même libellé existe dans les deux grilles (« Délai de remise des offres » : `SEANCE` au dossier de marché, `AVIS`, `DAO` ici) :
+  le rattachement se fait **par famille** (DMC ici, DDM au B2), jamais par libellé seul sur toute la table.
+- Les autres grilles nées d'une fiche (consultation de prix, AMI, appel d'offres restreint, DC…) : même logique ; le front relèvera leurs
+  points dans une demande suivante — rien à faire pour elles ici, sauf si un libellé identique à ceux du tableau rend le rattachement évident.
+
+**Côté front** : la grille d'un dossier né d'une fiche se réduit à l'onglet ouvert, sur `elements` dès qu'il est servi, sur ce tableau
+(reconnu au libellé) d'ici là ; l'onglet « Plan de passation » dit qu'il est une référence déjà examinée.
+
+> ⚠️ **2026-11-05 — B4 livré (PRS20, V168), sans écart sur le tableau.**
+> - Les codes `PLAN`, `AVIS` et `CANEVAS` sont admis. Aucun point ne porte `PLAN`, mais le code reste admis à l'écriture, comme `PV_CNM` (voir B3).
+> - **Recette (lecture seule, 05/11)** : la grille DAOO compte 44 points pour 33 libellés distincts : 11 libellés ont leur variante
+>   contrat-cadre. Tous les points sont dans la famille `DMC`, sous-type `DAOO`. Les 33 libellés du tableau ont été rapprochés un à un,
+>   sans écart. V168 couvre les sous-types `DAOO` et `DAOO-CC`, variantes comprises.
+> - **Par famille** : la migration et les semeurs filtrent sur la famille et le sous-type. « Délai de remise des offres » vaut donc `AVIS`,
+>   `DAO` au DAO et reste `SEANCE` au dossier de marché, comme le vérifient les tests.
+> - Un point n'est rattaché que s'il n'a encore aucun élément : un réglage de l'Administrateur n'est pas écrasé.
+> - **Base neuve** : les points saisis par l'Administrateur le 26/09 (« Conformité au plan de passation »…) et leurs variantes (V133)
+>   n'y existent pas. Seuls les points du semeur du manuel y sont rattachés d'office.
+> - Rien n'a été fait pour les autres grilles nées d'une fiche, comme prévu.

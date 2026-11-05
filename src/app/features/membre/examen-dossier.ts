@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   HostListener,
   Injector,
   OnDestroy,
@@ -10,6 +11,7 @@ import {
   inject,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -86,7 +88,8 @@ import { CanevasRapportDoc } from '../circuit/dossier/canevas-rapport-doc';
 import { FichePresentationDaoDoc } from '../circuit/dossier/fiche-presentation-dao';
 import { PlanDuDossierDao } from '../circuit/dossier/plan-du-dossier-dao';
 import { OngletPieceFournie, avecProcedure, ficheDuDossier, ongletDuFichier } from '../circuit/dossier/dossier-pieces';
-import { ELEMENTS_DEJA_EXAMINES, LIBELLES_ELEMENT_GRILLE, pointsDeLElement } from './examen/examen-modele';
+import { ELEMENTS_DEJA_EXAMINES, FamilleGrille, LIBELLES_ELEMENT_GRILLE, elementsDejaExamines, pointsDeLElement } from './examen/examen-modele';
+import { partieDuPoint } from '../circuit/dossier/parties-rapport-evaluation';
 import { PieceEnDonnees } from '../circuit/dossier/piece-en-donnees';
 import {
   COLONNES_PPM_OFFICIEL,
@@ -238,7 +241,7 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
     ControlesDossier,
   ],
   template: `
-    <section class="exam" [class.exam--synthese]="estEtapeAvis() && points().length > 0">
+    <section class="exam" #exam [style.height.px]="hauteurExam()" [class.exam--synthese]="estEtapeAvis() && points().length > 0">
       @if (loading()) {
         <p class="exam__info" role="status">Chargement…</p>
       } @else if (!dossier()) {
@@ -292,12 +295,12 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
         }
 
         @if (!estEtapeAvis() || !points().length) {
-          <div class="cols" [class.cols--repliee]="!grilleOuverte() || !points().length" [style.--larg-grille]="largeurGrille()">
+          <div class="cols" [class.cols--repliee]="!grilleOuverte() || !points().length || grilleMasquee()" [style.--larg-grille]="largeurGrille()">
             <section class="doc" aria-label="Documents du dossier">
               <div class="doc__barre">
                 @if (onglets().length > 1) {
                   <div class="doc__onglets" role="tablist" aria-label="Documents du dossier">
-                    @for (o of onglets(); track o.cle) {
+                    @for (o of ongletsAControler(); track o.cle) {
                       <button
                         type="button"
                         role="tab"
@@ -315,6 +318,16 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
                   </div>
                 } @else {
                   <h2 class="doc__titre">Pièces jointes <small>{{ nbPieces() }}</small></h2>
+                }
+                <!-- ⚠️ 05/11 (pilote, maquette « éléments de l'examen », variante C) — les éléments déjà examinés ne sont plus des onglets :
+                     « Comparer avec » ouvre la référence À CÔTÉ de l'élément contrôlé, la grille restant à droite. Fermée par défaut. -->
+                @if (references().length) {
+                  <div class="doc__comparer-avec" role="group" aria-label="Comparer avec une référence déjà examinée">
+                    <span class="doc__comparer-t">Comparer avec</span>
+                    @for (o of references(); track o.cle) {
+                      <button type="button" class="dtab dtab--ref" [attr.aria-pressed]="comparaison() === o.cle" (click)="comparer(o.cle)">{{ o.libelle }}</button>
+                    }
+                  </div>
                 }
                 <span class="doc__esp"></span>
                 @if (ongletAffiche() === 'ppm') {
@@ -372,6 +385,7 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
                 }
               </div>
 
+              <div class="doc__zone" [class.doc__zone--comparer]="!!comparaison()">
               <div
                 class="doc__corps"
                 id="panneau-doc"
@@ -462,7 +476,7 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
                     <div class="pj__donnees pj__donnees--seul"><app-piece-en-donnees [dossier]="dossier()!" element="seance" /></div>
                   }
                   @case ('evaluation') {
-                    <div class="pj__donnees pj__donnees--seul"><app-piece-en-donnees [dossier]="dossier()!" element="evaluation" /></div>
+                    <div class="pj__donnees pj__donnees--seul"><app-piece-en-donnees [dossier]="dossier()!" element="evaluation" [examen]="true" [controles]="controles()" [visee]="partieVisee()" /></div>
                   }
                   @case ('attribution') {
                     <div class="pj__donnees pj__donnees--seul"><app-piece-en-donnees [dossier]="dossier()!" element="attribution" /></div>
@@ -544,6 +558,34 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
                   }
                 }
               </div>
+              @if (comparaison(); as c) {
+                <aside class="doc__ref" [attr.aria-label]="libelleOnglet(c) + ' — référence déjà examinée'">
+                  <div class="doc__ref-tete">
+                    <strong>{{ libelleOnglet(c) }}</strong>
+                    <span class="doc__ref-tag">référence · {{ origineReferences() }}</span>
+                    <button type="button" class="doc__ref-fermer" [attr.aria-label]="'Fermer la comparaison avec ' + libelleOnglet(c)" (click)="comparaison.set(null)">✕</button>
+                  </div>
+                  <div class="doc__ref-corps">
+                    @switch (c) {
+                      @case ('dao') {
+                        <app-document-visionneuse [annotations]="annotationsDoc()">
+                          <app-fiche-dao-doc [idDmc]="idFicheDossier()!" [observations]="observationsDao()" [observable]="false" />
+                        </app-document-visionneuse>
+                      }
+                      @case ('bordereau') {
+                        <app-document-visionneuse><app-bordereau-estimatif-doc [idDmc]="idFicheDossier()!" [versionSoumise]="dossier()!.ficheMarche?.versionSoumise" /></app-document-visionneuse>
+                      }
+                      @case ('pv-cnm') {
+                        <div class="pj__donnees pj__donnees--seul"><app-piece-en-donnees [dossier]="dossier()!" element="pv-cnm" /></div>
+                      }
+                      @case ('plan') {
+                        <app-plan-du-dossier-dao [idDossierPlan]="dossier()!.idDossierPlan!" [idDetail]="dossier()!.ficheMarche?.idDetail" />
+                      }
+                    }
+                  </div>
+                </aside>
+              }
+              </div>
             </section>
 
             <!-- Colonne de droite = la grille de contrôle, seule. ⚠️ Toute section ajoutée ici va DANS
@@ -553,11 +595,12 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
                  barre du document (demande pilote 21/09) — il dit où regarder, il ne remplace aucun point. -->
             <div class="cote">
               <!-- ⚠️ 18/10 (pilote, lot C) — la poignée entre le document et la grille : tirer (ou ← →) règle la largeur, retenue. -->
-              @if (points().length && grilleOuverte()) {
+              <!-- ⚠️ 05/11 (pilote) — la grille ne se présente qu'aux éléments NOUVEAUX : sur un élément déjà examiné, le document seul. -->
+              @if (points().length && grilleOuverte() && !grilleMasquee()) {
                 <div class="poignee" role="separator" aria-orientation="vertical" aria-label="Largeur de la grille" tabindex="0"
                   (pointerdown)="tirerPoignee($event)" (keydown)="clavierPoignee($event)"></div>
               }
-              @if (points().length) {
+              @if (points().length && !grilleMasquee()) {
                 <app-examen-grille [vue]="vueGrille()" [ouverte]="grilleOuverte()" [pointOuvert]="pointOuvert()" [codesConnus]="codesFiche()" [enregistre]="derniereSauvegarde()" (action)="surActionGrille($event)" />
               }
             </div>
@@ -954,9 +997,19 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
   /** L'utilisateur a demandé toute la grille malgré l'onglet ouvert. */
   readonly tousPointsGrille = signal(false);
   /** Les points de l'onglet ouvert, à l'étape de la grille d'un dossier de marché ; `null` : toute la grille. */
+  /**
+   * ⚠️ 05/11 (pilote, « valable pour l'examen de tout type de dossier ») — la grille suit l'onglet au dossier de marché comme au dossier
+   * né d'une fiche (DAO…) ; `null` pour les autres (plan de passation : ses grilles ont déjà leur portée).
+   */
+  readonly familleGrille = computed<FamilleGrille | null>(() => {
+    const d = this.dossier();
+    if (d?.procedure) return 'MARCHE';
+    return d?.idDmc != null && !this.estPpm() ? 'FICHE' : null;
+  });
   private readonly pointsElement = computed(() => {
-    if (!this.estEtapeDossier() || !this.dossier()?.procedure) return null;
-    const l = pointsDeLElement(this.elementGrille(), this.pointsDossier());
+    const famille = this.familleGrille();
+    if (!this.estEtapeDossier() || !famille) return null;
+    const l = pointsDeLElement(this.elementGrille(), this.pointsDossier(), famille);
     return l ? new Set(l.map((x) => x.idPointCtrl)) : null;
   });
   rangPoint(p: PointsCtrl): number { return this.pointsCourants().findIndex((x) => x.idPointCtrl === p.idPointCtrl) + 1; }
@@ -966,6 +1019,16 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
     if (this.ongletAffiche() !== 'dao') this.ongletContenu.set('dao');
     this.ficheCible.set({ code, jeton: maintenantPoste() });
   }
+  /**
+   * ⚠️ 05/11 (pilote, tableau validé) — la partie du rapport d'évaluation que la grille demande : l'onglet du rapport s'ouvre (la grille
+   * garde son filtre), la partie défile et se surligne. Le jeton distingue deux demandes de la même partie.
+   */
+  readonly partieVisee = signal<{ cle: string; jeton: number } | null>(null);
+  allerPartieRapport(cle: string): void {
+    if (this.ongletAffiche() !== 'evaluation') this.ongletContenu.set('evaluation');
+    this.viserPartie(cle);
+  }
+  private viserPartie(cle: string): void { this.partieVisee.set({ cle, jeton: maintenantPoste() }); }
   /** ⚠️ 18/10 (pilote, lot C) — la largeur de la grille, réglée à la poignée et retenue par le navigateur. */
   readonly largeurGrille = signal<string | null>((() => { try { return localStorage.getItem('cnm.examen.largeur-grille'); } catch { return null; } })());
   private retenirLargeur(px: number): void {
@@ -1201,6 +1264,29 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
    */
   readonly daoEnReference = computed(() => { const d = this.dossier(); return d?.idDmc == null && !!d?.procedure; });
   /** ⚠️ 05/11 (pilote) — l'onglet affiché est-il un élément déjà examiné dans un dossier antérieur ? Où, et à quoi il sert ici. */
+  /**
+   * ⚠️ 05/11 (pilote, variante C) — les onglets : les éléments à contrôler ; les éléments déjà examinés (selon la famille de l'examen)
+   * passent dans « Comparer avec ». Hors dossier de marché ou né d'une fiche, tous les onglets restent.
+   */
+  private readonly dejaExaminesIci = computed<ReadonlySet<string>>(() => {
+    const f = this.familleGrille();
+    return f ? elementsDejaExamines(f) : new Set<string>();
+  });
+  readonly ongletsAControler = computed(() => this.onglets().filter((o) => !this.dejaExaminesIci().has(o.cle)));
+  readonly references = computed(() => this.onglets().filter((o) => this.dejaExaminesIci().has(o.cle)));
+  /** La référence ouverte à côté de l'élément contrôlé (`null` : fermée, la valeur par défaut). */
+  readonly comparaison = signal<OngletDocument | null>(null);
+  comparer(cle: OngletDocument): void {
+    this.comparaison.set(this.comparaison() === cle ? null : cle);
+  }
+  libelleOnglet(cle: OngletDocument): string {
+    return this.onglets().find((o) => o.cle === cle)?.libelle ?? '';
+  }
+  /** Où les références ont été examinées : le dossier de mise en concurrence, ou le plan de passation. */
+  readonly origineReferences = computed(() =>
+    this.familleGrille() === 'MARCHE' ? (this.dossier()?.procedure?.refeDossierMiseEnConcurrence ?? 'dossier de mise en concurrence') : 'plan de passation');
+  /** ⚠️ 05/11 (pilote, « masquer la grille ») — sur un élément déjà examiné, la grille de contrôle ne se présente pas. */
+  readonly grilleMasquee = computed(() => this.referenceAffichee() != null);
   readonly referenceAffichee = computed<{ ou: string; usage: string } | null>(() => {
     const d = this.dossier();
     const o = this.ongletAffiche();
@@ -1594,6 +1680,8 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
           cleCible: o.champ ? `${o.champ}|${o.idBenefCible ?? ''}` : '',
         })),
         erreur: erreurs.get(p.idPointCtrl) ?? null,
+        // ⚠️ 05/11 — dossier de marché : la partie du rapport d'évaluation que le point lit (la grille y mène).
+        partie: this.familleGrille() === 'MARCHE' ? partieDuPoint(p.libelPointCtrl) : null,
         // ⚠️ 21/09 — « pas de texte = pas d'observation » : dit AVANT le clic que ce point vaudra RAS.
         seraRas: st.statut === 'OBS' && !estObservationEffective(st),
       };
@@ -1602,7 +1690,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
     const ids = this.pointsElement();
     const tous = this.tousPointsGrille();
     const affiches = ids && !tous ? points.filter((x) => ids.has(x.idPt)) : points;
-    const filtre = ids ? { libelle: LIBELLES_ELEMENT_GRILLE[this.elementGrille() ?? ''] ?? '', n: ids.size, total: points.length, tous, dejaExamine: ELEMENTS_DEJA_EXAMINES.has(this.elementGrille() ?? '') } : null;
+    const filtre = ids ? { libelle: LIBELLES_ELEMENT_GRILLE[this.elementGrille() ?? ''] ?? '', n: ids.size, total: points.length, tous, dejaExamine: elementsDejaExamines(this.familleGrille() ?? 'MARCHE').has(this.elementGrille() ?? '') } : null;
     // Résumé sur l'EFFECTIF : un point « Observation » sans texte compte déjà pour RAS.
     // Le décompte suit les points affichés (la barre « n / total »).
     const resume = {
@@ -1799,7 +1887,29 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
     return 'Précédent';
   });
 
+  /**
+   * ⚠️ 05/11 (pilote, option 1 « plan de travail fixe ») — la zone d'examen occupe EXACTEMENT la hauteur qui reste sous la coquille
+   * (en-tête, menu, pied mesurés sur la page réelle) : la page ne défile plus, seuls le document et, au besoin, la grille défilent.
+   * Sous 60 rem, l'écran s'empile et la page défile (règle de la feuille de style).
+   */
+  private readonly zoneExam = viewChild<ElementRef<HTMLElement>>('exam');
+  readonly hauteurExam = signal<number | null>(null);
+  @HostListener('window:resize')
+  ajusterHauteur(): void {
+    const el = this.zoneExam()?.nativeElement;
+    if (!el || window.innerWidth < 960) { this.hauteurExam.set(null); return; }
+    const surplus = document.documentElement.scrollHeight - window.innerHeight;
+    const h = Math.max(416, Math.floor(el.offsetHeight - surplus));
+    if (h !== this.hauteurExam()) this.hauteurExam.set(h);
+  }
+
   constructor() {
+    // La zone se mesure une fois rendue, puis à chaque changement de dossier ou d'étape (sa structure change).
+    effect(() => {
+      this.dossier();
+      this.estEtapeAvis();
+      setTimeout(() => this.ajusterHauteur());
+    });
     // ⚠️ Demande pilote (2026-09-21) — un avis choisi qui n'est plus proposé (les observations ont changé
     // après un retour arrière) est ramené à l'avis suggéré, dès que le référentiel est chargé. Un effect
     // qui écrit, jamais un computed.
@@ -1849,7 +1959,10 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       // ⚠️ 27/10 — un dossier de marché lit la fiche DAO de sa procédure.
       else if (this.estEtapeDossier() && !untracked(() => this.elementGrille())) {
         // ⚠️ 05/11 (pilote) — dossier de marché : le DAO est une référence ; la grille s'ouvre sur le premier élément nouveau.
-        const nouveau = this.dossier()?.procedure ? untracked(() => this.onglets()).find((o) => o.cle === 'seance' || o.cle === 'evaluation' || o.cle === 'attribution')?.cle : undefined;
+        // Au dossier né d'une fiche, la grille s'ouvre sur les informations du DAO, qui portent l'essentiel des points.
+        const nouveau = this.dossier()?.procedure
+          ? untracked(() => this.onglets()).find((o) => o.cle === 'seance' || o.cle === 'evaluation' || o.cle === 'attribution')?.cle
+          : untracked(() => this.familleGrille()) === 'FICHE' ? ('dao' as const) : undefined;
         if (nouveau) {
           this.ongletContenu.set(nouveau);
           untracked(() => this.elementGrille.set(nouveau));
@@ -2336,7 +2449,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
     };
     setTimeout(replacer);
     // ⚠️ 27/10 (pilote) — dossier de marché : un onglet d'élément amène la grille du dossier, réduite à ses points.
-    if (this.dossier()?.procedure && o !== 'pieces') {
+    if (this.familleGrille() && o !== 'pieces') {
       this.elementGrille.set(o);
       this.tousPointsGrille.set(false);
       if (this.hasEtapeDossier() && !this.estEtapeDossier()) this.allerEtape(this.etapeDossierIdx());
@@ -2454,6 +2567,14 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
         break;
       case 'ouvrir':
         this.pointOuvert.set(a.idPt);
+        // ⚠️ 05/11 — le rapport d'évaluation ouvert : il défile jusqu'à la partie du point qu'on vient d'ouvrir.
+        if (this.ongletAffiche() === 'evaluation') {
+          const pa = this.vueGrille().points.find((p) => p.idPt === a.idPt)?.partie;
+          if (pa) this.viserPartie(pa.cle);
+        }
+        break;
+      case 'partie':
+        this.allerPartieRapport(a.cle);
         break;
       case 'ref':
         this.allerInformation(a.code);

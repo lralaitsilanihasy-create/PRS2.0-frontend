@@ -1,0 +1,220 @@
+<title>Éléments nouveaux et références</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Trois maquettes de l'écran d'examen d'un DOSSIER DE MARCHÉ (00003/MAOO/CNM/2026) : comment distinguer, à l'œil, les éléments
+     NOUVEAUX du dossier (contrôlés sur la grille) des éléments déjà examinés au dossier de mise en concurrence (références).
+     Palette : celle de l'application (bloc « DESIGN INSTITUTIONNEL » de styles.scss), thème clair seul, comme l'application. */
+  :root {
+    color-scheme: light;
+    --menu-fond: #0C3A5B; --section-fond: #082C47; --onglet-actif-fond: #EAF2FF;
+    --page-fond: #E9EEF3; --carte-fond: #FFFFFF; --tableau-entete: #EEF1F4; --ligne-survol: #F7F8FA;
+    --bordure: #D9DEE3; --bordure-champ: #868E96; --texte: #1F2328; --texte-secondaire: #5F6368;
+    --texte-menu: #FFFFFF; --texte-menu-secondaire: #A9BCCD; --bouton-principal: #2557D6;
+    --examen-fond: #FFF1C2; --examen-texte: #7A5600; --favorable-fond: #E3F4EA; --favorable-texte: #187547;
+    --neutre-fond: #ECEEF1; --neutre-texte: #3C4043;
+    --police: 'Segoe UI', Roboto, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page-fond); color: var(--texte); font: 14px/1.45 var(--police); }
+  .page { max-width: 1280px; margin: 0 auto; padding: 24px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 18px; }
+  h1 { margin: 0; font-size: 1.4rem; font-weight: 500; }
+  .intro { margin: 0; max-width: 80ch; color: var(--texte-secondaire); }
+  .choix { display: flex; flex-wrap: wrap; gap: 8px; }
+  .choix button { font: inherit; padding: 8px 14px; border-radius: 4px; border: 1px solid var(--bordure-champ); background: var(--carte-fond); color: var(--texte); cursor: pointer; display: grid; text-align: left; gap: 2px; }
+  .choix button b { font-weight: 500; }
+  .choix button span { font-size: 12px; color: var(--texte-secondaire); }
+  .choix button[aria-pressed="true"] { background: var(--menu-fond); border-color: var(--menu-fond); color: var(--texte-menu); }
+  .choix button[aria-pressed="true"] span { color: var(--texte-menu-secondaire); }
+  button:focus-visible { outline: 2px solid var(--bouton-principal); outline-offset: 2px; }
+
+  /* Le cadre d'écran */
+  .ecran { background: var(--page-fond); border: 1px solid var(--bordure); border-radius: 6px; overflow: hidden; }
+  .entete { background: var(--menu-fond); color: var(--texte-menu); padding: 8px 14px; font-size: 13px; display: flex; gap: 14px; flex-wrap: wrap; }
+  .entete b { font-weight: 500; }
+  .entete span { color: var(--texte-menu-secondaire); }
+  .corps { padding: 12px; display: grid; gap: 10px; }
+  .etapes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .etape { background: var(--carte-fond); border: 1px solid var(--bordure); border-radius: 6px; padding: 8px 10px; font-size: 13px; }
+  .etape--on { border-color: var(--bouton-principal); }
+  .etape small { display: block; color: var(--texte-secondaire); }
+  .cols { display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: 10px; align-items: start; }
+  .cols--seul { grid-template-columns: minmax(0, 1fr); }
+  .doc { background: var(--carte-fond); border: 1px solid var(--bordure); border-radius: 6px; overflow: hidden; min-width: 0; }
+  .onglets { display: flex; flex-wrap: wrap; align-items: stretch; border-bottom: 1px solid var(--bordure); font-size: 13px; }
+  .onglet { padding: 9px 11px; border: 0; background: none; font: inherit; color: var(--texte); border-bottom: 2px solid transparent; display: inline-flex; gap: 6px; align-items: center; }
+  .onglet--on { border-bottom-color: var(--bouton-principal); font-weight: 500; }
+  .n { display: inline-block; min-width: 18px; padding: 0 6px; border-radius: 999px; font-size: 11px; text-align: center; background: var(--examen-fond); color: var(--examen-texte); }
+  .n--ok { background: var(--favorable-fond); color: var(--favorable-texte); }
+  .ref { color: var(--texte-secondaire); }
+  .tag { font-size: 10.5px; padding: 0 6px; border-radius: 3px; background: var(--neutre-fond); color: var(--neutre-texte); letter-spacing: 0.02em; }
+  .groupe { display: flex; align-items: center; gap: 2px; padding: 0 6px; }
+  .groupe__t { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--texte-secondaire); padding: 0 6px 0 4px; }
+  .groupe--ref { background: var(--neutre-fond); border-left: 1px solid var(--bordure); margin-left: auto; }
+  .contenu { padding: 14px 16px; display: grid; gap: 10px; }
+  .contenu--ref { background: var(--ligne-survol); }
+  .note { margin: 0; padding: 7px 10px; border-left: 3px solid var(--neutre-texte); background: var(--neutre-fond); font-size: 12.5px; }
+  .note b { font-weight: 500; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  th { background: var(--tableau-entete); font-weight: 500; text-align: left; padding: 5px 8px; }
+  td { border-top: 1px solid var(--bordure); padding: 5px 8px; }
+  .r { text-align: right; }
+  .contenu--ref table, .contenu--ref h3 { opacity: 0.88; }
+  h3 { margin: 0; font-size: 13.5px; font-weight: 500; }
+  .grille { background: var(--carte-fond); border: 1px solid var(--bordure); border-radius: 6px; padding: 10px 12px; display: grid; gap: 6px; font-size: 12.5px; }
+  .grille__k { font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texte-secondaire); }
+  .grille__f { background: var(--onglet-actif-fond); border-radius: 4px; padding: 5px 8px; }
+  .pt { display: flex; justify-content: space-between; gap: 8px; border-top: 1px solid var(--bordure); padding-top: 5px; }
+  .ras { font-size: 11px; padding: 0 6px; border-radius: 3px; background: var(--favorable-fond); color: var(--favorable-texte); }
+  .aide { font-size: 12px; color: var(--texte-secondaire); }
+  .bandeau-refs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 7px 10px; border-top: 1px solid var(--bordure); background: var(--neutre-fond); font-size: 12px; }
+  .bandeau-refs b { font-weight: 500; margin-right: 4px; }
+  .lien-ref { font: inherit; font-size: 12px; padding: 2px 9px; border-radius: 4px; border: 1px solid var(--bordure-champ); background: var(--carte-fond); color: var(--texte); }
+  .comparer { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0; }
+  .comparer > div { min-width: 0; }
+  .comparer > div + div { border-left: 1px solid var(--bordure); }
+  .volet-t { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background: var(--neutre-fond); font-size: 12px; }
+  .bilan { display: grid; gap: 6px; padding: 12px 14px; background: var(--carte-fond); border: 1px solid var(--bordure); border-radius: 6px; }
+  .bilan h2 { margin: 0; font-size: 1rem; font-weight: 500; }
+  .bilan ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
+  .plus { color: var(--favorable-texte); } .moins { color: var(--examen-texte); }
+  [hidden] { display: none !important; }
+  @media (max-width: 900px) { .cols, .comparer { grid-template-columns: 1fr; } .comparer > div + div { border-left: 0; border-top: 1px solid var(--bordure); } .etapes { grid-template-columns: 1fr; } .groupe--ref { margin-left: 0; } }
+</style>
+
+<div class="page">
+  <h1>Examen d'un dossier de marché : éléments à contrôler et références</h1>
+  <p class="intro">Trois façons de montrer, dès la barre des onglets, ce que la Commission contrôle (les éléments <b>nouveaux</b> du dossier, avec leur
+    grille) et ce qu'elle ne fait que <b>consulter</b> (le PV de la CNM, les informations du DAO et le bordereau, examinés au dossier
+    00002/DAOO/CNM/2026). Exemple : le dossier 00003/MAOO/CNM/2026 (Maintirano). Choisissez une variante.</p>
+
+  <div class="choix" role="group" aria-label="Variante">
+    <button type="button" aria-pressed="true" data-v="a"><b>A · Deux groupes d'onglets</b><span>À contrôler | Références, sur la même barre</span></button>
+    <button type="button" aria-pressed="false" data-v="b"><b>B · Références en bandeau</b><span>Les onglets = les seuls éléments à contrôler</span></button>
+    <button type="button" aria-pressed="false" data-v="c"><b>C · Comparer côte à côte</b><span>La référence s'ouvre à côté de l'élément contrôlé</span></button>
+  </div>
+
+  <!-- ===================== A ===================== -->
+  <section data-variante="a">
+    <div class="ecran">
+      <div class="entete"><b>EXAMEN 00003/MAOO/CNM/2026</b><span>Dossier de marché · Ministère des Travaux publics</span></div>
+      <div class="corps">
+        <div class="etapes"><div class="etape etape--on">1 · Grille du dossier<small>En cours · 6 / 21</small></div><div class="etape">2 · Contrôle des pièces<small>0 sur 1</small></div><div class="etape">3 · Synthèse et avis<small>Après les contrôles</small></div></div>
+        <div class="cols cols--seul">
+          <div class="doc">
+            <div class="onglets">
+              <div class="groupe"><span class="groupe__t">À contrôler</span>
+                <span class="onglet">Fiche de présentation <span class="n">1</span></span>
+                <span class="onglet">Séance d'ouverture <span class="n n--ok">6</span></span>
+                <span class="onglet">Rapport d'évaluation <span class="n">12</span></span>
+                <span class="onglet">Attribution <span class="n">4</span></span>
+                <span class="onglet">Pièces jointes <span class="n">1</span></span>
+              </div>
+              <div class="groupe groupe--ref"><span class="groupe__t">Références · 00002/DAOO</span>
+                <span class="onglet ref">PV de la CNM</span>
+                <span class="onglet ref">Informations du DAO</span>
+                <span class="onglet ref onglet--on">Bordereau estimatif</span>
+              </div>
+            </div>
+            <div class="contenu contenu--ref">
+              <p class="note"><b>Référence, déjà examinée</b> au dossier 00002/DAOO/CNM/2026 — consultée pour juger l'évaluation et l'attribution ; pas de grille ici.</p>
+              <h3>Devis quantitatif et estimatif <span class="tag">DAO v1</span></h3>
+              <table><tr><th>N° prix</th><th>Désignation</th><th>Unité</th><th class="r">Quantité</th><th class="r">Prix unitaire HT</th><th class="r">Montant HT</th></tr>
+                <tr><td>001</td><td>Installation et repli de chantier</td><td>Forfait</td><td class="r">1</td><td class="r">300 000 000,00</td><td class="r">300 000 000,00</td></tr>
+                <tr><td>101</td><td>Décapage de la chaussée existante</td><td>m²</td><td class="r">44 800</td><td class="r">3 500,00</td><td class="r">156 800 000,00</td></tr>
+                <tr><td>102</td><td>Déblai en terrain de toute nature</td><td>m³</td><td class="r">18 000</td><td class="r">25 000,00</td><td class="r">450 000 000,00</td></tr></table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="bilan"><h2>A · Deux groupes d'onglets</h2><ul>
+      <li class="plus">Tout reste sur une barre : on voit d'un coup d'œil ce qui se contrôle (avec le nombre de points, vert quand tout est statué) et ce qui se consulte.</li>
+      <li class="plus">Les références se distinguent par leur groupe gris, leur texte secondaire et le fond du document ; la grille disparaît (le document prend la largeur).</li>
+      <li class="moins">La barre s'allonge (deux intitulés de groupe) ; sous 1 000 px, les références passent à la ligne.</li>
+    </ul></div>
+  </section>
+
+  <!-- ===================== B ===================== -->
+  <section data-variante="b" hidden>
+    <div class="ecran">
+      <div class="entete"><b>EXAMEN 00003/MAOO/CNM/2026</b><span>Dossier de marché · Ministère des Travaux publics</span></div>
+      <div class="corps">
+        <div class="etapes"><div class="etape etape--on">1 · Grille du dossier<small>En cours · 6 / 21</small></div><div class="etape">2 · Contrôle des pièces<small>0 sur 1</small></div><div class="etape">3 · Synthèse et avis<small>Après les contrôles</small></div></div>
+        <div class="cols">
+          <div class="doc">
+            <div class="onglets">
+              <span class="onglet">Fiche de présentation <span class="n">1</span></span>
+              <span class="onglet">Séance d'ouverture <span class="n n--ok">6</span></span>
+              <span class="onglet onglet--on">Rapport d'évaluation <span class="n">12</span></span>
+              <span class="onglet">Attribution <span class="n">4</span></span>
+              <span class="onglet">Pièces jointes <span class="n">1</span></span>
+            </div>
+            <div class="contenu">
+              <h3>Rapport d'évaluation — lot 1</h3>
+              <table><tr><th>Rang</th><th>Soumissionnaire</th><th>Examen préliminaire</th><th class="r">Montant évalué HT</th><th>Post-qualification</th></tr>
+                <tr><td>1</td><td>Melaky BTP SARL</td><td>Conforme</td><td class="r">8 391 592 440 Ar</td><td>Qualifiée</td></tr>
+                <tr><td>2</td><td>Routes et Ouvrages de l'Ouest SA</td><td>Conforme</td><td class="r">8 568 257 544 Ar</td><td>—</td></tr>
+                <tr><td>3</td><td>Travaux Publics Bemaraha SARLU</td><td>Conforme</td><td class="r">9 009 920 304 Ar</td><td>—</td></tr></table>
+            </div>
+            <div class="bandeau-refs"><b>Références (examinées au 00002/DAOO) :</b>
+              <button type="button" class="lien-ref">PV de la CNM</button><button type="button" class="lien-ref">Informations du DAO</button><button type="button" class="lien-ref">Bordereau estimatif</button>
+              <span class="aide">— s'ouvrent en fenêtre, la grille reste en place</span></div>
+          </div>
+          <div class="grille"><span class="grille__k">Grille du dossier</span><span class="grille__f">Points liés à « Rapport d'évaluation » · 12 sur 21</span>
+            <div class="pt">3. Rejets motivés par le DAO <span class="ras">RAS</span></div><div class="pt">4. Montant évalué conforme au DAO <span class="ras">RAS</span></div><div class="pt">5. Offres anormales : justification <span class="ras">RAS</span></div><div class="pt">6. Classement et attributaire <span class="ras">RAS</span></div><span class="aide">…</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="bilan"><h2>B · Références en bandeau</h2><ul>
+      <li class="plus">La barre ne contient que ce qui se contrôle : impossible de chercher une grille sur une référence.</li>
+      <li class="plus">La référence s'ouvre en fenêtre par-dessus l'élément : la grille reste visible, on vérifie « Montant évalué conforme au DAO » sans changer d'onglet.</li>
+      <li class="moins">Les références sont moins visibles (un bandeau sous le document) ; la fenêtre masque l'élément qu'on contrôle.</li>
+    </ul></div>
+  </section>
+
+  <!-- ===================== C ===================== -->
+  <section data-variante="c" hidden>
+    <div class="ecran">
+      <div class="entete"><b>EXAMEN 00003/MAOO/CNM/2026</b><span>Dossier de marché · Ministère des Travaux publics</span></div>
+      <div class="corps">
+        <div class="etapes"><div class="etape etape--on">1 · Grille du dossier<small>En cours · 6 / 21</small></div><div class="etape">2 · Contrôle des pièces<small>0 sur 1</small></div><div class="etape">3 · Synthèse et avis<small>Après les contrôles</small></div></div>
+        <div class="cols">
+          <div class="doc">
+            <div class="onglets">
+              <span class="onglet">Fiche de présentation <span class="n">1</span></span>
+              <span class="onglet">Séance d'ouverture <span class="n n--ok">6</span></span>
+              <span class="onglet onglet--on">Rapport d'évaluation <span class="n">12</span></span>
+              <span class="onglet">Attribution <span class="n">4</span></span>
+              <span class="onglet">Pièces jointes <span class="n">1</span></span>
+              <span class="groupe groupe--ref"><span class="groupe__t">Comparer avec</span><span class="onglet ref">PV de la CNM</span><span class="onglet ref">DAO</span><span class="onglet ref onglet--on">Bordereau ✓</span></span>
+            </div>
+            <div class="comparer">
+              <div><div class="volet-t"><b>Rapport d'évaluation — lot 1</b><span class="tag">à contrôler</span></div>
+                <div class="contenu"><table><tr><th>Rang</th><th>Soumissionnaire</th><th class="r">Montant évalué HT</th></tr>
+                  <tr><td>1</td><td>Melaky BTP SARL</td><td class="r">8 391 592 440 Ar</td></tr><tr><td>2</td><td>Routes et Ouvrages de l'Ouest</td><td class="r">8 568 257 544 Ar</td></tr><tr><td>3</td><td>TP Bemaraha SARLU</td><td class="r">9 009 920 304 Ar</td></tr></table>
+                  <span class="aide">Moralité des prix : estimation 8 000 000 000 Ar HT · moyenne des offres 7 869 627 360 Ar HT</span></div></div>
+              <div class="contenu--ref"><div class="volet-t"><b>Bordereau estimatif</b><span class="tag">référence · 00002/DAOO</span></div>
+                <div class="contenu"><table><tr><th>N°</th><th>Désignation</th><th class="r">Montant HT</th></tr>
+                  <tr><td>001</td><td>Installation et repli</td><td class="r">300 000 000</td></tr><tr><td>204</td><td>Revêtement BB 0/10</td><td class="r">1 792 000 000</td></tr><tr><td></td><td><b>Total estimé HT</b></td><td class="r"><b>8 000 000 000</b></td></tr></table></div></div>
+            </div>
+          </div>
+          <div class="grille"><span class="grille__k">Grille du dossier</span><span class="grille__f">Points liés à « Rapport d'évaluation » · 12 sur 21</span>
+            <div class="pt">4. Montant évalué conforme au DAO <span class="ras">RAS</span></div><div class="pt">15. Moralité des prix <span class="ras">RAS</span></div><div class="pt">3. Rejets motivés par le DAO <span class="ras">RAS</span></div><span class="aide">…</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="bilan"><h2>C · Comparer côte à côte</h2><ul>
+      <li class="plus">Conçu pour ce que fait le contrôleur : juger l'élément nouveau <i>à la lumière</i> du DAO, du bordereau ou du PV, les deux sous les yeux, la grille à droite.</li>
+      <li class="plus">La référence ne s'ouvre jamais seule : elle accompagne l'élément contrôlé (fermée par défaut, un clic sur « Comparer avec » l'ouvre).</li>
+      <li class="moins">Demande un écran large (au-dessous de 1 000 px, les deux volets s'empilent) ; c'est la variante la plus longue à réaliser.</li>
+    </ul></div>
+  </section>
+</div>
+
+<script>
+  const boutons = document.querySelectorAll('.choix button');
+  boutons.forEach((b) => b.addEventListener('click', () => {
+    boutons.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    document.querySelectorAll('[data-variante]').forEach((s) => { s.hidden = s.dataset.variante !== b.dataset.v; });
+  }));
+</script>

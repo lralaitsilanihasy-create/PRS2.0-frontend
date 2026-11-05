@@ -269,7 +269,7 @@ export function syntheseOffre(o: OffreEvaluee): { conformite: string; anormale: 
   };
 }
 
-const LIBELLES_COTE: Readonly<Record<CoteConformite, string>> = { C: 'Conforme', SC: 'Substantiellement conforme', NC: 'Non conforme', SO: 'Sans objet' };
+export const LIBELLES_COTE: Readonly<Record<CoteConformite, string>> = { C: 'Conforme', SC: 'Substantiellement conforme', NC: 'Non conforme', SO: 'Sans objet' };
 
 /** Le projet de marché du lot : un document produit par l'application, sans données propres — il s'affiche dans l'onglet. */
 @Component({

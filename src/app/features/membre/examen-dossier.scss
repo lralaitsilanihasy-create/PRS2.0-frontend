@@ -12,7 +12,7 @@
   gap: 0.625rem;
   /* 3 rem : barre du haut ; 2 rem : marges verticales de la page en mode concentration. */
   height: calc(100dvh - 5rem);
-  min-height: 34rem;
+  min-height: 26rem; /* ⚠️ 05/11 — 34 → 26 rem : la page ne défile plus, même à 1366 × 640. */
   min-width: 0;
 }
 .exam__info {
@@ -465,3 +465,23 @@
 
 /* ⚠️ 05/11 (pilote) — le DAO d'un dossier de marché, lu en référence : une ligne d'explication au-dessus du document. */
 .doc-reference { margin: 0 0 0.75rem; padding: 0.5rem 0.75rem; border-left: 3px solid var(--neutre-texte); background: var(--neutre-fond); color: var(--texte); font-size: var(--text-sm); }
+
+/* ⚠️ 05/11 (pilote, maquette « éléments de l'examen », variante C) — « Comparer avec » : la référence s'ouvre à côté de l'élément contrôlé. */
+.doc__comparer-avec { display: flex; align-items: stretch; gap: 0.1rem; flex-wrap: wrap; margin-left: auto; padding: 0 0.4rem; border-left: 1px solid var(--bordure); background: var(--neutre-fond); }
+.doc__comparer-t { align-self: center; padding: 0 0.4rem; font-size: 0.6875rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texte-secondaire); }
+.dtab--ref { color: var(--texte-secondaire); font-weight: 400; }
+.dtab--ref[aria-pressed='true'] { color: var(--texte); border-bottom-color: var(--neutre-texte); font-weight: 500; }
+.doc__zone { flex: 1; min-height: 0; display: flex; }
+.doc__zone > .doc__corps { flex: 1 1 0; min-width: 0; }
+.doc__ref { flex: 1 1 0; min-width: 0; min-height: 0; display: flex; flex-direction: column; border-left: 1px solid var(--bordure); background: var(--ligne-survol); }
+.doc__ref-tete { flex: none; display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.6rem; background: var(--neutre-fond); font-size: 0.8125rem; }
+.doc__ref-tete strong { font-weight: 500; }
+.doc__ref-tag { font-size: 0.6875rem; padding: 0 0.4rem; border-radius: 3px; background: var(--carte-fond); color: var(--neutre-texte); }
+.doc__ref-fermer { margin-left: auto; border: 1px solid var(--bordure-champ); background: var(--carte-fond); color: var(--texte); border-radius: 4px; padding: 0 0.45rem; cursor: pointer; }
+.doc__ref-corps { flex: 1; min-height: 0; overflow: auto; }
+@media (max-width: 64rem) {
+  .doc__zone--comparer { flex-direction: column; }
+  .doc__ref { border-left: 0; border-top: 1px solid var(--bordure); }
+}
+/* Deux documents côte à côte : un tableau large défile dans sa moitié au lieu d’être coupé. */
+.doc__zone--comparer > .doc__corps { overflow-x: auto; }

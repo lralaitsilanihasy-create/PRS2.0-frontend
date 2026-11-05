@@ -129,3 +129,21 @@ button.pc[aria-disabled='true']:hover {
     transition: none;
   }
 }
+
+/* ⚠️ 05/11 (pilote, option 1 « plan de travail fixe ») — une étape sur UNE ligne : libellé à gauche, état à droite, la progression en
+   filet sous la carte. La zone de travail gagne la hauteur d'une ligne. */
+.pc {
+  position: relative;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.6rem 0.45rem;
+}
+.pc__s { margin-left: auto; flex: 0 1 auto; }
+.pc__b {
+  position: absolute;
+  left: 0.6rem;
+  right: 0.6rem;
+  bottom: 3px;
+  height: 3px;
+}

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { RapportEvaluationExamen } from './rapport-evaluation-examen';
 
-import { Dossier } from '../../../models';
+import { Dossier, ControleResultat } from '../../../models';
 import { FicheDaoDoc } from '../../../shared/prmp/fiche-dao-doc';
 import { DocumentVisionneuse } from '../../../shared/ui/document-visionneuse';
 import { AvisSpecifiqueDoc } from './avis-specifique-doc';
@@ -18,7 +19,7 @@ import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marc
 @Component({
   selector: 'app-piece-en-donnees',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DocumentVisionneuse, FichePresentationDaoDoc, FicheDaoDoc, AvisSpecifiqueDoc, BordereauEstimatifDoc, CanevasRapportDoc, SeanceMarcheDoc, EvaluationMarcheDoc, PvCnmDoc],
+  imports: [DocumentVisionneuse, FichePresentationDaoDoc, FicheDaoDoc, AvisSpecifiqueDoc, BordereauEstimatifDoc, CanevasRapportDoc, SeanceMarcheDoc, EvaluationMarcheDoc, PvCnmDoc, RapportEvaluationExamen],
   template: `
     @let d = dossier();
     @let pr = d.procedure;
@@ -32,7 +33,13 @@ import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marc
       @case ('canevas') { <app-document-visionneuse><app-canevas-rapport-doc [idDossier]="d.idDossier" /></app-document-visionneuse> }
       @case ('pv-cnm') { @if (pr) { <app-pv-cnm-doc [idDossier]="d.idDossier" [idDossierMec]="pr.idDossierMiseEnConcurrence" [refeMec]="pr.refeDossierMiseEnConcurrence" /> } }
       @case ('seance') { @if (pr) { <app-seance-marche-doc [idDmc]="pr.idDmc" /> } }
-      @case ('evaluation') { @if (pr) { <app-evaluation-marche-doc [idDmc]="pr.idDmc" [lot]="pr.lot" /> } }
+      @case ('evaluation') {
+        @if (pr) {
+          <!-- ⚠️ 05/11 (pilote, tableau validé) — à l'examen, le rapport se lit en huit parties nommant leurs points ; ailleurs, la vue de la page du dossier. -->
+          @if (examen()) { <app-rapport-evaluation-examen [idDmc]="pr.idDmc" [lot]="pr.lot" [controles]="controles()" [visee]="visee()" /> }
+          @else { <app-evaluation-marche-doc [idDmc]="pr.idDmc" [lot]="pr.lot" /> }
+        }
+      }
       @case ('attribution') { @if (pr) { <app-evaluation-marche-doc [idDmc]="pr.idDmc" [lot]="pr.lot" [vue]="'attribution'" /> } }
     }
   `,
@@ -43,5 +50,9 @@ import { EvaluationMarcheDoc, PvCnmDoc, SeanceMarcheDoc } from './procedure-marc
 export class PieceEnDonnees {
   readonly dossier = input.required<Dossier>();
   readonly element = input.required<OngletPieceFournie>();
+  /** ⚠️ 05/11 — à l'examen : le rapport d'évaluation en parties, les contrôles automatiques sous leurs points, la partie visée par la grille. */
+  readonly examen = input(false);
+  readonly controles = input<readonly ControleResultat[]>([]);
+  readonly visee = input<{ cle: string; jeton: number } | null>(null);
   readonly idFiche = computed(() => ficheDuDossier(this.dossier()));
 }

@@ -197,6 +197,22 @@ Inventaire, décisions du pilote (Q1-Q6) et plan : `docs/design-institutionnel-i
   1229×691, dans un vrai Chrome) : `+n` = la barre déborde, `−n` = la marge. À lancer après **toute** entrée
   ajoutée à `NAV_BY_ROLE`.
 
+## Examen d'un dossier de marché et d'un dossier né d'une fiche (pilote, 05/11/2026)
+- **La grille ne porte que sur les éléments NOUVEAUX du dossier** : au dossier de marché, le PV de la CNM, les informations du DAO et le
+  bordereau (examinés au dossier de mise en concurrence) ; au dossier né d'une fiche, la ligne du plan. Ces éléments de référence ne
+  sont plus des onglets : « Comparer avec » les ouvre **à côté** de l'élément contrôlé (maquette `docs/maquette-2026-11-05-elements-examen.html`,
+  variante C), la grille restant à droite. `ELEMENTS_DEJA_EXAMINES` / `ELEMENTS_DEJA_EXAMINES_FICHE` (`membre/examen/examen-modele.ts`).
+- **La grille suit l'onglet ouvert** sur le rattachement du référentiel (`PointsCtrl.elements`, V166-V168, demande
+  `demande-backend-2026-11-05-points-par-element.md`) ; à défaut, le tableau validé lu au libellé (`pointsDeLElement`). Un nouveau point se
+  rattache par l'administration des points, jamais par un motif dans l'écran.
+- **Plan de travail fixe** : la page ne défile pas (`hauteurExam` mesure la place sous la coquille), seuls le document et, au besoin, la grille
+  défilent ; les étapes tiennent sur une ligne ; la grille est compacte dès deux points.
+- **Le rapport d'évaluation à l'examen** (`circuit/dossier/rapport-evaluation-examen.ts`) se lit en **huit parties nommant leurs points**
+  (`PARTIES_RAPPORT`, `partieDuPoint` : rattachement au libellé) ; la grille y mène (« Lire dans le rapport »), les contrôles automatiques
+  s'affichent sous leur point, ce que le serveur ne sert pas est dit « en attente du serveur ». Données attendues et manques :
+  `docs/examen-rapport-evaluation-donnees-2026-11-05.md`, demande `demande-backend-2026-11-05-rapport-evaluation-examen.md`.
+  La fenêtre de la page du dossier (`EvaluationMarcheDoc`, onglets) reste la lecture de la PRMP et de la CAO.
+
 ## Chronogrammes de pilotage (`chronogrammes/`)
 
 Dossier **autonome**, sans lien avec l'application Angular : son propre `package.json`, son

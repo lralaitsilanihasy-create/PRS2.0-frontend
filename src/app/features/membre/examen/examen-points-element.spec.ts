@@ -1,4 +1,4 @@
-import { ELEMENTS_DEJA_EXAMINES, pointsDeLElement } from './examen-modele';
+import { ELEMENTS_DEJA_EXAMINES, ELEMENTS_DEJA_EXAMINES_FICHE, pointsDeLElement } from './examen-modele';
 
 // Les 21 points de la grille du dossier de marché (MAOO, recette du 05/11), par leur libellé.
 const GRILLE = [
@@ -55,6 +55,25 @@ describe('pointsDeLElement — la grille suit l’onglet du dossier de marché (
     // Le référentiel porte encore DAO et BORDEREAU en secondaire : déjà examinés, l'écran n'y met aucun point.
     expect(pointsDeLElement('dao', servis)).toEqual([]);
     expect(pointsDeLElement('bordereau', servis)).toEqual([]);
+  });
+
+  it('dossier né d’une fiche (DAO) : l’essentiel aux informations du DAO, l’avis, le bordereau, le canevas ; le plan est une référence', () => {
+    const DAO = ['Conformité au plan de passation', 'Allotissement', 'Fiche de présentation cohérente', 'Délai de remise des offres',
+      'AGPM contrôlé et publié', 'Avis spécifique conforme', 'Remise et ouverture des plis', 'Visite des lieux', 'Prix unitaires ou forfaitaires',
+      'Spécifications et DQE', 'Évaluation et attribution', 'Spécifications neutres'].map((libelPointCtrl) => ({ libelPointCtrl }));
+    const de = (e: string) => pointsDeLElement(e, DAO, 'FICHE')?.map((p) => p.libelPointCtrl) ?? null;
+    expect(de('avis')).toEqual(['Délai de remise des offres', 'Avis spécifique conforme', 'Remise et ouverture des plis', 'Visite des lieux']);
+    expect(de('bordereau')).toEqual(['Prix unitaires ou forfaitaires', 'Spécifications et DQE']);
+    expect(de('canevas')).toEqual(['Évaluation et attribution']);
+    expect(de('presentation')).toEqual(['Fiche de présentation cohérente']);
+    expect(de('pieces')).toEqual(['AGPM contrôlé et publié']);
+    expect(de('dao')).not.toContain('Avis spécifique conforme');
+    expect(de('dao')).not.toContain('AGPM contrôlé et publié');
+    expect(de('dao')).toContain('Conformité au plan de passation');
+    expect(ELEMENTS_DEJA_EXAMINES_FICHE.has('plan')).toBe(true);
+    expect(de('plan')).toEqual([]);
+    // Le référentiel, quand il est servi, fait foi aussi ici.
+    expect(pointsDeLElement('avis', [{ libelPointCtrl: 'X', elements: ['AVIS', 'DAO'] }, { libelPointCtrl: 'Y', elements: ['DAO'] }], 'FICHE')?.map((p) => p.libelPointCtrl)).toEqual(['X']);
   });
 
   it('PV de la CNM, informations du DAO, bordereau : déjà examinés, aucun point ; sans élément : toute la grille', () => {
