@@ -426,12 +426,22 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
                          une information ouvre la proposition « Observer » avec l'ancrage (idDmc, champFiche). -->
                     <!-- ⚠️ 18/10 (pilote, examen du DAO) — le DAO complet n'est plus une « pièce » examinée à part : c'est le rendu de cette
                          fiche dans le modèle type ; son PDF reste à portée pour le texte type (IC, CCAG, modèles). -->
+                    <!-- ⚠️ 05/11 (pilote) — dans un DOSSIER DE MARCHÉ, le DAO a déjà été examiné (dossier de mise en concurrence, clôturé) et
+                         ne peut plus changer : il se lit en RÉFÉRENCE de l'évaluation et de l'attribution, sans observation par cellule.
+                         Les observations déjà posées restent lisibles (interrupteur « Annotations »). -->
+                    @if (daoEnReference()) {
+                      <p class="doc-reference" role="note">
+                        <strong>Référence, non réexaminée.</strong>
+                        Ce DAO a été examiné par la Commission@if (dossier()?.procedure?.refeDossierMiseEnConcurrence; as ref) { au dossier <strong>{{ ref }}</strong>}
+                        et ne peut plus changer : il sert ici à juger l’évaluation et l’attribution, sur les points de la grille.
+                      </p>
+                    }
                     <app-document-visionneuse [annotations]="annotationsDoc()">
                       <app-fiche-dao-doc
                         [idDmc]="idFicheDossier()!"
                         [observations]="observationsDao()"
                         [modifiees]="perimetre()?.ficheDao?.informations ?? []"
-                        [observable]="mode() !== 'locked' && pointsCourants().length > 0"
+                        [observable]="mode() !== 'locked' && pointsCourants().length > 0 && !daoEnReference()"
                         [citees]="codesCitesOuvert()"
                         [cible]="ficheCible()"
                         (codesRendus)="codesFiche.set($event)"
@@ -1182,7 +1192,13 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
    * statut du marché, versionnement…) : un seul interrupteur pour tous les onglets de l'écran.
    */
   readonly annotationsDoc = signal(true);
-  readonly ongletAvecAnnotations = computed(() => ONGLETS_ANNOTES.includes(this.ongletAffiche()));
+  /**
+   * ⚠️ 05/11 (pilote) — un dossier de MARCHÉ (né d'une attribution) : son DAO, examiné au dossier de mise en concurrence, se lit en
+   * référence ; il ne s'observe plus cellule par cellule. L'interrupteur « Annotations » n'y reste que pour d'anciennes observations.
+   */
+  readonly daoEnReference = computed(() => { const d = this.dossier(); return d?.idDmc == null && !!d?.procedure; });
+  readonly ongletAvecAnnotations = computed(() =>
+    ONGLETS_ANNOTES.includes(this.ongletAffiche()) && !(this.ongletAffiche() === 'dao' && this.daoEnReference() && !this.observationsDao().length));
   /** Les deux documents dérivés — mêmes fonctions pures que le détail PPM et l'aperçu de création. */
   readonly ficheDoc = computed(() =>
     calculerFichePresentation(this.marches(), this.previsions(), this.modesRef(), this.capmsRef()),

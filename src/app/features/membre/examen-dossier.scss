@@ -462,3 +462,6 @@
 /* ⚠️ 18/10 (lot B) — bulle ciblée : « Autre point… ». */
 .prop__autres { margin: 0.2rem 0 0.3rem; padding: 0; border: 0; background: none; font: inherit; font-size: 0.78rem; font-weight: 500; color: var(--texte); cursor: pointer; }
 .prop__autres:hover { text-decoration: underline; }
+
+/* ⚠️ 05/11 (pilote) — le DAO d'un dossier de marché, lu en référence : une ligne d'explication au-dessus du document. */
+.doc-reference { margin: 0 0 0.75rem; padding: 0.5rem 0.75rem; border-left: 3px solid var(--neutre-texte); background: var(--neutre-fond); color: var(--texte); font-size: var(--text-sm); }
