@@ -79,9 +79,8 @@ export function numeroProcedure(e: Pick<LigneEligible, 'numeroProcedure' | 'mode
   template: `
     <div class="pl" role="group" [attr.aria-label]="'Procédure en ligne' + (numero() ? ' ' + numero() : '')">
       <div class="pl__tete">
-        <span class="pl__k">Procédure en ligne{{ numero() ? ' · ' : '' }}</span>
-        @if (numero(); as n) { <span class="pl__r">{{ n }}</span> }
-        @if (etat()) { <span class="pl__etat">{{ etat() }}</span> }
+        <span class="pl__k">Procédure en ligne</span>
+        <span class="pl__info">@if (numero(); as n) { <span class="pl__r">{{ n }}</span> }@if (etat()) { <span class="pl__etat">{{ etat() }}</span> }</span>
       </div>
       <div class="pl__liens">
         <!-- ⚠️ 04/11 (pilote) — chaque écran s'ouvre en FENÊTRE, rendue par l'écran du plan (hors du volet collant) ; la fiche DAO reste une page. -->
@@ -98,19 +97,29 @@ export function numeroProcedure(e: Pick<LigneEligible, 'numeroProcedure' | 'mode
   styles: `
     /* ⚠️ 04/11 (variante B) — un groupe du dossier de mise en concurrence, intitulé comme « À lire » et « Archives du circuit ». */
     :host { display: block; }
-    .pl { display: grid; gap: 0.35rem; }
+    /* ⚠️ 04/11 (pilote, compact) — dans la barre d'un dossier : une rangée, l'intitulé et le n° dans la colonne des intitulés. */
+    .pl { display: grid; grid-template-columns: var(--cdc-etiquette, 9.5rem) minmax(0, 1fr); gap: 0.25rem 0.75rem; align-items: center; }
+    @media (max-width: 48rem) { .pl { grid-template-columns: minmax(0, 1fr); } }
+    :host(.dl__seule) .pl { grid-template-columns: minmax(0, 1fr); }
     /* Seule (fiche sans dossier) : sa propre carte, bandeau bleu nuit et corps bleu pâle, comme un dossier de mise en concurrence. */
     :host(.dl__seule) .pl { gap: 0; border: 1px solid var(--menu-fond); border-radius: 8px; overflow: hidden; background: var(--onglet-actif-fond); }
     :host(.dl__seule) .pl__tete { padding: 0.5rem 0.9rem; background: var(--menu-fond); }
     :host(.dl__seule) .pl__k, :host(.dl__seule) .pl__etat { color: var(--texte-menu-secondaire); }
     :host(.dl__seule) .pl__r { color: var(--texte-menu); }
     :host(.dl__seule) .pl__liens { padding: 0.7rem 0.9rem 0.85rem; }
-    .pl__tete { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline; }
+    .pl__tete { display: flex; flex-wrap: wrap; gap: 0.1rem 0.4rem; align-items: baseline; }
+    .pl__info { display: inline-flex; flex-wrap: wrap; gap: 0.1rem 0.4rem; align-items: baseline; }
+    /* Dans une barre : l'intitulé à gauche, les boutons à droite, le n° et l'état de la procédure en petit sous les boutons. */
+    :host(:not(.dl__seule)) .pl__tete { display: contents; }
+    :host(:not(.dl__seule)) .pl__k { grid-column: 1; grid-row: 1; }
+    :host(:not(.dl__seule)) .pl__liens { grid-column: 2; grid-row: 1; }
+    :host(:not(.dl__seule)) .pl__info { grid-column: 2; grid-row: 2; }
+    @media (max-width: 48rem) { :host(:not(.dl__seule)) .pl__k, :host(:not(.dl__seule)) .pl__liens, :host(:not(.dl__seule)) .pl__info { grid-column: 1; grid-row: auto; } }
     .pl__k { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texte-secondaire); }
     .pl__r { font-size: 0.8125rem; font-weight: 500; }
     .pl__etat { font-size: 0.75rem; color: var(--texte-secondaire); }
-    .pl__liens { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-    .pl__b { border-radius: 6px; text-decoration: none; }
+    .pl__liens { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .pl__b { border-radius: 6px; text-decoration: none; padding: 0.25rem 0.65rem; font-size: 0.8125rem; }
     .pl__n { display: inline-block; margin-left: 0.45rem; padding: 0.05rem 0.45rem; border-radius: 20px; background: var(--neutre-fond); color: var(--neutre-texte); font-size: 0.7rem; }
   `,
 })

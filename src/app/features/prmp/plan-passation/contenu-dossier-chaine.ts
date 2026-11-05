@@ -80,7 +80,7 @@ export function libelleElement(contenu: DossierContenuStore, cle: OngletDossier)
               <span class="cdc__g">Archives du circuit</span>
               <div class="cdc__elements">
                 @for (o of archives(); track o.cle) {
-                  <button type="button" class="onglets-dossier__tab cdc__petit" aria-haspopup="dialog" (click)="ouvrir.emit({ contenu, cle: o.cle, intitule: intitule(), reference: reference() })">
+                  <button type="button" class="onglets-dossier__tab" aria-haspopup="dialog" (click)="ouvrir.emit({ contenu, cle: o.cle, intitule: intitule(), reference: reference() })">
                     {{ o.libelle }} @if (o.n !== undefined) {<span class="onglets-dossier__n">{{ o.n }}</span> }
                   </button>
                 }
@@ -97,21 +97,24 @@ export function libelleElement(contenu: DossierContenuStore, cle: OngletDossier)
     .cdc--dao .cdc__corps { background: var(--onglet-actif-fond); }
     .cdc--marche .cdc__corps { background: var(--favorable-fond); }
     .cdc--autre .cdc__corps { background: var(--neutre-fond); }
-    .cdc__bandeau { display: flex; flex-wrap: wrap; gap: 0.35rem 0.75rem; align-items: center; justify-content: space-between; padding: 0.5rem 0.9rem;
+    .cdc__bandeau { display: flex; flex-wrap: wrap; gap: 0.35rem 0.75rem; align-items: center; justify-content: space-between; padding: 0.4rem 0.9rem;
       background: var(--menu-fond); color: var(--texte-menu); }
     .cdc__titre { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: baseline; min-width: 0; }
     .cdc__k { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texte-menu-secondaire); }
     .cdc__r { font-weight: 500; overflow-wrap: anywhere; color: var(--texte-menu); }
     .cdc__lien { color: var(--texte-menu); font-size: 0.8125rem; text-decoration: underline; text-decoration-color: var(--texte-menu-secondaire); text-underline-offset: 3px; }
     .cdc__lien:focus-visible { outline: 2px solid var(--texte-menu); outline-offset: 2px; }
-    .cdc__corps { display: grid; gap: 0.7rem; padding: 0.7rem 0.9rem 0.85rem; }
+    /* ⚠️ 04/11 (pilote, « ne pas utiliser le scrolling ») — COMPACT : chaque groupe sur UNE rangée, son intitulé dans une colonne à
+       gauche (largeur commune, « --cdc-etiquette », que la rangée « Procédure en ligne » reprend), des boutons plus bas. Le volet du
+       plan tient ainsi sans barre de défilement propre pour une ligne ordinaire ; sous 48 rem, l'intitulé repasse au-dessus. */
+    .cdc__corps { --cdc-etiquette: 9.5rem; display: grid; gap: 0.45rem; padding: 0.55rem 0.9rem 0.6rem; }
     .cdc__attente { margin: 0; font-size: 0.8125rem; color: var(--texte-secondaire); }
-    .cdc__groupe { display: grid; gap: 0.35rem; }
+    .cdc__groupe { display: grid; grid-template-columns: var(--cdc-etiquette) minmax(0, 1fr); gap: 0.25rem 0.75rem; align-items: center; }
     .cdc__g { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texte-secondaire); }
     /* Des boutons qui ouvrent une fenêtre, pas des onglets : la barre commune, sans sa marge ni son profil d'onglet. */
-    .cdc__elements { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-    .cdc__elements .onglets-dossier__tab { border-radius: 6px; }
-    .cdc__petit { padding: 0.3rem 0.7rem; }
+    .cdc__elements { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .cdc__elements .onglets-dossier__tab { border-radius: 6px; padding: 0.25rem 0.65rem; font-size: 0.8125rem; }
+    @media (max-width: 48rem) { .cdc__groupe { grid-template-columns: minmax(0, 1fr); } }
   `,
 })
 export class ContenuDossierChaine implements OnInit {
