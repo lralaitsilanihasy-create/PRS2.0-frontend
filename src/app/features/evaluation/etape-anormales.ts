@@ -24,8 +24,10 @@ import { LIBELLES_ANORMALE, ariary, ecartPourCent, refusEvaluation } from './lib
         <p class="text-sm ip__methode"><strong>Méthode du DAO :</strong> {{ ind.methodeDao || 'aucune — la CAO motive son appréciation au cas par cas.' }}</p>
         <p class="text-sm ip__methode">Estimation du plan : <strong>{{ ariary(ind.estimation) }}</strong> (telle que le plan la porte) · moyenne des offres classées : <strong>{{ ariary(ind.moyenne) }}</strong> HT</p>
         <div class="cnm-table-wrap">
-          <table class="cnm-table" aria-labelledby="ip-titre">
-            <thead><tr><th scope="col">Offre</th><th scope="col">Montant HT (corrigé, rabais déduit)</th><th scope="col">Écart à l'estimation</th><th scope="col">Écart à la moyenne</th><th scope="col">Sous-détails</th></tr></thead>
+          <!-- ⚠️ 05/11 (pilote) — sans défilement horizontal : colonnes à largeur fixe, en-têtes et alertes qui passent à la ligne. -->
+          <table class="cnm-table ip__table" aria-labelledby="ip-titre">
+            <colgroup><col class="ip__c-offre" /><col class="ip__c-mt" /><col class="ip__c-ecart" /><col class="ip__c-ecart" /><col /></colgroup>
+            <thead><tr><th scope="col">Offre</th><th scope="col" class="ip__num">Montant HT <span class="ip__sous">corrigé, rabais déduit</span></th><th scope="col" class="ip__num">Écart à l'estimation</th><th scope="col" class="ip__num">Écart à la moyenne</th><th scope="col">Sous-détails</th></tr></thead>
             <tbody>
               @for (o of ind.offres; track o.idOffre) {
                 <tr>
@@ -33,7 +35,11 @@ import { LIBELLES_ANORMALE, ariary, ecartPourCent, refusEvaluation } from './lib
                   <td class="ip__num">{{ ariary(o.montant) }}</td>
                   <td class="ip__num">{{ ecart(o.ecartEstimation) }}</td>
                   <td class="ip__num">{{ ecart(o.ecartMoyenne) }}</td>
-                  <td class="text-sm">{{ o.alertes.length ? o.alertes.join(' ; ') : '—' }}</td>
+                  <td class="text-sm">
+                    @if (o.alertes.length) {
+                      <ul class="ip__alertes">@for (a of o.alertes; track $index) { <li>{{ a }}</li> }</ul>
+                    } @else { — }
+                  </td>
                 </tr>
               }
             </tbody>
@@ -50,7 +56,8 @@ import { LIBELLES_ANORMALE, ariary, ecartPourCent, refusEvaluation } from './lib
               @let e = $any(estimation());
               <p class="text-sm ip__methode">Total estimé : <strong>{{ ariary(e.totalEstime) }}</strong> HT · montant du lot au plan : <strong>{{ ariary(e.montantPlan) }}</strong></p>
               <div class="cnm-table-wrap">
-                <table class="cnm-table">
+                <table class="cnm-table ip__table">
+                  <colgroup><col class="ip__c-no" /><col /><col class="ip__c-unite" /><col class="ip__c-qte" /><col class="ip__c-pu" /><col class="ip__c-mt" /></colgroup>
                   <thead><tr><th scope="col">N°</th><th scope="col">Désignation</th><th scope="col">Unité</th><th scope="col">Quantité</th><th scope="col">Prix unitaire estimé HT</th><th scope="col">Montant</th></tr></thead>
                   <tbody>
                     @for (a of e.articles; track $index) {
@@ -71,6 +78,21 @@ import { LIBELLES_ANORMALE, ariary, ecartPourCent, refusEvaluation } from './lib
     .ip__h3 { margin: 0; font-size: 0.95rem; }
     .ip__methode { margin: 0; }
     .ip__num { text-align: right; white-space: nowrap; }
+    /* ⚠️ 05/11 (pilote) — le tableau tient dans sa largeur : colonnes fixes, le texte passe à la ligne. */
+    .ip__table { table-layout: fixed; }
+    .ip__table thead th { white-space: normal; letter-spacing: 0.04em; vertical-align: bottom; }
+    .ip__table td { white-space: normal; overflow-wrap: anywhere; }
+    .ip__table td.ip__num { white-space: nowrap; }
+    .ip__table th.ip__num { text-align: right; }
+    .ip__sous { display: block; font-size: 0.68rem; text-transform: none; letter-spacing: 0; }
+    .ip__c-offre { width: 4.5rem; }
+    .ip__c-mt { width: 10.5rem; }
+    .ip__c-ecart { width: 7.5rem; }
+    .ip__c-no { width: 3.5rem; }
+    .ip__c-unite { width: 5rem; }
+    .ip__c-qte { width: 6.5rem; }
+    .ip__c-pu { width: 9rem; }
+    .ip__alertes { margin: 0; padding-left: 1rem; display: grid; gap: 0.15rem; }
     .ip__estim summary { cursor: pointer; font-weight: 500; font-size: 0.88rem; }
   `,
 })
