@@ -86,7 +86,7 @@ import { CanevasRapportDoc } from '../circuit/dossier/canevas-rapport-doc';
 import { FichePresentationDaoDoc } from '../circuit/dossier/fiche-presentation-dao';
 import { PlanDuDossierDao } from '../circuit/dossier/plan-du-dossier-dao';
 import { OngletPieceFournie, avecProcedure, ficheDuDossier, ongletDuFichier } from '../circuit/dossier/dossier-pieces';
-import { LIBELLES_ELEMENT_GRILLE, pointsDeLElement } from './examen/examen-modele';
+import { ELEMENTS_DEJA_EXAMINES, LIBELLES_ELEMENT_GRILLE, pointsDeLElement } from './examen/examen-modele';
 import { PieceEnDonnees } from '../circuit/dossier/piece-en-donnees';
 import {
   COLONNES_PPM_OFFICIEL,
@@ -379,6 +379,16 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
                 [attr.aria-labelledby]="onglets().length > 1 ? 'onglet-doc-' + ongletAffiche() : null"
                 (scroll)="fermerProposition()"
               >
+                <!-- ⚠️ 05/11 (pilote, « valable pour l'examen de tout type de dossier ») — un élément déjà examiné dans un dossier antérieur
+                     se lit en référence, sans point de la grille : au dossier de marché, le PV de la CNM, le DAO et le bordereau ; au dossier
+                     né d'une fiche (DAO…), la ligne du plan de passation. -->
+                @if (referenceAffichee(); as r) {
+                  <p class="doc-reference" role="note">
+                    <strong>Référence, déjà examinée.</strong>
+                    Cet élément a été examiné par la Commission {{ r.ou }} et ne peut plus changer : aucun point de la grille ne s’y applique ;
+                    il sert à juger {{ r.usage }}.
+                  </p>
+                }
                 @switch (ongletAffiche()) {
                   @case ('ppm') {
                     <app-document-visionneuse class="doc-entete-collante" [annotations]="annotationsDoc()">
@@ -429,13 +439,6 @@ function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<un
                     <!-- ⚠️ 05/11 (pilote) — dans un DOSSIER DE MARCHÉ, le DAO a déjà été examiné (dossier de mise en concurrence, clôturé) et
                          ne peut plus changer : il se lit en RÉFÉRENCE de l'évaluation et de l'attribution, sans observation par cellule.
                          Les observations déjà posées restent lisibles (interrupteur « Annotations »). -->
-                    @if (daoEnReference()) {
-                      <p class="doc-reference" role="note">
-                        <strong>Référence, non réexaminée.</strong>
-                        Ce DAO a été examiné par la Commission@if (dossier()?.procedure?.refeDossierMiseEnConcurrence; as ref) { au dossier <strong>{{ ref }}</strong>}
-                        et ne peut plus changer : il sert ici à juger l’évaluation et l’attribution, sur les points de la grille.
-                      </p>
-                    }
                     <app-document-visionneuse [annotations]="annotationsDoc()">
                       <app-fiche-dao-doc
                         [idDmc]="idFicheDossier()!"
@@ -1197,6 +1200,17 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
    * référence ; il ne s'observe plus cellule par cellule. L'interrupteur « Annotations » n'y reste que pour d'anciennes observations.
    */
   readonly daoEnReference = computed(() => { const d = this.dossier(); return d?.idDmc == null && !!d?.procedure; });
+  /** ⚠️ 05/11 (pilote) — l'onglet affiché est-il un élément déjà examiné dans un dossier antérieur ? Où, et à quoi il sert ici. */
+  readonly referenceAffichee = computed<{ ou: string; usage: string } | null>(() => {
+    const d = this.dossier();
+    const o = this.ongletAffiche();
+    if (this.daoEnReference() && ELEMENTS_DEJA_EXAMINES.has(o)) {
+      const ref = d?.procedure?.refeDossierMiseEnConcurrence;
+      return { ou: ref ? 'au dossier ' + ref : 'au dossier de mise en concurrence', usage: 'l’évaluation et l’attribution' };
+    }
+    if (o === 'plan' && d?.idDmc != null && !this.estPpm()) return { ou: 'au plan de passation, avant son entrée en vigueur', usage: 'la conformité du dossier au plan' };
+    return null;
+  });
   readonly ongletAvecAnnotations = computed(() =>
     ONGLETS_ANNOTES.includes(this.ongletAffiche()) && !(this.ongletAffiche() === 'dao' && this.daoEnReference() && !this.observationsDao().length));
   /** Les deux documents dérivés — mêmes fonctions pures que le détail PPM et l'aperçu de création. */
@@ -1588,7 +1602,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
     const ids = this.pointsElement();
     const tous = this.tousPointsGrille();
     const affiches = ids && !tous ? points.filter((x) => ids.has(x.idPt)) : points;
-    const filtre = ids ? { libelle: LIBELLES_ELEMENT_GRILLE[this.elementGrille() ?? ''] ?? '', n: ids.size, total: points.length, tous } : null;
+    const filtre = ids ? { libelle: LIBELLES_ELEMENT_GRILLE[this.elementGrille() ?? ''] ?? '', n: ids.size, total: points.length, tous, dejaExamine: ELEMENTS_DEJA_EXAMINES.has(this.elementGrille() ?? '') } : null;
     // Résumé sur l'EFFECTIF : un point « Observation » sans texte compte déjà pour RAS.
     // Le décompte suit les points affichés (la barre « n / total »).
     const resume = {
@@ -1833,7 +1847,14 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       else if (this.estEtapeAgpm()) this.ongletContenu.set('agpm');
       // ⚠️ Lot B — aux contrôles du dossier, le document sous les yeux est la fiche DAO quand le dossier en porte une.
       // ⚠️ 27/10 — un dossier de marché lit la fiche DAO de sa procédure.
-      else if (this.estEtapeDossier() && !untracked(() => this.elementGrille())) this.ongletContenu.set(this.idFicheDossier() != null ? 'dao' : 'ppm');
+      else if (this.estEtapeDossier() && !untracked(() => this.elementGrille())) {
+        // ⚠️ 05/11 (pilote) — dossier de marché : le DAO est une référence ; la grille s'ouvre sur le premier élément nouveau.
+        const nouveau = this.dossier()?.procedure ? untracked(() => this.onglets()).find((o) => o.cle === 'seance' || o.cle === 'evaluation' || o.cle === 'attribution')?.cle : undefined;
+        if (nouveau) {
+          this.ongletContenu.set(nouveau);
+          untracked(() => this.elementGrille.set(nouveau));
+        } else this.ongletContenu.set(this.idFicheDossier() != null ? 'dao' : 'ppm');
+      }
     });
     // Étape « Pièce N » : la pièce s'affiche d'elle-même dans la zone document.
     effect(() => {

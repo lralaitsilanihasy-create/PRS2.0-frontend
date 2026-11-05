@@ -55,7 +55,8 @@ import { ActionGrille, PointVue, VueGrille, codesCites, pluriel } from './examen
           <h2 id="grille-titre" class="grille__titre">{{ vue().titre }}</h2>
           @if (vue().filtre; as f) {
             <div class="grille__filtre">
-              <span>{{ f.tous ? 'Tous les points du dossier (' + f.total + ')' : 'Points liés à « ' + f.libelle + ' » · ' + f.n + ' sur ' + f.total }}</span>
+              <!-- ⚠️ 05/11 (pilote) — un élément déjà examiné au dossier de mise en concurrence n'a pas de point : on le dit. -->
+              <span>{{ f.tous ? 'Tous les points du dossier (' + f.total + ')' : f.dejaExamine ? '« ' + f.libelle + ' » : déjà examiné, aucun point ici' : 'Points liés à « ' + f.libelle + ' » · ' + f.n + ' sur ' + f.total }}</span>
               <button type="button" class="grille__filtre-btn" (click)="action.emit({ type: 'tousPoints' })">{{ f.tous ? 'Seulement « ' + f.libelle + ' »' : 'Tous les points' }}</button>
             </div>
           }

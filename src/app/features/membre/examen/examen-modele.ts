@@ -453,14 +453,20 @@ export interface PieceVue {
  * présentation, PV de la CNM) montre toute la grille.
  */
 const POINTS_PAR_ELEMENT: Readonly<Record<string, RegExp>> = {
-  // ⚠️ 27/10 (vérification de cohérence) — chaque point va à l'onglet qui en affiche les données.
-  presentation: /remise des offres|date et heure|quorum/i,
-  seance: /PV d.ouverture|documents essentiels|validité de l.offre|qualification : activités/i,
-  evaluation: /CAO désignée|rejet|montant évalué|anormal|classement|qualification|rapport|documents essentiels|spécifications|moralité|PV de validation/i,
-  attribution: /projet de marché|attributaire|validité de l.offre/i,
-  bordereau: /montant évalué|moralité des prix/i,
-  dao: /DAO|documents essentiels|spécifications|remise des offres|critères/i,
+  // ⚠️ 05/11 (pilote) — repli tant que le référentiel ne sert pas `elements` (demande points-par-element) : le rattachement validé
+  // par le pilote, reconnu au libellé. Seuls les éléments NOUVEAUX du dossier de marché portent des points.
+  presentation: /offre retenue acceptable/i,
+  seance: /CAO désignée|PV d.ouverture|remise des offres|documents essentiels/i,
+  evaluation: /rejet|montant évalué|anormal|classement|post-qualification|qualification : activités|spécifications|moralité|rapport signé|PV de validation|documents essentiels/i,
+  attribution: /projet de marché|classement|validité de l.offre|offre retenue acceptable/i,
+  pieces: /CAO désignée|publicité effective/i,
 };
+/**
+ * ⚠️ 05/11 (pilote) — « la grille de contrôle s'applique aux éléments du dossier qui n'ont pas encore passé en examen ». Le PV de la
+ * CNM, les informations du DAO et le bordereau estimatif ont été examinés au dossier de mise en concurrence : ils se lisent en
+ * référence, sans point propre.
+ */
+export const ELEMENTS_DEJA_EXAMINES: ReadonlySet<string> = new Set(['pv-cnm', 'dao', 'bordereau']);
 export const LIBELLES_ELEMENT_GRILLE: Readonly<Record<string, string>> = {
   presentation: 'Fiche de présentation',
   seance: 'Séance d’ouverture',
@@ -468,9 +474,22 @@ export const LIBELLES_ELEMENT_GRILLE: Readonly<Record<string, string>> = {
   attribution: 'Attribution',
   bordereau: 'Bordereau estimatif',
   dao: 'Informations du DAO',
+  'pv-cnm': 'PV de la CNM (DAO)',
+  pieces: 'Pièces jointes',
 };
-/** Les points de l'élément ; `null` quand l'élément n'en a pas de propres (toute la grille s'affiche). */
-export function pointsDeLElement<T extends { libelPointCtrl?: string | null }>(element: string | null, points: readonly T[]): T[] | null {
+/** Le code serveur de l'élément (`PointsCtrl.elements`) de chaque onglet. */
+const CODE_ELEMENT: Readonly<Record<string, string>> = {
+  presentation: 'PRESENTATION', 'pv-cnm': 'PV_CNM', dao: 'DAO', seance: 'SEANCE', evaluation: 'EVALUATION', attribution: 'ATTRIBUTION',
+  bordereau: 'BORDEREAU', pieces: 'PIECES',
+};
+/**
+ * Les points de l'élément ; `[]` pour un élément déjà examiné (aucun point) ; `null` sans élément connu (toute la grille).
+ * ⚠️ 05/11 — le rattachement du RÉFÉRENTIEL (`elements`, V166) fait foi dès qu'un point de la grille en porte un ; à défaut, le libellé.
+ */
+export function pointsDeLElement<T extends { libelPointCtrl?: string | null; elements?: readonly string[] | null }>(element: string | null, points: readonly T[]): T[] | null {
+  if (element && ELEMENTS_DEJA_EXAMINES.has(element)) return [];
+  const code = element ? CODE_ELEMENT[element] : undefined;
+  if (code && points.some((p) => p.elements?.length)) return points.filter((p) => p.elements?.includes(code));
   const re = element ? POINTS_PAR_ELEMENT[element] : undefined;
   if (!re) return null;
   const l = points.filter((x) => re.test(x.libelPointCtrl ?? ''));
@@ -492,7 +511,7 @@ export interface VueGrille {
   libellePrecedent: string | null;
   verrouille: boolean;
   /** ⚠️ 27/10 — la grille réduite aux points de l'onglet ouvert (dossier de marché) ; `tous` : l'utilisateur a demandé toute la grille. */
-  filtre?: { libelle: string; n: number; total: number; tous: boolean } | null;
+  filtre?: { libelle: string; n: number; total: number; tous: boolean; dejaExamine?: boolean } | null;
 }
 
 export type ActionGrille =

@@ -187,6 +187,12 @@ export interface PointsCtrl {
    */
   portee?: 'LIGNE' | 'DOSSIER' | 'FICHE' | 'AGPM' | 'SUPPRESSION';
   /**
+   * ⚠️ 05/11 (demande « points-par-element », B1 ; PRS20 V166) — les éléments du dossier de marché que le point contrôle, l'élément
+   * principal en premier : `PRESENTATION`, `PV_CNM`, `DAO`, `SEANCE`, `EVALUATION`, `ATTRIBUTION`, `BORDEREAU`, `PIECES`. Toujours
+   * servi (`[]` sans élément) ; au `PUT`, absent = conservé.
+   */
+  elements?: string[];
+  /**
    * ⚠️ Manuel de contrôle, M3 (V96) — la condition du point : catégorie de la fiche (`FOURNITURES_SERVICES`, `TRAVAUX`,
    * `PRESTATIONS_INTELLECTUELLES` ; nul : toutes) et forme (`CONTRAT_CADRE`, `AUTRE` ; nul : toutes). La grille d'un dossier
    * (`GET /api/dossiers/{id}/grille`) retire les points qui ne s'appliquent pas à sa fiche ; sans fiche, ils restent.
